@@ -142,8 +142,19 @@ function ipv6_is_valid() {
 
 	assert isset address
 
+	local prefix=$(ip_get_prefix ${address})
+	address=$(ip_split_prefix ${address})
+
 	# Check length
 	[ ${#address} -gt 39 ] && return ${EXIT_ERROR}
+
+	# Check prefix if provided
+	if [ -n "${prefix}" ]; then
+		# XXX need to check was largest prefix is
+		if [ ${prefix} -lt 0 ] && [ ${prefix} -gt 64 ]; then
+			return ${EXIT_ERROR}
+		fi
+	fi
 
 	# XXX find :: twice?
 	# XXX check for documentation prefix?
@@ -167,6 +178,10 @@ function ipv6_implode() {
 		error "IPv6 address is invalid: ${address}"
 		return ${EXIT_ERROR}
 	fi
+
+	# Save prefix
+	local prefix=$(ip_get_prefix ${address})
+	address=$(ip_split_prefix ${address})
 
 	# Make proper address in exploded format
 	address=$(ipv6_explode ${address})
@@ -253,6 +268,9 @@ function ipv6_implode() {
 		address="${address_new}${address:${pos_end}:${#address}}"
 	fi
 
+	# If a prefix was provided we append it in the end
+	[ -n "${prefix}" ] && address="${address}/${prefix}"
+
 	assert ipv6_is_valid ${address}
 
 	echo "${address}"
@@ -263,8 +281,11 @@ function ipv6_explode() {
 
 	assert isset address
 
+	local prefix=$(ip_get_prefix ${address})
+	address=$(ip_split_prefix ${address})
+
 	if [ ${#address} -eq 39 ]; then
-		echo "${address}"
+		echo "${address}$([ -n "${prefix}" ] && echo "/${prefix}")"
 		return ${EXIT_OK}	
 	fi
 
@@ -315,6 +336,9 @@ function ipv6_explode() {
 		address="${address}:${block}"
 	done
 	address=${address:1:39}
+
+	# If a prefix was provided we append it in the end again
+	[ -n "${prefix}" ] && address="${address}/${prefix}"
 
 	assert ipv6_is_valid ${address}
 

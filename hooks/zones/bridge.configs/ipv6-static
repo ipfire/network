@@ -59,7 +59,7 @@ function _create() {
 		GATEWAY=$(ipv6_explode ${GATEWAY})
 	fi
 
-	config_write $(zone_dir ${zone})/config.${HOOK}.$(ipv6_hash ${ADDRESS}).${PREFIX} ${HOOK_SETTINGS}
+	config_write $(zone_dir ${zone})/configs/${HOOK}.$(ipv6_hash ${ADDRESS}).${PREFIX} ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
@@ -74,13 +74,9 @@ function _up() {
 		exit ${EXIT_ERROR}
 	fi
 	
-	config_read $(zone_dir ${zone})/${config}
+	config_read $(zone_dir ${zone})/configs/${config}
 
-	if ! zone_has_ipv6 ${zone} ${ADDRESS}/${PREFIX}; then
-		ip addr add ${ADDRESS}/${PREFIX} dev ${zone}
-	else
-		warning "Do not set IPv6 address '${ADDRESS}/${PREFIX}' because it was already configured on zone '${zone}'."
-	fi
+	ip_address_add ${zone} ${ADDRESS}/${PREFIX}
 
 	if zone_is_nonlocal ${zone} && [ -n "${GATEWAY}" ]; then
 		: # XXX to be done
@@ -99,11 +95,9 @@ function _down() {
 		exit ${EXIT_ERROR}
 	fi
 	
-	config_read $(zone_dir ${zone})/${config}
+	config_read $(zone_dir ${zone})/configs/${config}
 
-	if zone_has_ipv6 ${zone} ${ADDRESS}/${PREFIX}; then
-		ip addr del ${ADDRESS}/${PREFIX} dev ${zone}
-	fi
+	ip_address_del ${zone} ${ADDRESS}/${PREFIX}
 
 	exit ${EXIT_OK}
 }
@@ -118,13 +112,13 @@ function _status() {
 		exit ${EXIT_ERROR}
 	fi
 	
-	config_read $(zone_dir ${zone})/${config}
+	config_read $(zone_dir ${zone})/configs/${config}
 
 	printf "        %10s - " "${HOOK}"
-	if zone_has_ipv6 ${zone} ${ADDRESS}/${PREFIX}; then
-		echo -ne "${COLOUR_OK} OK  ${COLOUR_NORMAL}"
+	if zone_has_ip ${zone} ${ADDRESS}/${PREFIX}; then
+		echo -ne "${COLOUR_UP} UP ${COLOUR_NORMAL}"
 	else
-		echo -ne "${COLOUR_ERROR}ERROR${COLOUR_NORMAL}"
+		echo -ne "${COLOUR_DOWN}DOWN${COLOUR_NORMAL}"
 	fi
 	echo " - $(ipv6_implode ${ADDRESS})/${PREFIX}"
 

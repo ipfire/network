@@ -556,12 +556,8 @@ function zone_configs_status() {
 	zone_configs_cmd config_status $@
 }
 
-function zone_has_ipv4() {
-	device_has_ipv4 $@
-}
-
-function zone_has_ipv6() {
-	device_has_ipv6 $@
+function zone_has_ip() {
+	device_has_ip $@
 }
 
 function zone_db() {

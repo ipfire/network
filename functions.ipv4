@@ -21,17 +21,24 @@
 
 IP_SUPPORTED_PROTOCOLS="${IP_SUPPORTED_PROTOCOLS} ipv4"
 
-function ipv4_split_prefix() {
-	ip_split_prefix $@
-}
-
 function ipv4_is_valid() {
 	local address=${1}
 
 	assert isset address
 
-	# Cut the /24 if there is one given
-	address=$(ipv4_split_prefix ${address})
+	# Cut the prefix if there is one given
+	local prefix=$(ip_get_prefix ${address})
+	address=$(ip_split_prefix ${address})
+
+	# If address is larger than 15 characters it cannot be an IPv4 address
+	[ ${#address} -gt 15 ] && return ${EXIT_ERROR}
+
+	# Check for a valid IPv4 prefix if provided
+	if [ -n "${prefix}" ]; then
+		if [ ${prefix} -lt 4 ] || [ ${prefix} -gt 30 ]; then
+			return ${EXIT_ERROR}
+		fi
+	fi
 
 	local IFS="."
 	local octet

@@ -472,35 +472,36 @@ function device_discover() {
 	done
 }
 
-function device_has_ipv4() {
+function device_has_ip() {
 	local device=${1}
 	local addr=${2}
 
-	if ! device_exists ${device}; then
-		error "Device '${device}' does not exist."
-		return ${EXIT_ERROR}
-	fi
+	assert isset addr
+	assert device_exists ${device}
 
-	ip addr show ${device} | grep -q -e "inet " -e "${addr}"
+	# IPv6 addresses must be fully imploded
+	local protocol=$(ip_detect_protocol ${addr})
+	case "${protocol}" in
+		ipv6)
+			addr=$(ipv6_implode ${addr})
+			;;
+	esac
+
+	listmatch ${addr} $(device_get_addresses ${device})
 }
 
-function device_has_ipv6() {
+function device_get_addresses() {
 	local device=${1}
-	local addr=${2}
 
-	if ! device_exists ${device}; then
-		error "Device '${device}' does not exist."
-		return ${EXIT_ERROR}
-	fi
+	assert device_exists ${device}
 
-	local prefix=${addr##*/}
-	addr=$(ipv6_implode ${addr%%/*})
-
-	if [ -n "${prefix}" ]; then
-		addr="${addr}/${prefix}"
-	fi
-
-	ip addr show ${device} | grep -q "inet6 ${addr}"
+	local prot
+	local addr
+	local line
+	ip addr show ${device} | \
+		while read prot addr line; do
+			[ "${prot:0:4}" = "inet" ] && echo "${addr}"
+		done
 }
 
 function __device_get_file() {

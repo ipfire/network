@@ -77,18 +77,7 @@ function _up() {
 
 	config_read $(zone_dir ${zone})/configs/${config}
 
-	if ! zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
-		if ipv4_detect_duplicate ${zone} ${ADDRESS}; then
-			error_log "Duplicate address detected on zone '${zone}' (${ADDRESS})."
-			error_log "Cannot continue."
-			exit ${EXIT_ERROR}
-		fi
-
-		ip addr add ${ADDRESS}/${PREFIX} dev ${zone}
-
-		# Announce our new address to the neighbours
-		ipv4_update_neighbours ${zone} ${ADDRESS}
-	fi
+	ip_address_add ${zone} ${ADDRESS}/${PREFIX}
 
 	if zone_is_nonlocal ${zone} && [ -n "${GATEWAY}" ]; then
 		# Save configuration
@@ -115,9 +104,7 @@ function _down() {
 	
 	config_read $(zone_dir ${zone})/configs/${config}
 
-	if zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
-		ip addr del ${ADDRESS}/${PREFIX} dev ${zone}
-	fi
+	ip_address_del ${zone} ${ADDRESS}/${PREFIX}
 
 	exit ${EXIT_OK}
 }
@@ -135,10 +122,10 @@ function _status() {
 	config_read $(zone_dir ${zone})/configs/${config}
 
 	printf "        %10s - " "${HOOK}"
-	if zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
-		echo -ne "${COLOUR_ENABLED}ENABLED ${COLOUR_NORMAL}"
+	if zone_has_ip ${zone} ${ADDRESS}/${PREFIX}; then
+		echo -ne "${COLOUR_UP} UP ${COLOUR_NORMAL}"
 	else
-		echo -ne "${COLOUR_DISABLED}DISABLED${COLOUR_NORMAL}"
+		echo -ne "${COLOUR_DOWN}DOWN${COLOUR_NORMAL}"
 	fi
 	echo " - ${ADDRESS}/${PREFIX}"
 

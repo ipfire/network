@@ -35,6 +35,9 @@ function ip_get_prefix() {
 
 	assert isset address
 
+	# Break if no prefix is provided
+	[[ ${address} =~ \/ ]] || return ${EXIT_OK}
+
 	echo "${address##*/}"
 }
 
@@ -46,10 +49,13 @@ function ip_detect_protocol() {
 	local protocol
 	for protocol in ${IP_SUPPORTED_PROTOCOLS}; do
 		if ${protocol}_is_valid ${address}; then
+			log DEBUG "Address '${address}' was detected to be protocol '${protocol}'."
 			echo "${protocol}"
 			return ${EXIT_OK}
 		fi
 	done
+
+	log DEBUG "Protocol version of address '${address}' could not be detected."
 
 	return ${EXIT_ERROR}
 }
@@ -60,4 +66,75 @@ function ip_protocol_is_supported() {
 	assert isset proto
 
 	listmatch ${proto} ${IP_SUPPORTED_PROTOCOLS}
+}
+
+function ip_address_add() {
+	local device=${1}
+	local address=${2}
+
+	assert isset address
+	assert device_exists ${device}
+
+	local prefix=$(ip_get_prefix ${address})
+	address=$(ip_split_prefix ${address})
+
+	assert isset prefix
+
+	# Detect the protocol version
+	local protocol=$(ip_detect_protocol ${address}/${prefix})
+	assert ip_protocol_is_supported ${protocol}
+
+	case "${protocol}" in
+		ipv4)
+			if ipv4_detect_duplicate ${device} ${address}; then
+				error_log "Duplicate address detected on zone '${device}' (${address})."
+				error_log "Cannot continue."
+				return ${EXIT_ERROR}
+			fi
+			;;
+	esac
+
+	if ! device_has_ip ${device} ${address}/${prefix}; then
+		assert ip addr add ${address}/${prefix} dev ${device}
+
+		log DEBUG "IP address '${address}' (${protocol}) was successfully configured on device '${device}'."
+
+		case "${protocol}" in
+			ipv4)
+				# Announce our new address to the neighbours
+				ipv4_update_neighbours ${device} ${address}
+				;;
+		esac
+	else
+		log DEBUG "IP address '${address}' (${protocol}) was already configured on device '${device}'."
+	fi
+
+	return ${EXIT_OK}
+}
+
+function ip_address_del() {
+	local device=${1}
+	local address=${2}
+
+	assert isset address
+	assert device_exists ${device}
+
+	local prefix=$(ip_get_prefix ${address})
+	address=$(ip_split_prefix ${address})
+
+	assert isset prefix
+
+	# Detect the protocol version
+	local protocol=$(ip_detect_protocol ${address}/${prefix})
+	assert ip_protocol_is_supported ${protocol}
+
+	if device_has_ip ${device} ${address}/${prefix}; then
+		assert ip addr del ${address}/${prefix} dev ${device}
+
+		log DEBUG "IP address '${address}' (${protocol}) was successfully removed from device '${device}'."
+	else
+		log DEBUG "IP address '${address}' (${protocol}) was not configured on device '${device}'."
+	fi
+
+	return ${EXIT_OK}
 }
