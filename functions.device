@@ -276,6 +276,17 @@ function device_is_promisc() {
 	ip link show ${device} | grep -qE "<.*PROMISC.*>"
 }
 
+function device_set_promisc() {
+	local device=${1}
+	local state=${2}
+
+	assert device_exists ${device}
+	assert isset state
+	assert isoneof state on off
+
+	ip link set ${device} promisc ${state}
+}
+
 # Check if the device is free
 function device_is_free() {
 	! device_is_used $@

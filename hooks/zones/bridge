@@ -114,6 +114,10 @@ function _up() {
 
 	device_set_up ${zone}
 
+	# XXX Currently, there is a bug (in the linux kernel?) that we need to
+	# set our bridges to promisc mode.
+	device_set_promisc ${zone} on
+
 	# Bring all ports up
 	zone_ports_up ${zone}
 	zone_configs_up ${zone}
@@ -136,6 +140,9 @@ function _down() {
 
 	zone_configs_down ${zone}
 	zone_ports_down ${zone}
+
+	# XXX See remark in _up().
+	device_set_promisc ${zone} off
 
 	device_set_down ${zone}
 	brctl delbr ${zone}
