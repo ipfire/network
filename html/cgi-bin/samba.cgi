@@ -180,7 +180,7 @@ if ($sambasettings{'ACTION'} eq 'globalreset')
 					 $Lang::tr{'yes'} <input type='image' alt='$Lang::tr{'yes'}' title='$Lang::tr{'yes'}' src='/images/edit-redo.png' />
 					<input type='hidden' name='ACTION' value='globalresetyes' /></form></td>
 			<td align='left'  width='50%'><form method='post' action='$ENV{'SCRIPT_NAME'}'>
-					<input type='image' alt='$Lang::tr{'no'}' title='$Lang::tr{'no'}' src='/images/dialog-error.png' /> $Lang::tr{'no'} 
+					<input type='image' alt='$Lang::tr{'no'}' title='$Lang::tr{'no'}' src='/images/dialog-error.png' /> $Lang::tr{'no'}
 					<input type='hidden' name='ACTION' value='cancel' /></form></td>
 	</tr>
 	</table>
@@ -198,7 +198,7 @@ if ($sambasettings{'ACTION'} eq 'sharesreset')
 					 $Lang::tr{'yes'} <input type='image' alt='$Lang::tr{'yes'}' title='$Lang::tr{'yes'}' src='/images/edit-redo.png' />
 					<input type='hidden' name='ACTION' value='sharesresetyes' /></form></td>
 			<td align='left'  width='50%'><form method='post' action='$ENV{'SCRIPT_NAME'}'>
-					<input type='image' alt='$Lang::tr{'no'}' title='$Lang::tr{'no'}' src='/images/dialog-error.png' /> $Lang::tr{'no'} 
+					<input type='image' alt='$Lang::tr{'no'}' title='$Lang::tr{'no'}' src='/images/dialog-error.png' /> $Lang::tr{'no'}
 					<input type='hidden' name='ACTION' value='cancel' /></form></td>
 	</tr>
 	</table>
@@ -240,7 +240,7 @@ if ($sambasettings{'PREFERREDMASTER'} eq 'on'){ $sambasettings{'PREFERREDMASTER'
 
 	open (FILE, ">${General::swroot}/samba/global") or die "Can't save the global settings: $!";
 	flock (FILE, 2);
-	
+
 print FILE <<END
 # global.settings by IPFire Project
 
@@ -278,7 +278,7 @@ log file       = /var/log/samba/samba-log.%m
 lock directory = /var/lock/samba
 pid directory = /var/run/
 log level = $sambasettings{'LOGLEVEL'}
-	
+
 preferred master = $sambasettings{'PREFERREDMASTER'}
 domain master = $sambasettings{'DOMAINMASTER'}
 local master = $sambasettings{'LOCALMASTER'}
@@ -331,7 +331,7 @@ else
 system("/usr/local/bin/sambactrl smbreload");refreshpage();
 }
   &General::readhash("${General::swroot}/samba/settings", \%sambasettings);
-  
+
 
 if ($errormessage)
 	{
@@ -476,7 +476,7 @@ print <<END
 <tr><td align='left' width='40%'>$Lang::tr{'os level'}</td><td align='left'><input type='text' name='OSLEVEL' value='$sambasettings{'OSLEVEL'}' size="30" /></td></tr>
 <tr><td align='left' width='40%'>$Lang::tr{'socket options'}</td><td align='left'><input type='text' name='SOCKETOPTIONS' value='$sambasettings{'SOCKETOPTIONS'}' size="30" /></td></tr>
 <tr><td align='left' width='40%'>$Lang::tr{'remote announce'}</td><td align='left'><input type='text' name='REMOTEANNOUNCE' value='$sambasettings{'REMOTEANNOUNCE'}' size="30" /></td></tr>
-<tr><td align='left' width='40%'>$Lang::tr{'remote browse sync'}</td><td align='left'><input type='text' name='REMOTESYNC='$sambasettings{'REMOTESYNC'}' size="30" /></td></tr>
+<tr><td align='left' width='40%'>$Lang::tr{'remote browse sync'}</td><td align='left'><input type='text' name='REMOTESYNC' value='$sambasettings{'REMOTESYNC'}' size="30" /></td></tr>
 END
 ;
 if ($sambasettings{'WINSSUPPORT'} eq 'off') {print"<tr><td align='left' width='40%'>$Lang::tr{'wins server'}</td><td align='left'><input type='text' name='WINSSRV' value='$sambasettings{'WINSSRV'}' size='30' /></td></tr>";}
@@ -509,7 +509,7 @@ if ($sambasettings{'SECURITY'} eq 'user' && $sambasettings{'DOMAINMASTER'} eq 'o
 END
 ;
 	}
-	
+
 	if ( -e "/var/ipfire/cups/enable")
 	{
 	print <<END
@@ -592,9 +592,9 @@ END
 	@user = <FILE>;
 	close(FILE);
 	system('/usr/local/bin/sambactrl locksmbpasswd');
-	
+
 	my $lines = 0;
-	
+
 	foreach $userentry (sort @user)
 		{
 		@userline = split( /\:/, $userentry );
@@ -1028,7 +1028,7 @@ if ($sambasettings{'ACTION'} eq 'printeradd' || $sambasettings{'ACTION'} eq 'pri
 END
 ;
 	}
-	
+
 if ($sambasettings{'ACTION'} eq 'printerchange' || $sambasettings{'ACTION'} eq 'printercaption2' )
 	{
 	my $printeroption = $printer{$sambasettings{'NAME'}};
@@ -1216,7 +1216,7 @@ sub isrunning
 				{
 				if (/^Name:\W+(.*)/)
 					{
-					$testcmd = $1; 
+					$testcmd = $1;
 					}
 				}
 			close FILE;
