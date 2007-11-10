@@ -1,0 +1,959 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+###############################################################################
+#
+# System variables
+#
+###############################################################################
+
+CONFIG_ROOT=/var/ipfire					# Configuration rootdir
+NICE=10													# Nice level
+PARALLELISM=1										# Parallelism flag
+MAX_RETRIES=1										# prefetch/check loop
+KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }'`
+MACHINE=`uname -m`
+SVN_REVISION=`svn info | grep Revision | cut -c 11-`
+
+PWD=`pwd`
+BASENAME=`basename $0`
+
+# Debian specific settings
+if [ ! -e /etc/debian_version ]; then
+	FULLPATH=`which $0`
+else
+	if [ -x /usr/bin/realpath ]; then
+		FULLPATH=`/usr/bin/realpath $0`
+	else
+		echo "ERROR: Need to do apt-get install realpath"
+		exit 1
+	fi
+fi
+
+BASEDIR=`echo $FULLPATH | sed "s/\/$BASENAME//g"`
+export BASEDIR
+mkdir $BASEDIR/log/ 2>/dev/null
+
+
+###############################################################################
+#
+# Read the local configuration to override the environment variables
+#
+###############################################################################
+
+if [ -e .config ]; then
+	. $BASEDIR/.config
+fi
+
+
+###############################################################################
+#
+# Variables that are not modifyable by .config
+#
+###############################################################################
+
+if [ 'i686' = $MACHINE -o 'i586' = $MACHINE -o 'i486' = $MACHINE -o 'i386' = $MACHINE ]; then
+	MACHINE=i586
+	MACHINE_REAL=i586
+	LINKER=/lib/ld-linux.so.2
+	C2FLAGS="-O2 -fomit-frame-pointer -march=i586 -pipe"
+	CXX2FLAGS="-O2 -fomit-frame-pointer -march=i586 -pipe"
+elif [ 'x86_64' = $MACHINE ]; then
+	MACHINE=i586
+	MACHINE_REAL=x86_64
+	LINKER=/lib/ld-linux.so.2
+	C2FLAGS="-O2 -fomit-frame-pointer -march=i586 -pipe"
+	CXX2FLAGS="-O2 -fomit-frame-pointer -march=i586 -pipe"
+else
+	beautify message FAIL
+	echo "Can't determine your architecture - $MACHINE" | tee -a $LOGFILE
+  exit 1
+fi
+
+# Set up what used to be /tools
+TOOLS_DIR=/tools_${MACHINE}
+
+# Set up /installer
+INSTALLER_DIR=/installer
+
+# include machine in TOOLCHAINNAME
+TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-${MACHINE}
+
+
+###############################################################################
+#
+# Beautifying variables & presentation & input output interface
+#
+###############################################################################
+
+## Screen Dimentions
+# Find current screen size
+if [ -z "${COLUMNS}" ]; then
+	COLUMNS=$(stty size)
+	COLUMNS=${COLUMNS##* }
+fi
+
+# When using remote connections, such as a serial port, stty size returns 0
+if [ "${COLUMNS}" = "0" ]; then
+	COLUMNS=80
+fi
+
+## Measurements for positioning result messages
+RESULT_WIDTH=4
+TIME_WIDTH=8
+OPT_WIDTH=6
+VER_WIDTH=10
+RESULT_COL=$((${COLUMNS} - $RESULT_WIDTH - 4))
+TIME_COL=$((${RESULT_COL} - $TIME_WIDTH - 5))
+OPT_COL=$((${TIME_COL} - $OPT_WIDTH - 5))
+VER_COL=$((${OPT_COL} - $VER_WIDTH - 5))
+
+## Set Cursur Position Commands, used via echo -e
+SET_RESULT_COL="\\033[${RESULT_COL}G"
+SET_TIME_COL="\\033[${TIME_COL}G"
+SET_OPT_COL="\\033[${OPT_COL}G"
+SET_VER_COL="\\033[${VER_COL}G"
+
+# Define color for messages
+BOLD="\\033[1;39m"
+DONE="\\033[1;32m"
+SKIP="\\033[1;34m"
+WARN="\\033[1;35m"
+FAIL="\\033[1;31m"
+NORMAL="\\033[0;39m"
+
+
+################################################################################
+#                                                                              #
+# Necessary shell functions                                                    #
+#                                                                              #
+################################################################################
+
+evaluate() {
+	if [ "$?" -eq "0" ]; then
+		beautify message DONE
+	else
+		EXITCODE=$1
+		shift 1
+		beautify message FAIL
+		$*
+		if [ $EXITCODE -ne "0" ]; then
+			exit $EXITCODE
+		fi
+	fi
+}
+
+position_cursor()
+{
+	# ARG1=starting position on screen
+	# ARG2=string to be printed
+	# ARG3=offset, negative for left movement, positive for right movement, relative to ARG1
+	# For example if your starting position is column 50 and you want to print Hello three columns to the right
+	# of your starting position, your call will look like this:
+	# position_cursor 50 "Hello" 3 (you'll get the string Hello at position 53 (= 50 + 3)
+	# If on the other hand you want your string "Hello" to end three columns to the left of position 50,
+	# your call will look like this:
+	# position_cursor 50 "Hello" -3 (you'll get the string Hello at position 42 (= 50 - 5 -3)
+	# If you want to start printing at the exact starting location, use offset 0
+
+	START=$1
+	STRING=$2
+	OFFSET=$3
+
+	STRING_LENGTH=${#STRING}
+
+	if [ ${OFFSET} -lt 0 ]; then
+		COL=$((${START} + ${OFFSET} - ${STRING_LENGTH}))
+	else
+		COL=$((${START} + ${OFFSET}))
+	fi
+
+	SET_COL="\\033[${COL}G"
+
+	echo $SET_COL
+} # End of position_cursor()
+
+
+beautify()
+{
+	# Commands: build_stage, make_pkg, message, result
+	case "$1" in
+		message)
+			case "$2" in
+				DONE)
+					echo -ne "${SET_RESULT_COL}[${DONE} DONE ${NORMAL}]\n"
+					;;
+				WARN)
+					echo -ne "${WARN}${3}${NORMAL}${SET_RESULT_COL}[${WARN} WARN ${NORMAL}]\n"
+					;;	
+				FAIL)
+					echo -ne "${SET_RESULT_COL}[${FAIL} FAIL ${NORMAL}]\n"
+					;;
+				SKIP)
+					echo -ne "${SET_RESULT_COL}[${SKIP} SKIP ${NORMAL}]\n"
+					;;
+			esac
+			;;
+		build_stage)
+			MESSAGE=$2
+			if [ "$STAGE_TIME_START" ]; then
+				LAST_STAGE_TIME=$[ `date +%s` - $STAGE_TIME_START ]
+			fi
+			STAGE_TIME_START=`date +%s`
+			echo -ne "${BOLD}*** ${MESSAGE}${NORMAL}"
+			if [ "$LAST_STAGE_TIME" ]; then
+				echo -ne "${DONE} (Last stage took $LAST_STAGE_TIME secs)${NORMAL}"
+			fi
+			echo -ne "${BOLD}${SET_VER_COL}      version${SET_OPT_COL} options${SET_TIME_COL} time (sec)${SET_RESULT_COL} status${NORMAL}\n"
+			;;
+		build_start)
+			BUILD_TIME_START=`date +%s`
+			;;
+		build_end)
+			BUILD_TIME_END=`date +%s`
+			echo -ne "${DONE}***Build is finished now and took $[ $BUILD_TIME_END - $BUILD_TIME_START ] secs!${NORMAL}\n"
+			;;
+		make_pkg)
+			echo "$2" | while read PKG_VER PROGRAM OPTIONS
+			do
+				SET_VER_COL_REAL=`position_cursor $OPT_COL $PKG_VER -3`
+
+				if [ "$OPTIONS" == "" ]; then
+					echo -ne "${PROGRAM}${SET_VER_COL}[ ${BOLD}${SET_VER_COL_REAL}${PKG_VER}"
+					echo -ne "${NORMAL} ]${SET_RESULT_COL}"
+				else
+					echo -ne "${PROGRAM}${SET_VER_COL}[ ${BOLD}${SET_VER_COL_REAL}${PKG_VER}"
+					echo -ne "${NORMAL} ]${SET_OPT_COL}[ ${BOLD}${OPTIONS}"
+					echo -ne "${NORMAL} ]${SET_RESULT_COL}"
+				fi
+			done
+			;;
+		result)
+			RESULT=$2
+
+			if [ ! $3 ]; then
+				PKG_TIME=0
+			else
+				PKG_TIME=$3
+			fi
+
+			SET_TIME_COL_REAL=`position_cursor $RESULT_COL $PKG_TIME -3`
+			case "$RESULT" in
+				DONE)
+					echo -ne "${SET_TIME_COL}[ ${BOLD}${SET_TIME_COL_REAL}$PKG_TIME${NORMAL} ]"
+					echo -ne "${SET_RESULT_COL}[${DONE} DONE ${NORMAL}]\n"
+					;;
+				FAIL)
+					echo -ne "${SET_TIME_COL}[ ${BOLD}${SET_TIME_COL_REAL}$PKG_TIME${NORMAL} ]"
+					echo -ne "${SET_RESULT_COL}[${FAIL} FAIL ${NORMAL}]\n"
+					;;
+				SKIP)
+					echo -ne "${SET_TIME_COL}[ ${BOLD}${SET_TIME_COL_REAL}$PKG_TIME${NORMAL} ]"
+					echo -ne "${SET_RESULT_COL}[${SKIP} SKIP ${NORMAL}]\n"
+					;;
+			esac
+			;;
+	esac
+} # End of beautify()
+
+
+get_pkg_ver()
+{
+	PKG_VER=`grep ^VER $1 | awk '{print $3}'`
+
+	if [ -z $PKG_VER ]; then
+		PKG_VER=`grep "Exp " $1 | awk '{print $4}'`
+	fi
+
+	if [ ${#PKG_VER} -gt $VER_WIDTH ]; then
+		# If a package version number is greater than $VER_WIDTH, we keep the first 4 characters
+		# and replace enough characters to fit the resulting string on the screen.  We'll replace
+		# the extra character with .. (two dots).  That's why the "+ 2" in the formula below.
+		# Example: if we have a 21-long version number that we want to fit into a 10-long space,
+		# we have to remove 11 characters.  But if we replace 11 characters with 2 characters, we'll
+		# end up with a 12-character long string.  That's why we replace 12 characters with ..
+		REMOVE=`expr substr "$PKG_VER" 4 $[ ${#PKG_VER} - $VER_WIDTH + 2 ]`
+		PKG_VER=`echo ${PKG_VER/$REMOVE/..}`
+	fi
+
+	echo "$PKG_VER"
+} # End of get_pkg_ver()
+
+stdumount() {
+	for fs in `mount | grep $BASEDIR/build_${MACHINE} | awk '{print $3}'`; do
+		umount $fs #2>/dev/null;
+	done
+} # End of stdumount()
+
+exiterror() {
+	stdumount
+	for i in `seq 0 7`; do
+	    if ( losetup /dev/loop${i} 2>/dev/null | grep -q "/install/images" ); then
+		losetup -d /dev/loop${i} 2>/dev/null
+	    fi;
+	done
+	
+	beautify message FAIL
+ 
+	echo -ne "${FAIL}ERROR${NORMAL}: ${BOLD}$*${NORMAL}\n"
+	echo "       Check $LOGFILE for errors if applicable"
+	exit 1
+} # End of exiterror()
+
+################################################################################
+# This is the function that sets the environment of a chroot and enters it     #
+################################################################################
+entershell() {
+	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:$TOOLS_DIR/bin:/usr/${MACHINE_REAL}-linux/bin
+
+	if [ ! -e $LFS/usr/src/lfs/ ]; then
+		exiterror "No such file or directory: $LFS/usr/src/lfs/"
+	fi
+	
+	echo -ne "Entering ${BOLD}$MACHINE${NORMAL} LFS chroot, type exit to return to host environment\n"
+	
+	chroot $LFS $TOOLS_DIR/bin/env -i \
+		HOME=/root \
+		TERM=$TERM \
+		PS1="${BOLD}[chroot-${MACHINE}]${NORMAL} \u:\w\$ " \
+		PATH=$PATH \
+		CONFIG_ROOT=${CONFIG_ROOT} \
+		VERSION=${VERSION} \
+		NAME=${NAME} \
+		SNAME=${SNAME} \
+		SLOGAN="$SLOGAN" \
+		CCACHE_DIR=/usr/src/ccache \
+		CCACHE_PREFIX=${CCACHE_PREFIX} \
+		CCACHE_HASHDIR=${CCACHE_HASHDIR} \
+		DISTCC_DIR=/usr/src/distcc \
+		PARALLELISM=$PARALLELISM \
+		LINKER=$LINKER \
+		TOOLS_DIR=$TOOLS_DIR \
+		INSTALLER_DIR=$INSTALLER_DIR \
+		MACHINE="$MACHINE" \
+		MACHINE_REAL="$MACHINE_REAL" \
+		CFLAGS="$C2FLAGS" \
+		CXXFLAGS="$CXX2FLAGS" \
+		KVER=$KVER \
+		STAGE=$STAGE \
+		STAGE_ORDER=$STAGE_ORDER \
+		LOGFILE=`echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g"` \
+		bash
+
+	if [ $? -ne 0 ]; then
+		exiterror "chroot error"
+	else
+		stdumount
+	fi
+} # End of entershell()
+
+
+
+################################################################################
+# Common checking before entering the chroot and compilling                    #
+# Return:0 caller can continue                                                 #
+#	:1 skip (nothing to do)                                                      #
+#	or fail if no script file found                                              #
+################################################################################
+lfsmakecommoncheck()
+{
+	# Script present?
+	if [ ! -f $BASEDIR/lfs/$1 ]; then
+		exiterror "No such file or directory: $BASEDIR/$1"
+	fi
+
+	local PKG_VER=`get_pkg_ver $BASEDIR/lfs/$1`
+	beautify make_pkg "$PKG_VER $*"
+
+	# Script slipped?
+	local i
+	for i in $SKIP_PACKAGE_LIST
+	do
+		if [ "$i" == "$1" ]; then
+			beautify result SKIP
+			return 1;
+		fi
+	done
+
+	echo -e "`date -u '+%b %e %T'`: Building $* " >> $LOGFILE
+
+	cd $BASEDIR/lfs && make -s -f $* MACHINE=$MACHINE LFS_BASEDIR=$BASEDIR MESSAGE="$1\t " download  >> $LOGFILE 2>&1
+	if [ $? -ne 0 ]; then
+		exiterror "Download error in $1"
+	fi
+
+	cd $BASEDIR/lfs && make -s -f $* MACHINE=$MACHINE LFS_BASEDIR=$BASEDIR MESSAGE="$1\t md5sum" md5  >> $LOGFILE 2>&1
+	if [ $? -ne 0 ]; then
+		exiterror "md5sum error in $1, check file in cache or signature"
+	fi
+
+	return 0	# pass all!
+} # End of lfsmakecommoncheck()
+
+################################################################################
+# This is the function that builds every package in stage "toolchain"	         #
+################################################################################
+toolchain_make() {
+	lfsmakecommoncheck $*
+	[ $? == 1 ] && return 0
+
+	local PKG_VER=`get_pkg_ver $BASEDIR/lfs/$1`
+
+	local EXTRA_MAKE=$EXTRA_MAKE
+
+	local PKG_TIME_START=`date +%s`
+	cd $BASEDIR/lfs && $EXTRA_MAKE make -f $* \
+		CONFIG_ROOT=$CONFIG_ROOT \
+		LINKER=$LINKER \
+		TOOLS_DIR=$TOOLS_DIR \
+		MACHINE="$MACHINE" \
+		LFS_BASEDIR=$BASEDIR \
+		LFS=$LFS \
+		PARALLELISM=$PARALLELISM \
+		KVER=$KVER \
+		STAGE=$STAGE \
+		STAGE_ORDER=$STAGE_ORDER \
+		install >> $LOGFILE 2>&1
+
+	local COMPILE_SUCCESS=$?
+	local PKG_TIME_END=`date +%s`
+
+	if [ $COMPILE_SUCCESS -ne 0 ]; then
+		beautify result FAIL $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		exiterror "Building $*";
+	else
+		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+	fi
+
+	return 0
+} # End of toolchain_make()
+
+################################################################################
+# This is the function that builds every package in stage "base"	             #
+################################################################################
+ipfire_make() {
+	lfsmakecommoncheck $*
+	[ $? == 1 ] && return 0
+
+	local PKG_VER=`get_pkg_ver $BASEDIR/lfs/$1`
+
+	local EXTRA_MAKE=$EXTRA_MAKE
+	# When cross-compiling, make sure the kernel is compiled for the target
+	[ "$MACHINE" != "$MACHINE_REAL" -a "$1" == "linux" ] && unset EXTRA_MAKE
+
+	# Also, make sure external kernel modules are compiled 64bit
+	if grep -qEi 'KERNEL_MOD = yes' $1 ; then
+		unset EXTRA_MAKE
+	fi
+
+	local PKG_TIME_START=`date +%s`
+	chroot $LFS $TOOLS_DIR/bin/env -i \
+		HOME=/root \
+		TERM=$TERM \
+		PS1='\u:\w\$ ' \
+		PATH=$PATH \
+		CONFIG_ROOT=${CONFIG_ROOT} \
+		VERSION=${VERSION} \
+		NAME=${NAME} \
+		SNAME=${SNAME} \
+		SLOGAN="$SLOGAN" \
+		CCACHE_DIR=/usr/src/ccache \
+		CCACHE_PREFIX=${CCACHE_PREFIX} \
+		CCACHE_HASHDIR=${CCACHE_HASHDIR} \
+		DISTCC_DIR=/usr/src/distcc \
+		PARALLELISM=$PARALLELISM \
+		LINKER=$LINKER \
+		TOOLS_DIR=$TOOLS_DIR \
+		INSTALLER_DIR=$INSTALLER_DIR \
+		MACHINE="$MACHINE" \
+		MACHINE_REAL="$MACHINE_REAL" \
+		CFLAGS="$C2FLAGS" \
+		CXXFLAGS="$CXX2FLAGS" \
+		KVER=$KVER \
+		STAGE=$STAGE \
+		STAGE_ORDER=$STAGE_ORDER \
+		LOGFILE=`echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g"` \
+		bash -x -c "cd /usr/src/lfs && \
+		$EXTRA_MAKE make -f $* LFS_BASEDIR=/usr/src install" >>$LOGFILE 2>&1
+
+	local COMPILE_SUCCESS=$?
+	local PKG_TIME_END=`date +%s`
+
+	if [ $COMPILE_SUCCESS -ne 0 ]; then
+		beautify result FAIL $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		exiterror "Building $*";
+	else
+		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+	fi
+
+	return 0
+} # End of ipfire_make()
+
+
+ipfire_dist() {
+	lfsmakecommoncheck $*
+	[ $? == 1 ] && return 0
+
+	local PKG_VER=`get_pkg_ver $BASEDIR/lfs/$1`
+
+	local EXTRA_MAKE=$EXTRA_MAKE
+
+	local PKG_TIME_START=`date +%s`
+	chroot $LFS $TOOLS_DIR/bin/env -i \
+		HOME=/root \
+		TERM=$TERM \
+		PS1='\u:\w\$ ' \
+		PATH=$PATH \
+		CONFIG_ROOT=${CONFIG_ROOT} \
+		VERSION=${VERSION} \
+		NAME=${NAME} \
+		SNAME=${SNAME} \
+		SLOGAN="$SLOGAN" \
+		CCACHE_DIR=/usr/src/ccache \
+		CCACHE_PREFIX=${CCACHE_PREFIX} \
+		CCACHE_HASHDIR=${CCACHE_HASHDIR} \
+		DISTCC_DIR=/usr/src/distcc \
+		PARALLELISM=$PARALLELISM \
+		LINKER=$LINKER \
+		TOOLS_DIR=$TOOLS_DIR \
+		INSTALLER_DIR=$INSTALLER_DIR \
+		MACHINE="$MACHINE" \
+		MACHINE_REAL="$MACHINE_REAL" \
+		CFLAGS="$C2FLAGS" \
+		CXXFLAGS="$CXX2FLAGS" \
+		KVER=$KVER \
+		STAGE=$STAGE \
+		STAGE_ORDER=$STAGE_ORDER \
+		LOGFILE=`echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g"` \
+		bash -x -c "cd /usr/src/lfs && \
+		$EXTRA_MAKE make -f $* LFS_BASEDIR=/usr/src dist" >>$LOGFILE 2>&1
+
+	local COMPILE_SUCCESS=$?
+	local PKG_TIME_END=`date +%s`
+
+	if [ $COMPILE_SUCCESS -ne 0 ]; then
+		beautify result FAIL $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		exiterror "Packaging $*";
+	else
+		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+	fi
+
+	return 0
+} # End of ipfire_dist()
+
+################################################################################
+# This prepares the build environment                                          #
+################################################################################
+prepareenv() {
+
+	LOGFILE=$BASEDIR/log_${MACHINE}/_build.preparation.log
+	export LOGFILE
+	mkdir -p $BASEDIR/log_${MACHINE}/01_toolchain 2>/dev/null
+  mkdir -p $BASEDIR/log_${MACHINE}/02_base 2>/dev/null
+  mkdir -p $BASEDIR/log_${MACHINE}/03_ipfire 2>/dev/null
+  mkdir -p $BASEDIR/log_${MACHINE}/04_misc 2>/dev/null
+  mkdir -p $BASEDIR/log_${MACHINE}/05_installer 2>/dev/null
+  mkdir -p $BASEDIR/log_${MACHINE}/06_packages 2>/dev/null
+  
+	#############################################################################
+	# Are we running the right shell?                                           #
+	#############################################################################
+	  
+	if [ ! "$BASH" ]; then
+		exiterror "BASH environment variable is not set.  You're probably running the wrong shell."
+	fi
+
+	if [ -z "${BASH_VERSION}" ]; then
+		exiterror "Not running BASH shell."
+	fi
+
+	#############################################################################
+	# Trap on emergency exit                                                    #
+	#############################################################################
+	trap "exiterror 'Build process interrupted'" SIGINT SIGTERM SIGKILL SIGSTOP SIGQUIT
+
+
+	#############################################################################
+	# Resetting our nice level                                                  #
+	#############################################################################
+	echo -ne "Resetting our nice level to $NICE" | tee -a $LOGFILE
+	renice $NICE $$ > /dev/null
+	if [ `nice` != "$NICE" ]; then
+		beautify message FAIL
+		exiterror "Failed to set correct nice level"
+	else
+		beautify message DONE
+	fi
+	
+	# Set SCHED_BATCH
+  if [ -x /usr/bin/schedtool ]; then
+  	echo -ne "Setting kernel schedular to SCHED_BATCH"
+  	/usr/bin/schedtool -B $$
+		if [ $? -eq 0 ]; then
+  		beautify message DONE
+  	else
+  		beautify message FAIL
+  	fi
+  fi
+
+	##############################################################################
+	# Checking if running as root user                                           #
+	##############################################################################
+	echo -ne "Checking if we're running as root user" | tee -a $LOGFILE
+	if [ `id -u` != 0 ]; then
+		beautify message FAIL
+		exiterror "Not building as root"
+	else
+		beautify message DONE
+	fi
+
+
+	##############################################################################
+	# Checking for necessary temporary space                                     #
+	##############################################################################
+	echo -ne "Checking for necessary space on disk $BASE_DEV" | tee -a $LOGFILE
+	BASE_DEV=`df -P -k $BASEDIR | tail -n 1 | awk '{ print $1 }'`
+	BASE_ASPACE=`df -P -k $BASEDIR | tail -n 1 | awk '{ print $4 }'`
+	if (( 2048000 > $BASE_ASPACE )); then
+		BASE_USPACE=`du -skx $BASEDIR | awk '{print $1}'`
+		if (( 2048000 - $BASE_USPACE > $BASE_ASPACE )); then
+			beautify message FAIL
+			exiterror "Not enough temporary space available, need at least 2GB on $BASE_DEV"
+		fi
+	else
+		beautify message DONE
+	fi
+
+
+	##############################################################################
+	# Building Linux From Scratch system configuration                           #
+	##############################################################################
+	
+	# Set umask
+	umask 022
+
+	# Set LFS Directory
+	LFS=$BASEDIR/build_${MACHINE}/ipfire
+	
+	# Check /tools symlink
+	if [ -h $TOOLS_DIR ]; then
+		rm -f $TOOLS_DIR
+	fi
+  if [ ! -a $TOOLS_DIR ]; then
+		ln -s $BASEDIR/build_${MACHINE}/$TOOLS_DIR /
+	fi
+	if [ ! -h $TOOLS_DIR ]; then
+		exiterror "Could not create $TOOLS_DIR symbolic link."
+	fi
+
+	# Setup environment
+	set +h
+	LC_ALL=POSIX
+	export LFS LC_ALL
+	unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
+
+	# Make some extra directories
+	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$INSTALLER_DIR,usr/local/{ccache,distcc}} 2>/dev/null
+	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
+	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
+	mkdir -p $LFS/dev/pts
+	mkdir -p $LFS/proc
+	mkdir -p $LFS/usr/src/{cache,config,doc,html,langs,lfs,log_${MACHINE},src,ccache,distcc}
+	mkdir -p $LFS/{$INSTALLER_DIR,usr/local/{ccache,distcc}}
+	mkdir -p $LFS/etc
+
+	mknod -m 600 $BASEDIR/build/dev/console c 5 1 2>/dev/null
+	mknod -m 666 $BASEDIR/build/dev/null c 1 3 2>/dev/null
+
+	# Make all sources and proc available under lfs build
+	mount --bind /dev																					$LFS/dev
+  mount --bind /proc																				$LFS/proc
+	mount --bind $BASEDIR/cache																$LFS/usr/src/cache
+	mount --bind $BASEDIR/ccache															$LFS/usr/src/ccache
+	mount --bind $BASEDIR/distcc															$LFS/usr/src/distcc
+	mount --bind $BASEDIR/config															$LFS/usr/src/config
+	mount --bind $BASEDIR/doc																	$LFS/usr/src/doc
+	mount --bind $BASEDIR/html																$LFS/usr/src/html
+	mount --bind $BASEDIR/langs																$LFS/usr/src/langs
+	mount --bind $BASEDIR/lfs																	$LFS/usr/src/lfs
+	mount --bind $BASEDIR/log_${MACHINE}											$LFS/usr/src/log_${MACHINE}
+	mount --bind $BASEDIR/src																	$LFS/usr/src/src
+	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR					$LFS/$TOOLS_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR			$LFS/$INSTALLER_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/usr/local/ccache		$LFS/usr/local/ccache
+	mount --bind $BASEDIR/build_${MACHINE}/usr/local/distcc		$LFS/usr/local/distcc
+
+	# This is a temporary hack!!!
+	#if [ ! -f /tools/bin/hostname ]; then
+	#	cp -f /bin/hostname /tools/bin/hostname 2>/dev/null
+	#fi
+
+	# Run LFS static binary creation scripts one by one
+	export CCACHE_DIR=$BASEDIR/ccache
+	export CCACHE_HASHDIR=1
+	if [ ! -z $DISTCC_HOSTS ]; then
+		export CCACHE_PREFIX="distcc"
+		export DISTCC_DIR=$BASEDIR/distcc
+	fi
+	
+	[ -z $DISTCC_HOSTS ] || echo $DISTCC_HOSTS > $DISTCC_DIR/hosts
+
+	# Remove pre-install list of installed files in case user erase some files before rebuild
+	rm -f $LFS/usr/src/lsalr 2>/dev/null
+}
+
+################################################################################
+# This is the function that checks for toolchain prerequisites		             #
+################################################################################
+check_toolchain_prerequisites() {
+
+	echo -ne "${BOLD}Checking for toolchain prerequisites${NORMAL}\n" | tee -a $LOGFILE
+
+	echo -ne "Checking for GNU bash" | tee -a $LOGFILE
+	if bash --version | grep -qEi 'GNU bash' ; then
+		beautify message DONE
+	else
+		exiterror "GNU bash not found!"
+	fi
+
+	echo -ne "Checking for GNU binutils" | tee -a $LOGFILE
+	if ld --version | grep -qEi 'GNU ld' ; then
+		beautify message DONE
+	else
+		exiterror "GNU binutils not found!"
+	fi
+
+	echo -ne "Checking for GNU bison" | tee -a $LOGFILE
+	if bison --version | grep -qEi '(GNU Bison)' ; then
+		beautify message DONE
+	else
+		exiterror "GNU bison not found!"
+	fi
+
+	echo -ne "Checking for GNU bzip2" | tee -a $LOGFILE
+	if bzip2 --version 2>&1 < /dev/null | head -n1 | cut -d" " -f1,6- | grep -qEi '^bzip2' ; then
+		beautify message DONE
+	else
+		exiterror "GNU bzip2 not found!"
+	fi
+
+	echo -ne "Checking for GNU coreutils" | tee -a $LOGFILE
+	if ls --version | head -n1 | grep -qEi 'coreutils' ; then
+		beautify message DONE
+	else
+		exiterror "GNU coreutils not found!"
+	fi
+
+	echo -ne "Checking for GNU diffutils" | tee -a $LOGFILE
+	if diff --version | grep -qEi '(GNU diffutils)' ; then
+		beautify message DONE
+	else
+		exiterror "GNU diffutils not found!"
+	fi
+
+	echo -ne "Checking for GNU findutils" | tee -a $LOGFILE
+	if find --version | grep -qEi 'GNU find' ; then
+		beautify message DONE
+	else
+		exiterror "GNU findutils not found!"
+	fi
+
+	echo -ne "Checking for GNU awk" | tee -a $LOGFILE
+	if gawk --version | grep -qEi 'GNU awk' ; then
+		beautify message DONE
+	else
+		beautify message FAIL
+		exiterror "GNU awk not found, mawk is not supported by glibc"
+	fi
+
+	echo -ne "Checking for GNU CC" | tee -a $LOGFILE
+	if gcc --version | grep -qEi '(GCC)' ; then
+		beautify message DONE
+	else
+		exiterror "GNU CC not found!"
+	fi
+
+	# Check for glibc
+	echo -ne "Checking for GNU libc" | tee -a $LOGFILE
+	if iconv --version | grep -qEi '(GNU libc)' ; then
+		beautify message DONE
+	else
+		exiterror "GNU libc not found!"
+	fi
+
+	echo -ne "Checking for GNU grep" | tee -a $LOGFILE
+	if grep --version | grep -qEi '(GNU grep)' ; then
+		beautify message DONE
+	else
+		exiterror "GNU grep not found!"
+	fi
+
+	echo -ne "Checking for GNU gzip" | tee -a $LOGFILE
+	if gzip --version | grep -qEi '^gzip ' ; then
+		beautify message DONE
+	else
+		exiterror "GNU gzip not found!"
+	fi
+
+	echo -ne "Checking for Linux Kernel v2.6" | tee -a $LOGFILE
+	if [ `uname -r | awk -F"." '{print $1$2}'` -eq 26 ]; then
+		beautify message DONE
+	else
+		exiterror "A Linux Kernel v2.6 is necessary to build glibc"
+	fi
+
+	echo -ne "Checking for GNU make" | tee -a $LOGFILE
+	if make --version | grep -qEi 'GNU Make' ; then
+		beautify message DONE
+	else
+		exiterror "GNU make not found!"
+	fi
+
+	echo -ne "Checking for GNU patch" | tee -a $LOGFILE
+	if patch --version | grep -qEi '^patch ' ; then
+		beautify message DONE
+	else
+		exiterror "GNU patch not found!"
+	fi
+
+	echo -ne "Checking for GNU sed" | tee -a $LOGFILE
+	if sed --version | grep -qEi 'GNU sed' ; then
+		beautify message DONE
+	else
+		exiterror "GNU sed not found!"
+	fi
+
+	echo -ne "Checking for GNU tar" | tee -a $LOGFILE
+	if tar --version | grep -qEi '(GNU tar)' ; then
+		beautify message DONE
+	else
+		exiterror "GNU tar not found!"
+	fi
+
+	# THE FOLLOWING ARE NOT REALLY REQUIRED BY LFS
+	# Check for flex (needed by binutils)
+	echo -ne "Checking for flex/lex" | tee -a $LOGFILE
+	if flex --version | grep -qEi 'flex.* [2-4]{1}' || lex  --version | grep -qEi 'flex.* [2-4]{1}' ; then
+		beautify message DONE
+	else
+		exiterror "flex/lex not found"
+	fi
+
+} # End of check_toolchain_prerequisites()
+
+batch_script() {
+	echo -ne "${BOLD}***This is our auto buildscript! Have fun...${NORMAL}\n"
+
+	if [ "$IPFIRE_REBUILD" -eq "0" ]; then
+		export IPFIRE_START_TIME=`date`
+		evaluate 1
+
+		echo "### RUNNING SVN-UPDATE"
+		$0 svn update
+		evaluate 1 mail_me SVNUPDATE
+
+		echo "### EXPORT SOURCES"
+		$0 svn dist
+		evaluate 1 mail_me SVNDIST
+	fi
+
+	echo "### RUNNING BUILD"
+	$0 build #--devel
+	evaluate 1 mail_me ERROR
+
+	echo "### UPLOADING ISO"
+	$0 upload iso
+	evaluate 1 mail_me ISO
+	
+	echo -ne "### UPLOADING PAKS"
+	$0 upload paks
+	evaluate 1 mail_me PAKS
+
+	echo -ne "${BOLD}***SUCCESS!${NORMAL}"
+	mail_me success
+	exit 0
+}
+
+watch_screen() {
+	echo -e "${BOLD}Exit with Ctrl+A, Ctrl+D.${NORMAL}"
+	sleep 0.5
+	screen -x ipfire
+}
+
+mail_me() {
+	echo "From: $MAIL_FROM" > /tmp/ipfire_mail_body.$$
+	echo "To: $MAIL_TO" >> /tmp/ipfire_mail_body.$$
+	case "$1" in
+		success)
+			cat <<END >> /tmp/ipfire_mail_body.$$
+Subject: SUCCESS: IPFIRE-BUILD R$SVN_REVISION on `hostname`
+Building IPFire on `hostname` in Revision $SVN_REVISION was successfull!
+You can find the ISO on your ftp server if you told the script where it is.
+
+Statistics:
+-----------
+Started:	$IPFIRE_START_TIME
+Finished:	`date`
+
+Best Regards
+Your IPFire-Build-Script
+
+END
+		echo -ne "${BOLD}***Sending success message${NORMAL}"
+		;;
+		*)
+			cat <<END >> /tmp/ipfire_mail_body.$$
+Subject: ERROR $1: IPFIRE-BUILD R$SVN_REVISION on `hostname`
+When I was building IPFire on `hostname`, I have found an ERROR with name $1!
+Here you can see the logs and detect the reason for this error.
+
+Best Regards
+Your IPFire-Build-Script
+
+
+Here is a summary... The full logs are in the attachment.
+---------------------------------------------------------
+
+`tail log/_*`
+END
+		echo -ne "${BOLD}***Sending error message${NORMAL}"
+		;;
+	esac
+
+sleep 15
+	python tools/sendEmail < /tmp/ipfire_mail_body.$$
+	if [ "$?" -eq "0" ]; then
+		beautify message DONE
+	else
+		beautify message FAIL
+	fi
+	rm -f /tmp/ipfire_mail_body.$$
+}
+
+update_langs() {
+		echo -ne "Checking the translations for missing or obsolete strings..."
+		chmod 755 $BASEDIR/tools/{check_strings.pl,sort_strings.pl,check_langs.sh}
+		$BASEDIR/tools/sort_strings.pl en
+		$BASEDIR/tools/sort_strings.pl de
+		$BASEDIR/tools/check_strings.pl en > $BASEDIR/doc/language_issues.en
+		$BASEDIR/tools/check_strings.pl de > $BASEDIR/doc/language_issues.de
+		$BASEDIR/tools/check_langs.sh > $BASEDIR/doc/language_missings
+		beautify message DONE
+}

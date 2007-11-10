@@ -24,552 +24,435 @@
 
 NAME="IPFire"										# Software name
 SNAME="ipfire"									# Short name
-VERSION="2.1"										# Version number
+VERSION="2.9"										# Version number
+TOOLCHAINVERSION="${VERSION}"   # Toolchain
 SLOGAN="www.ipfire.org"					# Software slogan
-CONFIG_ROOT=/var/ipfire					# Configuration rootdir
-NICE=10													# Nice level
-MAX_RETRIES=1										# prefetch/check loop
-KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }'`
-MACHINE=`uname -m`
-SVN_REVISION=`svn info | grep Revision | cut -c 11-`
-
-IPFVER="full"				# Which versions should be compiled? (full|devel)
-
-# Set an information about the build number
-if [ -e ./.svn ]; then
-	FIREBUILD=`cat .svn/entries |sed -n 's/^[ \t]*revision=\"// p' | sed -n 's/\".*$// p'`
-fi
-
-# Debian specific settings
-if [ ! -e /etc/debian_version ]; then
-	FULLPATH=`which $0`
-else
-	if [ -x /usr/bin/realpath ]; then
-		FULLPATH=`/usr/bin/realpath $0`
-	else
-		echo "ERROR: Need to do apt-get install realpath"
-		exit 1
-	fi
-fi
-
-PWD=`pwd`
-BASENAME=`basename $0`
-BASEDIR=`echo $FULLPATH | sed "s/\/$BASENAME//g"`
-LOGFILE=$BASEDIR/log/_build.preparation.log
-export BASEDIR LOGFILE
-DIR_CHK=$BASEDIR/cache/check
-mkdir $BASEDIR/log/ 2>/dev/null
 
 # Include funtions
-. tools/make-functions
-
-if [ -f .config ]; then
-	. .config
-else
-	echo -e  "${BOLD}No configuration found!${NORMAL}"
-	echo -ne "Do you want to create one (y/N)?"
-	read CREATE_CONFIG
-	echo ""
-	if [ "$CREATE_CONFIG" == "y" ]; then
-		make_config
-	fi
-fi
-
-prepareenv() {
-    ############################################################################
-    #                                                                          #
-    # Are we running the right shell?                                          #
-    #                                                                          #
-    ############################################################################
-    if [ ! "$BASH" ]; then
-			exiterror "BASH environment variable is not set.  You're probably running the wrong shell."
-    fi
-
-    if [ -z "${BASH_VERSION}" ]; then
-			exiterror "Not running BASH shell."
-    fi
+. tools/make-include
 
 
-    ############################################################################
-    #                                                                          #
-    # Trap on emergency exit                                                   #
-    #                                                                          #
-    ############################################################################
-    trap "exiterror 'Build process interrupted'" SIGINT SIGTERM SIGKILL SIGSTOP SIGQUIT
+################################################################################
+# This builds the entire stage "toolchain"                                     #
+################################################################################
+toolchain_build() {
 
+	ORG_PATH=$PATH
+	export PATH=$BASEDIR/build_${MACHINE}/usr/local/ccache/bin:$BASEDIR/build_${MACHINE}/usr/local/distcc/bin:$BASEDIR/build_${MACHINE}/$TOOLS_DIR/bin:$PATH
+	STAGE_ORDER=01
+	STAGE=toolchain
 
-    ############################################################################
-    #                                                                          #
-    # Resetting our nice level                                                 #
-    #                                                                          #
-    ############################################################################
-    echo -ne "Resetting our nice level to $NICE" | tee -a $LOGFILE
-    renice $NICE $$ > /dev/null
-    if [ `nice` != "$NICE" ]; then
-			beautify message FAIL
-			exiterror "Failed to set correct nice level"
-    else
-			beautify message DONE
-    fi
-
-
-    ############################################################################
-    #                                                                          #
-    # Checking if running as root user                                         #
-    #                                                                          #
-    ############################################################################
-    echo -ne "Checking if we're running as root user" | tee -a $LOGFILE
-    if [ `id -u` != 0 ]; then
-			beautify message FAIL
-			exiterror "Not building as root"
-    else
-			beautify message DONE
-    fi
-
-
-    ############################################################################
-    #                                                                          #
-    # Checking for necessary temporary space                                   #
-    #                                                                          #
-    ############################################################################
-    echo -ne "Checking for necessary space on disk $BASE_DEV" | tee -a $LOGFILE
-    BASE_DEV=`df -P -k $BASEDIR | tail -n 1 | awk '{ print $1 }'`
-    BASE_ASPACE=`df -P -k $BASEDIR | tail -n 1 | awk '{ print $4 }'`
-    if (( 2048000 > $BASE_ASPACE )); then
-			BASE_USPACE=`du -skx $BASEDIR | awk '{print $1}'`
-			if (( 2048000 - $BASE_USPACE > $BASE_ASPACE )); then
-				beautify message FAIL
-				exiterror "Not enough temporary space available, need at least 2GB on $BASE_DEV"
-			fi
-    else
-			beautify message DONE
-    fi
-
-    ############################################################################
-    #                                                                          #
-    # Building Linux From Scratch system                                       #
-    #                                                                          #
-    ############################################################################
-    # Set umask
-    umask 022
-
-    # Set LFS Directory
-    LFS=$BASEDIR/build
-
-    # Check /tools symlink
-    if [ -h /tools ]; then
-        rm -f /tools
-    fi
-    if [ ! -a /tools ]; then
-			ln -s $BASEDIR/build/tools /
-    fi
-    if [ ! -h /tools ]; then
-			exiterror "Could not create /tools symbolic link."
-    fi
-
-    # Setup environment
-    set +h
-    LC_ALL=POSIX
-    MAKETUNING="-j6"
-    export LFS LC_ALL CFLAGS CXXFLAGS MAKETUNING
-    unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
-
-    # Make some extra directories
-    mkdir -p $BASEDIR/build/{tools,etc,usr/src} 2>/dev/null
-    mkdir -p $BASEDIR/build/{dev/{shm,pts},proc,sys}
-    mkdir -p $BASEDIR/{cache,ccache} 2>/dev/null
-    mkdir -p $BASEDIR/build/usr/src/{cache,config,doc,html,langs,lfs,log,src,ccache}
-
-    mknod -m 600 $BASEDIR/build/dev/console c 5 1 2>/dev/null
-    mknod -m 666 $BASEDIR/build/dev/null c 1 3 2>/dev/null
-
-    # Make all sources and proc available under lfs build
-    mount --bind /dev            $BASEDIR/build/dev
-    mount --bind /dev/pts        $BASEDIR/build/dev/pts
-    mount --bind /dev/shm        $BASEDIR/build/dev/shm
-    mount --bind /proc           $BASEDIR/build/proc
-    mount --bind /sys            $BASEDIR/build/sys
-    mount --bind $BASEDIR/cache  $BASEDIR/build/usr/src/cache
-    mount --bind $BASEDIR/ccache $BASEDIR/build/usr/src/ccache
-    mount --bind $BASEDIR/config $BASEDIR/build/usr/src/config
-    mount --bind $BASEDIR/doc    $BASEDIR/build/usr/src/doc
-    mount --bind $BASEDIR/html   $BASEDIR/build/usr/src/html
-    mount --bind $BASEDIR/langs  $BASEDIR/build/usr/src/langs
-    mount --bind $BASEDIR/lfs    $BASEDIR/build/usr/src/lfs
-    mount --bind $BASEDIR/log    $BASEDIR/build/usr/src/log
-    mount --bind $BASEDIR/src    $BASEDIR/build/usr/src/src
-
-    # This is a temporary hack!!!
-    if [ ! -f /tools/bin/hostname ]; then
-      cp -f /bin/hostname /tools/bin/hostname 2>/dev/null
-    fi
-
-    # Run LFS static binary creation scripts one by one
-    export CCACHE_DIR=$BASEDIR/ccache
-    export CCACHE_HASHDIR=1
-
-    # Remove pre-install list of installed files in case user erase some files before rebuild
-    rm -f $BASEDIR/build/usr/src/lsalr 2>/dev/null
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.toolchain.log"
+	export LOGFILE
+	
+	NATIVEGCC=`gcc --version | grep GCC | awk {'print $3'}`
+	export NATIVEGCC GCCmajor=${NATIVEGCC:0:1} GCCminor=${NATIVEGCC:2:1} GCCrelease=${NATIVEGCC:4:1}
+	
+	# make distcc first so that CCACHE_PREFIX works immediately
+	[ -z $DISTCC_HOSTS ] || toolchain_make distcc
+	toolchain_make ccache
+	
+	toolchain_make binutils	PASS=1
+	toolchain_make gcc		PASS=1
+	toolchain_make linux-libc-header
+	toolchain_make glibc
+	toolchain_make cleanup-toolchain PASS=1
+	toolchain_make tcl
+	toolchain_make expect
+	toolchain_make dejagnu
+	toolchain_make gcc		PASS=2
+	toolchain_make binutils	PASS=2
+	toolchain_make ncurses
+	toolchain_make bash
+	toolchain_make bzip2
+	toolchain_make coreutils
+	toolchain_make diffutils
+	toolchain_make findutils
+	toolchain_make gawk
+	toolchain_make gettext
+	toolchain_make grep
+	toolchain_make gzip
+	toolchain_make m4
+	toolchain_make make
+	toolchain_make patch
+	toolchain_make perl
+	toolchain_make sed
+	toolchain_make tar
+	toolchain_make texinfo
+	toolchain_make util-linux
+	toolchain_make cleanup-toolchain	PASS=2
+	export PATH=$ORG_PATH
 }
 
-buildtoolchain() {
-    LOGFILE="$BASEDIR/log/_build.toolchain.log"
-    export LOGFILE
-    ORG_PATH=$PATH
-    NATIVEGCC=`gcc --version | grep GCC | awk {'print $3'}`
-    export NATIVEGCC GCCmajor=${NATIVEGCC:0:1} GCCminor=${NATIVEGCC:2:1} GCCrelease=${NATIVEGCC:4:1}
-    lfsmake1 ccache
-    lfsmake1 binutils	PASS=1
-    lfsmake1 gcc		PASS=1
-    export PATH=$BASEDIR/build/usr/local/bin:$BASEDIR/build/tools/bin:$PATH
-    lfsmake1 linux-libc-header
-    lfsmake1 glibc
-    lfsmake1 cleanup-toolchain PASS=1
-    lfsmake1 tcl
-    lfsmake1 expect
-    lfsmake1 dejagnu
-    lfsmake1 gcc		PASS=2
-    lfsmake1 binutils	PASS=2
-    lfsmake1 ncurses
-    lfsmake1 bash
-    lfsmake1 bzip2
-    lfsmake1 coreutils
-    lfsmake1 diffutils
-    lfsmake1 findutils
-    lfsmake1 gawk
-    lfsmake1 gettext
-    lfsmake1 grep
-    lfsmake1 gzip
-    lfsmake1 m4
-    lfsmake1 make
-    lfsmake1 patch
-    lfsmake1 perl
-    lfsmake1 sed
-    lfsmake1 tar
-    lfsmake1 texinfo
-    lfsmake1 util-linux
-    lfsmake1 cleanup-toolchain	PASS=2
-    export PATH=$ORG_PATH
+################################################################################
+# This builds the entire stage "base"                                          #
+################################################################################
+base_build() {
+
+	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:$TOOLS_DIR/bin
+	STAGE_ORDER=02
+	STAGE=base
+
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.base.log"
+	export LOGFILE
+
+	ipfire_make stage2
+	ipfire_make linux-libc-header
+	ipfire_make man-pages
+	ipfire_make glibc
+	ipfire_make cleanup-toolchain	PASS=3
+	ipfire_make binutils
+	ipfire_make gcc
+	ipfire_make berkeley
+	ipfire_make coreutils
+	ipfire_make iana-etc
+	ipfire_make m4
+	ipfire_make bison
+	ipfire_make ncurses
+	ipfire_make procps
+	ipfire_make sed
+	ipfire_make libtool
+	ipfire_make perl
+	ipfire_make readline
+	ipfire_make zlib
+	ipfire_make autoconf
+	ipfire_make automake
+	ipfire_make bash
+	ipfire_make bzip2
+	ipfire_make diffutils
+	ipfire_make e2fsprogs
+	ipfire_make ed
+	ipfire_make file
+	ipfire_make findutils
+	ipfire_make flex
+	ipfire_make gawk
+	ipfire_make gettext
+	ipfire_make grep
+	ipfire_make groff
+	ipfire_make gzip
+	ipfire_make inetutils
+	ipfire_make iproute2
+	ipfire_make kbd
+	ipfire_make less
+	ipfire_make libaal
+	ipfire_make make
+	ipfire_make man
+	ipfire_make mktemp
+	ipfire_make modutils
+	ipfire_make mtd
+	ipfire_make net-tools
+	ipfire_make patch
+	ipfire_make psmisc
+	ipfire_make reiser4progs
+	ipfire_make shadow
+	ipfire_make sysklogd
+	ipfire_make sysvinit
+	ipfire_make tar
+	ipfire_make texinfo
+	ipfire_make udev
+	ipfire_make util-linux
+	ipfire_make vim
+	ipfire_make grub
 }
 
-buildbase() {
-    LOGFILE="$BASEDIR/log/_build.base.log"
-    export LOGFILE
-    lfsmake2 stage2
-    lfsmake2 linux-libc-header
-    lfsmake2 man-pages
-    lfsmake2 glibc
-    lfsmake2 cleanup-toolchain	PASS=3
-    lfsmake2 binutils
-    lfsmake2 gcc
-    lfsmake2 berkeley
-    lfsmake2 coreutils
-    lfsmake2 iana-etc
-    lfsmake2 m4
-    lfsmake2 bison
-    lfsmake2 ncurses
-    lfsmake2 procps
-    lfsmake2 sed
-    lfsmake2 libtool
-    lfsmake2 perl
-    lfsmake2 readline
-    lfsmake2 zlib
-    lfsmake2 autoconf
-    lfsmake2 automake
-    lfsmake2 bash
-    lfsmake2 bzip2
-    lfsmake2 diffutils
-    lfsmake2 e2fsprogs
-    lfsmake2 ed
-    lfsmake2 file
-    lfsmake2 findutils
-    lfsmake2 flex
-    lfsmake2 gawk
-    lfsmake2 gettext
-    lfsmake2 grep
-    lfsmake2 groff
-    lfsmake2 gzip
-    lfsmake2 inetutils
-    lfsmake2 iproute2
-    lfsmake2 kbd
-    lfsmake2 less
-    lfsmake2 libaal
-    lfsmake2 make
-    lfsmake2 man
-    lfsmake2 mktemp
-    lfsmake2 modutils
-    lfsmake2 mtd
-    lfsmake2 net-tools
-    lfsmake2 patch
-    lfsmake2 psmisc
-    lfsmake2 reiser4progs
-    lfsmake2 shadow
-    lfsmake2 sysklogd
-    lfsmake2 sysvinit
-    lfsmake2 tar
-    lfsmake2 texinfo
-    lfsmake2 udev
-    lfsmake2 util-linux
-    lfsmake2 vim
-    lfsmake2 grub
+################################################################################
+# This builds the entire stage "ipfire"                                        #
+################################################################################
+ipfire_build() {
+	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	STAGE_ORDER=03
+	STAGE=ipfire
+
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.ipfire.log"
+	export LOGFILE
+
+  ipfire_make configroot
+  ipfire_make backup
+  ipfire_make dhcp
+  ipfire_make dhcpcd
+  ipfire_make libusb
+  ipfire_make libpcap
+  ipfire_make ppp
+  ipfire_make rp-pppoe
+  ipfire_make unzip
+  ipfire_make linux			SMP=1
+  ipfire_make ipp2p			SMP=1
+  ipfire_make zaptel			SMP=1
+  ipfire_make linux
+  ipfire_make ipp2p
+  ipfire_make zaptel
+  ipfire_make pkg-config
+  ipfire_make linux-atm
+  ipfire_make cpio
+  ipfire_make klibc
+  ipfire_make mkinitcpio
+  ipfire_make udev				KLIBC=1
+  ipfire_make expat
+  ipfire_make gdbm
+  ipfire_make gmp
+  ipfire_make pam
+  ipfire_make openssl
+  ipfire_make curl
+  ipfire_make python
+  ipfire_make libnet
+  ipfire_make libidn
+  ipfire_make libjpeg
+  ipfire_make libpng
+  ipfire_make libtiff
+  ipfire_make libart
+  ipfire_make freetype
+  ipfire_make gd
+  ipfire_make popt
+  ipfire_make pcre
+  ipfire_make slang
+  ipfire_make newt
+  ipfire_make libcap
+  ipfire_make pciutils
+  ipfire_make usbutils
+  ipfire_make libxml2
+  ipfire_make libxslt
+  ipfire_make BerkeleyDB
+  ipfire_make mysql
+  ipfire_make cyrus-sasl
+  ipfire_make openldap
+  ipfire_make apache2
+  ipfire_make php
+  ipfire_make apache2			PASS=C
+  ipfire_make arping
+  ipfire_make beep
+  ipfire_make bind
+  ipfire_make cdrtools
+  ipfire_make dnsmasq
+  ipfire_make dosfstools
+  ipfire_make squashfstools
+  ipfire_make reiserfsprogs
+  ipfire_make sysfsutils
+  ipfire_make fuse
+  ipfire_make ntfs-3g
+  ipfire_make ethtool
+  ipfire_make ez-ipupdate
+  ipfire_make fcron
+  ipfire_make perl-GD
+  ipfire_make GD-Graph
+  ipfire_make GD-TextUtil
+  ipfire_make gnupg
+  ipfire_make hdparm
+  ipfire_make sdparm
+  ipfire_make mtools
+  ipfire_make initscripts
+  ipfire_make whatmask
+  ipfire_make iptables
+  ipfire_make libupnp
+  ipfire_make ipp2p			IPT=1
+  ipfire_make linux-igd
+  ipfire_make ipac-ng
+  ipfire_make ipaddr
+  ipfire_make iptstate
+  ipfire_make iputils
+  ipfire_make l7-protocols
+  ipfire_make mISDN
+  ipfire_make hwdata
+  ipfire_make kudzu
+  ipfire_make logrotate
+  ipfire_make logwatch
+  ipfire_make misc-progs
+  ipfire_make nano
+  ipfire_make nasm
+  ipfire_make URI
+  ipfire_make HTML-Tagset
+  ipfire_make HTML-Parser
+  ipfire_make Compress-Zlib
+  ipfire_make Digest
+  ipfire_make Digest-SHA1
+  ipfire_make Digest-HMAC
+  ipfire_make libwww-perl
+  ipfire_make Net-DNS
+  ipfire_make Net-IPv4Addr
+  ipfire_make Net_SSLeay
+  ipfire_make IO-Stringy
+  ipfire_make Unix-Syslog
+  ipfire_make Mail-Tools
+  ipfire_make MIME-Tools
+  ipfire_make Net-Server
+  ipfire_make Convert-TNEF
+  ipfire_make Convert-UUlib
+  ipfire_make Archive-Tar
+  ipfire_make Archive-Zip
+  ipfire_make Text-Tabs+Wrap
+  ipfire_make Locale-Country
+  ipfire_make XML-Parser
+  ipfire_make glib
+  ipfire_make GeoIP
+  ipfire_make fwhits
+  ipfire_make noip_updater
+  ipfire_make ntp
+  ipfire_make openssh
+  ipfire_make openswan
+  ipfire_make rrdtool
+  ipfire_make setserial
+  ipfire_make setup
+  ipfire_make snort
+  ipfire_make oinkmaster
+  ipfire_make squid
+  ipfire_make squid-graph
+  ipfire_make squidguard
+  ipfire_make calamaris
+  ipfire_make tcpdump
+  ipfire_make traceroute
+  ipfire_make vlan
+  ipfire_make wireless
+  ipfire_make libsafe
+  ipfire_make pakfire
+  ipfire_make java
+  ipfire_make spandsp
+  ipfire_make lzo
+  ipfire_make openvpn
+  ipfire_make pammysql
+  ipfire_make cups
+  ipfire_make ghostscript
+  ipfire_make foomatic
+  ipfire_make hplip
+  ipfire_make samba
+  ipfire_make sudo
+  ipfire_make mc
+  ipfire_make wget
+  ipfire_make bridge-utils
+  ipfire_make screen
+  ipfire_make hddtemp
+  ipfire_make smartmontools
+  ipfire_make htop
+  ipfire_make postfix
+  ipfire_make fetchmail
+  ipfire_make cyrus-imapd
+  ipfire_make openmailadmin
+  ipfire_make clamav
+  ipfire_make spamassassin
+  ipfire_make amavisd
+  ipfire_make alsa
+  ipfire_make mpg123
+  ipfire_make mpfire
+  ipfire_make guardian
+  ipfire_make libid3tag
+  ipfire_make libmad
+  ipfire_make libogg
+  ipfire_make libvorbis
+  ipfire_make lame
+  ipfire_make sox
+  ipfire_make libshout
+  ipfire_make icecast
+  ipfire_make icegenerator
+  ipfire_make mpd
+  ipfire_make mpc
+  ipfire_make xvid
+  ipfire_make libmpeg2
+  ipfire_make videolan
+  ipfire_make libpri
+  ipfire_make asterisk
+  ipfire_make gnump3d
+  ipfire_make libsigc++
+  ipfire_make applejuice
+  ipfire_make ocaml
+  ipfire_make mldonkey
+  ipfire_make libtorrent
+  ipfire_make rtorrent
+  ipfire_make ipfireseeder
+  ipfire_make rsync
+  ipfire_make tcpwrapper
+  ipfire_make portmap
+  ipfire_make nfs
+  ipfire_make nmap
+  ipfire_make mbmon
+  ipfire_make ncftp
+  ipfire_make etherwake
+  ipfire_make bwm-ng
+  ipfire_make tripwire
+  ipfire_make sysstat
+  ipfire_make vsftpd
+  ipfire_make which
+  ipfire_make lsof
+  ipfire_make centerim
+  ipfire_make br2684ctl
 }
 
-buildipfire() {
-  LOGFILE="$BASEDIR/log/_build.ipfire.log"
-  export LOGFILE
-  ipfiremake configroot
-  ipfiremake backup
-  ipfiremake dhcp
-  ipfiremake dhcpcd
-  ipfiremake libusb
-  ipfiremake libpcap
-  ipfiremake ppp
-  ipfiremake rp-pppoe
-  ipfiremake unzip
-  ipfiremake linux			SMP=1
-  ipfiremake ipp2p			SMP=1
-  ipfiremake zaptel			SMP=1
-  ipfiremake linux
-  ipfiremake ipp2p
-  ipfiremake zaptel
-  ipfiremake pkg-config
-  ipfiremake linux-atm
-  ipfiremake cpio
-  ipfiremake klibc
-  ipfiremake mkinitcpio
-  ipfiremake udev				KLIBC=1
-  ipfiremake expat
-  ipfiremake gdbm
-  ipfiremake gmp
-  ipfiremake pam
-  ipfiremake openssl
-  ipfiremake curl
-  ipfiremake python
-  ipfiremake libnet
-  ipfiremake libidn
-  ipfiremake libjpeg
-  ipfiremake libpng
-  ipfiremake libtiff
-  ipfiremake libart
-  ipfiremake freetype
-  ipfiremake gd
-  ipfiremake popt
-  ipfiremake pcre
-  ipfiremake slang
-  ipfiremake newt
-  ipfiremake libcap
-  ipfiremake pciutils
-  ipfiremake usbutils
-  ipfiremake libxml2
-  ipfiremake libxslt
-  ipfiremake BerkeleyDB
-  ipfiremake mysql
-  ipfiremake cyrus-sasl
-  ipfiremake openldap
-  ipfiremake apache2
-  ipfiremake php
-  ipfiremake apache2			PASS=C
-  ipfiremake arping
-  ipfiremake beep
-  ipfiremake bind
-  ipfiremake cdrtools
-  ipfiremake dnsmasq
-  ipfiremake dosfstools
-  ipfiremake squashfstools
-  ipfiremake reiserfsprogs
-  ipfiremake sysfsutils
-  ipfiremake fuse
-  ipfiremake ntfs-3g
-  ipfiremake ethtool
-  ipfiremake ez-ipupdate
-  ipfiremake fcron
-  ipfiremake perl-GD
-  ipfiremake GD-Graph
-  ipfiremake GD-TextUtil
-  ipfiremake gnupg
-  ipfiremake hdparm
-  ipfiremake sdparm
-  ipfiremake mtools
-  ipfiremake initscripts
-  ipfiremake whatmask
-  ipfiremake iptables
-  ipfiremake libupnp
-  ipfiremake ipp2p			IPT=1
-  ipfiremake linux-igd
-  ipfiremake ipac-ng
-  ipfiremake ipaddr
-  ipfiremake iptstate
-  ipfiremake iputils
-  ipfiremake l7-protocols
-  ipfiremake mISDN
-  ipfiremake hwdata
-  ipfiremake kudzu
-  ipfiremake logrotate
-  ipfiremake logwatch
-  ipfiremake misc-progs
-  ipfiremake nano
-  ipfiremake nasm
-  ipfiremake URI
-  ipfiremake HTML-Tagset
-  ipfiremake HTML-Parser
-  ipfiremake Compress-Zlib
-  ipfiremake Digest
-  ipfiremake Digest-SHA1
-  ipfiremake Digest-HMAC
-  ipfiremake libwww-perl
-  ipfiremake Net-DNS
-  ipfiremake Net-IPv4Addr
-  ipfiremake Net_SSLeay
-  ipfiremake IO-Stringy
-  ipfiremake Unix-Syslog
-  ipfiremake Mail-Tools
-  ipfiremake MIME-Tools
-  ipfiremake Net-Server
-  ipfiremake Convert-TNEF
-  ipfiremake Convert-UUlib
-  ipfiremake Archive-Tar
-  ipfiremake Archive-Zip
-  ipfiremake Text-Tabs+Wrap
-  ipfiremake Locale-Country
-  ipfiremake XML-Parser
-  ipfiremake glib
-  ipfiremake GeoIP
-  ipfiremake fwhits
-  ipfiremake noip_updater
-  ipfiremake ntp
-  ipfiremake openssh
-  ipfiremake openswan
-  ipfiremake rrdtool
-  ipfiremake setserial
-  ipfiremake setup
-  ipfiremake snort
-  ipfiremake oinkmaster
-  ipfiremake squid
-  ipfiremake squid-graph
-  ipfiremake squidguard
-  ipfiremake calamaris
-  ipfiremake tcpdump
-  ipfiremake traceroute
-  ipfiremake vlan
-  ipfiremake wireless
-  ipfiremake libsafe
-  ipfiremake pakfire
-  ipfiremake java
-  ipfiremake spandsp
-  ipfiremake lzo
-  ipfiremake openvpn
-  ipfiremake pammysql
-  ipfiremake cups
-  ipfiremake ghostscript
-  ipfiremake foomatic
-  ipfiremake hplip
-  ipfiremake samba
-  ipfiremake sudo
-  ipfiremake mc
-  ipfiremake wget
-  ipfiremake bridge-utils
-  ipfiremake screen
-  ipfiremake hddtemp
-  ipfiremake smartmontools
-  ipfiremake htop
-  ipfiremake postfix
-  ipfiremake fetchmail
-  ipfiremake cyrus-imapd
-  ipfiremake openmailadmin
-  ipfiremake clamav
-  ipfiremake spamassassin
-  ipfiremake amavisd
-  ipfiremake alsa
-  ipfiremake mpg123
-  ipfiremake mpfire
-  ipfiremake guardian
-  ipfiremake libid3tag
-  ipfiremake libmad
-  ipfiremake libogg
-  ipfiremake libvorbis
-  ipfiremake lame
-  ipfiremake sox
-  ipfiremake libshout
-  ipfiremake icecast
-  ipfiremake icegenerator
-  ipfiremake mpd
-  ipfiremake mpc
-  ipfiremake xvid
-  ipfiremake libmpeg2
-  ipfiremake videolan
-  ipfiremake libpri
-  ipfiremake asterisk
-  ipfiremake gnump3d
-  ipfiremake libsigc++
-  ipfiremake applejuice
-  ipfiremake ocaml
-  ipfiremake mldonkey
-  ipfiremake libtorrent
-  ipfiremake rtorrent
-  ipfiremake ipfireseeder
-  ipfiremake rsync
-  ipfiremake tcpwrapper
-  ipfiremake portmap
-  ipfiremake nfs
-  ipfiremake nmap
-  ipfiremake mbmon
-  ipfiremake ncftp
-  ipfiremake etherwake
-  ipfiremake bwm-ng
-  ipfiremake tripwire
-  ipfiremake sysstat
-  ipfiremake vsftpd
-  ipfiremake which
-  ipfiremake lsof
-  ipfiremake centerim
-  ipfiremake br2684ctl
+################################################################################
+# This builds the entire stage "misc"                                          #
+################################################################################
+misc_build() {
+
+	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	STAGE_ORDER=04
+	STAGE=misc
+
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.misc.log"
+	export LOGFILE
+	
+	ipfire_make stage4
+	ipfire_make cdrtools
+	ipfire_make syslinux
+	ipfire_make parted
+	ipfire_make slang
+	ipfire_make newt
 }
 
-buildinstaller() {
-  # Run installer scripts one by one
-  LOGFILE="$BASEDIR/log/_build.installer.log"
-  export LOGFILE
-  ipfiremake syslinux
-  ipfiremake as86
-  ipfiremake mbr
-  ipfiremake memtest
-  installmake linux-libc-header
-  installmake binutils
-  ipfiremake uClibc			PASS=1
-  ipfiremake gcc			INST=1
-  installmake uClibc			PASS=2
-  installmake gcc			INST=2
-  installmake uClibc			PASS=3
-  installmake busybox
-  installmake udev
-  installmake slang
-  installmake newt
-  installmake gettext
-  installmake kbd
-  installmake popt
-  installmake sysvinit
-  installmake misc-progs
-  installmake libaal
-  installmake reiser4progs
-  installmake reiserfsprogs
-  installmake sysfsutils
-  installmake util-linux
-  installmake pciutils
-  installmake zlib
-  installmake mtd
-  installmake wget
-  installmake hwdata
-  installmake kudzu
-  installmake installer
-  installmake initrd
+################################################################################
+# This builds the entire stage "installer"                                     #
+################################################################################
+installer_build() {
+
+	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	STAGE_ORDER=05
+	STAGE=installer
+
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.installer.log"
+	export LOGFILE
+
+  ipfire_make as86
+  ipfire_make mbr
+  ipfire_make memtest
+  ipfire_make linux-libc-header
+  ipfire_make binutils
+  ipfire_make uClibc			PASS=1
+  ipfire_make gcc			INST=1
+  ipfire_make uClibc			PASS=2
+  ipfire_make gcc			INST=2
+  ipfire_make uClibc			PASS=3
+  ipfire_make busybox
+  ipfire_make udev
+  ipfire_make gettext
+  ipfire_make kbd
+  ipfire_make popt
+  ipfire_make sysvinit
+  ipfire_make misc-progs
+  ipfire_make libaal
+  ipfire_make reiser4progs
+  ipfire_make reiserfsprogs
+  ipfire_make sysfsutils
+  ipfire_make util-linux
+  ipfire_make pciutils
+  ipfire_make zlib
+  ipfire_make mtd
+  ipfire_make wget
+  ipfire_make hwdata
+  ipfire_make kudzu
+  ipfire_make installer
+  ipfire_make initrd
 }
 
-buildpackages() {
-  LOGFILE="$BASEDIR/log/_build.packages.log"
-  export LOGFILE
+################################################################################
+# This builds the entire stage "packages"                                      #
+################################################################################
+packages_build() {
+
+	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	STAGE_ORDER=06
+	STAGE=packages
+
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.packages.log"
+	export LOGFILE
+	
   echo "... see detailed log in _build.*.log files" >> $LOGFILE
 
-  installmake strip
+  ipfire_make strip
   
   # Generating list of packages used
   echo -n "Generating packages list from logs" | tee -a $LOGFILE
@@ -587,11 +470,11 @@ buildpackages() {
   beautify message DONE
 
   # Create images for install
-	ipfiremake cdrom ED=full
+	ipfire_make cdrom ED=full
 	
   # Check if there is a loop device for building in virtual environments
   if [ -e /dev/loop/0 ] || [ -e /dev/loop0 ]; then
-  	ipfiremake usb-stick
+  	ipfire_make usb-stick
   fi
   mv $LFS/install/images/{*.iso,*.tgz,*.img.gz} $BASEDIR >> $LOGFILE 2>&1
 
@@ -618,10 +501,10 @@ buildpackages() {
 }
 
 ipfirepackages() {
-	ipfiremake core-updates
+	ipfire_make core-updates
 	for i in $(ls -1 $BASEDIR/config/rootfiles/packages); do
 		if [ -e $BASEDIR/lfs/$i ]; then
-			ipfiredist $i
+			ipfire_dist $i
 		else
 			echo -n $i
 			beautify message SKIP
@@ -636,86 +519,119 @@ ipfirepackages() {
 case "$1" in 
 build)
 	clear
-	BUILDMACHINE=`uname -m`
-	PACKAGE=`ls -v -r $BASEDIR/cache/toolchains/$SNAME-$VERSION-toolchain-$BUILDMACHINE.tar.gz 2> /dev/null | head -n 1`
+	#a prebuilt toolchain package is only used if found in cache
+	if [ ! -d $BASEDIR/cache ]; then
+		exiterror "Use make.sh downloadsrc first!"
+	fi
+	cd $BASEDIR/cache
+	PACKAGE=`ls -v -r $TOOLCHAINNAME.tar.gz 2> /dev/null | head -n 1`
 	#only restore on a clean disk
-	if [ ! -f log/cleanup-toolchain-2-tools ]; then
-		if [ ! -n "$PACKAGE" ]; then
-			beautify build_stage "Full toolchain compilation - Native GCC: `gcc --version | grep GCC | awk {'print $3'}`"
+
+	echo -ne "Building for ${BOLD}${MACHINE} on ${MACHINE_REAL}${NORMAL}\n"
+	
+	if [ -f $BASEDIR/log_${MACHINE}/02_base/stage2 ]; then
+		prepareenv
+		echo "Using installed toolchain" >> $LOGFILE
+		beautify message DONE "Stage toolchain already built or extracted"
+	else
+		if [ -z "$PACKAGE" ]; then
+			echo "Full toolchain compilation" | tee -a $LOGFILE
 			prepareenv
-			buildtoolchain
+			
+			# Check if host can build the toolchain
+			check_toolchain_prerequisites
+			
+			beautify build_stage "Building toolchain"
+			toolchain_build
 		else
-			PACKAGENAME=${PACKAGE%.tar.gz}
-			beautify build_stage "Packaged toolchain compilation"
-			if [ `md5sum $PACKAGE | awk '{print $1}'` == `cat $PACKAGENAME.md5 | awk '{print $1}'` ]; then
-				tar zxf $PACKAGE
+			echo "Restore from $PACKAGE" | tee -a $LOGFILE
+			if [ `md5sum $BASEDIR/cache/$PACKAGE | awk '{print $1}'` == `cat $BASEDIR/cache/$TOOLCHAINNAME.md5 | awk '{print $1}'` ]; then
+				cd $BASEDIR && tar zxf $BASEDIR/cache/$PACKAGE
 				prepareenv
 			else
-				exiterror "$PACKAGENAME md5 did not match, check downloaded package"
+				exiterror "$TOOLCHAINNAME md5 did not match, check downloaded package"
 			fi
 		fi
+	fi
+	
+	if [ ! -e $BASEDIR/log_${MACHINE}/03_ipfire/stage3 ]; then
+		beautify build_stage "Building base"
+		base_build
 	else
-		echo -n "Using installed toolchain" | tee -a $LOGFILE
-		beautify message SKIP
-		prepareenv
+		beautify message DONE "Stage base      already built"
 	fi
 
-	beautify build_start
-	beautify build_stage "Building LFS"
-	buildbase
-
-	beautify build_stage "Building IPFire"
-	buildipfire
-
-	# Setzen des IPFire Builds
-	if [ "$FIREBUILD" ]; then
-		echo "$FIREBUILD" > $BASEDIR/build/var/ipfire/firebuild
+	if [ ! -e $BASEDIR/log_${MACHINE}/04_misc/stage4 ]; then
+		beautify build_stage "Building $NAME"
+		ipfire_build
 	else
-		echo "_(OvO)_" > $BASEDIR/build/var/ipfire/firebuild
+		beautify message DONE "Stage ipfire    already built"
+	fi
+
+	if [ ! -e $BASEDIR/log_${MACHINE}/05_installer/stage5 ]; then
+		beautify build_stage "Building miscellaneous"
+		misc_build
+	else
+		beautify message DONE "Stage misc      already built"
 	fi
 
 	beautify build_stage "Building installer"
-	buildinstaller
+	installer_build
 
 	beautify build_stage "Building packages"
-	buildpackages
-	beautify build_end
+	packages_build
+	
+	echo ""
+	echo "Burn a CD (floppy is too big) or use pxe to boot."
+	echo "... and all this hard work for this:"
+	du -bsh $BASEDIR/${SNAME}-${VERSION}*.${MACHINE}.iso
 	;;
+	
 shell)
 	# enter a shell inside LFS chroot
 	# may be used to changed kernel settings
 	prepareenv
 	entershell
 	;;
+	
 changelog)
 	echo -n "Loading new Changelog from SVN: "
 	svn log http://svn.ipfire.org/svn/ipfire > doc/ChangeLog
 	beautify message DONE
 	;;
+	
 clean)
-	echo -en "${BOLD}Cleaning build directory...${NORMAL}"
-	for i in `mount | grep $BASEDIR | sed 's/^.*loop=\(.*\))/\1/'`; do
+	echo -ne "Cleaning ${BOLD}$MACHINE${NORMAL} buildtree"
+	for i in `mount | grep $BASEDIR | sed 's/^.*loop=\(.*\))/\1/'`
+	do
 		$LOSETUP -d $i 2>/dev/null
 	done
-	for i in `mount | grep $BASEDIR | cut -d " " -f 1`; do
+
+	for i in `mount | grep $BASEDIR | cut -d " " -f 1`
+	do
 		umount $i
 	done
+
 	stdumount
-	for i in `seq 0 7`; do
-	    if ( losetup /dev/loop${i} 2>/dev/null | grep -q "/install/images" ); then
-		umount /dev/loop${i}     2>/dev/null;
-		losetup -d /dev/loop${i} 2>/dev/null;
-	    fi;
+	
+	for i in `seq 0 7`
+	do
+		if ( losetup /dev/loop${i} 2>/dev/null | grep -q "/install/images" ); then
+			umount /dev/loop${i}     2>/dev/null;
+			losetup -d /dev/loop${i} 2>/dev/null;
+		fi;
 	done
-	rm -rf $BASEDIR/build
-	rm -rf $BASEDIR/cdrom
+
+	rm -rf $BASEDIR/build_${MACHINE}
+	rm -rf $BASEDIR/log_${MACHINE}
 	rm -rf $BASEDIR/packages
-	rm -rf $BASEDIR/log
-	if [ -h /tools ]; then
-		rm -f /tools
+	
+	if [ -h $TOOLS_DIR ]; then
+		rm -f $TOOLS_DIR
 	fi
 	beautify message DONE
 	;;
+	
 downloadsrc)
 	if [ ! -d $BASEDIR/cache ]; then
 		mkdir $BASEDIR/cache
@@ -766,45 +682,64 @@ downloadsrc)
 	fi
 	cd - >/dev/null 2>&1
 	;;
+	
 toolchain)
-	clear
 	prepareenv
-	beautify build_stage "Toolchain compilation - Native GCC: `gcc --version | grep GCC | awk {'print $3'}`"
-	buildtoolchain
-	BUILDMACHINE=`uname -m`
-	echo "`date -u '+%b %e %T'`: Create toolchain tar.gz for $BUILDMACHINE" | tee -a $LOGFILE
-	test -d $BASEDIR/cache/toolchains || mkdir $BASEDIR/cache/toolchains
-	cd $BASEDIR && tar -zc --exclude='log/_build.*.log' -f cache/toolchains/$SNAME-$VERSION-toolchain-$BUILDMACHINE.tar.gz \
-		build/{bin,etc,usr/bin,usr/local} \
-		build/tools/{bin,etc,*-linux-gnu,include,lib,libexec,sbin,share,var} \
-		log >> $LOGFILE
-	md5sum cache/toolchains/$SNAME-$VERSION-toolchain-$BUILDMACHINE.tar.gz \
-		> cache/toolchains/$SNAME-$VERSION-toolchain-$BUILDMACHINE.md5
+	# Check if host can build the toolchain
+	check_toolchain_prerequisites
+	toolchain_build
+	echo "Create toolchain tar.gz for $MACHINE" | tee -a $LOGFILE
+	# Safer inside the chroot
+	echo -ne "Stripping lib"
+	chroot $LFS $TOOLS_DIR/bin/find $TOOLS_DIR/lib \
+		-type f \( -name '*.so' -o -name '*.so[\.0-9]*' \) \
+		-exec $TOOLS_DIR/bin/strip --strip-debug {} \; 2>/dev/null
+	beautify message DONE
+	echo -ne "Stripping binaries"
+	chroot $LFS $TOOLS_DIR/bin/find /usr/local /usr/src/binutils-build $TOOLS_DIR/bin $TOOLS_DIR/sbin \
+		-type f \
+		-exec $TOOLS_DIR/bin/strip --strip-all {} \; 2> /dev/null
+	beautify message DONE
+	stdumount
+	echo -ne "Tar creation "
+	cd $BASEDIR && tar cvj \
+				--exclude='log_${MACHINE}/_build.*.log' \
+				--file=cache/$TOOLCHAINNAME.tar.bz2 \
+				build_${MACHINE} \
+				log_${MACHINE} >> $LOGFILE
+	beautify message DONE
+	echo `ls -sh cache/$TOOLCHAINNAME.tar.bz2`
+	md5sum cache/$TOOLCHAINNAME.tar.bz2 \
+		> cache/$TOOLCHAINNAME.md5
+
 	stdumount
 	;;
+	
 gettoolchain)
-	BUILDMACHINE=`uname -m`
-	# arbitrary name to be updated in case of new toolchain package upload
-	PACKAGE=$SNAME-$VERSION-toolchain-$BUILDMACHINE
-	if [ ! -f $BASEDIR/cache/toolchains/$PACKAGE.tar.gz ]; then
+	if [ ! -f $BASEDIR/cache/toolchains/$TOOLCHAINNAME.tar.bz2 ]; then
 		URL_TOOLCHAIN=`grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }'`
 		test -d $BASEDIR/cache/toolchains || mkdir $BASEDIR/cache/toolchains
-		echo "`date -u '+%b %e %T'`: Load toolchain tar.gz for $BUILDMACHINE" | tee -a $LOGFILE
+		echo "Load toolchain tar.bz2 for $MACHINE" | tee -a $LOGFILE
 		cd $BASEDIR/cache/toolchains
-		wget $URL_TOOLCHAIN/$PACKAGE.tar.gz $URL_TOOLCHAIN/$PACKAGE.md5 >& /dev/null
+		wget -c -nv $URL_TOOLCHAIN/$TOOLCHAINNAME.tar.bz2 $URL_TOOLCHAIN/$TOOLCHAINNAME.md5
 		if [ $? -ne 0 ]; then
-			echo "`date -u '+%b %e %T'`: error downloading toolchain for $BUILDMACHINE machine" | tee -a $LOGFILE
+			echo -ne "Error downloading toolchain for $MACHINE machine" | tee -a $LOGFILE
+			beautify message FAIL
+			echo "Precompiled toolchain not always available for every MACHINE" | tee -a $LOGFILE
 		else
-			if [ "`md5sum $PACKAGE.tar.gz | awk '{print $1}'`" = "`cat $PACKAGE.md5 | awk '{print $1}'`" ]; then
-				echo "`date -u '+%b %e %T'`: toolchain md5 ok" | tee -a $LOGFILE
+			if [ "`md5sum $TOOLCHAINNAME.tar.bz2 | awk '{print $1}'`" = "`cat $TOOLCHAINNAME.md5 | awk '{print $1}'`" ]; then
+				beautify message DONE
+				echo "Toolchain md5 ok" | tee -a $LOGFILE
 			else
-				exiterror "$PACKAGE.md5 did not match, check downloaded package"
+				exiterror "$TOOLCHAINNAME.md5 did not match, check downloaded package"
 			fi
 		fi
 	else
-		echo "Toolchain is already downloaded. Exiting..."
+		echo "Toolchain tar.bz2 for $MACHINE is already downloaded" | tee -a $LOGFILE
+		beautify message SKIP
 	fi
 	;;
+	
 othersrc)
 	prepareenv
 	echo -ne "`date -u '+%b %e %T'`: Build sources iso for $MACHINE" | tee -a $LOGFILE
@@ -821,6 +756,7 @@ othersrc)
 	fi
 	stdumount
 	;;
+	
 svn)
 	case "$2" in
 	  update|up)
@@ -904,6 +840,7 @@ svn)
 	  ;;
 	esac
 	;;
+	
 uploadsrc)
 	PWD=`pwd`
 	cd $BASEDIR/cache/
@@ -924,6 +861,7 @@ uploadsrc)
 	cd $PWD
 	exit 0
 	;;
+	
 upload)
 	FTP_ISO_PORT=`echo "$FTP_ISO_URL" | awk -F: '{ print $2 }'`
 	FTP_ISO_URL=`echo "$FTP_ISO_URL" | awk -F: '{ print $1 }'`
@@ -970,6 +908,7 @@ EOF
 	  ;;
 	esac
 	;;
+	
 batch)
 	if [ "$2" = "--background" ]; then
 		batch_script
@@ -991,68 +930,13 @@ batch)
 		exit 0
 	fi
 	;;
-watch)
+	
+watch|attach)
 	watch_screen
 	;;
-pxe)
-	case "$2" in
-	  start)
-		start_tftpd
-		;;
-	  stop)
-		stop_tftpd
-		;;
-	  reload|restart)
-		reload_tftpd
-		;;		
-	esac
-	exit 0
-	;;
-lang)
-	update_langs
-	;;
-"")
-	clear
-	svn info
-	select name in "Exit" "IPFIRE: Downloadsrc" "IPFIRE: Build (silent)" "IPFIRE: Watch Build" "IPFIRE: Batch" "IPFIRE: Clean" "SVN: Commit" "SVN: Update" "SVN: Status" "SVN: Diff" "LOG: Tail" "Help"
-	do
-	case $name in
-	"IPFIRE: Downloadsrc")
-		$0 downloadsrc
-		;;
-	"IPFIRE: Build (silent)")
-		$0 build-silent
-		;;
-	"IPFIRE: Watch Build")
-		$0 watch
-		;;
-	"IPFIRE: Batch")
-		$0 batch
-		;;
-	"IPFIRE: Clean")
-		$0 clean
-		;;
-	"SVN: Update")
-		$0 svn update
-		;;
-	"Help")
-		echo "Usage: $0 {build|changelog|clean|gettoolchain|downloadsrc|shell|sync|toolchain}"
-		cat doc/make.sh-usage
-		;;
-	"LOG: Tail")
-		tail -f log/_*
-		;;
-	"Exit")
-		break
-		;;
-	esac
-	done
-	;;
-config)
-	make_config
-	;;
+
 *)
-	echo "Usage: $0 {build|changelog|clean|gettoolchain|downloadsrc|shell|sync|toolchain}"
 	cat doc/make.sh-usage
 	;;
+	
 esac
