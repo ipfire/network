@@ -24,60 +24,27 @@
 
 include Config
 
-VER        = 3.1
+PKG_NAME   = bash
+VER        = 3.2
 
-THISAPP    = bash-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-# Normal build or /tools build.
-#
-ifeq "$(ROOT)" ""
-  TARGET = $(DIR_INFO)/$(THISAPP)
-  EXTRA_CONFIG = --prefix=/usr --bindir=/bin \
-    --without-bash-malloc --with-installed-readline \
-    --disable-nls
-  EXTRA_MAKE =
-  EXTRA_INSTALL =
-else
-  TARGET = $(DIR_INFO)/$(THISAPP)-tools
-  EXTRA_CONFIG = --prefix=/tools --without-bash-malloc \
-    --disable-nls
-  EXTRA_MAKE = 
-  EXTRA_INSTALL = 
-endif
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
-
-$(DL_FILE)             = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5         = ef5304c4b22aaa5088972c792ed45d72
+objects = $(DL_FILE) $(THISAPP)-fixes-6.patch
 
 install : $(TARGET)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
 
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -86,17 +53,10 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-fixes-8.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-login.patch
-	cd $(DIR_APP) && ./configure $(EXTRA_CONFIG)
-	cd $(DIR_APP) && make $(EXTRA_MAKE)
-	cd $(DIR_APP) && make $(EXTRA_INSTALL) install
-	ln -sf bash /bin/sh
-ifneq "$(ROOT)" ""
-	-mkdir -p $(ROOT)/bin
-	-mkdir -p $(ROOT)/usr/bin
-	ln -sf bash /tools/bin/sh
-	-ln -sf /tools/bin/bash $(ROOT)/bin/sh
-endif
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-fixes-6.patch
+	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR) --without-bash-malloc
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+	ln -sf bash $(TOOLS_DIR)/bin/sh
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

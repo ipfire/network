@@ -24,27 +24,14 @@
 
 include Config
 
-VER        = 4.2.27
+PKG_NAME   = findutils
+VER        = 4.2.31
 
-THISAPP    = findutils-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-# Normal build or /tools build.
-#
-ifeq "$(ROOT)" ""
-  TARGET = $(DIR_INFO)/$(THISAPP)
-  EXTRA_CONFIG = --prefix=/usr --libexecdir=/usr/lib/findutils \
-    --localstatedir=/var/lib/locate --disable-nls
-  EXTRA_MAKE =
-  EXTRA_INSTALL =
-else
-  TARGET = $(DIR_INFO)/$(THISAPP)-tools
-  EXTRA_CONFIG = --prefix=/tools --disable-nls
-  EXTRA_MAKE = 
-  EXTRA_INSTALL = 
-endif
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -52,30 +39,12 @@ endif
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = f1e0ddf09f28f8102ff3b90f3b5bc920
-
 install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -84,12 +53,8 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure $(EXTRA_CONFIG)
-	cd $(DIR_APP) && make $(MAKETUNING) $(EXTRA_MAKE)
-	cd $(DIR_APP) && make $(EXTRA_INSTALL) install
-ifeq "$(ROOT)" ""
-	mv -v /usr/bin/find /bin
-	sed -i -e 's/find:=${BINDIR}/find:=\/bin/' /usr/bin/updatedb
-endif
+	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

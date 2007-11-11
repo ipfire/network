@@ -24,26 +24,14 @@
 
 include Config
 
-VER        = 5.96
+PKG_NAME   = coreutils
+VER        = 6.9
 
-THISAPP    = coreutils-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-# Normal build or /tools build.
-#
-ifeq "$(ROOT)" ""
-  TARGET = $(DIR_INFO)/$(THISAPP)
-  EXTRA_CONFIG = --prefix=/usr --disable-nls
-  EXTRA_MAKE =
-  EXTRA_INSTALL =
-else
-  TARGET = $(DIR_INFO)/$(THISAPP)-tools
-  EXTRA_CONFIG = --prefix=/tools --disable-nls --host=$(MACHINE)
-  EXTRA_MAKE = 
-  EXTRA_INSTALL = 
-endif
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -51,30 +39,12 @@ endif
 
 objects =$(DL_FILE)
 
-$(DL_FILE)                      = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5                  = bf55d069d82128fd754a090ce8b5acff
-
 install : $(TARGET)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
+download : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -83,37 +53,17 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-ifeq "$(ROOT)" ""
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-uname-1.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-suppress_uptime_kill_su-1.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-i18n-1.patch
-	cd $(DIR_APP) && chmod +x tests/sort/sort-mb-tests
-	cd $(DIR_APP) && sed -i 's/_LEN 6/_LEN 20/' src/who.c
-endif
-	cd $(DIR_APP) && ./configure $(EXTRA_CONFIG)
-	cd $(DIR_APP) && make $(MAKETUNING) $(EXTRA_MAKE)
-	cd $(DIR_APP) && make $(EXTRA_INSTALL) install
-	#use hostname from inet-tools
-ifeq "$(ROOT)" ""
-	rm /usr/bin/hostname
-	mv -v /usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo} /bin
-	mv -v /usr/bin/{false,ln,ls,mkdir,mknod,mv,pwd,rm} /bin
-	mv -v /usr/bin/{rmdir,stty,sync,true,uname} /bin
-	mv -v /usr/bin/chroot /usr/sbin
-	mv -v /usr/bin/{head,sleep,nice} /bin
-	ln -sf test /bin/[
-	#ln -sf ../../bin/install /usr/bin
-	mv -f /bin/uname /bin/uname.bak
-	echo '#!/bin/bash'				>  /bin/uname
-	echo '/bin/uname.bak $$* | sed 's/i.86/$(MACHINE)/g'' >> /bin/uname
-	chmod 755 /bin/uname
-	dircolors -p > /etc/dircolors
-else
-	rm /tools/bin/hostname
-	mv -f /tools/bin/uname /tools/bin/uname.bak
-	echo '#!/bin/bash'					>  /tools/bin/uname
-	echo '/tools/bin/uname.bak $$* | sed 's/i.86/$(MACHINE)/g''	>> /tools/bin/uname
-	chmod 755 /tools/bin/uname
-endif
+	
+	cd $(DIR_APP) && \
+		for file in src/{copy,touch}.c lib/utimens.{c,h}; do \
+			cp -v $$file{,.orig}; \
+			sed 's/futimens/gl_&/' $$file.orig > $$file; \
+		done
+	
+	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+	cd $(DIR_APP) && cp -v src/su $(TOOLS_DIR)/bin/su-tools
+	
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

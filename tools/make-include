@@ -26,7 +26,7 @@
 
 CONFIG_ROOT=/var/ipfire					# Configuration rootdir
 NICE=10													# Nice level
-PARALLELISM=1										# Parallelism flag
+PARALLELISM=3										# Parallelism flag
 MAX_RETRIES=1										# prefetch/check loop
 KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }'`
 MACHINE=`uname -m`
@@ -49,8 +49,6 @@ fi
 
 BASEDIR=`echo $FULLPATH | sed "s/\/$BASENAME//g"`
 export BASEDIR
-mkdir $BASEDIR/log/ 2>/dev/null
-
 
 ###############################################################################
 #
@@ -83,9 +81,11 @@ elif [ 'x86_64' = $MACHINE ]; then
 	CXX2FLAGS="-O2 -fomit-frame-pointer -march=i586 -pipe"
 else
 	beautify message FAIL
-	echo "Can't determine your architecture - $MACHINE" | tee -a $LOGFILE
+	echo "Can't determine your architecture - $MACHINE"
   exit 1
 fi
+
+mkdir $BASEDIR/log_${MACHINE}/ 2>/dev/null
 
 # Set up what used to be /tools
 TOOLS_DIR=/tools_${MACHINE}
@@ -399,10 +399,10 @@ lfsmakecommoncheck()
 		exiterror "Download error in $1"
 	fi
 
-	cd $BASEDIR/lfs && make -s -f $* MACHINE=$MACHINE LFS_BASEDIR=$BASEDIR MESSAGE="$1\t md5sum" md5  >> $LOGFILE 2>&1
-	if [ $? -ne 0 ]; then
-		exiterror "md5sum error in $1, check file in cache or signature"
-	fi
+#	cd $BASEDIR/lfs && make -s -f $* MACHINE=$MACHINE LFS_BASEDIR=$BASEDIR MESSAGE="$1\t md5sum" md5  >> $LOGFILE 2>&1
+#	if [ $? -ne 0 ]; then
+#		exiterror "md5sum error in $1, check file in cache or signature"
+#	fi
 
 	return 0	# pass all!
 } # End of lfsmakecommoncheck()
@@ -845,6 +845,13 @@ check_toolchain_prerequisites() {
 		beautify message DONE
 	else
 		exiterror "GNU tar not found!"
+	fi
+	
+	echo -ne "Checking for GNU texinfo" | tee -a $LOGFILE
+	if makeinfo --version | grep -qEi '(GNU texinfo)' ; then
+		beautify message DONE
+	else
+		exiterror "GNU texinfo not found!"
 	fi
 
 	# THE FOLLOWING ARE NOT REALLY REQUIRED BY LFS

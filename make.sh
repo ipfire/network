@@ -52,16 +52,16 @@ toolchain_build() {
 	[ -z $DISTCC_HOSTS ] || toolchain_make distcc
 	toolchain_make ccache
 	
-	toolchain_make binutils	PASS=1
-	toolchain_make gcc		PASS=1
-	toolchain_make linux-libc-header
+	toolchain_make binutils											PASS=1
+	toolchain_make gcc													PASS=1
+	toolchain_make linux
 	toolchain_make glibc
-	toolchain_make cleanup-toolchain PASS=1
+	toolchain_make adjust-toolchain
 	toolchain_make tcl
 	toolchain_make expect
 	toolchain_make dejagnu
-	toolchain_make gcc		PASS=2
-	toolchain_make binutils	PASS=2
+	toolchain_make gcc													PASS=2
+	toolchain_make binutils											PASS=2
 	toolchain_make ncurses
 	toolchain_make bash
 	toolchain_make bzip2
@@ -72,7 +72,6 @@ toolchain_build() {
 	toolchain_make gettext
 	toolchain_make grep
 	toolchain_make gzip
-	toolchain_make m4
 	toolchain_make make
 	toolchain_make patch
 	toolchain_make perl
@@ -80,7 +79,7 @@ toolchain_build() {
 	toolchain_make tar
 	toolchain_make texinfo
 	toolchain_make util-linux
-	toolchain_make cleanup-toolchain	PASS=2
+	toolchain_make strip
 	export PATH=$ORG_PATH
 }
 
@@ -633,10 +632,12 @@ clean)
 	;;
 	
 downloadsrc)
+	LOGFILE=$BASEDIR/log_${MACHINE}/_build.preparation.log
+	
 	if [ ! -d $BASEDIR/cache ]; then
 		mkdir $BASEDIR/cache
 	fi
-	mkdir -p $BASEDIR/log
+	mkdir -p $BASEDIR/log_${MACHINE}
 	echo -e "${BOLD}Preload all source files${NORMAL}" | tee -a $LOGFILE
 	FINISHED=0
 	cd $BASEDIR/lfs
@@ -661,25 +662,6 @@ downloadsrc)
 			fi
 		done
 	done
-	echo -e "${BOLD}***Verifying md5sums${NORMAL}"
-	ERROR=0
-	for i in *; do
-		if [ -f "$i" -a "$i" != "Config" ]; then
-			make -s -f $i LFS_BASEDIR=$BASEDIR MESSAGE="$i\t " md5 >> $LOGFILE 2>&1
-			if [ $? -ne 0 ]; then
-				echo -ne "MD5 difference in lfs/$i"
-				beautify message FAIL
-				ERROR=1
-			fi
-		fi
-	done
-	if [ $ERROR -eq 0 ]; then
-		echo -ne "${BOLD}all files md5sum match${NORMAL}"
-		beautify message DONE
-	else
-		echo -ne "${BOLD}not all files were correctly download${NORMAL}"
-		beautify message FAIL
-	fi
 	cd - >/dev/null 2>&1
 	;;
 	

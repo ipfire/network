@@ -24,24 +24,14 @@
 
 include Config
 
+PKG_NAME   = util-linux
 VER        = 2.12r
 
-THISAPP    = util-linux-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-# Normal build or /tools build.
-#
-ifeq "$(ROOT)" ""
-ifeq "$(LFS_PASS)" "install"
-  TARGET = $(DIR_INFO)/$(THISAPP)-install
-else
-  TARGET = $(DIR_INFO)/$(THISAPP)
-endif
-else
-  TARGET = $(DIR_INFO)/$(THISAPP)-tools
-endif
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -49,30 +39,12 @@ endif
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = af9d9e03038481fbf79ea3ac33f116f9
-
 install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -81,31 +53,11 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-ifeq "$(ROOT)" ""
-ifeq "$(LFS_PASS)" "install"
-	cd $(DIR_APP) && CFLAGS="-Os -fomit-frame-pointer" ./configure
-	cd $(DIR_APP) && echo "HAVE_SLANG=yes" >> make_include
-	cd $(DIR_APP) && echo "SLANGFLAGS=-I/opt/$(MACHINE)-uClibc/include" >> make_include
-	cd $(DIR_APP)/fdisk && make cfdisk
-	cd $(DIR_APP)/fdisk && make sfdisk
-	cd $(DIR_APP)/fdisk && install -m 0755 cfdisk /install/initrd/bin
-	cd $(DIR_APP)/fdisk && install -m 0755 sfdisk /install/initrd/bin
-else
-	cd $(DIR_APP) && sed -i 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
-				hwclock/hwclock.c
-	-mkdir -p /var/lib/hwclock
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-cramfs-1.patch
+	cd $(DIR_APP) && sed -i 's@/usr/include@$(TOOLS_DIR)/include@g' configure
 	cd $(DIR_APP) && ./configure
-	cd $(DIR_APP) && make $(MAKETUNING) HAVE_KILL=yes HAVE_SLN=yes
-	cd $(DIR_APP) && make HAVE_KILL=yes HAVE_SLN=yes install
-endif
-else
-	cd $(DIR_APP) && sed -i 's@/usr/include@/tools/include@g' configure
-	cd $(DIR_APP) && ./configure
-	cd $(DIR_APP) && make $(MAKETUNING) -C lib
-	cd $(DIR_APP) && make $(MAKETUNING) -C mount mount umount
-	cd $(DIR_APP) && make $(MAKETUNING) -C text-utils more
-	cd $(DIR_APP) && cp mount/{,u}mount text-utils/more /tools/bin
-endif
+	cd $(DIR_APP) && make -C lib
+	cd $(DIR_APP) && make -C mount mount umount
+	cd $(DIR_APP) && make -C text-utils more
+	cd $(DIR_APP) && cp -v mount/{,u}mount text-utils/more $(TOOLS_DIR)/bin
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

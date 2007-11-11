@@ -24,29 +24,14 @@
 
 include Config
 
-VER        = 5.5
+PKG_NAME   = ncurses
+VER        = 5.6
 
-THISAPP    = ncurses-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-# Normal build or /tools build.
-#
-ifeq "$(ROOT)" ""
-  TARGET = $(DIR_INFO)/$(THISAPP)
-  EXTRA_CONFIG = --prefix=/usr --with-shared \
-	--without-debug --enable-widec --disable-nls
-  EXTRA_MAKE =
-  EXTRA_INSTALL =
-else
-  TARGET = $(DIR_INFO)/$(THISAPP)-tools
-  EXTRA_CONFIG = --prefix=/tools --with-shared \
-    --without-debug --without-ada --enable-overwrite \
-    --disable-nls
-  EXTRA_MAKE = 
-  EXTRA_INSTALL = 
-endif
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -54,30 +39,12 @@ endif
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = e73c1ac10b4bfc46db43b2ddfd6244ef
-
 install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -86,25 +53,9 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_SRC)/src/patches/ncurses-5.5-fixes-1.patch
-	cd $(DIR_APP) && ./configure $(EXTRA_CONFIG)
-	cd $(DIR_APP) && make $(EXTRA_MAKE)  #$(MAKETUNING) # Causes an error!
-	cd $(DIR_APP) && make $(EXTRA_INSTALL) install
-ifeq "$(ROOT)" ""
-	chmod -v 755 /usr/lib/*.5.5
-	chmod -v 644 /usr/lib/libncurses++w.a
-	mv -v /usr/lib/libncursesw.so.5* /lib
-	ln -sfv ../../lib/libncursesw.so.5 /usr/lib/libncursesw.so
-	cd $(DIR_APP) && for lib in curses ncurses form panel menu ; do \
-	    rm -vf /usr/lib/lib$${lib}.so ; \
-	    echo "INPUT(-l$${lib}w)" >/usr/lib/lib$${lib}.so ; \
-	    ln -sfv lib$${lib}w.a /usr/lib/lib$${lib}.a ; \
-	done
-	ln -sfv libncurses++w.a /usr/lib/libncurses++.a4
-	echo "INPUT(-lncursesw)" >/usr/lib/libcursesw.so
-	ln -sfv libncurses.so /usr/lib/libcurses.so
-	ln -sfv libncursesw.a /usr/lib/libcursesw.a
-	ln -sfv libncurses.a /usr/lib/libcurses.a
-endif
+	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR) --with-shared \
+		--without-debug --without-ada --enable-overwrite
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

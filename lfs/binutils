@@ -24,45 +24,17 @@
 
 include Config
 
-VER        = 2.16.1
+PKG_NAME   = binutils
+VER        = 2.17
 
-THISAPP    = binutils-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-# Normal build or /tools build.
-#
-ifeq "$(ROOT)" ""
-ifeq "$(LFS_PASS)" "install"
-  TARGET = $(DIR_INFO)/$(THISAPP)-install
-  EXTRA_CONFIG = --prefix=/opt/$(MACHINE)-uClibc \
-		--build=$(MACHINE)-pc-linux-gnu \
-		--host=$(MACHINE)-pc-linux-gnu \
-		--target=$(MACHINE)-linux-uclibc \
-		--disable-nls \
-		--enable-multilib \
-		--disable-werror
-  EXTRA_MAKE = all
-  EXTRA_INSTALL = 
+ifeq "$(STAGE)" "toolchain"
+	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
 else
-  TARGET = $(DIR_INFO)/$(THISAPP)
-  EXTRA_CONFIG = --prefix=/usr --enable-shared --disable-nls
-  EXTRA_MAKE = tooldir=/usr
-  EXTRA_INSTALL = tooldir=/usr
-endif
-else
-ifeq "$(PASS)" "1"
-  TARGET = $(DIR_INFO)/$(THISAPP)-tools1
-  EXTRA_CONFIG = --prefix=/tools --disable-nls
-  EXTRA_MAKE = LDFLAGS="-all-static"
-  EXTRA_INSTALL = 
-else
-  TARGET = $(DIR_INFO)/$(THISAPP)-tools2
-  EXTRA_CONFIG = --prefix=/tools --with-lib-path=/tools/lib --disable-nls
-  EXTRA_MAKE = 
-  EXTRA_INSTALL = 
-endif
+	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 endif
 
 ###############################################################################
@@ -71,30 +43,12 @@ endif
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 6a9d529efb285071dad10e1f3d2b2967
-
 install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -103,31 +57,27 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/binutils-build && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	@mkdir $(DIR_SRC)/binutils-build
-ifeq "$(LFS_PASS)" "install"
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/binutils-uclibc-conf.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/binutils-uclibc-libtool-conf.patch
-endif
-	cd $(DIR_SRC)/binutils-build && $(DIR_APP)/configure $(EXTRA_CONFIG)
+	-mkdir -v $(DIR_SRC)/binutils-build
+
 ifeq "$(PASS)" "1"
-	cd $(DIR_SRC)/binutils-build && make configure-host
-endif
-	cd $(DIR_SRC)/binutils-build && make $(EXTRA_MAKE) $(MAKETUNING)
-	cd $(DIR_SRC)/binutils-build && make $(EXTRA_INSTALL) install
-ifeq "$(ROOT)" ""
-ifneq "$(LFS_PASS)" "install"
-	cp -v $(DIR_APP)/include/libiberty.h /usr/include
-endif
-else
-ifeq "$(PASS)" "1"
+	cd $(DIR_SRC)/binutils-build && CC="gcc -B/usr/bin/" ../$(THISAPP)/configure \
+		--prefix=$(TOOLS_DIR) --disable-nls --disable-werror
+	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make install
 	cd $(DIR_SRC)/binutils-build && make -C ld clean
-	cd $(DIR_SRC)/binutils-build && make -C ld LIB_PATH=/tools/lib
-	cd $(DIR_SRC)/binutils-build && cp -v ld/ld-new /tools/bin
-else
+	cd $(DIR_SRC)/binutils-build && make -C ld LIB_PATH=$(TOOLS_DIR)/lib
+	cd $(DIR_SRC)/binutils-build && cp -v ld/ld-new $(TOOLS_DIR)/bin
+endif
+
+ifeq "$(PASS)" "2"
+	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure --prefix=$(TOOLS_DIR) \
+		--disable-nls --with-lib-path=$(TOOLS_DIR)/lib
+	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make install
 	cd $(DIR_SRC)/binutils-build && make -C ld clean
 	cd $(DIR_SRC)/binutils-build && make -C ld LIB_PATH=/usr/lib:/lib
-	cd $(DIR_SRC)/binutils-build && cp -v ld/ld-new /tools/bin
+	cd $(DIR_SRC)/binutils-build && cp -v ld/ld-new $(TOOLS_DIR)/bin
 endif
-endif
+	
 	@rm -rf $(DIR_APP) $(DIR_SRC)/binutils-build
 	@$(POSTBUILD)

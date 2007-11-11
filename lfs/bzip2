@@ -24,20 +24,14 @@
 
 include Config
 
-VER        = 1.0.3
+PKG_NAME   = bzip2
+VER        = 1.0.4
 
-THISAPP    = bzip2-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-# Normal build or /tools build.
-#
-ifeq "$(ROOT)" ""
-  TARGET = $(DIR_INFO)/$(THISAPP)
-else
-  TARGET = $(DIR_INFO)/$(THISAPP)-tools
-endif
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -45,30 +39,12 @@ endif
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 8a716bebecb6e647d2e8a29ea5d8447f
-
 install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -77,22 +53,7 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-ifeq "$(ROOT)" ""
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-bzgrep_security-1.patch
-	cd $(DIR_APP) && sed -i 's@tempfile -d /tmp -p bz@mktemp -p /tmp@' bzdiff
-	cd $(DIR_APP) && make -f Makefile-libbz2_so
-	cd $(DIR_APP) && make clean
-	cd $(DIR_APP) && make $(MAKETUNING)
-	cd $(DIR_APP) && make install
-	cd $(DIR_APP) && cp -v bzip2-shared /bin/bzip2
-	cd $(DIR_APP) && cp -av libbz2.so* /lib
-	ln -sfv ../../lib/libbz2.so.1.0 /usr/lib/libbz2.so
-	rm -v /usr/bin/{bunzip2,bzcat,bzip2}
-	ln -sfv bzip2 /bin/bunzip2
-	ln -sfv bzip2 /bin/bzcat
-else
-	cd $(DIR_APP) && make $(MAKETUNING)
-	cd $(DIR_APP) && make PREFIX=/tools install
-endif
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make PREFIX=$(TOOLS_DIR) install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

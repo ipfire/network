@@ -24,68 +24,30 @@
 
 include Config
 
-VER        = 2.3.6
+PKG_NAME   = glibc
+VER        = 2.7
 
-THISAPP    = glibc-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-CFLAGS     =
+
+CFLAGS     = -O2 -mno-tls-direct-seg-refs # This will make it xen-friendly
 CXXFLAGS   =
 
-# Normal build or /tools build.
-#
-ifeq "$(ROOT)" ""
-  TARGET = $(DIR_INFO)/$(THISAPP)
-  EXTRA_CONFIG = --prefix=/usr \
-    --disable-profile --enable-add-ons \
-    --enable-kernel=2.6.0 --libexecdir=/usr/lib/glibc
-  EXTRA_MAKE =
-  EXTRA_INSTALL =
-else
-  TARGET = $(DIR_INFO)/$(THISAPP)-tools
-  EXTRA_CONFIG = --prefix=/tools \
-    --disable-profile --enable-add-ons \
-    --enable-kernel=2.6.0 --with-binutils=/tools/bin \
-    --without-gd --with-headers=/tools/include \
-    --without-selinux
-  EXTRA_MAKE =
-  EXTRA_INSTALL =
-endif
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	glibc-libidn-$(VER).tar.bz2
-
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-glibc-libidn-$(VER).tar.bz2 = $(DL_FROM)/glibc-libidn-$(VER).tar.bz2
-
-$(DL_FILE)_MD5 = bfdce99f82d6dbcb64b7f11c05d6bc96
-glibc-libidn-$(VER).tar.bz2_MD5 = 49dbe06ce830fc73874d6b38bdc5b4db
+objects = $(DL_FILE) 
 
 install : $(TARGET)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
 
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -94,35 +56,21 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "toolchain"
 	@mkdir $(DIR_SRC)/glibc-build
-ifeq "$(ROOT)" ""
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_SRC)/src/patches/$(THISAPP)-linux_types-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_SRC)/src/patches/$(THISAPP)-inotify-1.patch
-	# This locale causes a loop on bash login - exclude it
-	cd $(DIR_APP) && sed -i '/vi_VN.TCVN/d' localedata/SUPPORTED
-	cd $(DIR_APP) && sed -i 's|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=/lib/ld-linux.so.2 -o|' \
-		scripts/test-installation.pl
-endif
-	cd $(DIR_SRC)/glibc-build && $(DIR_APP)/configure $(EXTRA_CONFIG)
-
-ifeq "$(ROOT)" ""
-	touch /etc/ld.so.conf
-	cd $(DIR_SRC)/glibc-build && make $(MAKETUNING) $(EXTRA_MAKE)
-	cd $(DIR_SRC)/glibc-build && make $(EXTRA_INSTALL) install
-	cp -v $(DIR_APP)/sysdeps/unix/sysv/linux/inotify.h /usr/include/sys
-else
-	-mkdir /tools/etc
-	touch /tools/etc/ld.so.conf
-	cd $(DIR_SRC)/glibc-build && make $(MAKETUNING) $(EXTRA_MAKE)
-	cd $(DIR_SRC)/glibc-build && make $(EXTRA_INSTALL) install
+	cd $(DIR_SRC)/glibc-build && echo "CFLAGS += -march=$(MACHINE)" > configparms
+	cd $(DIR_SRC)/glibc-build && CFLAGS="$(CFLAGS)" ../$(THISAPP)/configure \
+		--prefix=$(TOOLS_DIR) --disable-profile --enable-add-ons \
+		--enable-kernel=2.6.0 --with-binutils=$(TOOLS_DIR)/bin \
+		--without-gd --with-headers=$(TOOLS_DIR)/include \
+		--without-selinux
+		
+	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=-j$(PARALLELISM)
+	-mkdir -v $(TOOLS_DIR)/etc
+	touch $(TOOLS_DIR)/etc/ld.so.conf
+	cd $(DIR_SRC)/glibc-build && make install
 endif
 
-	# Creating the locales
-ifeq "$(ROOT)" ""
-	mkdir -p /usr/lib/locale
-	cd $(DIR_SRC)/glibc-build && localedef -i en_US -f ISO-8859-1 en_US
-	cd $(DIR_SRC)/glibc-build && localedef -i en_US -f UTF-8      en_US.utf8
-	cp -f /usr/share/zoneinfo/GMT /etc/localtime
-endif
 	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build
 	@$(POSTBUILD)
