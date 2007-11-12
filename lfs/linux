@@ -34,10 +34,7 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 CFLAGS     =
 CXXFLAGS   =
 
-ifeq "$(STAGE)" "toolchain"
-	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-endif
-
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -72,6 +69,14 @@ ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && make headers_check
 	cd $(DIR_APP) && make INSTALL_HDR_PATH=dest headers_install
 	cd $(DIR_APP) && cp -rv dest/include/* $(TOOLS_DIR)/include
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && sed -i '/scsi/d' include/Kbuild
+	cd $(DIR_APP) && make mrproper
+	cd $(DIR_APP) && make headers_check
+	cd $(DIR_APP) && make INSTALL_HDR_PATH=dest headers_install
+	cd $(DIR_APP) && cp -rv dest/include/* /usr/include
 endif
 
 	@rm -rf $(DIR_APP)

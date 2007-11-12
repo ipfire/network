@@ -53,13 +53,34 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libc-2.patch
 	cd $(DIR_APP) && mv -v makedepend.SH{,.orig}
 	cd $(DIR_APP) && sed 's/command /command[ -]/' makedepend.SH.orig > makedepend.SH
+	
 	cd $(DIR_APP) && ./configure.gnu --prefix=$(TOOLS_DIR) -Dstatic_ext='Data/Dumper Fcntl IO POSIX'
+	
 	cd $(DIR_APP) && make perl utilities -j $(PARALLELISM)
+	
 	cd $(DIR_APP) && cp -v perl pod/pod2man $(TOOLS_DIR)/bin
 	-mkdir -pv $(TOOLS_DIR)/lib/perl5/$(VER)
 	cd $(DIR_APP) && cp -Rv lib/* $(TOOLS_DIR)/lib/perl5/$(VER)
+endif
+
+ifeq "$(STAGE)" "base"
+	echo "127.0.0.1 localhost $(hostname)" > /etc/hosts
+	
+	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
+	cd $(DIR_APP) && ./configure.gnu --prefix=/usr \
+		-Dman1dir=/usr/share/man/man1 -Dman3dir=/usr/share/man/man3 \
+		-Dpager="/usr/bin/less -isR"
+		
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+	
+	rm -f /etc/hosts
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -79,7 +79,7 @@ toolchain_build() {
 	toolchain_make tar
 	toolchain_make texinfo
 	toolchain_make util-linux
-	toolchain_make strip
+	# toolchain_make strip
 	export PATH=$ORG_PATH
 }
 
@@ -94,32 +94,33 @@ base_build() {
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.base.log"
 	export LOGFILE
-
+	
 	ipfire_make stage2
-	ipfire_make linux-libc-header
+	ipfire_make linux
 	ipfire_make man-pages
 	ipfire_make glibc
-	ipfire_make cleanup-toolchain	PASS=3
+	ipfire_make adjust-toolchain
 	ipfire_make binutils
 	ipfire_make gcc
 	ipfire_make berkeley
+	ipfire_make sed
+	ipfire_make e2fsprogs
 	ipfire_make coreutils
 	ipfire_make iana-etc
 	ipfire_make m4
 	ipfire_make bison
 	ipfire_make ncurses
 	ipfire_make procps
-	ipfire_make sed
 	ipfire_make libtool
 	ipfire_make perl
 	ipfire_make readline
 	ipfire_make zlib
+	exiterror "Stop here."
 	ipfire_make autoconf
 	ipfire_make automake
 	ipfire_make bash
 	ipfire_make bzip2
 	ipfire_make diffutils
-	ipfire_make e2fsprogs
 	ipfire_make ed
 	ipfire_make file
 	ipfire_make findutils
@@ -528,7 +529,7 @@ build)
 
 	echo -ne "Building for ${BOLD}${MACHINE} on ${MACHINE_REAL}${NORMAL}\n"
 	
-	if [ -f $BASEDIR/log_${MACHINE}/02_base/stage2 ]; then
+	if [ -f $BASEDIR/log_${MACHINE}/02_base/stage2-LFS ]; then
 		prepareenv
 		echo "Using installed toolchain" >> $LOGFILE
 		beautify message DONE "Stage toolchain already built or extracted"
@@ -553,21 +554,21 @@ build)
 		fi
 	fi
 	
-	if [ ! -e $BASEDIR/log_${MACHINE}/03_ipfire/stage3 ]; then
+	if [ ! -e $BASEDIR/log_${MACHINE}/03_ipfire/stage3-LFS ]; then
 		beautify build_stage "Building base"
 		base_build
 	else
 		beautify message DONE "Stage base      already built"
 	fi
 
-	if [ ! -e $BASEDIR/log_${MACHINE}/04_misc/stage4 ]; then
+	if [ ! -e $BASEDIR/log_${MACHINE}/04_misc/stage4-LFS ]; then
 		beautify build_stage "Building $NAME"
 		ipfire_build
 	else
 		beautify message DONE "Stage ipfire    already built"
 	fi
 
-	if [ ! -e $BASEDIR/log_${MACHINE}/05_installer/stage5 ]; then
+	if [ ! -e $BASEDIR/log_${MACHINE}/05_installer/stage5-LFS ]; then
 		beautify build_stage "Building miscellaneous"
 		misc_build
 	else
@@ -670,7 +671,7 @@ toolchain)
 	# Check if host can build the toolchain
 	check_toolchain_prerequisites
 	toolchain_build
-	echo "Create toolchain tar.gz for $MACHINE" | tee -a $LOGFILE
+	echo "Create toolchain tar.bz for $MACHINE" | tee -a $LOGFILE
 	# Safer inside the chroot
 	echo -ne "Stripping lib"
 	chroot $LFS $TOOLS_DIR/bin/find $TOOLS_DIR/lib \
@@ -827,6 +828,11 @@ uploadsrc)
 	PWD=`pwd`
 	cd $BASEDIR/cache/
 	echo -e "Uploading cache to ftp server:"
+	for i in *; do
+		echo "${i}" | fgrep -q .md5 && continue
+		[ -e ${i}.md5 ] && continue
+		md5sum ${i} | tee ${i}.md5
+	done
 	ncftpls -u $FTP_CACHE_USER -p $FTP_CACHE_PASS ftp://$FTP_CACHE_URL/$FTP_CACHE_PATH/ > /tmp/ftplist
 	for i in *; do
 		if [ "$(basename $i)" == "toolchains" ]; then continue; fi

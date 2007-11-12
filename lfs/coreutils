@@ -37,7 +37,8 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects =$(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-uname-1.patch \
+	$(THISAPP)-suppress_uptime_kill_su-1.patch $(THISAPP)-i18n-1.patch
 
 install : $(TARGET)
 
@@ -54,6 +55,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	
+ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && \
 		for file in src/{copy,touch}.c lib/utimens.{c,h}; do \
 			cp -v $$file{,.orig}; \
@@ -63,7 +65,26 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+	
 	cd $(DIR_APP) && cp -v src/su $(TOOLS_DIR)/bin/su-tools
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && sed -i 's/futimens/gl_&/' src/{copy,touch}.c lib/utimens.{c,h}
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uname-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-suppress_uptime_kill_su-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-i18n-1.patch
+	
+	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+	
+	mv -v /usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo} /bin
+	mv -v /usr/bin/{false,hostname,ln,ls,mkdir,mknod,mv,pwd,readlink,rm} /bin
+	mv -v /usr/bin/{rmdir,stty,sync,true,uname} /bin
+	mv -v /usr/bin/chroot /usr/sbin
+	mv -v /usr/bin/{head,sleep,nice} /bin
+endif
 	
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

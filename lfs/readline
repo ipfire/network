@@ -24,44 +24,27 @@
 
 include Config
 
-VER        = 5.1
+PKG_NAME   = readline
+VER        = 5.2
 
-THISAPP    = readline-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
-
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 7ee5a692db88b30ca48927a13fd60e46
+objects = $(DL_FILE) $(THISAPP)-fixes-4.patch
 
 install : $(TARGET)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
 
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,15 +53,17 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_SRC)/src/patches/readline-5.1-fixes-3.patch
 	cd $(DIR_APP) && sed -i '/MV.*old/d' Makefile.in
 	cd $(DIR_APP) && sed -i '/{OLDSUFF}/c:' support/shlib-install
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-4.patch
+	
 	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib
-	cd $(DIR_APP) && make $(MAKETUNING) SHLIB_LIBS=-lncurses
+	
+	cd $(DIR_APP) && make -j $(PARALLELISM) SHLIB_LIBS=-lncurses
 	cd $(DIR_APP) && make install
-	chmod -v 755 /lib/lib{readline,history}.so*
+	
 	mv -v /lib/lib{readline,history}.a /usr/lib
-	rm -v /lib/lib{readline,history}.so
+	rm -fv /lib/lib{readline,history}.so
 	ln -sfv ../../lib/libreadline.so.5 /usr/lib/libreadline.so
 	ln -sfv ../../lib/libhistory.so.5 /usr/lib/libhistory.so
 	@rm -rf $(DIR_APP)

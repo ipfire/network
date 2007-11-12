@@ -40,7 +40,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) 
+objects = $(DL_FILE) glibc-libidn-$(VER).tar.bz2
 
 install : $(TARGET)
 
@@ -56,9 +56,9 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@mkdir $(DIR_SRC)/glibc-build
 
 ifeq "$(STAGE)" "toolchain"
-	@mkdir $(DIR_SRC)/glibc-build
 	cd $(DIR_SRC)/glibc-build && echo "CFLAGS += -march=$(MACHINE)" > configparms
 	cd $(DIR_SRC)/glibc-build && CFLAGS="$(CFLAGS)" ../$(THISAPP)/configure \
 		--prefix=$(TOOLS_DIR) --disable-profile --enable-add-ons \
@@ -70,6 +70,33 @@ ifeq "$(STAGE)" "toolchain"
 	-mkdir -v $(TOOLS_DIR)/etc
 	touch $(TOOLS_DIR)/etc/ld.so.conf
 	cd $(DIR_SRC)/glibc-build && make install
+endif
+
+ifeq "$(STAGE)" "base"
+	tar jxf $(DIR_DL)/glibc-libidn-$(VER).tar.bz2 -C $(DIR_APP)
+	cd $(DIR_APP) && mv glibc-libidn-$(VER) libidn
+	cd $(DIR_APP) && sed -i '/vi_VN.TCVN/d' localedata/SUPPORTED
+	cd $(DIR_APP) && sed -i 's|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(LINKER) -o|' \
+		scripts/test-installation.pl
+	cd $(DIR_APP) && sed -i 's|@BASH@|/bin/bash|' elf/ldd.bash.in
+	cd $(DIR_SRC)/glibc-build && echo "CFLAGS += -march=$(MACHINE)" > configparms
+	cd $(DIR_SRC)/glibc-build && ../$(THISAPP)/configure --prefix=/usr \
+    --disable-profile --enable-add-ons --enable-kernel=2.6.0 \
+		--libexecdir=/usr/lib/glibc
+	
+	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=-j$(PARALLELISM)
+	touch /etc/ld.so.conf
+	cd $(DIR_SRC)/glibc-build && make install
+	
+	# Locales
+	-mkdir -pv /usr/lib/locale
+	localedef -i en_US -f UTF-8 en_US.UTF-8
+	localedef -i en_US -f ISO-8859-1 en_US
+	localedef -i en_GB -f UTF-8 en_GB.UTF-8
+	localedef -i en_GB -f ISO-8859-1 en_GB
+	
+	# Timezone
+	cp -v --remove-destination /usr/share/zoneinfo/GMT /etc/localtime
 endif
 
 	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build

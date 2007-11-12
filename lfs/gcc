@@ -65,7 +65,8 @@ ifeq "$(PASS)" "1"
 	cd $(DIR_SRC)/gcc-build && CC="gcc -B/usr/bin/" ../gcc-4.2.2/configure \
 		--prefix=$(TOOLS_DIR) --with-local-prefix=/tools --disable-nls \
 		--enable-shared --enable-languages=c
-	cd $(DIR_SRC)/gcc-build && make bootstrap -j $(PARALLELISM)
+		
+	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/gcc-build && make install
 	ln -vs gcc $(TOOLS_DIR)/bin/cc
 endif
@@ -76,8 +77,15 @@ ifeq "$(PASS)" "2"
 	cd $(DIR_APP) && cp -v gcc/Makefile.in{,.tmp}
 	cd $(DIR_APP) && sed 's/^XCFLAGS =$$/& -fomit-frame-pointer/' gcc/Makefile.in.tmp \
 		> gcc/Makefile.in
-		
-	cd $(DIR_APP) && sed "s,/tools,$(TOOLS_DIR),g" $(DIR_PATCHES)/$(THISAPP)-specs-1.patch | patch -Np1
+	
+	cd $(DIR_APP) && \
+		for file in $$(find gcc/config -name linux64.h -o -name linux.h); do \
+			cp -uv $$file{,.orig}; \
+  		sed -e 's@/lib\(64\)\?\(32\)\?/ld@$(TOOLS_DIR)&@g' \
+					-e 's@/usr@$(TOOLS_DIR)@g' $$file.orig > $$file; \
+			echo -e "\n#undef STANDARD_INCLUDE_DIR\n#define STANDARD_INCLUDE_DIR 0" >> $$file; \
+			touch $$file.orig; \
+		done
 	
 	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure --prefix=$(TOOLS_DIR) \
 		--with-local-prefix=$(TOOLS_DIR) --enable-clocale=gnu \
@@ -86,6 +94,24 @@ ifeq "$(PASS)" "2"
 		
 	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/gcc-build && make install
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && sed -i 's/install_to_$$(INSTALL_DEST) //' libiberty/Makefile.in
+	cd $(DIR_APP) && sed -i 's/^XCFLAGS =$$/& -fomit-frame-pointer/' gcc/Makefile.in
+	cd $(DIR_APP) && sed -i 's@\./fixinc\.sh@-c true@' gcc/Makefile.in
+	cd $(DIR_APP) && sed -i 's/@have_mktemp_command@/yes/' gcc/gccbug.in
+	
+	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure --prefix=/usr \
+    --libexecdir=/usr/lib --enable-shared --enable-threads=posix \
+		--enable-__cxa_atexit --enable-clocale=gnu --enable-languages=c,c++ \
+    --disable-bootstrap
+  
+	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/gcc-build && make install
+	
+	ln -sfv ../usr/bin/cpp /lib
+	ln -sfv gcc /usr/bin/cc	
 endif
 
 	@rm -rf $(DIR_APP) $(DIR_SRC)/gcc-build

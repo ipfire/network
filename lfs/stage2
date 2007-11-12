@@ -24,10 +24,12 @@
 
 include Config
 
-VER        = ipfire
+PKG_NAME   = stage2
+VER        = LFS
 
-THISAPP    = stage2
-TARGET     = $(DIR_INFO)/$(THISAPP)
+THISAPP    = $(PKG_NAME)-$(VER)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -35,11 +37,7 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 install : $(TARGET)
 
-check :
-
 download :
-
-md5 :
 
 ###############################################################################
 # Installation Details
@@ -47,67 +45,81 @@ md5 :
 
 $(TARGET) :
 	@$(PREBUILD)
-
+	
 	# Create directories
-	-mkdir -pv /{bin,boot,etc/opt,etc/modprobe.d,home,lib,mnt,opt}
-	-mkdir -pv /{media/{floppy,cdrom,usbkey},sbin,srv,var}
+	-mkdir -pv /{bin,boot,etc/opt,home,lib,mnt,opt}
+	-mkdir -pv /{media/{floppy,cdrom},sbin,srv,var}
 	-install -dv -m 0750 /root
 	-install -dv -m 1777 /tmp /var/tmp
 	-mkdir -pv /usr/{,local/}{bin,include,lib,sbin,src}
 	-mkdir -pv /usr/{,local/}share/{doc,info,locale,man}
 	-mkdir -v  /usr/{,local/}share/{misc,terminfo,zoneinfo}
 	-mkdir -pv /usr/{,local/}share/man/man{1..8}
-	#-for dir in /usr /usr/local; do \
-	#  ln -sv share/{man,doc,info} $$dir; \
-	#done
+	-for dir in /usr /usr/local; do \
+		ln -sfv share/{man,doc,info} $$dir; \
+	done
+	-mkdir -v /var/{lock,log,mail,run,spool}
+	-mkdir -pv /var/{opt,cache,lib/{misc,locate},local}
 	
-	# Symlinks
-	# for this reason, stage2 rebuild will broke the iso:perl, grubbatch
-	-ln -sv /tools/bin/{bash,cat,grep,pwd,stty} /bin
-	-ln -sv /tools/bin/perl /usr/bin
-	-ln -sv /tools/lib/libgcc_s.so{,.1} /usr/lib
-	-ln -sv bash /bin/sh
+	# Check for some important links and create them if they don't exist
+	if [ ! -e /bin/bash	]; then ln -sfn $(TOOLS_DIR)/bin/bash	/bin/bash && ln -sf bash /bin/sh; fi
+	if [ ! -e /bin/cat	]; then ln -sfn $(TOOLS_DIR)/bin/cat	/bin/cat;		fi
+	if [ ! -e /bin/echo	]; then ln -sfn $(TOOLS_DIR)/bin/echo	/bin/echo;	fi
+	if [ ! -e /bin/grep	]; then ln -sfn $(TOOLS_DIR)/bin/grep	/bin/grep;	fi
+	if [ ! -e /bin/pwd	]; then ln -sfn $(TOOLS_DIR)/bin/pwd	/bin/pwd;		fi
+	if [ ! -e /bin/stty	]; then ln -sfn $(TOOLS_DIR)/bin/stty	/bin/stty;	fi
+	
+	if [ ! -e /usr/bin/perl	]; then ln -sfn $(TOOLS_DIR)/bin/perl	/usr/bin/perl; fi
+	
+	[ ! -e /lib/libgcc_s.so.1		] && ln -sfn $(TOOLS_DIR)/lib/libgcc_s.so{,.1} 	/usr/lib/
+	[ ! -e /lib/libstdc++.so.6	] && ln -sfn $(TOOLS_DIR)/lib/libstdc++.so{,.6}	/usr/lib/
+	
+	# Creating an empty mtab
+	touch /etc/mtab		#ln -sf /proc/mounts /etc/mtab
+	
+	# This trick is necessary in order to create two devices in the target /dev
+	# rather than in the host /dev
+	mkdir -p /dev1
+	mount --move /dev /dev1
+	
+	# Make /dev/null and /dev/console
+	cd /dev && rm -f null console
+	cd /dev && mknod -m 0666 null c 1 3
+	cd /dev && mknod -m 0600 console c 5 1
 
+	# Now move the target /dev to point back to the host /dev
+	mount --move /dev1 /dev
+	rm -fr /dev1
+	
 	# Config files
 	for i in $(DIR_SRC)/config/etc/*; do \
-	    [ -f $$i ] && cp $$i /etc; \
+		[ -f $$i ] && cp $$i /etc; \
 	done
-	touch /etc/mtab
-	echo "$(NAME) v$(VERSION) - $(SLOGAN)" >  /etc/issue
+	
+	ln -sf /proc/mounts /etc/mtab
+	
+	echo "$(NAME) v$(VERSION) for $(MACHINE) - $(SLOGAN) (\l)" > /etc/issue
 	echo "===============================" >> /etc/issue
 	echo "\n running on \s \r \m"          >> /etc/issue
-
+	
+	touch /var/run/utmp /var/log/{btmp,lastlog,wtmp}
+	chgrp -v utmp /var/run/utmp /var/log/lastlog
+	chmod -v 664 /var/run/utmp /var/log/lastlog
+	
 	# Bash startup files
 	install --directory --mode=0755 --owner=root --group=root /etc/profile.d
 	for i in $(DIR_SRC)/config/profile.d/*; do \
 	    [ -f $$i ] && cp $$i /etc/profile.d; \
 	done
-	chmod 755 /etc/bashrc
-	ln -svf ../bashrc /etc/profile.d/bashrc.sh
-
+	
 	# Scripts
 	for i in `find $(DIR_SRC)/src/scripts -maxdepth 1 -type f`; do \
 	    sed "s+CONFIG_ROOT+$(CONFIG_ROOT)+g" $$i > /usr/local/bin/`basename $$i`; \
 	    chmod 755 /usr/local/bin/`basename $$i`; \
 	done
-
+	
 	# Nobody user
 	-mkdir -p /home/nobody
 	chown -R nobody:nobody /home/nobody
-
-	# Create /var dirs and files
-	-mkdir -v /var/{lock,log,mail,run,spool,empty}
-	-mkdir -pv /var/{opt,cache,lib/{misc,locate},local}
-	-mkdir -pv /var/log/{counter,calamaris}
-	chown nobody.nobody /var/log/calamaris
-	touch /var/run/utmp /var/log/{btmp,lastlog,wtmp,net-traffic.log}
-	chgrp -v utmp /var/run/utmp /var/log/lastlog
-	chmod -v 664 /var/run/utmp /var/log/lastlog
-
-	# Permissions
-	chmod 0711 /var/empty
 	
-	# A small hack to include /root to the iso but not all of it's files.
-	touch /root/ipfire
-
 	@$(POSTBUILD)

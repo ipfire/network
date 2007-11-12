@@ -32,6 +32,8 @@ KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }'`
 MACHINE=`uname -m`
 SVN_REVISION=`svn info | grep Revision | cut -c 11-`
 
+DISTCC_HOSTS=localhost
+
 PWD=`pwd`
 BASENAME=`basename $0`
 
@@ -708,12 +710,12 @@ prepareenv() {
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache
 	export CCACHE_HASHDIR=1
-	if [ ! -z $DISTCC_HOSTS ]; then
+	if [ ! -z "$DISTCC_HOSTS" ]; then
 		export CCACHE_PREFIX="distcc"
 		export DISTCC_DIR=$BASEDIR/distcc
 	fi
 	
-	[ -z $DISTCC_HOSTS ] || echo $DISTCC_HOSTS > $DISTCC_DIR/hosts
+	[ -z "$DISTCC_HOSTS" ] || echo "$DISTCC_HOSTS" > $DISTCC_DIR/hosts
 
 	# Remove pre-install list of installed files in case user erase some files before rebuild
 	rm -f $LFS/usr/src/lsalr 2>/dev/null

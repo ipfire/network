@@ -72,29 +72,18 @@ KGCC = gcc
 # log/<TARGET> name. Modified files are not identified
 #
 define FIND_FILES
-	cd $(ROOT)/ && find -mount \
-	-not -path './tools*' -not -path './tmp*' -not -path './usr/src*' \
-	-not -path './dev*' -not -path './proc*' -not -path './install*'
+	cd $(LFS)/ && find -mount \
+	-not -path '.$(TOOLS_DIR)*' -not -path './tmp*' -not -path './usr/src*' \
+	-not -path './dev*' -not -path './proc*' -not -path './sys*' -not -path './install*'
 endef
 
 # This is common starting logic for builds.
 #
-ifeq "$(ROOT)" ""
+ifneq "$(STAGE)" "toolchain"
 define PREBUILD
 	echo "====================================== Installing $(THISAPP) ..."
-	@echo "Install started; saving file list to $(DIR_SRC)/lsalr ..."
-	@if [ ! -f $(DIR_SRC)/lsalr ]; then $(FIND_FILES) > $(DIR_SRC)/lsalr; fi
-	# Fix installation on partial rebuild, so modules install where they should
-	# and not everytime on the last compiled kernel
-	if [ -f $(DIR_SRC)/linux-$(KVER) ]; then \
-		if [ "$(SMP)" = "" ]; then \
-			cd $(DIR_SRC)/linux-$(KVER) && \
-				sed -i -e 's+^EXTRAVERSION.*$$+EXTRAVERSION\ =\ $(word 4,$(subst ., .,$(KVER)))-ipfire+' Makefile; \
-		else \
-			cd $(DIR_SRC)/linux-$(KVER) && \
-				sed -i -e 's+^EXTRAVERSION.*$$+EXTRAVERSION\ =\ $(word 4,$(subst ., .,$(KVER)))-ipfire-smp+' Makefile; \
-		fi; \
-	fi
+	echo "Install started; saving file list to $(DIR_SRC)/lsalr ..."
+	if [ ! -f $(DIR_SRC)/lsalr ]; then $(FIND_FILES) > $(DIR_SRC)/lsalr; fi
 endef
 else
 define PREBUILD
@@ -104,14 +93,12 @@ endif
 
 # Common end-of-installation logic for Stage 2 and beyond.
 #
-ifeq "$(ROOT)" ""
+ifneq "$(STAGE)" "toolchain"
 define POSTBUILD
 	@echo "Install done; saving file list to $(TARGET) ..."
 	@$(FIND_FILES) > $(DIR_SRC)/lsalrnew
-	@diff $(DIR_SRC)/lsalr $(DIR_SRC)/lsalrnew | grep '^> ' | sed 's/^> //' | sort > $(TARGET)_diff
-	@cp -f $(DIR_SRC)/lsalrnew $(DIR_SRC)/lsalr
-	@rm -f $(DIR_SRC)/lsalrnew
-	sed -i -e 's+.\/++' $(TARGET)_diff
+	@diff $(DIR_SRC)/lsalr $(DIR_SRC)/lsalrnew | grep '^> ' | sed 's+^> \./++' | sort > $(TARGET)_diff
+	@mv -f $(DIR_SRC)/lsalrnew $(DIR_SRC)/lsalr
 	# compare roofile ( same name as lfs script) with the list of installed files
 	# special cases
 	# - if the corresponding rootfile is not found, touch $(TARGET)_missing_rootfile
@@ -121,34 +108,46 @@ define POSTBUILD
 	# $(TARGET)_rootfile : ROOTFILE with KVER replacement
 	# $(TARGET) : log result with {commented|include|added} files
 	if [ -s "$(TARGET)_diff" ]; then \
-		if [ "$(PASS)" = "SMP" ]; then LFS_SCRIPT=$(firstword $(MAKEFILE_LIST))-smp; \
-		else LFS_SCRIPT=$(firstword $(MAKEFILE_LIST)); \
-		fi; \
-		echo $(LFS_SCRIPT); \
-		ROOTFILE=`find $(DIR_SRC)/config/rootfiles/common $(DIR_SRC)/config/rootfiles/packages -maxdepth 1 -type f -name $$LFS_SCRIPT`; \
+		LFS_SCRIPT=$(firstword $(MAKEFILE_LIST)); \
+		ROOTFILE=`find $(DIR_SRC)/config/rootfiles/common -maxdepth 1 -type f -name $$LFS_SCRIPT`; \
 		if [ "$$ROOTFILE" = "" ]; then \
-			ROOTFILE=`find $(DIR_SRC)/config/rootfiles/ver_$(IPFVER) -type f -name $$LFS_SCRIPT`; \
+			ROOTFILE=`find $(DIR_SRC)/config/rootfiles/packages -type f -name $$LFS_SCRIPT`; \
 		fi; \
 		if [ "$$ROOTFILE" = "" ]; then \
 			touch $(TARGET)_missing_rootfile; \
 			ROOTFILE=$(TARGET)_missing_rootfile ; \
 			echo "error $$LFS_SCRIPT not found in config/rootfiles"; \
 		fi; \
-		sed "s/KVER/$(KVER)/g" $$ROOTFILE > $(TARGET)_rootfile; \
-		for line in `cat $(TARGET)_diff`; do \
-			if grep -qE "^#$$line$$" $(TARGET)_rootfile; then echo "#$$line" >> $(TARGET); \
-			elif grep -qE "^$$line$$" $(TARGET)_rootfile ; then echo "$$line" >> $(TARGET); \
-			else echo "+$$line" >> $(TARGET); \
-			fi; \
-		done; \
+		sed "s/KVER/$(KVER)/g" $$ROOTFILE > $(TARGET)_rootfile; 	\
+		echo 'open (F,"$(TARGET)_rootfile");				\
+		    while (<F>) { $$allfile{$$_} = "x" };close (F);		\
+		    while (<>) {						\
+			if ( defined ($$allfile{"#$$_"}) )	{print "#$$_"}	\
+			elsif ( defined ($$allfile{$$_}) )	{print $$_}	\
+			else				{print "+$$_"}		\
+		    };								\
+		' > /tmp/perl.pl;						\
+		perl /tmp/perl.pl	<$(TARGET)_diff  > $(TARGET);		\
 		rm -f $(TARGET)_rootfile; \
 	else \
 		touch $(TARGET); \
 	fi
 	@rm -f $(TARGET)_diff
+
+	if [ "$(OTHER_SRC)" = "yes" ] && \
+	! grep -qEi "^$(PKG_NAME),$(VER),$(STAGE_ORDER),$(STAGE)" $(DIR_SRC)/LIST_OF_SOFTWARE-$(MACHINE).txt; then \
+		echo "$(PKG_NAME),$(VER),$(STAGE_ORDER),$(STAGE)" >> $(DIR_SRC)/LIST_OF_SOFTWARE-$(MACHINE).txt; \
+	fi
+
+	@echo "===================================== Install done for $(THISAPP)."
 endef
 else
 define POSTBUILD
+	if [ "$(OTHER_SRC)" = "yes" ] && \
+	! grep -qEi "^$(PKG_NAME),$(VER),$(STAGE_ORDER),$(STAGE)" $(DIR_SRC)/LIST_OF_SOFTWARE-$(MACHINE).txt; then \
+		echo "$(PKG_NAME),$(VER),$(STAGE_ORDER),$(STAGE)" >> $(DIR_SRC)/LIST_OF_SOFTWARE-$(MACHINE).txt; \
+	fi
+
 	@echo "===================================== Install done for $(THISAPP)."
 	touch $(TARGET)
 endef

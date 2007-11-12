@@ -47,6 +47,6 @@ $(TARGET) :
 ifeq "$(STAGE)" "toolchain"
 	-strip --strip-debug $(TOOLS_DIR)/lib/*
 	-strip --strip-unneeded $(TOOLS_DIR)/{,s}bin/*
-	rm -rf $(TOOLS_DIR)/{info,man}
-	chown -R root:root $(LFS)/$(TOOLS_DIR)
+	rm -rf $(TOOLS_DIR)/{,share/}{info,man}
+	chown -R root:root $(LFS)$(TOOLS_DIR)
 endif

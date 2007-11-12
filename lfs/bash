@@ -58,5 +58,12 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	ln -sf bash $(TOOLS_DIR)/bin/sh
+	
+	# Without the following lines, stage2 will not work
+	if [ ! -e $(LFS)/bin/bash ]; then \
+		install -d $(LFS)/bin && \
+		ln -sf $(TOOLS_DIR)/bin/bash $(LFS)/bin && \
+		ln -sf bash $(LFS)/bin/sh; \
+	fi
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

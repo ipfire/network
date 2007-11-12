@@ -78,6 +78,15 @@ ifeq "$(PASS)" "2"
 	cd $(DIR_SRC)/binutils-build && make -C ld LIB_PATH=/usr/lib:/lib
 	cd $(DIR_SRC)/binutils-build && cp -v ld/ld-new $(TOOLS_DIR)/bin
 endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure --prefix=/usr \
+		--enable-shared
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install
+	
+	cp -fv ../$(THISAPP)/include/libiberty.h /usr/include
+endif
 	
 	@rm -rf $(DIR_APP) $(DIR_SRC)/binutils-build
 	@$(POSTBUILD)
