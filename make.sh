@@ -211,11 +211,9 @@ ipfire_build() {
   ipfire_make libxml2
   ipfire_make libxslt
   ipfire_make BerkeleyDB
-  ipfire_make mysql
   ipfire_make cyrus-sasl
   ipfire_make openldap
   ipfire_make apache2
-  ipfire_make php
   ipfire_make apache2			PASS=C
   ipfire_make arping
   ipfire_make beep
