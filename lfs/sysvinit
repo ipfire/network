@@ -24,17 +24,14 @@
 
 include Config
 
+PKG_NAME   = sysvinit
 VER        = 2.86
 
-THISAPP    = sysvinit-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-ifeq "$(LFS_PASS)" "install"
-  TARGET     = $(DIR_INFO)/$(THISAPP)-install
-else
-  TARGET     = $(DIR_INFO)/$(THISAPP)
-endif
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -42,30 +39,12 @@ endif
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 7d5d61c026122ab791ac04c8a84db967
-
 install : $(TARGET)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
+download : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -74,16 +53,9 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-ifeq "$(LFS_PASS)" "install"
-	cd $(DIR_APP)/src && sed -i s'/-O2/-Os\ -fomit-frame-pointer/' Makefile
-	cd $(DIR_APP)/src && make killall5
-	cd $(DIR_APP)/src && install -m 0755 killall5 /install/initrd/bin
-else
-	cd $(DIR_APP) && cp src/init.c{,.backup}
-	cd $(DIR_APP) && sed -i 's@Sending processes@& started by init@g' \
-				src/init.c
-	cd $(DIR_APP) && make $(MAKETUNING) -C src 
+	cd $(DIR_APP) && sed -i 's@Sending processes@& configured via /etc/inittab@g' \
+		src/init.c
+	cd $(DIR_APP) && make -j $(PARALLELISM) -C src 
 	cd $(DIR_APP) && make -C src install
-endif
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -37,7 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-install_docs-1.patch
 
 install : $(TARGET)
 
@@ -53,7 +53,26 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	
+ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make PREFIX=$(TOOLS_DIR) install
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-install_docs-1.patch
+	cd $(DIR_APP) && make -f Makefile-libbz2_so
+	cd $(DIR_APP) && make clean
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make PREFIX=/usr install
+	
+	cd $(DIR_APP) && cp -v bzip2-shared /bin/bzip2
+	cd $(DIR_APP) && cp -av libbz2.so* /lib
+	ln -sv ../../lib/libbz2.so.1.0 /usr/lib/libbz2.so
+	rm -v /usr/bin/{bunzip2,bzcat,bzip2}
+	ln -sv bzip2 /bin/bunzip2
+	ln -sv bzip2 /bin/bzcat
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

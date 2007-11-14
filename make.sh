@@ -49,7 +49,7 @@ toolchain_build() {
 	export NATIVEGCC GCCmajor=${NATIVEGCC:0:1} GCCminor=${NATIVEGCC:2:1} GCCrelease=${NATIVEGCC:4:1}
 	
 	# make distcc first so that CCACHE_PREFIX works immediately
-	[ -z $DISTCC_HOSTS ] || toolchain_make distcc
+	[ -z "$DISTCC_HOSTS" ] || toolchain_make distcc
 	toolchain_make ccache
 	
 	toolchain_make binutils											PASS=1
@@ -115,16 +115,15 @@ base_build() {
 	ipfire_make perl
 	ipfire_make readline
 	ipfire_make zlib
-	exiterror "Stop here."
 	ipfire_make autoconf
 	ipfire_make automake
 	ipfire_make bash
 	ipfire_make bzip2
 	ipfire_make diffutils
-	ipfire_make ed
 	ipfire_make file
 	ipfire_make findutils
 	ipfire_make flex
+	ipfire_make grub
 	ipfire_make gawk
 	ipfire_make gettext
 	ipfire_make grep
@@ -134,16 +133,16 @@ base_build() {
 	ipfire_make iproute2
 	ipfire_make kbd
 	ipfire_make less
-	ipfire_make libaal
+	#ipfire_make libaal
 	ipfire_make make
-	ipfire_make man
+	ipfire_make man-db
 	ipfire_make mktemp
-	ipfire_make modutils
-	ipfire_make mtd
-	ipfire_make net-tools
+	ipfire_make module-init-tools
+	#ipfire_make mtd
+	#ipfire_make net-tools
 	ipfire_make patch
 	ipfire_make psmisc
-	ipfire_make reiser4progs
+	#ipfire_make reiser4progs
 	ipfire_make shadow
 	ipfire_make sysklogd
 	ipfire_make sysvinit
@@ -152,7 +151,7 @@ base_build() {
 	ipfire_make udev
 	ipfire_make util-linux
 	ipfire_make vim
-	ipfire_make grub
+	exiterror "Stop here."
 }
 
 ################################################################################

@@ -53,8 +53,19 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && ./configure --prefix=/usr --libexecdir=/usr/lib/findutils \
+		--localstatedir=/var/lib/locate
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+	mv -v /usr/bin/find /bin
+	sed -i -e 's/find:=$${BINDIR}/find:=\/bin/' /usr/bin/updatedb
+endif
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

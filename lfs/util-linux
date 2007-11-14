@@ -53,11 +53,26 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && sed -i 's@/usr/include@$(TOOLS_DIR)/include@g' configure
 	cd $(DIR_APP) && ./configure
 	cd $(DIR_APP) && make -C lib
 	cd $(DIR_APP) && make -C mount mount umount
 	cd $(DIR_APP) && make -C text-utils more
 	cd $(DIR_APP) && cp -v mount/{,u}mount text-utils/more $(TOOLS_DIR)/bin
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && sed -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
+	    -i $$(grep -rl '/etc/adjtime' .)
+	mkdir -pv /var/lib/hwclock
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-cramfs-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-lseek-1.patch
+	cd $(DIR_APP) && ./configure
+	cd $(DIR_APP) && make HAVE_KILL=yes HAVE_SLN=yes -j $(PARALLELISM)
+	cd $(DIR_APP) && make HAVE_KILL=yes HAVE_SLN=yes install
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

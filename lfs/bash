@@ -53,6 +53,8 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	
+ifeq "$(STAGE)" "toolchain" 
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-fixes-6.patch
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR) --without-bash-malloc
 	cd $(DIR_APP) && make -j $(PARALLELISM)
@@ -65,5 +67,18 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 		ln -sf $(TOOLS_DIR)/bin/bash $(LFS)/bin && \
 		ln -sf bash $(LFS)/bin/sh; \
 	fi
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && tar -xvf $(DIR_DL)/$(PKG_NAME)-doc-$(VER).tar.gz
+	cd $(DIR_APP) && sed -i "s|htmldir = @htmldir@|htmldir = /usr/share/doc/$(THISAPP)|" \
+		Makefile.in
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-fixes-6.patch
+	cd $(DIR_APP) && ./configure --prefix=/usr --bindir=/bin \
+		--without-bash-malloc --with-installed-readline
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

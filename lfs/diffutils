@@ -37,7 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-i18n-1.patch
 
 install : $(TARGET)
 
@@ -53,8 +53,20 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	
+ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-i18n-1.patch
+	cd $(DIR_APP) && touch man/diff.1
+	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

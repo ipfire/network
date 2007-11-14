@@ -24,44 +24,27 @@
 
 include Config
 
-VER        = 1.4.2
+PKG_NAME   = inetutils
+VER        = 1.5
 
-THISAPP    = inetutils-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
-
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = df0909a586ddac2b7a0d62795eea4206
+objects = $(DL_FILE) $(THISAPP)-no_server_man_pages-2.patch
 
 install : $(TARGET)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
 
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,13 +53,12 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-gcc4_fixes-3.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-daemon_fixes-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-no_server_man_pages-2.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr --libexecdir=/usr/sbin \
-				--sysconfdir=/etc --localstatedir=/var \
-				--mandir=/usr/share/man --infodir=/usr/share/info \
-				--disable-logger --disable-syslogd
-	cd $(DIR_APP) && make $(MAKETUNING)
+		--sysconfdir=/etc --localstatedir=/var \
+		--disable-ifconfig --disable-logger --disable-syslogd \
+		--disable-whois --disable-servers
+	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	mv -v /usr/bin/ping /bin
 	@rm -rf $(DIR_APP)

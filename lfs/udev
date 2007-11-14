@@ -24,54 +24,28 @@
 
 include Config
 
-VER        = 096
+PKG_NAME   = udev
+VER        = 113
+CONFVER    = 20070731
 
-THISAPP    = udev-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-ifeq "$(LFS_PASS)" "install"
-	TARGET     = $(DIR_INFO)/$(THISAPP)-install
-else
-ifeq "$(KLIBC)" "1"
-	TARGET     = $(DIR_INFO)/$(THISAPP)-klibc
-else
-	TARGET     = $(DIR_INFO)/$(THISAPP)
-endif
-endif
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) udev-config-6.2.tar.bz2
-
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-udev-config-6.2.tar.bz2 = $(DL_FROM)/udev-config-6.2.tar.bz2
-
-$(DL_FILE)_MD5 = f4effef7807ce1dc91ab581686ef197b
-udev-config-6.2.tar.bz2_MD5 = 9ff2667ab0f7bfe8182966ef690078a0
+objects = $(DL_FILE) $(THISAPP)-usb_id-1.patch
 
 install : $(TARGET)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
+download : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -80,68 +54,24 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-ifeq "$(LFS_PASS)" "install"
-	cd $(DIR_APP) && make DESTDIR=/install/initrd sbindir=/sbin udevdir=/dev
-	cd $(DIR_APP) && make DESTDIR=/install/initrd sbindir=/sbin udevdir=/dev install
-	rm -f /install/initrd/sbin/udev* /install/initrd/usr/sbin/udev* /install/initrd/usr/bin/udev*
-	cd $(DIR_APP) && install udevstart udevinfo udevd udevsettle udevtrigger /install/initrd/sbin
-	cd $(DIR_APP) && make $(MAKETUNING) EXTRAS="extras/ata_id extras/cdrom_id extras/edd_id \
-					extras/firmware extras/floppy extras/path_id \
-					extras/scsi_id extras/usb_id extras/volume_id"
-	cd $(DIR_APP) && make DESTDIR=/install/initrd EXTRAS="extras/ata_id extras/cdrom_id extras/edd_id \
-					extras/firmware extras/floppy extras/path_id \
-					extras/scsi_id extras/usb_id extras/volume_id" install
-	cd /install/initrd/usr/share && rm -rf man
-	cd /install/initrd/dev && rm -f console
-	cd /install/initrd/dev && mknod -m 0600 console c 5 1
-	cd /install/initrd/dev && rm -f null
-	cd /install/initrd/dev && mknod -m 0777 null c 1 3
-	cd /install/initrd/dev && rm -f tty*
-	cd /install/initrd/dev && mknod -m 0600 tty1 c 4 1
-	cd /install/initrd/dev && mknod -m 0600 tty2 c 4 2
-	cd /install/initrd/dev && mknod -m 0600 tty3 c 4 3
-	cd /install/initrd/dev && mknod -m 0600 tty4 c 4 4
-	cd /install/initrd/dev && mknod -m 0600 tty5 c 4 5
-	cd /install/initrd/dev && mknod -m 0600 tty6 c 4 6
-else
-ifeq "$(KLIBC)" "1"
-	cd $(DIR_APP) && sed -i "s|USE_LOG = .*|USE_LOG = false|g" Makefile
-	cd $(DIR_APP) && sed -i "s|USE_KLIBC = .*|USE_KLIBC = true|g" Makefile
-
-	cd $(DIR_APP) && make PROGRAMS="udevd udevsettle udevtrigger" EXTRAS="extras/firmware extras/cdrom_id"
-
-	-mkdir -p /lib/initcpio/udev
-	-mkdir -p /lib/initcpio/install
-	-mkdir -p /lib/initcpio/hooks
-	cd $(DIR_APP) && install -m755 udevd /lib/initcpio/udev
-	cd $(DIR_APP) && install -m755 udevtrigger  /lib/initcpio/udev
-	cd $(DIR_APP) && install -m755 udevsettle  /lib/initcpio/udev
-	cd $(DIR_APP) && install -m755 extras/firmware/firmware.sh  /lib/initcpio/udev
-	cd $(DIR_APP) && install -m755 extras/cdrom_id/cdrom_id  /lib/initcpio/udev
+	cd $(DIR_APP) && tar -xvf $(DIR_DL)/$(PKG_NAME)-config-$(CONFVER).tar.bz2
 	
-	install -m755 $(DIR_SRC)/config/mkinitcpio/start_udev /lib/initcpio/udev
-	install -m644 $(DIR_SRC)/config/mkinitcpio/udev.rules  /lib/initcpio/udev
-	install -m755 $(DIR_SRC)/config/mkinitcpio/load-modules.sh /lib/initcpio/udev
-	install -m644 $(DIR_SRC)/config/mkinitcpio/udev_install /lib/initcpio/install/udev
-	install -m644 $(DIR_SRC)/config/mkinitcpio/udev_hook /lib/initcpio/hooks/udev
-else
-	cd $(DIR_APP) && tar jxf $(DIR_DL)/udev-config-6.2.tar.bz2
 	install -dv /lib/{firmware,udev/devices/{pts,shm}}
-	mknod -m0666 /lib/udev/devices/null c 1 3
-	ln -sv /proc/self/fd /lib/udev/devices/fd
-	ln -sv /proc/self/fd/0 /lib/udev/devices/stdin
-	ln -sv /proc/self/fd/1 /lib/udev/devices/stdout
-	ln -sv /proc/self/fd/2 /lib/udev/devices/stderr
-	ln -sv /proc/kcore /lib/udev/devices/core
-	cd $(DIR_APP) && make $(MAKETUNING) EXTRAS="extras/ata_id extras/cdrom_id extras/edd_id \
-					extras/firmware extras/floppy extras/path_id \
-					extras/scsi_id extras/usb_id extras/volume_id"
-	cd $(DIR_APP) && make DESTDIR=/ EXTRAS="extras/ata_id extras/cdrom_id extras/edd_id \
-					extras/firmware extras/floppy extras/path_id \
-					extras/scsi_id extras/usb_id extras/volume_id" install
-	cd $(DIR_APP) && cp -v udev-config-6.2/[0-9]* /etc/udev/rules.d/
-	touch /etc/udev/rules.d/30-persistent-network.rules
-endif
-endif
+	-mknod -m0666 /lib/udev/devices/null c 1 3
+	ln -sfv /proc/self/fd /lib/udev/devices/fd
+	ln -sfv /proc/self/fd/0 /lib/udev/devices/stdin
+	ln -sfv /proc/self/fd/1 /lib/udev/devices/stdout
+	ln -sfv /proc/self/fd/2 /lib/udev/devices/stderr
+	ln -sfv /proc/kcore /lib/udev/devices/core
+	
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-usb_id-1.patch
+	
+	cd $(DIR_APP) && make EXTRAS="`echo extras/*/`" -j $(PARALLELISM)
+	cd $(DIR_APP) && make DESTDIR=/ EXTRAS="`echo extras/*/`" install
+	
+	cd $(DIR_APP) && cp -v etc/udev/rules.d/[0-9]* /etc/udev/rules.d/
+	
+	cd $(DIR_APP)/$(PKG_NAME)-config-$(CONFVER) && make install
+	
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -53,9 +53,19 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	
+ifeq "$(STAGE)" "toolchain" 
 	cd $(DIR_APP)/gettext-tools && ./configure --prefix=$(TOOLS_DIR) --disable-shared
 	cd $(DIR_APP)/gettext-tools && make -C gnulib-lib
 	cd $(DIR_APP)/gettext-tools && make -C src msgfmt
 	cd $(DIR_APP)/gettext-tools && cp -v src/msgfmt $(TOOLS_DIR)/bin
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

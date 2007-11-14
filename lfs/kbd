@@ -24,49 +24,27 @@
 
 include Config
 
+PKG_NAME   = kbd
 VER        = 1.12
 
-THISAPP    = kbd-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-ifeq "$(LFS_PASS)" "install"
-  TARGET     = $(DIR_INFO)/$(THISAPP)-install
-else
-  TARGET     = $(DIR_INFO)/$(THISAPP)
-endif
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
-objects = $(DL_FILE) $(THISAPP)-more-programs-1.patch
 
-$(DL_FILE)                            = $(DL_FROM)/$(DL_FILE)
-$(THISAPP)-more-programs-1.patch      = $(DL_FROM)/kbd-$(VER)-more-programs-1.patch
-
-$(DL_FILE)_MD5                        = 069d1175b4891343b107a8ac2b4a39f6
-$(THISAPP)-more-programs-1.patch_MD5  = dc70180a6bc0afa2b741cd38e3cc2e18
+objects = $(DL_FILE)
 
 install : $(TARGET)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
 
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -75,24 +53,11 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-more-programs-1.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-backspace-1.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-gcc4_fixes-1.patch
-ifeq "$(LFS_PASS)" "install"
-	cd $(DIR_APP) && CFLAGS="-Os -fomit-frame-pointer" ./configure --disable-nls
-	cd $(DIR_APP)/src && make CFLAGS="-Os -fomit-frame-pointer" DATA_DIR=/lib/kbd BINDIR=/bin setfont kbd_mode dumpkeys loadkeys loadunimap showconsolefont
-	cd $(DIR_APP)/src && install -m 0755 setfont loadunimap kbd_mode dumpkeys loadkeys showconsolefont unicode_start unicode_stop /install/initrd/bin
-	mkdir -p /install/initrd/lib/kbd/consolefonts
-	cd $(DIR_APP) && install -m 0644 data/consolefonts/lat0-16.psfu /install/initrd/lib/kbd/consolefonts
-	cd $(DIR_APP) && install -m 0644 data/consolefonts/lat1-16.psfu /install/initrd/lib/kbd/consolefonts
-	cd $(DIR_APP) && install -m 0644 data/consolefonts/lat2-16.psfu /install/initrd/lib/kbd/consolefonts
-	cd $(DIR_APP) && install -m 0644 data/consolefonts/lat5-16.psfu /install/initrd/lib/kbd/consolefonts
-	cd $(DIR_APP) && install -m 0644 data/consolefonts/iso07u-16.psfu /install/initrd/lib/kbd/consolefonts
-else
-	cd $(DIR_APP) && ./configure --datadir=/lib/kbd --disable-nls
-	cd $(DIR_APP) && make $(MAKETUNING)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-backspace-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-gcc4_fixes-1.patch
+	cd $(DIR_APP) && ./configure --datadir=/lib/kbd
+	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	mv -v /usr/bin/{kbd_mode,openvt,setfont} /bin
-endif
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

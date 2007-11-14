@@ -24,43 +24,27 @@
 
 include Config
 
-VER        = 2.59
+PKG_NAME   = autoconf
+VER        = 2.61
 
-THISAPP    = autoconf-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
+
 objects = $(DL_FILE)
-
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 1ee40f7a676b3cfdc0e3f7cd81551b5f
 
 install : $(TARGET)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
+download : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -69,8 +53,8 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr --disable-nls
-	cd $(DIR_APP) && make $(MAKETUNING)
+	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && make
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
