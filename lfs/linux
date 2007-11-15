@@ -36,17 +36,14 @@ CXXFLAGS   =
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+FULLVER    = $(VER)-ipfire
+EXTRAVERSION = $(shell echo "$(FULLVER)" | cut -c 7-)
+
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
-objects =$(DL_FILE) #\
-	mISDN-1_1_5.tar.gz \
-	squashfs3.2-r2.tar.gz \
-	iptables-1.3.5.tar.bz2 \
-	patch-o-matic-ng-20061210.tar.bz2 \
-	netfilter-layer7-v2.9.tar.gz \
-	patch-2.6.16-nath323-1.3.bz2 \
-	openswan-2.4.9.tar.gz
+objects =$(DL_FILE) # netfilter-layer7-v2.9.tar.gz
 
 install : $(TARGET)
 
@@ -55,14 +52,13 @@ download :$(patsubst %,$(DIR_DL)/%,$(objects))
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
 
-
 ###############################################################################
 # Installation Details
 ###############################################################################
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) $(DIR_SRC)/linux && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && make mrproper
@@ -77,6 +73,33 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make headers_check
 	cd $(DIR_APP) && make INSTALL_HDR_PATH=dest headers_install
 	cd $(DIR_APP) && cp -rv dest/include/* /usr/include
+endif
+
+ifeq "$(STAGE)" "ipfire"
+	# Reiser4
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/reiser4-2.6.23-2.patch
+	
+	# ip_conntrack permissions from 440 to 444
+	#cd $(DIR_APP) && patch -Np0 < $(DIR_PATCHES)/ip_conntrack_standalone-patch-for-ipfire.patch
+	
+	cd $(DIR_APP) && make mrproper
+	
+	cp $(DIR_SRC)/config/kernel/kernel.config.$(MACHINE) $(DIR_APP)/.config
+	cd $(DIR_APP) && sed -i -e "s/EXTRAVERSION\ =.*/EXTRAVERSION\ =\ $(EXTRAVERSION)/" \
+		Makefile
+	
+	cd $(DIR_APP) && make oldconfig
+	
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make modules_install
+	
+	cd $(DIR_APP) && cp -v arch/i386/boot/bzImage /boot/ipfirekernel-$(FULLVER)
+	cd $(DIR_APP) && cp -v System.map /boot/System.map-$(FULLVER)
+	
+	ln -svf ipfirekernel-$(FULLVER) /boot/ipfirekernel
+	ln -svf System.map-$(FULLVER) /boot/System.map
+	
+	cd $(DIR_APP) && install -m 755 usr/gen_init_cpio /sbin/
 endif
 
 	@rm -rf $(DIR_APP)

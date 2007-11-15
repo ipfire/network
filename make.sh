@@ -133,16 +133,12 @@ base_build() {
 	ipfire_make iproute2
 	ipfire_make kbd
 	ipfire_make less
-	#ipfire_make libaal
 	ipfire_make make
 	ipfire_make man-db
 	ipfire_make mktemp
 	ipfire_make module-init-tools
-	#ipfire_make mtd
-	#ipfire_make net-tools
 	ipfire_make patch
 	ipfire_make psmisc
-	#ipfire_make reiser4progs
 	ipfire_make shadow
 	ipfire_make sysklogd
 	ipfire_make sysvinit
@@ -151,7 +147,6 @@ base_build() {
 	ipfire_make udev
 	ipfire_make util-linux
 	ipfire_make vim
-	exiterror "Stop here."
 }
 
 ################################################################################
@@ -165,6 +160,8 @@ ipfire_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.ipfire.log"
 	export LOGFILE
 
+	ipfire_make linux
+	exiterror "Stop here."
   ipfire_make configroot
   ipfire_make backup
   ipfire_make dhcp
