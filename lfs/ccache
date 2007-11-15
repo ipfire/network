@@ -54,7 +54,7 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -p0 < $(DIR_SRC)/src/patches/$(THISAPP).patch
+	cd $(DIR_APP) && patch -p0 < $(DIR_PATCHES)/$(THISAPP).patch
 	cd $(DIR_APP) && CFLAGS="-O2 -static" ./configure --prefix=$(PREFIX)
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
