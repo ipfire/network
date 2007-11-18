@@ -59,6 +59,7 @@ DIR_SRC = $(LFS)/usr/src
 DIR_DL      = $(LFS_BASEDIR)/cache
 DIR_CONF    = $(LFS_BASEDIR)/config
 DIR_INFO    = $(LFS_BASEDIR)/log_$(MACHINE)
+DIR_TOOLS   = $(LFS_BASEDIR)/tools
 DIR_TMP     = /tmp
 DIR_PATCHES = $(DIR_DL)
 
@@ -154,10 +155,8 @@ endef
 endif
 
 define LOAD
-	echo -e "$(MESSAGE)Download: $($(notdir $@))"
-	wget -T 60 -t 1 -c $($(notdir $@)) $($(notdir $@)).md5 -P $(DIR_TMP)
-	[ `awk '{ print $$1 }' $(DIR_TMP)/$(notdir $@).md5` = `md5sum $(DIR_TMP)/$(notdir $@) | awk '{ print $$1 }'` ] # detect page not found answer
-	mv $(DIR_TMP)/$(notdir $@) $(DIR_TMP)/$(notdir $@).md5 $(DIR_DL)
+	BASEDIR=$(LFS_BASEDIR) DIR_TMP=$(DIR_TMP) DIR_DL=$(DIR_DL) \
+		sh $(DIR_TOOLS)/downloader $(URL_IPFIRE) $(notdir $@)
 endef
 
 define PAK
