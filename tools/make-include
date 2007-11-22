@@ -26,12 +26,11 @@
 
 CONFIG_ROOT=/etc/ipfire					# Configuration rootdir
 NICE=10													# Nice level
-PARALLELISM=3										# Parallelism flag
-MAX_RETRIES=1										# prefetch/check loop
 KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }'`
 MACHINE=`uname -m`
 SVN_REVISION=`svn info | grep Revision | cut -c 11-`
 
+PARALLELISM=$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))	# Parallelism flag
 DISTCC_HOSTS=localhost
 
 PWD=`pwd`

@@ -1,0 +1,53 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+# This is a sample config. Copy this file to .config and adjust the values    #
+# below to your own needs.                                                    #
+###############################################################################
+
+###############################################################################                   
+# Niceness                                                                    #
+###############################################################################
+# NICE is the value that indicates the priority to the process it runs with.  #
+# The higher the niceness the less is the priority of the whole task.         #
+# Default is 10.                                                              #
+###############################################################################
+
+#NICE=10
+
+###############################################################################                   
+# Jobs                                                                        #
+###############################################################################
+# If you have got more than one processor you can advice the gcc to run more  #
+# than one job a time. You also may want to adjust this when using distcc.    #
+# Default is count of cpus twice + 1.                                         #
+###############################################################################
+
+#PARALLELISM=3
+
+###############################################################################                   
+# Distcc Hosts                                                                #
+###############################################################################
+# Distcc lets you run some instances of gcc on other dedicated machines.      #
+# In this list you add the adresses of the hosts. Note that there is no dns   #
+# available in the chroot.                                                    #
+# Default is compling on localhost only.                                      #
+###############################################################################
+
+#DISTCC_HOSTS="localhost"
