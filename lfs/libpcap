@@ -24,13 +24,14 @@
 
 include Config
 
-VER        = 0.8.3
+PKG_NAME   = libpcap
+VER        = 0.9.6
 
-THISAPP    = libpcap-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -38,30 +39,12 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
+install: $(TARGET)
 
-$(DL_FILE)_MD5 = 56a9d4615d8354fcfe8cff8c8443c77b
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
+download: $(patsubst %,$(DIR_DL)/%,$(objects))
 
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,11 +53,8 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/libpcap-0.8.3-shared.patch
-	cd $(DIR_APP) && patch -Np0 < $(DIR_SRC)/src/patches/libpcap-0.8.3-ppp.patch
-	cd $(DIR_APP) && ./configure --prefix=/usr --disable-nls
-	cd $(DIR_APP) && make
+	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && make -j $(PRALLELISM)
 	cd $(DIR_APP) && make install
-	cd $(DIR_APP) && cp -vf pcap-int.h /usr/include
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

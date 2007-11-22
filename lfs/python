@@ -24,13 +24,14 @@
 
 include Config
 
-VER        = 2.4.3
+PKG_NAME   = Python
+VER        = 2.5.1
 
-THISAPP    = Python-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -38,30 +39,12 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 141c683447d5e76be1d2bd4829574f02
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,9 +53,8 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-gdbm-1.patch
-	cd $(DIR_APP) && OPT="$(CFLAGS)" ./configure --prefix=/usr --enable-shared --disable-nls
-	cd $(DIR_APP) && make $(MAKETUNING)
+	cd $(DIR_APP) && OPT="$(CFLAGS)" ./configure --prefix=/usr --enable-shared
+	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

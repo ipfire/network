@@ -24,13 +24,14 @@
 
 include Config
 
-VER        = 0.9.8g
+PKG_NAME   = openssl
+VER        = 0.9.8e
 
-THISAPP    = openssl-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -38,30 +39,12 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = acf70a16359bf3658bdfb74bda1c4419
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,13 +53,13 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	@rm -rf /etc/ssl
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix_manpages-1.patch
 	cd $(DIR_APP) && sed -i -e 's/mcpu/march/' config
-	cd $(DIR_APP) && sed -i -e 's/-O3/-O2/' -e 's/-march=i486/-march=i586/' Configure
-	cd $(DIR_APP) && ./config --openssldir=/etc/ssl --prefix=/usr shared
-	cd $(DIR_APP) && make MANDIR=/usr/share/man
+	cd $(DIR_APP) && sed -i -e 's/-O3/-O2/' -e 's/-march=i486/-march=$(MACHINE)/' Configure
+	cd $(DIR_APP) && ./config --prefix=/usr --openssldir=/etc/ssl shared
+	cd $(DIR_APP) && make MANDIR=/usr/share/man #-j $(PARALLELISM)
 	cd $(DIR_APP) && make MANDIR=/usr/share/man install
-	rm -rf /etc/ssl/lib
+	cd $(DIR_APP) && cp -v -r certs /etc/ssl
 	install -m 0644 $(DIR_SRC)/config/ssl/openssl.cnf /etc/ssl
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

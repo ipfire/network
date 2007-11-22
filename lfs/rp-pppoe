@@ -24,44 +24,27 @@
 
 include Config
 
+PKG_NAME   = rp-pppoe
 VER        = 3.8
 
-THISAPP    = rp-pppoe-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-iproute2-1.patch
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
+install: $(TARGET)
 
-$(DL_FILE)_MD5 = 0e32760f498f9cde44081ee6aafc823b
+download: $(patsubst %,$(DIR_DL)/%,$(objects))
 
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
+$(patsubst %,$(DIR_DL)/%,$(objects)):
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,8 +53,9 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP)/src && ./configure --disable-nls
-	cd $(DIR_APP)/src && make $(MAKETUNING)
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-iproute2-1.patch
+	cd $(DIR_APP)/src && ./configure
+	cd $(DIR_APP)/src && make -j $(PARALLELISM)
 	cd $(DIR_APP)/src && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -24,13 +24,14 @@
 
 include Config
 
-VER        = 1.4.5
+PKG_NAME   = gnupg
+VER        = 1.4.7
 
-THISAPP    = gnupg-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -38,30 +39,12 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 811525965b4c0987e6418a7729a6444d
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,9 +53,9 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	rm -rf /home/nobody/.gnupg /root/.gnupg
-	cd $(DIR_APP) && ./configure --prefix=/usr --libexecdir=/usr/lib --disable-nls
-	cd $(DIR_APP) && make $(MAKETUNING)
+	@rm -rf /home/nobody/.gnupg /root/.gnupg
+	cd $(DIR_APP) && ./configure --prefix=/usr --libexecdir=/usr/lib
+	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	chmod -v 4755 /usr/bin/gpg
 	@rm -rf $(DIR_APP)

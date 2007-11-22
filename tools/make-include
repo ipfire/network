@@ -24,7 +24,7 @@
 #
 ###############################################################################
 
-CONFIG_ROOT=/var/ipfire					# Configuration rootdir
+CONFIG_ROOT=/etc/ipfire					# Configuration rootdir
 NICE=10													# Nice level
 PARALLELISM=3										# Parallelism flag
 MAX_RETRIES=1										# prefetch/check loop
@@ -198,39 +198,26 @@ beautify()
 	# Commands: build_stage, make_pkg, message, result
 	case "$1" in
 		message)
+			MESSAGE="$3"
 			case "$2" in
 				DONE)
-					echo -ne "${SET_RESULT_COL}[${DONE} DONE ${NORMAL}]\n"
+					echo -ne "${BOLD}${MESSAGE}${NORMAL}${SET_RESULT_COL}[${DONE} DONE ${NORMAL}]\n"
 					;;
 				WARN)
-					echo -ne "${WARN}${3}${NORMAL}${SET_RESULT_COL}[${WARN} WARN ${NORMAL}]\n"
+					echo -ne "${WARN}${MESSAGE}${NORMAL}${SET_RESULT_COL}[${WARN} WARN ${NORMAL}]\n"
 					;;	
 				FAIL)
-					echo -ne "${SET_RESULT_COL}[${FAIL} FAIL ${NORMAL}]\n"
+					echo -ne "${BOLD}${MESSAGE}${NORMAL}${SET_RESULT_COL}[${FAIL} FAIL ${NORMAL}]\n"
 					;;
 				SKIP)
-					echo -ne "${SET_RESULT_COL}[${SKIP} SKIP ${NORMAL}]\n"
+					echo -ne "${BOLD}${MESSAGE}${NORMAL}${SET_RESULT_COL}[${SKIP} SKIP ${NORMAL}]\n"
 					;;
 			esac
 			;;
 		build_stage)
 			MESSAGE=$2
-			if [ "$STAGE_TIME_START" ]; then
-				LAST_STAGE_TIME=$[ `date +%s` - $STAGE_TIME_START ]
-			fi
-			STAGE_TIME_START=`date +%s`
-			echo -ne "${BOLD}*** ${MESSAGE}${NORMAL}"
-			if [ "$LAST_STAGE_TIME" ]; then
-				echo -ne "${DONE} (Last stage took $LAST_STAGE_TIME secs)${NORMAL}"
-			fi
-			echo -ne "${BOLD}${SET_VER_COL}      version${SET_OPT_COL} options${SET_TIME_COL} time (sec)${SET_RESULT_COL} status${NORMAL}\n"
-			;;
-		build_start)
-			BUILD_TIME_START=`date +%s`
-			;;
-		build_end)
-			BUILD_TIME_END=`date +%s`
-			echo -ne "${DONE}***Build is finished now and took $[ $BUILD_TIME_END - $BUILD_TIME_START ] secs!${NORMAL}\n"
+			echo -ne "${BOLD}*** ${MESSAGE}${SET_VER_COL}      version${SET_OPT_COL} options"
+			echo -ne "${SET_TIME_COL} time (sec)${SET_RESULT_COL} status${NORMAL}\n"
 			;;
 		make_pkg)
 			echo "$2" | while read PKG_VER PROGRAM OPTIONS

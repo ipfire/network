@@ -29,7 +29,6 @@ VER        = 2.6.23.1
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 CFLAGS     =
 CXXFLAGS   =
@@ -39,11 +38,14 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 FULLVER    = $(VER)-ipfire
 EXTRAVERSION = $(shell echo "$(FULLVER)" | cut -c 7-)
 
+IPP2P      = ipp2p-0.8.2-ipfire-1
+L7VER      = 2.15
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
-objects =$(DL_FILE) # netfilter-layer7-v2.9.tar.gz
+
+objects = $(DL_FILE) $(IPP2P).tar.bz2 layer7-kernel-$(L7VER).patch
 
 install : $(TARGET)
 
@@ -82,6 +84,8 @@ ifeq "$(STAGE)" "ipfire"
 	# ip_conntrack permissions from 440 to 444
 	#cd $(DIR_APP) && patch -Np0 < $(DIR_PATCHES)/ip_conntrack_standalone-patch-for-ipfire.patch
 	
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/layer7-kernel-$(L7VER).patch
+	
 	cd $(DIR_APP) && make mrproper
 	
 	cp $(DIR_SRC)/config/kernel/kernel.config.$(MACHINE) $(DIR_APP)/.config
@@ -100,6 +104,15 @@ ifeq "$(STAGE)" "ipfire"
 	ln -svf System.map-$(FULLVER) /boot/System.map
 	
 	cd $(DIR_APP) && install -m 755 usr/gen_init_cpio /sbin/
+	
+	### Building other modules
+	#
+	## IPP2P
+	#cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(IPP2P).tar.bz2
+	#cd $(DIR_SRC)/$(IPP2P) && KERNEL_SRC=$(DIR_APP) make ipt_ipp2p.ko
+	#cd $(DIR_SRC)/$(IPP2P) && cp -f ipt_ipp2p.ko \
+	#	/lib/modules/$(KVER)-ipfire/kernel/net/ipv4/netfilter
+	#rm -rf $(DIR_SRC)/$(IPP2P)	
 endif
 
 	@rm -rf $(DIR_APP)

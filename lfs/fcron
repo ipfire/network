@@ -24,13 +24,14 @@
 
 include Config
 
-VER        = 3.0.1
+PKG_NAME   = fcron
+VER        = 3.0.3
 
-THISAPP    = fcron-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).src.tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -38,30 +39,12 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 8e5dcb3a646c11294294895954ef0a48
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,29 +53,15 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure	\
-	    --prefix=/usr			\
-	    --disable-nls			\
-	    --without-sendmail		\
-	    --with-spooldir=/var/spool/cron 	\
-	    --with-fifodir=/var/run	 	\
-	    --with-username=cron		\
-	    --with-groupname=cron		\
-	    --with-run-non-privileged=no	\
-	    --with-fcrondyn=no		\
-	    --with-sysfcrontab=no		\
-	    --with-boot-install=no		\
-	    --with-pam=no			\
-	    --with-selinux=no
-	cd $(DIR_APP) && make $(MAKETUNING)
+	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc \
+		--localstatedir=/var --without-sendmail --with-boot-install=no
+		
+	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
-	echo "root" > /etc/fcron.allow
-	echo "all"  > /etc/fcron.deny
-	chmod u-s /usr/bin/fcrontab /usr/bin/fcronsighup
+	
 	mkdir -p /etc/fcron.minutely /etc/fcron.cyclic /etc/fcron.hourly \
 		/etc/fcron.daily /etc/fcron.weekly /etc/fcron.monthly
-	cp -vf $(DIR_CONF)/cron/minutely/* /etc/fcron.minutely
-	chmod -v 755 /etc/fcron.minutely/*
-	/usr/bin/fcrontab $(DIR_SRC)/config/cron/crontab
+		
+	fcrontab $(DIR_CONFIG)/$(PKG_NAME)/crontab
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -144,7 +144,7 @@ base_build() {
 	ipfire_make sysvinit
 	ipfire_make tar
 	ipfire_make texinfo
-	ipfire_make udev
+	ipfire_make udev					## NEED TO INSTALL CONFIG
 	ipfire_make util-linux
 	ipfire_make vim
 }
@@ -159,169 +159,177 @@ ipfire_build() {
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.ipfire.log"
 	export LOGFILE
-
+	
+	### Building the configuration dirs and files
+	#
+	ipfire_make stage3
+	
+	### Building the kernel stuff
+	#
 	ipfire_make linux
-	exiterror "Stop here."
-  ipfire_make configroot
-  ipfire_make backup
-  ipfire_make dhcp
-  ipfire_make dhcpcd
-  ipfire_make libusb
-  ipfire_make libpcap
-  ipfire_make ppp
-  ipfire_make rp-pppoe
-  ipfire_make unzip
-  ipfire_make linux			SMP=1
-  ipfire_make ipp2p			SMP=1
-  ipfire_make zaptel			SMP=1
-  ipfire_make linux
-  ipfire_make ipp2p
-  ipfire_make zaptel
-  ipfire_make pkg-config
-  ipfire_make linux-atm
-  ipfire_make cpio
-  ipfire_make klibc
-  ipfire_make mkinitcpio
-  ipfire_make udev				KLIBC=1
-  ipfire_make expat
-  ipfire_make gdbm
-  ipfire_make gmp
-  ipfire_make pam
-  ipfire_make openssl
-  ipfire_make curl
-  ipfire_make python
-  ipfire_make libnet
-  ipfire_make libidn
-  ipfire_make libjpeg
-  ipfire_make libpng
-  ipfire_make libtiff
-  ipfire_make libart
-  ipfire_make freetype
-  ipfire_make gd
-  ipfire_make popt
+	#ipfire_make zaptel
+	
+	### Building some network stuff
+	#
+	ipfire_make libpcap
+	ipfire_make linux-atm
+	ipfire_make ppp
+	ipfire_make rp-pppoe
+	ipfire_make dhcp
+	ipfire_make iptables
+	ipfire_make dnsmasq
+	#ipfire_make l7-protocols
+	#ipfire_make iptstate
+	#ipfire_make bridge-utils
+	#ipfire_make vlan
+	
+	### Building some general stuff
+	#
+	ipfire_make openssl
+	ipfire_make pam																			PASS=1
+	ipfire_make shadow
+	ipfire_make pam																			PASS=2
+	
+	ipfire_make libidn		### Do we need this?
   ipfire_make pcre
-  ipfire_make slang
-  ipfire_make newt
-  ipfire_make libcap
-  ipfire_make pciutils
-  ipfire_make usbutils
-  ipfire_make libxml2
-  ipfire_make libxslt
-  ipfire_make BerkeleyDB
-  ipfire_make cyrus-sasl
+	ipfire_make popt
+	ipfire_make python
+	ipfire_make libxml2
+	ipfire_make libxslt
+	ipfire_make slang
+	ipfire_make newt
+	ipfire_make cyrus-sasl
   ipfire_make openldap
-  ipfire_make apache2
-  ipfire_make apache2			PASS=C
-  ipfire_make arping
-  ipfire_make beep
+  ipfire_make sqlite
+	ipfire_make curl
+	ipfire_make libusb
+	ipfire_make gnupg
+	ipfire_make sudo
+	#ipfire_make libjpeg	### Do we need this?
+	ipfire_make libpng
+	ipfire_make libtiff
+	ipfire_make libart
+	ipfire_make freetype
+	ipfire_make lzo
+	#ipfire_make whatmask
+	#ipfire_make lsof
+	#ipfire_make br2684ctl
+	#ipfire_make etherwake
+	#ipfire_make htop
+	#ipfire_make beep
+	
+	### Building filesystem stuff
+	#
+	ipfire_make reiserfsprogs
+	ipfire_make libaal
+	ipfire_make reiser4progs
+	#ipfire_make xfsprogs	### This is missing.
+		
+	### Building hardware utils
+	#
+	ipfire_make pciutils
+	ipfire_make usbutils
+	ipfire_make hdparm
+	ipfire_make kudzu
+	#ipfire_make smartmontools
+
+	### Building some important tools
+	#
+	ipfire_make fcron
+	ipfire_make which
+	ipfire_make nano
+	ipfire_make screen
+	ipfire_make rrdtool
+	ipfire_make ntp			### Needs config.
+	ipfire_make openssh
+	#ipfire_make ez-ipupdate
+	#ipfire_make noip_updater
+	#ipfire_make apache2			### Marked to be removed
+	#ipfire_make apache2			PASS=C
+	
+	### Programs that are still for discussion
+	#   package or in the standard system
+	#
+	## NTFS
+	#ipfire_make fuse
+  #ipfire_make ntfs-3g
+  #
+  ## Net tools
+  #ipfire_make bwm-ng
+  #ipfire_make openvpn
+  #
+  ## UPNP
+  #ipfire_make libupnp
+  #ipfire_make linux-igd
+  
+  #ipfire_make pakfire
+  #ipfire_make initscripts
+	
+	exiterror "Stop here."
+		
+  ipfire_make backup
+  ipfire_make unzip
+  ipfire_make pkg-config
+  ipfire_make cpio
+  ipfire_make expat
+  ipfire_make gmp
+  ipfire_make gd
+  ipfire_make libcap
+
   ipfire_make bind
   ipfire_make cdrtools
-  ipfire_make dnsmasq
   ipfire_make dosfstools
-  ipfire_make squashfstools
-  ipfire_make reiserfsprogs
   ipfire_make sysfsutils
-  ipfire_make fuse
-  ipfire_make ntfs-3g
-  ipfire_make ethtool
-  ipfire_make ez-ipupdate
-  ipfire_make fcron
-  ipfire_make perl-GD
-  ipfire_make GD-Graph
-  ipfire_make GD-TextUtil
-  ipfire_make gnupg
-  ipfire_make hdparm
-  ipfire_make sdparm
   ipfire_make mtools
-  ipfire_make initscripts
-  ipfire_make whatmask
-  ipfire_make iptables
-  ipfire_make libupnp
-  ipfire_make ipp2p			IPT=1
-  ipfire_make linux-igd
-  ipfire_make ipac-ng
-  ipfire_make ipaddr
-  ipfire_make iptstate
-  ipfire_make iputils
-  ipfire_make l7-protocols
   ipfire_make mISDN
-  ipfire_make hwdata
-  ipfire_make kudzu
   ipfire_make logrotate
   ipfire_make logwatch
-  ipfire_make misc-progs
-  ipfire_make nano
   ipfire_make nasm
-  ipfire_make URI
-  ipfire_make HTML-Tagset
-  ipfire_make HTML-Parser
-  ipfire_make Compress-Zlib
-  ipfire_make Digest
-  ipfire_make Digest-SHA1
-  ipfire_make Digest-HMAC
-  ipfire_make libwww-perl
-  ipfire_make Net-DNS
-  ipfire_make Net-IPv4Addr
-  ipfire_make Net_SSLeay
-  ipfire_make IO-Stringy
-  ipfire_make Unix-Syslog
-  ipfire_make Mail-Tools
-  ipfire_make MIME-Tools
-  ipfire_make Net-Server
-  ipfire_make Convert-TNEF
-  ipfire_make Convert-UUlib
-  ipfire_make Archive-Tar
-  ipfire_make Archive-Zip
-  ipfire_make Text-Tabs+Wrap
-  ipfire_make Locale-Country
-  ipfire_make XML-Parser
   ipfire_make glib
-  ipfire_make GeoIP
-  ipfire_make fwhits
-  ipfire_make noip_updater
-  ipfire_make ntp
-  ipfire_make openssh
-  ipfire_make openswan
-  ipfire_make rrdtool
-  ipfire_make setserial
-  ipfire_make setup
-  ipfire_make snort
-  ipfire_make oinkmaster
-  ipfire_make squid
-  ipfire_make squid-graph
-  ipfire_make squidguard
-  ipfire_make calamaris
-  ipfire_make tcpdump
-  ipfire_make traceroute
-  ipfire_make vlan
+  
   ipfire_make wireless
   ipfire_make libsafe
-  ipfire_make pakfire
-  ipfire_make java
+}
+
+################################################################################
+# This builds the entire stage "misc"                                          #
+################################################################################
+misc_build() {
+
+	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	STAGE_ORDER=04
+	STAGE=misc
+
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.misc.log"
+	export LOGFILE
+	
+	ipfire_make stage4
+	
+	#ipfire_make snort
+	#ipfire_make oinkmaster
+	#ipfire_make squid
+	#ipfire_make squid-graph
+	#ipfire_make squidguard
+	#ipfire_make calamaris
+	ipfire_make tcpdump
+	ipfire_make traceroute
+	ipfire_make vsftpd
+	ipfire_make centerim
+	ipfire_make ncftp
+	ipfire_make tripwire
+	ipfire_make java
   ipfire_make spandsp
-  ipfire_make lzo
-  ipfire_make openvpn
-  ipfire_make pammysql
   ipfire_make cups
   ipfire_make ghostscript
   ipfire_make foomatic
   ipfire_make hplip
   ipfire_make samba
-  ipfire_make sudo
   ipfire_make mc
   ipfire_make wget
-  ipfire_make bridge-utils
-  ipfire_make screen
-  ipfire_make hddtemp
-  ipfire_make smartmontools
-  ipfire_make htop
   ipfire_make postfix
   ipfire_make fetchmail
   ipfire_make cyrus-imapd
-  ipfire_make openmailadmin
   ipfire_make clamav
-  ipfire_make spamassassin
-  ipfire_make amavisd
   ipfire_make alsa
   ipfire_make mpg123
   ipfire_make mpfire
@@ -351,36 +359,9 @@ ipfire_build() {
   ipfire_make rtorrent
   ipfire_make ipfireseeder
   ipfire_make rsync
-  ipfire_make tcpwrapper
-  ipfire_make portmap
   ipfire_make nfs
   ipfire_make nmap
-  ipfire_make mbmon
-  ipfire_make ncftp
-  ipfire_make etherwake
-  ipfire_make bwm-ng
-  ipfire_make tripwire
-  ipfire_make sysstat
-  ipfire_make vsftpd
-  ipfire_make which
-  ipfire_make lsof
-  ipfire_make centerim
-  ipfire_make br2684ctl
-}
-
-################################################################################
-# This builds the entire stage "misc"                                          #
-################################################################################
-misc_build() {
-
-	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
-	STAGE_ORDER=04
-	STAGE=misc
-
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.misc.log"
-	export LOGFILE
 	
-	ipfire_make stage4
 	ipfire_make cdrtools
 	ipfire_make syslinux
 	ipfire_make parted
@@ -399,6 +380,10 @@ installer_build() {
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.installer.log"
 	export LOGFILE
+	
+	#ipfire_make klibc  ##### Maybe this will be in the installer
+  #ipfire_make mkinitcpio
+  #ipfire_make udev																	KLIBC=1
 
   ipfire_make as86
   ipfire_make mbr

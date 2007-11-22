@@ -24,17 +24,14 @@
 
 include Config
 
+PKG_NAME   = reiser4progs
 VER        = 1.0.5
 
-THISAPP    = reiser4progs-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-ifeq "$(LFS_PASS)" "install"
-	TARGET = $(DIR_INFO)/$(THISAPP)-install
-else
-	TARGET = $(DIR_INFO)/$(THISAPP)
-endif
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -42,30 +39,12 @@ endif
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = b0756831e16b2395d5f443526d640792
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -74,18 +53,8 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-ifeq "$(LFS_PASS)" "install"
-	cd $(DIR_APP) && ./configure --prefix=/opt/$(MACHINE)-uClibc \
-			--with-libaal=/opt/$(MACHINE)-uClibc \
-			--without-readline --disable-shared \
-			--sbindir=/install/initrd/sbin
-	cd $(DIR_APP) && make $(MAKETUNING)
+	cd $(DIR_APP) && ./configure --prefix=/usr --sbindir=/sbin
+	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
-	-rm -f /install/initrd/{debugfs.,measurefs.,make_}reiser4
-else
-	cd $(DIR_APP) && ./configure --prefix=/usr --sbindir=/sbin --enable-static
-	cd $(DIR_APP) && make $(MAKETUNING)
-	cd $(DIR_APP) && make install
-endif
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

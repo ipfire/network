@@ -24,8 +24,8 @@
 
 include Config
 
-PKG_NAME   = libaal
-VER        = 1.0.5
+PKG_NAME   = sqlite
+VER        = 3.5.2
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -53,8 +53,9 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr
-	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install
-	@rm -rf $(DIR_APP)
+	-mkdir $(DIR_SRC)/sqlite-build
+	cd $(DIR_SRC)/sqlite-build && $(DIR_APP)/configure --prefix=/usr --disable-tcl
+	cd $(DIR_SRC)/sqlite-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/sqlite-build && make install
+	@rm -rf $(DIR_APP) $(DIR_SRC)/sqlite-build
 	@$(POSTBUILD)

@@ -24,22 +24,14 @@
 
 include Config
 
-VER        = 2.1.21
+PKG_NAME   = cyrus-sasl
+VER        = 2.1.22
 
-THISAPP    = cyrus-sasl-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-PROG       = cyrus-sasl
-PAK_VER    = 1
 
-ifeq "$(PASS)" ""
-	TARGET     = $(DIR_INFO)/$(THISAPP)
-else
-	TARGET     = $(DIR_INFO)/$(THISAPP)-ldap
-endif
-
-DEPS       = ""
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -47,33 +39,12 @@ DEPS       = ""
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = dde02db234dea892bee298390890502e
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-dist :
-	@$(PAK)
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -82,28 +53,12 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && sed -i '/sasl_global/s/^static //' lib/client.c
-	cd $(DIR_APP) && sed -i 's/cat8/man8/' saslauthd/Makefile.in
-
-ifeq "$(PASS)" ""
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc \
 		            --with-dbpath=/var/lib/sasl/sasldb2 \
 		            --with-saslauthd=/var/run/saslauthd
-	cd $(DIR_APP) && make
+	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
-	install -v -m700 -d /var/lib/sasl
-	-mkdir /var/run/saslauthd
-	cp -vf $(DIR_SRC)/config/cyrus-sasl/smtpd.conf /usr/lib/sasl2/
-else
-	# WITH LDAP SUPPORT AT THIS TIME
-	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc \
-		            --with-dbpath=/var/lib/sasl/sasldb2 \
-		            --with-saslauthd=/var/run \
-			     --with-ldap --enable-ldapdb
-	cd $(DIR_APP) && make -C include
-	cd $(DIR_APP) && make -C sasldb
-	cd $(DIR_APP) && make -C plugins
-	cd $(DIR_APP) && libtool --mode=install install plugins/libldapdb.la /usr/lib/sasl2
-endif
+	install -v -m700 -d /var/lib/sasl /var/run/saslauthd
+	cp -vf $(DIR_CONFIG)/cyrus-sasl/smtpd.conf /usr/lib/sasl2/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

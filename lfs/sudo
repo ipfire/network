@@ -24,13 +24,14 @@
 
 include Config
 
+PKG_NAME   = sudo
 VER        = 1.6.8p12
 
-THISAPP    = sudo-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -38,30 +39,12 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = b29893c06192df6230dd5f340f3badf5
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,11 +53,12 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-envvar_fix-1.patch
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-envvar_fix-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr --libexecdir=/usr/lib \
 			    --enable-noargs-shell --with-ignore-dot --with-all-insults \
-			    --enable-shell-sets-home && \
-	cd $(DIR_APP) && make $(MAKETUNING)
+			    --enable-shell-sets-home
+	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+	cp -vf $(DIR_CONF)/$(PKG_NAME)/sudoers /etc/sudoers
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

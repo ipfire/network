@@ -24,48 +24,27 @@
 
 include Config
 
+PKG_NAME   = pciutils
 VER        = 2.2.3
 
-THISAPP    = pciutils-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-ifeq "$(LFS_PASS)" "install"
-  TARGET     = $(DIR_INFO)/$(THISAPP)-install
-else
-  TARGET     = $(DIR_INFO)/$(THISAPP)
-endif
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-sata.patch $(THISAPP)-devicetype.patch
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 86cc20eaa0360587497a8105d33e57fc
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -75,26 +54,12 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -i 's/null ;/null 2>\&1 ;/' update-pciids.sh
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/pciutils-strip.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/pciutils-2.1.10-scan.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/pciutils-havepread.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/pciutils-devicetype.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/pciutils-2.2.1-idpath.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/pciutils-2.1.99-gcc4.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/pciutils-2.2.3-multilib.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/pciutils-2.2.3-sata.patch
-ifeq "$(LFS_PASS)" "install"
-	cd $(DIR_APP)/lib && CFLAGS="-Os -fomit-frame-pointer" ./configure
-	cd $(DIR_APP)/lib && CFLAGS="-Os -fomit-frame-pointer" make $(MAKETUNING)
-	-mkdir -p /opt/$(MACHINE)-uClibc/include/pci
-	cd $(DIR_APP) && install -m 0644 lib/libpci.a /opt/$(MACHINE)-uClibc/lib
-	cd $(DIR_APP) && install -m 0644 lib/*.h /opt/$(MACHINE)-uClibc/include/pci
-else
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-sata.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-devicetype.patch
 	cd $(DIR_APP) && make PREFIX=/usr $(MAKETUNING)
 	cd $(DIR_APP) && make PREFIX=/usr install
-	cd $(DIR_APP) && install -v -m 755 -d /usr/include/pci
+	install -v -m 755 -d /usr/include/pci
 	cd $(DIR_APP) && install -v -m 644 lib/libpci.a /usr/lib
 	cd $(DIR_APP) && install -v -m 644 lib/*.h /usr/include/pci
-endif
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

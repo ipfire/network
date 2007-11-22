@@ -24,17 +24,14 @@
 
 include Config
 
-VER        = 1.2.5
+PKG_NAME   = nano
+VER        = 2.0.6
 
-THISAPP    = nano-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
-PROG       = nano
-PAK_VER    = 1
 
-DEPS       = ""
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -42,33 +39,12 @@ DEPS       = ""
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = f2b3efbf1cf356d736740d531b6b22c4
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-dist: 
-	@$(PAK)
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -78,10 +54,9 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc/nano \
-	    --enable-color --enable-multibuffer --enable-nanorc --disable-nls
-	cd $(DIR_APP) && make $(MAKETUNING)
+		--enable-color --enable-multibuffer --enable-nanorc
+	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
-	cd $(DIR_APP) && install -v -m644 -D nanorc.sample /etc/nano/nanorc.sample
-	ln -sf /usr/bin/nano /usr/bin/pico
+	cd $(DIR_APP) && install -v -m644 -D doc/nanorc.sample /etc/nano/nanorc.sample
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
