@@ -48,7 +48,7 @@ while [ "${COUNTER}" -lt "${MAX}" ]; do
 		rm -f ${FILE}* 2>/dev/null
 		exit 1
 	fi
-	COUNTER=${COUNTER} + 1
+	COUNTER=$(( ${COUNTER} + 1 ))
 done
 
 if [ "${COUNTER}" -eq "${MAX}" ]; then

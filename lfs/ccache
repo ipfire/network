@@ -37,7 +37,7 @@ PREFIX     = $(LFS_BASEDIR)/build_$(MACHINE)/usr/local/ccache
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP).patch
 
 install : $(TARGET)
 

@@ -45,7 +45,8 @@ L7VER      = 2.15
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(IPP2P).tar.bz2 layer7-kernel-$(L7VER).patch
+objects = $(DL_FILE) $(IPP2P).tar.bz2 layer7-kernel-$(L7VER).patch \
+	reiser4-2.6.23-2.patch
 
 install : $(TARGET)
 
