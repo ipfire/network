@@ -169,6 +169,10 @@ ipfire_build() {
 	ipfire_make linux
 	#ipfire_make zaptel
 	
+	### Building pkg-config
+	#
+	ipfire_make pkg-config
+	
 	### Building some network stuff
 	#
 	ipfire_make libpcap
@@ -177,11 +181,14 @@ ipfire_build() {
 	ipfire_make rp-pppoe
 	ipfire_make dhcp
 	ipfire_make iptables
+	ipfire_make libnfnetlink
+	ipfire_make libnetfilter_queue
+	ipfire_make libnetfilter_conntrack
 	ipfire_make dnsmasq
-	#ipfire_make l7-protocols
-	#ipfire_make iptstate
-	#ipfire_make bridge-utils
-	#ipfire_make vlan
+	ipfire_make l7-protocols
+	ipfire_make iptstate
+	ipfire_make bridge-utils
+	ipfire_make vlan
 	
 	### Building some general stuff
 	#
@@ -223,7 +230,7 @@ ipfire_build() {
 	ipfire_make reiserfsprogs
 	ipfire_make libaal
 	ipfire_make reiser4progs
-	#ipfire_make xfsprogs	### This is missing.
+	ipfire_make xfsprogs
 		
 	### Building hardware utils
 	#

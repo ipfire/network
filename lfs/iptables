@@ -55,7 +55,7 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/iptables-$(VER).tar.bz2
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/layer7-iptables-$(L7VER).patch
 	#cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/iptables-1.3.0-imq1.diff
@@ -76,16 +76,6 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_SRC)/$(IPP2P) && KERNEL_SRC=/usr/include make libipt_ipp2p.so
 	cp -f $(DIR_SRC)/$(IPP2P)/libipt_ipp2p.so /lib/iptables
 	rm -rf $(DIR_SRC)/$(IPP2P)
-
-	#cd $(DIR_SRC) && tar xfj $(DIR_DL)/libnfnetlink-0.0.25.tar.bz2
-	#cd $(DIR_SRC)/libnfnetlink-0.0.25 && ./configure --prefix=/usr
-	#cd $(DIR_SRC)/libnfnetlink-0.0.25 && make
-	#cd $(DIR_SRC)/libnfnetlink-0.0.25 && make install
-
-	#cd $(DIR_SRC) && tar xfj $(DIR_DL)/libnetfilter_queue-0.0.13.tar.bz2
-	#cd $(DIR_SRC)/libnetfilter_queue-0.0.13 && ./configure --prefix=/usr
-	#cd $(DIR_SRC)/libnetfilter_queue-0.0.13 && make
-	#cd $(DIR_SRC)/libnetfilter_queue-0.0.13 && make install
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
