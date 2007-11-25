@@ -68,7 +68,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && make LIBDIR=/lib KERNEL_DIR=/usr -j $(PARALLELISM)
 	cd $(DIR_APP) && make PREFIX=/usr LIBDIR=/lib BINDIR=/sbin \
 		MANDIR=/usr/share/man install install-devel
-	install -v -m644 iptables.xslt /lib/iptables
+	cd $(DIR_APP) && install -v -m644 iptables.xslt /lib/iptables
 	
 	### Building IPP2P
 	#

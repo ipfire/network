@@ -52,8 +52,8 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_SRC)/br2684ctl
-	cd $(DIR_SRC) && gcc $(CFLAGS) -latm $(DIR_SRC)/src/br2684ctl/br2684ctl.c -o br2684ctl
-	cd $(DIR_SRC) && install -v -m 755 br2684ctl /usr/bin/br2684ctl
-	@rm -rf $(DIR_SRC)/br2684ctl
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && gcc $(CFLAGS) -latm br2684ctl.c -o br2684ctl
+	cd $(DIR_APP) && install -v -m 755 br2684ctl /usr/bin/br2684ctl
+	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
