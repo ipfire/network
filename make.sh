@@ -167,7 +167,6 @@ ipfire_build() {
 	### Building the kernel stuff
 	#
 	ipfire_make linux
-	#ipfire_make zaptel
 	
 	### Building pkg-config
 	#
@@ -197,7 +196,7 @@ ipfire_build() {
 	ipfire_make shadow
 	ipfire_make pam																			PASS=2
 	
-	ipfire_make libidn		### Do we need this?
+	#ipfire_make libidn		### Do we need this?
   ipfire_make pcre
 	ipfire_make popt
 	ipfire_make python
@@ -218,12 +217,11 @@ ipfire_build() {
 	ipfire_make libart
 	ipfire_make freetype
 	ipfire_make lzo
-	#ipfire_make whatmask
-	#ipfire_make lsof
-	#ipfire_make br2684ctl
-	#ipfire_make etherwake
-	#ipfire_make htop
-	#ipfire_make beep
+	ipfire_make lsof
+	ipfire_make br2684ctl
+	ipfire_make etherwake
+	ipfire_make htop
+	ipfire_make beep
 	
 	### Building filesystem stuff
 	#
@@ -238,7 +236,7 @@ ipfire_build() {
 	ipfire_make usbutils
 	ipfire_make hdparm
 	ipfire_make kudzu
-	#ipfire_make smartmontools
+	ipfire_make smartmontools
 
 	### Building some important tools
 	#
@@ -249,10 +247,9 @@ ipfire_build() {
 	ipfire_make rrdtool
 	ipfire_make ntp			### Needs config.
 	ipfire_make openssh
-	#ipfire_make ez-ipupdate
-	#ipfire_make noip_updater
-	#ipfire_make apache2			### Marked to be removed
-	#ipfire_make apache2			PASS=C
+	ipfire_make ez-ipupdate
+	ipfire_make noip
+	ipfire_make lighttpd
 	
 	### Programs that are still for discussion
 	#   package or in the standard system

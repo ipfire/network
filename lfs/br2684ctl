@@ -24,22 +24,27 @@
 
 include Config
 
-VER        = ipfire
+PKG_NAME   = br2684ctl
+VER        = ipfire-1
 
-THISAPP    = br2684ctl
-TARGET     = $(DIR_INFO)/$(THISAPP)
+THISAPP    = $(PKG_NAME)-$(VER)
+DL_FILE    = $(THISAPP).tar.bz2
+DIR_APP    = $(DIR_SRC)/$(PKG_NAME)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-install : $(TARGET)
+objects = $(DL_FILE)
 
-check : 
+install: $(TARGET)
 
-download :
+download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : 
+$(patsubst %,$(DIR_DL)/%,$(objects)) :
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details
