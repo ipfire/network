@@ -269,30 +269,25 @@ ipfire_build() {
   #ipfire_make pakfire
   #ipfire_make initscripts
 	
-	exiterror "Stop here."
-		
-  ipfire_make backup
-  ipfire_make unzip
-  ipfire_make pkg-config
-  ipfire_make cpio
-  ipfire_make expat
-  ipfire_make gmp
-  ipfire_make gd
-  ipfire_make libcap
+	#ipfire_make backup
+  #ipfire_make expat
+  #ipfire_make gmp
+  #ipfire_make gd
+  #ipfire_make libcap
 
-  ipfire_make bind
-  ipfire_make cdrtools
-  ipfire_make dosfstools
-  ipfire_make sysfsutils
-  ipfire_make mtools
-  ipfire_make mISDN
-  ipfire_make logrotate
-  ipfire_make logwatch
-  ipfire_make nasm
-  ipfire_make glib
+  #ipfire_make bind
+  #ipfire_make cdrtools
+  #ipfire_make dosfstools
+  #ipfire_make sysfsutils
+  #ipfire_make mtools
+  #ipfire_make mISDN
+  #ipfire_make logrotate
+  #ipfire_make logwatch
+  #ipfire_make nasm
+  #ipfire_make glib
   
-  ipfire_make wireless
-  ipfire_make libsafe
+  #ipfire_make wireless
+  #ipfire_make libsafe
 }
 
 ################################################################################
@@ -307,7 +302,14 @@ misc_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.misc.log"
 	export LOGFILE
 	
-	ipfire_make stage4
+	#ipfire_make stage4
+	
+	ipfire_make cpio
+	#ipfire_make cdrtools
+	#ipfire_make syslinux
+	ipfire_make parted
+	#ipfire_make slang
+	#ipfire_make newt
 	
 	#ipfire_make snort
 	#ipfire_make oinkmaster
@@ -315,62 +317,57 @@ misc_build() {
 	#ipfire_make squid-graph
 	#ipfire_make squidguard
 	#ipfire_make calamaris
-	ipfire_make tcpdump
-	ipfire_make traceroute
-	ipfire_make vsftpd
-	ipfire_make centerim
-	ipfire_make ncftp
-	ipfire_make tripwire
-	ipfire_make java
-  ipfire_make spandsp
-  ipfire_make cups
-  ipfire_make ghostscript
-  ipfire_make foomatic
-  ipfire_make hplip
-  ipfire_make samba
-  ipfire_make mc
-  ipfire_make wget
-  ipfire_make postfix
-  ipfire_make fetchmail
-  ipfire_make cyrus-imapd
-  ipfire_make clamav
-  ipfire_make alsa
-  ipfire_make mpg123
-  ipfire_make mpfire
-  ipfire_make guardian
-  ipfire_make libid3tag
-  ipfire_make libmad
-  ipfire_make libogg
-  ipfire_make libvorbis
-  ipfire_make lame
-  ipfire_make sox
-  ipfire_make libshout
-  ipfire_make icecast
-  ipfire_make icegenerator
-  ipfire_make mpd
-  ipfire_make mpc
-  ipfire_make xvid
-  ipfire_make libmpeg2
-  ipfire_make videolan
-  ipfire_make libpri
-  ipfire_make asterisk
-  ipfire_make gnump3d
-  ipfire_make libsigc++
-  ipfire_make applejuice
-  ipfire_make ocaml
-  ipfire_make mldonkey
-  ipfire_make libtorrent
-  ipfire_make rtorrent
-  ipfire_make ipfireseeder
-  ipfire_make rsync
-  ipfire_make nfs
-  ipfire_make nmap
+	#ipfire_make tcpdump
+	#ipfire_make traceroute
+	#ipfire_make vsftpd
+	#ipfire_make centerim
+	#ipfire_make ncftp
+	#ipfire_make tripwire
+	#ipfire_make java
+  #ipfire_make spandsp
+  #ipfire_make cups
+  #ipfire_make ghostscript
+  #ipfire_make foomatic
+  #ipfire_make hplip
+  #ipfire_make samba
+  #ipfire_make mc
+  #ipfire_make wget
+  #ipfire_make postfix
+  #ipfire_make fetchmail
+  #ipfire_make cyrus-imapd
+  #ipfire_make clamav
+  #ipfire_make alsa
+  #ipfire_make mpg123
+  #ipfire_make mpfire
+  #ipfire_make guardian
+  #ipfire_make libid3tag
+  #ipfire_make libmad
+  #ipfire_make libogg
+  #ipfire_make libvorbis
+  #ipfire_make lame
+  #ipfire_make sox
+  #ipfire_make libshout
+  #ipfire_make icecast
+  #ipfire_make icegenerator
+  #ipfire_make mpd
+  #ipfire_make mpc
+  #ipfire_make xvid
+  #ipfire_make libmpeg2
+  #ipfire_make videolan
+  #ipfire_make libpri
+  #ipfire_make asterisk
+  #ipfire_make gnump3d
+  #ipfire_make libsigc++
+  #ipfire_make applejuice
+  #ipfire_make ocaml
+  #ipfire_make mldonkey
+  #ipfire_make libtorrent
+  #ipfire_make rtorrent
+  #ipfire_make ipfireseeder
+  #ipfire_make rsync
+  #ipfire_make nfs
+  #ipfire_make nmap
 	
-	ipfire_make cdrtools
-	ipfire_make syslinux
-	ipfire_make parted
-	ipfire_make slang
-	ipfire_make newt
 }
 
 ################################################################################
@@ -385,27 +382,22 @@ installer_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.installer.log"
 	export LOGFILE
 	
-	#ipfire_make klibc  ##### Maybe this will be in the installer
+	ipfire_make busybox
+	ipfire_make initramfs
+	
+	exiterror "Stop here."
+	
+	#ipfire_make klibc  ##### Maybe this will be in the installer pass
   #ipfire_make mkinitcpio
   #ipfire_make udev																	KLIBC=1
 
   ipfire_make as86
   ipfire_make mbr
   ipfire_make memtest
-  ipfire_make linux-libc-header
-  ipfire_make binutils
-  ipfire_make uClibc			PASS=1
-  ipfire_make gcc			INST=1
-  ipfire_make uClibc			PASS=2
-  ipfire_make gcc			INST=2
-  ipfire_make uClibc			PASS=3
-  ipfire_make busybox
-  ipfire_make udev
   ipfire_make gettext
   ipfire_make kbd
   ipfire_make popt
   ipfire_make sysvinit
-  ipfire_make misc-progs
   ipfire_make libaal
   ipfire_make reiser4progs
   ipfire_make reiserfsprogs

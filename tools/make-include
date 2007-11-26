@@ -26,7 +26,7 @@
 
 CONFIG_ROOT=/etc/ipfire					# Configuration rootdir
 NICE=10													# Nice level
-KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }'`
+KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }' | tr -d '\n'; grep --max-count=1 FULLVER lfs/linux | awk '{ print $3 }' | cut -c 7-| tail -1`
 MACHINE=`uname -m`
 SVN_REVISION=`svn info | grep Revision | cut -c 11-`
 
@@ -658,13 +658,13 @@ prepareenv() {
 	unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
 
 	# Make some extra directories
-	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$INSTALLER_DIR,usr/local/{ccache,distcc}} 2>/dev/null
+	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$INSTALLER_DIR,images,usr/local/{ccache,distcc}} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
 	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/dev/pts
 	mkdir -p $LFS/proc
 	mkdir -p $LFS/usr/src/{cache,config,doc,html,langs,lfs,log_${MACHINE},src,ccache,distcc}
-	mkdir -p $LFS/{$INSTALLER_DIR,usr/local/{ccache,distcc}}
+	mkdir -p $LFS/{$INSTALLER_DIR,images,usr/local/{ccache,distcc}}
 	mkdir -p $LFS/etc
 
 	mknod -m 600 $BASEDIR/build/dev/console c 5 1 2>/dev/null
@@ -685,13 +685,9 @@ prepareenv() {
 	mount --bind $BASEDIR/src																	$LFS/usr/src/src
 	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR					$LFS/$TOOLS_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR			$LFS/$INSTALLER_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/images							$LFS/images
 	mount --bind $BASEDIR/build_${MACHINE}/usr/local/ccache		$LFS/usr/local/ccache
 	mount --bind $BASEDIR/build_${MACHINE}/usr/local/distcc		$LFS/usr/local/distcc
-
-	# This is a temporary hack!!!
-	#if [ ! -f /tools/bin/hostname ]; then
-	#	cp -f /bin/hostname /tools/bin/hostname 2>/dev/null
-	#fi
 
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache
