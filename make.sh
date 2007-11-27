@@ -475,7 +475,7 @@ packages_build() {
 
 ipfirepackages() {
 	ipfire_make core-updates
-	for i in $(ls -1 $BASEDIR/config/rootfiles/packages); do
+	for i in $(ls -1 $BASEDIR/src/rootfiles/extras); do
 		if [ -e $BASEDIR/lfs/$i ]; then
 			ipfire_dist $i
 		else

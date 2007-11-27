@@ -63,6 +63,7 @@ DIR_TOOLS   = $(LFS_BASEDIR)/tools
 DIR_TMP     = /tmp
 DIR_PATCHES = $(DIR_DL)
 DIR_CONFIG  = $(DIR_CONF)
+DIR_SOURCE  = $(DIR_SRC)/src
 
 KGCC = gcc
 
@@ -101,7 +102,7 @@ define POSTBUILD
 	@$(FIND_FILES) > $(DIR_SRC)/lsalrnew
 	@diff $(DIR_SRC)/lsalr $(DIR_SRC)/lsalrnew | grep '^> ' | sed 's+^> \./++' | sort > $(TARGET)_diff
 	@mv -f $(DIR_SRC)/lsalrnew $(DIR_SRC)/lsalr
-	# compare roofile ( same name as lfs script) with the list of installed files
+	# compare roofile (same name as lfs script) with the list of installed files
 	# special cases
 	# - if the corresponding rootfile is not found, touch $(TARGET)_missing_rootfile
 	# - on a partial rebuild without a new file inside TARGET_diff, just touch TARGET
@@ -111,14 +112,14 @@ define POSTBUILD
 	# $(TARGET) : log result with {commented|include|added} files
 	if [ -s "$(TARGET)_diff" ]; then \
 		LFS_SCRIPT=$(firstword $(MAKEFILE_LIST)); \
-		ROOTFILE=`find $(DIR_SRC)/config/rootfiles/common -maxdepth 1 -type f -name $$LFS_SCRIPT`; \
+		ROOTFILE=`find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f -name $$LFS_SCRIPT`; \
 		if [ "$$ROOTFILE" = "" ]; then \
-			ROOTFILE=`find $(DIR_SRC)/config/rootfiles/packages -type f -name $$LFS_SCRIPT`; \
+			ROOTFILE=`find $(DIR_SOURCE)/rootfiles/extras -type f -name $$LFS_SCRIPT`; \
 		fi; \
 		if [ "$$ROOTFILE" = "" ]; then \
 			touch $(TARGET)_missing_rootfile; \
 			ROOTFILE=$(TARGET)_missing_rootfile ; \
-			echo "error $$LFS_SCRIPT not found in config/rootfiles"; \
+			echo "error $$LFS_SCRIPT not found in $(DIR_SOURCE)/rootfiles"; \
 		fi; \
 		sed "s/KVER/$(KVER)/g" $$ROOTFILE > $(TARGET)_rootfile; 	\
 		echo 'open (F,"$(TARGET)_rootfile");				\
@@ -171,7 +172,7 @@ define PAK
 		cp -f /usr/src/src/paks/default/{,un}install.sh /usr/src/src/paks/default/update.sh \
 		/install/packages/package; \
 	fi
-	sed -e "s/KVER/$(KVER)/g" < /usr/src/config/rootfiles/packages/$(PROG) > /install/packages/package/ROOTFILES 
+	sed -e "s/KVER/$(KVER)/g" < $(DIR_SOURCE)/rootfiles/packages/$(PROG) > /install/packages/package/ROOTFILES 
 	chmod 755 /install/packages/package/{{,un}install,update}.sh
 	cd / && tar cf /install/packages/package/files --files-from=/install/packages/package/ROOTFILES --exclude='#*' \
 		--preserve --numeric-owner

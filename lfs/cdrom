@@ -48,7 +48,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	
 	### Compress root fs
 	#
-	cd / && find $(DIR_CONFIG)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
+	cd / && find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
 		sed -e "s/KVER/$(KVER)/g" | grep -v '#' | sort | uniq | cpio -o -H newc | \
 		lzma e -si -so > $(CDROM_DIR)/$(SNAME)-$(VERSION).img
 
