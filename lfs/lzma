@@ -24,29 +24,20 @@
 
 include Config
 
-PKG_NAME   = linux
-VER        = 2.6.23.1
+PKG_NAME   = lzma
+VER        = 443
 
-THISAPP    = $(PKG_NAME)-$(VER)
+THISAPP    = $(PKG_NAME)$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-CFLAGS     =
-CXXFLAGS   =
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-
-FULLVER    = $(VER)-ipfire1
-EXTRAVERSION = $(shell echo "$(FULLVER)" | cut -c 7-)
-
-IPP2P      = ipp2p-0.8.2-ipfire-1
-L7VER      = 2.15
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(IPP2P).tar.bz2 layer7-kernel-$(L7VER).patch \
-	reiser4-2.6.23-2.patch
+objects = $(DL_FILE)
 
 install : $(TARGET)
 
@@ -61,62 +52,11 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-
-ifeq "$(STAGE)" "toolchain"
-	cd $(DIR_APP) && make mrproper
-	cd $(DIR_APP) && make headers_check
-	cd $(DIR_APP) && make INSTALL_HDR_PATH=dest headers_install
-	cd $(DIR_APP) && cp -rv dest/include/* $(TOOLS_DIR)/include
-endif
-
-ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && sed -i '/scsi/d' include/Kbuild
-	cd $(DIR_APP) && make mrproper
-	cd $(DIR_APP) && make headers_check
-	cd $(DIR_APP) && make INSTALL_HDR_PATH=dest headers_install
-	cd $(DIR_APP) && cp -rv dest/include/* /usr/include
-endif
-
-ifeq "$(STAGE)" "ipfire"
-
-	### Reiser4
-	#
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/reiser4-2.6.23-2.patch
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && mkdir $(DIR_APP) && \
+		tar jxf $(DIR_DL)/$(DL_FILE) -C $(DIR_APP)
 	
-	# ip_conntrack permissions from 440 to 444
-	#cd $(DIR_APP) && patch -Np0 < $(DIR_PATCHES)/ip_conntrack_standalone-patch-for-ipfire.patch
-	
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/layer7-kernel-$(L7VER).patch
-	
-	cd $(DIR_APP) && make mrproper
-	
-	cp $(DIR_SRC)/config/kernel/kernel.config.$(MACHINE) $(DIR_APP)/.config
-	cd $(DIR_APP) && sed -i -e "s/EXTRAVERSION\ =.*/EXTRAVERSION\ =\ $(EXTRAVERSION)/" \
-		Makefile
-	
-	cd $(DIR_APP) && make oldconfig
-	
-	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make modules_install
-	
-	cd $(DIR_APP) && cp -v arch/i386/boot/bzImage /boot/ipfirekernel-$(FULLVER)
-	cd $(DIR_APP) && cp -v System.map /boot/System.map-$(FULLVER)
-	
-	ln -svf ipfirekernel-$(FULLVER) /boot/ipfirekernel
-	ln -svf System.map-$(FULLVER) /boot/System.map
-	
-	cd $(DIR_APP) && install -m 755 usr/gen_init_cpio /sbin/
-	
-	### Building other modules
-	#
-	## IPP2P
-	#cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(IPP2P).tar.bz2
-	#cd $(DIR_SRC)/$(IPP2P) && KERNEL_SRC=$(DIR_APP) make ipt_ipp2p.ko
-	#cd $(DIR_SRC)/$(IPP2P) && cp -f ipt_ipp2p.ko \
-	#	/lib/modules/$(KVER)-ipfire/kernel/net/ipv4/netfilter
-	#rm -rf $(DIR_SRC)/$(IPP2P)	
-endif
+	cd $(DIR_APP)/C/7zip/Compress/LZMA_Alone && make -f makefile.gcc -j $(PARALLELISM)
+	cd $(DIR_APP)/C/7zip/Compress/LZMA_Alone && cp lzma /bin
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

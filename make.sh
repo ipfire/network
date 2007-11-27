@@ -250,6 +250,7 @@ ipfire_build() {
 	ipfire_make ez-ipupdate
 	ipfire_make noip
 	ipfire_make lighttpd
+	ipfire_make lzma
 	
 	### Programs that are still for discussion
 	#   package or in the standard system
@@ -305,11 +306,9 @@ misc_build() {
 	#ipfire_make stage4
 	
 	ipfire_make cpio
-	#ipfire_make cdrtools
-	#ipfire_make syslinux
+	ipfire_make cdrtools
 	ipfire_make parted
-	#ipfire_make slang
-	#ipfire_make newt
+	ipfire_make memtest86+
 	
 	#ipfire_make snort
 	#ipfire_make oinkmaster
@@ -324,49 +323,49 @@ misc_build() {
 	#ipfire_make ncftp
 	#ipfire_make tripwire
 	#ipfire_make java
-  #ipfire_make spandsp
-  #ipfire_make cups
-  #ipfire_make ghostscript
-  #ipfire_make foomatic
-  #ipfire_make hplip
-  #ipfire_make samba
-  #ipfire_make mc
-  #ipfire_make wget
-  #ipfire_make postfix
-  #ipfire_make fetchmail
-  #ipfire_make cyrus-imapd
-  #ipfire_make clamav
-  #ipfire_make alsa
-  #ipfire_make mpg123
-  #ipfire_make mpfire
-  #ipfire_make guardian
-  #ipfire_make libid3tag
-  #ipfire_make libmad
-  #ipfire_make libogg
-  #ipfire_make libvorbis
-  #ipfire_make lame
-  #ipfire_make sox
-  #ipfire_make libshout
-  #ipfire_make icecast
-  #ipfire_make icegenerator
-  #ipfire_make mpd
-  #ipfire_make mpc
-  #ipfire_make xvid
-  #ipfire_make libmpeg2
-  #ipfire_make videolan
-  #ipfire_make libpri
-  #ipfire_make asterisk
-  #ipfire_make gnump3d
-  #ipfire_make libsigc++
-  #ipfire_make applejuice
-  #ipfire_make ocaml
-  #ipfire_make mldonkey
-  #ipfire_make libtorrent
-  #ipfire_make rtorrent
-  #ipfire_make ipfireseeder
-  #ipfire_make rsync
-  #ipfire_make nfs
-  #ipfire_make nmap
+	#ipfire_make spandsp
+	#ipfire_make cups
+	#ipfire_make ghostscript
+	#ipfire_make foomatic
+	#ipfire_make hplip
+	#ipfire_make samba
+	#ipfire_make mc
+	#ipfire_make wget
+	#ipfire_make postfix
+	#ipfire_make fetchmail
+	#ipfire_make cyrus-imapd
+	#ipfire_make clamav
+	#ipfire_make alsa
+	#ipfire_make mpg123
+	#ipfire_make mpfire
+	#ipfire_make guardian
+	#ipfire_make libid3tag
+	#ipfire_make libmad
+	#ipfire_make libogg
+	#ipfire_make libvorbis
+	#ipfire_make lame
+	#ipfire_make sox
+	#ipfire_make libshout
+	#ipfire_make icecast
+	#ipfire_make icegenerator
+	#ipfire_make mpd
+	#ipfire_make mpc
+	#ipfire_make xvid
+	#ipfire_make libmpeg2
+	#ipfire_make videolan
+	#ipfire_make libpri
+	#ipfire_make asterisk
+	#ipfire_make gnump3d
+	#ipfire_make libsigc++
+	#ipfire_make applejuice
+	#ipfire_make ocaml
+	#ipfire_make mldonkey
+	#ipfire_make libtorrent
+	#ipfire_make rtorrent
+	#ipfire_make ipfireseeder
+	#ipfire_make rsync
+	#ipfire_make nfs
+	#ipfire_make nmap
 	
 }
 
@@ -393,7 +392,6 @@ installer_build() {
 
   ipfire_make as86
   ipfire_make mbr
-  ipfire_make memtest
   ipfire_make gettext
   ipfire_make kbd
   ipfire_make popt

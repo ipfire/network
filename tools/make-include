@@ -70,7 +70,7 @@ fi
 
 if [ 'i686' = $MACHINE -o 'i586' = $MACHINE -o 'i486' = $MACHINE -o 'i386' = $MACHINE ]; then
 	MACHINE=i586
-	MACHINE_REAL=i586
+	MACHINE_REAL=i686
 	LINKER=/lib/ld-linux.so.2
 	C2FLAGS="-O2 -fomit-frame-pointer -march=i586 -pipe"
 	CXX2FLAGS="-O2 -fomit-frame-pointer -march=i586 -pipe"
@@ -93,6 +93,12 @@ TOOLS_DIR=/tools_${MACHINE}
 
 # Set up /installer
 INSTALLER_DIR=/installer
+
+# A place to build the iso
+CDROM_DIR=/cdrom
+
+# A place to keep the images
+IMAGES_DIR=/images
 
 # include machine in TOOLCHAINNAME
 TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-${MACHINE}
@@ -470,6 +476,8 @@ ipfire_make() {
 		LINKER=$LINKER \
 		TOOLS_DIR=$TOOLS_DIR \
 		INSTALLER_DIR=$INSTALLER_DIR \
+		CDROM_DIR=$CDROM_DIR \
+		IMAGES_DIR=$IMAGES_DIR \
 		MACHINE="$MACHINE" \
 		MACHINE_REAL="$MACHINE_REAL" \
 		CFLAGS="$C2FLAGS" \
@@ -658,13 +666,13 @@ prepareenv() {
 	unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
 
 	# Make some extra directories
-	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$INSTALLER_DIR,images,usr/local/{ccache,distcc}} 2>/dev/null
+	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$INSTALLER_DIR,cdrom,images,usr/local/{ccache,distcc}} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
 	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/dev/pts
 	mkdir -p $LFS/proc
 	mkdir -p $LFS/usr/src/{cache,config,doc,html,langs,lfs,log_${MACHINE},src,ccache,distcc}
-	mkdir -p $LFS/{$INSTALLER_DIR,images,usr/local/{ccache,distcc}}
+	mkdir -p $LFS/{$INSTALLER_DIR,cdrom,images,usr/local/{ccache,distcc}}
 	mkdir -p $LFS/etc
 
 	mknod -m 600 $BASEDIR/build/dev/console c 5 1 2>/dev/null
@@ -685,7 +693,8 @@ prepareenv() {
 	mount --bind $BASEDIR/src																	$LFS/usr/src/src
 	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR					$LFS/$TOOLS_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR			$LFS/$INSTALLER_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/images							$LFS/images
+	mount --bind $BASEDIR/build_${MACHINE}/$CDROM_DIR					$LFS/$CDROM_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$IMAGES_DIR				$LFS/$IMAGES_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/usr/local/ccache		$LFS/usr/local/ccache
 	mount --bind $BASEDIR/build_${MACHINE}/usr/local/distcc		$LFS/usr/local/distcc
 

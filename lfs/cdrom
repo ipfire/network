@@ -27,7 +27,7 @@ include Config
 VER = ipfire
 
 THISAPP    = cdrom
-TARGET     = $(DIR_INFO)/$(THISAPP)
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -35,55 +35,41 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 install : $(TARGET)
 
-check :
-
 download :
-
-md5 :
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
-	rm -rf /install/cdrom /tmp/*
-
-	# Compress root filesystem
-	# Reason for this tar+untar+tar is removing of entries listed two or more in src/ROOTFILES
-	mkdir -p /install/cdrom/doc
-	find $(DIR_SRC)/config/rootfiles/common -maxdepth 1 -type f | xargs cat >> /tmp/ROOTFILES
-	find $(DIR_SRC)/config/rootfiles/ver_$(ED) -maxdepth 1 -type f | xargs cat >> /tmp/ROOTFILES
-	sed -e "s/KVER/$(KVER)/g" -i /tmp/ROOTFILES
-
-	tar -c -C / --files-from=/tmp/ROOTFILES \
-		-f /$(SNAME).tar --exclude='#*' --exclude='dev/pts/*' \
-		--exclude='proc/*' --exclude='tmp/ROOTFILES'
-	rm -f /tmp/ROOTFILES
-	tar -x -C /tmp -f /$(SNAME).tar
-	rm -f /$(SNAME).tar
-	@mkdir /tmp/sys
-	cd /tmp && tar jcf /install/cdrom/$(SNAME)-$(VERSION).tbz2 * && rm -rf *
+	@rm -rf $(CDROM_DIR)/*
+	
+	mkdir -p $(CDROM_DIR)/{boot/grub,doc,grub}
+	
+	### Compress root fs
+	#
+	cd / && find $(DIR_CONFIG)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
+		sed -e "s/KVER/$(KVER)/g" | grep -v '#' | sort | uniq | cpio -o -H newc | \
+		lzma e -si -so > $(CDROM_DIR)/$(SNAME)-$(VERSION).img
 
 	# Other files
-	sed 's/VERSION/$(VERSION)/' $(DIR_SRC)/config/cdrom/README.txt > /install/cdrom/README.txt
-	cp $(DIR_SRC)/doc/COPYING				/install/cdrom/
-	cp $(DIR_SRC)/doc/{ChangeLog,packages-list.txt}	/install/cdrom/doc
+	sed 's/VERSION/$(VERSION)/' $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README.txt
+	cp $(DIR_SRC)/doc/COPYING										$(CDROM_DIR)
+	cp $(DIR_SRC)/doc/{ChangeLog,packages-list.txt}	$(CDROM_DIR)/doc
+	
+	cp $(IMAGES_DIR)/initramfs-$(VERSION).img		$(CDROM_DIR)/boot/grub/initramfs.img
+	cp /boot/ipfirekernel-$(KVER)								$(CDROM_DIR)/boot/grub/ipfirekernel
+	
+	cp /usr/lib/grub/i386-pc/stage2_eltorito		$(CDROM_DIR)/boot/grub/stage2_eltorito
+	#cp $(DIR_CONF)/grub/installer.conf					$(CDROM_DIR)/boot/grub/grub.conf
+	#cp $(DIR_CONF)/grub/ipfire.xpm.gz						$(CDROM_DIR)/boot/grub/ipfire.xpm.gz
+	
+	#cp /usr/lib/memtest86+/memtest.bin          $(CDROM_DIR)/boot/grub/memtest
+	
+	cd $(CDROM_DIR) && mkisofs -J -r -V "$(NAME)_$(VERSION)" \
+		-b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table \
+		. > $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE)-$(ED).iso
+	
+	@rm -rf $(CDROM_DIR)/*
 
-	# Configuration
-	mkdir -p /install/cdrom/boot
-	cp $(DIR_SRC)/config/syslinux/unattended.conf    /install/cdrom/boot/unattended.conf
-
-	# Make the ISO
-	mkdir -p /install/cdrom/boot/isolinux; \
-	dd if=/dev/zero  bs=1k count=2            > /install/cdrom/boot/isolinux/boot.catalog; \
-	cp /install/images/initrd                   /install/cdrom/boot/isolinux/instroot; \
-	cp /boot/vmlinuz-$(KVER)-ipfire             /install/cdrom/boot/isolinux/vmlinuz; \
-	cp $(DIR_SRC)/config/syslinux/syslinux.cfg  /install/cdrom/boot/isolinux/isolinux.cfg; \
-	cp $(DIR_SRC)/config/syslinux/boot.msg      /install/cdrom/boot/isolinux/boot.msg; \
-	cp $(DIR_SRC)/config/syslinux/options.msg   /install/cdrom/boot/isolinux/options.msg; \
-	cp $(DIR_SRC)/config/syslinux/splash.lss    /install/cdrom/boot/isolinux/splash.lss; \
-	cp /usr/lib/memtest86+/memtest.bin          /install/cdrom/boot/isolinux/memtest; \
-	cp /usr/lib/syslinux/isolinux.bin           /install/cdrom/boot/isolinux/isolinux.bin; \
-	cd /install/cdrom && mkisofs -J -r -V "$(NAME)_$(VERSION)" \
-    	    -b boot/isolinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table \
-    	    -c boot/isolinux/boot.catalog . > /install/images/$(SNAME)-$(VERSION).$(MACHINE)-$(ED).iso
+	### REBUILD THIS AT EVERY PASS
