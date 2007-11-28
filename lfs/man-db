@@ -65,7 +65,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && echo -e "#define GRAP \"/usr/bin/grap\"" >> include/manconfig.h.in
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr --enable-mb-groff --disable-setuid
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make #-j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -285,7 +285,6 @@ ipfire_build() {
   #ipfire_make logrotate
   #ipfire_make logwatch
   #ipfire_make nasm
-  #ipfire_make glib
   
   #ipfire_make wireless
   #ipfire_make libsafe
@@ -304,6 +303,9 @@ misc_build() {
 	export LOGFILE
 	
 	#ipfire_make stage4
+	
+	ipfire_make glib
+	ipfire_make mc
 	
 	ipfire_make cpio
 	ipfire_make cdrtools
@@ -329,7 +331,6 @@ misc_build() {
 	#ipfire_make foomatic
 	#ipfire_make hplip
 	#ipfire_make samba
-	#ipfire_make mc
 	#ipfire_make wget
 	#ipfire_make postfix
 	#ipfire_make fetchmail
@@ -714,86 +715,22 @@ othersrc)
 	;;
 	
 svn)
+	. $BASEDIR/tools/make-subversion
 	case "$2" in
-	  update|up)
-		# clear
-		echo -ne "Loading the latest source files...\n"
-		if [ $3 ]; then
-			svn update -r $3 | tee -a $PWD/log/_build.svn.update.log
-		else
-			svn update | tee -a $PWD/log/_build.svn.update.log
-		fi
-		if [ $? -eq "0" ]; then
-			beautify message DONE
-		else
-			beautify message FAIL
-			exit 1
-		fi
-		echo -ne "Writing the svn-info to a file"
-		svn info > $PWD/svn_status
-		if [ $? -eq "0" ]; then
-			beautify message DONE
-		else
-			beautify message FAIL
-			exit 1
-		fi
-		chmod 755 $0
-		exit 0
-	  ;;
-	  commit|ci)
-		clear
-		if [ -f /usr/bin/mcedit ]; then
-			export EDITOR=/usr/bin/mcedit
-		fi
-		if [ -f /usr/bin/nano ]; then
-			export EDITOR=/usr/bin/nano
-		fi
-		echo -ne "Selecting editor $EDITOR..."
-		beautify message DONE
-		if [ -e /sbin/yast ]; then
-			if [ "`echo $SVN_REVISION | cut -c 3`" -eq "0" ]; then
-				$0 changelog
-			fi
-		fi
-		update_langs
-		svn commit
-		$0 svn up
-		if [ -n "$FTP_CACHE_URL" ]; then
-			$0 uploadsrc
-		fi
-	  ;;
-	  dist)
-		if [ $3 ]; then
-			SVN_REVISION=$3
-		fi
-		if [ -f ipfire-source-r$SVN_REVISION.tar.gz ]; then
-			echo -ne "REV $SVN_REVISION: SKIPPED!\n"
-			exit 0
-		fi
-		echo -en "REV $SVN_REVISION: Downloading..."
-		svn export http://svn.ipfire.org/svn/ipfire/trunk ipfire-source/ --force > /dev/null
-		svn log http://svn.ipfire.org/svn/ipfire/trunk -r 1:$SVN_REVISION > ipfire-source/Changelog
-		#svn info http://svn.ipfire.org/svn/ipfire/trunk -r $SVN_REVISION > ipfire-source/svn_status
-		evaluate 1
-
-		echo -en "REV $SVN_REVISION: Compressing files..."
-		if [ -e ipfire-source/trunk/make.sh ]; then
-			chmod 755 ipfire-source/trunk/make.sh
-		fi
-		tar cfz ipfire-source-r$SVN_REVISION.tar.gz ipfire-source
-		evaluate 1
-		echo -en "REV $SVN_REVISION: Cleaning up..."
-		rm ipfire-source/ -r
-		evaluate 1
-	  ;;
-	  diff|di)
-	  update_langs
-		echo -ne "Make a local diff to last svn revision"
-		svn diff > ipfire-diff-`date +'%Y-%m-%d-%H:%M'`-r`svn info | grep Revision | cut -c 11-`.diff
-		evaluate 1
-		echo "Diff was successfully saved to ipfire-diff-`date +'%Y-%m-%d-%H:%M'`-r`svn info | grep Revision | cut -c 11-`.diff"
-		svn status
-	  ;;
+		update|up)
+			svn_up
+			;;
+		commit|ci)
+			clear
+			svn_commit
+			svn_up
+			;;
+		dist)
+			svn_dist
+			;;
+		diff|di)
+			svn_diff
+			;;
 	esac
 	;;
 	

@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
@@ -17,48 +18,62 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #                                                                             #
 ###############################################################################
-
 ###############################################################################
-# Definitions
-###############################################################################
-
-include Config
-
-PKG_NAME   = mc
-VER        = 4.6.1
-
-THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.gz
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
-
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-
-###############################################################################
-# Top-level Rules
+#
+# A small helper to make the svn functions comfortable
+#
 ###############################################################################
 
-objects = $(DL_FILE)
+svn_up() {
+	echo "Loading the latest source files..."
+	if [ "$3" ]; then
+		svn update -r $3
+	else
+		svn update
+	fi
+	if [ $? -eq "0" ]; then
+		beautify message DONE
+	else
+		beautify message FAIL
+		exit 1
+	fi
+}
 
-install: $(TARGET)
+svn_commit() {
+	if which nano; then
+		export EDITOR=nano
+	fi
+	if [ "`echo $SVN_REVISION | cut -c 3`" -eq "0" ]; then
+		svn_changelog
+	fi
+	update_langs
+	svn commit
+}
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
+svn_diff(){
+	echo -ne "Make a local diff to last svn revision"
+	svn diff > ipfire-diff-`date +'%Y-%m-%d-%H:%M'`-r`svn info | grep Revision | cut -c 11-`.diff
+	evaluate 1
+	echo "Diff was successfully saved to ipfire-diff-`date +'%Y-%m-%d-%H:%M'`-r`svn info | grep Revision | cut -c 11-`.diff"
+	svn status
+}
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
-	@$(LOAD)
+svn_dist() {
+	if [ "$3" ]; then
+		SVN_REVISION=$3
+	fi
+	
+	echo -en "REV $SVN_REVISION: Downloading code..."
+	svn export http://svn.ipfire.org/svn/ipfire/trunk ipfire-source/ --force > /dev/null
+	evaluate 1
+	
+	echo -en "REV $SVN_REVISION: Fetching changelog..."
+	svn log http://svn.ipfire.org/svn/ipfire/trunk -r 1:$SVN_REVISION > ipfire-source/Changelog
+	evaluate 1
 
-###############################################################################
-# Installation Details
-###############################################################################
-
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
-	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-bash32-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-debian_fixes-1.patch
-	cd $(DIR_APP) && CPPFLAGS="$(CPPFLAGS) -DUTF8" ./configure --prefix=/usr \
-		--enable-charset
-	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install
-	chmod 1755 /usr/lib/mc/cons.saver
-	@rm -rf $(DIR_APP)
-	@$(POSTBUILD)
+	echo -en "REV $SVN_REVISION: Compressing files..."
+	tar cfj ipfire-source-r$SVN_REVISION.tar.bz2 ipfire-source
+	evaluate 1
+	
+	rm -rf ipfire-source/
+}
