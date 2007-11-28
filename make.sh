@@ -311,6 +311,8 @@ misc_build() {
 	ipfire_make cdrtools
 	ipfire_make parted
 	ipfire_make memtest86+
+	#ipfire_make as86
+	#ipfire_make mbr
 	
 	#ipfire_make snort
 	#ipfire_make oinkmaster
@@ -383,33 +385,12 @@ installer_build() {
 	export LOGFILE
 	
 	ipfire_make busybox
+	#ipfire_make installer
 	ipfire_make initramfs
-	
-	exiterror "Stop here."
 	
 	#ipfire_make klibc  ##### Maybe this will be in the installer pass
   #ipfire_make mkinitcpio
   #ipfire_make udev																	KLIBC=1
-
-  ipfire_make as86
-  ipfire_make mbr
-  ipfire_make gettext
-  ipfire_make kbd
-  ipfire_make popt
-  ipfire_make sysvinit
-  ipfire_make libaal
-  ipfire_make reiser4progs
-  ipfire_make reiserfsprogs
-  ipfire_make sysfsutils
-  ipfire_make util-linux
-  ipfire_make pciutils
-  ipfire_make zlib
-  ipfire_make mtd
-  ipfire_make wget
-  ipfire_make hwdata
-  ipfire_make kudzu
-  ipfire_make installer
-  ipfire_make initrd
 }
 
 ################################################################################
@@ -429,64 +410,34 @@ packages_build() {
   ipfire_make strip
   
   # Generating list of packages used
-  echo -n "Generating packages list from logs" | tee -a $LOGFILE
-  rm -f $BASEDIR/doc/packages-list
-  for i in `ls -1tr $BASEDIR/log/[^_]*`; do
-	if [ "$i" != "$BASEDIR/log/FILES" -a -n $i ]; then
-		echo "* `basename $i`" >>$BASEDIR/doc/packages-list
-	fi
-  done
-  echo "== List of softwares used to build $NAME Version: $VERSION ==" > $BASEDIR/doc/packages-list.txt
-  grep -v 'configroot$\|img$\|initrd$\|initscripts$\|installer$\|install$\|setup$\|pakfire$\|stage2$\|smp$\|tools$\|tools1$\|tools2$\|.tgz$\|-config$\|_missing_rootfile$\|install1$\|install2$\|pass1$\|pass2$\|pass3$' \
-	$BASEDIR/doc/packages-list | sort >> $BASEDIR/doc/packages-list.txt
-  rm -f $BASEDIR/doc/packages-list
-  # packages-list.txt is ready to be displayed for wiki page
-  beautify message DONE
+	### MISSING ATM
 
-  # Create images for install
-	ipfire_make cdrom ED=full
+	ipfire_make cdrom
 	
   # Check if there is a loop device for building in virtual environments
   if [ -e /dev/loop/0 ] || [ -e /dev/loop0 ]; then
   	ipfire_make usb-stick
   fi
-  mv $LFS/install/images/{*.iso,*.tgz,*.img.gz} $BASEDIR >> $LOGFILE 2>&1
+  mv $LFS/$IMAGES_DIR/{*.iso,*.tgz,*.img.gz} $BASEDIR >> $LOGFILE 2>&1
 
-  ipfirepackages
-
-  # Cleanup
-  stdumount
-  rm -rf $BASEDIR/build/tmp/*
-
-  # Generating total list of files
-  echo -n "Generating files list from logs" | tee -a $LOGFILE
-  rm -f $BASEDIR/log/FILES
-  for i in `ls -1tr $BASEDIR/log/[^_]*`; do
-	if [ "$i" != "$BASEDIR/log/FILES" -a -n $i ]; then
-		echo "##" >>$BASEDIR/log/FILES
-		echo "## `basename $i`" >>$BASEDIR/log/FILES
-		echo "##" >>$BASEDIR/log/FILES
-		cat $i | sed "s%^\./%#%" | sort >> $BASEDIR/log/FILES
-	fi
-  done
-  beautify message DONE
-
-  cd $PWD
-}
-
-ipfirepackages() {
-	ipfire_make core-updates
+	#ipfire_make core-updates
+	### DISABLED ATM
+	
 	for i in $(ls -1 $BASEDIR/src/rootfiles/extras); do
 		if [ -e $BASEDIR/lfs/$i ]; then
-			ipfire_dist $i
+			echo -n
+			### Do nothing at the moment, we are gonna use a new packager
 		else
 			echo -n $i
 			beautify message SKIP
 		fi
 	done
-  test -d $BASEDIR/packages || mkdir $BASEDIR/packages
-  mv -f $LFS/install/packages/* $BASEDIR/packages >> $LOGFILE 2>&1
-  rm -rf  $BASEDIR/build/install/packages/*
+
+  # Cleanup
+  stdumount
+  rm -rf $LFS/tmp/*
+
+  cd $PWD
 }
 
 # See what we're supposed to do
@@ -519,8 +470,8 @@ build)
 			toolchain_build
 		else
 			echo "Restore from $PACKAGE" | tee -a $LOGFILE
-			if [ `md5sum $BASEDIR/cache/$PACKAGE | awk '{print $1}'` == `cat $BASEDIR/cache/$TOOLCHAINNAME.md5 | awk '{print $1}'` ]; then
-				cd $BASEDIR && tar zxf $BASEDIR/cache/$PACKAGE
+			if [ `md5sum $BASEDIR/cache/toolchains/$PACKAGE | awk '{print $1}'` == `cat $BASEDIR/cache/toolchains/$TOOLCHAINNAME.md5 | awk '{print $1}'` ]; then
+				cd $BASEDIR && tar jxf $BASEDIR/cache/toolchains/$PACKAGE
 				prepareenv
 			else
 				exiterror "$TOOLCHAINNAME md5 did not match, check downloaded package"
@@ -556,9 +507,8 @@ build)
 	packages_build
 	
 	echo ""
-	echo "Burn a CD (floppy is too big) or use pxe to boot."
 	echo "... and all this hard work for this:"
-	du -bsh $BASEDIR/${SNAME}-${VERSION}*.${MACHINE}.iso
+	du -bsh $BASEDIR/${SNAME}-${VERSION}.${MACHINE}.iso
 	;;
 	
 shell)
@@ -659,15 +609,16 @@ toolchain)
 	beautify message DONE
 	stdumount
 	echo -ne "Tar creation "
+	[ -d cache/toolchains ] || mkdir cache/toolchains
 	cd $BASEDIR && tar cvj \
 				--exclude='log_${MACHINE}/_build.*.log' \
-				--file=cache/$TOOLCHAINNAME.tar.bz2 \
+				--file=cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
 				build_${MACHINE} \
 				log_${MACHINE} >> $LOGFILE
 	beautify message DONE
-	echo `ls -sh cache/$TOOLCHAINNAME.tar.bz2`
-	md5sum cache/$TOOLCHAINNAME.tar.bz2 \
-		> cache/$TOOLCHAINNAME.md5
+	echo `ls -sh cache/toolchains/$TOOLCHAINNAME.tar.bz2`
+	md5sum cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
+		> cache/toolchains/$TOOLCHAINNAME.md5
 
 	stdumount
 	;;

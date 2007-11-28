@@ -56,6 +56,10 @@ $(TARGET) :
 	ln -svf libdl-2.7.so										$(INSTALLER_DIR)/lib/libdl.so.2
 	install -c -D /lib/libnss_files-2.7.so	$(INSTALLER_DIR)/lib/libnss_files-2.7.so
 	ln -svf libnss_files-2.7.so							$(INSTALLER_DIR)/lib/libnss_files.so.2
+	install -c -D /lib/libcrypt-2.7.so			$(INSTALLER_DIR)/lib/libcrypt-2.7.so
+	ln -svf libcrypt-2.7.so									$(INSTALLER_DIR)/lib/libcrypt.so.1
+	install -c -D /lib/libm-2.7.so					$(INSTALLER_DIR)/lib/libm-2.7.so
+	ln -svf libm-2.7.so											$(INSTALLER_DIR)/lib/libm.so.6
 	install -c -D /lib/ld-2.7.so						$(INSTALLER_DIR)/lib/ld-2.7.so
 	ln -svf ld-2.7.so												$(INSTALLER_DIR)/$(LINKER)
 	
@@ -90,7 +94,7 @@ $(TARGET) :
 	#
 	install -c -D /usr/sbin/parted					$(INSTALLER_DIR)/usr/sbin/parted
 	install -c -D /usr/lib/libparted-1.8.so.8.0.0	$(INSTALLER_DIR)/usr/lib/libparted-1.8.so.8.0.0
-	ln -svf libparted-1.8.so.8.0.0					$(INSTALLER_DIR)/lib/libparted-1.8.so.8
+	ln -svf libparted-1.8.so.8.0.0					$(INSTALLER_DIR)/usr/lib/libparted-1.8.so.8
 	
 	### kudzu
 	#
@@ -110,6 +114,7 @@ $(TARGET) :
 	#
 	cp -avf $(DIR_CONF)/install/*						$(INSTALLER_DIR)/etc/
 	chmod -v 755 $(INSTALLER_DIR)/etc/{halt,rc}
+	ln -svf /etc/rc													$(INSTALLER_DIR)/init
 	cp -vf /etc/issue /etc/group						$(INSTALLER_DIR)/etc/
 	cp -f /usr/share/terminfo/l/linux				$(INSTALLER_DIR)/usr/share/terminfo/l
 	
@@ -121,16 +126,16 @@ $(TARGET) :
 	### kernel modules
 	#
 	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/{drivers,fs}
-	cp -avf \
+		cp -avf \
 		/lib/modules/$(KVER)/kernel/drivers/{pcmcia,scsi} \
+		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/drivers
+	cp -avf \
 		/lib/modules/$(KVER)/kernel/fs/{exportfs,ext{2,3},fat,ntfs,reiser{4,fs},udf,vfat,xfs} \
-		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/
+		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/fs
 	
 	### compressing everything
 	#
 	-find $(INSTALLER_DIR) -name .svn -exec rm -rf {} \;
-	cd $(INSTALLER_DIR) && find ./ -type d | sed 's!\./!!g' | \
-		sort > $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/root.list
 	cd $(INSTALLER_DIR) && find . | cpio -o -H newc | gzip -9 > \
   	/images/initramfs-$(VERSION).img
 		

@@ -44,31 +44,39 @@ download :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(CDROM_DIR)/*
 	
-	mkdir -p $(CDROM_DIR)/{boot/grub,doc,grub}
+	mkdir -p $(CDROM_DIR)/{boot/grub,doc}
 	
 	### Compress root fs
 	#
 	cd / && find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
-		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq | cpio -o -H newc | \
+		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq | \
+		cpio -o -H newc 2>/tmp/cpio.err | \
 		lzma e -si -so > $(CDROM_DIR)/$(SNAME)-$(VERSION).img
+		
+	if grep "No such file or directory" < /tmp/cpio.err; then \
+		rm -f /tmp/cpio.err; \
+		exit 1; \
+	else \
+		rm -f /tmp/cpio.err; \
+	fi
 
 	# Other files
 	sed 's/VERSION/$(VERSION)/' $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README.txt
 	cp $(DIR_SRC)/doc/COPYING										$(CDROM_DIR)
 	cp $(DIR_SRC)/doc/{ChangeLog,packages-list.txt}	$(CDROM_DIR)/doc
 	
-	cp $(IMAGES_DIR)/initramfs-$(VERSION).img		$(CDROM_DIR)/boot/grub/initramfs.img
-	cp /boot/ipfirekernel-$(KVER)								$(CDROM_DIR)/boot/grub/ipfirekernel
+	cp $(IMAGES_DIR)/initramfs-$(VERSION).img		$(CDROM_DIR)/boot/initramfs.img
+	cp /boot/ipfirekernel-$(KVER)								$(CDROM_DIR)/boot/ipfirekernel
 	
 	cp /usr/lib/grub/i386-pc/stage2_eltorito		$(CDROM_DIR)/boot/grub/stage2_eltorito
-	#cp $(DIR_CONF)/grub/installer.conf					$(CDROM_DIR)/boot/grub/grub.conf
-	#cp $(DIR_CONF)/grub/ipfire.xpm.gz						$(CDROM_DIR)/boot/grub/ipfire.xpm.gz
+	cp $(DIR_CONF)/grub/installer.conf					$(CDROM_DIR)/boot/grub/grub.conf
+	cp $(DIR_CONF)/grub/ipfire.xpm.gz						$(CDROM_DIR)/boot/grub/ipfire.xpm.gz
 	
-	#cp /usr/lib/memtest86+/memtest.bin          $(CDROM_DIR)/boot/grub/memtest
+	cp /usr/lib/memtest86+/memtest.bin          $(CDROM_DIR)/boot/memtest
 	
 	cd $(CDROM_DIR) && mkisofs -J -r -V "$(NAME)_$(VERSION)" \
 		-b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table \
-		. > $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE)-$(ED).iso
+		. > $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).iso
 	
 	@rm -rf $(CDROM_DIR)/*
 

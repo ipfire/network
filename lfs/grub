@@ -69,6 +69,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.93-special-device-names.patch
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.95-moreraid.patch
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.94-i2o.patch
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.93-configfile.patch
 
 	cd $(DIR_APP) && ./configure --prefix=/usr
 
