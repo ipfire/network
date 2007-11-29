@@ -448,8 +448,8 @@ build)
 	if [ ! -d $BASEDIR/cache ]; then
 		exiterror "Use make.sh downloadsrc first!"
 	fi
-	cd $BASEDIR/cache
-	PACKAGE=`ls -v -r $TOOLCHAINNAME.tar.gz 2> /dev/null | head -n 1`
+	cd $BASEDIR/cache/toolchains
+	PACKAGE=`ls -v -r $TOOLCHAINNAME.tar.bz2 2> /dev/null | head -n 1`
 	#only restore on a clean disk
 
 	echo -ne "Building for ${BOLD}${MACHINE} on ${MACHINE_REAL}${NORMAL}\n"
@@ -610,7 +610,7 @@ toolchain)
 	stdumount
 	echo -ne "Tar creation "
 	[ -d cache/toolchains ] || mkdir cache/toolchains
-	cd $BASEDIR && tar cvj \
+	cd $BASEDIR && tar cj \
 				--exclude='log_${MACHINE}/_build.*.log' \
 				--file=cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
 				build_${MACHINE} \
@@ -627,23 +627,23 @@ gettoolchain)
 	if [ ! -f $BASEDIR/cache/toolchains/$TOOLCHAINNAME.tar.bz2 ]; then
 		URL_TOOLCHAIN=`grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }'`
 		test -d $BASEDIR/cache/toolchains || mkdir $BASEDIR/cache/toolchains
-		echo "Load toolchain tar.bz2 for $MACHINE" | tee -a $LOGFILE
+		echo "Loading toolchain for $MACHINE"
 		cd $BASEDIR/cache/toolchains
 		wget -c -nv $URL_TOOLCHAIN/$TOOLCHAINNAME.tar.bz2 $URL_TOOLCHAIN/$TOOLCHAINNAME.md5
 		if [ $? -ne 0 ]; then
-			echo -ne "Error downloading toolchain for $MACHINE machine" | tee -a $LOGFILE
+			echo -n "ERROR: Downloading toolchain for $MACHINE machine"
 			beautify message FAIL
-			echo "Precompiled toolchain not always available for every MACHINE" | tee -a $LOGFILE
+			echo "Precompiled toolchain not always available for every machine"
 		else
 			if [ "`md5sum $TOOLCHAINNAME.tar.bz2 | awk '{print $1}'`" = "`cat $TOOLCHAINNAME.md5 | awk '{print $1}'`" ]; then
 				beautify message DONE
-				echo "Toolchain md5 ok" | tee -a $LOGFILE
+				echo "Toolchain md5 ok"
 			else
 				exiterror "$TOOLCHAINNAME.md5 did not match, check downloaded package"
 			fi
 		fi
 	else
-		echo "Toolchain tar.bz2 for $MACHINE is already downloaded" | tee -a $LOGFILE
+		echo -n "Toolchain for $MACHINE is already existing"
 		beautify message SKIP
 	fi
 	;;

@@ -113,8 +113,9 @@ $(TARGET) :
 	### configuration
 	#
 	cp -avf $(DIR_CONF)/install/*						$(INSTALLER_DIR)/etc/
+	cp -vf $(DIR_SOURCE)/initscripts/init.d/functions $(INSTALLER_DIR)/etc/functions
 	chmod -v 755 $(INSTALLER_DIR)/etc/{halt,rc}
-	ln -svf /etc/rc													$(INSTALLER_DIR)/init
+	ln -svf etc/rc													$(INSTALLER_DIR)/init 
 	cp -vf /etc/issue /etc/group						$(INSTALLER_DIR)/etc/
 	cp -f /usr/share/terminfo/l/linux				$(INSTALLER_DIR)/usr/share/terminfo/l
 	
@@ -127,11 +128,20 @@ $(TARGET) :
 	#
 	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/{drivers,fs}
 		cp -avf \
-		/lib/modules/$(KVER)/kernel/drivers/{pcmcia,scsi} \
+		/lib/modules/$(KVER)/kernel/drivers/{ata,block,cdrom,dma,firewire,hid,ide,net,pcmcia,scsi,usb} \
 		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/drivers
 	cp -avf \
 		/lib/modules/$(KVER)/kernel/fs/{exportfs,ext{2,3},fat,ntfs,reiser{4,fs},udf,vfat,xfs} \
 		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/fs
+	cp -f /lib/modules/$(KVER)/modules.* $(INSTALLER_DIR)/lib/modules/$(KVER)
+	
+	### stripping
+	#
+	# We do the stripping here because we don't want to destroy our development tree by stripping all symbols
+	# Instead we strip all binaries and libraries as we create the initramfs.
+	# It's quite safe to do strip --strip-all on libraries if they will not be used for development.
+	cd $(INSTALLER_DIR) && find .{,/usr/}/bin .{,/usr/}/sbin -maxdepth 1 -type f -exec $(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
+	cd $(INSTALLER_DIR) && find .{,/usr/}/lib -maxdepth 1 -type f -exec $(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
 	
 	### compressing everything
 	#

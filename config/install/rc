@@ -1,46 +1,123 @@
 #!/bin/ash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
 
-echo -n "Mounting filesystems: /tmp "
-mount -n -t tmpfs tmpfs /tmp -o mode=1777
+## Set the defaults
+STARTUP_MODE=install
+HOSTNAME=ipfire.localdomain
 
-echo -n "/proc "
-mount -n -t proc none /proc
-echo >/proc/sys/kernel/printk "1 4 1 7"
+. /etc/functions
 
-echo -n "/sys "
-mount -n -t sysfs sysfs /sys
+	boot_mesg -n "Mounting kernel-based file systems:" ${INFO}
 
-echo -n "/dev "
-mount -n -t tmpfs tmpfs /dev -o mode=755
-mkdir -p -m 0755 /dev/pts
-mkdir -p -m 0755 /dev/shm
+	boot_mesg -n " /proc" ${NORMAL}
+	mount -n -t proc proc /proc || failed=1
 
-echo -n "/dev/pts "
-mount -n -t devpts devpts /dev/pts
+	boot_mesg -n " /sys" ${NORMAL}
+	mount -n -t sysfs sysfs /sys || failed=1
+	
+	boot_mesg "" ${NORMAL}
 
-echo "/root"
-mount -n -t ramfs none /root
+	(exit ${failed})
+	evaluate_retval
 
-echo -n -e "\033[9;0]"
 
-ln -snf /proc/self/fd /dev/fd
-ln -snf /proc/self/fd/0 /dev/stdin
-ln -snf /proc/self/fd/1 /dev/stdout
-ln -snf /proc/self/fd/2 /dev/stderr
-ln -s /proc/kcore /dev/core
+	boot_mesg "Silencing kernel..."
+	echo >/proc/sys/kernel/printk "1 4 1 7"
+	evaluate_retval
 
-echo "Starting syslogd"
-syslogd -O /dev/tty4
+	
+	boot_mesg "Disabling screen blanking..."
+	echo -n -e "\033[9;0]"
+	evaluate_retval
 
-echo "Starting udev daemon"
-/sbin/udevd --daemon
-/sbin/udevtrigger
-/sbin/udevsettle
 
-sleep 3
-for file in /dev/.udev/failed/*/uevent ; do
-	echo "add" >"${file}"
-done 2>/dev/null
-/sbin/udevsettle
+	boot_mesg "Mounting /dev"
+	mount -n -t tmpfs tmpfs /dev -o mode=755
+	evaluate_retval
+	
+	boot_mesg "Populating /dev with device nodes..."
+	echo > /proc/sys/kernel/hotplug
+	
+	cp -a /lib/udev/devices/* /dev
+	/sbin/udevd --daemon
+	/sbin/udevtrigger
+	/sbin/udevsettle
+	evaluate_retval
+	
+	
+	boot_mesg "Bringing up the loopback interface..."
+	ip addr add 127.0.0.1/8 label lo dev lo
+	ip link set lo up
+	evaluate_retval
+	
+	
+	boot_mesg "Setting hostname to ${HOSTNAME}..."
+	hostname ${HOSTNAME}
+	evaluate_retval
 
-echo "Loading Installer..."
+
+	# Now check what mode= was passed to the kernel
+	for i in $(cat /proc/cmdline); do
+		case $i in
+			mode=*)
+				STARTUP_MODE=${i#mode=}
+				;;
+		esac
+	done
+	
+	case $STARTUP_MODE in
+		install)
+			SYSLOGD_EXTRA="-O /root/install.log"
+			
+			boot_mesg "Detecting hardware..."
+			for MODULE in $(kudzu -qps  -t 30 | grep driver: | cut -d ' ' -f 2 | sort | uniq); do
+				if [ "$MODULE" = "unknown" ] || \
+						[ "$MODULE" = "ignore" ] || \
+						[ "$MODULE" = "" ]; then
+		        continue
+				fi
+				MODULE=$(find /lib/modules -name $(echo $MODULE | sed -e 's/[_-]/*/g')* 2>/dev/null)
+		    [ "$MODULE" == "" ] && continue
+		    MODULE=$(basename $MODULE | cut -d. -f1 | head -1)
+		    
+				if grep -Eqe "^$MODULE " /proc/modules; then
+					continue
+				fi
+				
+				echo "$MODULE" >> /tmp/modules-found.txt
+				modprobe $MODULE
+				
+			done
+			echo_ok
+			;;
+		rescue)
+			sed -i "s, -c /bin/installer,,g" /etc/inittab
+			;;
+	esac
+
+
+	boot_mesg "Starting system log daemon..."
+	syslogd -O /dev/tty4 $SYSLOGD_EXTRA
+	evaluate_retval
+
+
+	exec init
+	

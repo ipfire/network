@@ -1,10 +1,8 @@
-# System initialization.
-::sysinit:/etc/rc
-
-# Run gettys in standard runlevels
-tty1::respawn:/bin/iowrap /dev/tty1 /bin/ash --login -c "/bin/install /dev/tty2"
-tty2::respawn:/bin/iowrap /dev/tty2 /bin/ash --login
-tty3::respawn:/bin/iowrap /dev/tty3 /bin/ash --login
+# a number of shells
+tty1::respawn:/sbin/getty -n -i -l /bin/ash 38400 tty1
+tty2::respawn:/sbin/getty -n -i -l /bin/ash 38400 tty2
+tty3::respawn:/sbin/getty -n -i -l /bin/ash 38400 tty3
+tty4::respawn:/sbin/getty -n -i -l /bin/ash 38400 tty4
 
 # Stuff to do before rebooting
 ::ctrlaltdel:/etc/halt
