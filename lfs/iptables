@@ -68,6 +68,9 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && make LIBDIR=/lib KERNEL_DIR=/usr -j $(PARALLELISM)
 	cd $(DIR_APP) && make PREFIX=/usr LIBDIR=/lib BINDIR=/sbin \
 		MANDIR=/usr/share/man install install-devel
+		 -mkdir /usr/include/libiptc
+	cd $(DIR_APP) && cp -vf include/libiptc/{libiptc.h,ipt_kernel_headers.h} \
+		/usr/include/libiptc
 	cd $(DIR_APP) && install -v -m644 iptables.xslt /lib/iptables
 	
 	### Building IPP2P

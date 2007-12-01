@@ -229,6 +229,7 @@ ipfire_build() {
 	ipfire_make libaal
 	ipfire_make reiser4progs
 	ipfire_make xfsprogs
+	ipfire_make sysfsutils
 		
 	### Building hardware utils
 	#
@@ -237,6 +238,7 @@ ipfire_build() {
 	ipfire_make hdparm
 	ipfire_make kudzu
 	ipfire_make smartmontools
+	ipfire_make lm-sensors
 
 	### Building some important tools
 	#
@@ -251,6 +253,7 @@ ipfire_build() {
 	ipfire_make noip
 	ipfire_make lighttpd
 	ipfire_make lzma
+	ipfire_make collectd
 	
 	### Programs that are still for discussion
 	#   package or in the standard system
