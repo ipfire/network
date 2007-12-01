@@ -418,9 +418,9 @@ packages_build() {
 	ipfire_make cdrom
 	
   # Check if there is a loop device for building in virtual environments
-  if [ -e /dev/loop/0 ] || [ -e /dev/loop0 ]; then
-  	ipfire_make usb-stick
-  fi
+  #if [ -e /dev/loop/0 ] || [ -e /dev/loop0 ]; then
+  #	ipfire_make usb-stick
+  #fi
   mv $LFS/$IMAGES_DIR/{*.iso,*.tgz,*.img.gz} $BASEDIR >> $LOGFILE 2>&1
 
 	#ipfire_make core-updates

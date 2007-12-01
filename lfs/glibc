@@ -66,7 +66,7 @@ ifeq "$(STAGE)" "toolchain"
 		--without-gd --with-headers=$(TOOLS_DIR)/include \
 		--without-selinux
 		
-	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=-j$(PARALLELISM)
+	cd $(DIR_SRC)/glibc-build && DISTCC_HOSTS=localhost make PARALLELMFLAGS=-j$(PARALLELISM)
 	-mkdir -v $(TOOLS_DIR)/etc
 	touch $(TOOLS_DIR)/etc/ld.so.conf
 	cd $(DIR_SRC)/glibc-build && make install
@@ -84,7 +84,7 @@ ifeq "$(STAGE)" "base"
     --disable-profile --enable-add-ons --enable-kernel=2.6.0 \
 		--libexecdir=/usr/lib/glibc
 	
-	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=-j$(PARALLELISM)
+	cd $(DIR_SRC)/glibc-build && DISTCC_HOSTS=localhost make PARALLELMFLAGS=-j$(PARALLELISM)
 	touch /etc/ld.so.conf
 	cd $(DIR_SRC)/glibc-build && make install
 	
