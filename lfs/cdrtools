@@ -37,7 +37,8 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-mkisofs_iconv-1.patch \
+	$(THISAPP)-ascii-2.patch
 
 install: $(TARGET)
 

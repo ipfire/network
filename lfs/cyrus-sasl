@@ -56,7 +56,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc \
 		            --with-dbpath=/var/lib/sasl/sasldb2 \
 		            --with-saslauthd=/var/run/saslauthd
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make #-j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	install -v -m700 -d /var/lib/sasl /var/run/saslauthd
 	cp -vf $(DIR_CONFIG)/cyrus-sasl/smtpd.conf /usr/lib/sasl2/
