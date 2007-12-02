@@ -24,53 +24,26 @@
 
 include Config
 
-VER        = 2.11
+PKG_NAME   = stage4
+VER        = LFS
 
-THISAPP    = dosfstools-$(VER)
-DL_FILE    = $(THISAPP).src.tar.gz
-DL_FROM    = $(URL_IPFIRE)
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+THISAPP    = $(PKG_NAME)-$(VER)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
-
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 407d405ade410f7597d364ab5dc8c9f6
-
 install : $(TARGET)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
-
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
-	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
+download :
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
+$(TARGET) :
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && make $(MAKETUNING)
-	cd $(DIR_APP) && make install
-	@rm -rf $(DIR_APP)
+	
 	@$(POSTBUILD)

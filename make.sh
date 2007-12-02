@@ -188,6 +188,7 @@ ipfire_build() {
 	ipfire_make iptstate
 	ipfire_make bridge-utils
 	ipfire_make vlan
+	ipfire_make bind
 	
 	### Building some general stuff
 	#
@@ -254,41 +255,26 @@ ipfire_build() {
 	ipfire_make lighttpd
 	ipfire_make lzma
 	ipfire_make collectd
-	
-	### Programs that are still for discussion
-	#   package or in the standard system
-	#
-	## NTFS
-	#ipfire_make fuse
-  #ipfire_make ntfs-3g
-  #
-  ## Net tools
-  #ipfire_make bwm-ng
-  #ipfire_make openvpn
-  #
-  ## UPNP
-  #ipfire_make libupnp
-  #ipfire_make linux-igd
-  
+  #ipfire_make logrotate
+  #ipfire_make logwatch	
+	ipfire_make cpio
+	ipfire_make cdrtools
+	ipfire_make parted
+	ipfire_make memtest86+
   #ipfire_make pakfire
   #ipfire_make initscripts
-	
-	#ipfire_make backup
+  
+  ### -------------------------------------------------------------------------
+  ### Tools that maybe not needed
+  #	
   #ipfire_make expat
   #ipfire_make gmp
   #ipfire_make gd
   #ipfire_make libcap
-
-  #ipfire_make bind
-  #ipfire_make cdrtools
-  #ipfire_make dosfstools
-  #ipfire_make sysfsutils
   #ipfire_make mtools
   #ipfire_make mISDN
-  #ipfire_make logrotate
-  #ipfire_make logwatch
+
   #ipfire_make nasm
-  
   #ipfire_make wireless
   #ipfire_make libsafe
 }
@@ -305,38 +291,50 @@ misc_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.misc.log"
 	export LOGFILE
 	
-	#ipfire_make stage4
+	ipfire_make stage4
 	
+	### Console tools
+	#
 	ipfire_make glib
 	ipfire_make mc
+	#ipfire_make traceroute
+	#ipfire_make nmap
+	#ipfire_make rsync
+	#ipfire_make tcpdump
 	
-	ipfire_make cpio
-	ipfire_make cdrtools
-	ipfire_make parted
-	ipfire_make memtest86+
-	#ipfire_make as86
-	#ipfire_make mbr
+	#ipfire_make squid
+	#ipfire_make squid-graph	## WILL THIS BE BANISHED BY COLLECTD?
+	#ipfire_make squidguard		## CAN THIS BE BANISHED BY ANYTHING BETTER?
+	#ipfire_make calamaris		## CAN THIS BE BANISHED BY ANYTHING BETTER?
+	#ipfire_make vsftpd
 	
+	### Programs that are still for discussion
+	#   package or in the standard system
+	#
+	## NTFS
+	#ipfire_make fuse
+  #ipfire_make ntfs-3g
+  #
+  ## Net tools
+  #ipfire_make bwm-ng
+  #ipfire_make openvpn
+  #
+  ## UPNP
+  #ipfire_make libupnp
+  #ipfire_make linux-igd
+		
+	### These will become addons as usual but will be integrated later
+	#
 	#ipfire_make snort
 	#ipfire_make oinkmaster
-	#ipfire_make squid
-	#ipfire_make squid-graph
-	#ipfire_make squidguard
-	#ipfire_make calamaris
-	#ipfire_make tcpdump
-	#ipfire_make traceroute
-	#ipfire_make vsftpd
 	#ipfire_make centerim
-	#ipfire_make ncftp
 	#ipfire_make tripwire
 	#ipfire_make java
-	#ipfire_make spandsp
 	#ipfire_make cups
 	#ipfire_make ghostscript
 	#ipfire_make foomatic
 	#ipfire_make hplip
 	#ipfire_make samba
-	#ipfire_make wget
 	#ipfire_make postfix
 	#ipfire_make fetchmail
 	#ipfire_make cyrus-imapd
@@ -361,18 +359,16 @@ misc_build() {
 	#ipfire_make videolan
 	#ipfire_make libpri
 	#ipfire_make asterisk
-	#ipfire_make gnump3d
 	#ipfire_make libsigc++
 	#ipfire_make applejuice
-	#ipfire_make ocaml
-	#ipfire_make mldonkey
 	#ipfire_make libtorrent
 	#ipfire_make rtorrent
 	#ipfire_make ipfireseeder
-	#ipfire_make rsync
 	#ipfire_make nfs
-	#ipfire_make nmap
 	
+	# ---------------------------------------------------------------------------
+	#ipfire_make as86
+	#ipfire_make mbr
 }
 
 ################################################################################
@@ -390,10 +386,6 @@ installer_build() {
 	ipfire_make busybox
 	#ipfire_make installer
 	ipfire_make initramfs
-	
-	#ipfire_make klibc  ##### Maybe this will be in the installer pass
-  #ipfire_make mkinitcpio
-  #ipfire_make udev																	KLIBC=1
 }
 
 ################################################################################

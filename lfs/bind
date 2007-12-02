@@ -25,13 +25,14 @@
 
 include Config
 
-VER        = 9.3.2
+PKG_NAME   = bind
+VER        = 9.4.1-P1
 
-THISAPP    = bind-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -39,30 +40,12 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 55e709501a7780233c36e25ccd15ece2
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -71,13 +54,13 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr --disable-nls
-	cd $(DIR_APP) && make -C lib/dns
-	cd $(DIR_APP) && make -C lib/isc
-	cd $(DIR_APP) && make -C lib/bind9
-	cd $(DIR_APP) && make -C lib/isccfg
-	cd $(DIR_APP) && make -C lib/lwres
-	cd $(DIR_APP) && make -C bin/dig
+	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && make -C lib/dns -j $(PARALLELISM)
+	cd $(DIR_APP) && make -C lib/isc -j $(PARALLELISM)
+	cd $(DIR_APP) && make -C lib/bind9 -j $(PARALLELISM)
+	cd $(DIR_APP) && make -C lib/isccfg -j $(PARALLELISM)
+	cd $(DIR_APP) && make -C lib/lwres -j $(PARALLELISM)
+	cd $(DIR_APP) && make -C bin/dig -j $(PARALLELISM)
 	cd $(DIR_APP) && make -C bin/dig install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
