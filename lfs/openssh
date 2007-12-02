@@ -55,7 +55,6 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	install -v -m700 -d /var/lib/sshd
 	chown -v root:sys /var/lib/sshd
-	install -v -m755 -d /etc/ssh
 	cd $(DIR_APP) && sed -i "s:-lcrypto:/usr/lib/libcrypto.a -ldl:g" configure
 	cd $(DIR_APP) && sed -i "s/lkrb5 -ldes/lkrb5/" configure
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc/ssh \
