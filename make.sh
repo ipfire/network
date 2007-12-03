@@ -383,6 +383,7 @@ installer_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.installer.log"
 	export LOGFILE
 	
+	ipfire_make stage5
 	ipfire_make busybox
 	#ipfire_make installer
 	ipfire_make initramfs
@@ -399,8 +400,6 @@ packages_build() {
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.packages.log"
 	export LOGFILE
-	
-  echo "... see detailed log in _build.*.log files" >> $LOGFILE
 
   toolchain_make strip
   

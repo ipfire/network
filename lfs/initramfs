@@ -60,6 +60,10 @@ $(TARGET) :
 	ln -svf libcrypt-2.7.so									$(INSTALLER_DIR)/lib/libcrypt.so.1
 	install -c -D /lib/libm-2.7.so					$(INSTALLER_DIR)/lib/libm-2.7.so
 	ln -svf libm-2.7.so											$(INSTALLER_DIR)/lib/libm.so.6
+	install -c -D /lib/libutil-2.7.so				$(INSTALLER_DIR)/lib/libutil-2.7.so
+	ln -svf libutil-2.7.so									$(INSTALLER_DIR)/lib/libutil.so.1
+	install -c -D /lib/libpthread-2.7.so		$(INSTALLER_DIR)/lib/libpthread-2.7.so
+	ln -svf libpthread-2.7.so								$(INSTALLER_DIR)/lib/libpthread.so.0
 	install -c -D /lib/ld-2.7.so						$(INSTALLER_DIR)/lib/ld-2.7.so
 	ln -svf ld-2.7.so												$(INSTALLER_DIR)/$(LINKER)
 	
@@ -109,6 +113,27 @@ $(TARGET) :
 	#
 	install -c -D /lib/libz.so.1.2.3				$(INSTALLER_DIR)/lib/libz.so.1.2.3
 	ln -svf libz.so.1.2.3										$(INSTALLER_DIR)/lib/libz.so.1
+	
+	### newt
+	#
+	install -c -D /usr/lib/libnewt.so.0.52.7	$(INSTALLER_DIR)/usr/lib/libnewt.so.0.52.7
+	ln -svf libnewt.so.0.52.7								$(INSTALLER_DIR)/usr/lib/libnewt.so.0.52
+	
+	### slang
+	#
+	install -c -D /usr/lib/libslang.so.2.1.1	$(INSTALLER_DIR)/usr/lib/libslang.so.2.1.1
+	ln -svf libslang.so.2.1.1							$(INSTALLER_DIR)/usr/lib/libslang.so.2	
+	
+	### python
+	#
+	install -c -D /usr/lib/libpython2.5.so.1.0	$(INSTALLER_DIR)/usr/lib/libpython2.5.so.1.0
+	ln -svf libpython2.5.so.1.0							$(INSTALLER_DIR)/usr/lib/libpython2.5.so
+	install -D /usr/bin/python							$(INSTALLER_DIR)/usr/bin/python
+	-mkdir -p $(INSTALLER_DIR)/usr/lib/python2.5/{site-packages,lib-dynload}
+	cp -avf /usr/lib/python2.5/{UserDict,cmd,copy*,os,posixpath,re,site,socket,sre*,stat,string,types}.py{,o} \
+		$(INSTALLER_DIR)/usr/lib/python2.5/
+	cp -avf /usr/lib/python2.5/site-packages/{_{snack,kudzu}module.so,{kudzu,snack}.py} \
+		$(INSTALLER_DIR)/usr/lib/python2.5/site-packages
 	
 	### configuration
 	#
