@@ -79,7 +79,7 @@ toolchain_build() {
 	toolchain_make tar
 	toolchain_make texinfo
 	toolchain_make util-linux
-	# toolchain_make strip
+	toolchain_make strip
 	export PATH=$ORG_PATH
 }
 
@@ -198,7 +198,7 @@ ipfire_build() {
 	ipfire_make pam																			PASS=2
 	
 	#ipfire_make libidn		### Do we need this?
-  ipfire_make pcre
+	ipfire_make pcre
 	ipfire_make popt
 	ipfire_make python
 	ipfire_make libxml2
@@ -206,8 +206,8 @@ ipfire_build() {
 	ipfire_make slang
 	ipfire_make newt
 	ipfire_make cyrus-sasl
-  ipfire_make openldap
-  ipfire_make sqlite
+	ipfire_make openldap
+	ipfire_make sqlite
 	ipfire_make curl
 	ipfire_make libusb
 	ipfire_make gnupg
@@ -255,28 +255,28 @@ ipfire_build() {
 	ipfire_make lighttpd
 	ipfire_make lzma
 	ipfire_make collectd
-  #ipfire_make logrotate
-  #ipfire_make logwatch	
+	#ipfire_make logrotate
+	#ipfire_make logwatch	
 	ipfire_make cpio
 	ipfire_make cdrtools
 	ipfire_make parted
 	ipfire_make memtest86+
-  #ipfire_make pakfire
-  #ipfire_make initscripts
+	#ipfire_make pakfire
+	#ipfire_make initscripts
   
-  ### -------------------------------------------------------------------------
-  ### Tools that maybe not needed
-  #	
-  #ipfire_make expat
-  #ipfire_make gmp
-  #ipfire_make gd
-  #ipfire_make libcap
-  #ipfire_make mtools
-  #ipfire_make mISDN
-
-  #ipfire_make nasm
-  #ipfire_make wireless
-  #ipfire_make libsafe
+	### -------------------------------------------------------------------------
+	### Tools that maybe not needed
+	#	
+	#ipfire_make expat
+	#ipfire_make gmp
+	#ipfire_make gd
+	#ipfire_make libcap
+	#ipfire_make mtools
+	#ipfire_make mISDN
+	
+	#ipfire_make nasm
+	#ipfire_make wireless
+	#ipfire_make libsafe
 }
 
 ################################################################################
@@ -313,15 +313,15 @@ misc_build() {
 	#
 	## NTFS
 	#ipfire_make fuse
-  #ipfire_make ntfs-3g
-  #
-  ## Net tools
-  #ipfire_make bwm-ng
-  #ipfire_make openvpn
-  #
-  ## UPNP
-  #ipfire_make libupnp
-  #ipfire_make linux-igd
+	#ipfire_make ntfs-3g
+	#
+	## Net tools
+	#ipfire_make bwm-ng
+	#ipfire_make openvpn
+	#
+	## UPNP
+	#ipfire_make libupnp
+	#ipfire_make linux-igd
 		
 	### These will become addons as usual but will be integrated later
 	#
@@ -402,7 +402,7 @@ packages_build() {
 	
   echo "... see detailed log in _build.*.log files" >> $LOGFILE
 
-  ipfire_make strip
+  toolchain_make strip
   
   # Generating list of packages used
 	### MISSING ATM

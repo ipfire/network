@@ -27,8 +27,8 @@ include Config
 PKG_NAME   = strip
 VER        = LFS
 
-THISAPP    = strip
-TARGET     = $(DIR_INFO)/$(THISAPP)
+THISAPP    = $(PKG_NAME)-$(VER)
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -49,4 +49,11 @@ ifeq "$(STAGE)" "toolchain"
 	-strip --strip-unneeded $(TOOLS_DIR)/{,s}bin/*
 	rm -rf $(TOOLS_DIR)/{,share/}{info,man}
 	chown -R root:root $(LFS)$(TOOLS_DIR)
+endif
+
+ifeq "$(STAGE)" "packages"
+	-$(TOOLS_DIR)/bin/find /{,usr/}{bin,lib,sbin} -type f ! -name make ! -name bash -exec \
+		$(TOOLS_DIR)/bin/strip --strip-debug '{}' ';'
+	-$(TOOLS_DIR)/bin/find /{,usr/}{bin,sbin} -type f ! -name make ! -name bash -exec \
+		$(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
 endif
