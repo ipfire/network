@@ -201,6 +201,7 @@ ipfire_build() {
 	ipfire_make pcre
 	ipfire_make popt
 	ipfire_make python
+	ipfire_make pyfire
 	ipfire_make libxml2
 	ipfire_make libxslt
 	ipfire_make slang
@@ -303,7 +304,6 @@ misc_build() {
 	#ipfire_make tcpdump
 	
 	#ipfire_make squid
-	#ipfire_make squid-graph	## WILL THIS BE BANISHED BY COLLECTD?
 	#ipfire_make squidguard		## CAN THIS BE BANISHED BY ANYTHING BETTER?
 	#ipfire_make calamaris		## CAN THIS BE BANISHED BY ANYTHING BETTER?
 	#ipfire_make vsftpd
@@ -385,7 +385,7 @@ installer_build() {
 	
 	ipfire_make stage5
 	ipfire_make busybox
-	#ipfire_make installer
+	ipfire_make installer
 	ipfire_make initramfs
 }
 

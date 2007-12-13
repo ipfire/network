@@ -18,53 +18,9 @@
 #                                                                             #
 ###############################################################################
 
-###############################################################################
-# Definitions
-###############################################################################
-
-include Config
-
-PKG_NAME   = Python
-VER        = 2.5.1
-
-ICONV      = iconvmodule-1.0-ipfire-1
-
-THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.bz2
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
-
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-
-MODULES    = "$(ICONV)"
-
-###############################################################################
-# Top-level Rules
-###############################################################################
-
-objects = $(DL_FILE) $(ICONV).tar.bz2
-
-install: $(TARGET)
-
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
-	@$(LOAD)
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
-	@$(PREBUILD)
-	@rm -rf $(DIR_APP) $(MODULES) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && OPT="$(CFLAGS)" ./configure --prefix=/usr --enable-shared
-	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install
+# A dummy
+def pyfire():
+	from pyfire.translate import _, textdomain
 	
-	### Building optional modules
-	#
-	cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(ICONV).tar.bz2
-	cd $(DIR_SRC)/$(ICONV) && make install
-	
-	@rm -rf $(DIR_APP) $(MODULES)
-	@$(POSTBUILD)
+	textdomain("pyfire")
+	print _("This is a dummy")

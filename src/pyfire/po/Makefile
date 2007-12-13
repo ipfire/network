@@ -18,53 +18,59 @@
 #                                                                             #
 ###############################################################################
 
-###############################################################################
-# Definitions
-###############################################################################
+include ../Makefile.inc
 
-include Config
+POTFILES = ../src/*.py
+NONPOTFILES = 
 
-PKG_NAME   = Python
-VER        = 2.5.1
+POS = $(wildcard *.po)
+FMTCATALOGS = $(patsubst %.po,%.mo,$(POS))
 
-ICONV      = iconvmodule-1.0-ipfire-1
+MSGMERGE = msgmerge -v
 
-THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.bz2
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+all: $(FMTCATALOGS)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+$(SNAME).pot: $(POTFILES) $(NONPOTFILES)
+	xgettext --from-code=UTF-8 --default-domain=$(SNAME) \
+		--keyword=_ --keyword=N_ $(POTFILES)
+	if cmp -s $(SNAME).po $(SNAME).pot; then \
+	    rm -f $(SNAME).po; \
+	else \
+	    mv $(SNAME).po $(SNAME).pot; \
+	fi
 
-MODULES    = "$(ICONV)"
+refresh-po:
+	for cat in $(POS); do \
+		lang=`basename $$cat .po`; \
+		if $(MSGMERGE) $$lang.po $(SNAME).pot > $$lang.pot ; then \
+			mv -f $$lang.pot $$lang.po ; \
+			echo "$(MSGMERGE) of $$lang succeeded" ; \
+		else \
+			echo "$(MSGMERGE) of $$lang failed" ; \
+			rm -f $$lang.pot ; \
+		fi \
+	done
 
-###############################################################################
-# Top-level Rules
-###############################################################################
+update-po: $(SNAME).pot refresh-po
 
-objects = $(DL_FILE) $(ICONV).tar.bz2
+install: all
+	mkdir -p $(PREFIX)/$(INSTALLNLSDIR)
+	for n in $(FMTCATALOGS); do \
+	    l=`basename $$n .mo`; \
+	    $(INSTALL) -m 755 -d $(PREFIX)/$(INSTALLNLSDIR)/$$l; \
+	    $(INSTALL) -m 755 -d $(PREFIX)/$(INSTALLNLSDIR)/$$l/LC_MESSAGES; \
+	    $(INSTALL) -m 644 $$n \
+				$(PREFIX)/$(INSTALLNLSDIR)/$$l/LC_MESSAGES/$(SNAME).mo; \
+	done
 
-install: $(TARGET)
+%.mo: %.po
+	msgfmt --check -o $@ $<
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
+report:
+	@for cat in $(POS); do \
+		echo -n "$$cat: "; \
+		msgfmt -v --statistics -o /dev/null $$cat; \
+	done
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
-	@$(LOAD)
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
-	@$(PREBUILD)
-	@rm -rf $(DIR_APP) $(MODULES) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && OPT="$(CFLAGS)" ./configure --prefix=/usr --enable-shared
-	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install
-	
-	### Building optional modules
-	#
-	cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(ICONV).tar.bz2
-	cd $(DIR_SRC)/$(ICONV) && make install
-	
-	@rm -rf $(DIR_APP) $(MODULES)
-	@$(POSTBUILD)
+clean:
+	rm -f *.mo missing

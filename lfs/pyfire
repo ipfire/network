@@ -24,13 +24,13 @@
 
 include Config
 
-VER        = 3.2
+PKG_NAME   = pyfire
+VER        = 0.99.1
 
-THISAPP    = squid-graph-$(VER)
-DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
-DIR_APP    = $(DIR_SRC)/squid-graph
-TARGET     = $(DIR_INFO)/$(THISAPP)
+THISAPP    = $(PKG_NAME)-$(VER)
+DIR_APP    = $(DIR_SOURCE)/$(PKG_NAME)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -38,30 +38,12 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 7ed7d187f87bde1ec9dabe05f07053b5
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download :$(patsubst %,$(DIR_DL)/%,$(objects))
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(patsubst %,$(DIR_DL)/%,$(objects)) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -69,14 +51,8 @@ $(subst %,%_MD5,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && sed \
-	    -e "s/\$$color{'gr'}   .*$$/\$$color{'gr'}   = ['33','33','99']; # graph total line color/" \
-	    -e "s/\$$color{'hit'}  .*$$/\$$color{'hit'}  = ['99','33','33']; # graph hit line color/" \
-	    -e "s/\$$color{'miss'} .*$$/\$$color{'miss'} = ['33','99','33']; # graph miss line color/" \
-	    -e "s/\$$color{'ims'}  .*$$/\$$color{'ims'}  = ['99','33','99']; # graph ims hit line color/" \
-	       squid-graph > /usr/bin/squid-graph
-	chmod 755 /usr/bin/squid-graph
-	-mkdir -p /srv/web/ipfire/html/sgraph
-	@rm -rf $(DIR_APP)
+	cd $(DIR_APP) && make -C po update-po
+	cd $(DIR_APP) && make
+	cd $(DIR_APP) && make install
+	cd $(DIR_APP) && make clean
 	@$(POSTBUILD)

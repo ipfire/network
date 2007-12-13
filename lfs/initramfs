@@ -122,7 +122,7 @@ $(TARGET) :
 	### slang
 	#
 	install -c -D /usr/lib/libslang.so.2.1.1	$(INSTALLER_DIR)/usr/lib/libslang.so.2.1.1
-	ln -svf libslang.so.2.1.1							$(INSTALLER_DIR)/usr/lib/libslang.so.2	
+	ln -svf libslang.so.2.1.1								$(INSTALLER_DIR)/usr/lib/libslang.so.2
 	
 	### python
 	#
@@ -130,10 +130,14 @@ $(TARGET) :
 	ln -svf libpython2.5.so.1.0							$(INSTALLER_DIR)/usr/lib/libpython2.5.so
 	install -D /usr/bin/python							$(INSTALLER_DIR)/usr/bin/python
 	-mkdir -p $(INSTALLER_DIR)/usr/lib/python2.5/{site-packages,lib-dynload}
-	cp -avf /usr/lib/python2.5/{UserDict,cmd,copy*,os,posixpath,re,site,socket,sre*,stat,string,types}.py{,o} \
+	cp -avf /usr/lib/python2.5/{encodings,logging} \
 		$(INSTALLER_DIR)/usr/lib/python2.5/
-	cp -avf /usr/lib/python2.5/site-packages/{_{snack,kudzu}module.so,{kudzu,snack}.py} \
+	cp -avf /usr/lib/python2.5/{UserDict,bdb,cmd,codecs,copy*,fnmatch,gettext,glob,gzip,linecache,locale,os,pickle,posixpath,pty,re,shlex,site,socket,sre*,stat,string,struct,subprocess,traceback,tty,types}.py{,o} \
+		$(INSTALLER_DIR)/usr/lib/python2.5/
+	cp -avf /usr/lib/python2.5/site-packages/{_{snack,kudzu}module.so,{kudzu,snack}.py,iconv.so} \
 		$(INSTALLER_DIR)/usr/lib/python2.5/site-packages
+	cp -avf /usr/lib/python2.5/lib-dynload/{{binascii,collections,cPickle,cStringIO,fcntl,operator,select,termios,time,zlib},_{socket,struct}}.so \
+		$(INSTALLER_DIR)/usr/lib/python2.5/lib-dynload
 	
 	### configuration
 	#
@@ -142,7 +146,7 @@ $(TARGET) :
 	chmod -v 755 $(INSTALLER_DIR)/etc/{halt,rc}
 	ln -svf etc/rc													$(INSTALLER_DIR)/init 
 	cp -vf /etc/issue /etc/group						$(INSTALLER_DIR)/etc/
-	cp -f /usr/share/terminfo/l/linux				$(INSTALLER_DIR)/usr/share/terminfo/l
+	cp -vf /usr/share/terminfo/l/linux			$(INSTALLER_DIR)/usr/share/terminfo/l
 	
 	cd $(INSTALLER_DIR) && find ./bin -maxdepth 1 -type f -exec \
 		$(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
