@@ -63,6 +63,6 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 		--with-rrdtool=/usr/share/rrdtool/
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
-	cp -vrf $(DIR_SRC)/stc/initscripts/sysconfig/collectd.conf /etc/
+	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/collectd.conf /etc/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
