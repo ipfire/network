@@ -24,8 +24,8 @@
 
 include Config
 
-PKG_NAME   = gmp
-VER        = 4.2.1
+PKG_NAME   = strongswan
+VER        = 4.1.10
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -53,7 +53,9 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr --enable-cxx --enable-mpbsd ABI=32
+	cd $(DIR_APP) && ./configure --prefix=/usr \
+										--sysconfdir=/etc
+										### XXX UID/GID
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)

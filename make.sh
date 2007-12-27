@@ -196,7 +196,7 @@ ipfire_build() {
 	ipfire_make pam																			PASS=1
 	ipfire_make shadow
 	ipfire_make pam																			PASS=2
-	
+	ipfire_make gmp
 	#ipfire_make libidn		### Do we need this?
 	ipfire_make pcre
 	ipfire_make popt
@@ -224,6 +224,10 @@ ipfire_build() {
 	ipfire_make etherwake
 	ipfire_make htop
 	ipfire_make beep
+	
+	### Building vpn stuff
+	#
+	ipfire_make strongswan
 	
 	### Building filesystem stuff
 	#
@@ -269,7 +273,6 @@ ipfire_build() {
 	### Tools that maybe not needed
 	#	
 	#ipfire_make expat
-	#ipfire_make gmp
 	#ipfire_make gd
 	#ipfire_make libcap
 	#ipfire_make mtools
@@ -473,26 +476,14 @@ build)
 		fi
 	fi
 	
-	if [ ! -e $BASEDIR/log_${MACHINE}/03_ipfire/stage3-LFS ]; then
-		beautify build_stage "Building base"
-		base_build
-	else
-		beautify message DONE "Stage base      already built"
-	fi
+	beautify build_stage "Building base"
+	base_build
 
-	if [ ! -e $BASEDIR/log_${MACHINE}/04_misc/stage4-LFS ]; then
-		beautify build_stage "Building $NAME"
-		ipfire_build
-	else
-		beautify message DONE "Stage ipfire    already built"
-	fi
+	beautify build_stage "Building $NAME"
+	ipfire_build
 
-	if [ ! -e $BASEDIR/log_${MACHINE}/05_installer/stage5-LFS ]; then
-		beautify build_stage "Building miscellaneous"
-		misc_build
-	else
-		beautify message DONE "Stage misc      already built"
-	fi
+	beautify build_stage "Building miscellaneous"
+	misc_build
 
 	beautify build_stage "Building installer"
 	installer_build
