@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = binutils
-VER        = 2.17
+VER        = 2.18
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -41,7 +41,7 @@ endif
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-configure-1.patch
 
 install : $(TARGET)
 
@@ -58,6 +58,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/binutils-build && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	-mkdir -v $(DIR_SRC)/binutils-build
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-configure-1.patch
 
 ifeq "$(PASS)" "1"
 	cd $(DIR_SRC)/binutils-build && CC="gcc -B/usr/bin/" ../$(THISAPP)/configure \
