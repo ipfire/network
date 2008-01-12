@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = man-db
-VER        = 2.4.4
+VER        = 2.5.0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -37,7 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-fixes-1.patch
+objects = $(DL_FILE)
 
 install : $(TARGET)
 
@@ -53,17 +53,11 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && mv man/de{_DE.88591,}
-	cd $(DIR_APP) && mv man/es{_ES.88591,}
-	cd $(DIR_APP) && mv man/it{_IT.88591,}
-	cd $(DIR_APP) && mv man/ja{_JP.eucJP,}
-	cd $(DIR_APP) && sed -i 's,\*_\*,??,' man/Makefile.in
 	cd $(DIR_APP) && sed -i -e '\%\t/usr/man%d' -e '\%\t/usr/local/man%d' src/man_db.conf.in
 	cd $(DIR_APP) && echo -e "#define WEB_BROWSER \"exec /usr/bin/lynx\"" >> include/manconfig.h.in
 	cd $(DIR_APP) && echo -e "#define COL \"/usr/bin/col\"" >> include/manconfig.h.in
 	cd $(DIR_APP) && echo -e "#define VGRIND \"/usr/bin/vgrind\"" >> include/manconfig.h.in
 	cd $(DIR_APP) && echo -e "#define GRAP \"/usr/bin/grap\"" >> include/manconfig.h.in
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr --enable-mb-groff --disable-setuid
 	cd $(DIR_APP) && make #-j $(PARALLELISM)
 	cd $(DIR_APP) && make install

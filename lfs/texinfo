@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = texinfo
-VER        = 4.9
+VER        = 4.11
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -37,7 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-multibyte-1.patch $(THISAPP)-tempfile_fix-1.patch
+objects = $(DL_FILE)
 
 install : $(TARGET)
 
@@ -61,8 +61,6 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-multibyte-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-tempfile_fix-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
