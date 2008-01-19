@@ -549,28 +549,17 @@ downloadsrc)
 	fi
 	mkdir -p $BASEDIR/log_${MACHINE}
 	echo -e "${BOLD}Preload all source files${NORMAL}" | tee -a $LOGFILE
-	FINISHED=0
 	cd $BASEDIR/lfs
-	for c in `seq $MAX_RETRIES`; do
-		if (( FINISHED==1 )); then 
-			break
-		fi
-		FINISHED=1
-		cd $BASEDIR/lfs
-		for i in *; do
-			if [ -f "$i" -a "$i" != "Config" ]; then
-				echo -ne "Loading $i"
-				make -s -f $i LFS_BASEDIR=$BASEDIR MESSAGE="$i\t ($c/$MAX_RETRIES)" download >> $LOGFILE 2>&1
-				if [ $? -ne 0 ]; then
-					beautify message FAIL
-					FINISHED=0
-				else
-					if [ $c -eq 1 ]; then
-					beautify message DONE
-					fi
-				fi
+	for i in *; do
+		if [ -f "$i" -a "$i" != "Config" ]; then
+			echo -ne "Loading $i"
+			make -s -f $i LFS_BASEDIR=$BASEDIR MESSAGE="$i\t" download >> $LOGFILE 2>&1
+			if [ $? -ne 0 ]; then
+				beautify message FAIL
+			else
+				beautify message DONE
 			fi
-		done
+		fi
 	done
 	cd - >/dev/null 2>&1
 	;;
