@@ -184,7 +184,6 @@ ipfire_build() {
 	ipfire_make libnetfilter_queue
 	ipfire_make libnetfilter_conntrack
 	ipfire_make libnetfilter_log
-	ipfire_make ulogd2
 	ipfire_make dnsmasq
 	ipfire_make l7-protocols
 	ipfire_make iptstate
@@ -250,6 +249,7 @@ ipfire_build() {
 
 	### Building some important tools
 	#
+	ipfire_make ulogd2
 	ipfire_make fcron
 	ipfire_make which
 	ipfire_make nano
