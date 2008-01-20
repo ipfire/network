@@ -46,7 +46,6 @@ svn_commit() {
 	if [ "`echo $SVN_REVISION | cut -c 3`" -eq "0" ]; then
 		svn_changelog
 	fi
-	update_langs
 	svn commit
 }
 

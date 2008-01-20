@@ -393,11 +393,6 @@ lfsmakecommoncheck()
 		exiterror "Download error in $1"
 	fi
 
-#	cd $BASEDIR/lfs && make -s -f $* MACHINE=$MACHINE LFS_BASEDIR=$BASEDIR MESSAGE="$1\t md5sum" md5  >> $LOGFILE 2>&1
-#	if [ $? -ne 0 ]; then
-#		exiterror "md5sum error in $1, check file in cache or signature"
-#	fi
-
 	return 0	# pass all!
 } # End of lfsmakecommoncheck()
 
@@ -947,12 +942,3 @@ sleep 15
 	rm -f /tmp/ipfire_mail_body.$$
 }
 
-update_langs() {
-		echo -ne "Checking the translations for missing or obsolete strings..."
-		chmod 755 $BASEDIR/tools/{check_strings.pl,sort_strings.pl}
-		$BASEDIR/tools/sort_strings.pl en
-		$BASEDIR/tools/sort_strings.pl de
-		$BASEDIR/tools/check_strings.pl en > $BASEDIR/doc/language_issues.en
-		$BASEDIR/tools/check_strings.pl de > $BASEDIR/doc/language_issues.de
-		beautify message DONE
-}
