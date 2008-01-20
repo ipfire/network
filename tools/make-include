@@ -666,7 +666,7 @@ prepareenv() {
 	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/dev/pts
 	mkdir -p $LFS/proc
-	mkdir -p $LFS/usr/src/{cache,config,doc,html,langs,lfs,log_${MACHINE},src,ccache,distcc}
+	mkdir -p $LFS/usr/src/{cache,config,doc,html,lfs,log_${MACHINE},src,ccache,distcc}
 	mkdir -p $LFS/{$INSTALLER_DIR,cdrom,images,usr/local/{ccache,distcc}}
 	mkdir -p $LFS/etc
 
@@ -682,7 +682,6 @@ prepareenv() {
 	mount --bind $BASEDIR/config															$LFS/usr/src/config
 	mount --bind $BASEDIR/doc																	$LFS/usr/src/doc
 	mount --bind $BASEDIR/html																$LFS/usr/src/html
-	mount --bind $BASEDIR/langs																$LFS/usr/src/langs
 	mount --bind $BASEDIR/lfs																	$LFS/usr/src/lfs
 	mount --bind $BASEDIR/log_${MACHINE}											$LFS/usr/src/log_${MACHINE}
 	mount --bind $BASEDIR/src																	$LFS/usr/src/src
