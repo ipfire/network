@@ -78,7 +78,7 @@ toolchain_build() {
 	toolchain_make sed
 	toolchain_make tar
 	toolchain_make texinfo
-	toolchain_make util-linux
+	toolchain_make util-linux-ng
 	toolchain_make strip
 	export PATH=$ORG_PATH
 }
@@ -145,7 +145,7 @@ base_build() {
 	ipfire_make tar
 	ipfire_make texinfo
 	ipfire_make udev					## NEED TO INSTALL CONFIG
-	ipfire_make util-linux
+	ipfire_make util-linux-ng
 	ipfire_make vim
 }
 
