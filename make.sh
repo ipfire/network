@@ -168,9 +168,22 @@ ipfire_build() {
 	#
 	ipfire_make linux
 	
-	### Building pkg-config
-	#
+	### Building some general stuff
+	#   STAGE 1
 	ipfire_make pkg-config
+	ipfire_make expat
+	ipfire_make glib
+	ipfire_make libxml2
+	ipfire_make libxslt
+	ipfire_make openssl
+	ipfire_make perl			### We are building the modules here.
+	ipfire_make python
+	ipfire_make gmp
+	#ipfire_make libidn		### Do we need this?
+	ipfire_make pcre
+	ipfire_make popt
+	ipfire_make libusb
+	ipfire_make dbus
 	
 	### Building some network stuff
 	#
@@ -192,26 +205,16 @@ ipfire_build() {
 	ipfire_make bind
 	
 	### Building some general stuff
-	#
-	ipfire_make openssl
+	#   STAGE 2
 	ipfire_make pam																			PASS=1
 	ipfire_make shadow
 	ipfire_make pam																			PASS=2
-	ipfire_make gmp
-	#ipfire_make libidn		### Do we need this?
-	ipfire_make pcre
-	ipfire_make popt
-	ipfire_make python
-	ipfire_make pyfire
-	ipfire_make libxml2
-	ipfire_make libxslt
 	ipfire_make slang
 	ipfire_make newt
 	ipfire_make cyrus-sasl
 	ipfire_make openldap
 	ipfire_make sqlite
 	ipfire_make curl
-	ipfire_make libusb
 	ipfire_make gnupg
 	ipfire_make sudo
 	#ipfire_make libjpeg	### Do we need this?
@@ -246,6 +249,7 @@ ipfire_build() {
 	ipfire_make kudzu
 	ipfire_make smartmontools
 	ipfire_make lm-sensors
+	ipfire_make hal
 
 	### Building some important tools
 	#
@@ -270,6 +274,8 @@ ipfire_build() {
 	ipfire_make memtest86+
 	#ipfire_make pakfire
 	#ipfire_make initscripts
+	
+	ipfire_make pyfire
   
 	### -------------------------------------------------------------------------
 	### Tools that maybe not needed
@@ -301,7 +307,6 @@ misc_build() {
 	
 	### Console tools
 	#
-	ipfire_make glib
 	ipfire_make mc
 	#ipfire_make traceroute
 	#ipfire_make nmap

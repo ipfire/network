@@ -33,11 +33,13 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+XMLPARSER  = XML-Parser-2.34
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-libc-2.patch
+objects = $(DL_FILE) $(THISAPP)-libc-2.patch $(XMLPARSER).tar.gz
 
 install : $(TARGET)
 
@@ -52,7 +54,8 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) $(DIR_SRC)/$(XMLPARSER) && \
+		cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libc-2.patch
@@ -82,5 +85,12 @@ ifeq "$(STAGE)" "base"
 	rm -f /etc/hosts
 endif
 
-	@rm -rf $(DIR_APP)
+ifeq "$(STAGE)" "ipfire"
+	cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(XMLPARSER).tar.gz
+	cd $(DIR_SRC)/$(XMLPARSER) && perl Makefile.PL
+	cd $(DIR_SRC)/$(XMLPARSER) && make
+	cd $(DIR_SRC)/$(XMLPARSER) && make install
+endif
+
+	@rm -rf $(DIR_APP) $(DIR_SRC)/$(XMLPARSER)
 	@$(POSTBUILD)

@@ -33,11 +33,13 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+DBUSGLIB   = dbus-glib-0.74
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(DBUSGLIB).tar.gz
 
 install: $(TARGET)
 
@@ -52,10 +54,19 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) $(DIR_SRC)/$(DBUSGLIB) && \
+		cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && ./configure --prefix=/usr
+	
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+	
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/glib2-locale.sh /etc/profile.d/
-	@rm -rf $(DIR_APP)
+	
+	cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DBUSGLIB).tar.gz
+	cd $(DIR_SRC)/$(DBUSGLIB) && ./configure --prefix=/usr
+	cd $(DIR_SRC)/$(DBUSGLIB) && make
+	cd $(DIR_SRC)/$(DBUSGLIB) && make install
+	
+	@rm -rf $(DIR_APP) $(DIR_SRC)/$(DBUSGLIB)
 	@$(POSTBUILD)

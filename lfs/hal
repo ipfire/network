@@ -24,25 +24,20 @@
 
 include Config
 
-PKG_NAME   = Python
-VER        = 2.5.1
-
-ICONV      = iconvmodule-1.0-ipfire-1
-DBUSPY     = dbus-python-0.82.0
+PKG_NAME   = hal
+VER        = 0.5.9.1
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.bz2
+DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-
-MODULES    = $(DIR_SRC)/$(ICONV) $(DIR_SRC)/$(DBUSPY)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(ICONV).tar.bz2 $(DBUSPY).tar.gz
+objects = $(DL_FILE)
 
 install: $(TARGET)
 
@@ -57,20 +52,13 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) $(MODULES) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && OPT="$(CFLAGS)" ./configure --prefix=/usr --enable-shared
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && ./configure --prefix=/usr \
+		            --sysconfdir=/etc \
+		            --libexecdir=/usr/lib/hal \
+		            --localstatedir=/var
+		
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
-	
-	### Building optional modules
-	#
-	cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(ICONV).tar.bz2
-	cd $(DIR_SRC)/$(ICONV) && make install
-	
-	cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DBUSPY).tar.gz
-	cd $(DIR_SRC)/$(DBUSPY) && ./configure --prefix=/usr
-	cd $(DIR_SRC)/$(DBUSPY) && make
-	cd $(DIR_SRC)/$(DBUSPY) && make install
-	
-	@rm -rf $(DIR_APP) $(MODULES)
+	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

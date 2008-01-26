@@ -54,7 +54,7 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) $(PYPARTED)
+	@rm -rf $(DIR_APP) $(DIR_SRC)/$(PYPARTED)
 	@cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && ./configure --prefix=/usr --without-readline --disable-nls \
 		--disable-Werror --disable-dependency-tracking --disable-debug --with-gnu-ld
@@ -67,5 +67,5 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_SRC)/$(PYPARTED) && make all install \
 		libdir=/usr/lib/python2.5/site-packages
 	
-	@rm -rf $(DIR_APP) $(PYPARTED)
+	@rm -rf $(DIR_APP) $(DIR_SRC)/$(PYPARTED)
 	@$(POSTBUILD)

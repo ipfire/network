@@ -291,6 +291,7 @@ get_pkg_ver()
 } # End of get_pkg_ver()
 
 stdumount() {
+	sleep 1 # Wait one second for finish of processes
 	for fs in `mount | grep $BASEDIR/build_${MACHINE} | awk '{print $3}'`; do
 		umount $fs #2>/dev/null;
 	done
