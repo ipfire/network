@@ -62,7 +62,7 @@ svn_dist() {
 		SVN_REVISION=$3
 	fi
 	
-	echo -en "REV $SVN_REVISION: Downloading code..."
+	echo -en "REV $SVN_REVISION: Downloading sourcecode..."
 	svn export http://svn.ipfire.org/svn/ipfire/trunk ipfire-source/ --force > /dev/null
 	evaluate 1
 	
@@ -75,4 +75,10 @@ svn_dist() {
 	evaluate 1
 	
 	rm -rf ipfire-source/
+}
+
+svn_log() {
+	echo -n "Updateing changelog from repository..."
+	svn log --limit 750 > $BASEDIR/doc/ChangeLog
+	beautify message DONE
 }
