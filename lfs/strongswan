@@ -57,6 +57,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 										--sysconfdir=/etc \
 										--libexecdir=/usr/lib/ipsec
 										### XXX UID/GID
+										### XXX Cisco Quirks
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)

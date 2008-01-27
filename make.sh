@@ -172,6 +172,7 @@ ipfire_build() {
 	#   STAGE 1
 	ipfire_make pkg-config
 	ipfire_make expat
+	ipfire_make dbus
 	ipfire_make glib
 	ipfire_make libxml2
 	ipfire_make libxslt
@@ -183,7 +184,6 @@ ipfire_build() {
 	ipfire_make pcre
 	ipfire_make popt
 	ipfire_make libusb
-	ipfire_make dbus
 	
 	### Building some network stuff
 	#
