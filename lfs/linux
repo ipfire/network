@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = linux
-VER        = 2.6.23.1
+VER        = 2.6.24
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -71,7 +71,6 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && sed -i '/scsi/d' include/Kbuild
 	cd $(DIR_APP) && make mrproper
 	cd $(DIR_APP) && make headers_check
 	cd $(DIR_APP) && make INSTALL_HDR_PATH=dest headers_install
@@ -82,7 +81,7 @@ ifeq "$(STAGE)" "ipfire"
 
 	### Reiser4
 	#
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/reiser4-2.6.23-2.patch
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/reiser4-for-2.6.24.patch
 	
 	# ip_conntrack permissions from 440 to 444
 	#cd $(DIR_APP) && patch -Np0 < $(DIR_PATCHES)/ip_conntrack_standalone-patch-for-ipfire.patch
@@ -105,8 +104,6 @@ ifeq "$(STAGE)" "ipfire"
 	
 	ln -svf ipfirekernel-$(FULLVER) /boot/ipfirekernel
 	ln -svf System.map-$(FULLVER) /boot/System.map
-	
-	cd $(DIR_APP) && install -m 755 usr/gen_init_cpio /sbin/
 	
 	### Building other modules
 	#
