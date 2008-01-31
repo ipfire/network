@@ -96,37 +96,12 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	rm -f /etc/squid/errors
 	ln -sf /usr/lib/squid/errors/English /etc/squid/errors
 
-	-mkdir -p /var/log/cache /var/log/squid /var/log/updatexlrator
+	-mkdir -p /var/log/cache /var/log/squid
 	touch /var/log/squid/access.log
-	chown -R squid:squid /var/log/squid /var/log/cache /var/log/updatexlrator
-
-	cp -f $(DIR_SRC)/config/updxlrator/updxlrator /usr/sbin/updxlrator
-	cp -f $(DIR_SRC)/config/updxlrator/checkup /var/ipfire/updatexlrator/bin/checkup
-	cp -f $(DIR_SRC)/config/updxlrator/download /var/ipfire/updatexlrator/bin/download
-	-mkdir -p /usr/lib/squid/errors.ipfire
-	cp -fr $(DIR_SRC)/config/proxy/errors.ipfire/* /usr/lib/squid/errors.ipfire/
-	-find /usr/lib/squid/errors.ipfire/ -name .svn -exec rm -rf {} \;
-	chmod 755 /usr/sbin/updxlrator /var/ipfire/updatexlrator/bin/checkup \
-		/var/ipfire/updatexlrator/bin/download
-
-	ln -fs /bin/false /var/ipfire/updatexlrator/autocheck/cron.daily
-	ln -fs /bin/false /var/ipfire/updatexlrator/autocheck/cron.monthly
-	ln -fs /bin/false /var/ipfire/updatexlrator/autocheck/cron.weekly
-
-	chown -R nobody:nobody /var/ipfire/updatexlrator
-	chown nobody.squid /srv/web/ipfire/html/updatecache
-	chown nobody.squid /srv/web/ipfire/html/updatecache/download
-	chown nobody.squid /srv/web/ipfire/html/updatecache/metadata
-	chmod 775 /srv/web/ipfire/html/updatecache
-	chmod 775 /srv/web/ipfire/html/updatecache/download
-	chmod 775 /srv/web/ipfire/html/updatecache/metadata
-	chmod 755 /var/log/updatexlrator
+	chown -R squid:squid /var/log/squid /var/log/cache
 	
 	chown squid:squid /var/log/squid
 	ln -sf /usr/lib/squid /usr/lib/squid/auth
-	cp -f $(DIR_SRC)/config/proxy/proxy.pac /srv/web/ipfire/html/proxy.pac
-	chown nobody.nobody /srv/web/ipfire/html/proxy.pac
-	ln -sf /srv/web/ipfire/html/proxy.pac /srv/web/ipfire/html/wpad.dat
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
