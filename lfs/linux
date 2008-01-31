@@ -46,7 +46,7 @@ L7VER      = 2.15
 ###############################################################################
 
 objects = $(DL_FILE) $(IPP2P).tar.bz2 layer7-kernel-$(L7VER).patch \
-	reiser4-2.6.23-2.patch
+	reiser4-for-$(VER).patch
 
 install : $(TARGET)
 
@@ -81,7 +81,7 @@ ifeq "$(STAGE)" "ipfire"
 
 	### Reiser4
 	#
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/reiser4-for-2.6.24.patch
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/reiser4-for-$(VER).patch
 	
 	# ip_conntrack permissions from 440 to 444
 	#cd $(DIR_APP) && patch -Np0 < $(DIR_PATCHES)/ip_conntrack_standalone-patch-for-ipfire.patch
