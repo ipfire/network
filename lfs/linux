@@ -39,14 +39,12 @@ FULLVER    = $(VER)-ipfire1
 EXTRAVERSION = $(shell echo "$(FULLVER)" | cut -c 7-)
 
 IPP2P      = ipp2p-0.8.2-ipfire-1
-L7VER      = 2.15
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(IPP2P).tar.bz2 layer7-kernel-$(L7VER).patch \
-	reiser4-for-$(VER).patch
+objects = $(DL_FILE) $(IPP2P).tar.bz2	reiser4-for-$(VER).patch
 
 install : $(TARGET)
 
@@ -85,8 +83,6 @@ ifeq "$(STAGE)" "ipfire"
 	
 	# ip_conntrack permissions from 440 to 444
 	#cd $(DIR_APP) && patch -Np0 < $(DIR_PATCHES)/ip_conntrack_standalone-patch-for-ipfire.patch
-	
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/layer7-kernel-$(L7VER).patch
 	
 	cd $(DIR_APP) && make mrproper
 	
