@@ -46,19 +46,24 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	
 	mkdir -p $(CDROM_DIR)/{boot/grub,doc}
 	
-	### Compress root fs
+	### Compressing root fs
 	#
-	cd / && find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
-		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq | \
-		cpio -o -H newc 2>/tmp/cpio.err | \
-		lzma e -si -so > $(CDROM_DIR)/$(SNAME)-$(VERSION).img
-		
-	if grep "No such file or directory" < /tmp/cpio.err; then \
-		rm -f /tmp/cpio.err; \
+	find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
+		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq > $(CDROM_DIR)/archive.files
+	
+	cd / && cpio -o -H newc < $(CDROM_DIR)/archive.files \
+		> $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp 2>$(CDROM_DIR)/archive.errors
+
+	@cat $(CDROM_DIR)/archive.errors
+	if grep "No such file or directory" < $(CDROM_DIR)/archive.errors; then \
 		exit 1; \
-	else \
-		rm -f /tmp/cpio.err; \
 	fi
+	
+	lzma e 	$(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp \
+					$(CDROM_DIR)/$(SNAME)-$(VERSION).img
+	
+	# These files won't be included in the iso
+	@rm -f $(CDROM_DIR)/archive.{files,errors} $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp
 
 	# Other files
 	sed 's/VERSION/$(VERSION)/' $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README.txt
