@@ -174,11 +174,11 @@ ipfire_build() {
 	ipfire_make expat
 	ipfire_make dbus
 	ipfire_make glib
-	ipfire_make libxml2
-	ipfire_make libxslt
 	ipfire_make openssl
 	ipfire_make perl			### We are building the modules here.
 	ipfire_make python
+	ipfire_make libxml2
+	ipfire_make libxslt
 	ipfire_make gmp
 	#ipfire_make libidn		### Do we need this?
 	ipfire_make pcre

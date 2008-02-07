@@ -55,7 +55,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 		> $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp 2>$(CDROM_DIR)/archive.errors
 
 	@cat $(CDROM_DIR)/archive.errors
-	if grep "No such file or directory" < $(CDROM_DIR)/archive.errors; then \
+	@if grep -q "No such file or directory" < $(CDROM_DIR)/archive.errors; then \
 		exit 1; \
 	fi
 	
