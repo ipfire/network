@@ -38,13 +38,11 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 FULLVER    = $(VER)-ipfire1
 EXTRAVERSION = $(shell echo "$(FULLVER)" | cut -c 7-)
 
-IPP2P      = ipp2p-0.8.2-ipfire-1
-
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(IPP2P).tar.bz2	reiser4-for-$(VER).patch
+objects = $(DL_FILE) reiser4-for-$(VER).patch
 
 install : $(TARGET)
 
@@ -100,15 +98,6 @@ ifeq "$(STAGE)" "ipfire"
 	
 	ln -svf ipfirekernel-$(FULLVER) /boot/ipfirekernel
 	ln -svf System.map-$(FULLVER) /boot/System.map
-	
-	### Building other modules
-	#
-	## IPP2P
-	#cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(IPP2P).tar.bz2
-	#cd $(DIR_SRC)/$(IPP2P) && KERNEL_SRC=$(DIR_APP) make ipt_ipp2p.ko
-	#cd $(DIR_SRC)/$(IPP2P) && cp -f ipt_ipp2p.ko \
-	#	/lib/modules/$(KVER)-ipfire/kernel/net/ipv4/netfilter
-	#rm -rf $(DIR_SRC)/$(IPP2P)	
 endif
 
 	@rm -rf $(DIR_APP)

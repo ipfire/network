@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = sudo
-VER        = 1.6.8p12
+VER        = 1.6.9p12
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -37,7 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-envvar_fix-1.patch
+objects = $(DL_FILE)
 
 install: $(TARGET)
 
@@ -53,12 +53,13 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-envvar_fix-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr --libexecdir=/usr/lib \
 			    --enable-noargs-shell --with-ignore-dot --with-all-insults \
-			    --enable-shell-sets-home
+			    --enable-shell-sets-home --disable-root-sudo \
+			    --with-logfac=auth
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	cp -vf $(DIR_CONF)/$(PKG_NAME)/sudoers /etc/sudoers
+	sed 's@/su@/sudo@g' /etc/pam.d/su > /etc/pam.d/sudo
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

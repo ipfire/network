@@ -30,7 +30,7 @@ build)
 	PACKAGE=`ls -v -r $TOOLCHAINNAME.tar.bz2 2> /dev/null | head -n 1`
 	#only restore on a clean disk
 
-	echo -ne "Building for ${BOLD}${MACHINE} on ${MACHINE_REAL}${NORMAL}\n"
+	echo -ne "Building for ${BOLD}${MACHINE}-${TARGET} on ${MACHINE_REAL}${NORMAL}\n"
 	
 	if [ -f $BASEDIR/log_${MACHINE}/02_base/stage2-LFS ]; then
 		prepareenv
