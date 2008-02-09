@@ -135,7 +135,6 @@ base_build() {
 	ipfire_make less
 	ipfire_make make
 	ipfire_make man-db
-	ipfire_make mktemp
 	ipfire_make module-init-tools
 	ipfire_make patch
 	ipfire_make psmisc

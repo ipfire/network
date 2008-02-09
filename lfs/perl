@@ -64,7 +64,7 @@ ifeq "$(STAGE)" "toolchain"
 	
 	cd $(DIR_APP) && ./configure.gnu --prefix=$(TOOLS_DIR) -Dstatic_ext='Data/Dumper Fcntl IO POSIX'
 	
-	cd $(DIR_APP) && make perl utilities -j $(PARALLELISM)
+	cd $(DIR_APP) && make perl utilities ext/Errno/pm_to_blib -j $(PARALLELISM)
 	
 	cd $(DIR_APP) && cp -v perl pod/pod2man $(TOOLS_DIR)/bin
 	-mkdir -pv $(TOOLS_DIR)/lib/perl5/$(VER)
