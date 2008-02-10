@@ -33,14 +33,11 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-IPP2P      = ipp2p-0.8.2-ipfire-1
-L7VER      = 2.15
-
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) layer7-iptables-$(L7VER).patch $(IPP2P).tar.bz2
+objects = $(DL_FILE)
 
 install: $(TARGET)
 
@@ -57,7 +54,6 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/layer7-iptables-$(L7VER).patch
 	#cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/iptables-1.3.0-imq1.diff
 
 	cd $(DIR_APP) && sed -i -e 's/DO_IPV6:=1/DO_IPV6:=0/' Makefile
@@ -73,12 +69,5 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 		/usr/include/libiptc
 	cd $(DIR_APP) && install -v -m644 iptables.xslt /lib/iptables
 	
-	### Building IPP2P
-	#
-	cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(IPP2P).tar.bz2
-	cd $(DIR_SRC)/$(IPP2P) && KERNEL_SRC=/usr/include make libipt_ipp2p.so
-	cp -f $(DIR_SRC)/$(IPP2P)/libipt_ipp2p.so /lib/iptables
-	rm -rf $(DIR_SRC)/$(IPP2P)
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

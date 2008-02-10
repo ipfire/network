@@ -142,7 +142,8 @@ downloadsrc)
 toolchain)
 	prepareenv
 	# Check if host can build the toolchain
-	check_toolchain_prerequisites
+	. tools/make-check
+	check_toolchain
 	toolchain_build
 	echo "Create toolchain tar.bz for $MACHINE" | tee -a $LOGFILE
 	# Safer inside the chroot
