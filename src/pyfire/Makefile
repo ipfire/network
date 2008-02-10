@@ -20,7 +20,7 @@
 
 include Makefile.inc
 
-SUBDIRS = src po
+SUBDIRS = src
 
 all: subdirs
 

@@ -115,7 +115,7 @@ class i18n:
 				if not domain:
 					path = 'po/%s.mo'
 				else:
-					path = '%s/%s/LC_MESSAGES/%s.mo' % (mypath, '%s', domain,)                
+					path = '%s/%s/LC_MESSAGES/%s.mo' % (mypath, '%s', domain,)
 
 				mofile = None
 				for lang in self.langs:
@@ -143,24 +143,24 @@ class i18n:
 				except Exception, e:
 					sys.stderr.write('unable to translate from %s to utf-8: %s\n' %(catalog.charset(), e))
 					theiconv = iconv.open(self.codeset, 'UTF-8')
-  
+	  
 				self.cats[domain] = (catalog, theiconv)
 				if self.iconv is None:
 					self.iconv = theiconv
 				break
-
-				# now let's put None at the beginning of the list as it corresponds
-				# to the "current" local po files for testing
-				self.domains.insert(0, None)
-
-				if len(self.cats) == 0:
-					encoding = locale.nl_langinfo (locale.CODESET)
-#					sys.stderr.write("WARNING: Unable to find catalog, using %s for codeset, %s for encoding\n" %(self.codeset, encoding))
-					try:
-						self.iconv = iconv.open(self.codeset, encoding)
-					except:
-						sys.stderr.write("FAILED to create iconv with codeset %s and encoding %s\n" %(self.codeset, encoding));
-					return
+	
+			# now let's put None at the beginning of the list as it corresponds
+			# to the "current" local po files for testing
+			self.domains.insert(0, None)
+	
+			if len(self.cats) == 0:
+				encoding = locale.nl_langinfo (locale.CODESET)
+#				sys.stderr.write("WARNING: Unable to find catalog, using %s for codeset, %s for encoding\n" %(self.codeset, encoding))
+				try:
+					self.iconv = iconv.open(self.codeset, encoding)
+				except:
+					sys.stderr.write("FAILED to create iconv with codeset %s and encoding %s\n" %(self.codeset, encoding));
+				return
 
 	def setDomainCodeset(self, domain, codeset):
 		self.codeset = codeset
