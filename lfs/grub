@@ -70,7 +70,9 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.95-moreraid.patch
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.94-i2o.patch
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.93-configfile.patch
-
+	
+	cd $(DIR_APP) && autoupdate
+	
 	cd $(DIR_APP) && ./configure --prefix=/usr
 
 	cd $(DIR_APP) && make -j $(PRALLELISM)
@@ -79,7 +81,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	mkdir -vp /boot/grub
 	cp -v /usr/lib/grub/i386-pc/stage{1,2} /boot/grub
 	
-	for i in $(DIR_SRC)/config/grub/*; do \
+	for i in $(DIR_SRC)/config/grub/{grub.conf,ipfire.xpm.gz}; do \
 	    [ -f $$i ] && cp -f $$i /boot/grub; \
 	done
 
