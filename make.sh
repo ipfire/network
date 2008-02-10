@@ -42,7 +42,7 @@ toolchain_build() {
 	STAGE_ORDER=01
 	STAGE=toolchain
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.toolchain.log"
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-toolchain.log"
 	export LOGFILE
 	
 	NATIVEGCC=`gcc --version | grep GCC | awk {'print $3'}`
@@ -92,7 +92,7 @@ base_build() {
 	STAGE_ORDER=02
 	STAGE=base
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.base.log"
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-base.log"
 	export LOGFILE
 	
 	ipfire_make stage2
@@ -156,7 +156,7 @@ ipfire_build() {
 	STAGE_ORDER=03
 	STAGE=ipfire
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.ipfire.log"
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-ipfire.log"
 	export LOGFILE
 	
 	### Building the configuration dirs and files
@@ -299,7 +299,7 @@ misc_build() {
 	STAGE_ORDER=04
 	STAGE=misc
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.misc.log"
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-misc.log"
 	export LOGFILE
 	
 	ipfire_make stage4
@@ -389,7 +389,7 @@ installer_build() {
 	STAGE_ORDER=05
 	STAGE=installer
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.installer.log"
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-installer.log"
 	export LOGFILE
 	
 	ipfire_make stage5
@@ -407,7 +407,7 @@ packages_build() {
 	STAGE_ORDER=06
 	STAGE=packages
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.packages.log"
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-packages.log"
 	export LOGFILE
 
   toolchain_make strip
