@@ -54,7 +54,6 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix_manpages-1.patch
-	cd $(DIR_APP) && sed -i -e 's/mcpu/march/' config
 	cd $(DIR_APP) && sed -i -e 's/-O3/-O2/' -e 's/-march=i486/-march=$(MACHINE)/' Configure
 	cd $(DIR_APP) && ./config --prefix=/usr --openssldir=/etc/ssl shared
 	cd $(DIR_APP) && make MANDIR=/usr/share/man #-j $(PARALLELISM)
