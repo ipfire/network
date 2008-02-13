@@ -44,7 +44,7 @@ svn_commit() {
 		export EDITOR=nano
 	fi
 	if [ "`echo $SVN_REVISION | cut -c 3`" -eq "0" ]; then
-		svn_changelog
+		svn_log
 	fi
 	svn commit
 }
