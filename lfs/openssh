@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = openssh
-VER        = 4.6p1
+VER        = 4.7p1
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -55,12 +55,15 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	install -v -m700 -d /var/lib/sshd
 	chown -v root:sys /var/lib/sshd
-	cd $(DIR_APP) && sed -i "s:-lcrypto:/usr/lib/libcrypto.a -ldl:g" configure
-	cd $(DIR_APP) && sed -i "s/lkrb5 -ldes/lkrb5/" configure
+	cd $(DIR_APP) && sed -i 's@-lcrypto@/usr/lib/libcrypto.a -ldl@' configure
+	cd $(DIR_APP) && sed -i 's@ -ldes@@' configure
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc/ssh \
+				--datadir=/usr/share/sshd \
 		    --libexecdir=/usr/lib/openssh --with-md5-passwords \
-		    --with-privsep-path=/var/lib/sshd
+		    --with-privsep-path=/var/lib/sshd 
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+	sed 's@d/login@d/sshd@g' /etc/pam.d/login > /etc/pam.d/sshd 
+	chmod 644 /etc/pam.d/sshd
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
