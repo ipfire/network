@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,6 +24,23 @@ ccache_stats() {
     PATH=$PATH:build_${MACHINE}/usr/local/ccache/bin \
     CCACHE_DIR=${BASEDIR}/ccache \
     ccache -s
+  else
+  	echo -n "You can't access the statistics if you didn't run ./make.sh build"
+  	beautify message FAIL
+  fi
+}
+
+distcc_mon() {
+	
+	INTERVAL=1 # in seconds
+	
+	if [ -e $BASEDIR/distcc ]; then
+		while sleep $INTERVAL; do
+			clear
+	    PATH=$PATH:build_${MACHINE}/usr/local/distcc/bin \
+	    DISTCC_DIR=${BASEDIR}/distcc \
+	    distccmon-text
+	  done
   else
   	echo -n "You can't access the statistics if you didn't run ./make.sh build"
   	beautify message FAIL
