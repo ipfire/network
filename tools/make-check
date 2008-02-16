@@ -30,8 +30,8 @@ check_common() {
 	
 	local EXTRA=$4
 	
-	RANDOM=$(uuidgen)
-	TMPFILE=/tmp/$RANDOM
+	RANDOM=$$
+	TMPFILE=/tmp/ipfire-check-$RANDOM
 	
 	echo -ne "${BOLD}Checking for $NAME${NORMAL}"
 	
@@ -39,16 +39,17 @@ check_common() {
 	
 	bash -c "$COMMAND" >$TMPFILE 2>&1
 	
-	if [ $? -eq 0 ]; then
+	if ! grep -q "command not found" < $TMPFILE; then
 		beautify message DONE
 	else
+		rm -f $TMPFILE 2>/dev/null
 		exiterror "$NAME not found!"
 	fi
 	
 	[ -n "$EXTRA" ] && echo -n "$EXTRA"
 	
 	cat $TMPFILE
-	> $TMPFILE
+	rm -f $TMPFILE 2>/dev/null
 	echo # Empty line
 }
 
