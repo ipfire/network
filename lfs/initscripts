@@ -56,7 +56,6 @@ $(TARGET) :
 	install -d -m 755 /etc/rc.d/init.d/networking
 	install -d -m 755 /etc/rc.d/init.d/networking/red.up
 	install -d -m 755 /etc/rc.d/init.d/networking/red.down
-	install -d -m 755 /etc/rc.d/helper
 	install -d -m 755 /etc/sysconfig
 	-rm -rf /etc/init.d
 	ln -svf rc.d/init.d /etc/init.d
@@ -84,10 +83,6 @@ $(TARGET) :
 		install -v -m 644 $$i /etc/sysconfig/; \
 	done
 	chmod -v 755 /etc/sysconfig/{firewall,rc}.local
-
-	for i in $(DIR_SRC)/src/initscripts/helper/*; do \
-		install -v -m 755 $$i /etc/rc.d/helper/; \
-	done
 
 	ln -sf ../init.d/sysklogd    /etc/rc.d/rc0.d/K90sysklogd
 	ln -sf ../init.d/sendsignals /etc/rc.d/rc0.d/S60sendsignals
