@@ -67,6 +67,7 @@ toolchain_build() {
 	toolchain_make bzip2
 	toolchain_make coreutils
 	toolchain_make diffutils
+	toolchain_make e2fsprogs
 	toolchain_make findutils
 	toolchain_make gawk
 	toolchain_make gettext

@@ -56,7 +56,6 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
-	cd $(DIR_APP) && make -C lib
 	cd $(DIR_APP) && make -C mount mount umount
 	cd $(DIR_APP) && make -C text-utils more
 	cd $(DIR_APP) && cp -v mount/{,u}mount text-utils/more $(TOOLS_DIR)/bin

@@ -122,22 +122,12 @@ toolchain)
 	# Check if host can build the toolchain
 	. tools/make-check
 	check_toolchain
+	
 	toolchain_build
-	echo "Create toolchain tar.bz for $MACHINE" | tee -a $LOGFILE
-	# Safer inside the chroot
-	echo -ne "Stripping lib"
-	chroot $LFS $TOOLS_DIR/bin/find $TOOLS_DIR/lib \
-		-type f \( -name '*.so' -o -name '*.so[\.0-9]*' \) \
-		-exec $TOOLS_DIR/bin/strip --strip-debug {} \; 2>/dev/null
-	beautify message DONE
-	echo -ne "Stripping binaries"
-	chroot $LFS $TOOLS_DIR/bin/find /usr/local /usr/src/binutils-build $TOOLS_DIR/bin $TOOLS_DIR/sbin \
-		-type f \
-		-exec $TOOLS_DIR/bin/strip --strip-all {} \; 2> /dev/null
-	beautify message DONE
+	
 	stdumount
-	echo -ne "Tar creation "
-	[ -d cache/toolchains ] || mkdir cache/toolchains
+	echo -ne "\ntarball creation "
+	[ -d $BASEDIR/cache/toolchains ] || mkdir $BASEDIR/cache/toolchains
 	cd $BASEDIR && tar cj \
 				--exclude='log_${MACHINE}/_build.*.log' \
 				--file=cache/toolchains/$TOOLCHAINNAME.tar.bz2 \

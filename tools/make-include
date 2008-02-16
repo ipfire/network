@@ -558,7 +558,7 @@ prepareenv() {
 	#############################################################################
 	# Resetting our nice level                                                  #
 	#############################################################################
-	echo -ne "Resetting our nice level to $NICE" | tee -a $LOGFILE
+	echo -ne "Resetting our nice level to $NICE"
 	renice $NICE $$ > /dev/null
 	if [ `nice` != "$NICE" ]; then
 		beautify message FAIL
@@ -581,7 +581,7 @@ prepareenv() {
 	##############################################################################
 	# Checking if running as root user                                           #
 	##############################################################################
-	echo -ne "Checking if we're running as root user" | tee -a $LOGFILE
+	echo -ne "Checking if we're running as root user"
 	if [ `id -u` != 0 ]; then
 		beautify message FAIL
 		exiterror "Not building as root"
@@ -593,7 +593,7 @@ prepareenv() {
 	##############################################################################
 	# Checking for necessary temporary space                                     #
 	##############################################################################
-	echo -ne "Checking for necessary space on disk $BASE_DEV" | tee -a $LOGFILE
+	echo -ne "Checking for necessary space on disk $BASE_DEV"
 	BASE_DEV=`df -P -k $BASEDIR | tail -n 1 | awk '{ print $1 }'`
 	BASE_ASPACE=`df -P -k $BASEDIR | tail -n 1 | awk '{ print $4 }'`
 	if (( 2048000 > $BASE_ASPACE )); then

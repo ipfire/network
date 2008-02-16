@@ -54,10 +54,20 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	-mkdir $(DIR_APP)/build
+
+ifeq "$(STAGE)" "toolchain"
+	cd $(DIR_APP)/build && ../configure --prefix=$(TOOLS_DIR)
+	cd $(DIR_APP)/build && make -j $(PARALLELISM)
+	cd $(DIR_APP)/build && make install-libs
+endif
+
+ifeq "$(STAGE)" "base"
 	cd $(DIR_APP)/build && ../configure --prefix=/usr --with-root-prefix="" \
 		--enable-elf-shlibs 
 	cd $(DIR_APP)/build && make -j $(PARALLELISM)
 	cd $(DIR_APP)/build && make install
 	cd $(DIR_APP)/build && make install-libs
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
