@@ -152,14 +152,14 @@ OPT_WIDTH=6
 VER_WIDTH=10
 RESULT_COL=$((${COLUMNS} - $RESULT_WIDTH - 4))
 TIME_COL=$((${RESULT_COL} - $TIME_WIDTH - 5))
-OPT_COL=$((${TIME_COL} - $OPT_WIDTH - 5))
-VER_COL=$((${OPT_COL} - $VER_WIDTH - 5))
+VER_COL=$((${TIME_COL} - $VER_WIDTH - 5))
+OPT_COL=$((${VER_COL} - $OPT_WIDTH - 6))
 
 ## Set Cursur Position Commands, used via echo -e
 SET_RESULT_COL="\\033[${RESULT_COL}G"
 SET_TIME_COL="\\033[${TIME_COL}G"
-SET_OPT_COL="\\033[${OPT_COL}G"
 SET_VER_COL="\\033[${VER_COL}G"
+SET_OPT_COL="\\033[${OPT_COL}G"
 
 # Define color for messages
 BOLD="\\033[1;39m"
@@ -244,20 +244,20 @@ beautify()
 			;;
 		build_stage)
 			MESSAGE=$2
-			echo -ne "${BOLD}*** ${MESSAGE}${SET_VER_COL}      version${SET_OPT_COL} options"
+			echo -ne "${BOLD}*** ${MESSAGE}${SET_OPT_COL} options${SET_VER_COL}     version "
 			echo -ne "${SET_TIME_COL} time (sec)${SET_RESULT_COL} status${NORMAL}\n"
 			;;
 		make_pkg)
 			echo "$2" | while read PKG_VER PROGRAM OPTIONS
 			do
-				SET_VER_COL_REAL=`position_cursor $OPT_COL $PKG_VER -3`
+				SET_VER_COL_REAL=`position_cursor $TIME_COL $PKG_VER -3`
 
 				if [ "$OPTIONS" == "" ]; then
 					echo -ne "${PROGRAM}${SET_VER_COL}[ ${BOLD}${SET_VER_COL_REAL}${PKG_VER}"
 					echo -ne "${NORMAL} ]${SET_RESULT_COL}"
 				else
-					echo -ne "${PROGRAM}${SET_VER_COL}[ ${BOLD}${SET_VER_COL_REAL}${PKG_VER}"
-					echo -ne "${NORMAL} ]${SET_OPT_COL}[ ${BOLD}${OPTIONS}"
+					echo -ne "${PROGRAM}${SET_OPT_COL}[ ${BOLD}${OPTIONS}"
+					echo -ne "${NORMAL} ]${SET_VER_COL}[ ${BOLD}${SET_VER_COL_REAL}${PKG_VER}"
 					echo -ne "${NORMAL} ]${SET_RESULT_COL}"
 				fi
 			done
