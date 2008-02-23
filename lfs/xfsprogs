@@ -25,10 +25,10 @@
 include Config
 
 PKG_NAME   = xfsprogs
-VER        = 2.9.4
+VER        = 2.9.6
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.gz
+DL_FILE    = $(THISAPP)-1.tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
@@ -56,7 +56,6 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && make DEBUG=-DNDEBUG INSTALL_USER=root INSTALL_GROUP=root \
 		LOCAL_CONFIGURE_OPTIONS="--enable-readline=yes" #-j $(PARALLELISM)
 	cd $(DIR_APP) && make install
-	cd $(DIR_APP) && install -v -m755 -D libhandle/libhandle.la /usr/lib/libhandle.la
 	chmod -v 755 /lib/libhandle.so*
 	rm -f /lib/libhandle.{a,la,so}
 	ln -svf ../../lib/libhandle.so.1 /usr/lib/libhandle.so

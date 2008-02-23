@@ -60,7 +60,8 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc/ssh \
 				--datadir=/usr/share/sshd \
 		    --libexecdir=/usr/lib/openssh --with-md5-passwords \
-		    --with-privsep-path=/var/lib/sshd 
+		    --with-privsep-path=/var/lib/sshd \
+				--with-pam 
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	sed 's@d/login@d/sshd@g' /etc/pam.d/login > /etc/pam.d/sshd 

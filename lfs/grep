@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = grep
-VER        = 2.5.1a
+VER        = 2.5.3
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -37,7 +37,9 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-redhat_fixes-2.patch
+objects = $(DL_FILE) \
+	$(THISAPP)-upstream_fixes-1.patch \
+	$(THISAPP)-debian_fixes-1.patch
 
 install : $(TARGET)
 
@@ -62,7 +64,8 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-redhat_fixes-2.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-debian_fixes-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-upstream_fixes-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr --bindir=/bin
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
