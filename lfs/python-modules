@@ -24,20 +24,24 @@
 
 include Config
 
-PKG_NAME   = Python
-VER        = 2.5.1
+PKG_NAME   = python-modules
+VER        = ipfire
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.bz2
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+ICONV      = iconvmodule-1.0-ipfire-1
+DBUSPY     = dbus-python-0.82.0
+URLGRABBER = urlgrabber-3.1.0
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+DIR_MOD    = $(DIR_SRC)/$(THISAPP)
+MODULES    = $(DIR_SRC)/$(ICONV) $(DIR_SRC)/$(DBUSPY) $(DIR_SRC)/$(URLGRABBER)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(ICONV).tar.bz2 $(DBUSPY).tar.gz $(URLGRABBER).tar.gz
 
 install: $(TARGET)
 
@@ -52,9 +56,19 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && OPT="$(CFLAGS)" ./configure --prefix=/usr --enable-shared
-	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install
-	@rm -rf $(DIR_APP)
+	@rm -rf $(DIR_MOD)
+	@mkdir -p $(DIR_MOD)
+	
+	cd $(DIR_MOD) && tar jxf $(DIR_DL)/$(ICONV).tar.bz2
+	cd $(DIR_MOD)/$(ICONV) && make install
+	
+	cd $(DIR_MOD) && tar zxf $(DIR_DL)/$(DBUSPY).tar.gz
+	cd $(DIR_MOD)/$(DBUSPY) && ./configure --prefix=/usr
+	cd $(DIR_MOD)/$(DBUSPY) && make
+	cd $(DIR_MOD)/$(DBUSPY) && make install
+	
+	cd $(DIR_MOD) && tar zxf $(DIR_DL)/$(URLGRABBER).tar.gz
+	cd $(DIR_MOD)/$(URLGRABBER) && python setup.py install
+	
+	@rm -rf $(DIR_MOD)
 	@$(POSTBUILD)
