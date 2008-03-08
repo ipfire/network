@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = pcre
-VER        = 7.2
+VER        = 7.6
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -37,7 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-abi_breakage-1.patch
 
 install: $(TARGET)
 
@@ -53,9 +53,13 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-		--docdir=/usr/share/doc/pcre-$(VER) --enable-utf8
-		
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-abi_breakage-1.patch
+	cd $(DIR_APP) && ./configure	--prefix=/usr \
+																--docdir=/usr/share/doc/pcre-$(VER) \
+																--enable-utf8 \
+																--enable-pcregrep-libz \
+																--enable-pcregrep-libbz2
+	
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	mv -v /usr/lib/libpcre.so.* /lib/
