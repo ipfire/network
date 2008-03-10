@@ -67,6 +67,20 @@ DIR_SOURCE  = $(DIR_SRC)/src
 
 KGCC = gcc
 
+ifeq "$(STAGE)" "toolchain"
+ifneq "$(MACHINE_REAL)" "$(MACHINE)"
+ifeq  "$(CROSS)" ""
+	CC="${IFS_TARGET}-gcc"
+	CXX="${IFS_TARGET}-g++"
+	AR="${IFS_TARGET}-ar"
+	AS="${IFS_TARGET}-as"
+	RANLIB="${IFS_TARGET}-ranlib"
+	LD="${IFS_TARGET}-ld"
+	STRIP="${IFS_TARGET}-strip"
+endif
+endif
+endif
+
 ###############################################################################
 # Common Macro Definitions
 ###############################################################################

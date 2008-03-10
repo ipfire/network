@@ -60,16 +60,17 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
+	install -dv $(TOOLS_DIR)/include
 	cd $(DIR_APP) && make mrproper
-	cd $(DIR_APP) && make headers_check
-	cd $(DIR_APP) && make INSTALL_HDR_PATH=dest headers_install
+	cd $(DIR_APP) && make ARCH=i386 headers_check
+	cd $(DIR_APP) && make ARCH=i386 INSTALL_HDR_PATH=dest headers_install
 	cd $(DIR_APP) && cp -rv dest/include/* $(TOOLS_DIR)/include
 endif
 
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make mrproper
-	cd $(DIR_APP) && make headers_check
-	cd $(DIR_APP) && make INSTALL_HDR_PATH=dest headers_install
+	cd $(DIR_APP) && make ARCH=i386 headers_check
+	cd $(DIR_APP) && make ARCH=i386 INSTALL_HDR_PATH=dest headers_install
 	cd $(DIR_APP) && cp -rv dest/include/* /usr/include
 endif
 
@@ -79,14 +80,45 @@ ifeq "$(STAGE)" "ipfire"
 	#
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/reiser4-for-$(VER).patch
 	
-	# ip_conntrack permissions from 440 to 444
-	#cd $(DIR_APP) && patch -Np0 < $(DIR_PATCHES)/ip_conntrack_standalone-patch-for-ipfire.patch
-	
 	cd $(DIR_APP) && make mrproper
+
+	-[ "$(TARGET_ARCH)" == "i586" ] && \
+			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+						-e "s/^# CONFIG_MPENTIUMIII is not set/CONFIG_MPENTIUMII=y/" \
+						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
 	
-	cp $(DIR_SRC)/config/kernel/kernel.config.$(MACHINE) $(DIR_APP)/.config
-	cd $(DIR_APP) && sed -i -e "s/EXTRAVERSION\ =.*/EXTRAVERSION\ =\ $(EXTRAVERSION)/" \
-		Makefile
+	-[ "$(TARGET_ARCH)" == "i486" ] && \
+			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+						-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
+						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
+	
+	-[ "$(TARGET_ARCH)" == "i386" ] && \
+			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+						-e "s/^# CONFIG_M386 is not set/CONFIG_M386=y/" \
+						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
+	
+	-[ "$(TARGET_ARCH)" == "i486" ] && \
+			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+						-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
+						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
+
+	-[ "$(TARGET_ARCH)" == "via-c7" ] && \
+			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+						-e "s/^# CONFIG_MVIAC7 is not set/CONFIG_MVIAC7=y/" \
+						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
+	
+	-[ "$(TARGET_ARCH)" == "via-c3" ] && \
+			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+						-e "s/^# CONFIG_MVIAC3_2 is not set/CONFIG_MVIAC3_2=y/" \
+						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
+	
+	# if no $(TARGET) matched use the default
+	[ ! -e "$(DIR_APP)/.config" ] && cp -f $(DIR_CONF)/kernel/kernel.config \
+																				 $(DIR_APP)/.config
+	
+	cd $(DIR_APP) && \
+		sed -i -e "s/EXTRAVERSION\ =.*/EXTRAVERSION\ =\ $(EXTRAVERSION)/" \
+			Makefile
 	
 	cd $(DIR_APP) && make oldconfig
 	

@@ -31,10 +31,14 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-CFLAGS     = -O2 -mno-tls-direct-seg-refs # This will make it xen-friendly
+CFLAGS     =
 CXXFLAGS   =
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
+	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+else
+	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-cross
+endif
 
 ###############################################################################
 # Top-level Rules
@@ -58,6 +62,11 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	@mkdir $(DIR_SRC)/glibc-build
 
+ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
+	#
+	# Normal build
+	#
+	
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_SRC)/glibc-build && echo "CFLAGS += -march=$(MACHINE)" > configparms
 	cd $(DIR_SRC)/glibc-build && CFLAGS="$(CFLAGS)" ../$(THISAPP)/configure \
@@ -97,6 +106,40 @@ ifeq "$(STAGE)" "base"
 	
 	# Timezone
 	cp -v --remove-destination /usr/share/zoneinfo/GMT /etc/localtime
+endif
+else
+	#
+	# Cross build
+	#
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libgcc_eh-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-localedef_segfault-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-i586_chk-1.patch
+	
+	echo "libc_cv_forced_unwind=yes" > $(DIR_SRC)/glibc-build/config.cache
+	echo "libc_cv_c_cleanup=yes"		>> $(DIR_SRC)/glibc-build/config.cache
+	
+	cd $(DIR_SRC)/glibc-build && BUILD_CC="gcc" \
+																	CC="$(IFS_TARGET)-gcc" \
+																	AR="$(IFS_TARGET)-ar" \
+																	RANLIB="$(IFS_TARGET)-ranlib" \
+																	CFLAGS="-march=$$(cut -d- -f1 <<< $(IFS_TARGET)) -mtune=generic -g -O2" \
+																	../$(THISAPP)/configure \
+																	--prefix=$(TOOLS_DIR) \
+																	--host=${IFS_TARGET} \
+																	--build=$(IFS_HOST) \
+																	--disable-profile \
+																	--enable-add-ons \
+																	--with-tls \
+																	--enable-kernel=2.6.0 \
+																	--with-__thread \
+																	--with-binutils=$(CTOOLS_DIR)/bin \
+																	--with-headers=$(TOOLS_DIR)/include \
+																	--cache-file=config.cache
+	
+	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=-j$(PARALLELISM)
+	cd $(DIR_SRC)/glibc-build && make install
+
 endif
 
 	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build

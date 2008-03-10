@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -72,9 +72,8 @@ fi
 if [ 'i686' = $MACHINE_REAL \
 	-o 'i586' = $MACHINE_REAL \
 	-o 'i486' = $MACHINE_REAL \
-	-o 'i386' = $MACHINE_REAL \
 	-o 'x86_64' = $MACHINE_REAL ]; then
-	:
+	IFS_HOST="$(echo $MACHTYPE | sed "s/$(echo $MACHTYPE | cut -d- -f2)/cross/")"
 else
 	beautify message FAIL
 	echo "Can't determine your architecture - $MACHINE_REAL"
@@ -82,27 +81,27 @@ else
 fi
 
 if [ 'i686' = $TARGET -o 'i586' = $TARGET \
-	-o 'i486' = $TARGET -o 'i386' = $TARGET ]; then
+	-o 'i486' = $TARGET ]; then
 	MACHINE=${TARGET}
 	MACHINE_REAL=${MACHINE_REAL}
 	LINKER=/lib/ld-linux.so.2
-	C2HOST="${MACHINE}-pc-linux-gnu"
-	C2FLAGS="-march=${MACHINE} -O2 -pipe -fomit-frame-pointer"
-	CXX2FLAGS="${C2FLAGS}"
+	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	CFLAGS="-march=${MACHINE} -O2 -pipe -fomit-frame-pointer"
+	CXXFLAGS="${CFLAGS}"
 elif [ 'via-c7' = $TARGET ]; then
 	MACHINE=i686
 	MACHINE_REAL=${MACHINE_REAL}
 	LINKER=/lib/ld-linux.so.2
-	C2HOST="i686-pc-linux-gnu"
-	C2FLAGS="-march=${MACHINE} -mmmx -msse -msse2 -msse3 -O2 -pipe -fomit-frame-pointer"
-	CXX2FLAGS="${C2FLAGS}"
+	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	CFLAGS="-march=${MACHINE} -mmmx -msse -msse2 -msse3 -O2 -pipe -fomit-frame-pointer"
+	CXXFLAGS="${CFLAGS}"
 elif [ 'via-c3' = $TARGET ]; then
 	MACHINE=i586
 	MACHINE_REAL=${MACHINE_REAL}
 	LINKER=/lib/ld-linux.so.2
-	C2HOST="i586-pc-linux-gnu"
-	C2FLAGS="-march=c3 -m3dnow -O2 -pipe -fomit-frame-pointer"
-	CXX2FLAGS="${C2FLAGS}"
+	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	CFLAGS="-march=c3 -m3dnow -O2 -pipe -fomit-frame-pointer"
+	CXXFLAGS="${CFLAGS}"
 else
 	beautify message FAIL
 	echo "Not a valid target arch (i686|i586|i486|i386|via-c7|via-c3) - $TARGET"
@@ -113,6 +112,7 @@ mkdir $BASEDIR/log_${MACHINE}/ 2>/dev/null
 
 # Set up what used to be /tools
 TOOLS_DIR=/tools_${MACHINE}
+CTOOLS_DIR=/cross-tools_${MACHINE}
 
 # Set up /installer
 INSTALLER_DIR=/installer
@@ -124,7 +124,7 @@ CDROM_DIR=/cdrom
 IMAGES_DIR=/images
 
 # include machine in TOOLCHAINNAME
-TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-${MACHINE}
+TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-t${TARGET}-m${MACHINE}
 
 
 ###############################################################################
@@ -148,12 +148,12 @@ fi
 ## Measurements for positioning result messages
 RESULT_WIDTH=4
 TIME_WIDTH=8
-OPT_WIDTH=6
+OPT_WIDTH=7
 VER_WIDTH=10
 RESULT_COL=$((${COLUMNS} - $RESULT_WIDTH - 4))
 TIME_COL=$((${RESULT_COL} - $TIME_WIDTH - 5))
 VER_COL=$((${TIME_COL} - $VER_WIDTH - 5))
-OPT_COL=$((${VER_COL} - $OPT_WIDTH - 6))
+OPT_COL=$((${VER_COL} - $OPT_WIDTH - 5))
 
 ## Set Cursur Position Commands, used via echo -e
 SET_RESULT_COL="\\033[${RESULT_COL}G"
@@ -244,7 +244,7 @@ beautify()
 			;;
 		build_stage)
 			MESSAGE=$2
-			echo -ne "${BOLD}*** ${MESSAGE}${SET_OPT_COL} options${SET_VER_COL}     version "
+			echo -ne "${BOLD}*** ${MESSAGE}${SET_OPT_COL}  options${SET_VER_COL}     version "
 			echo -ne "${SET_TIME_COL} time (sec)${SET_RESULT_COL} status${NORMAL}\n"
 			;;
 		make_pkg)
@@ -350,7 +350,7 @@ entershell() {
 	chroot $LFS $TOOLS_DIR/bin/env -i \
 		HOME=/root \
 		TERM=$TERM \
-		PS1="${BOLD}[chroot-${MACHINE}-${TARGET}]${NORMAL} \u:\w\$ " \
+		PS1="${BOLD}[chroot-${TARGET}(${MACHINE})]${NORMAL} \u:\w\$ " \
 		PATH=$PATH \
 		CONFIG_ROOT=${CONFIG_ROOT} \
 		VERSION=${VERSION} \
@@ -367,9 +367,10 @@ entershell() {
 		INSTALLER_DIR=$INSTALLER_DIR \
 		MACHINE="$MACHINE" \
 		MACHINE_REAL="$MACHINE_REAL" \
-		CHOST="$C2HOST" \
-		CFLAGS="$C2FLAGS" \
-		CXXFLAGS="$CXX2FLAGS" \
+		CFLAGS="$CFLAGS" \
+		CXXFLAGS="$CXXFLAGS" \
+		IFS_HOST="$IFS_HOST" \
+		IFS_TARGET="$IFS_TARGET" \
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
@@ -437,7 +438,11 @@ toolchain_make() {
 		CONFIG_ROOT=$CONFIG_ROOT \
 		LINKER=$LINKER \
 		TOOLS_DIR=$TOOLS_DIR \
+		CTOOLS_DIR=$CTOOLS_DIR \
 		MACHINE="$MACHINE" \
+		MACHINE_REAL="$MACHINE_REAL" \
+		IFS_HOST="$IFS_HOST" \
+		IFS_TARGET="$IFS_TARGET" \
 		LFS_BASEDIR=$BASEDIR \
 		LFS=$LFS \
 		PARALLELISM=$PARALLELISM \
@@ -500,9 +505,10 @@ ipfire_make() {
 		IMAGES_DIR=$IMAGES_DIR \
 		MACHINE="$MACHINE" \
 		MACHINE_REAL="$MACHINE_REAL" \
-		CHOST="$C2HOST" \
-		CFLAGS="$C2FLAGS" \
-		CXXFLAGS="$CXX2FLAGS" \
+		CFLAGS="$CFLAGS" \
+		CXXFLAGS="$CXXFLAGS" \
+		IFS_HOST="$IFS_HOST" \
+		IFS_TARGET="$IFS_TARGET" \
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
@@ -528,14 +534,14 @@ ipfire_make() {
 ################################################################################
 prepareenv() {
 
-	LOGFILE=$BASEDIR/log_${MACHINE}/_build.preparation.log
+	LOGFILE=$BASEDIR/log_${MACHINE}/_build.00-preparation.log
 	export LOGFILE
 	mkdir -p $BASEDIR/log_${MACHINE}/01_toolchain 2>/dev/null
-  mkdir -p $BASEDIR/log_${MACHINE}/02_base 2>/dev/null
-  mkdir -p $BASEDIR/log_${MACHINE}/03_ipfire 2>/dev/null
-  mkdir -p $BASEDIR/log_${MACHINE}/04_misc 2>/dev/null
-  mkdir -p $BASEDIR/log_${MACHINE}/05_installer 2>/dev/null
-  mkdir -p $BASEDIR/log_${MACHINE}/06_packages 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/02_base 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/03_ipfire 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/04_misc 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/05_installer 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/06_packages 2>/dev/null
   
 	#############################################################################
 	# Are we running the right shell?                                           #
@@ -627,6 +633,17 @@ prepareenv() {
 	if [ ! -h $TOOLS_DIR ]; then
 		exiterror "Could not create $TOOLS_DIR symbolic link."
 	fi
+	
+	# Check /ctools symlink
+	if [ -h $CTOOLS_DIR ]; then
+		rm -f $CTOOLS_DIR
+	fi
+  if [ ! -a $CTOOLS_DIR ]; then
+		ln -s $BASEDIR/build_${MACHINE}/$CTOOLS_DIR /
+	fi
+	if [ ! -h $CTOOLS_DIR ]; then
+		exiterror "Could not create $CTOOLS_DIR symbolic link."
+	fi
 
 	# Setup environment
 	set +h
@@ -635,9 +652,9 @@ prepareenv() {
 	unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
 
 	# Make some extra directories
-	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$INSTALLER_DIR,cdrom,images,usr/local/{ccache,distcc}} 2>/dev/null
+	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$CTOOLS_DIR,$INSTALLER_DIR,cdrom,images,usr/local/{ccache,distcc}} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
-	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
+	mkdir -p $LFS/{$TOOLS_DIR,$CTOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/dev/pts
 	mkdir -p $LFS/proc
 	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${MACHINE},src,ccache,distcc}
@@ -659,6 +676,7 @@ prepareenv() {
 	mount --bind $BASEDIR/log_${MACHINE}											$LFS/usr/src/log_${MACHINE}
 	mount --bind $BASEDIR/src																	$LFS/usr/src/src
 	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR					$LFS/$TOOLS_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$CTOOLS_DIR				$LFS/$CTOOLS_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR			$LFS/$INSTALLER_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$CDROM_DIR					$LFS/$CDROM_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$IMAGES_DIR				$LFS/$IMAGES_DIR
@@ -689,7 +707,7 @@ build() {
 	PACKAGE=`ls -v -r $TOOLCHAINNAME.tar.bz2 2> /dev/null | head -n 1`
 	#only restore on a clean disk
 
-	echo -ne "Building for ${BOLD}${MACHINE}-${TARGET} on ${MACHINE_REAL}${NORMAL}\n"
+	echo -ne "Building for ${BOLD}${TARGET} (${MACHINE}) on ${MACHINE_REAL}${NORMAL}\n"
 	
 	if [ -f $BASEDIR/log_${MACHINE}/02_base/stage2-LFS ]; then
 		prepareenv
@@ -697,7 +715,7 @@ build() {
 		beautify message DONE "Stage toolchain already built or extracted"
 	else
 		if [ -z "$PACKAGE" ]; then
-			echo "Full toolchain compilation" | tee -a $LOGFILE
+			echo "Full toolchain compilation"
 			prepareenv
 			
 			. $BASEDIR/tools/make-check
@@ -706,7 +724,7 @@ build() {
 			beautify build_stage "Building toolchain"
 			toolchain_build
 		else
-			echo "Restore from $PACKAGE" | tee -a $LOGFILE
+			echo "Restore from $PACKAGE"
 			if [ `md5sum $BASEDIR/cache/toolchains/$PACKAGE | awk '{print $1}'` == `cat $BASEDIR/cache/toolchains/$TOOLCHAINNAME.md5 | awk '{print $1}'` ]; then
 				cd $BASEDIR && tar jxf $BASEDIR/cache/toolchains/$PACKAGE
 				prepareenv

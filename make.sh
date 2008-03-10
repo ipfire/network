@@ -17,7 +17,7 @@
 # along with IPFire; if not, write to the Free Software                    #
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA #
 #                                                                          #
-# Copyright (C) 2007 IPFire-Team <info@ipfire.org>.                        #
+# Copyright (C) 2008 IPFire-Team <info@ipfire.org>.                        #
 #                                                                          #
 ############################################################################
 #
@@ -38,30 +38,39 @@ SLOGAN="www.ipfire.org"					# Software slogan
 toolchain_build() {
 
 	ORG_PATH=$PATH
-	export PATH=$BASEDIR/build_${MACHINE}/usr/local/ccache/bin:$BASEDIR/build_${MACHINE}/usr/local/distcc/bin:$BASEDIR/build_${MACHINE}/$TOOLS_DIR/bin:$PATH
+	export PATH=$BASEDIR/build_${TARGET}/usr/local/ccache/bin:$BASEDIR/build_${TARGET}/usr/local/distcc/bin:$BASEDIR/build_${TARGET}/$CTOOLS_DIR/bin:$BASEDIR/build_${TARGET}/$TOOLS_DIR/bin:$PATH
 	STAGE_ORDER=01
 	STAGE=toolchain
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-toolchain.log"
 	export LOGFILE
 	
-	NATIVEGCC=`gcc --version | grep GCC | awk {'print $3'}`
-	export NATIVEGCC GCCmajor=${NATIVEGCC:0:1} GCCminor=${NATIVEGCC:2:1} GCCrelease=${NATIVEGCC:4:1}
-	
 	# make distcc first so that CCACHE_PREFIX works immediately
 	[ -z "$DISTCC_HOSTS" ] || toolchain_make distcc
 	toolchain_make ccache
+	toolchain_make linux
+	
+	if [ "${MACHINE}" != "${MACHINE_REAL}" ]; then
+		toolchain_make binutils-x-compile
+		toolchain_make gcc-x-compile							PASS=1
+		toolchain_make glibc-x-compile
+		toolchain_make gcc-x-compile							PASS=2
+	
+	fi
 	
 	toolchain_make binutils											PASS=1
 	toolchain_make gcc													PASS=1
-	toolchain_make linux
+	exiterror "Stop here"
+	
 	toolchain_make glibc
 	toolchain_make adjust-toolchain
-	toolchain_make tcl
-	toolchain_make expect
-	toolchain_make dejagnu
-	toolchain_make gcc													PASS=2
-	toolchain_make binutils											PASS=2
+	if [ "${MACHINE}" == "${MACHINE_REAL}" ]; then
+		toolchain_make tcl
+		toolchain_make expect
+		toolchain_make dejagnu
+		toolchain_make gcc												PASS=2
+		toolchain_make binutils										PASS=2
+	fi
 	toolchain_make ncurses
 	toolchain_make bash
 	toolchain_make bzip2
