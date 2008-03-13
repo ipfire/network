@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = slang
-VER        = 2.1.1
+VER        = 2.1.3
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -55,7 +55,8 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc
 	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install_doc_dir=/usr/share/doc/slang-$(VER) install-all
+	cd $(DIR_APP) && make install_doc_dir=/usr/share/doc/slang-$(VER) \ 
+ 		SLSH_DOC_DIR=/usr/share/doc/slang-$(VER)/slsh install-all
 	chmod -v 755 /usr/lib/libslang.so.$(VER) /usr/lib/slang/v2/modules/*.so
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
