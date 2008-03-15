@@ -38,7 +38,7 @@ SLOGAN="www.ipfire.org"					# Software slogan
 toolchain_build() {
 
 	ORG_PATH=$PATH
-	export PATH=$BASEDIR/build_${TARGET}/usr/local/ccache/bin:$BASEDIR/build_${TARGET}/usr/local/distcc/bin:$BASEDIR/build_${TARGET}/$CTOOLS_DIR/bin:$BASEDIR/build_${TARGET}/$TOOLS_DIR/bin:$PATH
+	export PATH=$BASEDIR/build_${MACHINE}/usr/local/ccache/bin:$BASEDIR/build_${MACHINE}/usr/local/distcc/bin:$BASEDIR/build_${MACHINE}/$CTOOLS_DIR/bin:$BASEDIR/build_${MACHINE}/$TOOLS_DIR/bin:$PATH
 	STAGE_ORDER=01
 	STAGE=toolchain
 
