@@ -60,7 +60,6 @@ toolchain_build() {
 	
 	toolchain_make binutils											PASS=1
 	toolchain_make gcc													PASS=1
-	exiterror "Stop here"
 	
 	toolchain_make glibc
 	toolchain_make adjust-toolchain
