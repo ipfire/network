@@ -25,7 +25,10 @@
 include Config
 
 PKG_NAME   = flex
-VER        = 2.5.34
+VER        = 2.5.33
+
+### Downgraded from 2.5.34 to 2.5.33 because that causes 
+### build errors in libpcap and ppp
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -56,7 +59,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && ./configure --prefix=/usr
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
-	ln -sv libfl.a /usr/lib/libl.a
+	ln -sfv libfl.a /usr/lib/libl.a
 	echo "#!/bin/sh"											>  /usr/bin/lex
 	echo "exec /usr/bin/flex -l \"$$@\""	>> /usr/bin/lex
 	chmod 755 /usr/bin/lex
