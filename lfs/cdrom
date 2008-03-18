@@ -51,6 +51,8 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
 		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq > $(CDROM_DIR)/archive.files
 	
+	wc -l < $(CDROM_DIR)/archive.files > $(CDROM_DIR)/numberof.files
+	
 	cd / && cpio -o -H newc < $(CDROM_DIR)/archive.files \
 		> $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp 2>$(CDROM_DIR)/archive.errors
 
@@ -75,7 +77,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	
 	cp /usr/lib/grub/i386-pc/stage2_eltorito		$(CDROM_DIR)/boot/grub/stage2_eltorito
 	cp $(DIR_CONF)/grub/installer.conf					$(CDROM_DIR)/boot/grub/grub.conf
-	cp $(DIR_CONF)/grub/ipfire.xpm.gz						$(CDROM_DIR)/boot/grub/ipfire.xpm.gz
+	cp $(DIR_CONF)/grub/splash.xpm.gz						$(CDROM_DIR)/boot/grub/splash.xpm.gz
 	
 	cp /usr/lib/memtest86+/memtest.bin          $(CDROM_DIR)/boot/memtest
 	
