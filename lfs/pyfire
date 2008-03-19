@@ -51,7 +51,7 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	cd $(DIR_APP) && make -C po update-po
+	cd $(DIR_APP) && make clean
 	cd $(DIR_APP) && make
 	cd $(DIR_APP) && make install
 	cd $(DIR_APP) && make clean

@@ -44,7 +44,7 @@ download :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(CDROM_DIR)/*
 	
-	mkdir -p $(CDROM_DIR)/{boot/grub,doc}
+	mkdir -p $(CDROM_DIR)/{isolinux,doc}
 	
 	### Compressing root fs
 	#
@@ -68,22 +68,23 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -f $(CDROM_DIR)/archive.{files,errors} $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp
 
 	# Other files
-	sed 's/VERSION/$(VERSION)/' $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README.txt
-	cp $(DIR_SRC)/doc/COPYING										$(CDROM_DIR)
-	cp $(DIR_SRC)/doc/{ChangeLog,packages-list.txt}	$(CDROM_DIR)/doc
+	sed 's/VERSION/$(VERSION)/' $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README
+	cp -vf $(DIR_SRC)/doc/COPYING								$(CDROM_DIR)
+	cp -vf $(DIR_SRC)/doc/{ChangeLog,packages-list.txt} $(CDROM_DIR)/doc
 	
-	cp $(IMAGES_DIR)/initramfs-$(VERSION).img		$(CDROM_DIR)/boot/initramfs.img
-	cp /boot/ipfirekernel-$(KVER)								$(CDROM_DIR)/boot/ipfirekernel
+	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/isolinux/init0
+	cp -vf /boot/ipfirekernel-$(KVER)						$(CDROM_DIR)/isolinux/ipfire0
 	
-	cp /usr/lib/grub/i386-pc/stage2_eltorito		$(CDROM_DIR)/boot/grub/stage2_eltorito
-	cp $(DIR_CONF)/grub/installer.conf					$(CDROM_DIR)/boot/grub/grub.conf
-	cp $(DIR_CONF)/grub/splash.xpm.gz						$(CDROM_DIR)/boot/grub/splash.xpm.gz
-	
-	cp /usr/lib/memtest86+/memtest.bin          $(CDROM_DIR)/boot/memtest
+	cp -vf /usr/lib/syslinux/{vesamenu.c32,isolinux.bin} \
+		$(DIR_CONF)/bootloader/splash.{jpg,lss} $(DIR_CONF)/bootloader/*.msg \
+																							$(CDROM_DIR)/isolinux
+	sed -e "s/VERSION/$(VERSION)/g" $(DIR_CONF)/bootloader/installer.conf > \
+																							$(CDROM_DIR)/isolinux/isolinux.cfg
+	cp -vf /usr/lib/memtest86+/memtest.bin			$(CDROM_DIR)/isolinux/memtest
 	
 	cd $(CDROM_DIR) && mkisofs -J -r -V "$(NAME)_$(VERSION)" \
-		-b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table \
-		. > $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).iso
+		-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
+		-boot-info-table . > $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).iso
 	
 	@rm -rf $(CDROM_DIR)/*
 

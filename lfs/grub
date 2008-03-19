@@ -81,7 +81,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	mkdir -vp /boot/grub
 	cp -v /usr/lib/grub/i386-pc/stage{1,2} /boot/grub
 	
-	for i in $(DIR_SRC)/config/grub/{grub.conf,splash.xpm.gz}; do \
+	for i in $(DIR_SRC)/config/bootloader/{grub.conf,splash.xpm.gz}; do \
 	    [ -f $$i ] && cp -vf $$i /boot/grub; \
 	done
 

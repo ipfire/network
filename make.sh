@@ -295,7 +295,6 @@ ipfire_build() {
 	#ipfire_make mtools
 	#ipfire_make mISDN
 	
-	#ipfire_make nasm
 	#ipfire_make wireless
 	#ipfire_make libsafe
 }
@@ -321,6 +320,12 @@ misc_build() {
 	#ipfire_make nmap
 	#ipfire_make rsync
 	#ipfire_make tcpdump
+	
+	### Assembler
+	#
+	ipfire_make nasm
+	
+	ipfire_make syslinux
 	
 	#ipfire_make squid
 	#ipfire_make squidguard		## CAN THIS BE BANISHED BY ANYTHING BETTER?
