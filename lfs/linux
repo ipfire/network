@@ -42,7 +42,8 @@ EXTRAVERSION = $(shell echo "$(FULLVER)" | cut -c 7-)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) reiser4-for-$(VER).patch
+objects = $(DL_FILE) reiser4-for-$(VER).patch $(THISAPP)-lzma-init-ia32.patch \
+					$(THISAPP)-lzma-vmlinuz-x86.patch
 
 install : $(TARGET)
 
@@ -58,6 +59,15 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	
+	### Reiser4
+	#
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/reiser4-for-$(VER).patch
+	
+	### LZMA
+	#
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-lzma-init-ia32.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-lzma-vmlinuz-x86.patch
 
 ifeq "$(STAGE)" "toolchain"
 	install -dv $(TOOLS_DIR)/include
@@ -75,39 +85,35 @@ ifeq "$(STAGE)" "base"
 endif
 
 ifeq "$(STAGE)" "ipfire"
-
-	### Reiser4
-	#
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/reiser4-for-$(VER).patch
 	
 	cd $(DIR_APP) && make mrproper
 
-	-[ "$(TARGET_ARCH)" == "i586" ] && \
+	-[ "$(TARGET)" == "i586" ] && \
 			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 						-e "s/^# CONFIG_MPENTIUMIII is not set/CONFIG_MPENTIUMII=y/" \
 						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
 	
-	-[ "$(TARGET_ARCH)" == "i486" ] && \
+	-[ "$(TARGET)" == "i486" ] && \
 			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 						-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
 						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
 	
-	-[ "$(TARGET_ARCH)" == "i386" ] && \
+	-[ "$(TARGET)" == "i386" ] && \
 			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 						-e "s/^# CONFIG_M386 is not set/CONFIG_M386=y/" \
 						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
 	
-	-[ "$(TARGET_ARCH)" == "i486" ] && \
+	-[ "$(TARGET)" == "i486" ] && \
 			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 						-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
 						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
 
-	-[ "$(TARGET_ARCH)" == "via-c7" ] && \
+	-[ "$(TARGET)" == "via-c7" ] && \
 			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 						-e "s/^# CONFIG_MVIAC7 is not set/CONFIG_MVIAC7=y/" \
 						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
 	
-	-[ "$(TARGET_ARCH)" == "via-c3" ] && \
+	-[ "$(TARGET)" == "via-c3" ] && \
 			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 						-e "s/^# CONFIG_MVIAC3_2 is not set/CONFIG_MVIAC3_2=y/" \
 						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
@@ -125,7 +131,7 @@ ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make modules_install
 	
-	cd $(DIR_APP) && cp -v arch/i386/boot/bzImage /boot/ipfirekernel-$(FULLVER)
+	cd $(DIR_APP) && cp -v arch/x86/boot/bzImage /boot/ipfirekernel-$(FULLVER)
 	cd $(DIR_APP) && cp -v System.map /boot/System.map-$(FULLVER)
 	
 	ln -svf ipfirekernel-$(FULLVER) /boot/ipfirekernel

@@ -175,7 +175,7 @@ $(TARGET) :
 	### compressing everything
 	#
 	-find $(INSTALLER_DIR) -name .svn -exec rm -rf {} \;
-	cd $(INSTALLER_DIR) && find . | cpio -o -H newc | gzip -9 > \
+	cd $(INSTALLER_DIR) && find . | cpio -o -H newc | lzma e -si -so > \
   	/images/initramfs-$(VERSION).img
 		
 	@$(POSTBUILD)

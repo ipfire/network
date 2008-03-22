@@ -171,9 +171,8 @@ ipfire_build() {
 	### Building the configuration dirs and files
 	#
 	ipfire_make stage3
-	
-	### Building the kernel stuff
-	#
+	ipfire_make lzma
+
 	ipfire_make linux
 	
 	### Building some general stuff
@@ -273,7 +272,6 @@ ipfire_build() {
 	ipfire_make ez-ipupdate
 	ipfire_make noip
 	ipfire_make lighttpd
-	ipfire_make lzma
 	ipfire_make collectd
 	#ipfire_make logrotate
 	#ipfire_make logwatch	
