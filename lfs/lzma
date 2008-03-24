@@ -25,10 +25,10 @@
 include Config
 
 PKG_NAME   = lzma
-VER        = 443
+VER        = 4.32.5
 
-THISAPP    = $(PKG_NAME)$(VER)
-DL_FILE    = $(THISAPP).tar.bz2
+THISAPP    = $(PKG_NAME)-$(VER)
+DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
@@ -52,11 +52,11 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && mkdir $(DIR_APP) && \
-		tar jxf $(DIR_DL)/$(DL_FILE) -C $(DIR_APP)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	
-	cd $(DIR_APP)/C/7zip/Compress/LZMA_Alone && make -f makefile.gcc -j $(PARALLELISM)
-	cd $(DIR_APP)/C/7zip/Compress/LZMA_Alone && cp lzma /bin
+	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
