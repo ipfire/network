@@ -17,68 +17,74 @@
 # You should have received a copy of the GNU General Public License           #
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #                                                                             #
+# A small helper to make the git functions comfortable                        #
+#                                                                             #
 ###############################################################################
 ###############################################################################
 #
-# A small helper to make the svn functions comfortable
+# Set the environment
 #
 ###############################################################################
 
-svn_up() {
-	echo "Loading the latest source files..."
-	if [ "$3" ]; then
-		svn update -r $3
-	else
-		svn update
-	fi
-	if [ $? -eq "0" ]; then
-		beautify message DONE
-	else
-		beautify message FAIL
-		exit 1
-	fi
+[ -z $GIT_URL ] || exiterror "You have to setup GIT_USER first."
+
+GIT_URL="ssh://${GIT_USER}@git.ipfire.org/pub/ipfire-3.x"
+
+if [ -z $EDITOR ]; then
+	for i in nano emacs vi; do
+		EDITOR=$(which $i 2>/dev/null)
+		if ! [ -z $EDITOR ]; then
+			export EDITOR=$EDITOR
+			break
+		fi
+	done
+	[ -z $EDITOR ] && exiterror "You should have installed an editor."
+fi
+
+###############################################################################
+#
+# A small helper to make the git functions comfortable
+#
+###############################################################################
+
+git_pull() {
+	git pull
 }
 
-svn_commit() {
-	if which nano; then
-		export EDITOR=nano
-	fi
-	if [ "`echo $SVN_REVISION | cut -c 3`" -eq "0" ]; then
-		svn_log
-	fi
-	svn commit
+git_push() {
+	git push ${GIT_URL} master
 }
 
-svn_diff(){
-	echo -ne "Make a local diff to last svn revision"
-	svn diff > ipfire-diff-`date +'%Y-%m-%d-%H:%M'`-r`svn info | grep Revision | cut -c 11-`.diff
-	evaluate 1
-	echo "Diff was successfully saved to ipfire-diff-`date +'%Y-%m-%d-%H:%M'`-r`svn info | grep Revision | cut -c 11-`.diff"
-	svn status
-}
-
-svn_dist() {
-	if [ "$3" ]; then
-		SVN_REVISION=$3
-	fi
+git_commit() {
+	git commit $*
 	
-	echo -en "REV $SVN_REVISION: Downloading sourcecode..."
-	svn export http://svn.ipfire.org/svn/ipfire/trunk ipfire-source/ --force > /dev/null
-	evaluate 1
+	[ "$?" -eq "0" ] || exiterror "git commit $* failed."
 	
-	echo -en "REV $SVN_REVISION: Fetching changelog..."
-	svn log http://svn.ipfire.org/svn/ipfire/trunk -r 1:$SVN_REVISION > ipfire-source/Changelog
-	evaluate 1
-
-	echo -en "REV $SVN_REVISION: Compressing files..."
-	tar cfj ipfire-source-r$SVN_REVISION.tar.bz2 ipfire-source
-	evaluate 1
-	
-	rm -rf ipfire-source/
+	echo "${BOLD}Do you want to push, too? [y/N]${NORMAL}"
+	read
+	for i in y Y j J; do
+		if [ "$i" -eq "$REPLY" ]; then
+			git_push
+			exit $?
+		fi
+	done
 }
 
-svn_log() {
+git_diff(){
+	echo -ne "Make a local diff to last revision"
+	git diff > ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff
+	evaluate 1
+	echo "Diff was successfully saved to ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff"
+	git diff --stat
+}
+
+git_log() {
 	echo -n "Updateing changelog from repository..."
-	svn log --limit 750 > $BASEDIR/doc/ChangeLog
+	
+	[ -z $GIT_TAG ]  || LAST_TAG=$GIT_TAG
+	[ -z $LAST_TAG ] || EXT="$LAST_TAG..HEAD"
+	
+	git log --pretty=short --no-color $EXT > $BASEDIR/doc/ChangeLog
+	
 	beautify message DONE
 }

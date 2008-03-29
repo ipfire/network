@@ -29,9 +29,10 @@ NICE=10													# Nice level
 TARGET=i686											# Default target
 KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }' | tr -d '\n'; grep --max-count=1 FULLVER lfs/linux | awk '{ print $3 }' | cut -c 7-| tail -1`
 MACHINE_REAL=`uname -m`
-SVN_REVISION=`svn info | grep Revision | cut -c 11-`
+GIT_TAG=$(git tag | tail -1)
 
-PARALLELISM=$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))	# Parallelism flag
+# Parallelism flag
+PARALLELISM=$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
 DISTCC_HOSTS=localhost
 
 PWD=`pwd`

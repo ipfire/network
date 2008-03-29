@@ -185,25 +185,22 @@ othersrc)
 	stdumount
 	;;
 	
-svn)
-	. $BASEDIR/tools/make-subversion
+git)
+	. $BASEDIR/tools/make-git
 	case "$2" in
-		update|up)
-			svn_up
+		update|pull)
+			git_pull
 			;;
 		commit|ci)
+			shift 2
 			clear
-			svn_commit
-			svn_up
-			;;
-		dist)
-			svn_dist
+			git_commit $*
 			;;
 		diff|di)
-			svn_diff
+			git_diff
 			;;
 		log)
-			svn_log
+			git_log
 			;;
 	esac
 	;;
