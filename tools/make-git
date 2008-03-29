@@ -26,7 +26,7 @@
 #
 ###############################################################################
 
-[ -z $GIT_URL ] || exiterror "You have to setup GIT_USER first."
+[ -z $GIT_USER ] && exiterror "You have to setup GIT_USER first."
 
 GIT_URL="ssh://${GIT_USER}@git.ipfire.org/pub/ipfire-3.x"
 
