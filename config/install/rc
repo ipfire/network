@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -20,104 +20,177 @@
 ###############################################################################
 
 ## Set the defaults
-STARTUP_MODE=install
 HOSTNAME=ipfire.localdomain
 
 . /etc/functions
 
-	boot_mesg -n "Mounting kernel-based file systems:" ${INFO}
 
-	boot_mesg -n " /proc" ${NORMAL}
-	mount -n -t proc proc /proc || failed=1
+################################################################################
+# Mounting early filesystems                                                   #
+################################################################################
 
-	boot_mesg -n " /sys" ${NORMAL}
-	mount -n -t sysfs sysfs /sys || failed=1
+boot_mesg -n "Mounting kernel-based file systems:" ${INFO}
+
+boot_mesg -n " /proc" ${NORMAL}
+mount -n -t proc proc /proc || failed=1
+
+boot_mesg -n " /sys" ${NORMAL}
+mount -n -t sysfs sysfs /sys || failed=1
+
+boot_mesg "" ${NORMAL}
+
+(exit ${failed})
+evaluate_retval
+
+
+################################################################################
+# Setting kernel parameters                                                    #
+################################################################################
+
+boot_mesg "Silencing kernel..."
+echo >/proc/sys/kernel/printk "1 4 1 7"
+evaluate_retval
+
+boot_mesg "Disabling screen blanking..."
+echo -n -e "\033[9;0]"
+evaluate_retval
+
+
+################################################################################
+# Starting udev daemon                                                         #
+################################################################################
+
+boot_mesg "Mounting /dev"
+mount -n -t tmpfs tmpfs /dev -o mode=755
+evaluate_retval
+
+boot_mesg "Populating /dev with device nodes..."
+echo > /proc/sys/kernel/hotplug
+
+cp -a /lib/udev/devices/* /dev
+/sbin/udevd --daemon
+/sbin/udevtrigger
+/sbin/udevsettle
+evaluate_retval
+
+
+################################################################################
+# Setting up local networking                                                  #
+################################################################################
+
+boot_mesg "Bringing up the loopback interface..."
+ip addr add 127.0.0.1/8 label lo dev lo
+ip link set lo up
+evaluate_retval
+
+boot_mesg "Setting hostname to ${HOSTNAME}..."
+hostname ${HOSTNAME}
+evaluate_retval
+
+
+################################################################################
+# Starting syslog daemon                                                       #
+################################################################################
+
+boot_mesg "Starting system log daemon..."
+syslogd -O /dev/tty4 $SYSLOGD_EXTRA
+evaluate_retval
+
+
+################################################################################
+# Detecting hardware                                                           #
+################################################################################
+
+boot_mesg "Detecting hardware..."
+for MODULE in $(kudzu -qps  -t 30 | grep driver: | cut -d ' ' -f 2 | sort | uniq); do
+	if [ "$MODULE" = "unknown" ] || \
+			[ "$MODULE" = "ignore" ] || \
+			[ "$MODULE" = "" ]; then
+      continue
+	fi
+	MODULE=$(find /lib/modules -name $(echo $MODULE | sed -e 's/[_-]/*/g')* 2>/dev/null)
+  [ "$MODULE" == "" ] && continue
+  MODULE=$(basename $MODULE | cut -d. -f1 | head -1)
+  
+	echo "$MODULE" >> /tmp/modules-found.txt
 	
-	boot_mesg "" ${NORMAL}
+done
+echo_ok
 
-	(exit ${failed})
-	evaluate_retval
+MODULES="ide-generic generic ide-cd ide-disk"
+MODULES="$MODULES uhci-hcd ehci-hcd ohci-hcd sd_mod sr_mod"
+MODULES="$MODULES usb-storage usbhid"
 
+MODULES="$MODULES ext2 ext3 reiserfs reiser4 xfs vfat"
 
-	boot_mesg "Silencing kernel..."
-	echo >/proc/sys/kernel/printk "1 4 1 7"
-	evaluate_retval
+for MODULE in $(cat /tmp/modules-found.txt); do
+	MODULES="$MODULES $MODULE"
+done
 
-	
-	boot_mesg "Disabling screen blanking..."
-	echo -n -e "\033[9;0]"
-	evaluate_retval
-
-
-	boot_mesg "Mounting /dev"
-	mount -n -t tmpfs tmpfs /dev -o mode=755
-	evaluate_retval
-	
-	boot_mesg "Populating /dev with device nodes..."
-	echo > /proc/sys/kernel/hotplug
-	
-	cp -a /lib/udev/devices/* /dev
-	/sbin/udevd --daemon
-	/sbin/udevtrigger
-	/sbin/udevsettle
-	evaluate_retval
-	
-	
-	boot_mesg "Bringing up the loopback interface..."
-	ip addr add 127.0.0.1/8 label lo dev lo
-	ip link set lo up
-	evaluate_retval
-	
-	
-	boot_mesg "Setting hostname to ${HOSTNAME}..."
-	hostname ${HOSTNAME}
-	evaluate_retval
+for MODULE in $MODULES; do
+	if grep -Eqe "^$MODULE " /proc/modules; then
+		continue
+	fi
+	modprobe $MODULE
+done
 
 
-	# Now check what mode= was passed to the kernel
-	for i in $(cat /proc/cmdline); do
-		case $i in
-			mode=*)
-				STARTUP_MODE=${i#mode=}
-				;;
-		esac
-	done
-	
-	case $STARTUP_MODE in
-		install)
-			SYSLOGD_EXTRA="-O /root/install.log"
-			
-			boot_mesg "Detecting hardware..."
-			for MODULE in $(kudzu -qps  -t 30 | grep driver: | cut -d ' ' -f 2 | sort | uniq); do
-				if [ "$MODULE" = "unknown" ] || \
-						[ "$MODULE" = "ignore" ] || \
-						[ "$MODULE" = "" ]; then
-		        continue
-				fi
-				MODULE=$(find /lib/modules -name $(echo $MODULE | sed -e 's/[_-]/*/g')* 2>/dev/null)
-		    [ "$MODULE" == "" ] && continue
-		    MODULE=$(basename $MODULE | cut -d. -f1 | head -1)
-		    
-				if grep -Eqe "^$MODULE " /proc/modules; then
-					continue
-				fi
-				
-				echo "$MODULE" >> /tmp/modules-found.txt
-				modprobe $MODULE
-				
-			done
-			echo_ok
-			;;
-		rescue)
-			sed -i "s, -c /bin/installer,,g" /etc/inittab
+################################################################################
+# Now check what mode= was passed to the kernel                                #
+################################################################################
+for i in $(cat /proc/cmdline); do
+	case $i in
+		mode=*)
+			STARTUP_MODE=${i#mode=}
 			;;
 	esac
+done
+
+case $STARTUP_MODE in
+	install)
+		:
+		;;
+	rescue)
+		sed -i "s, -c /sbin/installer,,g" /etc/inittab
+		;;
+esac
 
 
-	boot_mesg "Starting system log daemon..."
-	syslogd -O /dev/tty4 $SYSLOGD_EXTRA
-	evaluate_retval
+################################################################################
+# Networking                                                                   #
+################################################################################
 
+INTERFACES=""
+NETWORK=off
+for i in $(seq 0 9); do
+	link_status=`ip link show eth${i} 2> /dev/null`
+	if [ -n "${link_status}" ]; then
+		INTERFACES="${INTERFACES} eth${i}"
+	fi
+done
 
-	exec init
+for i in ${INTERFACES}; do
+	boot_mesg "Starting network (dhcp) on ${i}..."
+	ip link set ${i} up && \
+		udhcpc -Sn -i ${i} >/dev/null 2>&1 && \
+		echo_ok && \
+		NETWORK=on && \
+		break
 	
+	ip link set ${i} down
+	echo_failure
+done
+
+if [ "$NETWORK" == "on" ]; then
+	#boot_mesg "Starting telnetd..."
+	#telnetd
+	#evaluate_retval
+	echo -n
+fi
+
+
+################################################################################
+# Running the machines init                                                    #
+################################################################################
+
+exec init
