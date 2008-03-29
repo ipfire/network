@@ -24,7 +24,7 @@
 
 NAME="IPFire"										# Software name
 SNAME="ipfire"									# Short name
-VERSION="2.9"										# Version number
+VERSION="3.0-prealpha"					# Version number
 TOOLCHAINVERSION="${VERSION}-1"	# Toolchain
 SLOGAN="www.ipfire.org"					# Software slogan
 
