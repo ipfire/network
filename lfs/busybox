@@ -53,12 +53,14 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	-mkdir -p $(INSTALLER_DIR)/busybox
 	cd $(DIR_APP) && cp -f $(DIR_CONFIG)/$(PKG_NAME)/.config .config
 	cd $(DIR_APP) && make oldconfig
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	rm -vf $(INSTALLER_DIR)/linuxrc
-	-mkdir -p $(INSTALLER_DIR)/usr/share/udhcpc/
-	cp -vf $(DIR_CONF)/busybox/default.script $(INSTALLER_DIR)/usr/share/udhcpc/
+	-mkdir -p $(INSTALLER_DIR)/busybox/usr/share/udhcpc/
+	install -m 755 -v $(DIR_CONF)/busybox/default.script \
+		$(INSTALLER_DIR)/busybox/usr/share/udhcpc/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
