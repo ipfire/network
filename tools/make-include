@@ -24,7 +24,7 @@
 #
 ###############################################################################
 
-CONFIG_ROOT=/etc/ipfire					# Configuration rootdir
+CONFIG_ROOT=/etc/$(SNAME)				# Configuration rootdir
 NICE=10													# Nice level
 TARGET=i686											# Default target
 KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }' | tr -d '\n'; grep --max-count=1 FULLVER lfs/linux | awk '{ print $3 }' | cut -c 7-| tail -1`
