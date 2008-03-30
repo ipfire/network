@@ -90,3 +90,7 @@ git_log() {
 	
 	beautify message DONE
 }
+
+git_export() {
+	git archive HEAD | gzip -9 > ${SNAME}-${VERSION}.tar.gz
+}
