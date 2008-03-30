@@ -42,7 +42,7 @@ download :
 ###############################################################################
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
-	@rm -rf $(CDROM_DIR)/*
+	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
 	
 	mkdir -p $(CDROM_DIR)/{isolinux,doc}
 	
@@ -61,8 +61,8 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 		exit 1; \
 	fi
 	
-	lzma e 	$(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp \
-					$(CDROM_DIR)/$(SNAME)-$(VERSION).img
+	lzma -fcz $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp > \
+				 		$(CDROM_DIR)/$(SNAME)-$(VERSION).img
 	
 	# These files won't be included in the iso
 	@rm -f $(CDROM_DIR)/archive.{files,errors} $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp
@@ -82,10 +82,16 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 																							$(CDROM_DIR)/isolinux/isolinux.cfg
 	cp -vf /usr/lib/memtest86+/memtest.bin			$(CDROM_DIR)/isolinux/memtest
 	
+	# Creating the info file
+	echo -e "Release: $(NAME)-$(VERSION)" \
+					"\nBuild host: $$(hostname)\nDate: $$(date)" \
+					"\nMD5: $$(md5sum $(CDROM_DIR)/$(SNAME)-$(VERSION).img | awk '{ print $$1 }')" \
+				> $(CDROM_DIR)/.$(SNAME)info
+	
 	cd $(CDROM_DIR) && mkisofs -J -r -V "$(NAME)_$(VERSION)" \
 		-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
 		-boot-info-table . > $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).iso
 	
-	@rm -rf $(CDROM_DIR)/*
+	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
 
 	### REBUILD THIS AT EVERY PASS
