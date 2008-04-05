@@ -74,7 +74,7 @@ git_commit() {
 
 git_diff(){
 	echo -ne "Make a local diff to last revision"
-	git diff > ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff
+	git diff HEAD > ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff
 	evaluate 1
 	echo "Diff was successfully saved to ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff"
 	git diff --stat
