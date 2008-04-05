@@ -60,9 +60,9 @@ toolchain_build() {
 	
 	toolchain_make binutils											PASS=1
 	toolchain_make gcc													PASS=1
-	
 	toolchain_make glibc
 	toolchain_make adjust-toolchain
+	
 	if [ "${MACHINE}" == "${MACHINE_REAL}" ]; then
 		toolchain_make tcl
 		toolchain_make expect
@@ -70,6 +70,7 @@ toolchain_build() {
 		toolchain_make gcc												PASS=2
 		toolchain_make binutils										PASS=2
 	fi
+	
 	toolchain_make ncurses
 	toolchain_make bash
 	toolchain_make bzip2
