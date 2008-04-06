@@ -24,11 +24,12 @@
 
 include Config
 
-PKG_NAME   = infire
+PKG_NAME   = pomona
 VER        = ipfire
 
 THISAPP    = $(PKG_NAME)
 DIR_APP    = $(DIR_SOURCE)/$(THISAPP)
+INITRAMFS_DIR = $(INSTALLER_DIR)/initramfs
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -40,14 +41,18 @@ install : $(TARGET)
 
 download :
 
-
 ###############################################################################
 # Installation Details
 ###############################################################################
 
 $(TARGET) :
 	@$(PREBUILD)
+	-mkdir -p $(INITRAMFS_DIR)
+	
 	cd $(DIR_APP) && make -C po update-po
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
+	cd $(DIR_APP) && make lang-names
+	cd $(DIR_APP) && make install DESTDIR=$(INITRAMFS_DIR) NAME=$(NAME) \
+																SNAME=$(SNAME) VERSION=$(VERSION)
 	cd $(DIR_APP) && make clean
+	
 	@$(POSTBUILD)

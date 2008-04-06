@@ -28,6 +28,7 @@ PKG_NAME   = initramfs
 VER        = LFS
 
 THISAPP    = $(PKG_NAME)-$(VER)
+INITRAMFS_DIR = $(INSTALLER_DIR)/initramfs
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -45,138 +46,213 @@ download :
 
 $(TARGET) :
 	@$(PREBUILD)
-	-mkdir -p $(INSTALLER_DIR)/{usr,bin,sbin,lib,dev,etc,mnt,root,cdrom,dev,harddisk,proc,tmp,sys,var/run}
-	-mkdir -p $(INSTALLER_DIR)/usr/{bin,sbin,lib,share/locale,share/terminfo/l,share/udhcpc}
+	#@rm -rf $(INITRAMFS_DIR)/*
+	-mkdir -p $(INITRAMFS_DIR)/{usr,bin,sbin,lib,dev,etc,mnt/{source,target},root,cdrom,dev,harddisk,proc,tmp,sys,var/run}
+	-mkdir -p $(INITRAMFS_DIR)/usr/{bin,sbin,lib/locale,share/locale,share/terminfo/l,share/udhcpc,share/zoneinfo}
+	-mkdir -p $(INITRAMFS_DIR)/lib/kbd/{consolefonts,keymaps}
 
 	### glibc
 	#
-	install -c -D /lib/libc-2.7.so					$(INSTALLER_DIR)/lib/libc-2.7.so
-	ln -svf libc-2.7.so											$(INSTALLER_DIR)/lib/libc.so.6
-	install -c -D /lib/libdl-2.7.so					$(INSTALLER_DIR)/lib/libdl-2.7.so
-	ln -svf libdl-2.7.so										$(INSTALLER_DIR)/lib/libdl.so.2
-	install -c -D /lib/libnss_files-2.7.so	$(INSTALLER_DIR)/lib/libnss_files-2.7.so
-	ln -svf libnss_files-2.7.so							$(INSTALLER_DIR)/lib/libnss_files.so.2
-	install -c -D /lib/libcrypt-2.7.so			$(INSTALLER_DIR)/lib/libcrypt-2.7.so
-	ln -svf libcrypt-2.7.so									$(INSTALLER_DIR)/lib/libcrypt.so.1
-	install -c -D /lib/libm-2.7.so					$(INSTALLER_DIR)/lib/libm-2.7.so
-	ln -svf libm-2.7.so											$(INSTALLER_DIR)/lib/libm.so.6
-	install -c -D /lib/libutil-2.7.so				$(INSTALLER_DIR)/lib/libutil-2.7.so
-	ln -svf libutil-2.7.so									$(INSTALLER_DIR)/lib/libutil.so.1
-	install -c -D /lib/libpthread-2.7.so		$(INSTALLER_DIR)/lib/libpthread-2.7.so
-	ln -svf libpthread-2.7.so								$(INSTALLER_DIR)/lib/libpthread.so.0
-	install -c -D /lib/ld-2.7.so						$(INSTALLER_DIR)/lib/ld-2.7.so
-	ln -svf ld-2.7.so												$(INSTALLER_DIR)/$(LINKER)
+	install -c -D /lib/libc-2.7.so					$(INITRAMFS_DIR)/lib/libc-2.7.so
+	ln -svf libc-2.7.so											$(INITRAMFS_DIR)/lib/libc.so.6
+	install -c -D /lib/libdl-2.7.so					$(INITRAMFS_DIR)/lib/libdl-2.7.so
+	ln -svf libdl-2.7.so										$(INITRAMFS_DIR)/lib/libdl.so.2
+	install -c -D /lib/libnss_files-2.7.so	$(INITRAMFS_DIR)/lib/libnss_files-2.7.so
+	ln -svf libnss_files-2.7.so							$(INITRAMFS_DIR)/lib/libnss_files.so.2
+	install -c -D /lib/libnss_dns-2.7.so		$(INITRAMFS_DIR)/lib/libnss_dns-2.7.so
+	ln -svf libnss_dns-2.7.so								$(INITRAMFS_DIR)/lib/libnss_dns.so.2
+	install -c -D /lib/libcrypt-2.7.so			$(INITRAMFS_DIR)/lib/libcrypt-2.7.so
+	ln -svf libcrypt-2.7.so									$(INITRAMFS_DIR)/lib/libcrypt.so.1
+	install -c -D /lib/libm-2.7.so					$(INITRAMFS_DIR)/lib/libm-2.7.so
+	ln -svf libm-2.7.so											$(INITRAMFS_DIR)/lib/libm.so.6
+	install -c -D /lib/libutil-2.7.so				$(INITRAMFS_DIR)/lib/libutil-2.7.so
+	ln -svf libutil-2.7.so									$(INITRAMFS_DIR)/lib/libutil.so.1
+	install -c -D /lib/libpthread-2.7.so		$(INITRAMFS_DIR)/lib/libpthread-2.7.so
+	ln -svf libpthread-2.7.so								$(INITRAMFS_DIR)/lib/libpthread.so.0
+	install -c -D /lib/libresolv-2.7.so			$(INITRAMFS_DIR)/lib/libresolv-2.7.so
+	ln -svf libresolv-2.7.so								$(INITRAMFS_DIR)/lib/libresolv.so.2
+	install -c -D /lib/ld-2.7.so						$(INITRAMFS_DIR)/lib/ld-2.7.so
+	ln -svf ld-2.7.so												$(INITRAMFS_DIR)/$(LINKER)
+	
+	install -c -D /usr/lib/libstdc++.so.6.0.9 $(INITRAMFS_DIR)/usr/lib/libstdc++.so.6.0.9
+	ln -svf libstdc++.so.6.0.9							$(INITRAMFS_DIR)/usr/lib/libstdc++.so.6
+	install -c -D /usr/lib/libgcc_s.so.1		$(INITRAMFS_DIR)/usr/lib/libgcc_s.so.1
+	ln -svf libgcc_s.so.1										$(INITRAMFS_DIR)/usr/lib/libstdc++.so
 	
 	### udev
 	#
-	install -D /sbin/udevd									$(INSTALLER_DIR)/sbin
-	install -D /sbin/udevsettle							$(INSTALLER_DIR)/sbin
-	install -D /sbin/udevtrigger						$(INSTALLER_DIR)/sbin
-	-cp -avf /lib/udev											$(INSTALLER_DIR)/lib/
-	cp -avf /etc/udev												$(INSTALLER_DIR)/etc/
+	install -D /sbin/udevd									$(INITRAMFS_DIR)/sbin
+	install -D /sbin/udevsettle							$(INITRAMFS_DIR)/sbin
+	install -D /sbin/udevtrigger						$(INITRAMFS_DIR)/sbin
+	-cp -avf /lib/udev											$(INITRAMFS_DIR)/lib/
+	cp -avf /etc/udev												$(INITRAMFS_DIR)/etc/
 	
 	### ncurses
 	#
-	install -c -D /lib/libncursesw.so.5.6		$(INSTALLER_DIR)/lib/libncursesw.so.5.6
-	ln -svf libncursesw.so.5.6							$(INSTALLER_DIR)/lib/libncursesw.so
+	install -c -D /lib/libncursesw.so.5.6		$(INITRAMFS_DIR)/lib/libncursesw.so.5.6
+	ln -svf libncursesw.so.5.6							$(INITRAMFS_DIR)/lib/libncursesw.so
 	
 	### e2fsprogs
 	#
-	install -c -D /sbin/mke2fs							$(INSTALLER_DIR)/sbin/mke2fs
-	install -c -D /lib/libext2fs.so.2.4			$(INSTALLER_DIR)/lib/libext2fs.so.2.4
-	ln -svf libext2fs.so.2.4								$(INSTALLER_DIR)/lib/libext2fs.so.2
-	install -c -D /lib/libuuid.so.1.2				$(INSTALLER_DIR)/lib/libuuid.so.1.2
-	ln -svf libuuid.so.1.2									$(INSTALLER_DIR)/lib/libuuid.so.1
-	install -c -D /lib/libcom_err.so.2.1		$(INSTALLER_DIR)/lib/libcom_err.so.2.1
-	ln -svf libcom_err.so.2.1								$(INSTALLER_DIR)/lib/libcom_err.so.2
-	install -c -D /lib/libblkid.so.1.0			$(INSTALLER_DIR)/lib/libblkid.so.1.0
-	ln -svf libblkid.so.1.0									$(INSTALLER_DIR)/lib/libblkid.so.1
-	install -c -D /lib/libe2p.so.2.3				$(INSTALLER_DIR)/lib/libe2p.so.2.3
-	ln -svf libe2p.so.2.3										$(INSTALLER_DIR)/lib/libe2p.so.2
+	install -c -D /sbin/mke2fs							$(INITRAMFS_DIR)/sbin/mke2fs
+	install -c -D /sbin/tune2fs							$(INITRAMFS_DIR)/sbin/tune2fs
+	install -c -D /sbin/e2label							$(INITRAMFS_DIR)/sbin/e2label
+	#
+	install -c -D /lib/libext2fs.so.2.4			$(INITRAMFS_DIR)/lib/libext2fs.so.2.4
+	ln -svf libext2fs.so.2.4								$(INITRAMFS_DIR)/lib/libext2fs.so.2
+	install -c -D /lib/libuuid.so.1.2				$(INITRAMFS_DIR)/lib/libuuid.so.1.2
+	ln -svf libuuid.so.1.2									$(INITRAMFS_DIR)/lib/libuuid.so.1
+	install -c -D /lib/libcom_err.so.2.1		$(INITRAMFS_DIR)/lib/libcom_err.so.2.1
+	ln -svf libcom_err.so.2.1								$(INITRAMFS_DIR)/lib/libcom_err.so.2
+	install -c -D /lib/libblkid.so.1.0			$(INITRAMFS_DIR)/lib/libblkid.so.1.0
+	ln -svf libblkid.so.1.0									$(INITRAMFS_DIR)/lib/libblkid.so.1
+	install -c -D /lib/libe2p.so.2.3				$(INITRAMFS_DIR)/lib/libe2p.so.2.3
+	ln -svf libe2p.so.2.3										$(INITRAMFS_DIR)/lib/libe2p.so.2
+	
+	### util-linux-ng
+	#
+	install -c -D /sbin/mkswap							$(INITRAMFS_DIR)/sbin/mkswap
+	
+	### kbd
+	#
+	cp -av /lib/kbd/keymaps/{i386,include}	$(INITRAMFS_DIR)/lib/kbd/keymaps/
+	#install -c -D /bin/kbd_mode							$(INITRAMFS_DIR)/bin/kbd_mode
+	install -c -D /bin/loadkeys							$(INITRAMFS_DIR)/bin/loadkeys
+	install -c -D /bin/setfont							$(INITRAMFS_DIR)/bin/setfont
+	install -c -D /usr/bin/dumpkeys					$(INITRAMFS_DIR)/usr/bin/dumpkeys
+	install -c -D /usr/bin/loadunimap				$(INITRAMFS_DIR)/usr/bin/loadunimap
+	install -c -D /usr/bin/showconsolefont	$(INITRAMFS_DIR)/usr/bin/showconsolefont
+	install -c -D /usr/bin/unicode_start		$(INITRAMFS_DIR)/usr/bin/unicode_start
+	install -c -D /usr/bin/unicode_stop			$(INITRAMFS_DIR)/usr/bin/unicode_stop
 	
 	### parted
 	#
-	install -c -D /usr/sbin/parted					$(INSTALLER_DIR)/usr/sbin/parted
-	install -c -D /usr/lib/libparted-1.8.so.8.0.0	$(INSTALLER_DIR)/usr/lib/libparted-1.8.so.8.0.0
-	ln -svf libparted-1.8.so.8.0.0					$(INSTALLER_DIR)/usr/lib/libparted-1.8.so.8
+	install -c -D /usr/sbin/parted					$(INITRAMFS_DIR)/usr/sbin/parted
+	install -c -D /usr/lib/libparted-1.8.so.8.0.0	$(INITRAMFS_DIR)/usr/lib/libparted-1.8.so.8.0.0
+	ln -svf libparted-1.8.so.8.0.0					$(INITRAMFS_DIR)/usr/lib/libparted-1.8.so.8
 	
 	### kudzu
 	#
-	install -c -D /sbin/kudzu								$(INSTALLER_DIR)/sbin/kudzu
+	install -c -D /sbin/kudzu								$(INITRAMFS_DIR)/sbin/kudzu
+	
+	### cpio
+	#
+	install -c -D /bin/cpio									$(INITRAMFS_DIR)/bin/cpio
+	
+	### openssl
+	#
+	install -c -D /usr/lib/libcrypto.so.0.9.8	$(INITRAMFS_DIR)/usr/lib/libcrypto.so.0.9.8
+	ln -svf libcrypto.so.0.9.8							$(INITRAMFS_DIR)/usr/lib/libcrypto.so
+	install -c -D /usr/lib/libssl.so.0.9.8	$(INITRAMFS_DIR)/usr/lib/libssl.so.0.9.8
+	ln -svf libssl.so.0.9.8									$(INITRAMFS_DIR)/usr/lib/libssl.so
 	
 	### popt
 	#
-	install -c -D /usr/lib/libpopt.so.0.0.0	$(INSTALLER_DIR)/usr/lib/libpopt.so.0.0.0
-	ln -svf libpopt.so.0.0.0								$(INSTALLER_DIR)/usr/lib/libpopt.so.0
+	install -c -D /usr/lib/libpopt.so.0.0.0	$(INITRAMFS_DIR)/usr/lib/libpopt.so.0.0.0
+	ln -svf libpopt.so.0.0.0								$(INITRAMFS_DIR)/usr/lib/libpopt.so.0
 	
 	### libz
 	#
-	install -c -D /lib/libz.so.1.2.3				$(INSTALLER_DIR)/lib/libz.so.1.2.3
-	ln -svf libz.so.1.2.3										$(INSTALLER_DIR)/lib/libz.so.1
+	install -c -D /lib/libz.so.1.2.3				$(INITRAMFS_DIR)/lib/libz.so.1.2.3
+	ln -svf libz.so.1.2.3										$(INITRAMFS_DIR)/lib/libz.so.1
 	
 	### newt
 	#
-	install -c -D /usr/lib/libnewt.so.0.52.7	$(INSTALLER_DIR)/usr/lib/libnewt.so.0.52.7
-	ln -svf libnewt.so.0.52.7								$(INSTALLER_DIR)/usr/lib/libnewt.so.0.52
+	install -c -D /usr/lib/libnewt.so.0.52.7	$(INITRAMFS_DIR)/usr/lib/libnewt.so.0.52.7
+	ln -svf libnewt.so.0.52.7								$(INITRAMFS_DIR)/usr/lib/libnewt.so.0.52
 	
 	### slang
 	#
-	install -c -D /usr/lib/libslang.so.2.1.3	$(INSTALLER_DIR)/usr/lib/libslang.so.2.1.3
-	ln -svf libslang.so.2.1.3								$(INSTALLER_DIR)/usr/lib/libslang.so.2
+	install -c -D /usr/lib/libslang.so.2.1.3	$(INITRAMFS_DIR)/usr/lib/libslang.so.2.1.3
+	ln -svf libslang.so.2.1.3								$(INITRAMFS_DIR)/usr/lib/libslang.so.2
+
+	### lzma
+	#
+	install -c -D /usr/bin/lzma_sdk					$(INITRAMFS_DIR)/usr/bin/lzma_sdk
+	
+	### busybox
+	#
+	cp -av $(INSTALLER_DIR)/busybox/*				$(INITRAMFS_DIR)
+
+	### configuration
+	#	
+	cp -avf $(DIR_CONF)/install/*						$(INITRAMFS_DIR)/etc/
+	cp -vf $(DIR_SOURCE)/initscripts/init.d/functions $(INITRAMFS_DIR)/etc/functions
+	chmod -v 755 $(INITRAMFS_DIR)/etc/{halt,rc}
+	ln -svf etc/rc													$(INITRAMFS_DIR)/init 
+	cp -vf /etc/issue /etc/group						$(INITRAMFS_DIR)/etc/
+	cp -vf /usr/share/terminfo/l/linux			$(INITRAMFS_DIR)/usr/share/terminfo/l
+	cp -a /usr/lib/locale/locale-archive		$(INITRAMFS_DIR)/usr/lib/locale/locale-archive
+	ln -svf /proc/mounts										$(INITRAMFS_DIR)/etc/mtab
+	cp -vf /usr/share/zoneinfo/zone.tab			$(INITRAMFS_DIR)/usr/share/zoneinfo/
+	cp -avf /lib/kbd/consolefonts/LatArCyrHeb-16.psfu.gz \
+		$(INITRAMFS_DIR)/lib/kbd/consolefonts/LatArCyrHeb-16.psfu.gz
 	
 	### python
 	#
-	install -c -D /usr/lib/libpython2.5.so.1.0	$(INSTALLER_DIR)/usr/lib/libpython2.5.so.1.0
-	ln -svf libpython2.5.so.1.0							$(INSTALLER_DIR)/usr/lib/libpython2.5.so
-	install -D /usr/bin/python							$(INSTALLER_DIR)/usr/bin/python
-	-mkdir -p $(INSTALLER_DIR)/usr/lib/python2.5/{site-packages,lib-dynload}
+	install -c -D /usr/lib/libpython2.5.so.1.0	$(INITRAMFS_DIR)/usr/lib/libpython2.5.so.1.0
+	ln -svf libpython2.5.so.1.0							$(INITRAMFS_DIR)/usr/lib/libpython2.5.so
+	install -D /usr/bin/python							$(INITRAMFS_DIR)/usr/bin/python
+	-mkdir -p $(INITRAMFS_DIR)/usr/lib/python2.5/{site-packages,lib-dynload}
 	cp -avf /usr/lib/python2.5/{encodings,logging} \
-		$(INSTALLER_DIR)/usr/lib/python2.5/
-	cp -avf /usr/lib/python2.5/{UserDict,bdb,cmd,codecs,copy*,fnmatch,gettext,glob,gzip,linecache,locale,os,pickle,posixpath,pty,re,shlex,site,socket,sre*,stat,string,struct,subprocess,traceback,tty,types}.py{,o} \
-		$(INSTALLER_DIR)/usr/lib/python2.5/
-	cp -avf /usr/lib/python2.5/site-packages/{_{snack,kudzu}module.so,{kudzu,snack}.py,iconv.so} \
-		$(INSTALLER_DIR)/usr/lib/python2.5/site-packages
-	cp -avf /usr/lib/python2.5/lib-dynload/{{binascii,collections,cPickle,cStringIO,fcntl,operator,select,termios,time,zlib},_{socket,struct}}.so \
-		$(INSTALLER_DIR)/usr/lib/python2.5/lib-dynload
+		$(INITRAMFS_DIR)/usr/lib/python2.5/
+	cp -avf \
+		/usr/lib/python2.5/{UserDict,base64,bdb,bisect,cmd,codecs,cookielib,copy*,fnmatch,ftplib,gettext,glob,gzip}.py{,o} \
+		/usr/lib/python2.5/{hashlib,httplib,imputil,linecache,locale,mime{tools,types},os,optparse,pdb,pickle,popen2,posixpath,pprint,pty,random,re}.py{,o} \
+		/usr/lib/python2.5/{repr,rfc822,sh{lex,util},site,socket,sre*,stat,string,struct}.py{,o} \
+		/usr/lib/python2.5/{subprocess,tempfile,textwrap,traceback,tty,types,urllib{,2},urlparse,warnings}.py{,o} \
+		$(INITRAMFS_DIR)/usr/lib/python2.5/
+	cp -avf \
+		/usr/lib/python2.5/site-packages/{_{snack,kudzu}module.so,{kudzu,snack}.py} \
+		/usr/lib/python2.5/site-packages/{{iconv,partedmodule,pylzma}.so,pyfire,urlgrabber} \
+		$(INITRAMFS_DIR)/usr/lib/python2.5/site-packages
+	cp -avf \
+		/usr/lib/python2.5/lib-dynload/{binascii,collections,cPickle,cStringIO,crypt}.so \
+		/usr/lib/python2.5/lib-dynload/{fcntl,itertools,math,operator,resource,select}.so \
+		/usr/lib/python2.5/lib-dynload/{{termios,time,zlib},_{bisect,hashlib,random,socket,ssl,struct}}.so \
+		$(INITRAMFS_DIR)/usr/lib/python2.5/lib-dynload
 	
-	### configuration
+	cd $(INITRAMFS_DIR) && find ./bin -maxdepth 1 -type f -exec \
+		$(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
+	cd $(INITRAMFS_DIR) && find ./bin -maxdepth 1 -type f -exec \
+		$(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
+		
+	### Preparing for system's initramfs
 	#
-	cp -avf $(DIR_CONF)/install/*						$(INSTALLER_DIR)/etc/
-	cp -vf $(DIR_SOURCE)/initscripts/init.d/functions $(INSTALLER_DIR)/etc/functions
-	chmod -v 755 $(INSTALLER_DIR)/etc/{halt,rc}
-	ln -svf etc/rc													$(INSTALLER_DIR)/init 
-	cp -vf /etc/issue /etc/group						$(INSTALLER_DIR)/etc/
-	cp -vf /usr/share/terminfo/l/linux			$(INSTALLER_DIR)/usr/share/terminfo/l
-	
-	cd $(INSTALLER_DIR) && find ./bin -maxdepth 1 -type f -exec \
-		$(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
-	cd $(INSTALLER_DIR) && find ./lib -maxdepth 1 -type f -exec \
-		$(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
+	#rm -rf /usr/lib/mkinitramfs
+	#mkdir -p /usr/lib/mkinitramfs
+	#cp -af $(INITRAMFS_DIR)/* /usr/lib/mkinitramfs
+	# Remove Python
+	#rm -rf $(INITRAMFS_DIR)/usr/{lib/{,lib}python*,bin/python}	
 	
 	### kernel modules
 	#
-	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/{drivers,fs}
-		cp -avf \
-		/lib/modules/$(KVER)/kernel/drivers/{ata,block,cdrom,dma,firewire,hid,ide,net,pcmcia,scsi,usb} \
-		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/drivers
+	-mkdir -p $(INITRAMFS_DIR)/lib/modules/$(KVER)/kernel/{drivers,fs,lib/lzo}
 	cp -avf \
-		/lib/modules/$(KVER)/kernel/fs/{exportfs,ext{2,3},fat,ntfs,reiser{4,fs},udf,vfat,xfs} \
-		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/fs
-	cp -f /lib/modules/$(KVER)/modules.* $(INSTALLER_DIR)/lib/modules/$(KVER)
+		/lib/modules/$(KVER)/kernel/drivers/{ata,block,cdrom,dma,firewire} \
+		/lib/modules/$(KVER)/kernel/drivers/{hid,ide,net,pcmcia,scsi,ssb,usb} \
+		$(INITRAMFS_DIR)/lib/modules/$(KVER)/kernel/drivers
+	cp -avf \
+		/lib/modules/$(KVER)/kernel/fs/{exportfs,ext{2,3},fat,jbd,mbcache.ko} \
+		/lib/modules/$(KVER)/kernel/fs/{msdos,ntfs,reiser{4,fs},udf,vfat,xfs} \
+		$(INITRAMFS_DIR)/lib/modules/$(KVER)/kernel/fs
+	cp -avf \
+		/lib/modules/$(KVER)/kernel/lib/lzo/lzo_{,de}compress.ko \
+		$(INITRAMFS_DIR)/lib/modules/$(KVER)/kernel/lib/lzo
+	cp -f /lib/modules/$(KVER)/modules.* $(INITRAMFS_DIR)/lib/modules/$(KVER)
 	
 	### stripping
 	#
-	# We do the stripping here because we don't want to destroy our development tree by stripping all symbols
-	# Instead we strip all binaries and libraries as we create the initramfs.
-	# It's quite safe to do strip --strip-all on libraries if they will not be used for development.
-	cd $(INSTALLER_DIR) && find .{,/usr/}/bin .{,/usr/}/sbin -maxdepth 1 -type f -exec $(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
-	cd $(INSTALLER_DIR) && find .{,/usr/}/lib -maxdepth 1 -type f -exec $(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
+	cd $(INITRAMFS_DIR) && find .{,/usr/}/bin .{,/usr/}/sbin -maxdepth 1 -type f \
+		-exec $(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
+	cd $(INITRAMFS_DIR) && find .{,/usr/}/lib -maxdepth 1 -type f \
+		-exec $(TOOLS_DIR)/bin/strip --strip-all '{}' ';'
 	
 	### compressing everything
 	#
-	-find $(INSTALLER_DIR) -name .svn -exec rm -rf {} \;
-	cd $(INSTALLER_DIR) && find . | cpio -o -H newc | gzip -9 > \
-  	/images/initramfs-$(VERSION).img
+	-find $(INITRAMFS_DIR) -name .svn -exec rm -rf {} \;
+	cd $(INITRAMFS_DIR) && find . | cpio -o -H newc | gzip -9 > \
+  	$(IMAGES_DIR)/initramfs-$(VERSION).img
 	
 	#| lzma_sdk e -d16 -si -so
 	
