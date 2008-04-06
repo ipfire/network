@@ -51,22 +51,20 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
 		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq > $(CDROM_DIR)/archive.files
 	
-	wc -l < $(CDROM_DIR)/archive.files > $(CDROM_DIR)/numberof.files
-	
 	cd / && cpio -o -H newc < $(CDROM_DIR)/archive.files \
 		> $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp 2>$(CDROM_DIR)/archive.errors
-
+	
 	@cat $(CDROM_DIR)/archive.errors
 	@if grep -q "No such file or directory" < $(CDROM_DIR)/archive.errors; then \
 		exit 1; \
 	fi
 	
-	lzma -fcz $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp > \
-				 		$(CDROM_DIR)/$(SNAME)-$(VERSION).img
+	lzma_sdk e $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp \
+						 $(CDROM_DIR)/$(SNAME)-$(VERSION).img
 	
 	# These files won't be included in the iso
 	@rm -f $(CDROM_DIR)/archive.{files,errors} $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp
-
+	
 	# Other files
 	sed 's/VERSION/$(VERSION)/' $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README
 	cp -vf $(DIR_SRC)/doc/COPYING								$(CDROM_DIR)
@@ -93,5 +91,5 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 		-boot-info-table . > $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).iso
 	
 	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
-
+	
 	### REBUILD THIS AT EVERY PASS
