@@ -42,37 +42,37 @@ def execWithRedirect(command, argv, stdin = 0, stdout = 1, stderr = 2,
 	childpid = os.fork()
 	if (not childpid):
 		if (root and root != '/'): 
-			os.chroot (root)
+			os.chroot(root)
 			os.chdir("/")
 
-	if ignoreTermSigs:
-		signal.signal(signal.SIGTSTP, signal.SIG_IGN)
-		signal.signal(signal.SIGINT, signal.SIG_IGN)
+		if ignoreTermSigs:
+			signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+			signal.signal(signal.SIGINT, signal.SIG_IGN)
+	
+		if type(stdin) == type("a"):
+			stdin = os.open(stdin, os.O_RDONLY)
+		if type(stdout) == type("a"):
+			stdout = os.open(stdout, os.O_RDWR)
+		if type(stderr) == type("a"):
+			stderr = os.open(stderr, os.O_RDWR)
+	
+		if stdin != 0:
+			os.dup2(stdin, 0)
+			os.close(stdin)
+		if stdout != 1:
+			os.dup2(stdout, 1)
+			if stdout != stderr:
+				os.close(stdout)
+		if stderr != 2:
+			os.dup2(stderr, 2)
+			os.close(stderr)
+	
+		if (searchPath):
+			os.execvp(command, argv)
+		else:
+			os.execv(command, argv)
 
-	if type(stdin) == type("a"):
-		stdin = os.open(stdin, os.O_RDONLY)
-	if type(stdout) == type("a"):
-		stdout = os.open(stdout, os.O_RDWR)
-	if type(stderr) == type("a"):
-		stderr = os.open(stderr, os.O_RDWR)
-
-	if stdin != 0:
-		os.dup2(stdin, 0)
-		os.close(stdin)
-	if stdout != 1:
-		os.dup2(stdout, 1)
-		if stdout != stderr:
-			os.close(stdout)
-	if stderr != 2:
-		os.dup2(stderr, 2)
-		os.close(stderr)
-
-	if (searchPath):
-		os.execvp(command, argv)
-	else:
-		os.execv(command, argv)
-
-	sys.exit(1)
+		sys.exit(1)
 
 	if newPgrp:
 		os.setpgid(childpid, childpid)
@@ -105,19 +105,19 @@ def execWithCapture(command, argv, searchPath = 0, root = '/', stdin = 0,
 		os.close(write)
 		os.close(read)
 
-	if closefd != -1:
-		os.close(closefd)
-
-	if stdin:
-		os.dup2(stdin, 0)
-		os.close(stdin)
-
-	if (searchPath):
-		os.execvp(command, argv)
-	else:
-		os.execv(command, argv)
-
-	sys.exit(1)
+		if closefd != -1:
+			os.close(closefd)
+	
+		if stdin:
+			os.dup2(stdin, 0)
+			os.close(stdin)
+	
+		if (searchPath):
+			os.execvp(command, argv)
+		else:
+			os.execv(command, argv)
+	
+		sys.exit(1)
 
 	os.close(write)
 

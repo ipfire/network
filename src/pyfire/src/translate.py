@@ -93,7 +93,7 @@ class i18n:
 			for dom in domain:
 				if dom in self.domains:
 					self.domains.pop(self.domains.index(dom))
-					self.domains.insert(0, dom)
+				self.domains.insert(0, dom)
 		else:
 			if domain in self.domains:
 				self.domains.pop(self.domains.index(domain))
@@ -149,18 +149,18 @@ class i18n:
 					self.iconv = theiconv
 				break
 	
-			# now let's put None at the beginning of the list as it corresponds
-			# to the "current" local po files for testing
-			self.domains.insert(0, None)
+		# now let's put None at the beginning of the list as it corresponds
+		# to the "current" local po files for testing
+		self.domains.insert(0, None)
 	
-			if len(self.cats) == 0:
-				encoding = locale.nl_langinfo (locale.CODESET)
-#				sys.stderr.write("WARNING: Unable to find catalog, using %s for codeset, %s for encoding\n" %(self.codeset, encoding))
-				try:
-					self.iconv = iconv.open(self.codeset, encoding)
-				except:
-					sys.stderr.write("FAILED to create iconv with codeset %s and encoding %s\n" %(self.codeset, encoding));
-				return
+		#if len(self.cats) == 0:
+		#	encoding = locale.nl_langinfo(locale.CODESET)
+		#	sys.stderr.write("WARNING: Unable to find catalog, using %s for codeset, %s for encoding\n" %(self.codeset, encoding))
+		#	try:
+		#		self.iconv = iconv.open(self.codeset, encoding)
+		#	except:
+		#		sys.stderr.write("FAILED to create iconv with codeset %s and encoding %s\n" %(self.codeset, encoding));
+		#	return
 
 	def setDomainCodeset(self, domain, codeset):
 		self.codeset = codeset
