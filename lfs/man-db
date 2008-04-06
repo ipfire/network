@@ -58,7 +58,10 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && echo -e "#define COL \"/usr/bin/col\"" >> include/manconfig.h.in
 	cd $(DIR_APP) && echo -e "#define VGRIND \"/usr/bin/vgrind\"" >> include/manconfig.h.in
 	cd $(DIR_APP) && echo -e "#define GRAP \"/usr/bin/grap\"" >> include/manconfig.h.in
-	cd $(DIR_APP) && ./configure --prefix=/usr --libexecdir=/usr/lib --disable-setuid
+	cd $(DIR_APP) && ./configure --prefix=/usr \
+																--libexecdir=/usr/lib \
+																--sysconfdir=/etc \
+																--disable-setuid
 	cd $(DIR_APP) && make #-j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)

@@ -44,7 +44,8 @@ objects = $(DL_FILE) grub-0.94-i2o.patch grub-0.95-moreraid.patch \
 	grub-0.93-special-device-names.patch grub-0.95-splash-error-term.patch \
 	grub-0.95-xpmjunk.patch grub-0.93-graphics-bootterm.patch \
 	grub-0.91-splashimagehelp.patch grub-0.95-graphics.patch \
-	$(THISAPP)-disk_geometry-1.patch grub-0.93-configfile.patch
+	$(THISAPP)-disk_geometry-1.patch grub-0.93-configfile.patch \
+	$(THISAPP)-256byte_inode-1.patch
 
 install : $(TARGET)
 
@@ -60,16 +61,17 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-disk_geometry-1.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.95-graphics.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.91-splashimagehelp.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.93-graphics-bootterm.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.95-xpmjunk.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.95-splash-error-term.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.93-special-device-names.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.95-moreraid.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.94-i2o.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/grub-0.93-configfile.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disk_geometry-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.95-graphics.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.91-splashimagehelp.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.93-graphics-bootterm.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.95-xpmjunk.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.95-splash-error-term.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.93-special-device-names.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.95-moreraid.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.94-i2o.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.93-configfile.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-256byte_inode-1.patch
 	
 	cd $(DIR_APP) && autoupdate
 	

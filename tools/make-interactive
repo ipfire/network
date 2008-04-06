@@ -196,6 +196,9 @@ git)
 			clear
 			git_commit $*
 			;;
+		dist|export|archive)
+			git_export
+			;;
 		push)
 			git_push
 			;;

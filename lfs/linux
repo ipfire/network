@@ -42,8 +42,11 @@ EXTRAVERSION = $(shell echo "$(FULLVER)" | cut -c 7-)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) reiser4-for-$(VER).patch $(THISAPP)-lzma-init-ia32.patch \
-					$(THISAPP)-lzma-vmlinuz-x86.patch
+objects = $(DL_FILE) reiser4-for-$(VER).patch \
+	$(THISAPP)-lzma-init-3.patch \
+	$(THISAPP)-lzma-init-sdk-3.patch \
+	$(THISAPP)-lzma-vmlinuz-x86-3.patch \
+	$(THISAPP)-lzma-vmlinuz-x86-sdk-3.patch
 
 install : $(TARGET)
 
@@ -66,8 +69,10 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	
 	### LZMA
 	#
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-lzma-init-ia32.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-lzma-vmlinuz-x86.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-lzma-init-3.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-lzma-init-sdk-3.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-lzma-vmlinuz-x86-3.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-lzma-vmlinuz-x86-sdk-3.patch
 
 ifeq "$(STAGE)" "toolchain"
 	install -dv $(TOOLS_DIR)/include

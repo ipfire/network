@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = bzip2
-VER        = 1.0.4
+VER        = 1.0.5
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -68,10 +68,10 @@ ifeq "$(STAGE)" "base"
 	
 	cd $(DIR_APP) && cp -v bzip2-shared /bin/bzip2
 	cd $(DIR_APP) && cp -av libbz2.so* /lib
-	ln -sv ../../lib/libbz2.so.1.0 /usr/lib/libbz2.so
-	rm -v /usr/bin/{bunzip2,bzcat,bzip2}
-	ln -sv bzip2 /bin/bunzip2
-	ln -sv bzip2 /bin/bzcat
+	ln -sfv ../../lib/libbz2.so.1.0 /usr/lib/libbz2.so
+	rm -fv /usr/bin/{bunzip2,bzcat,bzip2}
+	ln -sfv bzip2 /bin/bunzip2
+	ln -sfv bzip2 /bin/bzcat
 endif
 
 	@rm -rf $(DIR_APP)

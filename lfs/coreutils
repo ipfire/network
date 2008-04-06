@@ -67,7 +67,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-i18n-1.patch
 	
 	cd $(DIR_APP) && ./configure --prefix=/usr --enable-install-program=hostname \
-										--enable-no-install-program=kill
+										--enable-no-install-program=kill,uptime
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	
