@@ -45,7 +45,8 @@ objects = $(DL_FILE) grub-0.94-i2o.patch grub-0.95-moreraid.patch \
 	grub-0.95-xpmjunk.patch grub-0.93-graphics-bootterm.patch \
 	grub-0.91-splashimagehelp.patch grub-0.95-graphics.patch \
 	$(THISAPP)-disk_geometry-1.patch grub-0.93-configfile.patch \
-	$(THISAPP)-256byte_inode-1.patch
+	$(THISAPP)-256byte_inode-1.patch grub-0.94-installcopyonly.patch \
+	$(THISAPP)-install.in.patch
 
 install : $(TARGET)
 
@@ -72,8 +73,10 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.94-i2o.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.93-configfile.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-256byte_inode-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-install.in.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.94-installcopyonly.patch
 	
-	cd $(DIR_APP) && autoupdate
+	cd $(DIR_APP) && autoconf
 	
 	cd $(DIR_APP) && ./configure --prefix=/usr
 
@@ -81,7 +84,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && make install
 
 	mkdir -vp /boot/grub
-	cp -v /usr/lib/grub/i386-pc/stage{1,2} /boot/grub
+	#cp -v /usr/lib/grub/i386-pc/stage{1,2} /boot/grub
 	
 	for i in $(DIR_SRC)/config/bootloader/{grub.conf,splash.xpm.gz}; do \
 	    [ -f $$i ] && cp -vf $$i /boot/grub; \
