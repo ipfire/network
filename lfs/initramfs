@@ -250,7 +250,6 @@ $(TARGET) :
 	
 	### compressing everything
 	#
-	-find $(INITRAMFS_DIR) -name .svn -exec rm -rf {} \;
 	cd $(INITRAMFS_DIR) && find . | cpio -o -H newc | gzip -9 > \
   	$(IMAGES_DIR)/initramfs-$(VERSION).img
 	
