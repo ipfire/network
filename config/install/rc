@@ -151,7 +151,7 @@ case $STARTUP_MODE in
 		:
 		;;
 	rescue)
-		sed -i "s, -c /sbin/installer,,g" /etc/inittab
+		sed -i "s,/sbin/pomona,/bin/ash,g" /etc/inittab
 		;;
 esac
 
