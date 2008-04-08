@@ -70,7 +70,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cp -vf $(DIR_SRC)/doc/COPYING								$(CDROM_DIR)
 	cp -vf $(DIR_SRC)/doc/{ChangeLog,packages-list.txt} $(CDROM_DIR)/doc
 	
-	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/isolinux/init0
+	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/isolinux/initrd0
 	cp -vf /boot/ipfirekernel-$(KVER)						$(CDROM_DIR)/isolinux/ipfire0
 	
 	cp -vf /usr/lib/syslinux/{vesamenu.c32,isolinux.bin} \

@@ -82,9 +82,10 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 	cd $(DIR_APP) && make -j $(PRALLELISM)
 	cd $(DIR_APP) && make install
+	
+	sed -e "s/pkgdatadir/pkglibdir/g" -i /usr/sbin/grub-install
 
 	mkdir -vp /boot/grub
-	#cp -v /usr/lib/grub/i386-pc/stage{1,2} /boot/grub
 	
 	for i in $(DIR_SRC)/config/bootloader/{grub.conf,splash.xpm.gz}; do \
 	    [ -f $$i ] && cp -vf $$i /boot/grub; \
