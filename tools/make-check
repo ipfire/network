@@ -76,7 +76,7 @@ check_toolchain() {
 
 check_build() {
 	check_common "GNU wget"								"wget --version | head -n1"
-	check_common "Subversion"							"svn --version | head -n1"
+	check_common "Git"										"git --version"
 	check_common "ncftp Client"						"echo \"quit\" | ncftp --version | head -n1"
 	check_common "GNU which"							"which --version | head -n1"
 }
