@@ -210,6 +210,10 @@ git)
 		log)
 			git_log
 			;;
+		put-key)
+			shift 2
+			ssh_cert $*
+			;;
 	esac
 	;;
 	
