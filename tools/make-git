@@ -41,6 +41,8 @@ if [ -z $EDITOR ]; then
 	[ -z $EDITOR ] && exiterror "You should have installed an editor."
 fi
 
+CURRENT_BRANCH=$(git branch | grep ^* | cut -c 3-)
+
 ###############################################################################
 #
 # A small helper to make the git functions comfortable
@@ -48,10 +50,39 @@ fi
 ###############################################################################
 
 git_pull() {
-	git pull
+	if [ "$CURRENT_BRANCH" == "master" ]; then
+		if ! (git status | grep -q "working directory clean"); then
+			echo    "Your \"master\" branch is not clean. This may cause a merge commit."
+			echo -n "Do you want this? [y/N]"
+			read
+			[ -z $REPLY ] && exit 0
+			for i in y Y j J; do
+				if [ "$i" == "$REPLY" ]; then
+					git pull
+					exit $?
+				fi
+			done
+			exit 0
+		else
+			git pull
+		fi
+	else
+		echo -n "You are not on branch \"master\". Do you want to rebase from \"master\"? [y/N]"
+		read
+		[ -z $REPLY ] && exit 0
+		for i in y Y j J; do
+			if [ "$i" == "$REPLY" ]; then
+				git rebase refs/heads/master
+				exit $?
+			fi
+		done
+		exiterror "\"$REPLY\" is not a valid answer."
+	fi
 }
 
 git_push() {
+	[ "$CURRENT_BRANCH" == "master" ] || \
+		exiterror "You have to be in branch \"master\", if you want to push."
 	git push ${GIT_URL} master
 }
 
