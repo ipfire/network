@@ -56,6 +56,8 @@ git_push() {
 }
 
 git_commit() {
+	. $BASEDIR/tools/make-check && check_sanity
+
 	git commit $*
 	
 	[ "$?" -eq "0" ] || exiterror "git commit $* failed."
@@ -72,7 +74,9 @@ git_commit() {
 	exiterror "\"$REPLY\" is not a valid answer."
 }
 
-git_diff(){
+git_diff() {
+	. $BASEDIR/tools/make-check && check_sanity
+
 	echo -ne "Make a local diff to last revision"
 	git diff HEAD > ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff
 	evaluate 1

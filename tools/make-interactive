@@ -21,6 +21,8 @@
 
 case "$1" in
 build)
+	# check for prerequisites
+	. $BASEDIR/tools/make-check && check_build
 	# compile the distro right now
 	build
 	# beeps when finished

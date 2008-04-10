@@ -80,3 +80,30 @@ check_build() {
 	check_common "ncftp Client"						"echo \"quit\" | ncftp --version | head -n1"
 	check_common "GNU which"							"which --version | head -n1"
 }
+
+check_rootfiles() {
+
+	if grep -n ^/ $BASEDIR/src/rootfiles/*/*; then
+		exiterror "Please check your rootfiles! There are trailing slashes."
+	fi
+
+	if grep -n ^+ $BASEDIR/src/rootfiles/*/*; then
+		exiterror "Please check your rootfiles for trailing pluses."
+	fi
+
+	if grep -n ^$ $BASEDIR/src/rootfiles/*/*; then
+		exiterror "Please check your rootfiles for empty lines."
+	fi
+
+}
+
+
+check_sanity() {
+
+	echo -ne "Checking sanity of working directory..."
+
+	check_rootfiles
+
+	beautify message DONE
+
+}

@@ -253,12 +253,15 @@ beautify()
 			do
 				SET_VER_COL_REAL=`position_cursor $TIME_COL $PKG_VER -3`
 
-				if [ "$OPTIONS" == "" ]; then
-					echo -ne "${PROGRAM}${SET_VER_COL}[ ${BOLD}${SET_VER_COL_REAL}${PKG_VER}"
-					echo -ne "${NORMAL} ]${SET_RESULT_COL}"
+				echo -ne "${PROGRAM}"
+				if ! [ "$OPTIONS" == "" ]; then
+					echo -ne "${SET_OPT_COL}[ ${BOLD}${OPTIONS}${NORMAL} ]"
+				fi
+
+				if [ "${PKG_VER}" == "${SNAME}" ] || [ "${PKG_VER}" == "LFS" ]; then
+					echo -ne "${SET_RESULT_COL}"
 				else
-					echo -ne "${PROGRAM}${SET_OPT_COL}[ ${BOLD}${OPTIONS}"
-					echo -ne "${NORMAL} ]${SET_VER_COL}[ ${BOLD}${SET_VER_COL_REAL}${PKG_VER}"
+					echo -ne "${SET_VER_COL}[ ${BOLD}${SET_VER_COL_REAL}${PKG_VER}"
 					echo -ne "${NORMAL} ]${SET_RESULT_COL}"
 				fi
 			done
@@ -315,7 +318,7 @@ get_pkg_ver()
 } # End of get_pkg_ver()
 
 stdumount() {
-	sleep 1 # Wait one second for finish of processes
+	sleep 0.3 # Wait one second for finish of processes
 	for fs in `mount | grep $BASEDIR/build_${MACHINE} | awk '{print $3}'`; do
 		umount $fs #2>/dev/null;
 	done
@@ -323,15 +326,11 @@ stdumount() {
 
 exiterror() {
 	stdumount
-	for i in `seq 0 7`; do
-	    if ( losetup /dev/loop${i} 2>/dev/null | grep -q "/install/images" ); then
-		losetup -d /dev/loop${i} 2>/dev/null
-	    fi;
-	done
 	
 	beautify message FAIL
  
 	echo -ne "${FAIL}ERROR${NORMAL}: ${BOLD}$*${NORMAL}\n"
+	[ -z "$LOGFILE" ] || \
 	echo "       Check $LOGFILE for errors if applicable"
 	exit 1
 } # End of exiterror()
@@ -539,7 +538,7 @@ prepareenv() {
 	export LOGFILE
 	mkdir -p $BASEDIR/log_${MACHINE}/01_toolchain 2>/dev/null
 	mkdir -p $BASEDIR/log_${MACHINE}/02_base 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/03_ipfire 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/03_${SNAME} 2>/dev/null
 	mkdir -p $BASEDIR/log_${MACHINE}/04_misc 2>/dev/null
 	mkdir -p $BASEDIR/log_${MACHINE}/05_installer 2>/dev/null
 	mkdir -p $BASEDIR/log_${MACHINE}/06_packages 2>/dev/null
@@ -623,7 +622,7 @@ prepareenv() {
 	umask 022
 
 	# Set LFS Directory
-	LFS=$BASEDIR/build_${MACHINE}/ipfire
+	LFS=$BASEDIR/build_${MACHINE}/${SNAME}
 	
 	# Check /tools symlink
 	if [ -h $TOOLS_DIR ]; then
@@ -753,5 +752,5 @@ build() {
 	
 	echo ""
 	echo "... and all this hard work for this:"
-	du -bsh $BASEDIR/${SNAME}-${VERSION}.${MACHINE}.iso
+	ls -sh $BASEDIR/${SNAME}-${VERSION}.${MACHINE}.iso
 }
