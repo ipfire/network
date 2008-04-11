@@ -339,7 +339,7 @@ exiterror() {
 # This is the function that sets the environment of a chroot and enters it     #
 ################################################################################
 entershell() {
-	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:$TOOLS_DIR/bin:/usr/${MACHINE_REAL}-linux/bin
+	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:${TOOLS_DIR}/bin:/usr/${MACHINE_REAL}-linux/bin
 
 	if [ ! -e $LFS/usr/src/lfs/ ]; then
 		exiterror "No such file or directory: $LFS/usr/src/lfs/"
@@ -653,13 +653,13 @@ prepareenv() {
 	unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
 
 	# Make some extra directories
-	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$CTOOLS_DIR,$INSTALLER_DIR,cdrom,images,usr/local/{ccache,distcc}} 2>/dev/null
+	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$CTOOLS_DIR,$INSTALLER_DIR,cdrom,images} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
-	mkdir -p $LFS/{$TOOLS_DIR,$CTOOLS_DIR,usr/src} 2>/dev/null
+	mkdir -p $LFS/{$TOOLS_DIR/usr,$CTOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/dev/pts
 	mkdir -p $LFS/proc
 	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${MACHINE},src,ccache,distcc}
-	mkdir -p $LFS/{$INSTALLER_DIR,cdrom,images,usr/local/{ccache,distcc}}
+	mkdir -p $LFS/{$INSTALLER_DIR,cdrom,images}
 	mkdir -p $LFS/etc
 
 	mknod -m 600 $BASEDIR/build/dev/console c 5 1 2>/dev/null
@@ -681,8 +681,6 @@ prepareenv() {
 	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR			$LFS/$INSTALLER_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$CDROM_DIR					$LFS/$CDROM_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$IMAGES_DIR				$LFS/$IMAGES_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/usr/local/ccache		$LFS/usr/local/ccache
-	mount --bind $BASEDIR/build_${MACHINE}/usr/local/distcc		$LFS/usr/local/distcc
 
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache

@@ -38,7 +38,7 @@ SLOGAN="www.ipfire.org"					# Software slogan
 toolchain_build() {
 
 	ORG_PATH=$PATH
-	export PATH=$BASEDIR/build_${MACHINE}/usr/local/ccache/bin:$BASEDIR/build_${MACHINE}/usr/local/distcc/bin:$BASEDIR/build_${MACHINE}/$CTOOLS_DIR/bin:$BASEDIR/build_${MACHINE}/$TOOLS_DIR/bin:$PATH
+	export PATH=${CTOOLS_DIR}/bin:${TOOLS_DIR}/usr/bin:${TOOLS_DIR}/bin:$PATH
 	STAGE_ORDER=01
 	STAGE=toolchain
 
@@ -98,7 +98,7 @@ toolchain_build() {
 ################################################################################
 base_build() {
 
-	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:$TOOLS_DIR/bin
+	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:$TOOLS_DIR/bin
 	STAGE_ORDER=02
 	STAGE=base
 
@@ -162,7 +162,7 @@ base_build() {
 # This builds the entire stage "ipfire"                                        #
 ################################################################################
 ipfire_build() {
-	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
 	STAGE_ORDER=03
 	STAGE=ipfire
 
@@ -304,7 +304,7 @@ ipfire_build() {
 ################################################################################
 misc_build() {
 
-	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
 	STAGE_ORDER=04
 	STAGE=misc
 
@@ -400,7 +400,7 @@ misc_build() {
 ################################################################################
 installer_build() {
 
-	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
 	STAGE_ORDER=05
 	STAGE=installer
 
@@ -418,7 +418,7 @@ installer_build() {
 ################################################################################
 packages_build() {
 
-	PATH=/usr/local/ccache/bin:/usr/local/distcc/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
 	STAGE_ORDER=06
 	STAGE=packages
 
