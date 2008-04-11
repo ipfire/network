@@ -212,6 +212,7 @@ ipfire_build() {
 	ipfire_make bridge-utils
 	ipfire_make vlan
 	ipfire_make bind
+	ipfire_make whois
 	
 	### Building some general stuff
 	#   STAGE 2
