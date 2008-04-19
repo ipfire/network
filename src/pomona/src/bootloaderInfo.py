@@ -27,6 +27,8 @@ from copy import copy
 from pyfire.translate import _, N_
 import pyfire.executil
 
+from constants import *
+
 import logging
 log = logging.getLogger("pomona")
 
@@ -410,28 +412,28 @@ class x86BootloaderInfo(bootloaderInfo):
 			usedDevs[dev] = 1
             
 		if self.password:
-			f.write('password --md5 %s\n' %(self.password))
+			f.write('password --md5 %s\n' % (self.password))
         
-		for (label, longlabel, version) in kernelList:
-			kernelTag = "-" + version
-			kernelFile = "%svmlinuz%s" % (cfPath, kernelTag)
+		for (kernelName, kernelVersion, kernelTag, kernelDesc) in kernelList:
+			kernelFile = "%s%skernel%s" % (cfPath, sname, kernelTag,)
 
-			# initrd = booty.makeInitrd(kernelTag, instRoot) ### XXX N/A
+			initrd = "/boot/initrd-%s%s.img" % (kernelVersion, kernelTag,)
+			
+			### XXX Make initrd here...
 
-			f.write('title %s (%s)\n' % (longlabel, version))
+			f.write('title %s (%s - %s)\n' % (name, kernelDesc, kernelVersion))
 			f.write('\troot %s\n' % self.grubbyPartitionName(bootDevs[0]))
 
 			realroot = getRootDevName(initrd, fsset, rootDev, instRoot)
 			realroot = " root=%s" %(realroot,)
-          
-          
+
 			f.write('\tkernel %s ro%s' % (kernelFile, realroot))
 			if self.args.get():
 				f.write(' %s' % self.args.get())
 			f.write('\n')
 
 			if os.access (instRoot + initrd, os.R_OK):
-				f.write('\tinitrd %sinitrd%s.img\n' % (cfPath, kernelTag))
+				f.write('\tinitrd %sinitrd-%s%s.img\n' % (cfPath, kernelVersion, kernelTag,))
 
 		for (label, longlabel, device) in chainList:
 			if ((not longlabel) or (longlabel == "")):

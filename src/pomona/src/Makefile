@@ -34,6 +34,7 @@ install: all
 			-e "s/SNAME/$(SNAME)/g" \
 			-e "s/PNAME/$(PNAME)/g" \
 			-e "s/NAME/$(NAME)/g" \
+			-e "s/KVER/$(KVER)/g" \
 			-i $(PYTHONLIBDIR)/constants.py
 
 	sh ../py-compile $(PYTHONLIBDIR)/*.py

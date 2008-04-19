@@ -219,23 +219,25 @@ class PakfireBackend(PomonaBackend):
 					pomona.rootPath + "/etc/modprobe.conf")
 		### XXX pomona.id.network.write(pomona.rootPath)
 
-	def kernelVersionList(self):
+	def kernelVersionList(self, pomona):
 		kernelVersions = []
-        
-		# nick is used to generate the lilo name
-		for (ktag, nick) in [ ('kernel-smp', 'smp'),
-		                      ('kernel-xen0', 'xen0'),
-		                      ('kernel-xenU', 'xenU'),
-		                      ('kernel-xen', 'xen')]:
-		    tag = ktag.rsplit('-', 1)[1]
-		    for tsmbr in self.ayum.tsInfo.matchNaevr(name=ktag):
-		        version = ( tsmbr.version + '-' + tsmbr.release + tag)
-		        kernelVersions.append((version, tsmbr.arch, nick))
 		
-		for tsmbr in self.ayum.tsInfo.matchNaevr(name='kernel'):
-		    version = ( tsmbr.version + '-' + tsmbr.release)
-		    kernelVersions.append((version, tsmbr.arch, 'base'))
-		
+		tag2desc = {
+								"-smp" : _("Symmetric multiprocessing"),
+								"-xen" : _("Xen guest"),
+							 }
+
+		kernelName = "%skernel-%s" % (sname, kernelVersion)
+
+		for kernelTag in [ "", "-smp", "-xen", ]:
+			filename = "%s%s" % (kernelName, kernelTag)
+			if os.access(pomona.rootPath + "/boot/" + filename, os.R_OK):
+				if not kernelTag is "":
+					kernelDesc = tag2desc[kernelTag]
+				else:
+					kernelDesc = _("Normal Boot")
+				kernelVersions.append((kernelName, kernelVersion, kernelTag, kernelDesc))
+
 		return kernelVersions
 
 class PakfireProgress:

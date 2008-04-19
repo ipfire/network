@@ -2,11 +2,12 @@
 from pyfire.translate import _, N_
 
 version = "VERSION"
-name = "NAME %s" % version
+name = "NAME v%s" % version
 sname = "SNAME"
 iname = "PNAME"
 bugurl = "http://bugtracker.ipfire.org/"
 wikiurl = "http://wiki.ipfire.org/"
+kernelVersion = "KVER"
 
 HARDDISK_PATH = "/mnt/target"
 SOURCE_PATH = "/mnt/source"
