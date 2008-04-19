@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pomona\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-04-08 20:15+0000\n"
-"PO-Revision-Date: 2008-04-07 11:33+0100\n"
+"POT-Creation-Date: 2008-04-19 21:25+0000\n"
+"PO-Revision-Date: 2008-04-10 17:17+0100\n"
 "Last-Translator: Michael Tremer <michael.tremer@ipfire.org>\n"
 "Language-Team: German\n"
 "MIME-Version: 1.0\n"
@@ -142,7 +142,7 @@ msgid ""
 "installation. %s"
 msgstr ""
 
-#: ../src/autopart.py:1109 ../src/bootloader.py:137 ../src/partedUtils.py:232
+#: ../src/autopart.py:1109 ../src/bootloader.py:124 ../src/partedUtils.py:232
 #: ../src/partedUtils.py:563 ../src/partedUtils.py:600
 #: ../src/tui_bootloader.py:117 ../src/tui_bootloader.py:440
 #: ../src/tui_partition.py:181
@@ -188,13 +188,13 @@ msgstr "Bootloader"
 msgid "Installing bootloader..."
 msgstr "Installiere Bootloader..."
 
-#: ../src/bootloader.py:138
+#: ../src/bootloader.py:125
 msgid ""
 "No kernel packages were installed on your system.  Your boot loader "
 "configuration will not be changed."
 msgstr ""
 
-#: ../src/constants.py:39
+#: ../src/constants.py:40
 #, python-format
 msgid ""
 "An unhandled exception has occurred.  This is most likely a bug.  Please "
@@ -205,30 +205,30 @@ msgstr ""
 "Bug, wenn Sie diese Meldung sehen. Bitte sichern Sie eine detaillierte Kopie "
 "dieses Fehlers und senden Sie diese an den Bugtracker %s."
 
-#: ../src/constants.py:81 ../src/installer.py:91 ../src/tui.py:231
+#: ../src/constants.py:82 ../src/installer.py:91 ../src/tui.py:231
 #: ../src/tui.py:397 ../src/tui_confirm.py:26
 msgid "OK"
 msgstr "OK"
 
-#: ../src/constants.py:85 ../src/partIntfHelpers.py:148
+#: ../src/constants.py:86 ../src/partIntfHelpers.py:148
 #: ../src/partIntfHelpers.py:390 ../src/tui.py:101 ../src/tui.py:102
 #: ../src/tui.py:400 ../src/tui_bootloader.py:192
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ../src/constants.py:89 ../src/tui_confirm.py:26 ../src/tui_confirm.py:28
+#: ../src/constants.py:90 ../src/tui_confirm.py:26 ../src/tui_confirm.py:28
 msgid "Back"
 msgstr "Zurück"
 
-#: ../src/constants.py:93 ../src/tui.py:395 ../src/tui_bootloader.py:65
+#: ../src/constants.py:94 ../src/tui.py:395 ../src/tui_bootloader.py:65
 msgid "Yes"
 msgstr "Ja"
 
-#: ../src/constants.py:97 ../src/tui.py:396 ../src/tui_bootloader.py:65
+#: ../src/constants.py:98 ../src/tui.py:396 ../src/tui_bootloader.py:65
 msgid "No"
 msgstr "Nein"
 
-#: ../src/constants.py:101 ../src/tui_bootloader.py:268
+#: ../src/constants.py:102 ../src/tui_bootloader.py:268
 #: ../src/tui_partition.py:852
 msgid "Edit"
 msgstr "Bearbeiten"
@@ -535,7 +535,6 @@ msgid ""
 msgstr ""
 
 #: ../src/harddrive.py:81
-#, fuzzy
 msgid "Re_try"
 msgstr "Wiederholen"
 
@@ -572,10 +571,11 @@ msgid "Wrong CDROM"
 msgstr "Falsche CDROM"
 
 #: ../src/image.py:94
-#, fuzzy, python-format
+#, python-format
 msgid "That's not the correct %s CDROM in /dev/%s."
 msgstr ""
-"Bei der eingelegten CDROM handelt es sich nicht um die richtige CDROM für %s."
+"Bei der eingelegten CDROM in /dev/%s handelt es sich nicht um die richtige "
+"CDROM für %s."
 
 #: ../src/image.py:109
 msgid "Insert CDROM"
@@ -906,7 +906,6 @@ msgstr ""
 "und senden einen Report über '%s'.\n"
 
 #: ../src/packages.py:117
-#, fuzzy
 msgid "_Exit"
 msgstr "Ende"
 
@@ -919,7 +918,6 @@ msgid "Your system will now be rebooted..."
 msgstr "Ihr System wird jetzt neu gestartet..."
 
 #: ../src/packages.py:121 ../src/tui_confirm.py:35
-#, fuzzy
 msgid "_Back"
 msgstr "Zurück"
 
@@ -952,9 +950,8 @@ msgid "Base system"
 msgstr ""
 
 #: ../src/pakfireinstall.py:140
-#, fuzzy
 msgid "Installing base system..."
-msgstr "Installiere Bootloader..."
+msgstr "Installiere Basissystem..."
 
 #: ../src/pakfireinstall.py:196
 msgid "Install Starting"
@@ -974,7 +971,19 @@ msgstr ""
 msgid "Performing post install configuration..."
 msgstr "Starte Textinstallation..."
 
-#: ../src/pakfireinstall.py:243
+#: ../src/pakfireinstall.py:226
+msgid "Symmetric multiprocessing"
+msgstr ""
+
+#: ../src/pakfireinstall.py:227
+msgid "Xen guest"
+msgstr ""
+
+#: ../src/pakfireinstall.py:238
+msgid "Normal Boot"
+msgstr ""
+
+#: ../src/pakfireinstall.py:245
 msgid "Installation Progress"
 msgstr "Installationsprozess"
 
@@ -1565,15 +1574,15 @@ msgstr ""
 
 #: ../src/tui_bootloader.py:387
 msgid "Use a GRUB Password"
-msgstr ""
+msgstr "Benutze ein GRUB-Passwort"
 
 #: ../src/tui_bootloader.py:400
 msgid "Boot Loader Password:"
-msgstr ""
+msgstr "Bootloader-Passwort:"
 
 #: ../src/tui_bootloader.py:401
 msgid "Confirm:"
-msgstr ""
+msgstr "Bestätigen:"
 
 #: ../src/tui_bootloader.py:430
 msgid "Passwords Do Not Match"
@@ -1581,15 +1590,15 @@ msgstr ""
 
 #: ../src/tui_bootloader.py:431
 msgid "Passwords do not match"
-msgstr ""
+msgstr "Die Passwörter stimmen nicht überein"
 
 #: ../src/tui_bootloader.py:435
 msgid "Password Too Short"
-msgstr ""
+msgstr "Das Passwort ist zu kurz"
 
 #: ../src/tui_bootloader.py:436
 msgid "Boot loader password is too short"
-msgstr ""
+msgstr "Das Bootloader-Passwort ist zu kurz"
 
 #: ../src/tui_bootloader.py:441
 msgid ""
@@ -1598,6 +1607,10 @@ msgid ""
 "\n"
 "Would you like to continue with this password?"
 msgstr ""
+"Ihr Bootloader-Passwort ist kürzer als 6 Zeichen. Wir empfehlen einen "
+"längeren Schlüssel zu nehmen.\n"
+"\n"
+"Möchten Sie trotzdem mit dem eingegebenen Passwort fortfahren?"
 
 #: ../src/tui_complete.py:23
 msgid ""
@@ -1632,7 +1645,7 @@ msgstr ""
 
 #: ../src/tui_complete.py:37
 msgid "Complete"
-msgstr ""
+msgstr "Fertig"
 
 #: ../src/tui_confirm.py:21
 msgid "Installation to begin"
@@ -1666,19 +1679,19 @@ msgstr "Sprachauswahl"
 
 #: ../src/tui_language.py:39
 msgid "What language would you like to use during the installation process?"
-msgstr ""
+msgstr "Welche Sprache möchten Sie für den Installationsprozess nutzen?"
 
 #: ../src/tui_partition.py:40
 msgid "Must specify a value"
-msgstr ""
+msgstr "Bitte geben Sie einen Wert ein"
 
 #: ../src/tui_partition.py:43
 msgid "Requested value is not an integer"
-msgstr ""
+msgstr "Der eingegebene Wert ist kein Integer"
 
 #: ../src/tui_partition.py:45
 msgid "Requested value is too large"
-msgstr ""
+msgstr "Der eingegebene Wert ist zu groß"
 
 #: ../src/tui_partition.py:94 ../src/tui_partition.py:131
 msgid "Free space"
@@ -1686,7 +1699,7 @@ msgstr "Freier Platz"
 
 #: ../src/tui_partition.py:96
 msgid "Extended"
-msgstr ""
+msgstr "Erweitert"
 
 #: ../src/tui_partition.py:110
 #, fuzzy
@@ -1696,7 +1709,7 @@ msgstr "Nein"
 #: ../src/tui_partition.py:177
 #, python-format
 msgid "Could not allocate requested partitions: %s."
-msgstr ""
+msgstr "Konnte die Partition nicht finden: %s."
 
 #: ../src/tui_partition.py:181
 #, fuzzy, python-format
@@ -1705,24 +1718,24 @@ msgstr "Warnung"
 
 #: ../src/tui_partition.py:182
 msgid "Modify Partition"
-msgstr ""
+msgstr "Partition bearbeiten"
 
 #: ../src/tui_partition.py:182
 msgid "Add anyway"
-msgstr ""
+msgstr "Trotzdem hinzufügen"
 
 #: ../src/tui_partition.py:200 ../src/tui_partition.py:202
 #: ../src/tui_partition.py:204 ../src/tui_partition.py:229
 msgid "<Not Applicable>"
-msgstr ""
+msgstr "<Nicht verfügbar>"
 
 #: ../src/tui_partition.py:219
 msgid "Mount Point:"
-msgstr ""
+msgstr "Einhängepunkt:"
 
 #: ../src/tui_partition.py:239
 msgid "File System type:"
-msgstr ""
+msgstr "Dateisystem-Typ:"
 
 #: ../src/tui_partition.py:270
 msgid "Allowable Drives:"
@@ -1792,6 +1805,8 @@ msgid ""
 "Please choose how you would like to prepare the file system on this "
 "partition."
 msgstr ""
+"Bitte wählen Sie, wie sie das Dateisystem für diese Partition vorbereiten "
+"wollen."
 
 #: ../src/tui_partition.py:457
 #, fuzzy
@@ -1821,19 +1836,19 @@ msgstr "Erzwinge primäre Partition"
 
 #: ../src/tui_partition.py:687 ../src/tui_partition.py:741
 msgid "Invalid Entry for Partition Size"
-msgstr ""
+msgstr "Ungültige Eingabe für die Partitionsgröße"
 
 #: ../src/tui_partition.py:699
 msgid "Invalid Entry for Maximum Size"
-msgstr ""
+msgstr "Ungültige Eingabe für die maximale Größe"
 
 #: ../src/tui_partition.py:719
 msgid "Invalid Entry for Starting Cylinder"
-msgstr ""
+msgstr "Ungültige Eingabe für den Startzylinder"
 
 #: ../src/tui_partition.py:733
 msgid "Invalid Entry for End Cylinder"
-msgstr ""
+msgstr "Ungültige Eingabe für den Endzylinder"
 
 #: ../src/tui_partition.py:751 ../src/tui_partition.py:772
 msgid "Error With Request"
@@ -1922,19 +1937,19 @@ msgstr "Ansicht des Partitionslayout"
 
 #: ../src/tui_partition.py:1033
 msgid "Review and modify partitioning layout?"
-msgstr ""
+msgstr "Möchten Sie das Partitionslayout ansehen oder bearbeiten?"
 
 #: ../src/tui_partmethod.py:24
 msgid "Disk Partitioning Setup"
-msgstr ""
+msgstr "Plattenpartitionierungssetup"
 
 #: ../src/tui_partmethod.py:26
 msgid "Autopartition"
-msgstr ""
+msgstr "Autopartitionierung"
 
 #: ../src/tui_partmethod.py:27
 msgid "Disk Druid"
-msgstr ""
+msgstr "Disk Druid"
 
 #: ../src/tui_progress.py:50
 #, fuzzy
@@ -1943,7 +1958,7 @@ msgstr "Dateisystemoption:"
 
 #: ../src/tui_source.py:22
 msgid "Source Type"
-msgstr ""
+msgstr "Quelltyp"
 
 #: ../src/tui_source.py:24
 msgid ""
@@ -1951,18 +1966,21 @@ msgid ""
 "Mostly you will choose the disc here, but you are also able to install by "
 "HTTP, FTP hard disk or usb-key."
 msgstr ""
+"Bei der Installation haben Sie die Auswahl zwischen verschiedenen "
+"Quellmedien. Die Meisten werden hier die CD auswählen, jedoch ist auch eine "
+"Installation über HTTP, FTP, Festplatte oder USB-Stick möglich."
 
 #: ../src/tui_source.py:31
 msgid "Install Disc"
-msgstr ""
+msgstr "Installations-CD"
 
 #: ../src/tui_source.py:32
 msgid "Internet Source"
-msgstr ""
+msgstr "Internet-Quelle"
 
 #: ../src/tui_source.py:33
 msgid "External Drive"
-msgstr ""
+msgstr "Externes Laufwerk"
 
 #: ../src/tui_source.py:37 ../src/tui_welcome.py:9
 #, python-format
@@ -1978,34 +1996,42 @@ msgid ""
 "You choosed to install from an installtion disc, but there was no cdrom "
 "drive found on the system. Please choose another installation method."
 msgstr ""
+"Sie haben eine Installation mit CD ausgewählt, jedoch wurde kein CDROM-"
+"Laufwerk im System gefunden. Bitte wählen Sie eine andere "
+"Installationsmethode."
 
 #: ../src/tui_source.py:84
 msgid "Source URL"
-msgstr ""
+msgstr "Quell-URL"
 
 #: ../src/tui_source.py:86
 msgid ""
 "Enter a host you get the files from.You also must enter a path where the "
 "installer finds the files in."
 msgstr ""
+"Bitte geben Sie einen Server ein, von dem Sie die Installationsdateien "
+"beziehen. Weiterhin müssen Sie einen Pfad eingeben, in dem der Installer die "
+"Dateien auf dem Server findet."
 
 #: ../src/tui_source.py:94
 msgid "Host:"
-msgstr ""
+msgstr "Server:"
 
 #: ../src/tui_source.py:95
 msgid "Path:"
-msgstr ""
+msgstr "Pfad:"
 
 #: ../src/tui_source.py:115
 msgid "Wrong Protocol"
-msgstr ""
+msgstr "Ungültiges Protokoll"
 
 #: ../src/tui_source.py:116
 msgid ""
 "You entered a protocol that is not supported by Pomona. There are only "
 "http:// and ftp:// available."
 msgstr ""
+"Sie haben einen Protokolltyp eingegeben, der nicht von Pomona unterstützt "
+"wird. Unterstützt werden http:// und ftp://."
 
 #: ../src/tui_source.py:120
 #, fuzzy
@@ -2014,7 +2040,7 @@ msgstr "Fehler"
 
 #: ../src/tui_source.py:121
 msgid "The path of the URL must end with a /."
-msgstr ""
+msgstr "Der Pfad muss mit einem / enden."
 
 #: ../src/tui_source.py:130
 #, python-format
@@ -2023,14 +2049,17 @@ msgid ""
 "\n"
 "%s"
 msgstr ""
+"Bei einem Test der eingegebenen URL trat ein Fehler auf.\n"
+"\n"
+"%s"
 
 #: ../src/tui_timezone.py:62
 msgid "In which time zone are you located?"
-msgstr ""
+msgstr "In welcher Zeitzone befinden Sie sich?"
 
 #: ../src/tui_timezone.py:80
 msgid "System clock uses UTC"
-msgstr ""
+msgstr "Die Systemuhr ist auf UTC eingestellt."
 
 #: ../src/tui_timezone.py:83
 #, fuzzy
@@ -2039,7 +2068,7 @@ msgstr "Tastaturauswahl"
 
 #: ../src/tui_userauth.py:27
 msgid "Root Password"
-msgstr ""
+msgstr "Root-Passwort"
 
 #: ../src/tui_userauth.py:29
 msgid ""
@@ -2047,39 +2076,44 @@ msgid ""
 "not make a typing mistake. Remember that the root password is a critical "
 "part of system security!"
 msgstr ""
+"Wählen Sie ein Root-Passwort. Es muss zweimal eingegeben werden um "
+"Tippfehler zu vermeiden. Bedenken Sie: Das Root-Passwort ist ein kritischer "
+"Teil der Systemsicherheit."
 
 #: ../src/tui_userauth.py:39
 msgid "Password:"
-msgstr ""
+msgstr "Passwort:"
 
 #: ../src/tui_userauth.py:40
 msgid "Password (confirm):"
-msgstr ""
+msgstr "Passwort (bestätigen):"
 
 #: ../src/tui_userauth.py:57
 msgid "Password Length"
-msgstr ""
+msgstr "Passwortlänge"
 
 #: ../src/tui_userauth.py:58
 msgid "The root password must be at least 6 characters long."
-msgstr ""
+msgstr "Das Root-Passwort muss mindestens 6 Zeichen lang sein."
 
 #: ../src/tui_userauth.py:61
 msgid "Password Mismatch"
-msgstr ""
+msgstr "Passwort-Fehler"
 
 #: ../src/tui_userauth.py:62
 msgid "The passwords you entered were different. Please try again."
-msgstr ""
+msgstr "Die eingegebenen Passwörter stimmen nicht überein."
 
 #: ../src/tui_userauth.py:65
 msgid "Error with Password"
-msgstr ""
+msgstr "Fehler im Passwort"
 
 #: ../src/tui_userauth.py:66
 msgid ""
 "Requested password contains non-ASCII characters, which are not allowed."
 msgstr ""
+"Das eingegebene Passwort enthält nicht-ASCII-Zeichen, welche nicht erlaubt "
+"sind."
 
 #: ../src/tui_welcome.py:10
 #, python-format
@@ -2092,16 +2126,16 @@ msgstr ""
 
 #: ../src/urlinstall.py:40 ../src/urlinstall.py:67
 msgid "Downloading"
-msgstr ""
+msgstr "Download"
 
 #: ../src/urlinstall.py:40
 msgid "Connecting..."
-msgstr ""
+msgstr "Verbinde..."
 
 #: ../src/urlinstall.py:67
 #, python-format
 msgid "Retrieving %s"
-msgstr ""
+msgstr "Lade %s"
 
 #: ../src/urlinstall.py:92
 #, python-format
@@ -2114,6 +2148,13 @@ msgid ""
 "likely require reinstallation.\n"
 "\n"
 msgstr ""
+"Die Datei %s konnte nicht geöffnet werden. Es könnte sein, dass diese "
+"garnicht vorhanden oder beschädigt ist. Bitte überprüfen Sie ihren Server "
+"oder nutzen Sie einen anderen.\n"
+"\n"
+"Wenn Sie jetzt neustarten wird das System in einem inkonsistenten Zustand "
+"bleiben und eine Neuinstallation nötig sein.\n"
+"\n"
 
 #: ../src/urlinstall.py:181
 #, python-format
