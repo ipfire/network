@@ -97,33 +97,20 @@ def writeBootloader(pomona):
 	if kernelLabel is None:
 		log.error("unable to find default image, bailing")
 
-	plainLabelUsed = 0
-	defkern = "kernel"
-	#for (version, arch, nick) in pomona.backend.kernelVersionList():
-	#	if plainLabelUsed:
-	#		kernelList.append(("%s-%s" %(kernelLabel, nick),
-	#											 "%s-%s" %(kernelLongLabel, nick),
-	#											 version))
-	#	else:
-	#		kernelList.append((kernelLabel, kernelLongLabel, version))
-	#		if nick in ("hypervisor", "guest"): # XXX: *sigh* inconsistent
-	#			defkern = "kernel-xen-%s" %(nick,)
-	#		elif nick != "base":
-	#			defkern = "kernel-%s" %(nick,)
-	#		plainLabelUsed = 1
+	defkern = None
+	for (kernelName, kernelVersion, kernelTag, kernelDesc) in pomona.backend.kernelVersionList(pomona):
+		if not defkern:
+			defkern = "%s%s" % (kernelName, kernelTag)
+			
+		if kernelTag is "-smp" and isys.smpAvailable():
+			defkern = "%s%s" % (kernelName, kernelTag)
+			
+		kernelList.append((kernelName, kernelVersion, kernelTag, kernelDesc))
 
-	#	f = open(pomona.rootPath + "/etc/sysconfig/kernel", "w+")
-	#	f.write("# UPDATEDEFAULT specifies if new-kernel-pkg should make\n"
-	#					"# new kernels the default\n")
-	#	# only update the default if we're setting the default to linux (#156678)
-	#	if rootDev == defaultDev:
-	#		f.write("UPDATEDEFAULT=yes\n")
-	#	else:
-	#		f.write("UPDATEDEFAULT=no\n")
-	#	f.write("\n")
-	#	f.write("# DEFAULTKERNEL specifies the default kernel package type\n")
-	#	f.write("DEFAULTKERNEL=%s\n" %(defkern,))
-	#	f.close()
+	f = open(pomona.rootPath + "/etc/sysconfig/kernel", "w+")
+	f.write("# DEFAULTKERNEL specifies the default kernel package type\n")
+	f.write("DEFAULTKERNEL=%s\n" %(defkern,))
+	f.close()
 
 	dosync()
 	try:

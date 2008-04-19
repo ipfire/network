@@ -52,7 +52,7 @@ $(TARGET) :
 	cd $(DIR_APP) && make -C po update-po
 	cd $(DIR_APP) && make lang-names
 	cd $(DIR_APP) && make install DESTDIR=$(INITRAMFS_DIR) NAME=$(NAME) \
-																SNAME=$(SNAME) VERSION=$(VERSION)
+																SNAME=$(SNAME) VERSION=$(VERSION) KVER=$(KVER)
 	cd $(DIR_APP) && make clean
 	
 	@$(POSTBUILD)
