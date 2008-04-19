@@ -283,6 +283,7 @@ ipfire_build() {
 	ipfire_make memtest86+
 	#ipfire_make pakfire
 	#ipfire_make initscripts
+	ipfire_make chkconfig
 	
 	ipfire_make pyfire
   
