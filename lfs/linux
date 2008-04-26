@@ -143,5 +143,12 @@ ifeq "$(STAGE)" "ipfire"
 	ln -svf System.map-$(FULLVER) /boot/System.map
 endif
 
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && make mrproper
+	cd $(DIR_APP) && make ARCH=i386 headers_check
+	cd $(DIR_APP) && make ARCH=i386 INSTALL_HDR_PATH=dest headers_install
+	cd $(DIR_APP) && cp -rv dest/include/* $(UCLIBC_DIR)/include
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

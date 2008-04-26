@@ -69,5 +69,13 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP)/build && make install-libs
 endif
 
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP)/build && ../configure --prefix=/usr --with-root-prefix="" \
+		--enable-elf-shlibs --build=$(IFS_TARGET) --host=$(UCLIBC_TARGET)
+	cd $(DIR_APP)/build && make -j $(PARALLELISM)
+	cd $(DIR_APP)/build && make install DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP)/build && make install-libs DESTDIR=$(UCLIBC_DIR)
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

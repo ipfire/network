@@ -22,11 +22,11 @@
 ############################################################################
 #
 
-NAME="IPFire"										# Software name
-SNAME="ipfire"									# Short name
-VERSION="3.0-prealpha"					# Version number
+NAME="IPFire"			# Software name
+SNAME="ipfire"			# Short name
+VERSION="3.0-prealpha"		# Version number
 TOOLCHAINVERSION="${VERSION}-1"	# Toolchain
-SLOGAN="www.ipfire.org"					# Software slogan
+SLOGAN="www.ipfire.org"		# Software slogan
 
 # Include funtions
 . tools/make-include
@@ -52,13 +52,13 @@ toolchain_build() {
 	
 	if [ "${MACHINE}" != "${MACHINE_REAL}" ]; then
 		toolchain_make binutils-x-compile
-		toolchain_make gcc-x-compile							PASS=1
+		toolchain_make gcc-x-compile		PASS=1
 		toolchain_make glibc-x-compile
-		toolchain_make gcc-x-compile							PASS=2
+		toolchain_make gcc-x-compile		PASS=2
 	
 	fi
 	
-	toolchain_make binutils											PASS=1
+	toolchain_make binutils				PASS=1
 	toolchain_make gcc													PASS=1
 	toolchain_make glibc
 	toolchain_make adjust-toolchain
@@ -68,7 +68,7 @@ toolchain_build() {
 		toolchain_make expect
 		toolchain_make dejagnu
 		toolchain_make gcc												PASS=2
-		toolchain_make binutils										PASS=2
+		toolchain_make binutils			PASS=2
 	fi
 	
 	toolchain_make ncurses
@@ -397,19 +397,48 @@ misc_build() {
 }
 
 ################################################################################
+# This builds the entire stage "uclibc"                                        #
+################################################################################
+uclibc_build() {
+
+	PATH=${UCLIBC_DIR}/bin:${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	STAGE_ORDER=05
+	STAGE=uclibc
+
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-uclibc.log"
+	export LOGFILE
+
+	ipfire_make stage5
+	ipfire_make linux
+	ipfire_make uClibc		PASS=0
+	ipfire_make binutils
+	ipfire_make gcc			PASS=1
+	ipfire_make uClibc		PASS=1
+	ipfire_make gettext		PASS=1
+	ipfire_make adjust-toolchain
+	ipfire_make gcc			PASS=2
+	ipfire_make uClibc		PASS=2
+	ipfire_make gettext		PASS=2
+	ipfire_make busybox
+	ipfire_make udev
+	ipfire_make ncurses
+	#ipfire_make e2fsprogs
+	#ipfire_make util-linux-ng
+}
+
+################################################################################
 # This builds the entire stage "installer"                                     #
 ################################################################################
 installer_build() {
 
 	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
-	STAGE_ORDER=05
+	STAGE_ORDER=06
 	STAGE=installer
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-installer.log"
 	export LOGFILE
 	
-	ipfire_make stage5
-	ipfire_make busybox
+	ipfire_make stage6
 	ipfire_make installer
 	ipfire_make initramfs
 }
@@ -420,24 +449,24 @@ installer_build() {
 packages_build() {
 
 	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
-	STAGE_ORDER=06
+	STAGE_ORDER=07
 	STAGE=packages
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-packages.log"
 	export LOGFILE
 
-  toolchain_make strip
-  
-  # Generating list of packages used
+	toolchain_make strip
+
+	# Generating list of packages used
 	### MISSING ATM
 
 	ipfire_make cdrom
 	
-  # Check if there is a loop device for building in virtual environments
-  #if [ -e /dev/loop/0 ] || [ -e /dev/loop0 ]; then
-  #	ipfire_make usb-stick
-  #fi
-  mv $LFS/$IMAGES_DIR/{*.iso,*.tgz,*.img.gz} $BASEDIR >> $LOGFILE 2>&1
+	# Check if there is a loop device for building in virtual environments
+	#if [ -e /dev/loop/0 ] || [ -e /dev/loop0 ]; then
+	#	ipfire_make usb-stick
+	#fi
+	mv $LFS/$IMAGES_DIR/{*.iso,*.tgz,*.img.gz} $BASEDIR >> $LOGFILE 2>&1
 
 	#ipfire_make core-updates
 	### DISABLED ATM
@@ -452,11 +481,11 @@ packages_build() {
 		fi
 	done
 
-  # Cleanup
-  stdumount
-  rm -rf $LFS/tmp/*
-
-  cd $PWD
+	# Cleanup
+	stdumount
+	rm -rf $LFS/tmp/*
+	
+	cd $PWD
 }
 
 # See what we're supposed to do

@@ -24,20 +24,22 @@
 
 include Config
 
-PKG_NAME   = util-linux-ng
-VER        = 2.13.1
+PKG_NAME   = uClibc
+VER        = 0.9.29
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+LOCALE_FILE = $(PKG_NAME)-locale-030818.tgz
+
+TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(LOCALE_FILE) $(THISAPP)-config-1.patch
 
 install : $(TARGET)
 
@@ -53,28 +55,38 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	
+	## Copy configuration
+	cp -fv $(DIR_CONF)/$(PKG_NAME)/.config $(DIR_APP)/.config
+	cp -fv $(DIR_DL)/$(LOCALE_FILE) $(DIR_APP)/extra/locale
 
-ifeq "$(STAGE)" "toolchain"
-	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
-	cd $(DIR_APP) && make -C mount mount umount
-	cd $(DIR_APP) && make -C text-utils more
-	cd $(DIR_APP) && cp -v mount/{,u}mount text-utils/more $(TOOLS_DIR)/bin
+ifeq "$(PASS)" "0"
+	rm -vf $(DIR_APP)/.config
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-config-1.patch
+	cd $(DIR_APP) && make KERNEL_SOURCE=$(UCLIBC_DIR) headers all
+	rm -fvr $(DIR_APP)/include/{asm,asm-generic,linux}
+	cd $(DIR_APP) && make DEVEL_PREFIX=$(UCLIBC_DIR)/ install_dev
 endif
 
-ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && sed -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
-	    -i $$(grep -rl '/etc/adjtime' .)
-	mkdir -pv /var/lib/hwclock
-	cd $(DIR_APP) && ./configure
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+ifneq "$(PASS)" "0" # Do this on pass 1 and 2
+	cd $(DIR_APP) && sed \
+		-e "s@.*SHARED_LIB_LOADER_P.*@SHARED_LIB_LOADER_PREFIX=\"$(UCLIBC_DIR)/lib\"@g" \
+		-e "s@.*RUNTIME_PREFIX.*@RUNTIME_PREFIX=\"$(UCLIBC_DIR)\"@g" \
+		-e "s@.*DEVEL_PREFIX.*@DEVEL_PREFIX=\"$(UCLIBC_DIR)/\"@g" \
+		-e "s@.*KERNEL_SOURCE.*@KERNEL_SOURCE=\"$(UCLIBC_DIR)\"@g" \
+		-i .config
+	cd $(DIR_APP) && make CROSS=$(UCLIBC_TARGET)- all -j $(PARALLELISM)
+	rm -fvr $(DIR_APP)/include/{asm,asm-generic,linux}
 	cd $(DIR_APP) && make install
 endif
 
-ifeq "$(STAGE)" "uclibc"
-	cd $(DIR_APP) && ./configure 		--build=$(IFS_TARGET) \
-						--host=$(UCLIBC_TARGET)
-	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && cp -vf disk-utils/mkswap $(UCLIBC_DIR)/sbin/mkswap
+ifeq "$(PASS)" "2"
+	cd $(DIR_APP) && make headers
+	cd $(DIR_APP) && make CC="gcc -Wl,--dynamic-linker,$(UCLIBC_LINKER) /ulib/libc.so.0" \
+		-C utils
+	make -C utils install
+	mv -vf $(UCLIBC_DIR)/sbin/ldconfig $(UCLIBC_DIR)/bin
+	rm -rvf $(UCLIBC_DIR)/sbin/
 endif
 
 	@rm -rf $(DIR_APP)

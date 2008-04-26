@@ -71,10 +71,21 @@ ifeq "$(STAGE)" "base"
 	ln -sfv $(TOOLS_DIR)/bin/ld $(TOOLS_DIR)/$$(gcc -dumpmachine)/bin/ld
 	
 	gcc -dumpspecs | sed \
-    -e 's@$(TOOLS_DIR)$(LINKER)@$(LINKER)@g' \
-    -e '/\*startfile_prefix_spec:/{n;s@.*@/usr/lib/ @}' \
-    -e '/\*cpp:/{n;s@$$@ -isystem /usr/include@}' > \
-    `dirname $$(gcc --print-libgcc-file-name)`/specs
+		-e 's@$(TOOLS_DIR)$(LINKER)@$(LINKER)@g' \
+		-e '/\*startfile_prefix_spec:/{n;s@.*@/usr/lib/ @}' \
+		-e '/\*cpp:/{n;s@$$@ -isystem /usr/include@}' > \
+		`dirname $$(gcc --print-libgcc-file-name)`/specs
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	$(UCLIBC_TARGET)-gcc -dumpspecs \
+		> $$($(UCLIBC_TARGET)-gcc --print-file specs)
+	sed -e 's/%{shared:-lc}/%{!nointl: -lintl} &/' \
+		-i $$($(UCLIBC_TARGET)-gcc --print-file specs)
+	mv -v $(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin/{ld,ld-old}
+	mv -v $(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin/{ld-new,ld}
+	ln -sfv ../$(UCLIBC_TARGET)/bin/ld \
+		$(UCLIBC_DIR)/bin/$(UCLIBC_TARGET)-ld
 endif
 	
 	@$(POSTBUILD)

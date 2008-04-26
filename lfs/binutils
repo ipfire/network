@@ -45,7 +45,9 @@ endif
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-configure-1.patch
+objects = $(DL_FILE) $(THISAPP)-configure-1.patch \
+	$(THISAPP)-uClibc-1.patch \
+	$(THISAPP)-ld_makefile.patch
 
 install : $(TARGET)
 
@@ -64,6 +66,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	-mkdir -v $(DIR_SRC)/binutils-build
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-configure-1.patch
 
+ifeq "$(STAGE)" "toolchain"
 ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
 	#
 	#	Normal build
@@ -72,10 +75,9 @@ ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
 ifeq "$(PASS)" "1"
 ifeq "$(MACHINE)" "$(MACHINE_REAL)"
 	cd $(DIR_SRC)/binutils-build && CC="gcc -B/usr/bin/" ../$(THISAPP)/configure \
-																		--prefix=$(TOOLS_DIR) \
-																		--disable-nls \
-																		--disable-werror
-																		
+						--prefix=$(TOOLS_DIR) \
+						--disable-nls \
+						--disable-werror
 	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/binutils-build && make install
 	cd $(DIR_SRC)/binutils-build && make -C ld clean
@@ -86,14 +88,13 @@ else
 	# Cross build
 	#
 	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure \
-																		--prefix=$(TOOLS_DIR) \
-																		--build=${IFS_HOST} \
-																		--host=${IFS_TARGET} \
-																		--target=${IFS_TARGET} \
-																		--disable-nls \
-																		--enable-shared \
-																		--disable-multilib
-	
+						--prefix=$(TOOLS_DIR) \
+						--build=${IFS_HOST} \
+						--host=${IFS_TARGET} \
+						--target=${IFS_TARGET} \
+						--disable-nls \
+						--enable-shared \
+						--disable-multilib
 	cd $(DIR_SRC)/binutils-build && make configure-host																	
 	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/binutils-build && make install
@@ -102,10 +103,9 @@ endif
 
 ifeq "$(PASS)" "2"
 	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure \
-																		--prefix=$(TOOLS_DIR) \
-																		--disable-nls \
-																		--with-lib-path=$(TOOLS_DIR)/lib
-																		
+						--prefix=$(TOOLS_DIR) \
+						--disable-nls \
+						--with-lib-path=$(TOOLS_DIR)/lib
 	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/binutils-build && make install
 	
@@ -129,19 +129,36 @@ else
 	#
 
 	cd $(DIR_SRC)/binutils-build && AR=ar AS=as ../$(THISAPP)/configure \
-																								--prefix=$(CTOOLS_DIR) \
-																								--host=${IFS_HOST} \
-																								--target=${IFS_TARGET} \
-																								--with-lib-path=$(TOOLS_DIR)/lib \
-																								--disable-nls \
-																								--enable-shared \
-																								--disable-multilib
+						--prefix=$(CTOOLS_DIR) \
+						--host=${IFS_HOST} \
+						--target=${IFS_TARGET} \
+						--with-lib-path=$(TOOLS_DIR)/lib \
+						--disable-nls \
+						--enable-shared \
+						--disable-multilib
 	cd $(DIR_SRC)/binutils-build && make configure-host
 	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/binutils-build && make install
 	
 	-mkdir -p $(TOOLS_DIR)/include
 	cp -fv $(DIR_APP)/include/libiberty.h $(TOOLS_DIR)/include
+endif
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ld_makefile.patch
+	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure \
+						--prefix=$(UCLIBC_DIR) \
+						--disable-shared \
+						--disable-nls \
+						--target=$(UCLIBC_TARGET)
+	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make install
+	cd $(DIR_SRC)/binutils-build && make -C ld clean
+	cd $(DIR_SRC)/binutils-build && make -C ld LIB_PATH=/ulib
+	cd $(DIR_SRC)/binutils-build && cp -fv ld/ld-new \
+		$(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin
 endif
 
 	@rm -rf $(DIR_APP) $(DIR_SRC)/binutils-build

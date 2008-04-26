@@ -40,7 +40,11 @@ else
 	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-cross$(PASS)
 endif
 else
+ifeq "$(STAGE)" "uclibc"
+	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
+else
 	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+endif
 endif
 
 ###############################################################################
@@ -49,7 +53,8 @@ endif
 
 objects = $(DL_FILE) \
 	$(THISAPP)-cross_search_paths-1.patch \
-	$(THISAPP)-specs-1.patch
+	$(THISAPP)-specs-1.patch \
+	$(THISAPP)-uClibc-conf-1.conf
 
 install : $(TARGET)
 
@@ -76,12 +81,11 @@ ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
 ifeq "$(PASS)" "1"
 ifeq "$(MACHINE)" "$(MACHINE_REAL)"
 	cd $(DIR_SRC)/gcc-build && CC="gcc -B/usr/bin/" ../$(THISAPP)/configure \
-																--prefix=$(TOOLS_DIR) \
-																--with-local-prefix=$(TOOLS_DIR) \
-																--disable-nls \
-																--enable-shared \
-																--enable-languages=c
-		
+						--prefix=$(TOOLS_DIR) \
+						--with-local-prefix=$(TOOLS_DIR) \
+						--disable-nls \
+						--enable-shared \
+						--enable-languages=c
 	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/gcc-build && make install
 	ln -vs gcc $(TOOLS_DIR)/bin/cc
@@ -103,22 +107,21 @@ else
 		gcc/Makefile.in.orig > gcc/Makefile.in
 	
 	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure \
-																--prefix=$(TOOLS_DIR) \
-																--build=${IFS_HOST} \
-																--host=${IFS_TARGET} \
-																--target=${IFS_TARGET} \
-																--with-local-prefix=$(TOOLS_DIR) \
-																--enable-long-long \
-																--enable-c99 \
-																--enable-shared \
-																--enable-threads=posix \
-																--enable-__cxa_atexit \
-																--disable-nls \
-																--enable-languages=c,c++ \
-																--disable-libstdcxx-pch
-	
+						--prefix=$(TOOLS_DIR) \
+						--build=${IFS_HOST} \
+						--host=${IFS_TARGET} \
+						--target=${IFS_TARGET} \
+						--with-local-prefix=$(TOOLS_DIR) \
+						--enable-long-long \
+						--enable-c99 \
+						--enable-shared \
+						--enable-threads=posix \
+						--enable-__cxa_atexit \
+						--disable-nls \
+						--enable-languages=c,c++ \
+						--disable-libstdcxx-pch
 	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM) AS_FOR_TARGET=$(AS) \
-																										LD_FOR_TARGET=$(LD)
+						LD_FOR_TARGET=$(LD)
 	cd $(DIR_SRC)/gcc-build && make install
 endif
 endif
@@ -133,23 +136,22 @@ ifeq "$(PASS)" "2"
 	cd $(DIR_APP) && \
 		for file in $$(find gcc/config -name linux64.h -o -name linux.h); do \
 			cp -uv $$file{,.orig}; \
-  		sed -e 's@/lib\(64\)\?\(32\)\?/ld@$(TOOLS_DIR)&@g' \
-					-e 's@/usr@$(TOOLS_DIR)@g' $$file.orig > $$file; \
+			sed -e 's@/lib\(64\)\?\(32\)\?/ld@$(TOOLS_DIR)&@g' \
+				-e 's@/usr@$(TOOLS_DIR)@g' $$file.orig > $$file; \
 			echo -e "\n#undef STANDARD_INCLUDE_DIR\n#define STANDARD_INCLUDE_DIR 0" >> $$file; \
 			touch $$file.orig; \
 		done
 	
 	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure \
-																--prefix=$(TOOLS_DIR) \
-																--with-local-prefix=$(TOOLS_DIR) \
-																--enable-clocale=gnu \
-																--enable-shared \
-																--enable-threads=posix \
-																--enable-__cxa_atexit \
-																--enable-languages=c,c++ \
-																--disable-libstdcxx-pch \
-																--disable-bootstrap
-		
+						--prefix=$(TOOLS_DIR) \
+						--with-local-prefix=$(TOOLS_DIR) \
+						--enable-clocale=gnu \
+						--enable-shared \
+						--enable-threads=posix \
+						--enable-__cxa_atexit \
+						--enable-languages=c,c++ \
+						--disable-libstdcxx-pch \
+						--disable-bootstrap
 	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/gcc-build && make install
 endif
@@ -168,20 +170,19 @@ else
 	
 	cd $(DIR_APP) && cp -v gcc/Makefile.in{,.orig}
 	cd $(DIR_APP) && sed -e "s@\(^CROSS_SYSTEM_HEADER_DIR =\).*@\1 $(TOOLS_DIR)/include@g" \
-    gcc/Makefile.in.orig > gcc/Makefile.in
+		gcc/Makefile.in.orig > gcc/Makefile.in
 
 ifeq "$(PASS)" "1"
 	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure \
-																--prefix=$(CTOOLS_DIR) \
-																--host=${IFS_HOST} \
-																--target=${IFS_TARGET} \
-																--disable-multilib \
-																--with-local-prefix=$(TOOLS_DIR) \
-																--disable-nls \
-																--disable-shared \
-																--disable-threads \
-																--enable-languages=c
-																	
+						--prefix=$(CTOOLS_DIR) \
+						--host=${IFS_HOST} \
+						--target=${IFS_TARGET} \
+						--disable-multilib \
+						--with-local-prefix=$(TOOLS_DIR) \
+						--disable-nls \
+						--disable-shared \
+						--disable-threads \
+						--enable-languages=c
 	cd $(DIR_SRC)/gcc-build && make all-gcc -j $(PARALLELISM)
 	cd $(DIR_SRC)/gcc-build && make install-gcc	
 endif
@@ -192,21 +193,21 @@ ifeq "$(PASS)" "2"
 		configure
 
 	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure \
-																--prefix=$(CTOOLS_DIR) \
-																--target=${IFS_TARGET} \
-																--host=${IFS_HOST} \
-																--disable-multilib \
-																--with-local-prefix=$(TOOLS_DIR) \
-																--disable-nls \
-																--enable-shared \
-																--enable-languages=c,c++ \
-																--enable-__cxa_atexit \
-																--enable-c99 \
-																--enable-long-long \
-																--enable-threads=posix
-	
+						--prefix=$(CTOOLS_DIR) \
+						--target=${IFS_TARGET} \
+						--host=${IFS_HOST} \
+						--disable-multilib \
+						--with-local-prefix=$(TOOLS_DIR) \
+						--disable-nls \
+						--enable-shared \
+						--enable-languages=c,c++ \
+						--enable-__cxa_atexit \
+						--enable-c99 \
+						--enable-long-long \
+						--enable-threads=posix
+
 	cd $(DIR_SRC)/gcc-build && make AS_FOR_TARGET="${IFS_TARGET}-as" \
-																	LD_FOR_TARGET="${IFS_TARGET}-ld"
+						LD_FOR_TARGET="${IFS_TARGET}-ld"
 	cd $(DIR_SRC)/gcc-build && make install
 endif
 endif
@@ -218,20 +219,68 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && sed -i 's@\./fixinc\.sh@-c true@' gcc/Makefile.in
 	
 	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure \
-																--prefix=/usr \
-																--libexecdir=/usr/lib \
-																--enable-shared \
-																--enable-threads=posix \
-																--enable-__cxa_atexit \
-																--enable-clocale=gnu \
-																--enable-languages=c,c++ \
-																--disable-bootstrap
-  
+						--prefix=/usr \
+						--libexecdir=/usr/lib \
+						--enable-shared \
+						--enable-threads=posix \
+						--enable-__cxa_atexit \
+						--enable-clocale=gnu \
+						--enable-languages=c,c++ \
+						--disable-bootstrap
 	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/gcc-build && make install
 	
 	ln -sfv ../usr/bin/cpp /lib
 	ln -sfv gcc /usr/bin/cc	
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && patch -p1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc-conf-1.conf
+	sed -e "s@/lib/ld-uClibc.so.0@$(UCLIBC_LINKER)@g" -i $(DIR_APP)/gcc/config/linux.h
+	echo -e "\n#undef STARTFILE_PREFIX_SPEC\n#define STARTFILE_PREFIX_SPEC \"$(UCLIBC_DIR)/lib/\"" \
+		>> $(DIR_APP)/gcc/config/linux.h
+ifeq "$(PASS)" "1"
+	cd $(DIR_APP) && sed -e "s@\(^CROSS_SYSTEM_HEADER_DIR =\).*@\1 $(UCLIBC_DIR)/include@g" \
+		-i gcc/Makefile.in
+	touch ${UCLIBC_LINKER}
+	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure \
+						--prefix=$(UCLIBC_DIR) \
+						--target=$(UCLIBC_TARGET) \
+						--disable-nls \
+						--disable-shared \
+						--enable-languages=c \
+						--disable-__cxa_atexit \
+						--enable-target-optspace \
+						--with-gnu-ld \
+						--disable-multilib \
+						--disable-libmudflap \
+						--disable-libgomp
+	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/gcc-build && make install
+endif
+
+ifeq "$(PASS)" "2"
+	cd $(DIR_APP) && sed -e 's/%{shared:-lc}/%{!nointl: -lintl} &/' \
+		-i gcc/config/linux.h
+	cd $(DIR_APP) && cp -v gcc/Makefile.in{,.tmp}
+	#cd $(DIR_APP) && sed 's/^XCFLAGS =$$/& -fomit-frame-pointer/' gcc/Makefile.in.tmp \
+	#	> gcc/Makefile.in
+	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure \
+						--prefix=$(UCLIBC_DIR) \
+						--target=$(UCLIBC_TARGET) \
+						--libexecdir=/ulib \
+						--enable-shared \
+						--disable-__cxa_atexit \
+						--enable-target-optspace \
+						--enable-languages=c,c++ \
+						--disable-multilib \
+						--disable-libmudflap \
+						--with-gnu-ld \
+						--disable-nls
+	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/gcc-build && make install
+	ln -svf gcc $(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin/cc
+endif
 endif
 
 	@rm -rf $(DIR_APP) $(DIR_SRC)/gcc-build

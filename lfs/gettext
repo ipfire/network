@@ -31,7 +31,11 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+ifeq "$(STAGE)" "uclibc"
+	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
+else
+	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+endif
 
 ###############################################################################
 # Top-level Rules
@@ -65,6 +69,17 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && ./configure --prefix=/usr
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "uclibc" # Do this in pass 1 and 2
+	cd $(DIR_APP)/gettext-runtime && CC=$(UCLIBC_TARGET)-gcc ./configure \
+						--prefix=$(UCLIBC_DIR) \
+						--host=$(UCLIBC_TARGET) \
+						--with-included-gettext \
+						--without-csharp \
+						--disable-libasprintf
+	cd $(DIR_APP)/gettext-runtime && make -C intl/ -j $(PARALLELISM)
+	cd $(DIR_APP)/gettext-runtime && make -C intl/ install
 endif
 
 	@rm -rf $(DIR_APP)

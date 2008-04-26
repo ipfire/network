@@ -24,9 +24,9 @@
 #
 ###############################################################################
 
-CONFIG_ROOT=/etc/$SNAME					# Configuration rootdir
-NICE=10													# Nice level
-TARGET=i686											# Default target
+CONFIG_ROOT=/etc/$SNAME		# Configuration rootdir
+NICE=10				# Nice level
+TARGET=i686			# Default target
 KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }' | tr -d '\n'; grep --max-count=1 FULLVER lfs/linux | awk '{ print $3 }' | cut -c 7-| tail -1`
 MACHINE_REAL=`uname -m`
 GIT_TAG=$(git tag | tail -1)
@@ -89,6 +89,9 @@ if [ 'i686' = $TARGET -o 'i586' = $TARGET \
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
 	CFLAGS="-march=${MACHINE} -O2 -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
+	UCLIBC_TARGET=i386-pc-linux-uclibc
+	UCLIBC_LINKER=/ulib/ld-uClibc.so.0
+	UCLIBC_CFLAGS="-march=i386 -Os -pipe -fomit-frame-pointer"
 elif [ 'via-c7' = $TARGET ]; then
 	MACHINE=i686
 	MACHINE_REAL=${MACHINE_REAL}
@@ -96,6 +99,9 @@ elif [ 'via-c7' = $TARGET ]; then
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
 	CFLAGS="-march=${MACHINE} -mmmx -msse -msse2 -msse3 -O2 -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
+	UCLIBC_TARGET=i386-pc-linux-uclibc
+	UCLIBC_LINKER=/ulib/ld-uClibc.so.0
+	UCLIBC_CFLAGS="-march=i386 -Os -pipe -fomit-frame-pointer"
 elif [ 'via-c3' = $TARGET ]; then
 	MACHINE=i586
 	MACHINE_REAL=${MACHINE_REAL}
@@ -103,6 +109,9 @@ elif [ 'via-c3' = $TARGET ]; then
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
 	CFLAGS="-march=c3 -m3dnow -O2 -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
+	UCLIBC_TARGET=i386-pc-linux-uclibc
+	UCLIBC_LINKER=/ulib/ld-uClibc.so.0
+	UCLIBC_CFLAGS="-march=i386 -Os -pipe -fomit-frame-pointer"
 else
 	beautify message FAIL
 	echo "Not a valid target arch (i686|i586|i486|i386|via-c7|via-c3) - $TARGET"
@@ -127,6 +136,8 @@ IMAGES_DIR=/images
 # include machine in TOOLCHAINNAME
 TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-t${TARGET}-m${MACHINE}
 
+# The place where all uclibc files are stored in
+UCLIBC_DIR=/usr/${UCLIBC_TARGET}
 
 ###############################################################################
 #
@@ -365,6 +376,9 @@ entershell() {
 		LINKER=$LINKER \
 		TOOLS_DIR=$TOOLS_DIR \
 		INSTALLER_DIR=$INSTALLER_DIR \
+		UCLIBC_DIR=$UCLIBC_DIR \
+		UCLIBC_TARGET=$UCLIBC_TARGET \
+		UCLIBC_LINKER=$UCLIBC_LINKER \
 		MACHINE="$MACHINE" \
 		MACHINE_REAL="$MACHINE_REAL" \
 		CFLAGS="$CFLAGS" \
@@ -465,7 +479,7 @@ toolchain_make() {
 } # End of toolchain_make()
 
 ################################################################################
-# This is the function that builds every package in stage "base"	             #
+# This is the function that builds every package in stage "base" and "ipfire"  #
 ################################################################################
 ipfire_make() {
 	lfsmakecommoncheck $*
@@ -480,6 +494,15 @@ ipfire_make() {
 	# Also, make sure external kernel modules are compiled 64bit
 	if grep -qEi 'KERNEL_MOD = yes' $1 ; then
 		unset EXTRA_MAKE
+	fi
+	
+	local MYCFLAGS MYCXXFLAGS
+	if [ "${STAGE}" = "uclibc" ]; then
+		MYCFLAGS=${UCLIBC_CFLAGS}
+		MYCXXFLAGS=${UCLIBC_CFLAGS}
+	else
+		MYCFLAGS=${CFLAGS}
+		MYCXXFLAGS=${CXXFLAGS}
 	fi
 
 	local PKG_TIME_START=`date +%s`
@@ -503,10 +526,13 @@ ipfire_make() {
 		INSTALLER_DIR=$INSTALLER_DIR \
 		CDROM_DIR=$CDROM_DIR \
 		IMAGES_DIR=$IMAGES_DIR \
+		UCLIBC_DIR=$UCLIBC_DIR \
+		UCLIBC_TARGET=$UCLIBC_TARGET \
+		UCLIBC_LINKER=$UCLIBC_LINKER \
 		MACHINE="$MACHINE" \
 		MACHINE_REAL="$MACHINE_REAL" \
-		CFLAGS="$CFLAGS" \
-		CXXFLAGS="$CXXFLAGS" \
+		CFLAGS="$MYCFLAGS" \
+		CXXFLAGS="$MYCXXFLAGS" \
 		IFS_HOST="$IFS_HOST" \
 		IFS_TARGET="$IFS_TARGET" \
 		KVER=$KVER \
@@ -540,8 +566,9 @@ prepareenv() {
 	mkdir -p $BASEDIR/log_${MACHINE}/02_base 2>/dev/null
 	mkdir -p $BASEDIR/log_${MACHINE}/03_${SNAME} 2>/dev/null
 	mkdir -p $BASEDIR/log_${MACHINE}/04_misc 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/05_installer 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/06_packages 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/05_uclibc 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/06_installer 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/07_packages 2>/dev/null
   
 	#############################################################################
 	# Are we running the right shell?                                           #
@@ -666,21 +693,21 @@ prepareenv() {
 	mknod -m 666 $BASEDIR/build/dev/null c 1 3 2>/dev/null
 
 	# Make all sources and proc available under lfs build
-	mount --bind /dev																					$LFS/dev
-  mount --bind /proc																				$LFS/proc
-	mount --bind $BASEDIR/cache																$LFS/usr/src/cache
-	mount --bind $BASEDIR/ccache															$LFS/usr/src/ccache
-	mount --bind $BASEDIR/distcc															$LFS/usr/src/distcc
-	mount --bind $BASEDIR/config															$LFS/usr/src/config
-	mount --bind $BASEDIR/doc																	$LFS/usr/src/doc
-	mount --bind $BASEDIR/lfs																	$LFS/usr/src/lfs
-	mount --bind $BASEDIR/log_${MACHINE}											$LFS/usr/src/log_${MACHINE}
-	mount --bind $BASEDIR/src																	$LFS/usr/src/src
-	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR					$LFS/$TOOLS_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/$CTOOLS_DIR				$LFS/$CTOOLS_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR			$LFS/$INSTALLER_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/$CDROM_DIR					$LFS/$CDROM_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/$IMAGES_DIR				$LFS/$IMAGES_DIR
+	mount --bind /dev					$LFS/dev
+	mount --bind /proc					$LFS/proc
+	mount --bind $BASEDIR/cache				$LFS/usr/src/cache
+	mount --bind $BASEDIR/ccache				$LFS/usr/src/ccache
+	mount --bind $BASEDIR/distcc				$LFS/usr/src/distcc
+	mount --bind $BASEDIR/config				$LFS/usr/src/config
+	mount --bind $BASEDIR/doc				$LFS/usr/src/doc
+	mount --bind $BASEDIR/lfs				$LFS/usr/src/lfs
+	mount --bind $BASEDIR/log_${MACHINE}			$LFS/usr/src/log_${MACHINE}
+	mount --bind $BASEDIR/src				$LFS/usr/src/src
+	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR	$LFS/$TOOLS_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$CTOOLS_DIR	$LFS/$CTOOLS_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR	$LFS/$INSTALLER_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$CDROM_DIR	$LFS/$CDROM_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$IMAGES_DIR	$LFS/$IMAGES_DIR
 
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache
@@ -741,6 +768,9 @@ build() {
 
 	beautify build_stage "Building miscellaneous"
 	misc_build
+
+	beautify build_stage "Building uclibc"
+	uclibc_build
 
 	beautify build_stage "Building installer"
 	installer_build

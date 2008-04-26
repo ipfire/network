@@ -24,12 +24,10 @@
 
 include Config
 
-PKG_NAME   = util-linux-ng
-VER        = 2.13.1
+PKG_NAME   = stage6
+VER        = LFS
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.bz2
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -37,45 +35,15 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
-
 install : $(TARGET)
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
-
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
-	@$(LOAD)
+download :
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
+$(TARGET) :
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-
-ifeq "$(STAGE)" "toolchain"
-	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
-	cd $(DIR_APP) && make -C mount mount umount
-	cd $(DIR_APP) && make -C text-utils more
-	cd $(DIR_APP) && cp -v mount/{,u}mount text-utils/more $(TOOLS_DIR)/bin
-endif
-
-ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && sed -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
-	    -i $$(grep -rl '/etc/adjtime' .)
-	mkdir -pv /var/lib/hwclock
-	cd $(DIR_APP) && ./configure
-	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install
-endif
-
-ifeq "$(STAGE)" "uclibc"
-	cd $(DIR_APP) && ./configure 		--build=$(IFS_TARGET) \
-						--host=$(UCLIBC_TARGET)
-	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && cp -vf disk-utils/mkswap $(UCLIBC_DIR)/sbin/mkswap
-endif
-
-	@rm -rf $(DIR_APP)
+	
 	@$(POSTBUILD)

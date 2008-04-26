@@ -45,5 +45,11 @@ download :
 
 $(TARGET) :
 	@$(PREBUILD)
-	
+	for i in lib include $(UCLIBC_TARGET); do \
+		mkdir -pv $(UCLIBC_DIR)/$${i}; \
+	done
+	ln -svf ../include $(UCLIBC_DIR)/$(UCLIBC_TARGET)/sys-include
+	ln -svf ../lib /usr/$(UCLIBC_TARGET)/$(UCLIBC_TARGET)/lib
+	ln -svf usr/$(UCLIBC_TARGET)/lib /ulib
+	ln -svf lib /usr/$(UCLIBC_TARGET)/ulib
 	@$(POSTBUILD)
