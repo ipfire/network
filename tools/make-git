@@ -72,7 +72,7 @@ git_pull() {
 		[ -z $REPLY ] && exit 0
 		for i in y Y j J; do
 			if [ "$i" == "$REPLY" ]; then
-				git rebase refs/heads/master
+				git rebase -v refs/heads/master
 				exit $?
 			fi
 		done

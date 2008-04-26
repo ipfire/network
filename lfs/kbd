@@ -25,10 +25,10 @@
 include Config
 
 PKG_NAME   = kbd
-VER        = 1.13
+VER        = 1.14.1
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.bz2
+DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
@@ -52,11 +52,14 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-backspace-1.patch
-	cd $(DIR_APP) && ./configure --datadir=/lib/kbd
+	cd $(DIR_APP) && sed -e '1i KEYCODES_PROGS = @KEYCODES_PROGS@' \
+		-e '1i RESIZECONS_PROGS = @RESIZECONS_PROGS@' -i src/Makefile.in
+	cd $(DIR_APP) && sed -i "s/ifdef OPTIONAL_PROGS/ifeq (\$$(OPTIONAL_PROGS),yes)/" man/Makefile.in
+	cd $(DIR_APP) && ./configure --prefix=/usr --datadir=/lib/kbd
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
-	mv -v /usr/bin/{kbd_mode,openvt,setfont} /bin
+	mv -v /usr/bin/{kbd_mode,loadkeys,openvt,setfont} /bin
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
