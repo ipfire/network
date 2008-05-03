@@ -25,10 +25,10 @@
 include Config
 
 PKG_NAME   = lighttpd
-VER        = 1.4.18
+VER        = 1.4.19
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.bz2
+DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
@@ -52,12 +52,15 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
 	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/usr/lib/$(PKG_NAME) \
 		--disable-ipv6 --with-ldap --with-openssl=/usr/include
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+	
+	install -v m644 $(DIR_CONF)/$(PKG_NAME)/$(PKG_NAME).conf \
+		/etc/$(PKG_NAME).conf
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
