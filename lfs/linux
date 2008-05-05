@@ -77,15 +77,15 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 ifeq "$(STAGE)" "toolchain"
 	install -dv $(TOOLS_DIR)/include
 	cd $(DIR_APP) && make mrproper
-	cd $(DIR_APP) && make ARCH=i386 headers_check
-	cd $(DIR_APP) && make ARCH=i386 INSTALL_HDR_PATH=dest headers_install
+	cd $(DIR_APP) && make ARCH=x86 headers_check
+	cd $(DIR_APP) && make ARCH=x86 INSTALL_HDR_PATH=dest headers_install
 	cd $(DIR_APP) && cp -rv dest/include/* $(TOOLS_DIR)/include
 endif
 
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make mrproper
-	cd $(DIR_APP) && make ARCH=i386 headers_check
-	cd $(DIR_APP) && make ARCH=i386 INSTALL_HDR_PATH=dest headers_install
+	cd $(DIR_APP) && make ARCH=x86 headers_check
+	cd $(DIR_APP) && make ARCH=x86 INSTALL_HDR_PATH=dest headers_install
 	cd $(DIR_APP) && cp -rv dest/include/* /usr/include
 endif
 
@@ -145,8 +145,8 @@ endif
 
 ifeq "$(STAGE)" "uclibc"
 	cd $(DIR_APP) && make mrproper
-	cd $(DIR_APP) && make ARCH=i386 headers_check
-	cd $(DIR_APP) && make ARCH=i386 INSTALL_HDR_PATH=dest headers_install
+	cd $(DIR_APP) && make ARCH=x86 headers_check
+	cd $(DIR_APP) && make ARCH=x86 INSTALL_HDR_PATH=dest headers_install
 	cd $(DIR_APP) && cp -rv dest/include/* $(UCLIBC_DIR)/include
 endif
 
