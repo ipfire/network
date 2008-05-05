@@ -59,7 +59,7 @@ toolchain_build() {
 	fi
 	
 	toolchain_make binutils				PASS=1
-	toolchain_make gcc													PASS=1
+	toolchain_make gcc				PASS=1
 	toolchain_make glibc
 	toolchain_make adjust-toolchain
 	
@@ -67,7 +67,7 @@ toolchain_build() {
 		toolchain_make tcl
 		toolchain_make expect
 		toolchain_make dejagnu
-		toolchain_make gcc												PASS=2
+		toolchain_make gcc			PASS=2
 		toolchain_make binutils			PASS=2
 	fi
 	
@@ -216,9 +216,9 @@ ipfire_build() {
 	
 	### Building some general stuff
 	#   STAGE 2
-	ipfire_make pam																			PASS=1
+	ipfire_make pam					PASS=1
 	ipfire_make shadow
-	ipfire_make pam																			PASS=2
+	ipfire_make pam					PASS=2
 	ipfire_make slang
 	ipfire_make newt
 	ipfire_make cyrus-sasl
@@ -419,11 +419,23 @@ uclibc_build() {
 	ipfire_make gcc			PASS=2
 	ipfire_make uClibc		PASS=2
 	ipfire_make gettext		PASS=2
-	ipfire_make busybox
 	ipfire_make udev
+	ipfire_make pciutils
+	ipfire_make zlib
 	ipfire_make ncurses
-	#ipfire_make e2fsprogs
-	#ipfire_make util-linux-ng
+	ipfire_make pcre
+	ipfire_make popt
+	ipfire_make readline
+	ipfire_make e2fsprogs
+	ipfire_make util-linux-ng
+	ipfire_make parted
+	ipfire_make python
+	ipfire_make kudzu
+	ipfire_make slang
+	ipfire_make newt
+	ipfire_make cpio
+	ipfire_make lzma
+	ipfire_make busybox
 }
 
 ################################################################################

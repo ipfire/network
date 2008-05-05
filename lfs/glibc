@@ -99,6 +99,8 @@ ifeq "$(STAGE)" "base"
 	
 	# Locales
 	-mkdir -pv /usr/lib/locale
+	localedef -i de_DE -f UTF-8 de_DE.UTF-8
+	localedef -i de_DE -f ISO-8859-1 de_DE
 	localedef -i en_US -f UTF-8 en_US.UTF-8
 	localedef -i en_US -f ISO-8859-1 en_US
 	localedef -i en_GB -f UTF-8 en_GB.UTF-8

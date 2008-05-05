@@ -56,6 +56,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
+ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && ./configure --prefix=/usr --shared --libdir=/lib
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
@@ -69,6 +70,20 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && make install
 	
 	chmod -v 644 /usr/lib/libz.a
-	
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && CC=$(UCLIBC_TARGET)-gcc ./configure --prefix=/usr \
+							--shared \
+							--libdir=/lib
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && install -v -m 644 zlib.h zconf.h \
+		$(UCLIBC_DIR)/usr/include
+	cd $(DIR_APP) && install -v -m 755 libz.so.$(VER) \
+		$(UCLIBC_DIR)/usr/lib
+	ln -svf libz.so.$(VER) $(UCLIBC_DIR)/usr/lib/libz.so.1
+	ln -svf libz.so.$(VER) $(UCLIBC_DIR)/usr/lib/libz.so
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

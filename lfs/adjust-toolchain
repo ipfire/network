@@ -78,10 +78,10 @@ ifeq "$(STAGE)" "base"
 endif
 
 ifeq "$(STAGE)" "uclibc"
-	$(UCLIBC_TARGET)-gcc -dumpspecs \
-		> $$($(UCLIBC_TARGET)-gcc --print-file specs)
-	sed -e 's/%{shared:-lc}/%{!nointl: -lintl} &/' \
-		-i $$($(UCLIBC_TARGET)-gcc --print-file specs)
+	#$(UCLIBC_TARGET)-gcc -dumpspecs \
+	#	> $$($(UCLIBC_TARGET)-gcc --print-file specs)
+	#sed -e 's/%{shared:-lc}/%{!nointl: -lintl} &/' \
+	#	-i $$($(UCLIBC_TARGET)-gcc --print-file specs)
 	mv -v $(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin/{ld,ld-old}
 	mv -v $(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin/{ld-new,ld}
 	ln -sfv ../$(UCLIBC_TARGET)/bin/ld \

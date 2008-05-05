@@ -53,10 +53,24 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && ./configure CPIO_MT_PROG=mt --prefix=/usr \
 				--bindir=/bin --libexecdir=/tmp \
 				--with-rmt=/usr/sbin/rmt
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && ./configure CPIO_MT_PROG=mt --prefix=/usr \
+				--bindir=/bin --libexecdir=/tmp \
+				--with-rmt=/usr/sbin/rmt \
+				--build=$(IFS_TARGET) \
+				--host=$(UCLIBC_TARGET)
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR)
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -37,7 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-uclibc-1.patch
 
 install: $(TARGET)
 
@@ -53,10 +53,26 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install_doc_dir=/usr/share/doc/slang-$(VER) \
 		SLSH_DOC_DIR=/usr/share/doc/slang-$(VER)/slsh install-all
 	chmod -v 755 /usr/lib/libslang.so.$(VER) /usr/lib/slang/v2/modules/*.so
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_DL)/$(THISAPP)-uclibc-1.patch
+	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc \
+						--with-png=no \
+						--build=$(IFS_TARGET) \
+						--host=$(UCLIBC_TARGET)
+	cd $(DIR_APP)/src && make -j $(PARALLELISM)
+	cd $(DIR_APP)/src && make DESTDIR=$(UCLIBC_DIR) install-all
+	-chmod -v 755 $(UCLIBC_DIR)/usr/lib/libslang.so.$(VER) \
+		$(UCLIBC_DIR)/usr/lib/slang/v2/modules/*.so
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
