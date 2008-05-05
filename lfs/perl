@@ -39,7 +39,8 @@ XMLPARSER  = XML-Parser-2.34
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-libc-2.patch $(XMLPARSER).tar.gz
+objects = $(DL_FILE) $(THISAPP)-libc-2.patch $(XMLPARSER).tar.gz \
+	$(THISAPP)-asm-page-h-compile-failure.patch
 
 install : $(TARGET)
 
@@ -59,6 +60,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libc-2.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-asm-page-h-compile-failure.patch
 	cd $(DIR_APP) && mv -v makedepend.SH{,.orig}
 	cd $(DIR_APP) && sed 's/command /command[ -]/' makedepend.SH.orig > makedepend.SH
 	
@@ -73,7 +75,9 @@ endif
 
 ifeq "$(STAGE)" "base"
 	echo "127.0.0.1 localhost $(hostname)" > /etc/hosts
-	
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-asm-page-h-compile-failure.patch
+
 	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
 	cd $(DIR_APP) && ./configure.gnu --prefix=/usr \
 		-Dman1dir=/usr/share/man/man1 -Dman3dir=/usr/share/man/man3 \
