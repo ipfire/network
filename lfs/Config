@@ -89,7 +89,7 @@ endif
 # log/<TARGET> name. Modified files are not identified
 #
 define FIND_FILES
-	cd $(LFS)/ && find -mount \
+	cd $(LFS)/ && $(TOOLS_DIR)/bin/find -mount \
 	-not -path '.$(TOOLS_DIR)*' -not -path './tmp*' -not -path './usr/src*' \
 	-not -path './dev*' -not -path './proc*' -not -path './sys*' -not -path './install*'
 endef
