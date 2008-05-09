@@ -114,15 +114,6 @@ ifeq "$(PASS)" "2"
 	cd $(DIR_SRC)/binutils-build && cp -v ld/ld-new $(TOOLS_DIR)/bin
 endif
 
-ifeq "$(STAGE)" "base"
-	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure --prefix=/usr \
-		--enable-shared
-	cd $(DIR_SRC)/binutils-build && make tooldir=/usr -j $(PARALLELISM)
-	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install
-	
-	cp -fv ../$(THISAPP)/include/libiberty.h /usr/include
-endif
-
 else
 	#
 	# Cross build
@@ -143,6 +134,15 @@ else
 	-mkdir -p $(TOOLS_DIR)/include
 	cp -fv $(DIR_APP)/include/libiberty.h $(TOOLS_DIR)/include
 endif
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure --prefix=/usr \
+		--enable-shared
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install
+	
+	cp -fv ../$(THISAPP)/include/libiberty.h /usr/include
 endif
 
 ifeq "$(STAGE)" "uclibc"
