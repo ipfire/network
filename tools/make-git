@@ -112,7 +112,7 @@ git_diff() {
 	git diff HEAD > ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff
 	evaluate 1
 	echo "Diff was successfully saved to ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff"
-	git diff --stat
+	git diff HEAD --stat
 }
 
 git_log() {
