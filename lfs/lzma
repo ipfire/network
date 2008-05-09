@@ -54,13 +54,26 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_SRC)/$(THISAPP) && mkdir $(DIR_SRC)/$(THISAPP)
 	@cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE) -C $(THISAPP)
-	
+
+ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && make -C CPP/7zip/Compress/LZMA_Alone \
 		-f makefile.gcc -j $(PARALLELISM) CXX="g++ $(CXXFLAGS)" CXX_C="gcc $(CFLAGS)"
 	
 	install -m 755 \
 		$(DIR_APP)/CPP/7zip/Compress/LZMA_Alone/lzma \
 		/usr/bin/lzma_sdk
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && make -C CPP/7zip/Compress/LZMA_Alone \
+		-f makefile.gcc -j $(PARALLELISM) \
+		CXX="$(UCLIBC_TARGET)-g++ $(CXXFLAGS)" \
+		CXX_C="$(UCLIBC_TARGET)-gcc $(CFLAGS)"
+
+	install -m 755 \
+		$(DIR_APP)/CPP/7zip/Compress/LZMA_Alone/lzma \
+		$(UCLIBC_DIR)/bin/lzma_sdk
+endif
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

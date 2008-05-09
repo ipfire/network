@@ -25,7 +25,10 @@
 include Config
 
 PKG_NAME   = e2fsprogs
-VER        = 1.40.8
+VER        = 1.40.3
+
+## XXX - This was downgraded because uClibc leaks a function:
+## ../../lib/libuuid.so: undefined reference to `___tls_get_addr'
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -70,11 +73,18 @@ ifeq "$(STAGE)" "base"
 endif
 
 ifeq "$(STAGE)" "uclibc"
-	cd $(DIR_APP)/build && ../configure --prefix=/usr --with-root-prefix="" \
-		--enable-elf-shlibs --build=$(IFS_TARGET) --host=$(UCLIBC_TARGET)
+	cd $(DIR_APP)/build && ../configure --prefix=/usr \
+						--with-root-prefix="" \
+						--enable-elf-shlibs \
+						--build=$(IFS_TARGET) \
+						--host=$(UCLIBC_TARGET) \
+						--with-cc=$(UCLIBC_TARGET)-gcc \
+						--with-linker=$(UCLIBC_TARGET)-ld
 	cd $(DIR_APP)/build && make -j $(PARALLELISM)
-	cd $(DIR_APP)/build && make install DESTDIR=$(UCLIBC_DIR)
-	cd $(DIR_APP)/build && make install-libs DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP)/build && make install install-libs DESTDIR=$(UCLIBC_DIR)
+	for lib in libblkid.so.1 libcom_err.so.2 libe2p.so.2 libext2fs.so.2 libss.so.2 libuuid.so.1; do \
+		ln -svf $$lib $(UCLIBC_DIR)/lib/$$(awk -F. '{ print $$1"."$$2 }' <<< $$lib) || exit 1; \
+	done
 endif
 
 	@rm -rf $(DIR_APP)

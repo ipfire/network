@@ -56,7 +56,8 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && sed -i '/MV.*old/d' Makefile.in
 	cd $(DIR_APP) && sed -i '/{OLDSUFF}/c:' support/shlib-install
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-5.patch
-	
+
+ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib
 	
 	cd $(DIR_APP) && make -j $(PARALLELISM) SHLIB_LIBS=-lncurses
@@ -66,5 +67,19 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	rm -fv /lib/lib{readline,history}.so
 	ln -sfv ../../lib/libreadline.so.5 /usr/lib/libreadline.so
 	ln -sfv ../../lib/libhistory.so.5 /usr/lib/libhistory.so
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && \
+		CC=$(UCLIBC_TARGET)-gcc \
+		AR=$(UCLIBC_TARGET)-ar \
+		AS=$(UCLIBC_TARGET)-as \
+		LD=$(UCLIBC_TARGET)-ld \
+		RANLIB=$(UCLIBC_TARGET)-ranlib \
+		./configure --prefix=/
+	cd $(DIR_APP) && make -j $(PARALLELISM) SHLIB_LIBS=-lncurses
+	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR)
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

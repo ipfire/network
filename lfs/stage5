@@ -52,4 +52,7 @@ $(TARGET) :
 	ln -svf ../lib /usr/$(UCLIBC_TARGET)/$(UCLIBC_TARGET)/lib
 	ln -svf usr/$(UCLIBC_TARGET)/lib /ulib
 	ln -svf lib /usr/$(UCLIBC_TARGET)/ulib
+	ln -svf . $(UCLIBC_DIR)/usr
+	#ln -svf ../bin $(UCLIBC_DIR)/usr/bin
+	#ln -svf ../sbin $(UCLIBC_DIR)/usr/sbin
 	@$(POSTBUILD)

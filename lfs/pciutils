@@ -56,10 +56,24 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && sed -i 's/null ;/null 2>\&1 ;/' update-pciids.sh
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-sata.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-devicetype.patch
-	cd $(DIR_APP) && make PREFIX=/usr $(MAKETUNING)
+
+ifeq "$(STAGE)" "ipfire"
+	cd $(DIR_APP) && make OPT=$(CLFLAGS) PREFIX=/usr -j $(PARALLELISM)
 	cd $(DIR_APP) && make PREFIX=/usr install
 	install -v -m 755 -d /usr/include/pci
 	cd $(DIR_APP) && install -v -m 644 lib/libpci.a /usr/lib
 	cd $(DIR_APP) && install -v -m 644 lib/*.h /usr/include/pci
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && sed -e "s/^\tar/\t$(UCLIBC_TARGET)-ar/" \
+		-e "s/^\tranlib/\t$(UCLIBC_TARGET)-ranlib/" -i lib/Makefile
+	cd $(DIR_APP)/lib && ./configure /usr/share $(VER) $(UCLIBC_TARGET) $(KVER)
+	cd $(DIR_APP)/lib && make OPT=$(CLFLAGS) PREFIX=$(UCLIBC_DIR)/usr \
+		HOST=$(UCLIBC_TARGET) CC=$(UCLIBC_TARGET)-gcc -j $(PARALLELISM)
+	install -v -m 755 -d $(UCLIBC_DIR)/usr/include/pci
+	cd $(DIR_APP) && install -v -m 644 lib/libpci.a $(UCLIBC_DIR)/usr/lib
+	cd $(DIR_APP) && install -v -m 644 lib/*.h $(UCLIBC_DIR)/usr/include/pci
+endif
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

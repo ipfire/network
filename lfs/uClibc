@@ -57,8 +57,8 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	
 	## Copy configuration
-	cp -fv $(DIR_CONF)/$(PKG_NAME)/.config $(DIR_APP)/.config
-	cp -fv $(DIR_DL)/$(LOCALE_FILE) $(DIR_APP)/extra/locale
+	cp -f $(DIR_CONF)/$(PKG_NAME)/.config $(DIR_APP)/.config
+	cp -f $(DIR_DL)/$(LOCALE_FILE) $(DIR_APP)/extra/locale
 
 ifeq "$(PASS)" "0"
 	rm -vf $(DIR_APP)/.config
@@ -76,7 +76,7 @@ ifneq "$(PASS)" "0" # Do this on pass 1 and 2
 		-e "s@.*KERNEL_SOURCE.*@KERNEL_SOURCE=\"$(UCLIBC_DIR)\"@g" \
 		-i .config
 	cd $(DIR_APP) && make CROSS=$(UCLIBC_TARGET)- all -j $(PARALLELISM)
-	rm -fvr $(DIR_APP)/include/{asm,asm-generic,linux}
+	rm -fr $(DIR_APP)/include/{asm,asm-generic,linux}
 	cd $(DIR_APP) && make install
 endif
 
@@ -84,9 +84,7 @@ ifeq "$(PASS)" "2"
 	cd $(DIR_APP) && make headers
 	cd $(DIR_APP) && make CC="gcc -Wl,--dynamic-linker,$(UCLIBC_LINKER) /ulib/libc.so.0" \
 		-C utils
-	make -C utils install
-	mv -vf $(UCLIBC_DIR)/sbin/ldconfig $(UCLIBC_DIR)/bin
-	rm -rvf $(UCLIBC_DIR)/sbin/
+	mv -f $(DIR_APP)/utils/ldconfig $(UCLIBC_DIR)/bin
 endif
 
 	@rm -rf $(DIR_APP)

@@ -37,7 +37,9 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-gdbm-1.patch
+objects = $(DL_FILE) $(THISAPP)-gdbm-1.patch \
+	$(THISAPP)-crosscompile-1.patch \
+	$(THISAPP)-crosscompile-2.patch
 
 install: $(TARGET)
 
@@ -53,11 +55,39 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-gdbm-1.patch
 	cd $(DIR_APP) && OPT="$(CFLAGS)" ./configure --prefix=/usr \
-																							 --enable-shared \
-																							 --disable-ipv6
+						 --enable-shared \
+						 --disable-ipv6
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-crosscompile-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-crosscompile-2.patch
+	cd $(DIR_APP) && ./configure
+	cd $(DIR_APP) && make -j $(PARALLELISM) python Parser/pgen
+	cd $(DIR_APP) && mv -vf python hostpython
+	cd $(DIR_APP) && mv -vf Parser/pgen Parser/hostpgen
+	cd $(DIR_APP) && make distclean
+	cd $(DIR_APP) && sed -i -e '/^HOSTPYTHON/s:=.*:=./hostpython:' \
+				-e '/^HOSTPGEN/s:=.*:=./Parser/hostpgen:' \
+				Makefile.pre.in
+	-rm -rf $(DIR_APP)/Lib/test $(UCLIBC_DIR)/usr/lib/python2.5/test
+	cd $(DIR_APP) && OPT="$(CFLAGS)" ./configure --prefix=/usr \
+						--build=$(IFS_TARGET) \
+						--host=$(UCLIBC_TARGET) \
+						--enable-shared \
+						--disable-ipv6 \
+						--with-cxx=no
+	cd $(DIR_APP) && make -j $(PARALLELISM) \
+		HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen
+	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR) \
+		HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

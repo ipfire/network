@@ -275,6 +275,7 @@ ifeq "$(PASS)" "2"
 						--enable-languages=c,c++ \
 						--disable-multilib \
 						--disable-libmudflap \
+						--disable-libgomp \
 						--with-gnu-ld \
 						--disable-nls
 	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)

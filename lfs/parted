@@ -56,16 +56,38 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/$(PYPARTED)
 	@cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr --without-readline --disable-nls \
-		--disable-Werror --disable-dependency-tracking --disable-debug --with-gnu-ld
+
+ifeq "$(STAGE)" "ipfire"
+	cd $(DIR_APP) && ./configure --prefix=/usr \
+						--without-readline \
+						--disable-nls \
+						--disable-Werror \
+						--disable-dependency-tracking \
+						--disable-debug \
+						--with-gnu-ld
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && ./configure --prefix=/usr \
+						--build=$(IFS_TARGET) \
+						--host=$(UCLIBC_TARGET) \
+						--without-readline \
+						--disable-nls \
+						--disable-Werror \
+						--disable-dependency-tracking \
+						--disable-debug \
+						--with-gnu-ld
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR)
 	
 	### pyparted
 	#
-	cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(PYPARTED).tar.bz2
-	cd $(DIR_SRC)/$(PYPARTED) && make all install \
-		libdir=/usr/lib/python2.5/site-packages
+	#cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(PYPARTED).tar.bz2
+	#cd $(DIR_SRC)/$(PYPARTED) && make all install \
+	#	libdir=$(UCLIBC_DIR)/usr/lib/python2.5/site-packages
+endif
 	
 	@rm -rf $(DIR_APP) $(DIR_SRC)/$(PYPARTED)
 	@$(POSTBUILD)

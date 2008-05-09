@@ -55,8 +55,23 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-snack.patch
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-whiptail.patch
-	cd $(DIR_APP) && ./configure --prefix=/usr --without-gpm-support --without-tcl
+
+ifeq "$(STAGE)" "ipfire"
+	cd $(DIR_APP) && ./configure --prefix=/usr --without-gpm-support \
+							--without-tcl
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && ./configure --prefix=$(UCLIBC_DIR)/usr \
+							--without-gpm-support \
+							--without-tcl \
+							--build=$(IFS_TARGET) \
+							--host=$(UCLIBC_TARGET)
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

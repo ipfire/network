@@ -53,8 +53,28 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS) -I/usr/include" make #-j $(PARALLELISM)
 	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" make install
 	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" make install-program
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	cd $(DIR_APP) && sed -e "s/^AR = ar//" -e "s/^RANLIB = ranlib//" \
+		-i Makefile
+	cd $(DIR_APP) && sed -e "s@ln -s ../../sbin/kudzu \$$(usbindir)/kudzu@@" \
+		-i Makefile
+	cd $(DIR_APP) && \
+		ARCH=$(MACHINE) \
+		RPM_OPT_FLAGS="$(CFLAGS) -I$(UCLIBC_DIR)/usr/include" \
+		CC=$(UCLIBC_TARGET)-gcc \
+		AR=$(UCLIBC_TARGET)-ar \
+		RANLIB=$(UCLIBC_TARGET)-ranlib \
+		make -j $(PARALLELISM)
+	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" make install DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" make install-program DESTDIR=$(UCLIBC_DIR)
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
