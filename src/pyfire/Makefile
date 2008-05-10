@@ -18,17 +18,17 @@
 #                                                                             #
 ###############################################################################
 
-include Makefile.inc
+NAME = pyFire
+SNAME = pyfire
 
-SUBDIRS = src
+PYTHONLIBDIR  = $(DESTDIR)/usr/lib/python2.5/site-packages/$(SNAME)
 
-all: subdirs
+all:
 
 install: all
-	for d in $(SUBDIRS); do make PREFIX=`cd $(PREFIX); pwd` -C $$d install; [ $$? = 0 ] || exit 1; done
+	-mkdir -p $(PYTHONLIBDIR)
+	cp -f *.py $(PYTHONLIBDIR)
+	#py-compile $(PYTHONLIBDIR)/*.py
 
 clean:
-	for d in $(SUBDIRS); do make -C $$d clean; done
-
-subdirs:
-	for d in $(SUBDIRS); do make -C $$d; [ $$? = 0 ] || exit 1; done
+	rm -f *.o *.so *.pyc *.pyo
