@@ -34,7 +34,7 @@ class Timezone:
 		f.write('ZONE="%s"\n' % self.tz)
 		f.write("UTC=%s\n" % bool(self.utc))
 		f.write("ARC=%s\n" % bool(self.arc))
-	
+
 		f.close()
 
 	def getTimezoneInfo(self):

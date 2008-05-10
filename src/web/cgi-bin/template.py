@@ -25,7 +25,7 @@ from pyfire.translate import _
 class Site(IPFireWeb):
 	def __init__(self, title, icon="ipfire.png"):
 		IPFireWeb.__init__(self, title, icon)
-	
+
 	def content(self):
 		self.openbox(_("Template"))
 		print _("This is a template page to show new developers how our"
