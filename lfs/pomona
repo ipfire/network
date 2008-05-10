@@ -24,10 +24,11 @@
 
 include Config
 
-PKG_NAME   = stage6
-VER        = LFS
+PKG_NAME   = pomona
+VER        = ipfire
 
-THISAPP    = $(PKG_NAME)-$(VER)
+THISAPP    = $(PKG_NAME)
+DIR_APP    = $(DIR_SOURCE)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -45,5 +46,12 @@ download :
 
 $(TARGET) :
 	@$(PREBUILD)
+	-mkdir -p $(INITRAMFS_DIR)
+	
+	cd $(DIR_APP) && make -C po update-po
+	cd $(DIR_APP) && make lang-names
+	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR) NAME=$(NAME) \
+		SNAME=$(SNAME) VERSION=$(VERSION) KVER=$(KVER)
+	cd $(DIR_APP) && make clean
 	
 	@$(POSTBUILD)

@@ -46,9 +46,15 @@ $(TARGET) :
 
 ifeq "$(STAGE)" "toolchain"
 	-strip --strip-debug $(TOOLS_DIR)/lib/*
-	-strip --strip-all $(TOOLS_DIR)/{,s}bin/* /usr/local/*/bin/*
+	-strip --strip-all $(TOOLS_DIR)/{,s}bin/*
 	rm -rf $(TOOLS_DIR)/{,share/}{info,man}
 	chown -R root:root $(LFS)$(TOOLS_DIR)
+endif
+
+ifeq "$(STAGE)" "uclibc"
+	-$(TOOLS_DIR)/bin/find $(UCLIBC_DIR)/{bin,sbin,lib} \
+		-type f -exec $(TOOLS_DIR)/bin/strip --strip-all '{}' ';' \
+		&>/dev/null
 endif
 
 ifeq "$(STAGE)" "packages"

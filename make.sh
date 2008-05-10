@@ -397,15 +397,15 @@ misc_build() {
 }
 
 ################################################################################
-# This builds the entire stage "uclibc"                                        #
+# This builds the entire stage "installer"                                     #
 ################################################################################
-uclibc_build() {
+installer_build() {
 
 	PATH=${UCLIBC_DIR}/bin:${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
 	STAGE_ORDER=05
-	STAGE=uclibc
+	STAGE=installer
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-uclibc.log"
+	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-installer.log"
 	export LOGFILE
 
 	ipfire_make stage5
@@ -436,23 +436,9 @@ uclibc_build() {
 	ipfire_make cpio
 	ipfire_make lzma
 	ipfire_make busybox
-}
-
-################################################################################
-# This builds the entire stage "installer"                                     #
-################################################################################
-installer_build() {
-
-	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
-	STAGE_ORDER=06
-	STAGE=installer
-
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-installer.log"
-	export LOGFILE
-	
-	ipfire_make stage6
-	ipfire_make installer
-	ipfire_make initramfs
+	ipfire_make pyfire
+	ipfire_make pomona
+	ipfire_make strip
 }
 
 ################################################################################
@@ -461,12 +447,13 @@ installer_build() {
 packages_build() {
 
 	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
-	STAGE_ORDER=07
+	STAGE_ORDER=06
 	STAGE=packages
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-packages.log"
 	export LOGFILE
 
+	ipfire_make initramfs
 	toolchain_make strip
 
 	# Generating list of packages used

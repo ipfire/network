@@ -403,14 +403,14 @@ entershell() {
 ################################################################################
 # Common checking before entering the chroot and compilling                    #
 # Return:0 caller can continue                                                 #
-#	:1 skip (nothing to do)                                                      #
-#	or fail if no script file found                                              #
+#	:1 skip (nothing to do)                                                #
+#	or fail if no script file found                                        #
 ################################################################################
 lfsmakecommoncheck()
 {
 	# Script present?
 	if [ ! -f $BASEDIR/lfs/$1 ]; then
-		exiterror "No such file or directory: $BASEDIR/$1"
+		exiterror "No such file or directory: $BASEDIR/lfs/$1"
 	fi
 
 	local PKG_VER=`get_pkg_ver $BASEDIR/lfs/$1`
@@ -566,9 +566,8 @@ prepareenv() {
 	mkdir -p $BASEDIR/log_${MACHINE}/02_base 2>/dev/null
 	mkdir -p $BASEDIR/log_${MACHINE}/03_${SNAME} 2>/dev/null
 	mkdir -p $BASEDIR/log_${MACHINE}/04_misc 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/05_uclibc 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/06_installer 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/07_packages 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/05_installer 2>/dev/null
+	mkdir -p $BASEDIR/log_${MACHINE}/06_packages 2>/dev/null
   
 	#############################################################################
 	# Are we running the right shell?                                           #
@@ -680,7 +679,7 @@ prepareenv() {
 	unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
 
 	# Make some extra directories
-	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$CTOOLS_DIR,$INSTALLER_DIR,cdrom,images} 2>/dev/null
+	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$CTOOLS_DIR,cdrom} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
 	mkdir -p $LFS/{$TOOLS_DIR/usr,$CTOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/dev/pts
@@ -705,9 +704,7 @@ prepareenv() {
 	mount --bind $BASEDIR/src				$LFS/usr/src/src
 	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR	$LFS/$TOOLS_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$CTOOLS_DIR	$LFS/$CTOOLS_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR	$LFS/$INSTALLER_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$CDROM_DIR	$LFS/$CDROM_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/$IMAGES_DIR	$LFS/$IMAGES_DIR
 
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache
@@ -768,9 +765,6 @@ build() {
 
 	beautify build_stage "Building miscellaneous"
 	misc_build
-
-	beautify build_stage "Building uclibc"
-	uclibc_build
 
 	beautify build_stage "Building installer"
 	installer_build

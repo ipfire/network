@@ -51,8 +51,15 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
-	cd $(DIR_APP) && make clean
-	cd $(DIR_APP) && make
+
+ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR)
+endif
+
 	cd $(DIR_APP) && make clean
+
 	@$(POSTBUILD)

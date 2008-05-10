@@ -95,7 +95,7 @@ ifeq "$(STAGE)" "uclibc"
 						--without-debug \
 						#--enable-widec
 	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
+	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR)
 endif
 
 	@rm -rf $(DIR_APP)
