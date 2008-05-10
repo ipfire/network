@@ -26,8 +26,8 @@ all: subdirs
 
 install: all
 	-mkdir -p $(PYTHONLIBDIR)
-	cp -vf *.py ../lang-{table,names} $(PYTHONLIBDIR)
-	chmod -v 755 $(PYTHONLIBDIR)/installer.py
+	cp -f *.py ../lang-{table,names} $(PYTHONLIBDIR)
+	chmod 755 $(PYTHONLIBDIR)/installer.py
 	for d in $(SUBDIRS); do make -C $$d install; [ $$? = 0 ] || exit 1; done
 	
 	sed -e "s/VERSION/$(VERSION)/g" \
@@ -40,7 +40,7 @@ install: all
 	sh ../py-compile $(PYTHONLIBDIR)/*.py
 	-mkdir -p $(DESTDIR)/sbin
 	#ln -svf ../usr/lib/$(PSNAME)/installer.py $(DESTDIR)/sbin/$(PSNAME)
-	install -m 755 -v $(PSNAME) $(DESTDIR)/sbin/$(PSNAME)
+	install -m 755 $(PSNAME) $(DESTDIR)/sbin/$(PSNAME)
 
 clean:
 	rm -f *.o *.so *.pyc *.pyo
