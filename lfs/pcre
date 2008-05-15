@@ -55,7 +55,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-abi_breakage-1.patch
 
-ifeq "$(STAGE)" "base"
+ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && ./configure --prefix=/usr \
 						--docdir=/usr/share/doc/pcre-$(VER) \
 						--enable-utf8 \
