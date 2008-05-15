@@ -65,7 +65,7 @@ ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && install -v -m 644 lib/*.h /usr/include/pci
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && sed -e "s/^\tar/\t$(UCLIBC_TARGET)-ar/" \
 		-e "s/^\tranlib/\t$(UCLIBC_TARGET)-ranlib/" -i lib/Makefile
 	cd $(DIR_APP)/lib && ./configure /usr/share $(VER) $(UCLIBC_TARGET) $(KVER)

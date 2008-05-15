@@ -69,7 +69,7 @@ ifeq "$(STAGE)" "base"
 	ln -sfv ../../lib/libhistory.so.5 /usr/lib/libhistory.so
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && \
 		CC=$(UCLIBC_TARGET)-gcc \
 		AR=$(UCLIBC_TARGET)-ar \

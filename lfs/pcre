@@ -67,7 +67,7 @@ ifeq "$(STAGE)" "ipfire"
 	ln -v -sf ../../lib/libpcre.so.0 /usr/lib/libpcre.so
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && ./configure --prefix=/usr \
 						--enable-utf8 \
 						--build=$(IFS_TARGET) \

@@ -70,7 +70,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make install
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && ./configure 		--build=$(IFS_TARGET) \
 						--host=$(UCLIBC_TARGET)
 	cd $(DIR_APP) && make -C disk-utils mkswap -j $(PARALLELISM)

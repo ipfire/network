@@ -72,7 +72,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP)/build && make install-libs
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP)/build && ../configure --prefix=/usr \
 						--with-root-prefix="" \
 						--enable-elf-shlibs \

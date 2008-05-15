@@ -145,7 +145,7 @@ ifeq "$(STAGE)" "base"
 	cp -fv ../$(THISAPP)/include/libiberty.h /usr/include
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc-1.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ld_makefile.patch
 	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure \

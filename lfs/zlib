@@ -72,7 +72,7 @@ ifeq "$(STAGE)" "base"
 	chmod -v 644 /usr/lib/libz.a
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && CC=$(UCLIBC_TARGET)-gcc ./configure --prefix=/usr \
 							--shared \
 							--libdir=/lib

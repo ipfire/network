@@ -62,7 +62,7 @@ ifeq "$(STAGE)" "ipfire"
 	chmod -v 755 /usr/lib/libslang.so.$(VER) /usr/lib/slang/v2/modules/*.so
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_DL)/$(THISAPP)-uclibc-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc \
 						--with-png=no \

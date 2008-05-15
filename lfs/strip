@@ -51,7 +51,7 @@ ifeq "$(STAGE)" "toolchain"
 	chown -R root:root $(LFS)$(TOOLS_DIR)
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	-$(TOOLS_DIR)/bin/find $(UCLIBC_DIR)/{bin,sbin,lib} \
 		-type f -exec $(TOOLS_DIR)/bin/strip --strip-all '{}' ';' \
 		&>/dev/null

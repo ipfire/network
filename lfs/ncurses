@@ -86,7 +86,7 @@ ifeq "$(STAGE)" "base"
 	ln -sfv libncurses.a /usr/lib/libcurses.a
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-coverity_fixes-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr \
 						--build=$(IFS_TARGET) \

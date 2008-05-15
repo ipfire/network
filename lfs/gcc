@@ -40,7 +40,7 @@ else
 	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-cross$(PASS)
 endif
 else
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
 else
 	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
@@ -234,7 +234,7 @@ ifeq "$(STAGE)" "base"
 	ln -sfv gcc /usr/bin/cc	
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && patch -p1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc-conf-1.conf
 	sed -e "s@/lib/ld-uClibc.so.0@$(UCLIBC_LINKER)@g" -i $(DIR_APP)/gcc/config/linux.h
 	echo -e "\n#undef STARTFILE_PREFIX_SPEC\n#define STARTFILE_PREFIX_SPEC \"$(UCLIBC_DIR)/lib/\"" \

@@ -64,7 +64,7 @@ ifeq "$(STAGE)" "ipfire"
 		/usr/bin/lzma_sdk
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && make -C CPP/7zip/Compress/LZMA_Alone \
 		-f makefile.gcc -j $(PARALLELISM) \
 		CXX="$(UCLIBC_TARGET)-g++ $(CXXFLAGS)" \

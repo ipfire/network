@@ -62,7 +62,7 @@ ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && make install
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && ./configure CPIO_MT_PROG=mt --prefix=/usr \
 				--bindir=/bin --libexecdir=/tmp \
 				--with-rmt=/usr/sbin/rmt \

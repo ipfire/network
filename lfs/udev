@@ -76,7 +76,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP)/$(PKG_NAME)-config-$(CONFVER) && make install
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	install -dv $(UCLIBC_DIR)/lib/{firmware,udev/devices/{pts,shm}}
 	-mknod -m0666 $(UCLIBC_DIR)/lib/udev/devices/null c 1 3
 	ln -sfv /proc/self/fd $(UCLIBC_DIR)/lib/udev/devices/fd

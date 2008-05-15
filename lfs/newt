@@ -63,7 +63,7 @@ ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && make install
 endif
 
-ifeq "$(STAGE)" "uclibc"
+ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && ./configure --prefix=$(UCLIBC_DIR)/usr \
 							--without-gpm-support \
 							--without-tcl \
