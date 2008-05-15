@@ -125,13 +125,16 @@ ifeq "$(STAGE)" "ipfire"
 	
 	# if no $(TARGET) matched use the default
 	[ ! -e "$(DIR_APP)/.config" ] && cp -f $(DIR_CONF)/kernel/kernel.config \
-																				 $(DIR_APP)/.config
+		$(DIR_APP)/.config
 	
 	cd $(DIR_APP) && \
 		sed -i -e "s/EXTRAVERSION\ =.*/EXTRAVERSION\ =\ $(EXTRAVERSION)/" \
 			Makefile
 	
-	cd $(DIR_APP) && make oldconfig
+	cd $(DIR_APP) && yes "" | make oldconfig
+
+	# keep the source code in $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
+	cp -al $(DIR_APP) $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
 	
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make modules_install
