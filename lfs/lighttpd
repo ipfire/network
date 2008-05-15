@@ -59,7 +59,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	
-	install -v m644 $(DIR_CONF)/$(PKG_NAME)/$(PKG_NAME).conf \
+	cp -vf $(DIR_CONF)/$(PKG_NAME)/$(PKG_NAME).conf \
 		/etc/$(PKG_NAME).conf
 
 	@rm -rf $(DIR_APP)
