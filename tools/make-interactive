@@ -220,32 +220,6 @@ g[iu]t)
 	esac
 	;;
 	
-welcome)
-	clear
-	#. $BASEDIR/tools/make-git
-	
-	echo -ne "
-###############################################################################
-#
-# ${FAIL}$NAME${NORMAL} $VERSION
-#
-###############################################################################
-#
-# ${BOLD}You are:${NORMAL} $(git config user.name) <$(git config user.email)>
-#
-# ${BOLD}You are on branch:${NORMAL}
-#
-$(git branch --color)
-#
-###############################################################################
-#
-$(git diff --stat --color)
-#
-###############################################################################
-"
-	
-	;;
-	
 uploadsrc)
 	PWD=`pwd`
 	cd $BASEDIR/cache/
