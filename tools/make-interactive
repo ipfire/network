@@ -187,32 +187,35 @@ othersrc)
 	stdumount
 	;;
 	
-git)
+g[iu]t)
 	. $BASEDIR/tools/make-git
-	case "$2" in
+	COMMAND=$2
+	shift 2
+	case "$COMMAND" in
 		update|pull)
-			git_pull
+			git_pull $*
 			;;
 		commit|ci)
-			shift 2
 			clear
 			git_commit $*
 			;;
 		dist|export|archive)
-			git_export
+			git_export $*
 			;;
 		push)
-			git_push
+			git_push $*
 			;;
 		diff|di)
-			git_diff
+			git_diff $*
 			;;
 		log)
-			git_log
+			git_log $*
 			;;
 		put-key)
-			shift 2
 			ssh_cert $*
+			;;
+		*) # If no command matches run git directly
+			git $*
 			;;
 	esac
 	;;
