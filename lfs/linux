@@ -147,10 +147,11 @@ ifeq "$(STAGE)" "ipfire"
 endif
 
 ifeq "$(STAGE)" "installer"
+	-mkdir -pv $(UCLIBC_SYSROOT_DIR)/usr/include
 	cd $(DIR_APP) && make mrproper
 	cd $(DIR_APP) && make ARCH=x86 headers_check
 	cd $(DIR_APP) && make ARCH=x86 INSTALL_HDR_PATH=dest headers_install
-	cd $(DIR_APP) && cp -rv dest/include/* $(UCLIBC_DIR)/include
+	cd $(DIR_APP) && cp -rv dest/include/* $(UCLIBC_SYSROOT_DIR)/usr/include
 endif
 
 	@rm -rf $(DIR_APP)

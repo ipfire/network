@@ -76,16 +76,17 @@ ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && sed -i -e '/^HOSTPYTHON/s:=.*:=./hostpython:' \
 				-e '/^HOSTPGEN/s:=.*:=./Parser/hostpgen:' \
 				Makefile.pre.in
-	-rm -rf $(DIR_APP)/Lib/test $(UCLIBC_DIR)/usr/lib/python2.5/test
-	cd $(DIR_APP) && OPT="$(CFLAGS)" ./configure --prefix=/usr \
-						--build=$(IFS_TARGET) \
+	-rm -rf $(DIR_APP)/Lib/test $(INSTALLER_DIR)/usr/lib/python2.5/test
+	cd $(DIR_APP) && OPT="$(CFLAGS)" $(U_TOOLS) ./configure \
+						--prefix=/usr \
+						--target=$(UCLIBC_TARGET) \
 						--host=$(UCLIBC_TARGET) \
 						--enable-shared \
 						--disable-ipv6 \
 						--with-cxx=no
 	cd $(DIR_APP) && make -j $(PARALLELISM) \
 		HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen
-	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR) \
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR) \
 		HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen
 endif
 

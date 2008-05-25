@@ -70,15 +70,10 @@ ifeq "$(STAGE)" "base"
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && \
-		CC=$(UCLIBC_TARGET)-gcc \
-		AR=$(UCLIBC_TARGET)-ar \
-		AS=$(UCLIBC_TARGET)-as \
-		LD=$(UCLIBC_TARGET)-ld \
-		RANLIB=$(UCLIBC_TARGET)-ranlib \
-		./configure --prefix=/
+	cd $(DIR_APP) && $(U_TOOLS) bash_cv_func_sigsetjmp=yes \
+		./configure --prefix=/usr
 	cd $(DIR_APP) && make -j $(PARALLELISM) SHLIB_LIBS=-lncurses
-	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 endif
 
 	@rm -rf $(DIR_APP)

@@ -52,7 +52,7 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "installer"
-	-$(TOOLS_DIR)/bin/find $(UCLIBC_DIR)/{bin,sbin,lib} \
+	-$(TOOLS_DIR)/bin/find $(INSTALLER_DIR)/{,usr/}{bin,sbin,lib} \
 		-type f -exec $(TOOLS_DIR)/bin/strip --strip-all '{}' ';' \
 		&>/dev/null
 endif

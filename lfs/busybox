@@ -53,28 +53,25 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && cp -f $(DIR_CONFIG)/$(PKG_NAME)/.config .config
-	sed -e "s@^CONFIG_PREFIX=.*@CONFIG_PREFIX=\"$(UCLIBC_DIR)\"@g" \
+	cd $(DIR_APP) && cp -vf $(DIR_CONFIG)/$(PKG_NAME)/.config .config
+	sed -e "s@^CONFIG_PREFIX=.*@CONFIG_PREFIX=\"$(INSTALLER_DIR)\"@g" \
 		-i $(DIR_APP)/.config
 	cd $(DIR_APP) && make ARCH=i386 \
 		CROSS_COMPILE=$(UCLIBC_TARGET)- \
 		CROSS=$(UCLIBC_TARGET)- \
-		CC="ccache $(UCLIBC_TARGET)-gcc" \
 		oldconfig
 	cd $(DIR_APP) && make ARCH=i386 \
 		CROSS_COMPILE=$(UCLIBC_TARGET)- \
 		CROSS=$(UCLIBC_TARGET)- \
-		CC="ccache $(UCLIBC_TARGET)-gcc" \
 		-j $(PARALLELISM)
 	cd $(DIR_APP) && make ARCH=i386 \
 		CROSS_COMPILE=$(UCLIBC_TARGET)- \
 		CROSS=$(UCLIBC_TARGET)- \
-		CC="ccache $(UCLIBC_TARGET)-gcc" \
-		PREFIX=$(UCLIBC_DIR) \
+		PREFIX=$(INSTALLER_DIR) \
 		install
-	@rm -f $(UCLIBC_DIR)/linuxrc
-	-mkdir -p $(UCLIBC_DIR)/usr/share/udhcpc/
+	-rm -vf $(INSTALLER_DIR)/linuxrc
+	-mkdir -p $(INSTALLER_DIR)/usr/share/udhcpc/
 	install -m 755 -v $(DIR_CONF)/busybox/default.script \
-		$(UCLIBC_DIR)/usr/share/udhcpc/
+		$(INSTALLER_DIR)/usr/share/udhcpc/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

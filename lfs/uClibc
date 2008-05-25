@@ -60,31 +60,30 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cp -f $(DIR_CONF)/$(PKG_NAME)/.config $(DIR_APP)/.config
 	cp -f $(DIR_DL)/$(LOCALE_FILE) $(DIR_APP)/extra/locale
 
-ifeq "$(PASS)" "0"
-	rm -vf $(DIR_APP)/.config
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-config-1.patch
-	cd $(DIR_APP) && make KERNEL_SOURCE=$(UCLIBC_DIR) headers all
-	rm -fvr $(DIR_APP)/include/{asm,asm-generic,linux}
-	cd $(DIR_APP) && make DEVEL_PREFIX=$(UCLIBC_DIR)/ install_dev
-endif
+	#cd $(DIR_APP) && sed \
+	#	-e "s@.*CROSS_COMPILER_PREFIX=.*@CROSS_COMPILER_PREFIX=\"$(UCLIBC_DIR)/usr/bin/$(UCLIBC_TARGET)-\"@g" \
+	#	-e "s@.*SHARED_LIB_LOADER_P.*@SHARED_LIB_LOADER_PREFIX=\"$(UCLIBC_DIR)/lib\"@g" \
+	#	-e "s@.*RUNTIME_PREFIX.*@RUNTIME_PREFIX=\"$(UCLIBC_DIR)\"@g" \
+	#	-e "s@.*DEVEL_PREFIX.*@DEVEL_PREFIX=\"$(UCLIBC_DIR)/usr/\"@g" \
+	#	-e "s@.*KERNEL_SOURCE.*@KERNEL_SOURCE=\"$(UCLIBC_DIR)\"@g" \
+	#	-e "s@.*KERNEL_HEADERS.*@KERNEL_HEADERS=\"$(UCLIBC_DIR)/usr/include\"@g" \
+	#	-i .config
 
-ifneq "$(PASS)" "0" # Do this on pass 1 and 2
-	cd $(DIR_APP) && sed \
-		-e "s@.*SHARED_LIB_LOADER_P.*@SHARED_LIB_LOADER_PREFIX=\"$(UCLIBC_DIR)/lib\"@g" \
-		-e "s@.*RUNTIME_PREFIX.*@RUNTIME_PREFIX=\"$(UCLIBC_DIR)\"@g" \
-		-e "s@.*DEVEL_PREFIX.*@DEVEL_PREFIX=\"$(UCLIBC_DIR)/\"@g" \
-		-e "s@.*KERNEL_SOURCE.*@KERNEL_SOURCE=\"$(UCLIBC_DIR)\"@g" \
-		-i .config
-	cd $(DIR_APP) && make CROSS=$(UCLIBC_TARGET)- all -j $(PARALLELISM)
-	rm -fr $(DIR_APP)/include/{asm,asm-generic,linux}
-	cd $(DIR_APP) && make install
+ifeq "$(PASS)" "1"
+	# Make headers
+	cd $(DIR_APP) && make CROSS= PREFIX="${UCLIBC_SYSROOT_DIR}/" headers
+	cd $(DIR_APP) && make CROSS= PREFIX="${UCLIBC_SYSROOT_DIR}/" install_dev
 endif
 
 ifeq "$(PASS)" "2"
-	cd $(DIR_APP) && make headers
-	cd $(DIR_APP) && make CC="gcc -Wl,--dynamic-linker,$(UCLIBC_LINKER) /ulib/libc.so.0" \
-		-C utils
-	mv -f $(DIR_APP)/utils/ldconfig $(UCLIBC_DIR)/bin
+	cd $(DIR_APP) && make CROSS=$(UCLIBC_TARGET)- \
+		PREFIX=$(UCLIBC_SYSROOT_DIR)/ \
+		STRIPTOOL=true \
+		all
+	cd $(DIR_APP) && make CROSS=$(UCLIBC_TARGET)- \
+		PREFIX=$(UCLIBC_SYSROOT_DIR)/ \
+		STRIPTOOL=true \
+		install
 endif
 
 	@rm -rf $(DIR_APP)

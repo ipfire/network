@@ -65,7 +65,8 @@ DIR_PATCHES = $(DIR_DL)
 DIR_CONFIG  = $(DIR_CONF)
 DIR_SOURCE  = $(DIR_SRC)/src
 
-KGCC = gcc
+HOST_GCC="/usr/bin/gcc"
+KGCC=$(HOST_GCC)
 
 ifeq "$(STAGE)" "toolchain"
 ifneq "$(MACHINE_REAL)" "$(MACHINE)"
@@ -81,6 +82,20 @@ endif
 endif
 endif
 
+ifeq "$(STAGE)" "installer"
+	UCLIBC_HEADERS_DIR=$(UCLIBC_SYSROOT_DIR)/usr/include
+	U_CC="${UCLIBC_TARGET}-gcc"
+	U_CXX="${UCLIBC_TARGET}-g++"
+	U_AR="${UCLIBC_TARGET}-ar"
+	U_AS="${UCLIBC_TARGET}-as"
+	U_RANLIB="${UCLIBC_TARGET}-ranlib"
+	U_LD="${UCLIBC_TARGET}-ld"
+	U_STRIP="${UCLIBC_TARGET}-strip"
+	U_TOOLS=CC=$(U_CC) CXX=$(U_CXX) AR=$(U_AR) \
+		AS=$(U_AS) RANLIB=$(U_RANLIB) \
+		LD=$(U_LD) STRIP=$(U_STRIP)
+endif
+
 ###############################################################################
 # Common Macro Definitions
 ###############################################################################
@@ -91,7 +106,7 @@ endif
 define FIND_FILES
 	cd $(LFS)/ && $(TOOLS_DIR)/bin/find -mount \
 	-not -path '.$(TOOLS_DIR)*' -not -path './tmp*' -not -path './usr/src*' \
-	-not -path './dev*' -not -path './proc*' -not -path './sys*' -not -path './install*'
+	-not -path './dev*' -not -path './proc*' -not -path './sys*'
 endef
 
 # This is common starting logic for builds.

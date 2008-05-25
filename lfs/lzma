@@ -67,12 +67,12 @@ endif
 ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && make -C CPP/7zip/Compress/LZMA_Alone \
 		-f makefile.gcc -j $(PARALLELISM) \
-		CXX="$(UCLIBC_TARGET)-g++ $(CXXFLAGS)" \
-		CXX_C="$(UCLIBC_TARGET)-gcc $(CFLAGS)"
+		CXX="$(U_CXX) $(CXXFLAGS)" \
+		CXX_C="$(U_CC) $(CFLAGS)"
 
 	install -m 755 \
 		$(DIR_APP)/CPP/7zip/Compress/LZMA_Alone/lzma \
-		$(UCLIBC_DIR)/bin/lzma_sdk
+		$(INSTALLER_DIR)/usr/bin/lzma_sdk
 endif
 
 	@rm -rf $(DIR_APP)

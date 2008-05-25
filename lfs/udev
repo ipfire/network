@@ -77,22 +77,22 @@ ifeq "$(STAGE)" "base"
 endif
 
 ifeq "$(STAGE)" "installer"
-	install -dv $(UCLIBC_DIR)/lib/{firmware,udev/devices/{pts,shm}}
-	-mknod -m0666 $(UCLIBC_DIR)/lib/udev/devices/null c 1 3
-	ln -sfv /proc/self/fd $(UCLIBC_DIR)/lib/udev/devices/fd
-	ln -sfv /proc/self/fd/0 $(UCLIBC_DIR)/lib/udev/devices/stdin
-	ln -sfv /proc/self/fd/1 $(UCLIBC_DIR)/lib/udev/devices/stdout
-	ln -sfv /proc/self/fd/2 $(UCLIBC_DIR)/lib/udev/devices/stderr
-	ln -sfv /proc/kcore $(UCLIBC_DIR)/lib/udev/devices/core
+	install -dv $(INSTALLER_DIR)/lib/{firmware,udev/devices/{pts,shm}}
+	-mknod -m0666 $(INSTALLER_DIR)/lib/udev/devices/null c 1 3
+	ln -sfv /proc/self/fd $(INSTALLER_DIR)/lib/udev/devices/fd
+	ln -sfv /proc/self/fd/0 $(INSTALLER_DIR)/lib/udev/devices/stdin
+	ln -sfv /proc/self/fd/1 $(INSTALLER_DIR)/lib/udev/devices/stdout
+	ln -sfv /proc/self/fd/2 $(INSTALLER_DIR)/lib/udev/devices/stderr
+	ln -sfv /proc/kcore $(INSTALLER_DIR)/lib/udev/devices/core
 
 	cd $(DIR_APP) && make EXTRAS="`echo extras/*/`" \
 		CROSS_COMPILE=$(UCLIBC_TARGET)- -j $(PARALLELISM)
-	cd $(DIR_APP) && make DESTDIR=$(UCLIBC_DIR) EXTRAS="`echo extras/*/`" \
+	cd $(DIR_APP) && make DESTDIR=$(INSTALLER_DIR) EXTRAS="`echo extras/*/`" \
 		CROSS_COMPILE=$(UCLIBC_TARGET)- install
 	
-	cd $(DIR_APP) && cp -vf etc/udev/rules.d/[0-9]* $(UCLIBC_DIR)/etc/udev/rules.d/
+	cd $(DIR_APP) && cp -vf etc/udev/rules.d/[0-9]* $(INSTALLER_DIR)/etc/udev/rules.d/
 	
-	cd $(DIR_APP)/$(PKG_NAME)-config-$(CONFVER) && make install DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP)/$(PKG_NAME)-config-$(CONFVER) && make install DESTDIR=$(INSTALLER_DIR)
 endif
 	
 	@rm -rf $(DIR_APP)

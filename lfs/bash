@@ -80,5 +80,17 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make install
 endif
 
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-fixes-7.patch
+	cd $(DIR_APP) && ./configure --prefix=/usr \
+						--target=$(UCLIBC_TARGET) \
+						--host=$(UCLIBC_TARGET) \
+						--bindir=/bin \
+						--without-bash-malloc \
+						#--with-installed-readline
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

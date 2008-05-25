@@ -45,14 +45,45 @@ download :
 
 $(TARGET) :
 	@$(PREBUILD)
-	for i in lib include $(UCLIBC_TARGET); do \
+	
+	### Prepare the toolchain's directory
+	#
+	for i in bin sbin lib include; do \
 		mkdir -pv $(UCLIBC_DIR)/$${i}; \
 	done
-	ln -svf ../include $(UCLIBC_DIR)/$(UCLIBC_TARGET)/sys-include
-	ln -svf ../lib /usr/$(UCLIBC_TARGET)/$(UCLIBC_TARGET)/lib
-	ln -svf usr/$(UCLIBC_TARGET)/lib /ulib
-	ln -svf lib /usr/$(UCLIBC_TARGET)/ulib
-	ln -svf . $(UCLIBC_DIR)/usr
-	#ln -svf ../bin $(UCLIBC_DIR)/usr/bin
-	#ln -svf ../sbin $(UCLIBC_DIR)/usr/sbin
+	for i in usr/include usr/lib lib; do \
+		mkdir -pv $(UCLIBC_SYSROOT_DIR)/$${i}; \
+		mkdir -pv $(INSTALLER_DIR)/$${i}; \
+	done
+	-mkdir -pv "$(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/bin"
+	-mkdir -pv "$(UCLIBC_CC_CORE_STATIC_DIR)/bin"
+
+
+	### Prepare the installer's directory
+	#
+	-mkdir -p $(INSTALLER_DIR)/{bin,sbin,lib,dev,etc,mnt/{source,target}}
+	-mkdir -p $(INSTALLER_DIR)/{root,proc,tmp,sys,var/run}
+	-mkdir -p $(INSTALLER_DIR)/usr/{bin,sbin,lib,inlcude}
+
+	cp -af $(DIR_CONF)/install/*			$(INSTALLER_DIR)/etc/
+	cp -f $(DIR_SOURCE)/initscripts/init.d/functions $(INSTALLER_DIR)/etc/functions
+	chmod 755 $(INSTALLER_DIR)/etc/{halt,rc}
+	ln -sf etc/rc					$(INSTALLER_DIR)/init
+	cp -f /etc/issue /etc/group			$(INSTALLER_DIR)/etc/
+	ln -sf /proc/mounts				$(INSTALLER_DIR)/etc/mtab
+
+	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/{drivers,fs,lib/lzo}
+	cp -af \
+		/lib/modules/$(KVER)/kernel/drivers/{ata,block,cdrom,dma,firewire} \
+		/lib/modules/$(KVER)/kernel/drivers/{hid,ide,net,pcmcia,scsi,ssb,usb} \
+		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/drivers
+	cp -af \
+		/lib/modules/$(KVER)/kernel/fs/{exportfs,ext{2,3},fat,jbd,mbcache.ko} \
+		/lib/modules/$(KVER)/kernel/fs/{msdos,ntfs,reiser{4,fs},udf,vfat,xfs} \
+		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/fs
+	cp -af \
+		/lib/modules/$(KVER)/kernel/lib/lzo/lzo_{,de}compress.ko \
+		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/lib/lzo
+	cp -f /lib/modules/$(KVER)/modules.* $(INSTALLER_DIR)/lib/modules/$(KVER)
+
 	@$(POSTBUILD)

@@ -146,19 +146,22 @@ ifeq "$(STAGE)" "base"
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ld_makefile.patch
 	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure \
+						--target=$(UCLIBC_TARGET) \
 						--prefix=$(UCLIBC_DIR) \
-						--disable-shared \
-						--disable-nls \
-						--target=$(UCLIBC_TARGET)
+						--with-sysroot=$(UCLIBC_SYSROOT_DIR) \
+						--disable-multilib \
+						--disable-werror \
+						--disable-nls
 	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/binutils-build && make install
-	cd $(DIR_SRC)/binutils-build && make -C ld clean
-	cd $(DIR_SRC)/binutils-build && make -C ld LIB_PATH=/ulib
-	cd $(DIR_SRC)/binutils-build && cp -fv ld/ld-new \
-		$(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin
+
+	for t in ar as ld strip; do \
+		ln -sfv $(UCLIBC_DIR)/bin/$(UCLIBC_TARGET)-$${t} \
+			$(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/bin/$${t}; \
+		ln -sfv $(UCLIBC_DIR)/bin/$(UCLIBC_TARGET)-$${t} \
+			$(UCLIBC_CC_CORE_STATIC_DIR)/bin/$(UCLIBC_TARGET)-$${t}; \
+	done
 endif
 
 	@rm -rf $(DIR_APP) $(DIR_SRC)/binutils-build

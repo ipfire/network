@@ -57,7 +57,7 @@ ifeq "$(STAGE)" "ipfire"
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 endif
 
 	cd $(DIR_APP) && make clean

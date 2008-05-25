@@ -67,13 +67,11 @@ ifeq "$(STAGE)" "installer"
 		-i Makefile
 	cd $(DIR_APP) && \
 		ARCH=$(MACHINE) \
-		RPM_OPT_FLAGS="$(CFLAGS) -I$(UCLIBC_DIR)/usr/include" \
-		CC=$(UCLIBC_TARGET)-gcc \
-		AR=$(UCLIBC_TARGET)-ar \
-		RANLIB=$(UCLIBC_TARGET)-ranlib \
+		RPM_OPT_FLAGS="$(CFLAGS)" \
+		$(U_TOOLS) \
 		make -j $(PARALLELISM)
-	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" make install DESTDIR=$(UCLIBC_DIR)
-	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" make install-program DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" make install DESTDIR=$(INSTALLER_DIR)
+	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" make install-program DESTDIR=$(INSTALLER_DIR)
 endif
 
 	@rm -rf $(DIR_APP)

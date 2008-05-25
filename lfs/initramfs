@@ -31,6 +31,9 @@ THISAPP    = $(PKG_NAME)-$(VER)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+COMPRESS_CMD = gzip -9
+#COMPRESS_CMD = lzma -si -so
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -45,55 +48,18 @@ download :
 
 $(TARGET) :
 	@rm -rf $(INSTALLER_DIR)
-	-mkdir -p $(INSTALLER_DIR)/{bin,sbin,lib,dev,etc,mnt/{source,target}}
-	-mkdir -p $(INSTALLER_DIR)/{root,proc,tmp,sys,var/run}
 
 	find $(DIR_SOURCE)/rootfiles/installer -maxdepth 1 -type f | xargs cat | \
-		grep -v ^# | sed -e "s@UCLIBC_DIR@@g" | cut -c 2- | sort | uniq \
+		grep -v ^# | sed -e "s@INSTALLER_DIR@@g" | cut -c 2- | sort | uniq \
 		> $(INSTALLER_DIR)/archive.files
 
-	cd $(UCLIBC_DIR) && cpio -pdl $(INSTALLER_DIR) \
-		< $(INSTALLER_DIR)/archive.files 2>$(INSTALLER_DIR)/archive.errors
+	cd $(INSTALLER_DIR) && cpio -o -H newc \
+		< $(INSTALLER_DIR)/archive.files 2>$(INSTALLER_DIR)/archive.errors \
+		| $(COMPRESS_CMD) > $(IMAGES_DIR)/initramfs-$(VERSION).img 
 
 	@cat $(INSTALLER_DIR)/archive.errors
 	@if grep -q "No such file or directory" < $(INSTALLER_DIR)/archive.errors; then \
 		exit 1; \
 	fi
 
-	# Remove precompiled python modules to keep everything small
-	find $(INSTALLER_DIR) -name *.pyc -exec rm -rf {} \;
-	#find $(INSTALLER_DIR) -name *.pyo -exec rm -rf {} \;
-
-	@rm -f $(INSTALLER_DIR)/archive.{files,errors}
-
-	### kernel modules
-	#
-	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/{drivers,fs,lib/lzo}
-	cp -af \
-		/lib/modules/$(KVER)/kernel/drivers/{ata,block,cdrom,dma,firewire} \
-		/lib/modules/$(KVER)/kernel/drivers/{hid,ide,net,pcmcia,scsi,ssb,usb} \
-		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/drivers
-	cp -af \
-		/lib/modules/$(KVER)/kernel/fs/{exportfs,ext{2,3},fat,jbd,mbcache.ko} \
-		/lib/modules/$(KVER)/kernel/fs/{msdos,ntfs,reiser{4,fs},udf,vfat,xfs} \
-		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/fs
-	cp -af \
-		/lib/modules/$(KVER)/kernel/lib/lzo/lzo_{,de}compress.ko \
-		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/lib/lzo
-	cp -f /lib/modules/$(KVER)/modules.* $(INSTALLER_DIR)/lib/modules/$(KVER)
-
-	### configuration
-	#
-	cp -af $(DIR_CONF)/install/*			$(INSTALLER_DIR)/etc/
-	cp -f $(DIR_SOURCE)/initscripts/init.d/functions $(INSTALLER_DIR)/etc/functions
-	chmod 755 $(INSTALLER_DIR)/etc/{halt,rc}
-	ln -sf etc/rc					$(INSTALLER_DIR)/init
-	cp -f /etc/issue /etc/group			$(INSTALLER_DIR)/etc/
-	ln -sf /proc/mounts				$(INSTALLER_DIR)/etc/mtab
-	
-	### compressing everything
-	#
-	cd $(INSTALLER_DIR) && find . | cpio -o -H newc | gzip -9 > \
-  		$(IMAGES_DIR)/initramfs-$(VERSION).img
-
-	@rm -rf $(INSTALLER_DIR)
+	@rm -rf $(INSTALLER_DIR)/archive.{files,errors}

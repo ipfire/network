@@ -30,7 +30,7 @@ VER        = 4.2.3
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-CFLAGS     =
+CFLAGS     = -pipe
 CXXFLAGS   =
 
 ifeq "$(STAGE)" "toolchain"
@@ -54,7 +54,7 @@ endif
 objects = $(DL_FILE) \
 	$(THISAPP)-cross_search_paths-1.patch \
 	$(THISAPP)-specs-1.patch \
-	$(THISAPP)-uClibc-conf-1.conf
+	$(THISAPP)-uClibc-1.patch
 
 install : $(TARGET)
 
@@ -235,52 +235,53 @@ ifeq "$(STAGE)" "base"
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && patch -p1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc-conf-1.conf
-	sed -e "s@/lib/ld-uClibc.so.0@$(UCLIBC_LINKER)@g" -i $(DIR_APP)/gcc/config/linux.h
-	echo -e "\n#undef STARTFILE_PREFIX_SPEC\n#define STARTFILE_PREFIX_SPEC \"$(UCLIBC_DIR)/lib/\"" \
-		>> $(DIR_APP)/gcc/config/linux.h
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc-1.patch
 ifeq "$(PASS)" "1"
-	cd $(DIR_APP) && sed -e "s@\(^CROSS_SYSTEM_HEADER_DIR =\).*@\1 $(UCLIBC_DIR)/include@g" \
-		-i gcc/Makefile.in
-	touch ${UCLIBC_LINKER}
-	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure \
-						--prefix=$(UCLIBC_DIR) \
+	### Copying headers to install area of bootstrap gcc,
+	#   so it can build libgcc2
+	mkdir -pv $(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/include
+	cp -rfv $(UCLIBC_HEADERS_DIR)/* $(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/include
+
+	cd $(DIR_SRC)/gcc-build && CC_FOR_BUILD="$(HOST_GCC)" ../$(THISAPP)/configure \
 						--target=$(UCLIBC_TARGET) \
-						--disable-nls \
-						--disable-shared \
-						--enable-languages=c \
-						--disable-__cxa_atexit \
-						--enable-target-optspace \
-						--with-gnu-ld \
+						--prefix=$(UCLIBC_CC_CORE_STATIC_DIR) \
+						--with-local-prefix=$(UCLIBC_SYSROOT_DIR) \
 						--disable-multilib \
-						--disable-libmudflap \
-						--disable-libgomp
-	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
-	cd $(DIR_SRC)/gcc-build && make install
+						--with-newlib \
+						--with-sysroot=$(UCLIBC_SYSROOT_DIR) \
+						--enable-__cxa_atexit \
+						--disable-nls \
+						--enable-threads=no \
+						--enable-symvers=gnu \
+						--enable-languages=c \
+						--disable-shared \
+						--enable-target-optspace
+	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM) all-gcc
+	cd $(DIR_SRC)/gcc-build && make install-gcc
 endif
 
 ifeq "$(PASS)" "2"
-	cd $(DIR_APP) && sed -e 's/%{shared:-lc}/%{!nointl: -lintl} &/' \
-		-i gcc/config/linux.h
-	cd $(DIR_APP) && cp -v gcc/Makefile.in{,.tmp}
-	#cd $(DIR_APP) && sed 's/^XCFLAGS =$$/& -fomit-frame-pointer/' gcc/Makefile.in.tmp \
-	#	> gcc/Makefile.in
-	cd $(DIR_SRC)/gcc-build && ../$(THISAPP)/configure \
-						--prefix=$(UCLIBC_DIR) \
+	cd $(DIR_SRC)/gcc-build && CC_FOR_BUILD="$(HOST_GCC)" ../$(THISAPP)/configure \
 						--target=$(UCLIBC_TARGET) \
-						--libexecdir=/ulib \
-						--enable-shared \
-						--disable-__cxa_atexit \
-						--enable-target-optspace \
-						--enable-languages=c,c++ \
+						--prefix=$(UCLIBC_DIR) \
+						--with-local-prefix=$(UCLIBC_SYSROOT_DIR) \
 						--disable-multilib \
-						--disable-libmudflap \
-						--disable-libgomp \
-						--with-gnu-ld \
-						--disable-nls
+						--with-sysroot=$(UCLIBC_SYSROOT_DIR) \
+						--enable-__cxa_atexit \
+						--disable-nls \
+						--enable-threads=posix \
+						--enable-symvers=gnu \
+						--enable-c99 \
+						--enable-long-long \
+						--enable-languages=c,c++ \
+						--enable-target-optspace \
+						--enable-shared
 	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/gcc-build && make install
-	ln -svf gcc $(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin/cc
+
+	ln -svf $(UCLIBC_DIR)/bin/$(UCLIBC_TARGET)-gcc \
+		$(UCLIBC_DIR)/bin/$(UCLIBC_TARGET)-cc
+	cp -vaf $(UCLIBC_DIR)/$(UCLIBC_TARGET)/lib/* $(UCLIBC_SYSROOT_DIR)/usr/lib
 endif
 endif
 

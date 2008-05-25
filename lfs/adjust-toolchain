@@ -77,15 +77,4 @@ ifeq "$(STAGE)" "base"
 		`dirname $$(gcc --print-libgcc-file-name)`/specs
 endif
 
-ifeq "$(STAGE)" "installer"
-	#$(UCLIBC_TARGET)-gcc -dumpspecs \
-	#	> $$($(UCLIBC_TARGET)-gcc --print-file specs)
-	#sed -e 's/%{shared:-lc}/%{!nointl: -lintl} &/' \
-	#	-i $$($(UCLIBC_TARGET)-gcc --print-file specs)
-	mv -v $(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin/{ld,ld-old}
-	mv -v $(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin/{ld-new,ld}
-	ln -sfv ../$(UCLIBC_TARGET)/bin/ld \
-		$(UCLIBC_DIR)/bin/$(UCLIBC_TARGET)-ld
-endif
-	
 	@$(POSTBUILD)

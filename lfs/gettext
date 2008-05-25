@@ -31,11 +31,7 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-ifeq "$(STAGE)" "installer"
-	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
-else
-	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-endif
+TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -71,15 +67,17 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make install
 endif
 
-ifeq "$(STAGE)" "installer" # Do this in pass 1 and 2
-	cd $(DIR_APP)/gettext-runtime && CC=$(UCLIBC_TARGET)-gcc ./configure \
-						--prefix=$(UCLIBC_DIR) \
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP)/gettext-runtime && $(U_TOOLS) ./configure \
+						--prefix=/usr \
+						--target=$(UCLIBC_TARGET) \
 						--host=$(UCLIBC_TARGET) \
 						--with-included-gettext \
 						--without-csharp \
 						--disable-libasprintf
 	cd $(DIR_APP)/gettext-runtime && make -C intl/ -j $(PARALLELISM)
-	cd $(DIR_APP)/gettext-runtime && make -C intl/ install
+	cd $(DIR_APP)/gettext-runtime && make -C intl/ install \
+		DESTDIR=$(INSTALLER_DIR)
 endif
 
 	@rm -rf $(DIR_APP)

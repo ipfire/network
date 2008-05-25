@@ -56,20 +56,22 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && ./configure CPIO_MT_PROG=mt --prefix=/usr \
-				--bindir=/bin --libexecdir=/tmp \
-				--with-rmt=/usr/sbin/rmt
+						--bindir=/bin --libexecdir=/tmp \
+						--with-rmt=/usr/sbin/rmt
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && ./configure CPIO_MT_PROG=mt --prefix=/usr \
-				--bindir=/bin --libexecdir=/tmp \
-				--with-rmt=/usr/sbin/rmt \
-				--build=$(IFS_TARGET) \
-				--host=$(UCLIBC_TARGET)
+	cd $(DIR_APP) && ./configure CPIO_MT_PROG=mt \
+						--prefix=/usr \
+						--target=$(UCLIBC_TARGET) \
+						--host=$(UCLIBC_TARGET)
+						--bindir=/bin --libexecdir=/tmp \
+						--with-rmt=/usr/sbin/rmt \
+						--disable-nls
 	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 endif
 
 	@rm -rf $(DIR_APP)

@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = popt
-VER        = 1.10.4
+VER        = 1.14
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -53,7 +53,7 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && sed -i -e "/*origOptString ==/c 0)" popt.c
+	#cd $(DIR_APP) && sed -i -e "/*origOptString ==/c 0)" popt.c
 
 ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && ./configure --prefix=/usr
@@ -62,15 +62,12 @@ ifeq "$(STAGE)" "ipfire"
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && \
-		CC=$(UCLIBC_TARGET)-gcc \
-		AR=$(UCLIBC_TARGET)-ar \
-		AS=$(UCLIBC_TARGET)-as \
-		LD=$(UCLIBC_TARGET)-ld \
-		RANLIB=$(UCLIBC_TARGET)-ranlib \
-		./configure --prefix=/usr
+	cd $(DIR_APP) && $(U_TOOLS) ac_cv_va_copy=yes \
+		./configure --prefix=/usr \
+						--target=$(UCLIBC_TARGET) \
+						--host=$(UCLIBC_TARGET)
 	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 endif
 
 	@rm -rf $(DIR_APP)

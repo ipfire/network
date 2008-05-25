@@ -90,7 +90,7 @@ if [ 'i686' = $TARGET -o 'i586' = $TARGET \
 	CFLAGS="-march=${MACHINE} -O2 -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
 	UCLIBC_TARGET=i386-pc-linux-uclibc
-	UCLIBC_LINKER=/ulib/ld-uClibc.so.0
+	UCLIBC_LINKER=/lib/ld-uClibc.so.0
 	UCLIBC_CFLAGS="-march=i386 -Os -pipe -fomit-frame-pointer"
 elif [ 'via-c7' = $TARGET ]; then
 	MACHINE=i686
@@ -138,6 +138,10 @@ TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-t${TARGET}-m${MACHINE}
 
 # The place where all uclibc files are stored in
 UCLIBC_DIR=/usr/${UCLIBC_TARGET}
+UCLIBC_CC_CORE_STATIC_DIR=${UCLIBC_DIR}/gcc-core-static
+
+#UCLIBC_SYSROOT_DIR=${UCLIBC_DIR}/${UCLIBC_TARGET}/sys-root
+UCLIBC_SYSROOT_DIR=${INSTALLER_DIR}
 
 ###############################################################################
 #
@@ -376,9 +380,6 @@ entershell() {
 		LINKER=$LINKER \
 		TOOLS_DIR=$TOOLS_DIR \
 		INSTALLER_DIR=$INSTALLER_DIR \
-		UCLIBC_DIR=$UCLIBC_DIR \
-		UCLIBC_TARGET=$UCLIBC_TARGET \
-		UCLIBC_LINKER=$UCLIBC_LINKER \
 		MACHINE="$MACHINE" \
 		MACHINE_REAL="$MACHINE_REAL" \
 		CFLAGS="$CFLAGS" \
@@ -497,7 +498,7 @@ ipfire_make() {
 	fi
 	
 	local MYCFLAGS MYCXXFLAGS
-	if [ "${STAGE}" = "uclibc" ]; then
+	if [ "${STAGE}" = "installer" ]; then
 		MYCFLAGS=${UCLIBC_CFLAGS}
 		MYCXXFLAGS=${UCLIBC_CFLAGS}
 	else
@@ -527,8 +528,10 @@ ipfire_make() {
 		CDROM_DIR=$CDROM_DIR \
 		IMAGES_DIR=$IMAGES_DIR \
 		UCLIBC_DIR=$UCLIBC_DIR \
+		UCLIBC_SYSROOT_DIR=$UCLIBC_SYSROOT_DIR \
 		UCLIBC_TARGET=$UCLIBC_TARGET \
 		UCLIBC_LINKER=$UCLIBC_LINKER \
+		UCLIBC_CC_CORE_STATIC_DIR=${UCLIBC_CC_CORE_STATIC_DIR} \
 		MACHINE="$MACHINE" \
 		MACHINE_REAL="$MACHINE_REAL" \
 		CFLAGS="$MYCFLAGS" \

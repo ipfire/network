@@ -401,7 +401,8 @@ misc_build() {
 ################################################################################
 installer_build() {
 
-	PATH=${UCLIBC_DIR}/bin:${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	PATH=${UCLIBC_DIR}/bin:${UCLIBC_DIR}/usr/bin:${UCLIBC_CC_CORE_STATIC_DIR}/bin
+	PATH=$PATH:${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
 	STAGE_ORDER=05
 	STAGE=installer
 
@@ -410,22 +411,19 @@ installer_build() {
 
 	ipfire_make stage5
 	ipfire_make linux
-	ipfire_make uClibc		PASS=0
 	ipfire_make binutils
-	ipfire_make gcc			PASS=1
 	ipfire_make uClibc		PASS=1
-	ipfire_make gettext		PASS=1
-	ipfire_make adjust-toolchain
-	ipfire_make gcc			PASS=2
+	ipfire_make gcc			PASS=1
 	ipfire_make uClibc		PASS=2
-	ipfire_make gettext		PASS=2
+	ipfire_make gcc			PASS=2
+	ipfire_make gettext
 	ipfire_make udev
 	ipfire_make pciutils
 	ipfire_make zlib
 	ipfire_make ncurses
 	ipfire_make pcre
 	ipfire_make popt
-	ipfire_make readline
+	#ipfire_make readline
 	ipfire_make e2fsprogs
 	ipfire_make util-linux-ng
 	ipfire_make parted
@@ -433,11 +431,12 @@ installer_build() {
 	ipfire_make kudzu
 	ipfire_make slang
 	ipfire_make newt
+	#ipfire_make bash
 	ipfire_make cpio
 	ipfire_make lzma
-	ipfire_make busybox
 	ipfire_make pyfire
 	ipfire_make pomona
+	ipfire_make busybox
 	ipfire_make strip
 }
 

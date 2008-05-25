@@ -73,16 +73,16 @@ ifeq "$(STAGE)" "base"
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && CC=$(UCLIBC_TARGET)-gcc ./configure --prefix=/usr \
+	cd $(DIR_APP) && $(U_TOOLS) ./configure --prefix=/usr \
 							--shared \
 							--libdir=/lib
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && install -v -m 644 zlib.h zconf.h \
-		$(UCLIBC_DIR)/usr/include
+		$(INSTALLER_DIR)/usr/include
 	cd $(DIR_APP) && install -v -m 755 libz.so.$(VER) \
-		$(UCLIBC_DIR)/usr/lib
-	ln -svf libz.so.$(VER) $(UCLIBC_DIR)/usr/lib/libz.so.1
-	ln -svf libz.so.$(VER) $(UCLIBC_DIR)/usr/lib/libz.so
+		$(INSTALLER_DIR)/usr/lib
+	ln -svf libz.so.$(VER) $(INSTALLER_DIR)/usr/lib/libz.so.1
+	ln -svf libz.so.$(VER) $(INSTALLER_DIR)/usr/lib/libz.so
 endif
 
 	@rm -rf $(DIR_APP)

@@ -70,10 +70,10 @@ endif
 ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && ./configure --prefix=/usr \
 						--enable-utf8 \
-						--build=$(IFS_TARGET) \
+						--target=$(UCLIBC_TARGET) \
 						--host=$(UCLIBC_TARGET)
 	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 endif
 
 	@rm -rf $(DIR_APP)

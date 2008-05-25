@@ -76,14 +76,14 @@ ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP)/build && ../configure --prefix=/usr \
 						--with-root-prefix="" \
 						--enable-elf-shlibs \
-						--build=$(IFS_TARGET) \
+						--target=$(UCLIBC_TARGET) \
 						--host=$(UCLIBC_TARGET) \
-						--with-cc=$(UCLIBC_TARGET)-gcc \
-						--with-linker=$(UCLIBC_TARGET)-ld
+						--with-cc=$(U_CC) \
+						--with-linker=$(U_LD)
 	cd $(DIR_APP)/build && make -j $(PARALLELISM)
-	cd $(DIR_APP)/build && make install install-libs DESTDIR=$(UCLIBC_DIR)
+	cd $(DIR_APP)/build && make install install-libs DESTDIR=$(INSTALLER_DIR)
 	for lib in libblkid.so.1 libcom_err.so.2 libe2p.so.2 libext2fs.so.2 libss.so.2 libuuid.so.1; do \
-		ln -svf $$lib $(UCLIBC_DIR)/lib/$$(awk -F. '{ print $$1"."$$2 }' <<< $$lib) || exit 1; \
+		ln -svf $$lib $(INSTALLER_DIR)/lib/$$(awk -F. '{ print $$1"."$$2 }' <<< $$lib) || exit 1; \
 	done
 endif
 

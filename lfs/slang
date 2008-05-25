@@ -66,12 +66,12 @@ ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_DL)/$(THISAPP)-uclibc-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc \
 						--with-png=no \
-						--build=$(IFS_TARGET) \
+						--target=$(UCLIBC_TARGET) \
 						--host=$(UCLIBC_TARGET)
 	cd $(DIR_APP)/src && make -j $(PARALLELISM)
-	cd $(DIR_APP)/src && make DESTDIR=$(UCLIBC_DIR) install-all
-	-chmod -v 755 $(UCLIBC_DIR)/usr/lib/libslang.so.$(VER) \
-		$(UCLIBC_DIR)/usr/lib/slang/v2/modules/*.so
+	cd $(DIR_APP)/src && make DESTDIR=$(INSTALLER_DIR) install-all
+	-chmod -v 755 $(INSTALLER_DIR)/usr/lib/libslang.so.$(VER) \
+		$(INSTALLER_DIR)/usr/lib/slang/v2/modules/*.so
 endif
 
 	@rm -rf $(DIR_APP)
