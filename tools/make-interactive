@@ -169,6 +169,11 @@ gettoolchain)
 		beautify message SKIP
 	fi
 	;;
+
+check)
+	. tools/make-check
+	check_sanity $2
+	;;
 	
 othersrc)
 	prepareenv

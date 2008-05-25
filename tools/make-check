@@ -86,28 +86,63 @@ check_build() {
 }
 
 check_rootfiles() {
+	ACTION=$1
 
+	echo -n " Running rootfile checks"
+
+	case "$ACTION" in
+		--fix)
+			echo -n " and fix"
+
+			# Remove leading pluses and replace them by '#'
+			sed -e "s/^+/#/g" -i $BASEDIR/src/rootfiles/*/*
+
+			# Fix UCLIBC_DIR and UCLIBC_TARGET
+			sed -e "s@${UCLIBC_DIR:1}@UCLIBC_DIR@g" \
+			    -e "s@${UCLIBC_TARGET}@UCLIBC_TARGET@g" \
+				-i $BASEDIR/src/rootfiles/installer/*
+
+			# Fix INSTALLER_DIR
+			sed -e "s@${INSTALLER_DIR:1}/@INSTALLER_DIR/@g" \
+				-i $BASEDIR/src/rootfiles/installer/*
+			;;
+		"")
+			: # If no option was given we do nothing.
+			;;
+		*)
+			exiterror "This is not a valid option: $ACTION"
+			;;
+	esac
+
+	echo "..." # End the line
+
+	echo -n "  Searching for leading slashes..."
 	if grep -n ^/ $BASEDIR/src/rootfiles/*/*; then
-		exiterror "Please check your rootfiles! There are trailing slashes."
+		exiterror "Please check your rootfiles! There are leading slashes."
+	else
+		beautify message DONE
 	fi
 
+	echo -n "  Searching for leading pluses..."
 	if grep -n ^+ $BASEDIR/src/rootfiles/*/*; then
-		exiterror "Please check your rootfiles for trailing pluses."
+		exiterror "Please check your rootfiles for leading pluses."
+	else
+		beautify message DONE
 	fi
 
+	echo -n "  Searching for emtpy lines..."
 	if grep -n ^$ $BASEDIR/src/rootfiles/*/*; then
 		exiterror "Please check your rootfiles for empty lines."
+	else
+		beautify message DONE
 	fi
 
 }
 
-
 check_sanity() {
 
-	echo -ne "Checking sanity of working directory..."
+	echo "Checking sanity of working directory..."
 
-	check_rootfiles
-
-	beautify message DONE
+	check_rootfiles $*
 
 }
