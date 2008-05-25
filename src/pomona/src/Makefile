@@ -20,7 +20,8 @@
 
 include ../Makefile.inc
 
-SUBDIRS = isys
+#SUBDIRS = isys # Don't compile isys at the moment.
+SUBDIRS=
 
 all: subdirs
 
