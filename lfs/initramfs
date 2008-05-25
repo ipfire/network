@@ -47,11 +47,9 @@ download :
 ###############################################################################
 
 $(TARGET) :
-	@rm -rf $(INSTALLER_DIR)
-
 	find $(DIR_SOURCE)/rootfiles/installer -maxdepth 1 -type f | xargs cat | \
-		grep -v ^# | sed -e "s@INSTALLER_DIR@@g" | cut -c 2- | sort | uniq \
-		> $(INSTALLER_DIR)/archive.files
+		grep -v ^# | sed -e "s@INSTALLER_DIR@@g" -e "s@KVER@$(KVER)@g" \
+		-e "s@^/@@g" | sort | uniq > $(INSTALLER_DIR)/archive.files
 
 	cd $(INSTALLER_DIR) && cpio -o -H newc \
 		< $(INSTALLER_DIR)/archive.files 2>$(INSTALLER_DIR)/archive.errors \
