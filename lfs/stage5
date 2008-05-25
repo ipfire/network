@@ -63,7 +63,7 @@ $(TARGET) :
 	#
 	-mkdir -p $(INSTALLER_DIR)/{bin,sbin,lib,dev,etc,mnt/{source,target}}
 	-mkdir -p $(INSTALLER_DIR)/{root,proc,tmp,sys,var/run}
-	-mkdir -p $(INSTALLER_DIR)/usr/{bin,sbin,lib,inlcude}
+	-mkdir -p $(INSTALLER_DIR)/usr/{bin,sbin}
 
 	cp -af $(DIR_CONF)/install/*			$(INSTALLER_DIR)/etc/
 	cp -f $(DIR_SOURCE)/initscripts/init.d/functions $(INSTALLER_DIR)/etc/functions
