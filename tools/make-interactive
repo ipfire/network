@@ -192,60 +192,37 @@ othersrc)
 	stdumount
 	;;
 	
-git)
+g[iu]t)
 	. $BASEDIR/tools/make-git
-	case "$2" in
+	COMMAND=$2
+	shift 2
+	case "$COMMAND" in
 		update|pull)
-			git_pull
+			git_pull $*
 			;;
 		commit|ci)
-			shift 2
 			clear
 			git_commit $*
 			;;
 		dist|export|archive)
-			git_export
+			git_export $*
 			;;
 		push)
-			git_push
+			git_push $*
 			;;
 		diff|di)
-			git_diff
+			git_diff $*
 			;;
 		log)
-			git_log
+			git_log $*
 			;;
 		put-key)
-			shift 2
 			ssh_cert $*
 			;;
+		*) # If no command matches run git directly
+			git $*
+			;;
 	esac
-	;;
-	
-welcome)
-	clear
-	#. $BASEDIR/tools/make-git
-	
-	echo -ne "
-###############################################################################
-#
-# ${FAIL}$NAME${NORMAL} $VERSION
-#
-###############################################################################
-#
-# ${BOLD}You are:${NORMAL} $(git config user.name) <$(git config user.email)>
-#
-# ${BOLD}You are on branch:${NORMAL}
-#
-$(git branch --color)
-#
-###############################################################################
-#
-$(git diff --stat --color)
-#
-###############################################################################
-"
-	
 	;;
 	
 uploadsrc)
