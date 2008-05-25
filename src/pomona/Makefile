@@ -26,7 +26,8 @@ all: subdirs
 
 lang-names: lang-table
 	PYTHONPATH="./src/:." LANG=en_US.UTF-8 \
-		python scripts/getlangnames.py > lang-names
+		python scripts/getlangnames.py > lang-names.tmp
+	mv lang-names.tmp lang-names
 
 install: all
 	@if [ "$(DESTDIR)" = "" ]; then \
@@ -41,7 +42,7 @@ install: all
 
 clean:
 	for d in $(SUBDIRS); do make -C $$d clean; done
-	rm -rf lang-names
+	rm -rf lang-names{,.tmp}
 
 subdirs:
 	for d in $(SUBDIRS); do make -C $$d; [ $$? = 0 ] || exit 1; done
