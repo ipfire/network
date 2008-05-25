@@ -454,9 +454,12 @@ packages_build() {
 
 	ipfire_make initramfs
 	toolchain_make strip
+	
+	# Geneerate ChangeLog
+	. $BASEDIR/tools/make-git
+	git_log
 
 	# Generating list of packages used
-	### MISSING ATM
 
 	ipfire_make cdrom
 	
