@@ -60,15 +60,6 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cp -f $(DIR_CONF)/$(PKG_NAME)/.config $(DIR_APP)/.config
 	cp -f $(DIR_DL)/$(LOCALE_FILE) $(DIR_APP)/extra/locale
 
-	#cd $(DIR_APP) && sed \
-	#	-e "s@.*CROSS_COMPILER_PREFIX=.*@CROSS_COMPILER_PREFIX=\"$(UCLIBC_DIR)/usr/bin/$(UCLIBC_TARGET)-\"@g" \
-	#	-e "s@.*SHARED_LIB_LOADER_P.*@SHARED_LIB_LOADER_PREFIX=\"$(UCLIBC_DIR)/lib\"@g" \
-	#	-e "s@.*RUNTIME_PREFIX.*@RUNTIME_PREFIX=\"$(UCLIBC_DIR)\"@g" \
-	#	-e "s@.*DEVEL_PREFIX.*@DEVEL_PREFIX=\"$(UCLIBC_DIR)/usr/\"@g" \
-	#	-e "s@.*KERNEL_SOURCE.*@KERNEL_SOURCE=\"$(UCLIBC_DIR)\"@g" \
-	#	-e "s@.*KERNEL_HEADERS.*@KERNEL_HEADERS=\"$(UCLIBC_DIR)/usr/include\"@g" \
-	#	-i .config
-
 ifeq "$(PASS)" "1"
 	# Make headers
 	cd $(DIR_APP) && make CROSS= PREFIX="${UCLIBC_SYSROOT_DIR}/" headers
@@ -78,12 +69,7 @@ endif
 ifeq "$(PASS)" "2"
 	cd $(DIR_APP) && make CROSS=$(UCLIBC_TARGET)- \
 		PREFIX=$(UCLIBC_SYSROOT_DIR)/ \
-		STRIPTOOL=true \
-		all
-	cd $(DIR_APP) && make CROSS=$(UCLIBC_TARGET)- \
-		PREFIX=$(UCLIBC_SYSROOT_DIR)/ \
-		STRIPTOOL=true \
-		install
+		all install
 endif
 
 	@rm -rf $(DIR_APP)
