@@ -140,32 +140,29 @@ toolchain)
 	beautify message DONE
 	echo `ls -sh cache/toolchains/$TOOLCHAINNAME.tar.bz2`
 	md5sum cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
-		> cache/toolchains/$TOOLCHAINNAME.md5
-
+		> cache/toolchains/$TOOLCHAINNAME.tar.bz2.md5
 	stdumount
 	;;
 	
 gettoolchain)
 	if [ ! -f $BASEDIR/cache/toolchains/$TOOLCHAINNAME.tar.bz2 ]; then
-		URL_TOOLCHAIN=`grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }'`
-		test -d $BASEDIR/cache/toolchains || mkdir $BASEDIR/cache/toolchains
+		URL_TOOLCHAIN=$(grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }')
+		DIR_TOOLCHAIN="$BASEDIR/cache/toolchains"
+
 		echo "Loading toolchain for $MACHINE"
-		cd $BASEDIR/cache/toolchains
-		wget -c -nv $URL_TOOLCHAIN/$TOOLCHAINNAME.tar.bz2 $URL_TOOLCHAIN/$TOOLCHAINNAME.md5
-		if [ $? -ne 0 ]; then
-			echo -n "ERROR: Downloading toolchain for $MACHINE machine"
+		BASEDIR=$BASEDIR DIR_TMP=/tmp DIR_DL=$DIR_TOOLCHAIN \
+			sh $BASEDIR/tools/downloader $URL_TOOLCHAIN $TOOLCHAINNAME.tar.bz2
+
+		if [ $? -eq 0 ]; then
+			echo -n "Toolchain was successfully downloaded"
+			beautify message DONE
+		else
+			echo -n "ERROR: Downloading toolchain \"$TOOLCHAINNAME\""
 			beautify message FAIL
 			echo "Precompiled toolchain not always available for every machine"
-		else
-			if [ "`md5sum $TOOLCHAINNAME.tar.bz2 | awk '{print $1}'`" = "`cat $TOOLCHAINNAME.md5 | awk '{print $1}'`" ]; then
-				beautify message DONE
-				echo "Toolchain md5 ok"
-			else
-				exiterror "$TOOLCHAINNAME.md5 did not match, check downloaded package"
-			fi
 		fi
 	else
-		echo -n "Toolchain for $MACHINE is already existing"
+		echo -n "Toolchain \"$TOOLCHAINNAME\" is already existing"
 		beautify message SKIP
 	fi
 	;;

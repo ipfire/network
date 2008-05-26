@@ -684,6 +684,7 @@ prepareenv() {
 	# Make some extra directories
 	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$CTOOLS_DIR,cdrom} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
+	mkdir -p $BASEDIR/cache/toolchains 2>/dev/null
 	mkdir -p $LFS/{$TOOLS_DIR/usr,$CTOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/dev/pts
 	mkdir -p $LFS/proc
@@ -751,12 +752,8 @@ build() {
 			toolchain_build
 		else
 			echo "Restore from $PACKAGE"
-			if [ `md5sum $BASEDIR/cache/toolchains/$PACKAGE | awk '{print $1}'` == `cat $BASEDIR/cache/toolchains/$TOOLCHAINNAME.md5 | awk '{print $1}'` ]; then
-				cd $BASEDIR && tar jxf $BASEDIR/cache/toolchains/$PACKAGE
-				prepareenv
-			else
-				exiterror "$TOOLCHAINNAME md5 did not match, check downloaded package"
-			fi
+			cd $BASEDIR && tar jxf $BASEDIR/cache/toolchains/$PACKAGE
+			prepareenv
 		fi
 	fi
 	
