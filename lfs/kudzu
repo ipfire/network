@@ -69,9 +69,12 @@ ifeq "$(STAGE)" "installer"
 		ARCH=$(MACHINE) \
 		RPM_OPT_FLAGS="$(CFLAGS)" \
 		$(U_TOOLS) \
+		LDFLAGS=-lintl \
 		make -j $(PARALLELISM)
-	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" make install DESTDIR=$(INSTALLER_DIR)
-	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" make install-program DESTDIR=$(INSTALLER_DIR)
+	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" LDFLAGS=-lintl \
+		$(U_TOOLS) make install DESTDIR=$(INSTALLER_DIR)
+	cd $(DIR_APP) && ARCH=$(MACHINE) RPM_OPT_FLAGS="$(CFLAGS)" LDFLAGS=-lintl \
+		$(U_TOOLS) make install-program DESTDIR=$(INSTALLER_DIR)
 endif
 
 	@rm -rf $(DIR_APP)
