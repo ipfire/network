@@ -65,7 +65,7 @@ ifeq "$(STAGE)" "ipfire"
 						--disable-dependency-tracking \
 						--disable-debug \
 						--with-gnu-ld
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
 
@@ -79,7 +79,7 @@ ifeq "$(STAGE)" "installer"
 						--disable-dependency-tracking \
 						--disable-debug \
 						--with-gnu-ld
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 	
 	### pyparted

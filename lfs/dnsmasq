@@ -57,7 +57,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 		-e 's|^\/\* #define HAVE_ISC_READER .*$$|#define HAVE_ISC_READER\n#define NO_IPV6|' \
 		-e 's/^#define CHUSER .*$$/#define CHUSER "dnsmasq"/' \
 		-e 's/^#define CACHESIZ .*$$/#define CACHESIZ 512/' config.h
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && PREFIX=/usr make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

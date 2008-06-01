@@ -66,7 +66,7 @@ ifeq "$(STAGE)" "toolchain"
 	
 	cd $(DIR_APP) && ./configure.gnu --prefix=$(TOOLS_DIR) -Dstatic_ext='Data/Dumper Fcntl IO POSIX'
 	
-	cd $(DIR_APP) && make perl utilities ext/Errno/pm_to_blib -j $(PARALLELISM)
+	cd $(DIR_APP) && make perl utilities ext/Errno/pm_to_blib $(PARALLELISMFLAGS)
 	
 	cd $(DIR_APP) && cp -v perl pod/pod2man $(TOOLS_DIR)/bin
 	-mkdir -pv $(TOOLS_DIR)/lib/perl5/$(VER)
@@ -83,7 +83,7 @@ ifeq "$(STAGE)" "base"
 		-Dman1dir=/usr/share/man/man1 -Dman3dir=/usr/share/man/man3 \
 		-Dpager="/usr/bin/less -isR"
 		
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	
 	rm -f /etc/hosts

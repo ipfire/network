@@ -62,7 +62,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	
 	cd $(DIR_APP) && sed -i 's/name="$$node/name="node/' iptables.xslt
 	cd $(DIR_APP) && make COPT_FLAGS="$(CFLAGS)" LIBDIR=/lib KERNEL_DIR=$(DIR_SRC)/linux-$(KVER) \
-		KBUILD_OUTPUT=$(DIR_SRC)/linux-$(KVER) -j $(PARALLELISM)
+		KBUILD_OUTPUT=$(DIR_SRC)/linux-$(KVER) $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make PREFIX=/usr LIBDIR=/lib BINDIR=/sbin \
 		MANDIR=/usr/share/man install install-devel
 	-mkdir /usr/include/libiptc

@@ -58,7 +58,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 		--sysconfdir=/etc --localstatedir=/var \
 		--disable-ifconfig --disable-logger --disable-syslogd \
 		--disable-whois --disable-servers
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	mv -v /usr/bin/ping /bin
 	@rm -rf $(DIR_APP)

@@ -55,7 +55,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	@rm -rf /home/nobody/.gnupg /root/.gnupg
 	cd $(DIR_APP) && ./configure --prefix=/usr --libexecdir=/usr/lib
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	chmod -v 4755 /usr/bin/gpg
 	@rm -rf $(DIR_APP)

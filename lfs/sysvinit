@@ -55,7 +55,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -i 's@Sending processes@& configured via /etc/inittab@g' \
 		src/init.c
-	cd $(DIR_APP) && make -j $(PARALLELISM) -C src 
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) -C src 
 	cd $(DIR_APP) && make -C src install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -58,7 +58,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-debian_fixes-1.patch
 	cd $(DIR_APP) && CPPFLAGS="$(CPPFLAGS) -DUTF8" ./configure --prefix=/usr \
 		--enable-charset
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	chmod 1755 /usr/lib/mc/cons.saver
 	@rm -rf $(DIR_APP)

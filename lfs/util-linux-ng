@@ -66,7 +66,7 @@ ifeq "$(STAGE)" "base"
 	    -i $$(grep -rl '/etc/adjtime' .)
 	mkdir -pv /var/lib/hwclock
 	cd $(DIR_APP) && ./configure
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
 
@@ -74,7 +74,7 @@ ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && ./configure --target=$(UCLIBC_TARGET) \
 						--host=$(UCLIBC_TARGET) \
 						--disable-nls
-	cd $(DIR_APP) && make -C disk-utils mkswap -j $(PARALLELISM)
+	cd $(DIR_APP) && make -C disk-utils mkswap $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && cp -vf disk-utils/mkswap $(INSTALLER_DIR)/sbin/mkswap
 endif
 

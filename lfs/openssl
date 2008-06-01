@@ -56,7 +56,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix_manpages-1.patch
 	cd $(DIR_APP) && sed -i -e 's/-O3/-O2/' -e 's/-march=i486/-march=$(MACHINE)/' Configure
 	cd $(DIR_APP) && ./config --prefix=/usr --openssldir=/etc/ssl shared
-	cd $(DIR_APP) && make MANDIR=/usr/share/man #-j $(PARALLELISM)
+	cd $(DIR_APP) && make MANDIR=/usr/share/man #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make MANDIR=/usr/share/man install
 	cd $(DIR_APP) && cp -v -r certs /etc/ssl
 	install -m 0644 $(DIR_SRC)/config/ssl/openssl.cnf /etc/ssl

@@ -54,7 +54,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && make DEBUG=-DNDEBUG INSTALL_USER=root INSTALL_GROUP=root \
-		LOCAL_CONFIGURE_OPTIONS="--enable-readline=yes" #-j $(PARALLELISM)
+		LOCAL_CONFIGURE_OPTIONS="--enable-readline=yes" #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	chmod -v 755 /lib/libhandle.so*
 	rm -f /lib/libhandle.{a,la,so}

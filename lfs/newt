@@ -59,7 +59,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && ./configure --prefix=/usr --without-gpm-support \
 						--without-tcl
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
 
@@ -69,7 +69,7 @@ ifeq "$(STAGE)" "installer"
 						--host=$(UCLIBC_TARGET) \
 						--without-gpm-support \
 						--without-tcl
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install instroot=$(INSTALLER_DIR)
 endif
 

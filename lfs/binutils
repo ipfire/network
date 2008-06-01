@@ -78,7 +78,7 @@ ifeq "$(MACHINE)" "$(MACHINE_REAL)"
 						--prefix=$(TOOLS_DIR) \
 						--disable-nls \
 						--disable-werror
-	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make install
 	cd $(DIR_SRC)/binutils-build && make -C ld clean
 	cd $(DIR_SRC)/binutils-build && make -C ld LIB_PATH=$(TOOLS_DIR)/lib
@@ -96,7 +96,7 @@ else
 						--enable-shared \
 						--disable-multilib
 	cd $(DIR_SRC)/binutils-build && make configure-host																	
-	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make install
 endif
 endif
@@ -106,7 +106,7 @@ ifeq "$(PASS)" "2"
 						--prefix=$(TOOLS_DIR) \
 						--disable-nls \
 						--with-lib-path=$(TOOLS_DIR)/lib
-	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make install
 	
 	cd $(DIR_SRC)/binutils-build && make -C ld clean
@@ -128,7 +128,7 @@ else
 						--enable-shared \
 						--disable-multilib
 	cd $(DIR_SRC)/binutils-build && make configure-host
-	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make install
 	
 	-mkdir -p $(TOOLS_DIR)/include
@@ -139,7 +139,7 @@ endif
 ifeq "$(STAGE)" "base"
 	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure --prefix=/usr \
 		--enable-shared
-	cd $(DIR_SRC)/binutils-build && make tooldir=/usr -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install
 	
 	cp -fv ../$(THISAPP)/include/libiberty.h /usr/include
@@ -153,7 +153,7 @@ ifeq "$(STAGE)" "installer"
 						--disable-multilib \
 						--disable-werror \
 						--disable-nls
-	cd $(DIR_SRC)/binutils-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make install
 
 	for t in ar as ld strip; do \

@@ -56,7 +56,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-client_dns-1.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-iproute2-1.patch
 	cd $(DIR_APP) && ./configure
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make LIBDIR=/usr/lib INCDIR=/usr/include install
 	touch /var/state/dhcp/dhcpd.leases
 	ln -sf $(CONFIG_ROOT)/dhcp/dhcpd.conf /etc/dhcpd.conf

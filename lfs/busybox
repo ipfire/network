@@ -63,7 +63,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && make ARCH=i386 \
 		CROSS_COMPILE=$(UCLIBC_TARGET)- \
 		CROSS=$(UCLIBC_TARGET)- \
-		-j $(PARALLELISM)
+		$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make ARCH=i386 \
 		CROSS_COMPILE=$(UCLIBC_TARGET)- \
 		CROSS=$(UCLIBC_TARGET)- \

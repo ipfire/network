@@ -62,14 +62,14 @@ ifeq "$(STAGE)" "toolchain"
 		done
 
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
 
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && sed -i 's/futimens/gl_&/' gzip.c lib/utimens.{c,h}
 	cd $(DIR_APP) && ./configure --prefix=/usr --bindir=/bin
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	mv -v /bin/{gzexe,uncompress,zcmp,zdiff,zegrep} /usr/bin
 	mv -v /bin/{zfgrep,zforce,zgrep,zless,zmore,znew} /usr/bin

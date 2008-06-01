@@ -58,7 +58,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-devicetype.patch
 
 ifeq "$(STAGE)" "ipfire"
-	cd $(DIR_APP) && make OPT=$(CLFLAGS) PREFIX=/usr -j $(PARALLELISM)
+	cd $(DIR_APP) && make OPT=$(CLFLAGS) PREFIX=/usr $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make PREFIX=/usr install
 	install -v -m 755 -d /usr/include/pci
 	cd $(DIR_APP) && install -v -m 644 lib/libpci.a /usr/lib
@@ -70,7 +70,7 @@ ifeq "$(STAGE)" "installer"
 		-e "s/^\tranlib/\t$(U_RANLIB)/" -i lib/Makefile
 	cd $(DIR_APP)/lib && ./configure /usr/share $(VER) $(UCLIBC_TARGET) $(KVER)
 	cd $(DIR_APP)/lib && make OPT=$(CLFLAGS) PREFIX=$(INSTALLER_DIR)/usr \
-		HOST=$(UCLIBC_TARGET) CC=$(U_CC) -j $(PARALLELISM)
+		HOST=$(UCLIBC_TARGET) CC=$(U_CC) $(PARALLELISMFLAGS)
 	install -v -m 755 -d $(INSTALLER_DIR)/usr/include/pci
 	cd $(DIR_APP) && install -v -m 644 lib/libpci.a $(INSTALLER_DIR)/usr/lib
 	cd $(DIR_APP) && install -v -m 644 lib/*.h $(INSTALLER_DIR)/usr/include/pci

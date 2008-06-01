@@ -57,7 +57,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && make -C CPP/7zip/Compress/LZMA_Alone \
-		-f makefile.gcc -j $(PARALLELISM) CXX="g++ $(CXXFLAGS)" CXX_C="gcc $(CFLAGS)"
+		-f makefile.gcc $(PARALLELISMFLAGS) CXX="g++ $(CXXFLAGS)" CXX_C="gcc $(CFLAGS)"
 	
 	install -m 755 \
 		$(DIR_APP)/CPP/7zip/Compress/LZMA_Alone/lzma \
@@ -66,7 +66,7 @@ endif
 
 ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && make -C CPP/7zip/Compress/LZMA_Alone \
-		-f makefile.gcc -j $(PARALLELISM) \
+		-f makefile.gcc $(PARALLELISMFLAGS) \
 		CXX="$(U_CXX) $(CXXFLAGS)" \
 		CXX_C="$(U_CC) $(CFLAGS)"
 

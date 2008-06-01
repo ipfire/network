@@ -60,14 +60,14 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP)/build && ../configure --prefix=$(TOOLS_DIR)
-	cd $(DIR_APP)/build && make -j $(PARALLELISM)
+	cd $(DIR_APP)/build && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP)/build && make install-libs
 endif
 
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP)/build && ../configure --prefix=/usr --with-root-prefix="" \
 		--enable-elf-shlibs 
-	cd $(DIR_APP)/build && make -j $(PARALLELISM)
+	cd $(DIR_APP)/build && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP)/build && make install
 	cd $(DIR_APP)/build && make install-libs
 endif
@@ -80,7 +80,7 @@ ifeq "$(STAGE)" "installer"
 						--host=$(UCLIBC_TARGET) \
 						--with-cc=$(U_CC) \
 						--with-linker=$(U_LD)
-	cd $(DIR_APP)/build && make -j $(PARALLELISM)
+	cd $(DIR_APP)/build && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP)/build && make install install-libs DESTDIR=$(INSTALLER_DIR)
 	for lib in libblkid.so.1 libcom_err.so.2 libe2p.so.2 libext2fs.so.2 libss.so.2 libuuid.so.1; do \
 		ln -svf $$lib $(INSTALLER_DIR)/lib/$$(awk -F. '{ print $$1"."$$2 }' <<< $$lib) || exit 1; \
