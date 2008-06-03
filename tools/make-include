@@ -89,19 +89,17 @@ if [ 'i686' = $TARGET -o 'i586' = $TARGET \
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
 	CFLAGS="-march=${MACHINE} -O2 -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
-	UCLIBC_TARGET=i386-pc-linux-uclibc
-	UCLIBC_LINKER=/lib/ld-uClibc.so.0
-	UCLIBC_CFLAGS="-march=i386 -Os -pipe -fomit-frame-pointer"
+	UCLIBC_TARGET=${MACHINE}-pc-linux-uclibc
+	UCLIBC_CFLAGS="-march=${MACHINE} -Os -pipe"
 elif [ 'via-c7' = $TARGET ]; then
 	MACHINE=i686
 	MACHINE_REAL=${MACHINE_REAL}
 	LINKER=/lib/ld-linux.so.2
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
-	CFLAGS="-march=${MACHINE} -mmmx -msse -msse2 -msse3 -O2 -pipe -fomit-frame-pointer"
+	CFLAGS="-march=${MACHINE} -mmmx -msse -msse2 -msse3 -O2 -pipe"
 	CXXFLAGS="${CFLAGS}"
-	UCLIBC_TARGET=i386-pc-linux-uclibc
-	UCLIBC_LINKER=/ulib/ld-uClibc.so.0
-	UCLIBC_CFLAGS="-march=i386 -Os -pipe -fomit-frame-pointer"
+	UCLIBC_TARGET=${MACHINE}-pc-linux-uclibc
+	UCLIBC_CFLAGS="-march=i386 -Os -pipe"
 elif [ 'via-c3' = $TARGET ]; then
 	MACHINE=i586
 	MACHINE_REAL=${MACHINE_REAL}
@@ -109,9 +107,8 @@ elif [ 'via-c3' = $TARGET ]; then
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
 	CFLAGS="-march=c3 -m3dnow -O2 -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
-	UCLIBC_TARGET=i386-pc-linux-uclibc
-	UCLIBC_LINKER=/ulib/ld-uClibc.so.0
-	UCLIBC_CFLAGS="-march=i386 -Os -pipe -fomit-frame-pointer"
+	UCLIBC_TARGET=${MACHINE}-pc-linux-uclibc
+	UCLIBC_CFLAGS="-march=${MACHINE} -Os -pipe"
 else
 	beautify message FAIL
 	echo "Not a valid target arch (i686|i586|i486|i386|via-c7|via-c3) - $TARGET"
@@ -531,7 +528,6 @@ ipfire_make() {
 		UCLIBC_DIR=$UCLIBC_DIR \
 		UCLIBC_SYSROOT_DIR=$UCLIBC_SYSROOT_DIR \
 		UCLIBC_TARGET=$UCLIBC_TARGET \
-		UCLIBC_LINKER=$UCLIBC_LINKER \
 		UCLIBC_CC_CORE_STATIC_DIR=${UCLIBC_CC_CORE_STATIC_DIR} \
 		MACHINE="$MACHINE" \
 		MACHINE_REAL="$MACHINE_REAL" \

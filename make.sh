@@ -401,8 +401,9 @@ misc_build() {
 ################################################################################
 installer_build() {
 
-	PATH=${UCLIBC_DIR}/bin:${UCLIBC_DIR}/usr/bin:${UCLIBC_CC_CORE_STATIC_DIR}/bin
-	PATH=$PATH:${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	PATH=${TOOLS_DIR}/usr/bin:${UCLIBC_DIR}/bin:${UCLIBC_DIR}/usr/bin
+	PATH=$PATH:${UCLIBC_CC_CORE_STATIC_DIR}/bin:/bin:/usr/bin
+	PATH=$PATH:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
 	STAGE_ORDER=05
 	STAGE=installer
 
@@ -410,6 +411,7 @@ installer_build() {
 	export LOGFILE
 
 	ipfire_make stage5
+	ipfire_make ccache
 	ipfire_make linux
 	ipfire_make binutils
 	ipfire_make uClibc		PASS=1
