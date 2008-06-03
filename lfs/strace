@@ -1,0 +1,75 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include Config
+
+PKG_NAME   = strace
+VER        = 4.5.16
+
+THISAPP    = $(PKG_NAME)-$(VER)
+DL_FILE    = $(THISAPP).tar.bz2
+DIR_APP    = $(DIR_SRC)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+###############################################################################
+# Top-level Rules
+###############################################################################
+
+objects = $(DL_FILE) $(THISAPP)-uClibc-1.patch
+
+install : $(TARGET)
+
+download :$(patsubst %,$(DIR_DL)/%,$(objects))
+
+$(patsubst %,$(DIR_DL)/%,$(objects)) :
+	@$(LOAD)
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
+	@$(PREBUILD)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "$(SNAME)"
+	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && patch -Np1 -i \
+		$(DIR_PATCHES)/$(THISAPP)-uClibc-1.patch
+	cd $(DIR_APP) && ac_cv_header_linux_if_packet_h=yes \
+		ac_cv_header_linux_netlink_h=yes \
+		./configure --prefix=/usr --target=$(UCLIBC_TARGET) \
+		--host=$(UCLIBC_TARGET)
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
+endif
+
+	@rm -rf $(DIR_APP)
+	@$(POSTBUILD)

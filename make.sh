@@ -432,6 +432,7 @@ installer_build() {
 	ipfire_make slang
 	ipfire_make newt
 	#ipfire_make bash
+	ipfire_make strace
 	ipfire_make cpio
 	ipfire_make lzma
 	ipfire_make pyfire
