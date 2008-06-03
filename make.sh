@@ -437,7 +437,6 @@ installer_build() {
 	ipfire_make pyfire
 	ipfire_make pomona
 	ipfire_make busybox
-	ipfire_make strip
 }
 
 ################################################################################
@@ -452,10 +451,10 @@ packages_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-packages.log"
 	export LOGFILE
 
-	ipfire_make initramfs
 	toolchain_make strip
-	
-	# Geneerate ChangeLog
+	ipfire_make initramfs
+
+	# Generate ChangeLog
 	. $BASEDIR/tools/make-git
 	git_log
 
