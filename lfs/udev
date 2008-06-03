@@ -68,7 +68,7 @@ ifeq "$(STAGE)" "base"
 	ln -sfv /proc/self/fd/2 /lib/udev/devices/stderr
 	ln -sfv /proc/kcore /lib/udev/devices/core
 
-	cd $(DIR_APP) && make EXTRAS="`echo extras/*/`" -j $(PARALLELISM)
+	cd $(DIR_APP) && make EXTRAS="`echo extras/*/`" $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make DESTDIR=/ EXTRAS="`echo extras/*/`" install
 
 	cd $(DIR_APP) && cp -v etc/udev/rules.d/[0-9]* /etc/udev/rules.d/
@@ -86,7 +86,7 @@ ifeq "$(STAGE)" "installer"
 	ln -sfv /proc/kcore $(INSTALLER_DIR)/lib/udev/devices/core
 
 	cd $(DIR_APP) && make EXTRAS="`echo extras/*/`" \
-		CROSS_COMPILE=$(UCLIBC_TARGET)- -j $(PARALLELISM)
+		CROSS_COMPILE=$(UCLIBC_TARGET)- $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make DESTDIR=$(INSTALLER_DIR) EXTRAS="`echo extras/*/`" \
 		CROSS_COMPILE=$(UCLIBC_TARGET)- install
 	

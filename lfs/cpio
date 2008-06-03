@@ -58,7 +58,7 @@ ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && ./configure CPIO_MT_PROG=mt --prefix=/usr \
 						--bindir=/bin --libexecdir=/tmp \
 						--with-rmt=/usr/sbin/rmt
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
 
@@ -70,7 +70,7 @@ ifeq "$(STAGE)" "installer"
 						--bindir=/bin --libexecdir=/tmp \
 						--with-rmt=/usr/sbin/rmt \
 						--disable-nls
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 endif
 

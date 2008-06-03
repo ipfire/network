@@ -58,7 +58,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 		-e '1i RESIZECONS_PROGS = @RESIZECONS_PROGS@' -i src/Makefile.in
 	cd $(DIR_APP) && sed -i "s/ifdef OPTIONAL_PROGS/ifeq (\$$(OPTIONAL_PROGS),yes)/" man/Makefile.in
 	cd $(DIR_APP) && ./configure --prefix=/usr --datadir=/lib/kbd
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	mv -v /usr/bin/{kbd_mode,loadkeys,openvt,setfont} /bin
 	@rm -rf $(DIR_APP)

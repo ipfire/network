@@ -58,7 +58,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 
 ifeq "$(STAGE)" "toolchain" 
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR) --without-bash-malloc
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	ln -sf bash $(TOOLS_DIR)/bin/sh
 	
@@ -76,7 +76,7 @@ ifeq "$(STAGE)" "base"
 		Makefile.in
 	cd $(DIR_APP) && ./configure --prefix=/usr --bindir=/bin \
 		--without-bash-malloc --with-installed-readline
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
 
@@ -87,7 +87,7 @@ ifeq "$(STAGE)" "installer"
 						--bindir=/bin \
 						--without-bash-malloc \
 						#--with-installed-readline
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 endif
 

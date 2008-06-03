@@ -61,7 +61,7 @@ ifeq "$(STAGE)" "ipfire"
 						--enable-utf8 \
 						--enable-pcregrep-libz \
 						--enable-pcregrep-libbz2
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	mv -v /usr/lib/libpcre.so.* /lib/
 	ln -v -sf ../../lib/libpcre.so.0 /usr/lib/libpcre.so
@@ -72,7 +72,7 @@ ifeq "$(STAGE)" "installer"
 						--enable-utf8 \
 						--target=$(UCLIBC_TARGET) \
 						--host=$(UCLIBC_TARGET)
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 endif
 

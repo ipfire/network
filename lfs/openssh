@@ -62,7 +62,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 		    --libexecdir=/usr/lib/openssh --with-md5-passwords \
 		    --with-privsep-path=/var/lib/sshd \
 				--with-pam 
-	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	sed 's@d/login@d/sshd@g' /etc/pam.d/login > /etc/pam.d/sshd 
 	chmod 644 /etc/pam.d/sshd

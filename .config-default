@@ -42,14 +42,18 @@
 #NICE=10
 
 ###############################################################################                   
-# Jobs                                                                        #
+# Parallelism                                                                 #
 ###############################################################################
-# If you have got more than one processor you can advice the gcc to run more  #
+# If you have got more than one processor you can advice make to run more     #
 # than one job a time. You also may want to adjust this when using distcc.    #
-# Default is count of cpus twice + 1.                                         #
+# Default is count of cpus twice + 1. (-jN)                                   #
+# Possible options:                                                           #
+#    -j [N] : N is the number of the parallel jobs.                           #
+#    -l N   : Specify the max. load avg. for the system.                      #
+# Read more: http://www.gnu.org/software/automake/manual/make/Parallel.html   #
 ###############################################################################
 
-#PARALLELISM=3
+#PARALLELISMFLAGS=-jN
 
 ###############################################################################                   
 # Distcc Hosts                                                                #
