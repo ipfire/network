@@ -83,10 +83,11 @@ ifeq "$(STAGE)" "installer"
 						--host=$(UCLIBC_TARGET) \
 						--enable-shared \
 						--disable-ipv6 \
-						--with-cxx=no
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
+						--with-cxx=no \
+						--without-threads
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) $(U_TOOLS) \
 		HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR) \
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR) $(U_TOOLS) \
 		HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen
 endif
 
