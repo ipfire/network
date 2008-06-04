@@ -50,9 +50,9 @@ objects = $(DL_FILE) grub-0.94-i2o.patch grub-0.95-moreraid.patch \
 
 install : $(TARGET)
 
-download : $(patsubst %,$(DIR_DL)/%,$(objects))
+download : $(objects)
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
+$(objects) :
 	@$(LOAD)
 
 ###############################################################################

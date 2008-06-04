@@ -189,7 +189,7 @@ endif
 
 define LOAD
 	DIR_TMP=$(DIR_TMP) DIR_DL=$(DIR_DL) DIR_PATCHES=$(DIR_PATCHES) \
-		python $(DIR_TOOLS)/downloader-ng $(URL_IPFIRE)/$(notdir $@)
+		python $(DIR_TOOLS)/downloader $(URL_IPFIRE)/$@
 endef
 
 define PAK

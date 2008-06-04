@@ -50,9 +50,9 @@ objects = $(DL_FILE) reiser4-for-$(VER).patch \
 
 install : $(TARGET)
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
+download : $(objects)
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
+$(objects) :
 	@$(LOAD)
 
 ###############################################################################

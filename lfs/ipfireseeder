@@ -53,7 +53,7 @@ install : $(TARGET)
 
 check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
+download : $(objects)
 
 md5 : $(subst %,%_MD5,$(objects))
 
@@ -67,7 +67,7 @@ dist:
 $(patsubst %,$(DIR_CHK)/%,$(objects)) :
 	@$(CHECK)
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
+$(objects) :
 	@$(LOAD)
 
 $(subst %,%_MD5,$(objects)) :

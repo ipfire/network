@@ -48,9 +48,9 @@ objects = $(DL_FILE) glibc-libidn-$(VER).tar.bz2
 
 install : $(TARGET)
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
+download : $(objects)
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
+$(objects) :
 	@$(LOAD)
 
 ###############################################################################

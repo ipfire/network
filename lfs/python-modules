@@ -45,9 +45,9 @@ objects = $(ICONV).tar.bz2 $(DBUSPY).tar.gz $(URLGRABBER).tar.gz
 
 install: $(TARGET)
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
+download : $(objects)
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
+$(objects) :
 	@$(LOAD)
 
 ###############################################################################

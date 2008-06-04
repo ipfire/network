@@ -41,9 +41,9 @@ objects = $(DL_FILE) $(THISAPP)-no_server_man_pages-2.patch
 
 install : $(TARGET)
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
+download : $(objects)
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
+$(objects) :
 	@$(LOAD)
 
 ###############################################################################

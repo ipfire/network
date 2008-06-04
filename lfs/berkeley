@@ -41,9 +41,9 @@ objects = $(DL_FILE) $(THISAPP)-fixes-1.patch
 
 install : $(TARGET)
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
+download : $(objects)
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
+$(objects) :
 	@$(LOAD)
 
 ###############################################################################

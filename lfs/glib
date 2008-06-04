@@ -43,9 +43,9 @@ objects = $(DL_FILE) $(DBUSGLIB).tar.gz
 
 install: $(TARGET)
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
+download : $(objects)
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
+$(objects) :
 	@$(LOAD)
 
 ###############################################################################

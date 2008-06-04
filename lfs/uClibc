@@ -39,13 +39,13 @@ TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(LOCALE_FILE) $(THISAPP)-config-1.patch
+objects = $(DL_FILE) $(LOCALE_FILE)
 
 install : $(TARGET)
 
-download :$(patsubst %,$(DIR_DL)/%,$(objects))
+download : $(objects)
 
-$(patsubst %,$(DIR_DL)/%,$(objects)) :
+$(objects) :
 	@$(LOAD)
 
 ###############################################################################
