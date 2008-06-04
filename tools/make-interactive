@@ -99,22 +99,20 @@ clean)
 	;;
 	
 downloadsrc)
-	LOGFILE=$BASEDIR/log_${MACHINE}/_build.preparation.log
+	LOGFILE=$BASEDIR/log_${MACHINE}/_build.00-preparation.log
 	
 	if [ ! -d $BASEDIR/cache ]; then
-		mkdir $BASEDIR/cache
+		mkdir -p $BASEDIR/cache/{tarballs,patches}
 	fi
 	mkdir -p $BASEDIR/log_${MACHINE}
-	echo -e "${BOLD}Preload all source files${NORMAL}" | tee -a $LOGFILE
+	echo -e "${BOLD}Preload all source files${NORMAL}"
 	cd $BASEDIR/lfs
 	for i in *; do
 		if [ -f "$i" -a "$i" != "Config" ]; then
-			echo -ne "Loading $i"
-			make -s -f $i LFS_BASEDIR=$BASEDIR MESSAGE="$i\t" download >> $LOGFILE 2>&1
+			make -s -f $i LFS_BASEDIR=$BASEDIR MESSAGE="$i\t" download 2>> $LOGFILE
 			if [ $? -ne 0 ]; then
+				echo -ne "Couldn't download all files for ${BOLD}${i}${NORMAL}"
 				beautify message FAIL
-			else
-				beautify message DONE
 			fi
 		fi
 	done

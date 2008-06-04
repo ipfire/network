@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -25,33 +25,119 @@
 #                                                                             #
 ###############################################################################
 
-# BASEDIR, DIR_TMP, DIR_DL are given by the environment
-URL="$1"
-FILE="$(basename $2)"
+import os
+import sys
 
-MAX=2
-COUNTER=0
+import hashlib
+import shutil
 
-WGET_OPTS="-c"
+from urlgrabber.grabber import URLGrabber, URLGrabError
+import urlgrabber.progress as progress
 
-while [ "${COUNTER}" -lt "${MAX}" ]; do
-	cd ${DIR_TMP}
-	if wget ${WGET_OPTS} ${URL}/${FILE}{,.md5}; then
-		if [ `awk '{ print $1 }' ${DIR_TMP}/${FILE}.md5` = \
-				`md5sum ${DIR_TMP}/${FILE} | awk '{ print $1 }'` ]; then
-			mv ${DIR_TMP}/${FILE} ${DIR_TMP}/${FILE}.md5 ${DIR_DL}
-			exit 0
-		else
-			rm -f ${FILE}* 2>/dev/null
-		fi
-	else
-		rm -f ${FILE}* 2>/dev/null
-		exit 1
-	fi
-	COUNTER=$(( ${COUNTER} + 1 ))
-done
+###############################################################################
+# Sample header                                                               #
+###############################################################################
+#X-Object: FileObject
+#X-MD5: d79f553e7916ea21c556329eacfeaa16
+#X-SHA1: bb20efc7750fe0d6172c5945572bf036fe59d3dd
 
-if [ "${COUNTER}" -eq "${MAX}" ]; then
-	echo "Download failed." 1>&2
-	exit 1
-fi
+###############################################################################
+# Environment                                                                 #
+###############################################################################
+
+BSIZE = 1024	#1k
+gobj = None
+
+try:
+	DIR_DL = os.environ["DIR_DL"] or os.getcwd()
+	DIR_PATCHES = os.environ["DIR_PATCHES"] or os.getcwd()
+	DIR_TMP = os.environ["DIR_TMP"] or None
+except KeyError:
+	sys.stderr.write("DIR_TMP, DIR_DL and DIR_PATCHES have to be set "
+			 "in environment.\n")
+	sys.exit(1)
+
+url = sys.argv[1]
+filename = os.path.basename(url)
+
+#if os.access(os.path.join(DIR_PATCHES), filename), R_OK) or
+#	os.access(os.path.join(DIR_DL), filename), R_OK):
+#	sys.stdout.write("Already downloaded: %s\n" % (filename,))	
+#	sys.exit(0)
+
+#sys.stdout.write("Downloading %s\n" % (url,))
+
+###############################################################################
+# Create urlgrabber instance                                                  #
+###############################################################################
+g = URLGrabber( user_agent = "IPFireSourceGrabber/3.x",
+		progress_obj = progress.TextMeter(fo=sys.stdout) )
+try:
+	gobj = g.urlopen(url)
+except URLGrabError, e:
+	if e.errno == 14: # 404
+		sys.stderr.write("404 - File not found.\n")
+		sys.exit(1)
+
+if not gobj:
+	sys.stderr.write("Unknown happended: %s\n" % (url,))
+	sys.exit(1)
+
+# Init hash
+hobj = hashlib.sha1()
+
+###############################################################################
+# Parse header                                                                #
+###############################################################################
+try:
+	object_type = gobj.hdr["X-Object"]
+
+	#hash_md5 = gobj.hdr["X-MD5"]
+	hash_sha1 = gobj.hdr["X-SHA1"]
+	
+	hash = hash_sha1
+except KeyError:
+	sys.stderr.write("No header data found. Can't check file.\n")
+	#for line in gobj.hdr.items(): sys.stderr.write("  %s\n" % (line,))
+	sys.exit(1)
+
+###############################################################################
+# Setup fileobjects                                                           #
+###############################################################################
+if object_type == "FileObject":
+	dest_file = os.path.join(DIR_DL,filename)
+elif object_type == "PatchObject":
+	dest_file = os.path.join(DIR_PATCHES,filename)
+
+if DIR_TMP:
+	temp_file = os.path.join(DIR_TMP, filename)
+else:
+	temp_file = dest_file
+
+fobj = open(temp_file, "wb")
+
+###############################################################################
+# Download                                                                    #
+###############################################################################
+buf = gobj.read(BSIZE)
+while len(buf) > 0:
+	hobj.update(buf)
+	fobj.write(buf)
+	buf = gobj.read(BSIZE)
+
+gobj.close() # Close connection to server.
+fobj.close() # Also close local file.
+
+###############################################################################
+# Check hash                                                                  #
+###############################################################################
+if hash == hobj.hexdigest():
+	shutil.move(temp_file, dest_file)
+else:
+	os.unlink(temp_file)
+	sys.stderr.write("Hash mismatch: %s\n" % (filename,))
+	sys.exit(1)
+
+sys.exit(0)
+
+###############################################################################

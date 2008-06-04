@@ -33,7 +33,7 @@
 # URLs that are common sources of downloads.  If you're having trouble with
 # a site you should change its URL to that of a suitable mirror site.
 #
-URL_IPFIRE  = http://source.ipfire.org/source-3.0
+URL_IPFIRE  = http://source.ipfire.org/download
 URL_TOOLCHAIN = http://source.ipfire.org/toolchains
 
 # Default compiler optimizations.
@@ -56,14 +56,16 @@ DIR_SRC = $(LFS)/usr/src
 # save all the files that are downloaded.  DIR_INFO contains the
 # file lists of installed packages.
 #
-DIR_DL      = $(LFS_BASEDIR)/cache
+DIR_DL      = $(LFS_BASEDIR)/cache/tarballs
 DIR_CONF    = $(LFS_BASEDIR)/config
 DIR_INFO    = $(LFS_BASEDIR)/log_$(MACHINE)
 DIR_TOOLS   = $(LFS_BASEDIR)/tools
 DIR_TMP     = /tmp
-DIR_PATCHES = $(DIR_DL)
+DIR_PATCHES = $(DIR_DL)/../patches
 DIR_CONFIG  = $(DIR_CONF)
 DIR_SOURCE  = $(DIR_SRC)/src
+
+VPATH = $(DIR_DL):$(DIR_PATCHES)
 
 HOST_GCC="/usr/bin/gcc"
 KGCC=$(HOST_GCC)
@@ -186,8 +188,8 @@ endef
 endif
 
 define LOAD
-	BASEDIR=$(LFS_BASEDIR) DIR_TMP=$(DIR_TMP) DIR_DL=$(DIR_DL) \
-		sh $(DIR_TOOLS)/downloader $(URL_IPFIRE) $(notdir $@)
+	DIR_TMP=$(DIR_TMP) DIR_DL=$(DIR_DL) DIR_PATCHES=$(DIR_PATCHES) \
+		python $(DIR_TOOLS)/downloader-ng $(URL_IPFIRE)/$(notdir $@)
 endef
 
 define PAK
