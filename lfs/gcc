@@ -67,7 +67,7 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
+$(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/gcc-build && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	-mkdir -v $(DIR_SRC)/gcc-build

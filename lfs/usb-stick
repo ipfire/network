@@ -68,7 +68,7 @@ define COPY_TO_IMG
 	syslinux $$IMAGE
 endef
 
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
+$(TARGET) : 
 
 	# usb-fdd superfloppy (partitionless)
 	# compute size +32 blocks for bootsector/fat/etc...

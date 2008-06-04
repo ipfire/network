@@ -41,7 +41,7 @@ download :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
+$(TARGET) : 
 	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
 	
 	mkdir -p $(CDROM_DIR)/{isolinux,doc}

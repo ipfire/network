@@ -50,7 +50,7 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
+$(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_SRC)/$(THISAPP) && mkdir $(DIR_SRC)/$(THISAPP)
 	@cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE) -C $(THISAPP)

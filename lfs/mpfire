@@ -55,7 +55,7 @@ dist:
 # Installation Details
 ###############################################################################
 
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
+$(TARGET) : 
 	@$(PREBUILD)
 	-mkdir -p /var/ipfire/mpfire/{bin,db}
 	touch /var/ipfire/mpfire/{settings,playlist.m3u}

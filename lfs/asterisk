@@ -86,7 +86,7 @@ $(subst %,%_MD5,$(objects)) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
+$(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/asterisk-* && \
 		cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)

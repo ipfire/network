@@ -46,7 +46,7 @@ md5 :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
+$(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP)
 	-mkdir -p /opt/pakfire/{db/{meta,lists,rootfiles,installed,core},etc,lib,tmp} \
