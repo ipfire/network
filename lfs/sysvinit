@@ -53,6 +53,9 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+
+	cd $(DIR_APP) && sed 's/libcrypt.a/libcrypt.so/' -i.orig src/Makefile
+
 	cd $(DIR_APP) && sed -i 's@Sending processes@& configured via /etc/inittab@g' \
 		src/init.c
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) -C src 
