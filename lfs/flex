@@ -56,12 +56,22 @@ $(patsubst %,$(DIR_DL)/%,$(objects)) :
 $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "toolchain"
+	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
+	cd $(DIR_APP) && make -j $(PARALLELISM)
+	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && ./configure --prefix=/usr
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 	ln -sfv libfl.a /usr/lib/libl.a
-	echo "#!/bin/sh"											>  /usr/bin/lex
+	echo "#!/bin/sh"			>  /usr/bin/lex
 	echo "exec /usr/bin/flex -l \"$$@\""	>> /usr/bin/lex
 	chmod 755 /usr/bin/lex
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
