@@ -37,7 +37,8 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-disable__syslog_chk-1.patch \
+	$(THISAPP)-priv_sep-1.patch
 
 install : $(TARGET)
 
@@ -53,10 +54,17 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disable__syslog_chk-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-priv_sep-1.patch
+
+	install -d -m0000 /var/lib/syslogd
+	install -d -m0000 /var/lib/klogd
+
+	cd $(DIR_APP) && sed 's/644/600/' -i.orig syslogd.c
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	touch /var/log/{dhcpcd.log,messages,ovpnserver.log}
-	chmod 664 /var/log/{dhcpcd.log,messages,ovpnserver.log}
-	chown 0:105 /var/log/{dhcpcd.log,messages,ovpnserver.log}
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
