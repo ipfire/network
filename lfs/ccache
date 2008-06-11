@@ -58,9 +58,10 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && CFLAGS="-O2 -static" ./configure --prefix=$(PREFIX)
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
-	ln -sf ccache $(PREFIX)/bin/gcc
-	ln -sf ccache $(PREFIX)/bin/g++
-	ln -sf ccache $(PREFIX)/bin/cc
+	for i in gcc g++ cc; do \
+		ln -sf ccache $(PREFIX)/bin/$${i}; \
+		ln -sf ccache $(PREFIX)/bin/$(IFS_TARGET)-$${i}; \
+	done
 	$(PREFIX)/bin/ccache -z
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
