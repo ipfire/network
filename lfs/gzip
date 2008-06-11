@@ -61,7 +61,12 @@ ifeq "$(STAGE)" "toolchain"
 			sed 's/futimens/gl_&/' $$file.orig > $$file; \
 		done
 
+ifeq "$(PIE)" "1"
+	## Don't use assembler code because this is not position independent.
+	cd $(DIR_APP) && DEFS=NO_ASM ./configure --prefix=$(TOOLS_DIR)
+else
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
+endif
 	cd $(DIR_APP) && make -j $(PARALLELISM)
 	cd $(DIR_APP) && make install
 endif
