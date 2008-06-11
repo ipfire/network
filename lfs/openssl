@@ -54,11 +54,27 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix_manpages-1.patch
+
 	cd $(DIR_APP) && sed -i -e 's/-O3/-O2/' -e 's/-march=i486/-march=$(MACHINE)/' Configure
-	cd $(DIR_APP) && ./config --prefix=/usr --openssldir=/etc/ssl shared
+
+	cd $(DIR_APP) && sed -e 's/__OpenBSD__/__linux__/' -e 's/arandom/urandom/' \
+				-i.orig crypto/rand/randfile.c
+
+	cd $(DIR_APP) && sed 's/__OpenBSD__/__linux__/' -i.orig crypto/uid.c
+	cd $(DIR_APP) && sed 's/__OpenBSD__/__linux__/' -i.orig crypto/rand/rand_unix.c
+
+	cd $(DIR_APP) && find crypto/ -name Makefile -exec \
+		sed 's/^ASFLAGS=/&-Wa,--noexecstack /' -i.orig {} \;
+
+	cd $(DIR_APP) && ./config \
+		--prefix=/usr --openssldir=/etc/ssl \
+		shared zlib-dynamic -DSSL_FORBID_ENULL
 	cd $(DIR_APP) && make MANDIR=/usr/share/man #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make MANDIR=/usr/share/man install
 	cd $(DIR_APP) && cp -v -r certs /etc/ssl
+
+	mv -v /usr/lib/{libcrypto,libssl}.a /usr/lib/static
 	install -m 0644 $(DIR_SRC)/config/ssl/openssl.cnf /etc/ssl
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
