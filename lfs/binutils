@@ -121,15 +121,6 @@ endif
 	cp -fv ../$(THISAPP)/include/libiberty.h /usr/include
 endif
 
-ifeq "$(STAGE)" "base"
-	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure --prefix=/usr \
-		--enable-shared
-	cd $(DIR_SRC)/binutils-build && make tooldir=/usr $(PARALLELISMFLAGS)
-	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install
-	
-	cp -fv ../$(THISAPP)/include/libiberty.h /usr/include
-endif
-
 ifeq "$(STAGE)" "installer"
 	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure \
 						--target=$(UCLIBC_TARGET) \
