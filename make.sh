@@ -25,7 +25,7 @@
 NAME="IPFire"			# Software name
 SNAME="ipfire"			# Short name
 VERSION="3.0-prealpha"		# Version number
-TOOLCHAINVERSION="${VERSION}-3"	# Toolchain
+TOOLCHAINVERSION="${VERSION}-4"	# Toolchain
 SLOGAN="www.ipfire.org"		# Software slogan
 
 # Include funtions
@@ -38,39 +38,27 @@ SLOGAN="www.ipfire.org"		# Software slogan
 toolchain_build() {
 
 	ORG_PATH=$PATH
-	export PATH=${CTOOLS_DIR}/bin:${TOOLS_DIR}/usr/bin:${TOOLS_DIR}/bin:$PATH
+	export PATH=${TOOLS_DIR}/usr/bin:${TOOLS_DIR}/bin:$PATH
 	STAGE_ORDER=01
 	STAGE=toolchain
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-toolchain.log"
 	export LOGFILE
 	
+	toolchain_make stage1
 	# make distcc first so that CCACHE_PREFIX works immediately
 	[ -z "$DISTCC_HOSTS" ] || toolchain_make distcc
 	toolchain_make ccache
+	toolchain_make binutils		PASS=1
+	toolchain_make gcc		PASS=1
 	toolchain_make linux
-	
-	if [ "${MACHINE}" != "${MACHINE_REAL}" ]; then
-		toolchain_make binutils-x-compile
-		toolchain_make gcc-x-compile		PASS=1
-		toolchain_make glibc-x-compile
-		toolchain_make gcc-x-compile		PASS=2
-	
-	fi
-	
-	toolchain_make binutils				PASS=1
-	toolchain_make gcc				PASS=1
 	toolchain_make glibc
 	toolchain_make adjust-toolchain
-	
-	if [ "${MACHINE}" == "${MACHINE_REAL}" ]; then
-		toolchain_make tcl
-		toolchain_make expect
-		toolchain_make dejagnu
-		toolchain_make gcc			PASS=2
-		toolchain_make binutils			PASS=2
-	fi
-	
+	toolchain_make binutils		PASS=2
+	toolchain_make gcc		PASS=2
+	#toolchain_make tcl		# Maybe this can be dropped
+	#toolchain_make expect		# Maybe this can be dropped
+	#toolchain_make dejagnu		# Maybe this can be dropped
 	toolchain_make ncurses
 	toolchain_make bash
 	toolchain_make bzip2
@@ -88,6 +76,9 @@ toolchain_build() {
 	toolchain_make sed
 	toolchain_make tar
 	toolchain_make texinfo
+	#toolchain_make bison
+	toolchain_make flex
+	toolchain_make bc
 	toolchain_make util-linux-ng
 	toolchain_make strip
 	export PATH=$ORG_PATH
@@ -193,6 +184,7 @@ ipfire_build() {
 	ipfire_make pcre
 	ipfire_make popt
 	ipfire_make libusb
+	ipfire_make bc
 	
 	### Building some network stuff
 	#

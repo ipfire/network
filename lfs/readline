@@ -58,8 +58,7 @@ $(TARGET) :
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-5.patch
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib
-	
+	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib  --disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) SHLIB_LIBS=-lncurses
 	cd $(DIR_APP) && make install
 	

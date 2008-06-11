@@ -78,7 +78,9 @@ $(TARGET) :
 	
 	cd $(DIR_APP) && autoconf
 	
-	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && \
+		CC="gcc -fno-stack-protector -fno-pic -fno-pie -nopie" \
+		./configure --prefix=/usr
 
 	cd $(DIR_APP) && make -j $(PRALLELISM)
 	cd $(DIR_APP) && make install

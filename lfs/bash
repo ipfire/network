@@ -37,7 +37,8 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-fixes-8.patch $(PKG_NAME)-doc-$(VER).tar.gz
+objects = $(DL_FILE) $(THISAPP)-fixes-8.patch $(PKG_NAME)-doc-$(VER).tar.gz \
+	$(THISAPP)-arc4random-1.patch
 
 install : $(TARGET)
 
@@ -74,6 +75,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && tar -xvf $(DIR_DL)/$(PKG_NAME)-doc-$(VER).tar.gz
 	cd $(DIR_APP) && sed -i "s|htmldir = @htmldir@|htmldir = /usr/share/doc/$(THISAPP)|" \
 		Makefile.in
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-arc4random-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr --bindir=/bin \
 		--without-bash-malloc --with-installed-readline
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)

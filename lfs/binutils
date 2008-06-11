@@ -47,7 +47,9 @@ endif
 
 objects = $(DL_FILE) $(THISAPP)-configure-1.patch \
 	$(THISAPP)-uClibc-1.patch \
-	$(THISAPP)-ld_makefile.patch
+	$(THISAPP)-ld_makefile.patch \
+	$(THISAPP)-pt_pax-1.patch \
+	$(THISAPP)-lazy-1.patch
 
 install : $(TARGET)
 
@@ -67,72 +69,56 @@ $(TARGET) :
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-configure-1.patch
 
 ifeq "$(STAGE)" "toolchain"
-ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
-	#
-	#	Normal build
-	#
-
 ifeq "$(PASS)" "1"
-ifeq "$(MACHINE)" "$(MACHINE_REAL)"
-	cd $(DIR_SRC)/binutils-build && CC="gcc -B/usr/bin/" ../$(THISAPP)/configure \
-						--prefix=$(TOOLS_DIR) \
-						--disable-nls \
-						--disable-werror
+	cd $(DIR_SRC)/binutils-build && \
+		../$(THISAPP)/configure \
+			--target=$(IFS_TARGET) \
+			--prefix=$(TOOLS_DIR) \
+			--disable-nls \
+			--disable-werror
 	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make install
-	cd $(DIR_SRC)/binutils-build && make -C ld clean
-	cd $(DIR_SRC)/binutils-build && make -C ld LIB_PATH=$(TOOLS_DIR)/lib
-	cd $(DIR_SRC)/binutils-build && cp -v ld/ld-new $(TOOLS_DIR)/bin
-else
-	#
-	# Cross build
-	#
-	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure \
-						--prefix=$(TOOLS_DIR) \
-						--build=${IFS_HOST} \
-						--host=${IFS_TARGET} \
-						--target=${IFS_TARGET} \
-						--disable-nls \
-						--enable-shared \
-						--disable-multilib
-	cd $(DIR_SRC)/binutils-build && make configure-host																	
-	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
-	cd $(DIR_SRC)/binutils-build && make install
-endif
+
+	cd $(TOOLS_DIR)/$(IFS_TARGET)/bin; \
+		if [ "$(IFS_TARGET)" == "$$($(DIR_APP)/config.guess)" ]; then \
+			for t in $$(ls -1); do \
+				ln -sfv $${t} $(TOOLS_DIR)/bin/$(IFS_TARGET)-$${t}; \
+			done; \
+		fi
 endif
 
 ifeq "$(PASS)" "2"
-	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure \
-						--prefix=$(TOOLS_DIR) \
-						--disable-nls \
-						--with-lib-path=$(TOOLS_DIR)/lib
+	cd $(DIR_SRC)/binutils-build && \
+		CC="$(IFS_TARGET)-gcc -B$(TOOLS_DIR)/lib/" \
+		AR=$(IFS_TARGET)-ar \
+		RANLIB=$(IFS_TARGET)-ranlib \
+		../$(THISAPP)/configure \
+			--prefix=$(TOOLS_DIR) \
+			--disable-nls \
+			--with-lib-path=$(TOOLS_DIR)/lib
 	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make install
-	
+
 	cd $(DIR_SRC)/binutils-build && make -C ld clean
 	cd $(DIR_SRC)/binutils-build && make -C ld LIB_PATH=/usr/lib:/lib
 	cd $(DIR_SRC)/binutils-build && cp -v ld/ld-new $(TOOLS_DIR)/bin
 endif
+endif
 
-else
-	#
-	# Cross build
-	#
+ifeq "$(STAGE)" "base"
+ifeq "$(PAX)" "1"
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pt_pax-1.patch
+endif
+	cd $(DIR_SRC)/binutils-build && \
+		CC="gcc -specs=$$(dirname $$(gcc --print-libgcc-file-name))/myspecs -B/usr/lib/ -B/usr/bin/" \
+		../$(THISAPP)/configure \
+			--prefix=/usr \
+			--enable-shared \
+			--disable-werror
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr $(PARALLELISMFLAGS)
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install
 
-	cd $(DIR_SRC)/binutils-build && AR=ar AS=as ../$(THISAPP)/configure \
-						--prefix=$(CTOOLS_DIR) \
-						--host=${IFS_HOST} \
-						--target=${IFS_TARGET} \
-						--with-lib-path=$(TOOLS_DIR)/lib \
-						--disable-nls \
-						--enable-shared \
-						--disable-multilib
-	cd $(DIR_SRC)/binutils-build && make configure-host
-	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
-	cd $(DIR_SRC)/binutils-build && make install
-	
-	-mkdir -p $(TOOLS_DIR)/include
-	cp -fv $(DIR_APP)/include/libiberty.h $(TOOLS_DIR)/include
+	cp -fv ../$(THISAPP)/include/libiberty.h /usr/include
 endif
 endif
 
