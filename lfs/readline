@@ -57,7 +57,7 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	cd $(DIR_APP) && sed -i '/{OLDSUFF}/c:' support/shlib-install
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-5.patch
 	
-	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib
+	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib --disable-static
 	
 	cd $(DIR_APP) && make -j $(PARALLELISM) SHLIB_LIBS=-lncurses
 	cd $(DIR_APP) && make install

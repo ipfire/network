@@ -63,12 +63,5 @@ $(TARGET) : $(patsubst %,$(DIR_DL)/%,$(objects))
 	rm -v /lib/libz.so
 	ln -sfv ../../lib/libz.so.$(VER) /usr/lib/libz.so
 	
-	cd $(DIR_APP) && make clean
-	cd $(DIR_APP) && ./configure --prefix=/usr
-	cd $(DIR_APP) && make -j $(PARALLELISM)
-	cd $(DIR_APP) && make install
-	
-	chmod -v 644 /usr/lib/libz.a
-	
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
