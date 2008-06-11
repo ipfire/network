@@ -31,6 +31,11 @@ KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }' | tr -d '\n'; grep -
 MACHINE_REAL=`uname -m`
 GIT_TAG=$(git tag | tail -1)
 
+# Security options
+SSP=1
+PIE=1
+PAX=1
+
 # Parallelism flag
 PARALLELISM=$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
 DISTCC_HOSTS=localhost
@@ -241,6 +246,12 @@ beautify()
 				SKIP)
 					echo -ne "${BOLD}${MESSAGE}${NORMAL}${SET_RESULT_COL}[${SKIP} SKIP ${NORMAL}]\n"
 					;;
+				ON)
+					echo -ne "${BOLD}${MESSAGE}${NORMAL}${SET_RESULT_COL}[${DONE}  ON  ${NORMAL}]\n"
+					;;
+				OFF)
+					echo -ne "${BOLD}${MESSAGE}${NORMAL}${SET_RESULT_COL}[${FAIL} OFF  ${NORMAL}]\n"
+					;;
 			esac
 			;;
 		build_stage)
@@ -449,6 +460,9 @@ toolchain_make() {
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
+		SSP=$SSP \
+		PIE=$PIE \
+		PAX=$PAX \
 		install >> $LOGFILE 2>&1
 
 	local COMPILE_SUCCESS=$?
@@ -512,6 +526,9 @@ ipfire_make() {
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
+		SSP=$SSP \
+		PIE=$PIE \
+		PAX=$PAX \
 		LOGFILE=`echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g"` \
 		bash -x -c "cd /usr/src/lfs && \
 		$EXTRA_MAKE make -f $* LFS_BASEDIR=/usr/src install" >>$LOGFILE 2>&1
@@ -574,15 +591,15 @@ prepareenv() {
 	fi
 	
 	# Set SCHED_BATCH
-  if [ -x /usr/bin/schedtool ]; then
-  	echo -ne "Setting kernel schedular to SCHED_BATCH"
-  	/usr/bin/schedtool -B $$
+	if [ -x /usr/bin/schedtool ]; then
+		echo -ne "Setting kernel schedular to SCHED_BATCH"
+		/usr/bin/schedtool -B $$
 		if [ $? -eq 0 ]; then
-  		beautify message DONE
-  	else
-  		beautify message FAIL
-  	fi
-  fi
+			beautify message DONE
+		else
+			beautify message FAIL
+		fi
+	fi
 
 	##############################################################################
 	# Checking if running as root user                                           #
@@ -613,6 +630,32 @@ prepareenv() {
 		beautify message DONE
 	fi
 
+	##############################################################################
+	# Setting security features                                                  #
+	##############################################################################
+
+	echo -ne "Stack smashing protector (SSP)"
+	if [ $SSP -eq 1 ]; then
+		beautify message ON
+	else
+		beautify message OFF
+	fi
+
+	echo -ne "Position independent executeables (PIE)"
+	if [ $PIE -eq 1 ]; then
+		beautify message ON
+	else
+		beautify message OFF
+	fi
+
+	echo -ne "GRSecurity (PAX)"
+	if [ $PAX -eq 1 ]; then
+		beautify message ON
+	else
+		beautify message OFF
+	fi
+
+	export SSP PIE PAX
 
 	##############################################################################
 	# Building Linux From Scratch system configuration                           #
@@ -628,22 +671,11 @@ prepareenv() {
 	if [ -h $TOOLS_DIR ]; then
 		rm -f $TOOLS_DIR
 	fi
-  if [ ! -a $TOOLS_DIR ]; then
+	if [ ! -a $TOOLS_DIR ]; then
 		ln -s $BASEDIR/build_${MACHINE}/$TOOLS_DIR /
 	fi
 	if [ ! -h $TOOLS_DIR ]; then
 		exiterror "Could not create $TOOLS_DIR symbolic link."
-	fi
-	
-	# Check /ctools symlink
-	if [ -h $CTOOLS_DIR ]; then
-		rm -f $CTOOLS_DIR
-	fi
-  if [ ! -a $CTOOLS_DIR ]; then
-		ln -s $BASEDIR/build_${MACHINE}/$CTOOLS_DIR /
-	fi
-	if [ ! -h $CTOOLS_DIR ]; then
-		exiterror "Could not create $CTOOLS_DIR symbolic link."
 	fi
 
 	# Setup environment
@@ -653,9 +685,9 @@ prepareenv() {
 	unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
 
 	# Make some extra directories
-	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$CTOOLS_DIR,$INSTALLER_DIR,cdrom,images} 2>/dev/null
+	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,$INSTALLER_DIR,cdrom,images} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
-	mkdir -p $LFS/{$TOOLS_DIR/usr,$CTOOLS_DIR,usr/src} 2>/dev/null
+	mkdir -p $LFS/{$TOOLS_DIR/usr,usr/src} 2>/dev/null
 	mkdir -p $LFS/dev/pts
 	mkdir -p $LFS/proc
 	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${MACHINE},src,ccache,distcc}
@@ -677,7 +709,6 @@ prepareenv() {
 	mount --bind $BASEDIR/log_${MACHINE}											$LFS/usr/src/log_${MACHINE}
 	mount --bind $BASEDIR/src																	$LFS/usr/src/src
 	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR					$LFS/$TOOLS_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/$CTOOLS_DIR				$LFS/$CTOOLS_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR			$LFS/$INSTALLER_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$CDROM_DIR					$LFS/$CDROM_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$IMAGES_DIR				$LFS/$IMAGES_DIR
