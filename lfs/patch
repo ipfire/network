@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = patch
-VER        = 2.5.4
+VER        = 2.5.9
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -37,7 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-mkstemp-1.patch $(THISAPP)-fixes-1.patch
 
 install : $(TARGET)
 
@@ -54,6 +54,8 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-1.patch
+
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
@@ -61,6 +63,7 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-mkstemp-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
