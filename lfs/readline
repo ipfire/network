@@ -61,8 +61,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib  --disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) SHLIB_LIBS=-lncurses
 	cd $(DIR_APP) && make install
-	
-	mv -v /lib/lib{readline,history}.a /usr/lib
+
 	rm -fv /lib/lib{readline,history}.so
 	ln -sfv ../../lib/libreadline.so.5 /usr/lib/libreadline.so
 	ln -sfv ../../lib/libhistory.so.5 /usr/lib/libhistory.so
