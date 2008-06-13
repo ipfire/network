@@ -24,13 +24,14 @@
 
 include Config
 
-VER        = 1.10
+PKG_NAME   = attr
+VER        = 2.4.41
 
-THISAPP    = libcap-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -38,30 +39,12 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 2c09eea823f67cfdde96177a959bc39b
-
 install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
 download : $(objects)
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(objects) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,10 +53,15 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-syscall.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/$(THISAPP)-shared.patch
-	cd $(DIR_APP) && make
+	cd $(DIR_APP) && ./configure --prefix=/usr --bindir=/bin --enable-shared
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	chmod +x /lib/libcap.so.*
+
+	install -v -m0755 $(DIR_APP)/libattr/.libs/libattr.so.1.1.0 /lib
+	ln -vsf libattr.so.1.1.0 /lib/libattr.so.1
+	ln -vsf libattr.so.1.1.0 /lib/libattr.so
+	install -v -d /usr/include/attr
+	install -v -m0644 $(DIR_APP)/include/xattr.h /usr/include/attr/
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
