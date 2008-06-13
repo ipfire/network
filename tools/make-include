@@ -713,8 +713,8 @@ prepareenv() {
 	# Make some extra directories
 	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,cdrom} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
-	mkdir -p $BASEDIR/cache/toolchains 2>/dev/null
-	mkdir -p $LFS/{$TOOLS_DIR/usr,usr/src} 2>/dev/null
+	mkdir -p $BASEDIR/cache/{toolchains,patches,tarballs} 2>/dev/null
+	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/dev/pts
 	mkdir -p $LFS/proc
 	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${MACHINE},src,ccache,distcc}
