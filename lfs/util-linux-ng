@@ -69,10 +69,10 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
-	chmod -v -s /bin/mount
-	setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep /bin/mount
-	chmod -v -s /bin/umount
-	setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep /bin/umount
+	#chmod -v -s /bin/mount
+	#setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep /bin/mount
+	#chmod -v -s /bin/umount
+	#setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep /bin/umount
 endif
 
 ifeq "$(STAGE)" "installer"
