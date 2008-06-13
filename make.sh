@@ -49,6 +49,8 @@ toolchain_build() {
 	# make distcc first so that CCACHE_PREFIX works immediately
 	[ -z "$DISTCC_HOSTS" ] || toolchain_make distcc
 	toolchain_make ccache
+	toolchain_make gmp
+	toolchain_make mpfr
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
 	toolchain_make linux
@@ -97,6 +99,8 @@ base_build() {
 	export LOGFILE
 	
 	ipfire_make stage2
+	ipfire_make gmp
+	ipfire_make mpfr
 	ipfire_make linux
 	ipfire_make man-pages
 	ipfire_make glibc

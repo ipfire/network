@@ -24,14 +24,14 @@
 
 include Config
 
-PKG_NAME   = gmp
-VER        = 4.2.2
+PKG_NAME   = mpfr
+VER        = 2.3.1
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -39,7 +39,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-install: $(TARGET)
+install : $(TARGET)
 
 download : $(objects)
 
@@ -57,16 +57,20 @@ $(TARGET) :
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && ./configure \
 		--prefix=$(TOOLS_DIR) \
+		--enable-thread-safe \
 		--disable-shared \
 		--enable-static \
-		--enable-fft \
-		--enable-mpbsd
+		--with-gmp=$(TOOLS_DIR)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && ./configure --prefix=/usr --enable-cxx --enable-mpbsd ABI=32
+	cd $(DIR_APP) && ./configure \
+		--prefix=/usr \
+		--enable-thread-safe \
+		--disable-shared \
+		--enable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
