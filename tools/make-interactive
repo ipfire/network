@@ -124,7 +124,9 @@ toolchain)
 	# Check if host can build the toolchain
 	. tools/make-check
 	check_toolchain
-	
+
+	build_spy compiling
+
 	toolchain_build
 	
 	stdumount
@@ -140,6 +142,9 @@ toolchain)
 	md5sum cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
 		> cache/toolchains/$TOOLCHAINNAME.tar.bz2.md5
 	stdumount
+
+	build_spy idle
+
 	;;
 	
 gettoolchain)
