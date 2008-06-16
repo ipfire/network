@@ -28,7 +28,13 @@
 import os
 import sys
 
-import hashlib
+hashlib = 0
+try:
+	import sha
+except ImportError:
+	from hashlib import sha1
+	hashlib = 1
+
 import shutil
 
 from urlgrabber.grabber import URLGrabber, URLGrabError
@@ -84,7 +90,10 @@ if not gobj:
 	sys.exit(1)
 
 # Init hash
-hobj = hashlib.sha1()
+if hashlib:
+	hobj = sha1()
+else:
+	hobj = sha.new()
 
 ###############################################################################
 # Parse header                                                                #
