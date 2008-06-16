@@ -355,8 +355,14 @@ exiterror() {
 	echo -ne "${FAIL}ERROR${NORMAL}: ${BOLD}$*${NORMAL}\n"
 	[ -z "$LOGFILE" ] || \
 	echo "       Check $LOGFILE for errors if applicable"
+	build_spy error
 	exit 1
 } # End of exiterror()
+
+build_spy() {
+	UUID=${UUID} LOGFILE=${LOGFILE} \
+		python $BASEDIR/tools/buildspy $* >/dev/null 2>&1 &
+} # End of build_spy
 
 ################################################################################
 # This is the function that sets the environment of a chroot and enters it     #
@@ -762,8 +768,13 @@ build() {
 	PACKAGE=`ls -v -r $TOOLCHAINNAME.tar.bz2 2> /dev/null | head -n 1`
 	#only restore on a clean disk
 
+	local BLD_TIME_START=`date +%s`
+
 	echo -ne "Building for ${BOLD}${TARGET} (${MACHINE}) on ${MACHINE_REAL}${NORMAL}\n"
-	
+
+	build_spy set hostname $(hostname -f)
+	build_spy compiling
+
 	if [ -f $BASEDIR/log_${MACHINE}/02_base/stage2-LFS ]; then
 		prepareenv
 		echo "Using installed toolchain" >> $LOGFILE
@@ -803,4 +814,8 @@ build() {
 	echo ""
 	echo "... and all this hard work for this:"
 	ls -sh $BASEDIR/${SNAME}-${VERSION}.${MACHINE}.iso
+
+	local BLD_TIME_END=`date +%s`
+	build_spy set duration $[ $BLD_TIME_END - $BLD_TIME_START ]
+	build_spy idle
 }
