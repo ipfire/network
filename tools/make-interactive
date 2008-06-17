@@ -19,6 +19,10 @@
 #                                                                             #
 ###############################################################################
 
+usage() {
+	cat doc/make.sh-usage
+}
+
 case "$1" in
 build)
 	# check for prerequisites
@@ -47,6 +51,9 @@ batch)
 			;;
 		attach|watch)
 			batch_attach
+			;;
+		*)
+			usage
 			;;
 	esac
 	;;
@@ -115,11 +122,9 @@ toolchain)
 	stdumount
 	echo -ne "\ntarball creation "
 	[ -d $BASEDIR/cache/toolchains ] || mkdir $BASEDIR/cache/toolchains
-	cd $BASEDIR && tar cj \
-				--exclude='log_${MACHINE}/_build.*.log' \
-				--file=cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
-				build_${MACHINE} \
-				log_${MACHINE} >> $LOGFILE
+	cd $BASEDIR && tar cj --exclude='log_${MACHINE}/_build.*.log' \
+		--file=cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
+		build_${MACHINE} log_${MACHINE} >> $LOGFILE
 	beautify message DONE
 	echo `ls -sh cache/toolchains/$TOOLCHAINNAME.tar.bz2`
 	md5sum cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
@@ -130,26 +135,7 @@ toolchain)
 	;;
 
 gettoolchain)
-	if [ ! -f $BASEDIR/cache/toolchains/$TOOLCHAINNAME.tar.bz2 ]; then
-		URL_TOOLCHAIN=$(grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }')
-		DIR_TOOLCHAIN="$BASEDIR/cache/toolchains"
-
-		echo "Loading toolchain for $MACHINE"
-		BASEDIR=$BASEDIR DIR_TMP=/tmp DIR_DL=$DIR_TOOLCHAIN \
-			sh $BASEDIR/tools/downloader $URL_TOOLCHAIN $TOOLCHAINNAME.tar.bz2
-
-		if [ $? -eq 0 ]; then
-			echo -n "Toolchain was successfully downloaded"
-			beautify message DONE
-		else
-			echo -n "ERROR: Downloading toolchain \"$TOOLCHAINNAME\""
-			beautify message FAIL
-			echo "Precompiled toolchain not always available for every machine"
-		fi
-	else
-		echo -n "Toolchain \"$TOOLCHAINNAME\" is already existing"
-		beautify message SKIP
-	fi
+	gettoolchain
 	;;
 
 check)
@@ -164,7 +150,6 @@ g[iu]t)
 			git_pull $*
 			;;
 		commit|ci)
-			clear
 			git_commit $*
 			;;
 		dist|export|archive)
@@ -215,7 +200,7 @@ uploadsrc)
 	;;
 
 *)
-	cat doc/make.sh-usage
+	usage
 	;;
 
 esac
