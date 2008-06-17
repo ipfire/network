@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -17,33 +17,45 @@
 # You should have received a copy of the GNU General Public License           #
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #                                                                             #
-# A small helper to make the git functions comfortable                        #
-#                                                                             #
 ###############################################################################
 
 build_spy() {
-	UUID=$UUID LOGFILE=$LOGFILE \
-		python $BASEDIR/tools/buildspy $* >/dev/null 2>&1 &
-} # End of build_spy
+	## Do nothing if UUID is not set
+	[ -z "${UUID}" ] && return
+
+	ACTION=$1; KEY=$2; shift 2
+	VAL="$*"
+
+	DATA="uuid=${UUID}&action=${ACTION}"
+	if [ "${ACTION}" == "set" ]; then
+		DATA+="&key=${KEY}&val=\"${VAL}\""
+	elif [ "${ACTION}" == "error" ]; then
+		## if we send an error we append
+		#  the last 10 lines of $LOGFILE
+		LOG=$(tail -n 10 ${LOGFILE})
+		DATA+="&log=${LOG}"
+	fi
+
+	wget -q -O /dev/null --user-agent="${NAME}BuildSpy/${VERSION}" \
+		--post-data="${DATA}" \
+		http://build.ipfire.org/build.py
+}
 
 build_spy_send_profile() {
 	MEM_SIZE=$[ $(grep "^MemTotal:" /proc/meminfo | awk '{ print $2 }') * 1024 ]
 
 	CPU_CNT=$(grep "^processor" < /proc/cpuinfo | wc -l)
-	CPU_MHZ=$(grep "^cpu MHz" --max-count=1 /proc/cpuinfo | awk -F': ' '{ print $2 }')
-	CPU_MIPS=$[ $(grep "^bogomips" --max-count=1 /proc/cpuinfo | awk '{ print $3 }' | awk -F. '{ print $1 }') * ${CPU_CNT} ]
-	CPU_NAME=$(grep "^vendor_id" --max-count=1 /proc/cpuinfo | awk -F': ' '{ print $2 }' | tr '\n' ' '; \
-			grep "^model name" --max-count=1 /proc/cpuinfo | awk -F': ' '{ print $2 }')
+	CPU_MHZ=$(grep "^cpu MHz" --max-count=1 /proc/cpuinfo | \
+			awk -F': ' '{ print $2 }')
+	CPU_MIPS=$[ $(grep "^bogomips" --max-count=1 /proc/cpuinfo | \
+			awk '{ print $3 }' | awk -F. '{ print $1 }') * ${CPU_CNT} ]
+	CPU_NAME=$(grep "^model name" --max-count=1 /proc/cpuinfo | \
+			awk -F': ' '{ print $2 }')
 
 	build_spy set hostname $(hostname -f || hostname)
-	sleep 1
 	build_spy set cpu_mhz  $CPU_MHZ
-	sleep 1
 	build_spy set cpu_mips $CPU_MIPS
-	sleep 1
 	build_spy set cpu_name $CPU_NAME
-	sleep 1
 	build_spy set mem_size $MEM_SIZE
-	sleep 1
-	build_spy set distcc ${DISTCC_PORT-3632}
+	build_spy set distcc   ${DISTCC_PORT-3632}
 }
