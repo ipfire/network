@@ -26,10 +26,6 @@
 #
 ###############################################################################
 
-[ -z $GIT_USER ] && exiterror "You have to setup GIT_USER first."
-
-GIT_URL="ssh://${GIT_USER}@git.ipfire.org/pub/git/ipfire-3.x"
-
 if [ -z $EDITOR ]; then
 	for i in nano emacs vi; do
 		EDITOR=$(which $i 2>/dev/null)
@@ -81,6 +77,10 @@ git_pull() {
 }
 
 git_push() {
+	[ -z $GIT_USER ] && exiterror "You have to setup GIT_USER first."
+
+	GIT_URL="ssh://${GIT_USER}@git.ipfire.org/pub/git/ipfire-3.x"
+
 	[ "$CURRENT_BRANCH" == "master" ] || \
 		exiterror "You have to be in branch \"master\", if you want to push."
 	git push ${GIT_URL} master
