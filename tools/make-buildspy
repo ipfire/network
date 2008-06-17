@@ -1,0 +1,48 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+# A small helper to make the git functions comfortable                        #
+#                                                                             #
+###############################################################################
+
+build_spy() {
+	python $BASEDIR/tools/buildspy $* >/dev/null 2>&1 &
+} # End of build_spy
+
+build_spy_send_profile() {
+	MEM_SIZE=$[ $(grep "^MemTotal:" /proc/meminfo | awk '{ print $2 }') * 1024 ]
+
+	CPU_CNT=$(grep "^processor" < /proc/cpuinfo | wc -l)
+	CPU_MHZ=$(grep "^cpu MHz" --max-count=1 /proc/cpuinfo | awk -F': ' '{ print $2 }')
+	CPU_MIPS=$[ $(grep "^bogomips" --max-count=1 /proc/cpuinfo | awk '{ print $3 }' | awk -F. '{ print $1 }') * ${CPU_CNT} ]
+	CPU_NAME=$(grep "^vendor_id" --max-count=1 /proc/cpuinfo | awk -F': ' '{ print $2 }' | tr '\n' ' '; \
+			grep "^model name" --max-count=1 /proc/cpuinfo | awk -F': ' '{ print $2 }')
+
+	build_spy set hostname $(hostname -f || hostname)
+	sleep 1
+	build_spy set cpu_mhz  $CPU_MHZ
+	sleep 1
+	build_spy set cpu_mips $CPU_MIPS
+	sleep 1
+	build_spy set cpu_name $CPU_NAME
+	sleep 1
+	build_spy set mem_size $MEM_SIZE
+	sleep 1
+	build_spy set distcc ${DISTCC_PORT-3632}
+}

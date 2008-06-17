@@ -194,6 +194,8 @@ NORMAL="\\033[0;39m"
 #                                                                              #
 ################################################################################
 
+. $BASEDIR/tools/make-buildspy
+
 evaluate() {
 	if [ "$?" -eq "0" ]; then
 		beautify message DONE
@@ -358,11 +360,6 @@ exiterror() {
 	build_spy error
 	exit 1
 } # End of exiterror()
-
-build_spy() {
-	UUID=${UUID} LOGFILE=${LOGFILE} \
-		python $BASEDIR/tools/buildspy $* >/dev/null 2>&1 &
-} # End of build_spy
 
 ################################################################################
 # This is the function that sets the environment of a chroot and enters it     #
@@ -772,7 +769,7 @@ build() {
 
 	echo -ne "Building for ${BOLD}${TARGET} (${MACHINE}) on ${MACHINE_REAL}${NORMAL}\n"
 
-	build_spy set hostname $(hostname -f)
+	build_spy_send_profile &
 	build_spy compiling
 
 	if [ -f $BASEDIR/log_${MACHINE}/02_base/stage2-LFS ]; then
