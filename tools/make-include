@@ -195,6 +195,10 @@ NORMAL="\\033[0;39m"
 ################################################################################
 
 . $BASEDIR/tools/make-buildspy
+. $BASEDIR/tools/make-check
+. $BASEDIR/tools/make-batch
+. $BASEDIR/tools/make-compilers
+. $BASEDIR/tools/make-git
 
 evaluate() {
 	if [ "$?" -eq "0" ]; then
@@ -780,8 +784,7 @@ build() {
 		if [ -z "$PACKAGE" ]; then
 			echo "Full toolchain compilation"
 			prepareenv
-			
-			. $BASEDIR/tools/make-check
+
 			check_toolchain
 			
 			beautify build_stage "Building toolchain"

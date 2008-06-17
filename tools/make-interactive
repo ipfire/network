@@ -22,13 +22,13 @@
 case "$1" in
 build)
 	# check for prerequisites
-	. $BASEDIR/tools/make-check && check_build
+	check_build
 	# compile the distro right now
 	build
 	# beeps when finished
 	echo -ne '\a'
 	;;
-	
+
 shell)
 	# enter a shell inside LFS chroot
 	# may be used to change kernel settings
@@ -38,7 +38,6 @@ shell)
 
 batch)
 	# build the distro in background
-	. $BASEDIR/tools/make-batch
 	case "$2" in
 		start)
 			batch_start
@@ -54,8 +53,6 @@ batch)
 
 stats)
 	# show some stats about the compiler(s)
-	. $BASEDIR/tools/make-compilers
-	
 	case "$2" in
 		ccache)
 			ccache_stats
@@ -65,28 +62,15 @@ stats)
 			;;
 	esac
 	;;
-	
+
 clean)
 	echo -ne "Cleaning ${BOLD}$MACHINE${NORMAL} buildtree"
-	for i in `mount | grep $BASEDIR | sed 's/^.*loop=\(.*\))/\1/'`
-	do
-		$LOSETUP -d $i 2>/dev/null
-	done
 
-	for i in `mount | grep $BASEDIR | cut -d " " -f 1`
-	do
+	for i in $(mount | grep $BASEDIR | cut -d " " -f 1); do
 		umount $i
 	done
 
 	stdumount
-	
-	for i in `seq 0 7`
-	do
-		if ( losetup /dev/loop${i} 2>/dev/null | grep -q "/install/images" ); then
-			umount /dev/loop${i}     2>/dev/null;
-			losetup -d /dev/loop${i} 2>/dev/null;
-		fi;
-	done
 
 	rm -rf $BASEDIR/build_${MACHINE}
 	rm -rf $BASEDIR/log_${MACHINE}
@@ -97,7 +81,7 @@ clean)
 	fi
 	beautify message DONE
 	;;
-	
+
 downloadsrc)
 	LOGFILE=$BASEDIR/log_${MACHINE}/_build.00-preparation.log
 	
@@ -118,11 +102,10 @@ downloadsrc)
 	done
 	cd - >/dev/null 2>&1
 	;;
-	
+
 toolchain)
 	prepareenv
 	# Check if host can build the toolchain
-	. tools/make-check
 	check_toolchain
 
 	build_spy compiling
@@ -144,9 +127,8 @@ toolchain)
 	stdumount
 
 	build_spy idle
-
 	;;
-	
+
 gettoolchain)
 	if [ ! -f $BASEDIR/cache/toolchains/$TOOLCHAINNAME.tar.bz2 ]; then
 		URL_TOOLCHAIN=$(grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }')
@@ -171,29 +153,10 @@ gettoolchain)
 	;;
 
 check)
-	. tools/make-check
 	check_sanity $2
 	;;
-	
-othersrc)
-	prepareenv
-	echo -ne "`date -u '+%b %e %T'`: Build sources iso for $MACHINE" | tee -a $LOGFILE
-	chroot $LFS /tools/bin/env -i   HOME=/root \
-	TERM=$TERM PS1='\u:\w\$ ' \
-	PATH=/usr/local/bin:/bin:/usr/bin:/sbin:/usr/sbin \
-	VERSION=$VERSION NAME="$NAME" SNAME="$SNAME" MACHINE=$MACHINE \
-	/bin/bash -x -c "cd /usr/src/lfs && make -f sources-iso LFS_BASEDIR=/usr/src install" >>$LOGFILE 2>&1
-	mv $LFS/install/images/ipfire-* $BASEDIR >> $LOGFILE 2>&1
-	if [ $? -eq "0" ]; then
-		beautify message DONE
-	else
-		beautify message FAIL
-	fi
-	stdumount
-	;;
-	
+
 g[iu]t)
-	. $BASEDIR/tools/make-git
 	COMMAND=$2
 	shift 2
 	case "$COMMAND" in
@@ -224,7 +187,7 @@ g[iu]t)
 			;;
 	esac
 	;;
-	
+
 uploadsrc)
 	PWD=`pwd`
 	cd $BASEDIR/cache/
@@ -250,56 +213,9 @@ uploadsrc)
 	cd $PWD
 	exit 0
 	;;
-	
-upload)
-	FTP_ISO_PORT=`echo "$FTP_ISO_URL" | awk -F: '{ print $2 }'`
-	FTP_ISO_URL=`echo "$FTP_ISO_URL" | awk -F: '{ print $1 }'`
-	if [ -z $FTP_ISO_PORT ]; then
-	    FTP_ISO_PORT=21
-	fi
-	cat <<EOF > .ftp-commands
-mkdir -p $FTP_ISO_PATH$SVN_REVISION
-mkdir -p $FTP_ISO_PATH$SVN_REVISION/paks
-quit
-EOF
-	ncftp -u $FTP_ISO_USER -p $FTP_ISO_PASS -P $FTP_ISO_PORT $FTP_ISO_URL < .ftp-commands
-	rm -f .ftp-commands
-		
-	case "$2" in
-	  iso)
-		echo -e "Uploading the iso to $FTP_ISO_PATH/$SVN_REVISION."
 
-		md5sum ipfire-$VERSION.$MACHINE-full.iso > ipfire-$VERSION.$MACHINE-full.iso.md5
-		for i in svn_status ipfire-source-r$SVN_REVISION.tar.gz ipfire-$VERSION.$MACHINE-full.iso ipfire-$VERSION.$MACHINE-full.iso.md5 ipfire-$VERSION.$MACHINE-devel.iso ipfire-$VERSION.$MACHINE-devel.iso.md5; do
-				if [ -e "$i" ]; then
-			    ncftpput -u $FTP_ISO_USER -p $FTP_ISO_PASS -P $FTP_ISO_PORT $FTP_ISO_URL $FTP_ISO_PATH$SVN_REVISION/ $i
-					if [ "$?" -eq "0" ]; then
-						echo "The file with name $i was successfully uploaded to $FTP_ISO_URL$FTP_ISO_PATH$SVN_REVISION/."
-					else
-						echo "There was an error while uploading the file $i to the ftp server."
-						exit 1
-					fi
-				fi
-		done
-		rm -f ipfire-$VERSION.$MACHINE-full.iso.md5
-		if [ "$3" = "--with-sources-cd" ]; then
-			ncftpput -u $FTP_ISO_USER -p $FTP_ISO_PASS -P $FTP_ISO_PORT $FTP_ISO_URL $FTP_ISO_PATH/$SVN_REVISION/ ipfire-sources-cd-$VERSION.$MACHINE.iso
-		fi
-		;;
-	  paks)
-		ncftpput -u $FTP_ISO_USER -p $FTP_ISO_PASS -P $FTP_ISO_PORT $FTP_ISO_URL $FTP_ISO_PATH$SVN_REVISION/paks packages/*
-		if [ "$?" -eq "0" ]; then
-			echo -e "The packages were successfully uploaded to $FTP_ISO_URL$FTP_ISO_PATH$SVN_REVISION/."
-		else
-			echo -e "There was an error while uploading the packages to the ftp server."
-			exit 1
-		fi
-	  ;;
-	esac
-	;;
-	
 *)
 	cat doc/make.sh-usage
 	;;
-	
+
 esac
