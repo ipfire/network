@@ -64,10 +64,12 @@ export BASEDIR
 #
 ###############################################################################
 
-if [ -e .config ]; then
-	. $BASEDIR/.config
+if ! [ -e .config ]; then
+	sed -e "s/@UUID@/$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid)/" \
+	    -e "s/^#UUID=/UUID=/" < $BASEDIR/.config-default > $BASEDIR/.config
 fi
 
+. $BASEDIR/.config
 
 ###############################################################################
 #
