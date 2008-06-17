@@ -22,7 +22,8 @@
 ###############################################################################
 
 build_spy() {
-	python $BASEDIR/tools/buildspy $* >/dev/null 2>&1 &
+	UUID=$UUID LOGFILE=$LOGFILE \
+		python $BASEDIR/tools/buildspy $* >/dev/null 2>&1 &
 } # End of build_spy
 
 build_spy_send_profile() {
