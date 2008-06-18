@@ -207,7 +207,6 @@ ipfire_build() {
 	ipfire_make libnetfilter_log
 	ipfire_make dnsmasq
 	ipfire_make l7-protocols
-	ipfire_make iptstate
 	ipfire_make bridge-utils
 	ipfire_make vlan
 	ipfire_make bind
