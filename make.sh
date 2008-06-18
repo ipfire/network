@@ -51,9 +51,9 @@ toolchain_build() {
 	toolchain_make ccache
 	toolchain_make gmp
 	toolchain_make mpfr
+	toolchain_make linux
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
-	toolchain_make linux
 	toolchain_make glibc
 	toolchain_make adjust-toolchain
 	toolchain_make binutils		PASS=2
@@ -72,6 +72,7 @@ toolchain_build() {
 	toolchain_make gettext
 	toolchain_make grep
 	toolchain_make gzip
+	toolchain_make m4
 	toolchain_make make
 	toolchain_make patch
 	toolchain_make perl
