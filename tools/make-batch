@@ -26,13 +26,14 @@ BATCHLOG=$BASEDIR/log_${MACHINE}/_build.00-batch.log
 ###############################################################################
 batch_start() {
 
-	if ( screen -ls | grep -q [i]pfire ); then
+	if [ -e "$BASEDIR/.running" ]; then
 		echo -n "Build is already running..."
 		beautify message FAIL
 		exit 1
 	fi
 	
 	screen -dmS ipfire $0 batch _run
+
 }
 
 ###############################################################################                   
@@ -54,12 +55,10 @@ batch_attach() {
 ###############################################################################
 batch_run() {
 
-	. $BASEDIR/tools/make-subversion
-	
 	> $BATCHLOG		## Empty the log
 	
-	svn_up		| tee -a $BATCHLOG
-	$0 build	| tee -a $BATCHLOG
+	yes "y" | git_pull | tee -a $BATCHLOG
+	build | tee -a $BATCHLOG
 	if [ "$?" -ne "0" ]; then
 		batch_error
 	fi
@@ -84,7 +83,7 @@ batch_success() {
 ###############################################################################
 batch_error() {
 
-	batch_mail failed		## Send an error message
+	batch_mail failed	## Send an error message
 
 }
 
@@ -92,7 +91,7 @@ batch_error() {
 # A function to send an email to the developers                               #
 ###############################################################################
 batch_mail() {
-	
+
 	ACTION=$1
 
 	SUBJECT="IPFire.org $(hostname -f):"
@@ -122,4 +121,5 @@ batch_mail() {
 		beautify message FAIL
 	fi
 	rm -f $MAILLOG
+
 }

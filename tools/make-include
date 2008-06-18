@@ -821,3 +821,26 @@ build() {
 	build_spy set duration $[ $BLD_TIME_END - $BLD_TIME_START ]
 	build_spy idle
 }
+
+gettoolchain() {
+	if [ ! -f $BASEDIR/cache/toolchains/$TOOLCHAINNAME.tar.bz2 ]; then
+		URL_TOOLCHAIN=$(grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }')
+		DIR_TOOLCHAIN="$BASEDIR/cache/toolchains"
+
+		echo "Loading toolchain for $MACHINE"
+		BASEDIR=$BASEDIR DIR_TMP=/tmp DIR_DL=$DIR_TOOLCHAIN \
+			sh $BASEDIR/tools/downloader $URL_TOOLCHAIN $TOOLCHAINNAME.tar.bz2
+
+		if [ $? -eq 0 ]; then
+			echo -n "Toolchain was successfully downloaded"
+			beautify message DONE
+		else
+			echo -n "ERROR: Downloading toolchain \"$TOOLCHAINNAME\""
+			beautify message FAIL
+			echo "Precompiled toolchain not always available for every machine"
+		fi
+	else
+		echo -n "Toolchain \"$TOOLCHAINNAME\" is already existing"
+		beautify message SKIP
+	fi
+}
