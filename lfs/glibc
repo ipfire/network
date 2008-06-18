@@ -93,18 +93,18 @@ endif
 		../$(THISAPP)/configure \
 			--prefix=$(TOOLS_DIR) \
 			--host=$(IFS_TARGET) \
-			--build=$(shell $(DIR_APP)/scripts/config.guess) \
+			--build=$$($(DIR_APP)/scripts/config.guess) \
 			--disable-profile \
 			--enable-add-ons \
 			--enable-kernel=2.6.0 \
 			--with-headers=$(TOOLS_DIR)/include \
+			--with-binutils=$(TOOLS_DIR)/bin \
 			--without-selinux \
 			--without-gd \
 			--enable-bind-now \
 			libc_cv_initfini_array=yes \
 			libc_cv_forced_unwind=yes \
 			libc_cv_c_cleanup=yes
-			#--with-binutils=$(TOOLS_DIR)/bin
 	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
 	-mkdir -v $(TOOLS_DIR)/etc
 	touch $(TOOLS_DIR)/etc/ld.so.conf
