@@ -57,8 +57,6 @@ $(TARGET) :
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && ./configure \
 		--prefix=$(TOOLS_DIR) \
-		--host=$(IFS_TARGET) \
-		--build=$(shell $(DIR_APP)/config.guess) \
 		--disable-shared \
 		--enable-static \
 		--enable-fft \
