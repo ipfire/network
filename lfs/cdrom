@@ -45,9 +45,7 @@ $(TARGET) :
 	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
 	
 	mkdir -p $(CDROM_DIR)/{isolinux,doc}
-	
-	### Compressing root fs
-	#
+
 	find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
 		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq > $(CDROM_DIR)/archive.files
 	
@@ -60,36 +58,34 @@ $(TARGET) :
 	fi
 	
 	lzma_sdk e $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp \
-						 $(CDROM_DIR)/$(SNAME)-$(VERSION).img
+		$(CDROM_DIR)/$(SNAME)-$(VERSION).img
 	
 	# These files won't be included in the iso
 	@rm -f $(CDROM_DIR)/archive.{files,errors} $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp
 	
 	# Other files
 	sed 's/VERSION/$(VERSION)/' $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README
-	cp -vf $(DIR_SRC)/doc/COPYING								$(CDROM_DIR)
+	cp -vf $(DIR_SRC)/doc/COPYING $(CDROM_DIR)
 	cp -vf $(DIR_SRC)/doc/{ChangeLog,packages-list.txt} $(CDROM_DIR)/doc
 	
 	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/isolinux/initrd0
-	cp -vf /boot/ipfirekernel-$(KVER)						$(CDROM_DIR)/isolinux/ipfire0
+	cp -vf /boot/ipfirekernel-$(KVER) $(CDROM_DIR)/isolinux/ipfire0
 	
 	cp -vf /usr/lib/syslinux/{vesamenu.c32,isolinux.bin} \
 		$(DIR_CONF)/bootloader/splash.{jpg,lss} $(DIR_CONF)/bootloader/*.msg \
-																							$(CDROM_DIR)/isolinux
+		$(CDROM_DIR)/isolinux
 	sed -e "s/VERSION/$(VERSION)/g" $(DIR_CONF)/bootloader/installer.conf > \
-																							$(CDROM_DIR)/isolinux/isolinux.cfg
-	cp -vf /usr/lib/memtest86+/memtest.bin			$(CDROM_DIR)/isolinux/memtest
+		$(CDROM_DIR)/isolinux/isolinux.cfg
+	cp -vf /usr/lib/memtest86+/memtest.bin $(CDROM_DIR)/isolinux/memtest
 	
 	# Creating the info file
 	echo -e "Release: $(NAME)-$(VERSION)" \
-					"\nBuild host: $$(hostname)\nDate: $$(date)" \
-					"\nMD5: $$(md5sum $(CDROM_DIR)/$(SNAME)-$(VERSION).img | awk '{ print $$1 }')" \
-				> $(CDROM_DIR)/.$(SNAME)info
+		"\nBuild host: $$(hostname)\nDate: $$(date)" \
+		"\nMD5: $$(md5sum $(CDROM_DIR)/$(SNAME)-$(VERSION).img | awk '{ print $$1 }')" \
+		> $(CDROM_DIR)/.$(SNAME)info
 	
 	cd $(CDROM_DIR) && mkisofs -J -r -V "$(NAME)_$(VERSION)" \
 		-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
 		-boot-info-table . > $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).iso
 	
 	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
-	
-	### REBUILD THIS AT EVERY PASS
