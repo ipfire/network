@@ -53,6 +53,7 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && sed -e "s/-Werror//g" -i src/Makefile.in
 	cd $(DIR_APP) && ./configure --prefix=/usr --localstatedir=/var \
 		--disable-{apache,apple_sensors,csv,ipvs,memcached,mysql,netlink,nginx,nut} \
 		--disable-{perl,serial,snmp,tape,vserver,wireless,xmms} \
@@ -60,7 +61,7 @@ $(TARGET) :
 		--enable-{interface,iptables,irq,load,logfile,mbmon,memory,multimeter} \
 		--enable-{network,nfs,ntpd,ping,processes,rrdtool,sensors,swap,syslog} \
 		--enable-{tcpconns,unixsock,users} \
-		--with-rrdtool=/usr/share/rrdtool/ --enable-debug
+		--with-rrdtool=/usr/share/rrdtool/
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/collectd.conf /etc/
