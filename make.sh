@@ -323,7 +323,6 @@ misc_build() {
 	### Assembler
 	#
 	ipfire_make nasm
-	
 	ipfire_make syslinux
 	
 	#ipfire_make squid
@@ -392,6 +391,10 @@ misc_build() {
 	# ---------------------------------------------------------------------------
 	#ipfire_make as86
 	#ipfire_make mbr
+
+	### Debugging
+	#
+	ipfire_make strace
 }
 
 ################################################################################
@@ -410,6 +413,8 @@ installer_build() {
 
 	ipfire_make stage5
 	ipfire_make ccache
+	ipfire_make gmp
+	ipfire_make mpfr
 	ipfire_make linux
 	ipfire_make binutils
 	ipfire_make uClibc		PASS=1

@@ -71,5 +71,16 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make install
 endif
 
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && ABI=32 ./configure \
+		--prefix=$(UCLIBC_DIR) \
+		--disable-shared \
+		--enable-static \
+		--enable-fft \
+		--enable-mpbsd
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
