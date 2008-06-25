@@ -53,7 +53,7 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CC="gcc -fno-PIE -fno-stack-protector"
 	-mkdir -p /usr/lib/memtest86+
 	cd $(DIR_APP) && cp -f memtest.bin /usr/lib/memtest86+
 	@rm -rf $(DIR_APP)
