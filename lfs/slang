@@ -63,7 +63,7 @@ ifeq "$(STAGE)" "ipfire"
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_DL)/$(THISAPP)-uclibc-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uclibc-1.patch
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc \
 						--with-png=no \
 						--target=$(UCLIBC_TARGET) \
