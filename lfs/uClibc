@@ -25,11 +25,11 @@
 include Config
 
 PKG_NAME   = uClibc
-VER        = 0.9.29
+VER        = 20080623
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+DIR_APP    = $(DIR_SRC)/$(PKG_NAME)
 
 LOCALE_FILE = $(PKG_NAME)-locale-030818.tgz
 
@@ -39,7 +39,7 @@ TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(LOCALE_FILE)
+objects = $(DL_FILE) $(LOCALE_FILE) $(THISAPP)-1.patch
 
 install : $(TARGET)
 
@@ -55,20 +55,25 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	
+
 	## Copy configuration
 	cp -f $(DIR_CONF)/$(PKG_NAME)/.config $(DIR_APP)/.config
 	cp -f $(DIR_DL)/$(LOCALE_FILE) $(DIR_APP)/extra/locale
 
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-1.patch
+
+	cd $(DIR_APP) && yes "" | make oldconfig
+
 ifeq "$(PASS)" "1"
-	# Make headers
-	cd $(DIR_APP) && make CROSS= PREFIX="${UCLIBC_SYSROOT_DIR}/" headers
-	cd $(DIR_APP) && make CROSS= PREFIX="${UCLIBC_SYSROOT_DIR}/" install_dev
+	cd $(DIR_APP) && make CROSS= PREFIX="$(UCLIBC_SYSROOT_DIR)/" \
+		KERNEL_HEADERS="$(UCLIBC_SYSROOT_DIR)/usr/include/" \
+		headers pregen install_dev
 endif
 
 ifeq "$(PASS)" "2"
 	cd $(DIR_APP) && make CROSS=$(UCLIBC_TARGET)- \
 		PREFIX=$(UCLIBC_SYSROOT_DIR)/ \
+		KERNEL_HEADERS="$(UCLIBC_SYSROOT_DIR)/usr/include/" \
 		all install
 endif
 
