@@ -37,7 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-nossp.patch
 
 install: $(TARGET)
 
@@ -53,6 +53,7 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-nossp.patch
 	cd $(DIR_APP) && make clean
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) install
 	@rm -rf $(DIR_APP)
