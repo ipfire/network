@@ -67,7 +67,7 @@ DIR_SOURCE  = $(DIR_SRC)/src
 
 VPATH = $(DIR_DL):$(DIR_PATCHES)
 
-HOST_GCC="/usr/bin/gcc"
+HOST_GCC=ccache /usr/bin/gcc
 KGCC=$(HOST_GCC)
 
 ifeq "$(STAGE)" "toolchain"
