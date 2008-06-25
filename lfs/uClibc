@@ -39,7 +39,7 @@ TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(LOCALE_FILE) $(THISAPP)-1.patch
+objects = $(DL_FILE) $(LOCALE_FILE)
 
 install : $(TARGET)
 
@@ -59,8 +59,6 @@ $(TARGET) :
 	## Copy configuration
 	cp -f $(DIR_CONF)/$(PKG_NAME)/.config $(DIR_APP)/.config
 	cp -f $(DIR_DL)/$(LOCALE_FILE) $(DIR_APP)/extra/locale
-
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-1.patch
 
 	cd $(DIR_APP) && yes "" | make oldconfig
 
