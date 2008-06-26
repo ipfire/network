@@ -81,9 +81,9 @@ g = URLGrabber( user_agent = "IPFireSourceGrabber/3.x",
 try:
 	gobj = g.urlopen(url)
 except URLGrabError, e:
-	if e.errno == 14: # 404
-		sys.stderr.write("404 - File not found.\n")
-		sys.exit(1)
+	sys.stdout.write("%s: %s" % (filename, e))
+	sys.stderr.write("Error: %s\n" % e)
+	sys.exit(1)
 
 if not gobj:
 	sys.stderr.write("Unknown happended: %s\n" % (url,))

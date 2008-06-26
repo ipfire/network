@@ -147,3 +147,11 @@ check_sanity() {
 	check_rootfiles $*
 
 }
+
+check_user() {
+	if [ -z $IPFIRE_USER ]; then
+		echo -n "You have to setup IPFIRE_USER first. See .config for details."
+		beautify message FAIL
+		exit 1
+	fi
+}

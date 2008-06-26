@@ -89,53 +89,52 @@ clean)
 	beautify message DONE
 	;;
 
-downloadsrc)
+source|src)
 	LOGFILE=$BASEDIR/log_${MACHINE}/_build.00-preparation.log
-	
-	if [ ! -d $BASEDIR/cache ]; then
-		mkdir -p $BASEDIR/cache/{tarballs,patches}
-	fi
-	mkdir -p $BASEDIR/log_${MACHINE}
-	echo -e "${BOLD}Preload all source files${NORMAL}"
-	cd $BASEDIR/lfs
-	for i in *; do
-		if [ -f "$i" -a "$i" != "Config" ]; then
-			make -s -f $i LFS_BASEDIR=$BASEDIR MESSAGE="$i\t" download 2>> $LOGFILE
-			if [ $? -ne 0 ]; then
-				echo -ne "Couldn't download all files for ${BOLD}${i}${NORMAL}"
-				beautify message FAIL
-			fi
-		fi
-	done
-	cd - >/dev/null 2>&1
+	case "$2" in
+		get|pull|download)
+			getsource
+			;;
+		put|push|upload)
+			putsource
+			;;
+	esac
 	;;
 
 toolchain)
-	prepareenv
-	# Check if host can build the toolchain
-	check_toolchain
+	case "$2" in
+		get|pull|download)
+			gettoolchain
+			;;
+		put|push|upload)
+			puttoolchain
+			;;
+		"")
+			prepareenv
+			# Check if host can build the toolchain
+			check_toolchain
 
-	build_spy compiling
+			build_spy compiling
 
-	toolchain_build
-	
-	stdumount
-	echo -ne "\ntarball creation "
-	[ -d $BASEDIR/cache/toolchains ] || mkdir $BASEDIR/cache/toolchains
-	cd $BASEDIR && tar cj --exclude='log_${MACHINE}/_build.*.log' \
-		--file=cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
-		build_${MACHINE} log_${MACHINE} >> $LOGFILE
-	beautify message DONE
-	echo `ls -sh cache/toolchains/$TOOLCHAINNAME.tar.bz2`
-	md5sum cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
-		> cache/toolchains/$TOOLCHAINNAME.tar.bz2.md5
-	stdumount
+			toolchain_build
 
-	build_spy idle
-	;;
+			stdumount
+			echo -ne "\ntarball creation "
+			[ -d $BASEDIR/cache/toolchains ] || mkdir $BASEDIR/cache/toolchains
+			cd $BASEDIR && tar cj --exclude='log_${MACHINE}/_build.*.log' \
+				--file=cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
+				build_${MACHINE} log_${MACHINE} >> $LOGFILE
+			beautify message DONE
+			echo `ls -sh cache/toolchains/$TOOLCHAINNAME.tar.bz2`
 
-gettoolchain)
-	gettoolchain
+			stdumount
+
+			build_spy idle
+			;;
+		*)
+			usage
+			;;
+	esac
 	;;
 
 check)
@@ -171,32 +170,6 @@ g[iu]t)
 			git $*
 			;;
 	esac
-	;;
-
-uploadsrc)
-	PWD=`pwd`
-	cd $BASEDIR/cache/
-	echo -e "Uploading cache to ftp server:"
-	for i in *; do
-		echo "${i}" | fgrep -q .md5 && continue
-		[ -e ${i}.md5 ] && continue
-		md5sum ${i} | tee ${i}.md5
-	done
-	ncftpls -u $FTP_CACHE_USER -p $FTP_CACHE_PASS ftp://$FTP_CACHE_URL/$FTP_CACHE_PATH/ > /tmp/ftplist
-	for i in *; do
-		if [ "$(basename $i)" == "toolchains" ]; then continue; fi
-		grep -q $(basename $i) /tmp/ftplist
-		if [ "$?" -ne "0" ]; then
-			echo -ne "$(basename $i)"
-			ncftpput -u $FTP_CACHE_USER -p $FTP_CACHE_PASS $FTP_CACHE_URL $FTP_CACHE_PATH/ $(basename $i)
-			if [ "$?" -ne "0" ]; then
-				beautify message FAIL
-			fi
-		fi
-	done
-	rm -f /tmp/ftplist
-	cd $PWD
-	exit 0
 	;;
 
 *)

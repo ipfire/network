@@ -25,101 +25,57 @@ BATCHLOG=$BASEDIR/log_${MACHINE}/_build.00-batch.log
 # Starts the batch process in the background                                  #
 ###############################################################################
 batch_start() {
-
-	if [ -e "$BASEDIR/.running" ]; then
+	if [ -e "$RUNNING" ]; then
 		echo -n "Build is already running..."
 		beautify message FAIL
 		exit 1
 	fi
-	
-	screen -dmS ipfire $0 batch _run
 
+	yes "y" | git_pull --batch
+	screen -dmS ipfire $0 batch _run
 }
 
 ###############################################################################                   
 # Run this to check what is going on in the moment                            #
 ###############################################################################
 batch_attach() {
-
 	screen -x ipfire
 	if [ "$?" -eq "0" ]; then
 		beautify message DONE
 	else
 		beautify message FAIL
 	fi
-
 }
 
 ###############################################################################                   
 # This is the main batch function that runs one thing after an other          #
 ###############################################################################
-batch_run() {
-
-	> $BATCHLOG		## Empty the log
-	
-	yes "y" | git_pull | tee -a $BATCHLOG
-	build | tee -a $BATCHLOG
-	if [ "$?" -ne "0" ]; then
-		batch_error
-	fi
-
-	## place uploading here
-
-	batch_success
-
-}
-
-###############################################################################                   
-# Do this when everything finished fine                                       #
-###############################################################################
-batch_success() {
-
-	batch_mail success	## Send an okay message
-
-}
-
-###############################################################################                   
-# Do this when an error occured                                               #
-###############################################################################
-batch_error() {
-
-	batch_mail failed	## Send an error message
-
+batch_run() {	
+	gettoolchain
+	$0 build | tee $BATCHLOG
+	batch_mail
 }
 
 ###############################################################################                   
 # A function to send an email to the developers                               #
 ###############################################################################
 batch_mail() {
-
-	ACTION=$1
-
-	SUBJECT="IPFire.org $(hostname -f):"
+	SUBJECT="IPFire.org ${HOSTNAME-$(hostname -f || hostname)} Build"
 	MAILLOG=$BASEDIR/log_${MACHINE}/_mail.body.$$
-	
-	> $MAILLOG		## Empty the log
+
+	> $MAILLOG ## Empty the log
 
 	## Form the message header
 	echo -e "From: $MAIL_FROM\nTo: $MAIL_TO" >> $MAILLOG
-	if [ "$ACTION" = "success" ]; then
-		SUBJECT="$SUBJECT success!"
-	else
-		SUBJECT="$SUBJECT failure!"
-	fi
 	echo -e "Subject: $SUBJECT\n" >> $MAILLOG
 
 	## Remove the colors when sending an email
 	#  This has to be done better by anything else
 	sed -e 's@.\[.;..m@@g' < $BATCHLOG >> $MAILLOG
-	
+
 	## Send the email
 	python tools/sendEmail < $MAILLOG
-	
-	if [ "$?" -eq "0" ]; then
-		beautify message DONE
-	else
-		beautify message FAIL
-	fi
-	rm -f $MAILLOG
+	evaluate
 
+	rm -f $MAILLOG
 }

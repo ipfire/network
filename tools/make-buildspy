@@ -52,7 +52,7 @@ build_spy_send_profile() {
 	CPU_NAME=$(grep "^model name" --max-count=1 /proc/cpuinfo | \
 			awk -F': ' '{ print $2 }')
 
-	build_spy set hostname $(hostname -f || hostname)
+	build_spy set hostname ${HOSTNAME-$(hostname -f || hostname)}
 	build_spy set cpu_mhz  $CPU_MHZ
 	build_spy set cpu_cnt  $CPU_CNT
 	build_spy set cpu_mips $CPU_MIPS
