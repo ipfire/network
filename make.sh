@@ -25,7 +25,7 @@
 NAME="IPFire"			# Software name
 SNAME="ipfire"			# Short name
 VERSION="3.0-prealpha"		# Version number
-TOOLCHAINVERSION="${VERSION}-4"	# Toolchain
+TOOLCHAINVERSION="${VERSION}-5"	# Toolchain
 SLOGAN="www.ipfire.org"		# Software slogan
 
 # Include funtions
@@ -461,7 +461,6 @@ packages_build() {
 	ipfire_make initramfs
 
 	# Generate ChangeLog
-	. $BASEDIR/tools/make-git
 	git_log
 
 	# Generating list of packages used
