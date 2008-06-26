@@ -116,9 +116,18 @@ elif [ 'via-c3' = $TARGET ]; then
 	CXXFLAGS="${CFLAGS}"
 	UCLIBC_TARGET=${MACHINE}-pc-linux-uclibc
 	UCLIBC_CFLAGS="-march=${MACHINE} -Os -pipe"
+elif [ 'geodelx' = $TARGET ]; then
+	MACHINE=i586
+	MACHINE_REAL=${MACHINE_REAL}
+	LINKER=/lib/ld-linux.so.2
+	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	CFLAGS="-march=geode -Os -pipe -fomit-frame-pointer"
+	CXXFLAGS="${CFLAGS}"
+	UCLIBC_TARGET=${MACHINE}-pc-linux-uclibc
+	UCLIBC_CFLAGS="-march=geode -Os -pipe"
 else
 	beautify message FAIL
-	echo "Not a valid target arch (i686|i586|i486|i386|via-c7|via-c3) - $TARGET"
+	echo "Not a valid target arch (i686|i586|i486|via-c7|via-c3|geodelx) - $TARGET"
 	exit 1
 fi
 
