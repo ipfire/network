@@ -1,27 +1,27 @@
 Standard use commands in the order you may need them.
-  downloadsrc : preload all necessary files in cache before compilation
-        build : compile the distribution
-        clean : erase build and log to recompile everything from scratch
-
-Optional
- gettoolchain : optionally load from ipfire.org a precompilated toolchain
-		package. This solve some compilation issues on old or very
-		recent distributions and save 20% of next full building time.
-		If you want to use it, do it before build step
+         build : compile the distribution
+         clean : erase build and log to recompile everything from scratch
 
 Maintainer / advanced commands
-    toolchain : Create our own toolchain package to save 20% of build time.
+    toolchain  : (Without argument) Create our own toolchain package.
+      |`- get  : Download from source.ipfire.org.
+      `-- put  : Upload to source.ipfire.org.
 
-        shell : Enter a shell inside the chroot, used to tune lfs script
-		  and / or during kernel upgrade to rebuild a new .config
+     source    : _Source tarballs and patches_
+      |`- get  : Download from source.ipfire.org.
+      `-- put  : Upload to source.ipfire.org.
 
-          svn : <update|log|diff|commit|dist>
-          update <rev> : Loads the latest source files from svn or if <rev> is given
-                         it loads this revision.
-                   log : Updates doc/ChangeLog.
-                  diff : Mainly produce a diff from previous version to track wich
-                         files have been changed
-            commit|ci : Applies your changes to the svn.
-            dist <rev> : Tar the source code from revision.
+     shell     : Enter a shell inside the chroot, used to tune lfs script
+                 and / or during kernel upgrade to rebuild a new .config.
 
-       ccache : Display statistics about ccache's directory.
+     git       : _Git functions_
+      |`- pull : Loads the latest source files from repository.
+      |`- push : Pushes the local commits to the repository.
+      |`-  log : Updates doc/ChangeLog.
+      |`- diff : Mainly produce a diff from previous version to track wich
+      |          files have been changed.
+      |`-   ci : Applies your changes to the repository.
+      `-- export : Tar.bz2 the source code from revision.
+
+     check     : _Run sanity checks_
+      `- --fix : Fix some errors automatically.
