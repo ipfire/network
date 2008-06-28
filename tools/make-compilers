@@ -21,28 +21,28 @@
 
 ccache_stats() {
 	if [ -e $BASEDIR/ccache ]; then
-    PATH=$PATH:build_${MACHINE}/usr/local/ccache/bin \
-    CCACHE_DIR=${BASEDIR}/ccache \
-    ccache -s
-  else
-  	echo -n "You can't access the statistics if you didn't run ./make.sh build"
-  	beautify message FAIL
-  fi
+		PATH=$PATH:build_${MACHINE}/tools_${MACHINE}/usr/sbin \
+		CCACHE_DIR=${BASEDIR}/ccache \
+		ccache -s
+	else
+		echo -n "You can't access the statistics if you didn't run ./make.sh build"
+		beautify message FAIL
+	fi
 }
 
 distcc_mon() {
-	
+
 	INTERVAL=1 # in seconds
-	
+
 	if [ -e $BASEDIR/distcc ]; then
 		while sleep $INTERVAL; do
 			clear
-	    PATH=$PATH:build_${MACHINE}/usr/local/distcc/bin \
-	    DISTCC_DIR=${BASEDIR}/distcc \
-	    distccmon-text
-	  done
-  else
-  	echo -n "You can't access the statistics if you didn't run ./make.sh build"
-  	beautify message FAIL
-  fi
+			PATH=$PATH:build_${MACHINE}/tools_${MACHINE}/usr/sbin \
+			DISTCC_DIR=${BASEDIR}/distcc \
+			distccmon-text
+		done
+	else
+		echo -n "You can't access the statistics if you didn't run ./make.sh build"
+		beautify message FAIL
+	fi
 }
