@@ -432,7 +432,11 @@ installer_build() {
 	ipfire_make e2fsprogs
 	ipfire_make util-linux-ng
 	ipfire_make parted
+	ipfire_make expat
+	ipfire_make dbus
+	ipfire_make glib
 	ipfire_make python
+	ipfire_make python-modules
 	ipfire_make kudzu
 	ipfire_make slang
 	ipfire_make newt

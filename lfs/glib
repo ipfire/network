@@ -39,7 +39,7 @@ DBUSGLIB   = dbus-glib-0.74
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(DBUSGLIB).tar.gz
+objects = $(DL_FILE) $(DBUSGLIB).tar.gz $(DBUSGLIB)-cross-compile-1.patch
 
 install: $(TARGET)
 
@@ -52,21 +52,121 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
+ifeq "$(STAGE)" "$(SNAME)"
+define MAKE_DBUSGLIB
+	@rm -rf $(DIR_SRC)/$(DBUSGLIB)
+	cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DBUSGLIB).tar.gz
+	cd $(DIR_SRC)/$(DBUSGLIB) && ./configure --prefix=/usr
+	cd $(DIR_SRC)/$(DBUSGLIB) && make $(PARALLELISMFLAGS)
+	cd $(DIR_SRC)/$(DBUSGLIB) && make install
+	@rm -rf $(DIR_SRC)/$(DBUSGLIB)
+endef
+endif
+
+ifeq "$(STAGE)" "installer"
+define MAKE_DBUSGLIB
+	@rm -rf $(DIR_SRC)/$(DBUSGLIB)
+	cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DBUSGLIB).tar.gz
+	cd $(DIR_SRC)/$(DBUSGLIB) && patch -Np1 -i $(DIR_PATCHES)/$(DBUSGLIB)-cross-compile-1.patch
+	cd $(DIR_SRC)/$(DBUSGLIB) && \
+		ac_cv_have_abstract_sockets=yes \
+		ac_cv_func_posix_getpwnam_r=yes \
+		have_abstract_sockets=yes \
+		DBUS_CFLAGS="-I$(INSTALLER_DIR)/usr/include/dbus-1.0 -I$(INSTALLER_DIR)/usr/lib/dbus-1.0/include" \
+		DBUS_LIBS="$(INSTALLER_DIR)/usr/lib/libdbus-1.so" \
+		DBUS_GLIB_CFLAGS="-I$(INSTALLER_DIR)/usr/include/glib-2.0 -I$(INSTALLER_DIR)/usr/lib/glib-2.0/include" \
+		DBUS_GLIB_LIBS="$(INSTALLER_DIR)/usr/lib/libglib-2.0.so $(INSTALLER_DIR)/usr/lib/libgobject-2.0.so $(INSTALLER_DIR)/usr/lib/libgmodule-2.0.so $(INSTALLER_DIR)/usr/lib/libgthread-2.0.so" \
+		./configure \
+			--prefix=/usr \
+			--host=$(UCLIBC_TARGET)
+	cd $(DIR_SRC)/$(DBUSGLIB) && make DBUS_BUS_LIBS="$(INSTALLER_DIR)/usr/lib/libexpat.so" $(PARALLELISMFLAGS)
+	cd $(DIR_SRC)/$(DBUSGLIB) && make install DESTDIR=$(INSTALLER_DIR)
+	@rm -rf $(DIR_SRC)/$(DBUSGLIB)
+endef
+endif
+
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/$(DBUSGLIB) && \
 		cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "$(SNAME)"
 	cd $(DIR_APP) && ./configure --prefix=/usr
-	
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/glib2-locale.sh /etc/profile.d/
-	
-	cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DBUSGLIB).tar.gz
-	cd $(DIR_SRC)/$(DBUSGLIB) && ./configure --prefix=/usr
-	cd $(DIR_SRC)/$(DBUSGLIB) && make
-	cd $(DIR_SRC)/$(DBUSGLIB) && make install
-	
-	@rm -rf $(DIR_APP) $(DIR_SRC)/$(DBUSGLIB)
+endif
+
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && $(U_TOOLS) \
+		ac_cv_func_posix_getpwuid_r=yes \
+		glib_cv_stack_grows=no \
+		glib_cv_uscore=no \
+		ac_cv_func_strtod=yes \
+		ac_fsusage_space=yes  \
+		fu_cv_sys_stat_statfs2_bsize=yes \
+		ac_cv_func_closedir_void=no \
+		ac_cv_func_getloadavg=no \
+		ac_cv_lib_util_getloadavg=no \
+		ac_cv_lib_getloadavg_getloadavg=no \
+		ac_cv_func_getgroups=yes \
+		ac_cv_func_getgroups_works=yes \
+		ac_cv_func_chown_works=yes \
+		ac_cv_have_decl_euidaccess=no \
+		ac_cv_func_euidaccess=no \
+		ac_cv_have_decl_strnlen=yes \
+		ac_cv_func_strnlen_working=yes \
+		ac_cv_func_lstat_dereferences_slashed_symlink=yes \
+		ac_cv_func_lstat_empty_string_bug=no \
+		ac_cv_func_stat_empty_string_bug=no \
+		vb_cv_func_rename_trailing_slash_bug=no \
+		ac_cv_have_decl_nanosleep=yes \
+		jm_cv_func_nanosleep_works=yes \
+		gl_cv_func_working_utimes=yes \
+		ac_cv_func_utime_null=yes \
+		ac_cv_have_decl_strerror_r=yes \
+		ac_cv_func_strerror_r_char_p=no \
+		jm_cv_func_svid_putenv=yes \
+		ac_cv_func_getcwd_null=yes \
+		ac_cv_func_getdelim=yes \
+		ac_cv_func_mkstemp=yes \
+		utils_cv_func_mkstemp_limitations=no \
+		utils_cv_func_mkdir_trailing_slash_bug=no \
+		ac_cv_func_memcmp_working=yes \
+		ac_cv_have_decl_malloc=yes \
+		gl_cv_func_malloc_0_nonnull=yes \
+		ac_cv_func_malloc_0_nonnull=yes \
+		ac_cv_func_calloc_0_nonnull=yes \
+		ac_cv_func_realloc_0_nonnull=yes \
+		jm_cv_func_gettimeofday_clobber=no \
+		gl_cv_func_working_readdir=yes \
+		jm_ac_cv_func_link_follows_symlink=no \
+		utils_cv_localtime_cache=no \
+		ac_cv_struct_st_mtim_nsec=no \
+		gl_cv_func_tzset_clobber=no \
+		gl_cv_func_getcwd_null=yes \
+		gl_cv_func_getcwd_path_max=yes \
+		ac_cv_func_fnmatch_gnu=yes \
+		am_getline_needs_run_time_check=no \
+		am_cv_func_working_getline=yes \
+		gl_cv_func_mkdir_trailing_slash_bug=no \
+		gl_cv_func_mkstemp_limitations=no \
+		ac_cv_func_working_mktime=yes \
+		jm_cv_func_working_re_compile_pattern=yes \
+		ac_use_included_regex=no \
+		gl_cv_c_restrict=no \
+		ac_cv_path_GLIB_GENMARSHAL=/usr/bin/glib-genmarshal \
+		ac_cv_prog_F77=no \
+		ac_cv_prog_CXX=no \
+		ac_cv_func_posix_getgrgid_r=no \
+		./configure \
+			--prefix=/usr \
+			--host=$(UCLIBC_TARGET)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
+endif
+
+	$(MAKE_DBUSGLIB)
+
+	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

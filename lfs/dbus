@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = dbus
-VER        = 1.0.2
+VER        = 1.2.1
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -53,10 +53,27 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "$(SNAME)"
 	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc \
-										--localstatedir=/var
-		
+			--localstatedir=/var
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && $(U_TOOLS) \
+		LIBS="$(INSTALLER_DIR)/usr/lib/libexpat.so" \
+		ac_cv_have_abstract_sockets=yes \
+		./configure \
+			--host=$(UCLIBC_TARGET) \
+			--prefix=/usr \
+			--sysconfdir=/etc \
+			--localstatedir=/var \
+			--with-xml=expat
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
