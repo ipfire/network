@@ -45,7 +45,6 @@ endif
 
 objects = $(DL_FILE) \
 	$(THISAPP)-uClibc_conf-1.patch \
-	$(THISAPP)-uClibc_locale-1.patch \
 	$(THISAPP)-uClibc_c99-snprintf.patch \
 	$(THISAPP)-fstack_protector-1.patch \
 	$(THISAPP)-fortify_source-2.patch \
@@ -187,7 +186,6 @@ endif
 
 ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc_conf-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc_locale-1.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc_c99-snprintf.patch
 ifeq "$(PASS)" "1"
 	### Copying headers to install area of bootstrap gcc,
