@@ -31,6 +31,8 @@ batch_start() {
 		exit 1
 	fi
 
+	[ "$1" = "--clean" ] && $0 clean
+
 	yes "y" | git_pull --batch
 	screen -dmS ipfire $0 batch _run
 }
