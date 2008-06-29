@@ -33,7 +33,14 @@ batch_start() {
 
 	[ "$1" = "--clean" ] && $0 clean
 
-	yes "y" | git_pull --batch
+	git_pull --batch
+
+	if [ -e "$FAILED" ]; then
+		echo -n "Last build failed..."
+		beautify message FAIL
+		exit 1
+	fi
+
 	screen -dmS ipfire $0 batch _run
 }
 

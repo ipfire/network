@@ -82,6 +82,7 @@ clean)
 	rm -rf $BASEDIR/build_${MACHINE}
 	rm -rf $BASEDIR/log_${MACHINE}
 	rm -rf $BASEDIR/packages
+	rm -f  $FAILED $RUNNING 2>/dev/null
 	
 	if [ -h $TOOLS_DIR ]; then
 		rm -f $TOOLS_DIR

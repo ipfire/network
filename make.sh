@@ -44,7 +44,9 @@ toolchain_build() {
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-toolchain.log"
 	export LOGFILE
-	
+
+	build_spy set stage ${STAGE} &
+
 	toolchain_make stage1
 	# make distcc first so that CCACHE_PREFIX works immediately
 	[ -z "$DISTCC_HOSTS" ] || toolchain_make distcc
@@ -98,7 +100,9 @@ base_build() {
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-base.log"
 	export LOGFILE
-	
+
+	build_spy set stage ${STAGE} &
+
 	ipfire_make stage2
 	ipfire_make gmp
 	ipfire_make mpfr
@@ -166,7 +170,9 @@ ipfire_build() {
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-ipfire.log"
 	export LOGFILE
-	
+
+	build_spy set stage ${STAGE} &
+
 	### Building the configuration dirs and files
 	#
 	ipfire_make stage3
@@ -309,7 +315,9 @@ misc_build() {
 
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-misc.log"
 	export LOGFILE
-	
+
+	build_spy set stage ${STAGE} &
+
 	ipfire_make stage4
 	
 	### Console tools
@@ -411,6 +419,8 @@ installer_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-installer.log"
 	export LOGFILE
 
+	build_spy set stage ${STAGE} &
+
 	ipfire_make stage5
 	ipfire_make ccache
 	ipfire_make gmp
@@ -457,6 +467,8 @@ packages_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-packages.log"
 	export LOGFILE
 
+	build_spy set stage ${STAGE} &
+
 	toolchain_make strip
 	ipfire_make initramfs
 
@@ -473,13 +485,10 @@ packages_build() {
 	#fi
 	mv $LFS/$IMAGES_DIR/{*.iso,*.tgz,*.img.gz} $BASEDIR >> $LOGFILE 2>&1
 
-	#ipfire_make core-updates
-	### DISABLED ATM
-	
 	for i in $(ls -1 $BASEDIR/src/rootfiles/extras); do
 		if [ -e $BASEDIR/lfs/$i ]; then
-			echo -n
-			### Do nothing at the moment, we are gonna use a new packager
+			echo -n $i
+			beautify message SKIP
 		else
 			echo -n $i
 			beautify message SKIP
