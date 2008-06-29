@@ -71,29 +71,15 @@ VPATH = $(DIR_DL):$(DIR_PATCHES)
 HOST_GCC=ccache /usr/bin/gcc
 KGCC=$(HOST_GCC)
 
-ifeq "$(STAGE)" "toolchain"
-ifneq "$(MACHINE_REAL)" "$(MACHINE)"
-ifeq  "$(CROSS)" ""
-	CC="${IFS_TARGET}-gcc"
-	CXX="${IFS_TARGET}-g++"
-	AR="${IFS_TARGET}-ar"
-	AS="${IFS_TARGET}-as"
-	RANLIB="${IFS_TARGET}-ranlib"
-	LD="${IFS_TARGET}-ld"
-	STRIP="${IFS_TARGET}-strip"
-endif
-endif
-endif
-
 ifeq "$(STAGE)" "installer"
 	UCLIBC_HEADERS_DIR=$(UCLIBC_SYSROOT_DIR)/usr/include
-	U_CC="${UCLIBC_TARGET}-gcc"
-	U_CXX="${UCLIBC_TARGET}-g++"
-	U_AR="${UCLIBC_TARGET}-ar"
-	U_AS="${UCLIBC_TARGET}-as"
-	U_RANLIB="${UCLIBC_TARGET}-ranlib"
-	U_LD="${UCLIBC_TARGET}-ld"
-	U_STRIP="${UCLIBC_TARGET}-strip"
+	U_CC=${UCLIBC_TARGET}-gcc
+	U_CXX=${UCLIBC_TARGET}-g++
+	U_AR=${UCLIBC_TARGET}-ar
+	U_AS=${UCLIBC_TARGET}-as
+	U_RANLIB=${UCLIBC_TARGET}-ranlib
+	U_LD=${UCLIBC_TARGET}-ld
+	U_STRIP=${UCLIBC_TARGET}-strip
 	U_TOOLS=CC=$(U_CC) CXX=$(U_CXX) AR=$(U_AR) \
 		AS=$(U_AS) RANLIB=$(U_RANLIB) \
 		LD=$(U_LD) STRIP=$(U_STRIP)
@@ -129,6 +115,11 @@ endif
 # Common end-of-installation logic for Stage 2 and beyond.
 #
 ifneq "$(STAGE)" "toolchain"
+ifeq  "$(STAGE)" "installer"
+	ROOTFILES_DIR = $(DIR_SOURCE)/rootfiles/installer
+else
+	ROOTFILES_DIR = $(DIR_SOURCE)/rootfiles/core $(DIR_SOURCE)/rootfiles/extras
+endif
 define POSTBUILD
 	@echo "Install done; saving file list to $(TARGET) ..."
 	@$(FIND_FILES) > $(DIR_SRC)/lsalrnew
@@ -144,16 +135,18 @@ define POSTBUILD
 	# $(TARGET) : log result with {commented|include|added} files
 	if [ -s "$(TARGET)_diff" ]; then \
 		LFS_SCRIPT=$(firstword $(MAKEFILE_LIST)); \
-		ROOTFILE=`find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f -name $$LFS_SCRIPT`; \
-		if [ "$$ROOTFILE" = "" ]; then \
-			ROOTFILE=`find $(DIR_SOURCE)/rootfiles/extras -type f -name $$LFS_SCRIPT`; \
-		fi; \
+		ROOTFILE=$$(find $(ROOTFILES_DIR) -maxdepth 1 -type f -name $$LFS_SCRIPT | head -1); \
 		if [ "$$ROOTFILE" = "" ]; then \
 			touch $(TARGET)_missing_rootfile; \
 			ROOTFILE=$(TARGET)_missing_rootfile ; \
 			echo "error $$LFS_SCRIPT not found in $(DIR_SOURCE)/rootfiles"; \
 		fi; \
-		sed "s/KVER/$(KVER)/g" $$ROOTFILE > $(TARGET)_rootfile; 	\
+		sed	-e "s@KVER@$(KVER)@g"					\
+			-e "s@UCLIBC_DIR@$(UCLIBC_DIR)@g"			\
+			-e "s@UCLIBC_TARGET@$(UCLIBC_TARGET)@g"			\
+			-e "s@INSTALLER_DIR@$(INSTALLER_DIR)@g"			\
+			-e "s@^/@@g" -e "s@^#/@#@g"				\
+			$$ROOTFILE > $(TARGET)_rootfile;			\
 		echo 'open (F,"$(TARGET)_rootfile");				\
 		    while (<F>) { $$allfile{$$_} = "x" };close (F);		\
 		    while (<>) {						\
