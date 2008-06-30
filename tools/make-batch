@@ -31,8 +31,6 @@ batch_start() {
 		exit 1
 	fi
 
-	[ "$1" = "--clean" ] && $0 clean
-
 	git_pull --batch
 
 	if [ -e "$FAILED" ]; then
@@ -40,6 +38,8 @@ batch_start() {
 		beautify message FAIL
 		exit 1
 	fi
+
+	[ "$1" = "--clean" ] && $0 clean
 
 	screen -dmS ipfire $0 batch _run
 }
