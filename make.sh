@@ -240,12 +240,12 @@ ipfire_build() {
 	ipfire_make lsof
 	ipfire_make br2684ctl
 	ipfire_make etherwake
-	ipfire_make htop
 	ipfire_make beep
 	
 	### Building vpn stuff
 	#
 	ipfire_make strongswan
+	ipfire_make openvpn
 	
 	### Building filesystem stuff
 	#
@@ -270,7 +270,6 @@ ipfire_build() {
 	ipfire_make ulogd2
 	ipfire_make fcron
 	ipfire_make which
-	ipfire_make nano
 	ipfire_make screen
 	ipfire_make rrdtool
 	ipfire_make ntp			### Needs config.
@@ -293,8 +292,7 @@ ipfire_build() {
   
 	### -------------------------------------------------------------------------
 	### Tools that maybe not needed
-	#	
-	#ipfire_make expat
+	#
 	#ipfire_make gd
 	#ipfire_make libcap
 	#ipfire_make mtools
@@ -327,6 +325,8 @@ misc_build() {
 	#ipfire_make nmap
 	#ipfire_make rsync
 	#ipfire_make tcpdump
+	ipfire_make htop
+	ipfire_make nano
 	
 	### Assembler
 	#
@@ -337,22 +337,18 @@ misc_build() {
 	#ipfire_make squidguard		## CAN THIS BE BANISHED BY ANYTHING BETTER?
 	#ipfire_make calamaris		## CAN THIS BE BANISHED BY ANYTHING BETTER?
 	#ipfire_make vsftpd
-	
-	### Programs that are still for discussion
-	#   package or in the standard system
-	#
+
 	## NTFS
 	#ipfire_make fuse
 	#ipfire_make ntfs-3g
 	#
 	## Net tools
 	#ipfire_make bwm-ng
-	#ipfire_make openvpn
 	#
 	## UPNP
 	#ipfire_make libupnp
 	#ipfire_make linux-igd
-		
+
 	### These will become addons as usual but will be integrated later
 	#
 	#ipfire_make snort
@@ -395,7 +391,7 @@ misc_build() {
 	#ipfire_make rtorrent
 	#ipfire_make ipfireseeder
 	#ipfire_make nfs
-	
+
 	# ---------------------------------------------------------------------------
 	#ipfire_make as86
 	#ipfire_make mbr
