@@ -80,7 +80,7 @@ endef
 
 define MAKE_URLGRABBER
 	cd $(DIR_MOD) && tar zxf $(DIR_DL)/$(URLGRABBER).tar.gz
-	cd $(DIR_MOD)/$(URLGRABBER) && python setup.py install DESTDIR=$(DIR_DEST)
+	cd $(DIR_MOD)/$(URLGRABBER) && DESTDIR=$(DIR_DEST) python setup.py install
 endef
 
 $(TARGET):
