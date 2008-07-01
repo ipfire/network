@@ -33,13 +33,12 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-PYPARTED   = py$(PKG_NAME)-1.8.9
-
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(PYPARTED).tar.bz2
+objects = $(DL_FILE) \
+	$(THISAPP)-no-rpl-defines.patch
 
 install: $(TARGET)
 
@@ -54,40 +53,36 @@ $(objects) :
 
 $(TARGET) : 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) $(DIR_SRC)/$(PYPARTED)
+	@rm -rf $(DIR_APP)
 	@cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "ipfire"
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-						--without-readline \
-						--disable-nls \
-						--disable-Werror \
-						--disable-dependency-tracking \
-						--disable-debug \
-						--with-gnu-ld
+	cd $(DIR_APP) && \
+		./configure --prefix=/usr \
+			--without-readline \
+			--disable-nls \
+			--disable-Werror \
+			--disable-dependency-tracking \
+			--disable-debug \
+			--with-gnu-ld
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-						--target=$(UCLIBC_TARGET) \
-						--host=$(UCLIBC_TARGET) \
-						--without-readline \
-						--disable-nls \
-						--disable-Werror \
-						--disable-dependency-tracking \
-						--disable-debug \
-						--with-gnu-ld
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-no-rpl-defines.patch
+	cd $(DIR_APP) && \
+		./configure --prefix=/usr \
+			--host=$(UCLIBC_TARGET) \
+			--without-readline \
+			--disable-nls \
+			--disable-Werror \
+			--disable-dependency-tracking \
+			--disable-debug \
+			--with-gnu-ld
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
-	
-	### pyparted
-	#
-	#cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(PYPARTED).tar.bz2
-	#cd $(DIR_SRC)/$(PYPARTED) && make all install \
-	#	libdir=$(INSTALLER_DIR)/usr/lib/python2.5/site-packages
 endif
 	
-	@rm -rf $(DIR_APP) $(DIR_SRC)/$(PYPARTED)
+	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
