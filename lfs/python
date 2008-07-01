@@ -33,7 +33,7 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-PYTHON_DISABLE_MODULES = dbm zipfile readline _curses _curses_panel pyexpat \
+PYTHON_DISABLE_MODULES = dbm zipfile readline _curses _curses_panel \
 	gdbm bsddb _tkinter openssl _hashlib nis _codecs_kr _codecs_jp _codecs_cn \
 	_codecs_tw _codecs_hk bz2
 
@@ -42,8 +42,7 @@ PYTHON_DISABLE_MODULES = dbm zipfile readline _curses _curses_panel pyexpat \
 ###############################################################################
 
 objects = $(DL_FILE) $(THISAPP)-gdbm-1.patch \
-	$(THISAPP)-crosscompile-1.patch \
-	$(THISAPP)-crosscompile-2.patch \
+	$(THISAPP)-crosscompile-3.patch \
 	$(THISAPP)-disable_modules_and_ssl.patch
 
 install: $(TARGET)
@@ -71,8 +70,7 @@ ifeq "$(STAGE)" "ipfire"
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-crosscompile-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-crosscompile-2.patch
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-crosscompile-3.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disable_modules_and_ssl.patch
 	cd $(DIR_APP) && ./configure
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) python Parser/pgen
@@ -82,15 +80,13 @@ ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && sed -i -e '/^HOSTPYTHON/s:=.*:=./hostpython:' \
 				-e '/^HOSTPGEN/s:=.*:=./Parser/hostpgen:' \
 				Makefile.pre.in
-	#cd $(DIR_APP) && sed -e "s@/configure@& --host=$(UCLIBC_TARGET) @g" -i setup.py
 	-rm -rf $(DIR_APP)/Lib/test $(INSTALLER_DIR)/usr/lib/python2.5/test
 	cd $(DIR_APP) && OPT="$(CFLAGS)" $(U_TOOLS) ./configure \
 						--prefix=/usr \
 						--host=$(UCLIBC_TARGET) \
 						--enable-shared \
 						--disable-ipv6 \
-						--with-cxx=no \
-						--without-threads
+						--with-cxx=no
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
 		HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen \
 		PYTHON_DISABLE_MODULES="$(PYTHON_DISABLE_MODULES)" \
