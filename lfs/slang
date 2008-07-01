@@ -64,10 +64,12 @@ endif
 
 ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uclibc-1.patch
-	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc \
-						--with-png=no \
-						--target=$(UCLIBC_TARGET) \
-						--host=$(UCLIBC_TARGET)
+	cd $(DIR_APP) && $(U_TOOLS) \
+		./configure \
+			--host=$(UCLIBC_TARGET) \
+			--prefix=/usr \
+			--sysconfdir=/etc \
+			--with-png=no
 	cd $(DIR_APP)/src && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP)/src && make DESTDIR=$(INSTALLER_DIR) install-all
 	-chmod -v 755 $(INSTALLER_DIR)/usr/lib/libslang.so.$(VER) \
