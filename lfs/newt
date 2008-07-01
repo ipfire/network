@@ -64,11 +64,12 @@ ifeq "$(STAGE)" "ipfire"
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-						--target=$(UCLIBC_TARGET) \
-						--host=$(UCLIBC_TARGET) \
-						--without-gpm-support \
-						--without-tcl
+	cd $(DIR_APP) && $(U_TOOLS) \
+		./configure \
+			--host=$(UCLIBC_TARGET) \
+			--prefix=/usr \
+			--without-gpm-support \
+			--without-tcl
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install instroot=$(INSTALLER_DIR)
 endif
