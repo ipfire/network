@@ -245,7 +245,7 @@ ipfire_build() {
 	### Building vpn stuff
 	#
 	ipfire_make strongswan
-	ipfire_make openvpn
+	#ipfire_make openvpn
 	
 	### Building filesystem stuff
 	#
