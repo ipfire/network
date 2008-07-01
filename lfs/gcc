@@ -48,7 +48,8 @@ objects = $(DL_FILE) \
 	$(THISAPP)-uClibc_c99-snprintf.patch \
 	$(THISAPP)-fstack_protector-1.patch \
 	$(THISAPP)-fortify_source-2.patch \
-	$(THISAPP)-fpie-1.patch
+	$(THISAPP)-fpie-1.patch \
+	$(THISAPP)-libintl.patch
 
 install : $(TARGET)
 
@@ -187,6 +188,7 @@ endif
 ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc_conf-1.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc_c99-snprintf.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libintl.patch
 ifeq "$(PASS)" "1"
 	### Copying headers to install area of bootstrap gcc,
 	#   so it can build libgcc2
