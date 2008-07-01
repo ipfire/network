@@ -29,8 +29,9 @@ VER        = ipfire
 
 THISAPP    = $(PKG_NAME)-$(VER)
 ICONV      = iconvmodule-1.0-ipfire-1
-DBUSPY     = dbus-python-0.82.0
+DBUSPY     = dbus-python-0.82.4
 URLGRABBER = urlgrabber-3.1.0
+PYPARTED   = pyparted-1.8.9
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -40,20 +41,30 @@ MODULES    = $(DIR_SRC)/$(ICONV) $(DIR_SRC)/$(DBUSPY) $(DIR_SRC)/$(URLGRABBER)
 ifeq "$(STAGE)" "$(SNAME)"
 	DIR_DEST =
 	EXTRA_CONF =
+	EXTRA_LIBS =
+	EXTRA_CMD =
 else
 	DIR_DEST = $(INSTALLER_DIR)
-	EXTRA_CONF = --host=$(UCLIBC_TARGET) \
-		DBUS_CFLAGS="-I$(INSTALLER_DIR)/usr/include/dbus-1.0 -I$(INSTALLER_DIR)/usr/lib/dbus-1.0/include" \
+	EXTRA_CONF = --host=$(UCLIBC_TARGET)
+	PYTHONHOME = PYTHONHOME=$(INSTALLER_DIR)/usr
+	EXTRA_LIBS = DBUS_CFLAGS="-I$(INSTALLER_DIR)/usr/include/dbus-1.0 -I$(INSTALLER_DIR)/usr/lib/dbus-1.0/include" \
 		DBUS_LIBS="$(INSTALLER_DIR)/usr/lib/libdbus-1.so" \
 		DBUS_GLIB_CFLAGS="-I$(INSTALLER_DIR)/usr/include/glib-2.0 -I$(INSTALLER_DIR)/usr/lib/glib-2.0/include" \
-		DBUS_GLIB_LIBS="$(INSTALLER_DIR)/usr/lib/libglib-2.0.so $(INSTALLER_DIR)/usr/lib/libgobject-2.0.so $(INSTALLER_DIR)/usr/lib/libgmodule-2.0.so $(INSTALLER_DIR)/usr/lib/libgthread-2.0.so"
+		DBUS_GLIB_LIBS="$(INSTALLER_DIR)/usr/lib/libglib-2.0.so $(INSTALLER_DIR)/usr/lib/libgobject-2.0.so $(INSTALLER_DIR)/usr/lib/libgmodule-2.0.so $(INSTALLER_DIR)/usr/lib/libgthread-2.0.so" \
+		LIBS="$(INSTALLER_DIR)/usr/lib/libdbus-1.so" \
+		LDFLAGS="-L$(INSTALLER_DIR)/lib/ -L$(INSTALLER_DIR)/usr/lib/ -ldbus-1 $(INSTALLER_DIR)/usr/lib/libdbus-1.so"
+	EXTRA_CMD = sed -e "s@^PYTHON_INCLUDES = .*@PYTHON_INCLUDES = -I$(INSTALLER_DIR)/usr/include/python2.5@g" \
+		-i $(DIR_MOD)/$(DBUSPY)/{.,_dbus_{,glib_}bindings}/Makefile
 endif
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(ICONV).tar.bz2 $(DBUSPY).tar.gz $(URLGRABBER).tar.gz
+objects = $(ICONV).tar.bz2 \
+	$(DBUSPY).tar.gz \
+	$(URLGRABBER).tar.gz \
+	$(PYPARTED).tar.bz2
 
 install: $(TARGET)
 
@@ -68,19 +79,31 @@ $(objects) :
 
 define MAKE_ICONV
 	cd $(DIR_MOD) && tar jxf $(DIR_DL)/$(ICONV).tar.bz2
-	cd $(DIR_MOD)/$(ICONV) && $(U_TOOLS) make install DESTDIR=$(DIR_DEST)
+	cd $(DIR_MOD)/$(ICONV) && \
+		$(PYTHONHOME) \
+		make install DESTDIR=$(DIR_DEST)
 endef
 
 define MAKE_DBUSPY
 	cd $(DIR_MOD) && tar zxf $(DIR_DL)/$(DBUSPY).tar.gz
-	cd $(DIR_MOD)/$(DBUSPY) && ./configure --prefix=/usr $(EXTRA_CONF)
-	cd $(DIR_MOD)/$(DBUSPY) && make
+	cd $(DIR_MOD)/$(DBUSPY) && $(EXTRA_LIBS) \
+		./configure --prefix=/usr $(EXTRA_CONF)
+	$(EXTRA_CMD)
+	cd $(DIR_MOD)/$(DBUSPY) && make $(PARALLELISMFLAGS)
 	cd $(DIR_MOD)/$(DBUSPY) && make install DESTDIR=$(DIR_DEST)
 endef
 
 define MAKE_URLGRABBER
 	cd $(DIR_MOD) && tar zxf $(DIR_DL)/$(URLGRABBER).tar.gz
-	cd $(DIR_MOD)/$(URLGRABBER) && python setup.py install DESTDIR=$(DIR_DEST)
+	cd $(DIR_MOD)/$(URLGRABBER) && DESTDIR=$(DIR_DEST) python setup.py install
+endef
+
+define MAKE_PYPARTED
+	cd $(DIR_MOD) && tar jxf $(DIR_DL)/$(PYPARTED).tar.bz2
+	cd $(DIR_MOD)/$(PYPARTED) && $(U_TOOLS) \
+		$(PYTHONHOME) \
+		make all install \
+		libdir=$(INSTALLER_DIR)/usr/lib/python2.5/site-packages
 endef
 
 $(TARGET):
@@ -93,6 +116,10 @@ $(TARGET):
 
 ifeq "$(STAGE)" "$(SNAME)"
 	$(MAKE_URLGRABBER)
+endif
+
+ifeq "$(STAGE)" "installer"
+	$(MAKE_PYPARTED)
 endif
 
 	@rm -rf $(DIR_MOD)
