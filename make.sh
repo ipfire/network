@@ -260,7 +260,6 @@ ipfire_build() {
 	ipfire_make pciutils
 	ipfire_make usbutils
 	ipfire_make hdparm
-	ipfire_make kudzu
 	ipfire_make smartmontools
 	ipfire_make lm-sensors
 	ipfire_make hal
