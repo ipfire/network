@@ -1,3 +1,22 @@
+/*
+ * lang.c
+ *
+ * Copyright (C) 2007  Red Hat, Inc.  All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <alloca.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -21,8 +40,53 @@
 #include "lang.h"
 #include "stubs.h"
 
+int isysLoadFont(void) {
+    unsigned char font[65536];
+    struct console_font_op cfo;
+    unsigned short map[E_TABSZ];
+    struct unimapdesc d;
+    struct unimapinit u;
+    struct unipair desc[2048];
+    gzFile stream;
+    int rc;
+
+#if defined (__s390__) || defined (__s390x__)
+    return 0;
+#endif
+    stream = gunzip_open("/etc/screenfont.gz");
+    if (!stream)
+	return -EACCES;
+
+    gunzip_read(stream, &cfo, sizeof(cfo));
+    gunzip_read(stream, font, sizeof(font));
+    gunzip_read(stream, map, sizeof(map));
+    gunzip_read(stream, &d.entry_ct, sizeof(d.entry_ct));
+    d.entries = desc;
+    gunzip_read(stream, desc, d.entry_ct * sizeof(desc[0]));
+    gunzip_close(stream);
+
+    cfo.data = font;
+    cfo.op = KD_FONT_OP_SET;
+
+    rc = ioctl(1, KDFONTOP, &cfo);
+    if (rc) return rc;
+    rc = ioctl(1, PIO_UNIMAPCLR, &u);
+    if (rc) return rc;
+    rc = ioctl(1, PIO_UNIMAP, &d);
+    if (rc) return rc;
+    rc = ioctl(1, PIO_UNISCRNMAP, map);
+    if (rc) return rc;
+    /* activate the font map */
+    fprintf(stderr, "\033(K");
+    return 0;
+}
+
 int isysSetUnicodeKeymap(void) {
     int console;
+
+#if defined (__s390__) || defined (__s390x__)
+    return 0;
+#endif
     console = open("/dev/console", O_RDWR);
     if (console < 0)
 	return -EACCES;
@@ -44,6 +108,9 @@ int loadKeymap(gzFile stream) {
     short keymap[NR_KEYS];
     struct stat sb;
 
+#if defined (__s390__) || defined (__s390x__)
+    return 0;
+#endif
     if (isVioConsole())
         return 0;
     if (!access("/proc/xen", R_OK)) /* xen can't load keymaps */

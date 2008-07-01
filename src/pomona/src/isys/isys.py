@@ -1,18 +1,25 @@
 #
 # isys.py - installer utility functions and glue for C module
 #
-# Matt Wilson <msw@redhat.com>
-# Erik Troan <ewt@redhat.com>
-# Jeremy Katz <katzj@redhat.com>
+# Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007  Red Hat, Inc.
+# All rights reserved.
 #
-# Copyright 2001 - 2004 Red Hat, Inc.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-# This software may be freely redistributed under the terms of the GNU
-# library public license.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Library Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Author(s): Matt Wilson <msw@redhat.com>
+#            Erik Troan <ewt@redhat.com>
+#            Jeremy Katz <katzj@redhat.com>
 #
 
 import _isys
@@ -23,15 +30,16 @@ import socket
 import stat
 import posix
 import sys
-import kudzu
 import inutil
 import warnings
 import resource
 import re
 import struct
+import minihal
 
 import logging
 log = logging.getLogger("pomona")
+import warnings
 
 mountCount = {}
 raidCount = {}
@@ -39,18 +47,16 @@ raidCount = {}
 MIN_RAM = _isys.MIN_RAM
 EARLY_SWAP_RAM = _isys.EARLY_SWAP_RAM
 
-def pathSpaceAvailable(path, fsystem = "ext2"):
-	return _isys.devSpaceFree(path)
+## Get the amount of free space available under a directory path.
+# @param path The directory path to check.
+# @return The amount of free space available, in 
+def pathSpaceAvailable(path):
+    return _isys.devSpaceFree(path)
 
-def spaceAvailable(device, fsystem = "ext2"):
-	mount(device, "/mnt/space", fstype = fsystem)
-	space = _isys.devSpaceFree("/mnt/space/.")
-	umount("/mnt/space")
-	return space
-
-def fsSpaceAvailable(fsystem):
-	return _isys.devSpaceFree(fsystem)
-
+## Set up an already existing device node to be used as a loopback device.
+# @param device The full path to a device node to set up as a loopback device.
+# @param file The file to mount as loopback on device.
+# @param readOnly Should this loopback device be used read-only?
 def losetup(device, file, readOnly = 0):
 	if readOnly:
 		mode = os.O_RDONLY
@@ -73,6 +79,8 @@ def lochangefd(device, file):
 		os.close(loop)
 		os.close(targ)
 
+## Disable a previously setup loopback device.
+# @param device The full path to an existing loopback device node.
 def unlosetup(device):
 	loop = os.open(device, os.O_RDONLY)
 	try:
@@ -82,11 +90,11 @@ def unlosetup(device):
 
 def ddfile(file, megs, pw = None):
 	buf = '\x00' * (1024 * 256)
-	
+
 	fd = os.open(file, os.O_RDWR | os.O_CREAT)
-	
+
 	total = megs * 4	    # we write out 1/4 of a meg each time through
-	
+
 	if pw:
 		(fn, title, text) = pw
 		win = fn(title, text, total - 1)
@@ -101,31 +109,57 @@ def ddfile(file, megs, pw = None):
 
 	os.close(fd)
 
-def mount(device, location, fstype = "ext2", readOnly = 0, bindMount = 0, remount = 0):
+## Mount a filesystem, similar to the mount system call.
+# @param device The device to mount.  If bindMount is 1, this should be an
+#               already mounted directory.  Otherwise, it should be a device
+#               name.
+# @param location The path to mount device on.
+# @param fstype The filesystem type on device.  This can be disk filesystems
+#               such as vfat or ext3, or pseudo filesystems such as proc or
+#               selinuxfs.
+# @param readOnly Should this filesystem be mounted readonly?
+# @param bindMount Is this a bind mount?  (see the mount(8) man page)
+# @param remount Are we mounting an already mounted filesystem?
+# @return The return value from the mount system call.
+def mount(device, location, fstype = "ext2", readOnly = 0, bindMount = 0, remount = 0, options = "defaults"):
+	flags = None
 	location = os.path.normpath(location)
-	
+	opts = string.split(options)
+
 	# We don't need to create device nodes for devices that start with '/'
 	# (like '/usbdevfs') and also some special fake devices like 'proc'.
 	# First try to make a device node and if that fails, assume we can
 	# mount without making a device node.  If that still fails, the caller
 	# will have to deal with the exception.
 	# We note whether or not we created a node so we can clean up later.
-	if device and device != "none" and device[0] != "/":
-		devName = "/dev/%s" % device
-		device = devName
 
 	if mountCount.has_key(location) and mountCount[location] > 0:
 		mountCount[location] = mountCount[location] + 1
 		return
 
-	log.debug("mounting %s --> %s" % (device, location))
-	rc = _isys.mount(fstype, device, location, readOnly, bindMount, remount)
+	if readOnly or bindMount or remount:
+		if readOnly:
+			opts.append("ro")
+		if bindMount:
+			opts.append("bind")
+		if remount:
+			opts.append("remount")
+
+	flags = ",".join(opts)
+
+	log.debug("isys.py:mount()- going to mount %s on %s with options %s" %(device, location, flags))
+	rc = _isys.mount(fstype, device, location, flags)
 
 	if not rc:
 		mountCount[location] = 1
 
 	return rc
 
+## Unmount a filesystem, similar to the umount system call.
+# @param what The directory to be unmounted.  This does not need to be the
+#             absolute path.
+# @param removeDir Should the mount point be removed after being unmounted?
+# @return The return value from the umount system call.
 def umount(what, removeDir = 1):
 	what = os.path.normpath(what)
 
@@ -146,35 +180,37 @@ def umount(what, removeDir = 1):
 
 	return rc
 
+## Get the SMP status of the system.
+# @return True if this is an SMP system, False otherwise.
 def smpAvailable():
 	return _isys.smpavailable()
 
 htavailable = _isys.htavailable
 
-def chroot (path):
-	return os.chroot(path)
-
-def checkBoot (path):
-	return _isys.checkBoot(path)
-
+## Disable swap.
+# @param path The full path of the swap device to disable.
 def swapoff(path):
-	return _isys.swapoff(path)
+	return _isys.swapoff (path)
 
+## Enable swap.
+# @param path The full path of the swap device to enable.
 def swapon(path):
-	return _isys.swapon(path)
+	return _isys.swapon (path)
 
-def loadFont(): ### DO WE NEED THIS?
-	return _isys.loadFont()
-
+## Load a keyboard layout for text mode installs.
+# @param keymap The keyboard layout to load.  This must be one of the values
+#               from rhpl.KeyboardModels.
 def loadKeymap(keymap):
-	return _isys.loadKeymap(keymap)
-
-classMap = { "disk": kudzu.CLASS_HD,
-						 "cdrom": kudzu.CLASS_CDROM,
-						 "floppy": kudzu.CLASS_FLOPPY }
+	return _isys.loadKeymap (keymap)
 
 cachedDrives = None
 
+## Clear the drive dict cache.
+# This method clears the drive dict cache.  If the drive state changes (by
+# loading and unloading modules, attaching removable devices, etc.) then this
+# function must be called before any of the *DriveDict or *DriveList functions.
+# If not, those functions will return information that does not reflect the
+# current machine state.
 def flushDriveDict():
 	global cachedDrives
 	cachedDrives = None
@@ -183,74 +219,140 @@ def driveDict(klassArg):
 	import parted
 	global cachedDrives
 	if cachedDrives is None:
-		devs = kudzu.probe(kudzu.CLASS_HD | kudzu.CLASS_CDROM | \
-											 kudzu.CLASS_FLOPPY,
-		                   kudzu.BUS_UNSPEC, kudzu.PROBE_SAFE)
 		new = {}
-		for dev in devs:
-			device = dev.device
-			if device is None: # none devices make no sense
+		for dev in minihal.get_devices_by_type("storage"):
+			if dev['device'] is None: # none devices make no sense
 				continue
-			if dev.deviceclass != classMap["disk"]:
+
+			device = dev['device'].replace('/dev/','')
+			# we can't actually use the sg devices, so ignore them
+			if device.startswith("sg"):
+				log.info("ignoring sg device %s" %(device,))
+				continue
+
+			# we can't actually use the st devices, so ignore them
+			if device.startswith("st"):
+				log.info("ignoring st device %s" %(device,))
+				continue
+
+			# we want to ignore md devices as they're not hard disks in our pov
+			if device.startswith("md"):
+				continue
+
+			if dev['storage.drive_type'] != 'disk':
 				new[device] = dev
 				continue
 			try:
-				devName = "/dev/%s" % (device,)
-
 				if not mediaPresent(device):
 					new[device] = dev
 					continue
 
-				#if device.startswith("sd"):
-					# XXX peddev = parted.PedDevice.get(devName)
-					# model = peddev.model
-					# del peddev
-				
+				if device.startswith("sd"):
+					peddev = parted.PedDevice.get(dev['device'])
+					model = peddev.model
+
+					del peddev
 				new[device] = dev
 			except Exception, e:
-				log.debug("exception checking disk blacklist on %s: %s" % (device, e))
+				log.debug("exception checking disk blacklist on %s: %s" % \
+					(device, e))
 		cachedDrives = new
 
 	ret = {}
 	for key,dev in cachedDrives.items():
-		# XXX these devices should have deviceclass attributes.  Or they
-		# should all be subclasses in a device tree and we should be able
-		# to use isinstance on all of them.  Not both.
-		#if isinstance(dev, block.MultiPath) or isinstance(dev, block.RaidSet):
-		#	if klassArg == "disk":
-		#		ret[key] = dev
-		#el
-		if dev.deviceclass == classMap[klassArg]:
-			ret[key] = dev.desc
+		if dev['storage.drive_type'] == klassArg:
+			ret[key] = dev
 	return ret
 
+## Get all the hard drives attached to the system.
+# This method queries the drive dict cache for all hard drives.  If the cache
+# is empty, this will cause all disk devices to be probed.  If the status of
+# the devices has changed, flushDriveDict must be called first.
+#
+# @see flushDriveDict
+# @see driveDict
+# @return A dict of all the hard drive descriptions, keyed on device name.
 def hardDriveDict():
-	return driveDict("disk")
+	ret = {}
+	dict = driveDict("disk")
+	for item in dict.keys():
+		try:
+			ret[item] = dict[item]['description']
+		except AttributeError:
+			ret[item] = ""
+	return ret
 
-def floppyDriveDict():
-	return driveDict("floppy")
+## Get all the removable drives attached to the system.
+# This method queries the drive dict cache for all removable drives.  If the cache
+# is empty, this will cause all disk devices to be probed.  If the status of
+# the devices has changed, flushDriveDict must be run called first.
+#
+# @see flushDriveDict
+# @see driveDict
+# @return A dict of all the removable drive descriptions, keyed on device name.
+def removableDriveDict():
+	ret = {}
+	dict = driveDict("disk")
+	for item in dict.keys():
+		if dict[item]['storage.removable'] != 0:
+			try:
+				ret[item] = dict[item]['description']
+			except AttributeError:
+				ret[item] = ""
+	return ret
 
+## Get all CD/DVD drives attached to the system.
+# This method queries the drive dict cache for all hard drives.  If the cache
+# is empty, this will cause all disk devices to be probed.  If the status of
+# the devices has changed, flushDriveDict must be called first.
+#
+# @see flushDriveDict
+# @see driveDict
+# @return A sorted list of all the CD/DVD drives, without any leading /dev/.
 def cdromList():
 	list = driveDict("cdrom").keys()
 	list.sort()
 	return list
 
-def makedev(major, minor):
-	return os.makedev(major, minor)
+## Get all tape drives attached to the system.
+# This method queries the drive dict cache for all hard drives.  If the cache
+# is empty, this will cause all disk devices to be probed.  If the status of
+# the devices has changed, flushDriveDict must be called first.
+#
+# @see flushDriveDict
+# @see driveDict
+# @return A sorted list of all the tape drives, without any leading /dev/.
+def tapeDriveList():
+	list = driveDict("tape").keys()
+	list.sort()
+	return list
 
-def mknod(pathname, mode, dev):
-	return os.mknod(pathname, mode, dev)
+## Calculate the broadcast address of a network.
+# @param ip An IPv4 address as a string.
+# @param nm A corresponding netmask as a string.
+# @return A tuple of network address and broadcast address strings.
+def inet_calcNetBroad(ip, nm):
+	(ipaddr,) = struct.unpack('I', socket.inet_pton(socket.AF_INET, ip))
+	ipaddr = socket.ntohl(ipaddr)
 
-def getopt(*args):
-	return apply(_isys.getopt, args)
+	(nmaddr,) = struct.unpack('I', socket.inet_pton(socket.AF_INET, nm))
+	nmaddr = socket.ntohl(nmaddr)
+
+	netaddr = ipaddr & nmaddr
+	bcaddr = netaddr | (~nmaddr)
+
+	nw = socket.inet_ntop(socket.AF_INET, struct.pack('!I', netaddr))
+	bc = socket.inet_ntop(socket.AF_INET, struct.pack('!I', bcaddr))
+
+	return (nw, bc)
 
 def doProbeBiosDisks():
+	if not iutil.isX86():
+		return None
 	return _isys.biosDiskProbe()
 
 def doGetBiosDisk(mbrSig):
 	return _isys.getbiosdisk(mbrSig)
-
-handleSegv = _isys.handleSegv
 
 biosdisks = {}
 for d in range(80, 80 + 15):
@@ -268,31 +370,31 @@ def compareDrives(first, second):
 		elif (one > two):
 			return 1
 
-		if first.startswith("hd"):
-			type1 = 0
-		elif first.startswith("sd"):
-			type1 = 1
-		elif first.startswith("xvd"):
-			type1 = -1
-		else:
-			type1 = 2
+	if first.startswith("hd"):
+		type1 = 0
+	elif first.startswith("sd"):
+		type1 = 1
+	elif (first.startswith("vd") or first.startswith("xvd")):
+		type1 = -1
+	else:
+		type1 = 2
 
-		if second.startswith("hd"):
-			type2 = 0
-		elif second.startswith("sd"):
-			type2 = 1
-		elif second.startswith("xvd"):
-			type2 = -1
-		else:
-			type2 = 2
+	if second.startswith("hd"):
+		type2 = 0
+	elif second.startswith("sd"):
+		type2 = 1
+	elif (second.startswith("vd") or second.startswith("xvd")):
+		type2 = -1
+	else:
+		type2 = 2
 
-		if (type1 < type2):
-			return -1
-		elif (type1 > type2):
-			return 1
-		else:
-			len1 = len(first)
-			len2 = len(second)
+	if (type1 < type2):
+		return -1
+	elif (type1 > type2):
+		return 1
+	else:
+		len1 = len(first)
+		len2 = len(second)
 
 		if (len1 < len2):
 			return -1
@@ -306,128 +408,45 @@ def compareDrives(first, second):
 
 	return 0
 
-def readXFSLabel_int(device):
-	try:
-		fd = os.open(device, os.O_RDONLY)
-	except:
-		return None
-	
-	try:
-		buf = os.read(fd, 128)
-		os.close(fd)
-	except OSError, e:
-		log.debug("error reading xfs label on %s: %s" %(device, e))
-		try:
-			os.close(fd)
-		except:
-			pass
-		return None
-	
-	xfslabel = None
-	if len(buf) == 128 and buf[0:4] == "XFSB":
-		xfslabel = string.rstrip(buf[108:120],"\0x00")
-	
-	return xfslabel
-    
-def readXFSLabel(device):
-	label = readXFSLabel_int(device)
-	return label
+def readFSUuid(device):
+	if not os.path.exists(device):
+		device = "/dev/%s" % device
 
-def readSwapLabel_int(device):
-	label = None
-	try:
-		fd = os.open(device, os.O_RDONLY)
-	except:
-		return label
-	
-	pagesize = resource.getpagesize()
-	try:
-		buf = os.read(fd, pagesize)
-		os.close(fd)
-	except OSError, e:
-		log.debug("error reading swap label on %s: %s" %(device, e))
-		try:
-			os.close(fd)
-		except:
-			pass
-		return label
-	
-	if ((len(buf) == pagesize) and (buf[pagesize - 10:] == "SWAPSPACE2")):
-		label = string.rstrip(buf[1052:1068], "\0x00")
-	return label
-
-def readSwapLabel(device):
-	label = readSwapLabel_int(device)
-	return label
-
-def readExt2Label(device):
-	label = _isys.e2fslabel(device)
-	return label
-
-def readReiserFSLabel_int(device):
-	label = None
-	
-	try:
-		fd = os.open(device, os.O_RDONLY)
-	except OSError, e:
-		log.debug("error opening device %s: %s" % (device, e))
-		return label
-
-	# valid block sizes in reiserfs are 512 - 8192, powers of 2
-	# we put 4096 first, since it's the default
-	# reiserfs superblock occupies either the 2nd or 16th block
-	for blksize in (4096, 512, 1024, 2048, 8192):
-		for start in (blksize, (blksize*16)):
-			try:
-				os.lseek(fd, start, 0)
-				# read 120 bytes to get s_magic and s_label
-				buf = os.read(fd, 120)
-				
-				# see if this block is the superblock
-				# this reads reiserfs_super_block_v1.s_magic as defined
-				# in include/reiserfs_fs.h in the reiserfsprogs source
-				m = string.rstrip(buf[52:61], "\0x00")
-				if m == "ReIsErFs" or m == "ReIsEr2Fs" or m == "ReIsEr3Fs":
-					# this reads reiserfs_super_block.s_label as
-					# defined in include/reiserfs_fs.h
-					label = string.rstrip(buf[100:116], "\0x00")
-					os.close(fd)
-					return label
-			except OSError, e:
-				# [Error 22] probably means we're trying to read an
-				# extended partition. 
-				log.debug("error reading reiserfs label on %s: %s" %(device, e))
-				
-				try:
-					os.close(fd)
-				except:
-					pass
-				
-				return label
-	
-	os.close(fd)
-	return label
-
-def readReiserFSLabel(device):
-	label = readReiserFSLabel_int(device)
+	label = _isys.getblkid(device, "UUID")
 	return label
 
 def readFSLabel(device):
-	if not device.startswith("/dev/"):
+	if not os.path.exists(device):
 		device = "/dev/%s" % device
-	
-	label = readExt2Label(device)
-	if label is None:
-		label = readSwapLabel(device)
-	if label is None:
-		label = readXFSLabel(device)
-	if label is None:
-		label = readReiserFSLabel(device)
+
+	label = _isys.getblkid(device, "LABEL")
 	return label
 
-def ext2Clobber(device):
-	if not device.startswith("/dev/"):
+def readFSType(device):
+	if not os.path.exists(device):
 		device = "/dev/%s" % device
+
+	fstype = _isys.getblkid(device, "TYPE")
+	if fstype is None:
+		# FIXME: libblkid doesn't show physical volumes as having a filesystem
+		# so let's sniff for that.(#409321)
+		try:
+			fd = os.open(device, os.O_RDONLY)
+			buf = os.read(fd, 2048)
+		except:
+			return fstype
+		finally:
+			try:
+				os.close(fd)
+			except:
+				pass
+
+
+	if fstype == "ext4":
+		return "ext4dev"
+	return fstype
+
+def ext2Clobber(device):
 	_isys.e2fsclobber(device)
 
 def ext2IsDirty(device):
@@ -435,7 +454,7 @@ def ext2IsDirty(device):
 	return label
 
 def ext2HasJournal(device):
-	hasjournal = _isys.e2hasjournal(device)
+	hasjournal = _isys.e2hasjournal(device);
 	return hasjournal
 
 def ejectCdrom(device):
@@ -446,17 +465,18 @@ def ejectCdrom(device):
 		_isys.ejectcdrom(fd)
 	except SystemError, e:
 		log.warning("error ejecting cdrom (%s): %s" %(device, e))
-	pass
+		pass
 
 	os.close(fd)
 
 def driveUsesModule(device, modules):
 	"""Returns true if a drive is using a prticular module.  Only works
 	   for SCSI devices right now."""
+
 	if not isinstance(modules, ().__class__) and not \
 			isinstance(modules, [].__class__):
 		modules = [modules]
-        
+
 	if device[:2] == "hd":
 		return False
 	rc = False
@@ -468,7 +488,7 @@ def driveUsesModule(device, modules):
 			try:
 				# each line has format of:  <device>  <module>
 				(sddev, sdmod) = string.split(l)
-				
+
 				if sddev == device:
 					if sdmod in modules:
 						rc = True
@@ -477,13 +497,15 @@ def driveUsesModule(device, modules):
 				pass
 	return rc
 
+## Check if a removable media drive (CD, USB key, etc.) has media present.
+# @param device The basename of the device node.
+# @return True if media is present in device, False otherwise.
 def mediaPresent(device):
 	try:
 		fd = os.open("/dev/%s" % device, os.O_RDONLY)
 	except OSError, (errno, strerror):
 		# error 123 = No medium found
 		if errno == 123:
-			log.debug("No medium found on %s" % device)
 			return False
 		else:
 			return True
@@ -491,65 +513,123 @@ def mediaPresent(device):
 		os.close(fd)
 		return True
 
-def vtActivate (num):
+def vtActivate(num):
 	_isys.vtActivate (num)
 
 def isPsudoTTY(fd):
-	return _isys.isPsudoTTY(fd)
+	return _isys.isPsudoTTY (fd)
 
+## Flush filesystem buffers.
 def sync():
 	return _isys.sync ()
 
+## Determine if a file is an ISO image or not.
+# @param file The full path to a file to check.
+# @return True if ISO image, False otherwise.
 def isIsoImage(file):
 	return _isys.isisoimage(file)
 
 def fbinfo():
 	return _isys.fbinfo()
 
-def cdRwList():
-	if not os.access("/proc/sys/dev/cdrom/info", os.R_OK): return []
-	
-	f = open("/proc/sys/dev/cdrom/info", "r")
-	lines = f.readlines()
-	f.close()
-	
-	driveList = []
-	finalDict = {}
-	
-	for line in lines:
-		line = string.split(line, ':', 1)
+## Determine whether a network device has a link present or not.
+# @param dev The network device to check.
+# @return True if there is a link, False if not or if dev is in an unknown
+#         state.
+def getLinkStatus(dev):
+	if dev == '' or dev is None:
+		return False
 
-		if (line and line[0] == "drive name"):
-			line = string.split(line[1])
-			# no CDROM drives
-			if not line:  return []
+	# getLinkStatus returns 1 for link, 0 for no link, -1 for unknown state
+	if _isys.getLinkStatus(dev) == 1:
+		return True
+	else:
+		return False
 
-			for device in line:
-				if device[0:2] == 'sr':
-					device = "scd" + device[2:]
-					driveList.append(device)
-				elif ((line and line[0] == "Can write CD-R") or
-					(line and line[0] == "Can write CD-RW")):
-					line = string.split(line[1])
-					field = 0
-					for ability in line:
-						if ability == "1":
-							finalDict[driveList[field]] = 1
-							field = field + 1
+## Get the MAC address for a network device.
+# @param dev The network device to check.
+# @return The MAC address for dev as a string, or None on error.
+def getMacAddress(dev):
+	return _isys.getMacAddress(dev)
 
-	l = finalDict.keys()
-	l.sort()
-	return l
+## Determine if a network device is a wireless device.
+# @param dev The network device to check.
+# @return True if dev is a wireless network device, False otherwise.
+def isWireless(dev):
+	return _isys.isWireless(dev)
 
-def ideCdRwList():
-	newList = []
-	for dev in cdRwList():
-		if dev[0:2] == 'hd': newList.append(dev)
+## Get the IP address for a network device.
+# @param dev The network device to check.
+# @see netlink_interfaces_ip2str
+# @return The IPv4 address for dev, or None on error.
+def getIPAddress(dev):
+	return _isys.getIPAddress(dev)
 
-	return newList
+## Get the correct context for a file from loaded policy.
+# @param fn The filename to query.
+def matchPathContext(fn):
+	return _isys.matchPathContext(fn)
 
+## Set the SELinux file context of a file
+# @param fn The filename to fix.
+# @param con The context to use.
+# @param instroot An optional root filesystem to look under for fn.
+def setFileContext(fn, con, instroot = '/'):
+	if con is not None and os.access("%s/%s" % (instroot, fn), os.F_OK):
+		return (_isys.setFileContext(fn, con, instroot) != 0)
+	return False
 
-handleSegv = _isys.handleSegv
+## Restore the SELinux file context of a file to its default.
+# @param fn The filename to fix.
+# @param instroot An optional root filesystem to look under for fn.
+def resetFileContext(fn, instroot = '/'):
+	con = matchPathContext(fn)
+	if con:
+		return setFileContext(fn, con, instroot)
+	return False
+
+def prefix2netmask(prefix):
+	return _isys.prefix2netmask(prefix)
+
+def netmask2prefix (netmask):
+	prefix = 0
+
+	while prefix < 33:
+		if (prefix2netmask(prefix) == netmask):
+			return prefix
+
+		prefix += 1
+
+	return prefix
+
+isPAE = None
+def isPaeAvailable():
+	global isPAE
+	if isPAE is not None:
+		return isPAE
+
+	isPAE = False
+	if not iutil.isX86():
+		return isPAE
+
+	try:
+		f = open("/proc/iomem", "r")
+		lines = f.readlines()
+		for line in lines:
+			if line[0].isspace():
+				continue
+			start = line.split(' ')[0].split('-')[0]
+			start = long(start, 16)
+
+			if start > 0x100000000L:
+				isPAE = True
+				break
+
+		f.close()
+	except:
+		pass
+
+	return isPAE
 
 printObject = _isys.printObject
 bind_textdomain_codeset = _isys.bind_textdomain_codeset

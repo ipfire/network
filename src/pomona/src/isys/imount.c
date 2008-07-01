@@ -1,3 +1,22 @@
+/*
+ * imount.c
+ *
+ * Copyright (C) 2007, 2008 Red Hat, Inc.  All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,54 +24,80 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "imount.h"
-#include "sundries.h"
 
 #define _(foo) foo
 
 static int mkdirIfNone(char * directory);
 
-int doPwMount(char * dev, char * where, char * fs, int options, void *data) {
-    char * buf = NULL;
-    int isnfs = 0;
-    char * mount_opt = NULL;
-    long int flag;
-    char * chptr __attribute__ ((unused));
-    
-    if (!strcmp(fs, "nfs")) isnfs = 1;
+int doPwMount(char *dev, char *where, char *fs, char *options) {
+    int rc, child, status;
+    char *opts = NULL, *device;
 
-    /*logMessage(INFO, "mounting %s on %s as type %s", dev, where, fs);*/
-
-    if (mkdirChain(where))
-        return IMOUNT_ERR_ERRNO;
-
-    flag = MS_MGC_VAL;
-    if (options & IMOUNT_RDONLY)
-        flag |= MS_RDONLY;
-    if (options & IMOUNT_BIND)
-        flag |= MS_BIND;
-    if (options & IMOUNT_REMOUNT)
-        flag |= MS_REMOUNT;
-
-    if (!isnfs && (*dev == '/' || !strcmp(dev, "none"))) {
-        buf = dev;
-    } else if (!isnfs) {
-        buf = alloca(200);
-        strcpy(buf, "/tmp/");
-        strcat(buf, dev);
-    }
-    if (!strncmp(fs, "vfat", 4))
-        mount_opt="check=relaxed";
-
-    /*logMessage(INFO, "calling mount(%s, %s, %s, %ld, %p)", buf, where, fs, 
-      flag, mount_opt);*/
-    
-    if (mount(buf, where, fs, flag, mount_opt)) {
-        /*logMessage(ERROR, "mount failed: %s", strerror(errno));*/
+    if (mkdirChain(where)) {
         return IMOUNT_ERR_ERRNO;
     }
+
+    if (strstr(fs, "nfs")) {
+        if (options)
+            rc = asprintf(&opts, "%s,nolock", options);
+        else
+            opts = strdup("nolock");
+        device = strdup(dev);
+    } else {
+        if ((options && strstr(options, "bind") == NULL) && 
+            strncmp(dev, "LABEL=", 6) && strncmp(dev, "UUID=", 5) && *dev != '/')
+           rc = asprintf(&device, "/dev/%s", dev);
+        else
+           device = strdup(dev);
+        if (options)
+            opts = strdup(options);
+    }
+
+
+    if (!(child = fork())) {
+        int fd;
+
+        /* Close off all these filehandles since we don't want errors
+         * spewed to tty1.
+         */
+        fd = open("/dev/tty5", O_RDONLY);
+        close(STDIN_FILENO);
+        dup2(fd, STDIN_FILENO);
+        close(fd);
+
+        fd = open("/dev/tty5", O_WRONLY);
+        close(STDOUT_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        close(STDERR_FILENO);
+        dup2(fd, STDERR_FILENO);
+        close(fd);
+
+        if (opts) {
+            fprintf(stderr, "Running... /bin/mount -n -t %s -o %s %s %s\n",
+                    fs, opts, device, where);
+            rc = execl("/bin/mount",
+                       "/bin/mount", "-n", "-t", fs, "-o", opts, device, where, NULL);
+            exit(1);
+        }
+        else {
+            fprintf(stderr, "Running... /bin/mount -n -t %s %s %s\n",
+                    fs, device, where);
+            rc = execl("/bin/mount", "/bin/mount", "-n", "-t", fs, device, where, NULL);
+            exit(1);
+        }
+    }
+
+    waitpid(child, &status, 0);
+
+    free(opts);
+    free(device);
+    if (!WIFEXITED(status) || (WIFEXITED(status) && WEXITSTATUS(status)))
+       return IMOUNT_ERR_OTHER;
 
     return 0;
 }

@@ -2,17 +2,24 @@
  * eddsupport.c - handling of mapping disk drives in Linux to disk drives
  * according to the BIOS using the edd kernel module
  *
- * Copyright 2004 Dell, Inc., Red Hat, Inc.
+ * Copyright (C) 2004  Dell, Inc.  All rights reserved.
+ * Copyright (C) 2004  Red Hat, Inc.  All rights reserved.
  *
- * Rezwanul_Kabir@Dell.com
- * Jeremy Katz <katzj@redhat.com>
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * This software may be freely redistributed under the terms of the GNU
- * general public license.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Author(s): Rezwanul_Kabir@Dell.com
+ *            Jeremy Katz <katzj@redhat.com>
  */
 
 #include <ctype.h>
@@ -29,13 +36,10 @@
 #include <sys/types.h>
 #include <linux/types.h>
 
-#include <kudzu/kudzu.h>
-
 
 #include "eddsupport.h"
+#include "devices.h"
 #include "isys.h"
-
-
 
 #define EDD_DIR "/sys/firmware/edd"
 #define SIG_FILE "mbr_signature"
@@ -97,17 +101,13 @@ int probeBiosDisks() {
 
 
 static struct device ** createDiskList(){
-    return probeDevices (CLASS_HD, BUS_UNSPEC, PROBE_ALL);
+    return getDevices (DEVICE_DISK);
 }
 
 static int readDiskSig(char *device, uint32_t *disksig) {
     int fd, rc;
 
-    /* XXX if (devMakeInode(device, "/tmp/biosdev")){
-        return -1;
-    } */ 
-
-    fd = open("/tmp/biosdev", O_RDONLY);
+    fd = open(device, O_RDONLY);
     if (fd < 0) {
 #ifdef STANDALONE 
         fprintf(stderr, "Error opening device %s: %s\n ", device, 
@@ -138,7 +138,6 @@ static int readDiskSig(char *device, uint32_t *disksig) {
     }
 
     close(fd);
-    unlink("/tmp/biosdev");
     return 0;
 }
 
@@ -164,6 +163,7 @@ static int mapBiosDisks(struct device** devices,const char *path) {
 #ifdef STANDALONE
         fprintf(stderr, "Error initializing mbrSigToName table\n");
 #endif
+        closedir(dirHandle);
         return 0;
     }
 
@@ -176,31 +176,33 @@ static int mapBiosDisks(struct device** devices,const char *path) {
         sigFileName = malloc(strlen(path) + strlen(entry->d_name) + 20);
         sprintf(sigFileName, "%s/%s/%s", path, entry->d_name, SIG_FILE);
         if (readMbrSig(sigFileName, &mbrSig) == 0) {
-	    	
-	    for (currentDev = devices, i = 0, foundDisk=NULL; (*currentDev) != NULL && i<2; currentDev++) {
-        	if (!(*currentDev)->device)
-            		continue;
-		
-        	if ((rc=readDiskSig((*currentDev)->device, &currentSig)) < 0){
-			if (rc == -ENOMEDIUM)
-			     continue;
-			return 0;
-		} 
-            		
+            for (currentDev = devices, i = 0, foundDisk=NULL;
+                    (*currentDev) != NULL && i<2;
+                    currentDev++) {
+                if (!(*currentDev)->device)
+                    continue;
 
-            	if (mbrSig == currentSig){
-			foundDisk=currentDev;
-			i++;
-		}
-	    }
+                if ((rc=readDiskSig((*currentDev)->device, &currentSig)) < 0) {
+                    if (rc == -ENOMEDIUM)
+                        continue;
+                    closedir(dirHandle);
+                    return 0;
+                } 
 
-	    if (i==1){
-            if(!addToHashTable(mbrSigToName, (uint32_t)biosNum, 
-                               (*foundDisk)->device))
-                return 0;
-	    }
+                if (mbrSig == currentSig) {
+                    foundDisk=currentDev;
+                        i++;
+                }
+            }
+
+            if (i==1) {
+                if(!addToHashTable(mbrSigToName, (uint32_t)biosNum, 
+                               (*foundDisk)->device)) {
+                    closedir(dirHandle);
+                    return 0;
+                }
+            }
         } 
-
     }
     closedir(dirHandle);
     return 1;

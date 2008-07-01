@@ -1,5 +1,5 @@
 /*
- * stubs.h
+ * wireless.h
  *
  * Copyright (C) 2007  Red Hat, Inc.  All rights reserved.
  *
@@ -17,28 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* we use gzlib when linked against dietlibc, but otherwise, we should use
-   zlib.  it would make more sense to do the defines in the other direction, 
-   but that causes symbol wackiness because both gunzip_open and gzip_open in
-   gzlib are gzopen from zlib
-*/
+#ifndef WIRELESS_H
+#define WIRELESS_H
 
-#ifndef ISYS_STUB
-#define ISYS_STUB
-
-#ifndef GZLIB
-#include <zlib.h>
-
-#define gunzip_open(x) gzopen(x, "r")
-#define gunzip_dopen gzdopen(x, "r")
-#define gunzip_close gzclose
-#define gunzip_read gzread
-#define gzip_write gzwrite
-#define gzip_open(x, y, z) gzopen(x, "w")
-
-#else
-#include "gzlib/gzlib.h"
-
-#endif
+int is_wireless_interface(char * ifname);
+int set_essid(char * ifname, char * essid);
+char * get_essid(char * ifname);
+int set_wep_key(char * ifname, char * key);
+int set_managed(char * ifname);
 
 #endif

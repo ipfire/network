@@ -1,4 +1,23 @@
 /*
+ * smp.c
+ *
+ * Copyright (C) 2007  Red Hat, Inc.  All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
 [_Anarchy_(alan@lightning.swansea.uk.linux.org)] you should do one check
    though - if the board seems to be SMP and the CPU in /proc/cpuinfo is non
    intel dont install an SMP kernel - thats a dual pentium board with a cyrix
@@ -40,7 +59,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: smp.c,v 1.29 2006/06/26 15:01:37 pjones Exp $
+ *      $Id$
  */
 
 /*
@@ -145,9 +164,7 @@ static int     pfd;            /* physical /dev/mem fd */
 static int     verbose = 0;
 static int     grope = 0;
 
-static int
-readType()
-{
+static int readType() {
     u_char      type;
 
     if ( read( pfd, &type, sizeof( u_char ) ) != sizeof( u_char ) ) {
@@ -169,8 +186,7 @@ readType()
 
 #define MODE_SMP_CHECK 1
 
-static int groupForSMP(int mode)
-{
+static int groupForSMP(int mode) {
     vm_offset_t paddr;
     int         where;
     mpfps_t     mpfps;
@@ -233,8 +249,7 @@ static int groupForSMP(int mode)
  */
 #define NEXT(X)         ((X) += 4)
 static void
-apic_probe( vm_offset_t* paddr, int* where )
-{
+apic_probe( vm_offset_t* paddr, int* where ) {
     /*
      * c rewrite of apic_probe() by Jack F. Vogel
      */
@@ -385,26 +400,20 @@ apic_probe( vm_offset_t* paddr, int* where )
     *paddr = (vm_offset_t)0;
 }
 
-
 /*
  *
  */
-static int
-seekEntry( vm_offset_t addr )
-{
+static int seekEntry( vm_offset_t addr ) {
     if ( lseek( pfd, (off_t)addr, SEEK_SET ) < 0 ) {
         return 1;
     }
     return 0;
 }
 
-
 /*
  *
  */
-static void
-readEntry( void* entry, int size )
-{
+static void readEntry( void* entry, int size ) {
     if ( read( pfd, entry, size ) != size ) {
         return;
         perror( "readEntry" );
@@ -412,15 +421,13 @@ readEntry( void* entry, int size )
     }
 }
 
-static int intelDetectSMP(void)
-{
+static int intelDetectSMP(void) {
     return groupForSMP(MODE_SMP_CHECK);
 }
 
 /* ---- end mptable mess ---- */
 
-static inline unsigned int cpuid_ebx(int op)
-{
+static inline unsigned int cpuid_ebx(int op) {
     unsigned int eax, ebx;
 
     __asm__("pushl %%ebx; cpuid; movl %%ebx,%1; popl %%ebx"
@@ -432,8 +439,7 @@ static inline unsigned int cpuid_ebx(int op)
 
 /* XXX: rewrite using /proc/cpuinfo info if it there.  Only fall
    back to inline asm if it is not */
-int detectHT(void)
-{
+int detectHT(void) {
     FILE *f;
     int htflag = 0;
     uint32_t ebx = 0;
@@ -472,7 +478,11 @@ int detectSMP(void)
     static int isSMP = -1;
 
     if (isSMP != -1)
-			return isSMP;
+	return isSMP;
 
-  return isSMP = intelDetectSMP();
+#if defined (__i386__)
+    return isSMP = intelDetectSMP();
+#else
+    #error unknown architecture
+#endif
 }

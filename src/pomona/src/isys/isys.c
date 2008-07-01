@@ -1,17 +1,42 @@
+/*
+ * isys.c
+ *
+ * Copyright (C) 2007  Red Hat, Inc.  All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <Python.h>
 
 #include <stdio.h>
 #include <dirent.h>
 #include <errno.h>
 #define u32 __u32
-#include <linux/ext2_fs.h>
-#include <linux/ext3_fs.h>
 #include <ext2fs/ext2fs.h>
 #include <fcntl.h>
 #include <popt.h>
 /* Need to tell loop.h what the actual dev_t type is. */
 #undef dev_t
+#if defined(__alpha) || (defined(__sparc__) && defined(__arch64__))
+#define dev_t unsigned int
+#else
+#if defined(__x86_64__)
+#define dev_t unsigned long
+#else
 #define dev_t unsigned short
+#endif
+#endif
 #include <linux/loop.h>
 #undef dev_t
 #define dev_t dev_t
@@ -32,13 +57,19 @@
 #include <libintl.h>
 #include <libgen.h>
 #include <linux/major.h>
+#include <linux/raid/md_u.h>
+#include <linux/raid/md_p.h>
 #include <signal.h>
-#include <execinfo.h>
 
-#include "imount.h"
+#include <blkid/blkid.h>
+#include <blkid/blkid_types.h>
+
 #include "isys.h"
+#include "imount.h"
+#include "net.h"
 #include "smp.h"
 #include "lang.h"
+#include "wireless.h"
 #include "eddsupport.h"
 
 #ifndef CDROMEJECT
@@ -50,10 +81,8 @@ static PyObject * doGetOpt(PyObject * s, PyObject * args);
 static PyObject * doRmmod(PyObject * s, PyObject * args);*/
 static PyObject * doMount(PyObject * s, PyObject * args);
 static PyObject * doUMount(PyObject * s, PyObject * args);
-static PyObject * makeDevInode(PyObject * s, PyObject * args);
 static PyObject * smpAvailable(PyObject * s, PyObject * args);
 static PyObject * htAvailable(PyObject * s, PyObject * args);
-static PyObject * doCheckBoot(PyObject * s, PyObject * args);
 static PyObject * doSwapon(PyObject * s, PyObject * args);
 static PyObject * doSwapoff(PyObject * s, PyObject * args);
 static PyObject * doLoSetup(PyObject * s, PyObject * args);
@@ -62,7 +91,7 @@ static PyObject * doLoChangeFd(PyObject * s, PyObject * args);
 static PyObject * doDdFile(PyObject * s, PyObject * args);
 static PyObject * doDevSpaceFree(PyObject * s, PyObject * args);
 static PyObject * doLoadKeymap(PyObject * s, PyObject * args);
-static PyObject * doClobberExt2 (PyObject * s, PyObject * args);
+static PyObject * doClobberExt2(PyObject * s, PyObject * args);
 static PyObject * doReadE2fsLabel(PyObject * s, PyObject * args);
 static PyObject * doExt2Dirty(PyObject * s, PyObject * args);
 static PyObject * doExt2HasJournal(PyObject * s, PyObject * args);
@@ -72,11 +101,13 @@ static PyObject * doisPsudoTTY(PyObject * s, PyObject * args);
 static PyObject * doisVioConsole(PyObject * s);
 static PyObject * doSync(PyObject * s, PyObject * args);
 static PyObject * doisIsoImage(PyObject * s, PyObject * args);
+static PyObject * getFramebufferInfo(PyObject * s, PyObject * args);
 static PyObject * printObject(PyObject * s, PyObject * args);
 static PyObject * py_bind_textdomain_codeset(PyObject * o, PyObject * args);
+static PyObject * isWireless(PyObject * s, PyObject * args);
 static PyObject * doProbeBiosDisks(PyObject * s, PyObject * args);
-static PyObject * doGetBiosDisk(PyObject * s, PyObject * args); 
-static PyObject * doSegvHandler(PyObject *s, PyObject *args);
+static PyObject * doGetBiosDisk(PyObject * s, PyObject * args);
+static PyObject * doGetBlkidData(PyObject * s, PyObject * args);
 
 static PyMethodDef isysModuleMethods[] = {
     { "ejectcdrom", (PyCFunction) doEjectCdrom, METH_VARARGS, NULL },
@@ -94,7 +125,6 @@ static PyMethodDef isysModuleMethods[] = {
     { "smpavailable", (PyCFunction) smpAvailable, METH_VARARGS, NULL },
     { "htavailable", (PyCFunction) htAvailable, METH_VARARGS, NULL },
     { "umount", (PyCFunction) doUMount, METH_VARARGS, NULL },
-    { "checkBoot", (PyCFunction) doCheckBoot, METH_VARARGS, NULL },
     { "swapon",  (PyCFunction) doSwapon, METH_VARARGS, NULL },
     { "swapoff",  (PyCFunction) doSwapoff, METH_VARARGS, NULL },
     { "loadKeymap", (PyCFunction) doLoadKeymap, METH_VARARGS, NULL },
@@ -103,11 +133,13 @@ static PyMethodDef isysModuleMethods[] = {
     { "isVioConsole", (PyCFunction) doisVioConsole, METH_NOARGS, NULL},
     { "sync", (PyCFunction) doSync, METH_VARARGS, NULL},
     { "isisoimage", (PyCFunction) doisIsoImage, METH_VARARGS, NULL},
+    { "fbinfo", (PyCFunction) getFramebufferInfo, METH_VARARGS, NULL},
     { "printObject", (PyCFunction) printObject, METH_VARARGS, NULL},
     { "bind_textdomain_codeset", (PyCFunction) py_bind_textdomain_codeset, METH_VARARGS, NULL},
+    { "isWireless", (PyCFunction) isWireless, METH_VARARGS, NULL },
     { "biosDiskProbe", (PyCFunction) doProbeBiosDisks, METH_VARARGS,NULL},
     { "getbiosdisk",(PyCFunction) doGetBiosDisk, METH_VARARGS,NULL},
-    { "handleSegv", (PyCFunction) doSegvHandler, METH_VARARGS, NULL },
+    { "getblkid", (PyCFunction) doGetBlkidData, METH_VARARGS, NULL },
     { NULL, NULL, 0, NULL }
 } ;
 
@@ -355,25 +387,22 @@ static PyObject * doUMount(PyObject * s, PyObject * args) {
 }
 
 static PyObject * doMount(PyObject * s, PyObject * args) {
-    char * fs, * device, * mntpoint;
+    char *fs, *device, *mntpoint, *flags = NULL;
     int rc;
-    int readOnly = 0;
-    int bindMount = 0;
-    int reMount = 0;
-    int flags = 0;
 
-    if (!PyArg_ParseTuple(args, "sssiii", &fs, &device, &mntpoint,
-			  &readOnly, &bindMount, &reMount)) return NULL;
+    if (!PyArg_ParseTuple(args, "sss|z", &fs, &device, &mntpoint,
+			  &flags)) return NULL;
 
-    if (readOnly) flags |= IMOUNT_RDONLY; 
-    if (bindMount) flags |= IMOUNT_BIND;
-    if (reMount) flags |= IMOUNT_REMOUNT;
-
-    rc = doPwMount(device, mntpoint, fs, flags, NULL);
+    rc = doPwMount(device, mntpoint, fs, flags);
     if (rc == IMOUNT_ERR_ERRNO) 
 	PyErr_SetFromErrno(PyExc_SystemError);
-    else if (rc)
-	PyErr_SetString(PyExc_SystemError, "mount failed");
+    else if (rc) {
+        PyObject *tuple = PyTuple_New(2);
+
+        PyTuple_SetItem(tuple, 0, PyInt_FromLong(rc));
+        PyTuple_SetItem(tuple, 1, PyString_FromString("mount failed"));
+        PyErr_SetObject(PyExc_SystemError, tuple);
+    }
 
     if (rc) return NULL;
 
@@ -383,37 +412,6 @@ static PyObject * doMount(PyObject * s, PyObject * args) {
 
 #define BOOT_SIGNATURE	0xaa55	/* boot signature */
 #define BOOT_SIG_OFFSET	510	/* boot signature offset */
-
-static PyObject * doCheckBoot (PyObject * s, PyObject * args) {
-    char * path;
-    int fd, size;
-    unsigned short magic;
-
-    /* code from LILO */
-    
-    if (!PyArg_ParseTuple(args, "s", &path)) return NULL;
-
-    if ((fd = open (path, O_RDONLY)) == -1) {
-	PyErr_SetFromErrno(PyExc_SystemError);
-	return NULL;
-    }
-
-    if (lseek(fd,(long) BOOT_SIG_OFFSET, 0) < 0) {
-	close (fd);
-	PyErr_SetFromErrno(PyExc_SystemError);
-	return NULL;
-    }
-    
-    if ((size = read(fd,(char *) &magic, 2)) != 2) {
-	close (fd);
-	PyErr_SetFromErrno(PyExc_SystemError);
-	return NULL;
-    }
-
-    close (fd);
-    
-    return Py_BuildValue("i", magic == BOOT_SIGNATURE);
-}
 
 int swapoff(const char * path);
 int swapon(const char * path, int priorty);
@@ -680,6 +678,39 @@ static PyObject * doisIsoImage(PyObject * s, PyObject * args) {
     return Py_BuildValue("i", rc);
 }
 
+static PyObject * getFramebufferInfo(PyObject * s, PyObject * args) {
+    int fd;
+    struct fb_var_screeninfo fb;
+
+    fd = open("/dev/fb0", O_RDONLY);
+    if (fd == -1) {
+	Py_INCREF(Py_None);
+	return Py_None;
+    }
+
+    if (ioctl(fd, FBIOGET_VSCREENINFO, &fb)) {
+	close(fd);
+	PyErr_SetFromErrno(PyExc_SystemError);
+	return NULL;
+    }
+
+    close(fd);
+
+    return Py_BuildValue("(iii)", fb.xres, fb.yres, fb.bits_per_pixel);
+}
+
+static PyObject * isWireless(PyObject * s, PyObject * args) {
+    char *dev;
+    int ret;
+
+    if (!PyArg_ParseTuple(args, "s", &dev))
+	return NULL;
+
+    ret = is_wireless_interface(dev);
+
+    return Py_BuildValue("i", ret);
+}
+
 static PyObject * printObject (PyObject * o, PyObject * args) {
     PyObject * obj;
     char buf[256];
@@ -729,23 +760,32 @@ static PyObject * doGetBiosDisk(PyObject * s, PyObject * args) {
     return Py_None;
 }
 
-static PyObject * doSegvHandler(PyObject *s, PyObject *args) {
-    void *array[20];
-    size_t size;
-    char **strings;
-    size_t i;
+static PyObject * doGetBlkidData(PyObject * s, PyObject * args) {
+    char * dev, * key;
+    blkid_cache cache;
+    blkid_dev bdev = NULL;
+    blkid_tag_iterate titer;
+    const char * type, * data;
 
-    signal(SIGSEGV, SIG_DFL); /* back to default */
-    
-    size = backtrace (array, 20);
-    strings = backtrace_symbols (array, size);
-    
-    printf ("Anaconda received SIGSEGV!.  Backtrace:\n");
-    for (i = 0; i < size; i++)
-        printf ("%s\n", strings[i]);
-     
-    free (strings);
-    exit(1);
+    if (!PyArg_ParseTuple(args, "ss", &dev, &key)) return NULL;
+
+    blkid_get_cache(&cache, NULL);
+
+    bdev = blkid_get_dev(cache, dev, BLKID_DEV_NORMAL);
+    if (bdev == NULL)
+        goto out;
+    titer = blkid_tag_iterate_begin(bdev);
+    while (blkid_tag_next(titer, &type, &data) >= 0) {
+        if (!strcmp(type, key)) {
+            blkid_tag_iterate_end(titer);
+            return Py_BuildValue("s", data);
+        }
+    }
+    blkid_tag_iterate_end(titer);
+
+ out:
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4: */

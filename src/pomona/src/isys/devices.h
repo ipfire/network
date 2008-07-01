@@ -1,5 +1,5 @@
 /*
- * stubs.h
+ * devices.h
  *
  * Copyright (C) 2007  Red Hat, Inc.  All rights reserved.
  *
@@ -17,28 +17,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* we use gzlib when linked against dietlibc, but otherwise, we should use
-   zlib.  it would make more sense to do the defines in the other direction, 
-   but that causes symbol wackiness because both gunzip_open and gzip_open in
-   gzlib are gzopen from zlib
-*/
+#ifndef DEVICES_H
+#define DEVICES_H
 
-#ifndef ISYS_STUB
-#define ISYS_STUB
+enum deviceType {
+    DEVICE_ANY = ~0,
+    DEVICE_NETWORK = (1 << 0),
+    DEVICE_DISK = (1 << 1),
+    DEVICE_CDROM = (1 << 2)
+};
 
-#ifndef GZLIB
-#include <zlib.h>
+struct device {
+    char *device;
+    char *description;
+    enum deviceType type;
+    union {
+        char *hwaddr;
+        int removable;
+    } priv;
+};
 
-#define gunzip_open(x) gzopen(x, "r")
-#define gunzip_dopen gzdopen(x, "r")
-#define gunzip_close gzclose
-#define gunzip_read gzread
-#define gzip_write gzwrite
-#define gzip_open(x, y, z) gzopen(x, "w")
-
-#else
-#include "gzlib/gzlib.h"
-
-#endif
+struct device **getDevices(enum deviceType type);
 
 #endif

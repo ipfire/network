@@ -17,7 +17,6 @@ import os
 import sys
 import isys
 import time
-import kudzu
 import string
 import shutil
 

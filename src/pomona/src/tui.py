@@ -3,7 +3,6 @@ from snack import *
 import sys, os
 import isys
 import parted
-import kudzu
 import signal
 import inutil
 import imputil
