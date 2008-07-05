@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = hal
-VER        = 0.5.9.1
+VER        = 0.5.11
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -37,7 +37,9 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-cross-compile.patch \
+	$(THISAPP)-remove-glib-dbus-headers.patch
 
 install: $(TARGET)
 
@@ -53,12 +55,43 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-		            --sysconfdir=/etc \
-		            --libexecdir=/usr/lib/hal \
-		            --localstatedir=/var
-		
+
+ifeq "$(STAGE)" "$(SNAME)"
+	cd $(DIR_APP) && \
+		./configure --prefix=/usr \
+			--sysconfdir=/etc \
+			--libexecdir=/usr/lib/hal \
+			--localstatedir=/var \
+			--disable-policy-kit
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-cross-compile.patch
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-remove-glib-dbus-headers.patch
+	cd $(DIR_APP) && $(U_TOOLS) \
+		CFLAGS="$(CFLAGS) -I$(INSTALLER_DIR)/usr/include/glib-2.0" \
+		GLIB_CFLAGS="-I$(INSTALLER_DIR)/usr/include/glib-2.0 -I$(INSTALLER_DIR)/usr/lib/glib-2.0/include" \
+		GLIB_LIBS="$(INSTALLER_DIR)/usr/lib/libglib-2.0.so $(INSTALLER_DIR)/usr/lib/libgobject-2.0.so $(INSTALLER_DIR)/usr/lib/libgmodule-2.0.so $(INSTALLER_DIR)/usr/lib/libgthread-2.0.so" \
+		DBUS_CFLAGS="-I$(INSTALLER_DIR)/usr/include/dbus-1.0 -I$(INSTALLER_DIR)/usr/lib/dbus-1.0/include" \
+		DBUS_LIBS="$(INSTALLER_DIR)/usr/lib/libdbus-glib-1.so $(INSTALLER_DIR)/usr/lib/libdbus-1.so" \
+		VOLUME_ID_CFLAGS="$(CFLAGS)" \
+		VOLUME_ID_LIBS="$(INSTALLER_DIR)/usr/lib/libvolume_id.so" \
+		LIBS="$(INSTALLER_DIR)/usr/lib/libdbus-1.so" \
+		ac_cv_path_LIBUSB_CONFIG= \
+		./configure --prefix=/usr \
+			--host=$(UCLIBC_TARGET) \
+			--sysconfdir=/etc \
+			--libexecdir=/usr/lib/hal \
+			--localstatedir=/var \
+			--disable-policy-kit \
+			--with-hwdata=/usr/share/hwdata
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
+		LIBS="$(INSTALLER_DIR)/usr/lib/libdbus-1.so $(INSTALLER_DIR)/usr/lib/libdbus-glib-1.so $(INSTALLER_DIR)/usr/lib/libglib-2.0.so $(INSTALLER_DIR)/usr/lib/libgobject-2.0.so $(INSTALLER_DIR)/usr/lib/libgmodule-2.0.so $(INSTALLER_DIR)/usr/lib/libgthread-2.0.so" \
+		DBUS_GLIB_LIBS="$(INSTALLER_DIR)/usr/lib/libdbus-glib-1.so"
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
