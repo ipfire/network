@@ -1,0 +1,91 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include Config
+
+PKG_NAME   = dbus-glib
+VER        = 0.76
+
+THISAPP    = $(PKG_NAME)-$(VER)
+DL_FILE    = $(THISAPP).tar.gz
+DIR_APP    = $(DIR_SRC)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+###############################################################################
+# Top-level Rules
+###############################################################################
+
+objects = $(DL_FILE) $(THISAPP)-cross-compile-1.patch
+
+install : $(TARGET)
+
+download : $(objects)
+
+$(objects) :
+	@$(LOAD)
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(TARGET) :
+	@$(PREBUILD)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "$(SNAME)"
+	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-cross-compile-1.patch
+	cd $(DIR_APP) && \
+		ac_cv_have_abstract_sockets=yes \
+		ac_cv_func_posix_getpwnam_r=yes \
+		have_abstract_sockets=yes \
+		LDFLAGS="-L$(INSTALLER_DIR)/usr/lib" \
+		DBUS_CFLAGS="-I$(INSTALLER_DIR)/usr/include/dbus-1.0 -I$(INSTALLER_DIR)/usr/lib/dbus-1.0/include" \
+		DBUS_LIBS="$(INSTALLER_DIR)/usr/lib/libdbus-1.so" \
+		DBUS_GLIB_CFLAGS="-I$(INSTALLER_DIR)/usr/include/glib-2.0 -I$(INSTALLER_DIR)/usr/lib/glib-2.0/include" \
+		DBUS_GLIB_LIBS="$(INSTALLER_DIR)/usr/lib/libglib-2.0.so $(INSTALLER_DIR)/usr/lib/libgobject-2.0.so $(INSTALLER_DIR)/usr/lib/libgmodule-2.0.so $(INSTALLER_DIR)/usr/lib/libgthread-2.0.so" \
+		./configure \
+		--host=$(UCLIBC_TARGET) \
+		--prefix=/usr \
+		--exec-prefix=/usr \
+		--localstatedir=/var \
+		--program-prefix="" \
+		--disable-tests \
+		--disable-xml-docs \
+		--disable-doxygen-docs \
+		--enable-asserts=yes
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
+		DBUS_BUS_LIBS="$(INSTALLER_DIR)/usr/lib/libexpat.so" \
+		LIBS="-lglib-2.0 -lgobject-2.0"
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
+endif
+
+	@rm -rf $(DIR_APP)
+	@$(POSTBUILD)
