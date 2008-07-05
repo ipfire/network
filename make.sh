@@ -184,8 +184,9 @@ ipfire_build() {
 	#   STAGE 1
 	ipfire_make pkg-config
 	ipfire_make expat
-	ipfire_make dbus
 	ipfire_make glib
+	ipfire_make dbus
+	ipfire_make dbus-glib
 	ipfire_make openssl
 	ipfire_make perl			### We are building the modules here.
 	ipfire_make python
@@ -433,16 +434,17 @@ installer_build() {
 	ipfire_make ncurses
 	ipfire_make pcre
 	ipfire_make popt
+	ipfire_make glib
 	#ipfire_make readline
 	ipfire_make e2fsprogs
 	ipfire_make util-linux-ng
 	ipfire_make parted
 	ipfire_make expat
 	ipfire_make dbus
-	ipfire_make glib
+	ipfire_make dbus-glib
+	ipfire_make hal
 	ipfire_make python
 	ipfire_make python-modules
-	ipfire_make kudzu
 	ipfire_make slang
 	ipfire_make newt
 	#ipfire_make bash
