@@ -90,6 +90,9 @@ ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && make DESTDIR=$(INSTALLER_DIR) EXTRAS="`echo extras/*/`" \
 		CROSS_COMPILE=$(UCLIBC_TARGET)- install
 	
+	ln -svf ../../lib/$$(readlink $(INSTALLER_DIR)/lib/libvolume_id.so.0) \
+		$(INSTALLER_DIR)/usr/lib/libvolume_id.so
+
 	cd $(DIR_APP) && cp -vf etc/udev/rules.d/[0-9]* $(INSTALLER_DIR)/etc/udev/rules.d/
 	
 	cd $(DIR_APP)/$(PKG_NAME)-config-$(CONFVER) && make install DESTDIR=$(INSTALLER_DIR)
