@@ -52,8 +52,7 @@ $(objects) :
 
 $(TARGET) : 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) $(DIR_SRC)/$(DBUSGLIB) && \
-		cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "$(SNAME)"
 	cd $(DIR_APP) && ./configure --prefix=/usr
