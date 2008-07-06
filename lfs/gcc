@@ -48,8 +48,7 @@ objects = $(DL_FILE) \
 	$(THISAPP)-uClibc_c99-snprintf.patch \
 	$(THISAPP)-fstack_protector-1.patch \
 	$(THISAPP)-fortify_source-2.patch \
-	$(THISAPP)-fpie-1.patch \
-	$(THISAPP)-libintl.patch
+	$(THISAPP)-fpie-1.patch
 
 install : $(TARGET)
 
@@ -188,13 +187,16 @@ endif
 ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc_conf-1.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc_c99-snprintf.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libintl.patch
 ifeq "$(PASS)" "1"
 	### Copying headers to install area of bootstrap gcc,
 	#   so it can build libgcc2
 	mkdir -pv $(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/include
 	cp -rfv $(UCLIBC_HEADERS_DIR)/* $(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/include
-
+ifeq "$(PIE)" "1"
+	## Enable -fPIC by default
+	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
+		-i gcc/config/i386/linux.h
+endif
 	cd $(DIR_SRC)/gcc-build && CC_FOR_BUILD="$(HOST_GCC)" ../$(THISAPP)/configure \
 						--target=$(UCLIBC_TARGET) \
 						--prefix=$(UCLIBC_CC_CORE_STATIC_DIR) \
@@ -221,6 +223,9 @@ ifeq "$(PASS)" "1"
 endif
 
 ifeq "$(PASS)" "2"
+ifeq "$(PIE)" "1"
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fpie-1.patch
+endif
 	cd $(DIR_SRC)/gcc-build && CC_FOR_BUILD="$(HOST_GCC)" ../$(THISAPP)/configure \
 						--target=$(UCLIBC_TARGET) \
 						--prefix=$(UCLIBC_DIR) \

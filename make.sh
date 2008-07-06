@@ -428,6 +428,7 @@ installer_build() {
 	ipfire_make uClibc		PASS=2
 	ipfire_make gcc			PASS=2
 	ipfire_make gettext
+	ipfire_make adjust-toolchain
 	ipfire_make udev
 	ipfire_make pciutils
 	ipfire_make zlib

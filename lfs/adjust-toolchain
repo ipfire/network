@@ -69,4 +69,11 @@ ifeq "$(STAGE)" "base"
 		> $$(dirname $$(gcc --print-libgcc-file-name))/myspecs
 endif
 
+ifeq "$(STAGE)" "installer"
+	$(UCLIBC_TARGET)-gcc -dumpspecs \
+		> $$($(UCLIBC_TARGET)-gcc --print-file specs)
+	sed -e 's/%{shared:-lc}/%{!nointl: -lintl} &/' \
+		-i $$($(UCLIBC_TARGET)-gcc --print-file specs)
+endif
+
 	@$(POSTBUILD)
