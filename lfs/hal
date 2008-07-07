@@ -38,8 +38,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-cross-compile.patch \
-	$(THISAPP)-remove-glib-dbus-headers.patch
+	$(THISAPP)-cross-compile.patch
 
 install: $(TARGET)
 
@@ -69,7 +68,6 @@ endif
 
 ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-cross-compile.patch
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-remove-glib-dbus-headers.patch
 	cd $(DIR_APP) && $(U_TOOLS) \
 		CFLAGS="$(CFLAGS) -I$(INSTALLER_DIR)/usr/include/glib-2.0" \
 		GLIB_CFLAGS="-I$(INSTALLER_DIR)/usr/include/glib-2.0 -I$(INSTALLER_DIR)/usr/lib/glib-2.0/include" \
