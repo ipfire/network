@@ -68,8 +68,13 @@ ifeq "$(STAGE)" "base"
 endif
 
 ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && libtoolize -f
+	cd $(DIR_APP) && autoconf --force
 	cd $(DIR_APP) && $(U_TOOLS) bash_cv_func_sigsetjmp=yes \
-		./configure --prefix=/usr
+		./configure \
+			--prefix=/usr \
+			--host=$(UCLIBC_TARGET) \
+			--with-curses
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) SHLIB_LIBS=-lncurses
 	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 endif

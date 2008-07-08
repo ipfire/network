@@ -437,7 +437,7 @@ installer_build() {
 	ipfire_make pcre
 	ipfire_make popt
 	ipfire_make glib
-	#ipfire_make readline
+	ipfire_make readline
 	ipfire_make e2fsprogs
 	ipfire_make util-linux-ng
 	ipfire_make parted
@@ -450,7 +450,7 @@ installer_build() {
 	ipfire_make python-modules
 	ipfire_make slang
 	ipfire_make newt
-	#ipfire_make bash
+	ipfire_make bash
 	ipfire_make strace
 	ipfire_make cpio
 	ipfire_make lzma
