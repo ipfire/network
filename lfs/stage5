@@ -63,14 +63,17 @@ $(TARGET) :
 	#
 	-mkdir -p $(INSTALLER_DIR)/{bin,sbin,lib,dev,etc,mnt/{source,target}}
 	-mkdir -p $(INSTALLER_DIR)/{root,proc,tmp,sys,var/run}
-	-mkdir -p $(INSTALLER_DIR)/usr/{bin,sbin}
+	-mkdir -p $(INSTALLER_DIR)/usr/{bin,sbin,share}
 
-	cp -af $(DIR_CONF)/install/*			$(INSTALLER_DIR)/etc/
+	cp -af $(DIR_CONF)/install/* /etc/issue /etc/group $(INSTALLER_DIR)/etc/
+	grep -v "^root" /etc/passwd >> $(INSTALLER_DIR)/etc/passwd
+
 	cp -f $(DIR_SOURCE)/initscripts/init.d/functions $(INSTALLER_DIR)/etc/functions
 	chmod 755 $(INSTALLER_DIR)/etc/{halt,rc}
 	ln -sf etc/rc					$(INSTALLER_DIR)/init
-	cp -f /etc/issue /etc/group			$(INSTALLER_DIR)/etc/
 	ln -sf /proc/mounts				$(INSTALLER_DIR)/etc/mtab
+
+	cp -f /usr/share/{pci,usb}.ids			$(INSTALLER_DIR)/usr/share
 
 	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/{drivers,fs,lib/lzo}
 	cp -af \
