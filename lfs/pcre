@@ -56,11 +56,12 @@ $(TARGET) :
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-abi_breakage-1.patch
 
 ifeq "$(STAGE)" "ipfire"
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-						--docdir=/usr/share/doc/pcre-$(VER) \
-						--enable-utf8 \
-						--enable-pcregrep-libz \
-						--enable-pcregrep-libbz2
+	cd $(DIR_APP) && \
+		./configure --prefix=/usr \
+			--docdir=/usr/share/doc/pcre-$(VER) \
+			--enable-utf8 \
+			--enable-pcregrep-libz \
+			--enable-pcregrep-libbz2
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	mv -v /usr/lib/libpcre.so.* /lib/
@@ -68,10 +69,11 @@ ifeq "$(STAGE)" "ipfire"
 endif
 
 ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-						--enable-utf8 \
-						--target=$(UCLIBC_TARGET) \
-						--host=$(UCLIBC_TARGET)
+	cd $(DIR_APP) && \
+		./configure --prefix=/usr \
+			--host=$(UCLIBC_TARGET) \
+			--enable-utf8 \
+			--disable-cpp
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
 endif
