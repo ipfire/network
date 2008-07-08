@@ -264,6 +264,7 @@ ipfire_build() {
 	ipfire_make smartmontools
 	ipfire_make lm-sensors
 	ipfire_make hal
+	ipfire_make hal-info
 
 	### Building some important tools
 	#
@@ -444,6 +445,7 @@ installer_build() {
 	ipfire_make dbus
 	ipfire_make dbus-glib
 	ipfire_make hal
+	ipfire_make hal-info
 	ipfire_make python
 	ipfire_make python-modules
 	ipfire_make slang
