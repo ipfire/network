@@ -8,7 +8,7 @@ OBJECTS = devices.o imount.o smp.o linkdetect.o \
 
 SOBJECTS = $(patsubst %.o,%.lo,$(OBJECTS))
 SOURCES = $(patsubst %.o,%.c,$(OBJECTS)) isys.c
-LOADLIBES = -lpci -lpopt -lext2fs -lz -lpci -lblkid
+LOADLIBES = -lpci -lpopt -lext2fs -lz -lpci -lblkid -lintl
 PYMODULES = _isys.so
 
 ifeq (.depend,$(wildcard .depend))
