@@ -190,7 +190,9 @@ ipfire_build() {
 	ipfire_make openssl
 	ipfire_make perl			### We are building the modules here.
 	ipfire_make python
-	ipfire_make python-modules
+	ipfire_make python-dbus
+	ipfire_make python-urlgrabber
+	ipfire_make python-iconv
 	ipfire_make libxml2
 	ipfire_make libxslt
 	ipfire_make gmp
@@ -447,7 +449,10 @@ installer_build() {
 	ipfire_make hal
 	ipfire_make hal-info
 	ipfire_make python
-	ipfire_make python-modules
+	ipfire_make python-dbus
+	ipfire_make python-parted
+	ipfire_make python-urlgrabber
+	ipfire_make python-iconv
 	ipfire_make slang
 	ipfire_make newt
 	ipfire_make bash
