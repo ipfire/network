@@ -448,6 +448,7 @@ installer_build() {
 	ipfire_make dbus-glib
 	ipfire_make hal
 	ipfire_make hal-info
+	ipfire_make openssl
 	ipfire_make python
 	ipfire_make python-dbus
 	ipfire_make python-parted

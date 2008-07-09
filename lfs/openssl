@@ -55,7 +55,10 @@ $(TARGET) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix_manpages-1.patch
 
-	cd $(DIR_APP) && sed -i -e 's/-O3/-O2/' -e 's/-march=i486/-march=$(MACHINE)/' Configure
+	cd $(DIR_APP) && sed -i -e 's/-march=i486/-march=$(MACHINE)/' Configure
+
+ifeq "$(STAGE)" "$(SNAME)"
+	cd $(DIR_APP) && sed -i -e 's/-O3/-O2/' Configure
 
 	cd $(DIR_APP) && sed -e 's/__OpenBSD__/__linux__/' -e 's/arandom/urandom/' \
 				-i.orig crypto/rand/randfile.c
@@ -67,14 +70,37 @@ $(TARGET) :
 		sed 's/^ASFLAGS=/&-Wa,--noexecstack /' -i.orig {} \;
 
 	cd $(DIR_APP) && ./config \
-		--prefix=/usr --openssldir=/etc/ssl \
-		shared zlib-dynamic -DSSL_FORBID_ENULL
+		--prefix=/usr \
+		--openssldir=/etc/ssl \
+		shared zlib-dynamic \
+		-DSSL_FORBID_ENULL
 	cd $(DIR_APP) && make MANDIR=/usr/share/man #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make MANDIR=/usr/share/man install
 	cd $(DIR_APP) && cp -v -r certs /etc/ssl
 
 	mv -v /usr/lib/{libcrypto,libssl}.a /usr/lib/static
 	install -m 0644 $(DIR_SRC)/config/ssl/openssl.cnf /etc/ssl
+endif
+
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && sed -i -e 's/-O3/-Os/' Configure
+
+	cd $(DIR_APP) && $(U_TOOLS) \
+		./Configure linux-elf \
+			--prefix=/usr \
+			--openssldir=/etc/ssl \
+			-L$(INSTALLER_DIR)/lib \
+			-L$(INSTALLER_DIR)/usr/lib \
+			-ldl \
+			-I$(INSTALLER_DIR)/usr/include threads \
+			shared no-idea no-md2 no-mdc2 no-rc2 no-rc5 no-sha0 no-smime \
+			no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5 no-idea \
+			zlib-dynamic no-engines no-ec no-err no-fips no-hw zlib-dynamic \
+			no-sse2 no-perlasm \
+			-DOPENSSL_SMALL_FOOTPRINT
+	cd $(DIR_APP) && make CC=$(U_CC) AR="$(U_AR) r" RANLIB=$(U_RANLIB)
+	cd $(DIR_APP) && make CC=$(U_CC) install INSTALL_PREFIX=$(INSTALLER_DIR)
+endif
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
