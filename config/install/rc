@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/sh
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
@@ -154,7 +154,7 @@ case $STARTUP_MODE in
 		:
 		;;
 	rescue)
-		sed -i "s,/sbin/pomona,/bin/ash,g" /etc/inittab
+		sed -i "s,/sbin/pomona,/bin/bash,g" /etc/inittab
 		;;
 esac
 
