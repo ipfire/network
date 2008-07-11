@@ -74,6 +74,7 @@ $(TARGET) :
 	ln -sf /proc/mounts				$(INSTALLER_DIR)/etc/mtab
 
 	cp -f /usr/share/{pci,usb}.ids			$(INSTALLER_DIR)/usr/share
+	cp -fval /usr/share/zoneinfo			$(INSTALLER_DIR)/usr/share
 
 	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/{drivers,fs,lib/lzo}
 	cp -af \
