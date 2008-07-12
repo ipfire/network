@@ -140,11 +140,41 @@ check_rootfiles() {
 
 }
 
+check_code() {
+    ACTION=$1
+    ARGS="--recurse"
+
+    echo -n " Running code checks"
+
+	case "$ACTION" in
+		--fix)
+			echo -n " and fix"
+			;;
+		"")
+			ARGS+=" --dryrun"
+			;;
+		*)
+			exiterror "This is not a valid option: $ACTION"
+			;;
+	esac
+	
+	echo -n "..." # End the line
+
+    python $BASEDIR/tools/code-beautify $ARGS $BASEDIR/{config,doc,lfs,src,tools}
+    if [ "$?" -eq "0" ]; then
+        beautify message DONE
+    else
+        beautify message FAIL
+        exit 1
+    fi
+}
+
 check_sanity() {
 
 	echo "Checking sanity of working directory..."
 
 	check_rootfiles $*
+	check_code $*
 
 }
 

@@ -27,6 +27,8 @@ case "$1" in
 build)
 	# check for prerequisites
 	check_build
+	# check for sanity of code
+	check_sanity
 	# compile the distro right now
 	build
 	# beeps when finished

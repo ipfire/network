@@ -109,7 +109,7 @@ git_commit() {
 }
 
 git_diff() {
-	check_sanity
+	check_sanity --fix
 
 	echo -ne "Make a local diff to last revision"
 	git diff HEAD > ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff
