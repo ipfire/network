@@ -36,241 +36,241 @@ import inutil
 import isys
 
 def size_string(size):
-	def number_format(s):
-		return locale.format("%s", s, 1)
-	
-	if size > 1024 * 1024:
-		size = size / (1024*1024)
-		return _("%s MB") %(number_format(size),)
-	elif size > 1024:
-		size = size / 1024
-		return _("%s KB") %(number_format(size),)
-	else:
-		if size == 1:
-			return _("%s Byte") %(number_format(size),)
-		else:
-			return _("%s Bytes") %(number_format(size),)
+    def number_format(s):
+        return locale.format("%s", s, 1)
+
+    if size > 1024 * 1024:
+        size = size / (1024*1024)
+        return _("%s MB") %(number_format(size),)
+    elif size > 1024:
+        size = size / 1024
+        return _("%s KB") %(number_format(size),)
+    else:
+        if size == 1:
+            return _("%s Byte") %(number_format(size),)
+        else:
+            return _("%s Bytes") %(number_format(size),)
 
 class PomonaCallback:
-	def __init__(self, pomona, method):
-		self.method = method
-		
-		self.messageWindow = pomona.intf.messageWindow
-		self.waitWindow = pomona.intf.waitWindow
-		self.progress = pomona.id.instProgress ### XXX what's this?
-		self.progressWindow = pomona.intf.progressWindow
-		
-		self.initWindow = None
-		
-		self.lastprogress = 0
-		self.incr = 20
-		
-		self.text = ""
-		
-		self.window = None
-		self.windowType = None
+    def __init__(self, pomona, method):
+        self.method = method
 
-	def setSize(self, totalSize):
-		self.totalSize = totalSize
-		self.doneSize = 0
-		self.lastprogress = 0
-		self.incr = totalSize / 100
+        self.messageWindow = pomona.intf.messageWindow
+        self.waitWindow = pomona.intf.waitWindow
+        self.progress = pomona.id.instProgress ### XXX what's this?
+        self.progressWindow = pomona.intf.progressWindow
 
-	def callback(self, what, amount=0, title=None, text=None):
-		# first time here means we should pop the window telling
-		# user to wait until we get here
-		if self.initWindow is not None:
-			self.initWindow.pop()
-			self.initWindow = None
-		
-		if what == CB_START:
-			if self.totalSize == 0:
-				self.window = self.waitWindow(title, text, width=55)
-				self.text = text
-				self.windowType = "wait"
-			else:
-				self.window = self.progressWindow(title, text, self.totalSize)
-				self.windowType = "progress"
-		
-		elif what == CB_STOP:
-			self.window.pop()
-		
-		elif what == CB_PROGRESS:
-			if self.windowType == "progress":
-				if amount > self.lastprogress + self.incr:
-					self.window.set(amount)
-					self.lastprogress = amount
-			elif self.windowType == "wait":
-				self.window.set_text(self.text + " " + amount)
+        self.initWindow = None
+
+        self.lastprogress = 0
+        self.incr = 20
+
+        self.text = ""
+
+        self.window = None
+        self.windowType = None
+
+    def setSize(self, totalSize):
+        self.totalSize = totalSize
+        self.doneSize = 0
+        self.lastprogress = 0
+        self.incr = totalSize / 100
+
+    def callback(self, what, amount=0, title=None, text=None):
+        # first time here means we should pop the window telling
+        # user to wait until we get here
+        if self.initWindow is not None:
+            self.initWindow.pop()
+            self.initWindow = None
+
+        if what == CB_START:
+            if self.totalSize == 0:
+                self.window = self.waitWindow(title, text, width=55)
+                self.text = text
+                self.windowType = "wait"
+            else:
+                self.window = self.progressWindow(title, text, self.totalSize)
+                self.windowType = "progress"
+
+        elif what == CB_STOP:
+            self.window.pop()
+
+        elif what == CB_PROGRESS:
+            if self.windowType == "progress":
+                if amount > self.lastprogress + self.incr:
+                    self.window.set(amount)
+                    self.lastprogress = amount
+            elif self.windowType == "wait":
+                self.window.set_text(self.text + " " + amount)
 
 class PomonaPakfire:
-	def __init__(self, pomona):
-		self.pomona = pomona
-	
-	def run(self, cb, intf, id):
-		
-		self.extractFiles(cb, intf, id)
-		
-		self.pomona.method.filesDone()
-	
-	def checkMd5(self):
-		pass
-	
-	def extractFiles(self, cb, intf, id):
-	
-		BSIZE = 65535 # 64k
-	
-		filename = "%s/%s" % (SOURCE_PATH, IMAGE_FILE,)
-		filesize = int(os.path.getsize(filename))
-		log.info("Source file %s has size of %dKB" % (filename, filesize / 1024,))
-		cb.setSize(filesize)
-		
-		fd = open(filename, 'rb')
-		
-		command = \
-			"lzma_sdk d -si -so 2>/dev/tty5 | cpio -i --verbose -d >/dev/tty5 2>&1"
-		
-		os.chdir(HARDDISK_PATH)
-		
-		extractor = \
-			subprocess.Popen(command, shell=True,
-											 stdout=subprocess.PIPE,
-											 stdin=subprocess.PIPE)
+    def __init__(self, pomona):
+        self.pomona = pomona
 
-		cb.callback(CB_START, title=_("Base system"), text=_("Installing base system..."))
-		
-		buf = fd.read(BSIZE)
-		tot = len(buf)
-		while len(buf) >  0:
-			cb.callback(CB_PROGRESS, amount=tot)
-			extractor.stdin.write(buf)
-			buf = fd.read(BSIZE)
-			tot += len(buf)
-		
-		fd.close()
-		cb.callback(CB_STOP)
+    def run(self, cb, intf, id):
+
+        self.extractFiles(cb, intf, id)
+
+        self.pomona.method.filesDone()
+
+    def checkMd5(self):
+        pass
+
+    def extractFiles(self, cb, intf, id):
+
+        BSIZE = 65535 # 64k
+
+        filename = "%s/%s" % (SOURCE_PATH, IMAGE_FILE,)
+        filesize = int(os.path.getsize(filename))
+        log.info("Source file %s has size of %dKB" % (filename, filesize / 1024,))
+        cb.setSize(filesize)
+
+        fd = open(filename, 'rb')
+
+        command = \
+                "lzma_sdk d -si -so 2>/dev/tty5 | cpio -i --verbose -d >/dev/tty5 2>&1"
+
+        os.chdir(HARDDISK_PATH)
+
+        extractor = \
+                subprocess.Popen(command, shell=True,
+                                                                                 stdout=subprocess.PIPE,
+                                                                                 stdin=subprocess.PIPE)
+
+        cb.callback(CB_START, title=_("Base system"), text=_("Installing base system..."))
+
+        buf = fd.read(BSIZE)
+        tot = len(buf)
+        while len(buf) >  0:
+            cb.callback(CB_PROGRESS, amount=tot)
+            extractor.stdin.write(buf)
+            buf = fd.read(BSIZE)
+            tot += len(buf)
+
+        fd.close()
+        cb.callback(CB_STOP)
 
 class PakfireBackend(PomonaBackend):
-	def __init__(self, method, instPath):
-		PomonaBackend.__init__(self, method, instPath)		
+    def __init__(self, method, instPath):
+        PomonaBackend.__init__(self, method, instPath)
 
-	def selectBestKernel(self):
-		"""Find the best kernel package which is available and select it."""
-		pass ## XXX todo?
+    def selectBestKernel(self):
+        """Find the best kernel package which is available and select it."""
+        pass ## XXX todo?
 
-	def selectFSPackages(self, fsset, diskset):
-		for entry in fsset.entries:
-			map(self.selectPackage, entry.fsystem.getNeededPackages())
+    def selectFSPackages(self, fsset, diskset):
+        for entry in fsset.entries:
+            map(self.selectPackage, entry.fsystem.getNeededPackages())
 
-	def doPostSelection(self, pomona):
-		pass
+    def doPostSelection(self, pomona):
+        pass
 
-	def doPreInstall(self, pomona):
-		if pomona.dir == DISPATCH_BACK:
-			for d in ("/dev"): ### XXX proc, sys?
-				try:
-					isys.umount(pomona.rootPath + d, removeDir = 0)
-				except Exception, e:
-					log.error("unable to unmount %s: %s" %(d, e))
-			return
+    def doPreInstall(self, pomona):
+        if pomona.dir == DISPATCH_BACK:
+            for d in ("/dev"): ### XXX proc, sys?
+                try:
+                    isys.umount(pomona.rootPath + d, removeDir = 0)
+                except Exception, e:
+                    log.error("unable to unmount %s: %s" %(d, e))
+            return
 
-		if self.method.systemMounted(pomona.id.fsset, pomona.rootPath):
-			pomona.id.fsset.umountFilesystems(pomona.rootPath)
-			return DISPATCH_BACK
-		
-		self.pompak = PomonaPakfire(pomona)
+        if self.method.systemMounted(pomona.id.fsset, pomona.rootPath):
+            pomona.id.fsset.umountFilesystems(pomona.rootPath)
+            return DISPATCH_BACK
 
-		# we need to have a /dev during install and now that udev is
-		# handling /dev, it gets to be more fun.  so just bind mount the
-		# installer /dev
-		isys.mount("/dev", "%s/dev" %(pomona.rootPath,), bindMount = 1)
-		#pomona.id.fsset.mkDevRoot(pomona.rootPath)
-		
-		pomona.method.doPreInstall(pomona)
+        self.pompak = PomonaPakfire(pomona)
 
-	def doInstall(self, pomona):
-		log.info("Preparing to install files")
+        # we need to have a /dev during install and now that udev is
+        # handling /dev, it gets to be more fun.  so just bind mount the
+        # installer /dev
+        isys.mount("/dev", "%s/dev" %(pomona.rootPath,), bindMount = 1)
+        #pomona.id.fsset.mkDevRoot(pomona.rootPath)
 
-		cb = PomonaCallback(pomona, self.method)
-		
-		cb.initWindow = pomona.intf.waitWindow(_("Install Starting"),
-			_("Starting install process.  This may take several minutes..."))
-		
-		self.pompak.run(cb, pomona.intf, pomona.id)
-		
-		if cb.initWindow is not None:
-			cb.initWindow.pop()
-		
-		pomona.id.instProgress = None
+        pomona.method.doPreInstall(pomona)
 
-	def doPostInstall(self, pomona):
-		w = pomona.intf.waitWindow(_("Post Install"),
-		                           _("Performing post install configuration..."))
-		
-		PomonaBackend.doPostInstall(self, pomona)
-		w.pop()
-		
-		### XXX this is from pre
-		# write out the fstab
-		pomona.id.fsset.write(pomona.rootPath)
-		# rootpath mode doesn't have this file around
-		if os.access("/tmp/modprobe.conf", os.R_OK):
-			shutil.copyfile("/tmp/modprobe.conf", 
-					pomona.rootPath + "/etc/modprobe.conf")
-		### XXX pomona.id.network.write(pomona.rootPath)
+    def doInstall(self, pomona):
+        log.info("Preparing to install files")
 
-	def kernelVersionList(self, pomona):
-		kernelVersions = []
-		
-		tag2desc = {
-								"-smp" : _("Symmetric multiprocessing"),
-								"-xen" : _("Xen guest"),
-							 }
+        cb = PomonaCallback(pomona, self.method)
 
-		kernelName = "%skernel-%s" % (sname, kernelVersion)
+        cb.initWindow = pomona.intf.waitWindow(_("Install Starting"),
+                _("Starting install process.  This may take several minutes..."))
 
-		for kernelTag in [ "", "-smp", "-xen", ]:
-			filename = "%s%s" % (kernelName, kernelTag)
-			if os.access(pomona.rootPath + "/boot/" + filename, os.R_OK):
-				if not kernelTag is "":
-					kernelDesc = tag2desc[kernelTag]
-				else:
-					kernelDesc = _("Normal Boot")
-				kernelVersions.append((kernelName, kernelVersion, kernelTag, kernelDesc))
+        self.pompak.run(cb, pomona.intf, pomona.id)
 
-		return kernelVersions
+        if cb.initWindow is not None:
+            cb.initWindow.pop()
+
+        pomona.id.instProgress = None
+
+    def doPostInstall(self, pomona):
+        w = pomona.intf.waitWindow(_("Post Install"),
+                                   _("Performing post install configuration..."))
+
+        PomonaBackend.doPostInstall(self, pomona)
+        w.pop()
+
+        ### XXX this is from pre
+        # write out the fstab
+        pomona.id.fsset.write(pomona.rootPath)
+        # rootpath mode doesn't have this file around
+        if os.access("/tmp/modprobe.conf", os.R_OK):
+            shutil.copyfile("/tmp/modprobe.conf",
+                            pomona.rootPath + "/etc/modprobe.conf")
+        ### XXX pomona.id.network.write(pomona.rootPath)
+
+    def kernelVersionList(self, pomona):
+        kernelVersions = []
+
+        tag2desc = {
+                                                        "-smp" : _("Symmetric multiprocessing"),
+                                                        "-xen" : _("Xen guest"),
+                                                 }
+
+        kernelName = "%skernel-%s" % (sname, kernelVersion)
+
+        for kernelTag in [ "", "-smp", "-xen", ]:
+            filename = "%s%s" % (kernelName, kernelTag)
+            if os.access(pomona.rootPath + "/boot/" + filename, os.R_OK):
+                if not kernelTag is "":
+                    kernelDesc = tag2desc[kernelTag]
+                else:
+                    kernelDesc = _("Normal Boot")
+                kernelVersions.append((kernelName, kernelVersion, kernelTag, kernelDesc))
+
+        return kernelVersions
 
 class PakfireProgress:
-	def __init__(self, intf, text, total):
-		window = intf.progressWindow(_("Installation Progress"), text, total, 0.01)
-		self.window = window
-		
-		self.current = 0
-		self.incr = 1
-		self.total = total
-		self.popped = False
+    def __init__(self, intf, text, total):
+        window = intf.progressWindow(_("Installation Progress"), text, total, 0.01)
+        self.window = window
 
-	def set_incr(self, incr):
-		self.incr = incr
+        self.current = 0
+        self.incr = 1
+        self.total = total
+        self.popped = False
 
-	def progressbar(self, current, total, name=None):
-		if not self.popped:
-			self.window.set(float(current)/total * self.incr + self.current)
-		else:
-			warnings.warn("PakfireProgress.progressbar called when popped",
-											RuntimeWarning, stacklevel=2)
+    def set_incr(self, incr):
+        self.incr = incr
 
-	def pop(self):
-		self.window.pop()
-		self.popped = True
+    def progressbar(self, current, total, name=None):
+        if not self.popped:
+            self.window.set(float(current)/total * self.incr + self.current)
+        else:
+            warnings.warn("PakfireProgress.progressbar called when popped",
+                                                                            RuntimeWarning, stacklevel=2)
 
-	def next_task(self, current = None):
-		if current:
-			self.current = current
-		else:
-			self.current += self.incr
-		if not self.popped:
-			self.window.set(self.current)
-		else:
-			warnings.warn("PakfireProgress.set called when popped",
-											RuntimeWarning, stacklevel=2)
+    def pop(self):
+        self.window.pop()
+        self.popped = True
+
+    def next_task(self, current = None):
+        if current:
+            self.current = current
+        else:
+            self.current += self.incr
+        if not self.popped:
+            self.window.set(self.current)
+        else:
+            warnings.warn("PakfireProgress.set called when popped",
+                                                                            RuntimeWarning, stacklevel=2)

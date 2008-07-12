@@ -24,17 +24,16 @@ import socket
 
 ### Returns the hostname
 def gethostname():
-	return socket.gethostname()
+    return socket.gethostname()
 
 def has_device(device):
-	for nic in os.listdir("/sys/class/net/"):
-		if device == nic:
-			return True
-	return False
+    for nic in os.listdir("/sys/class/net/"):
+        if device == nic:
+            return True
+    return False
 
 def has_blue():
-	return has_device("blue0")
+    return has_device("blue0")
 
 def has_orange():
-	return has_device("orange0")
-
+    return has_device("orange0")

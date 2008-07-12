@@ -46,7 +46,7 @@ static int set_intf_up(struct ifreq ifr, int sock) {
     return (0);
 }
 
-int setEthtoolSettings(char * dev, ethtool_speed speed, 
+int setEthtoolSettings(char * dev, ethtool_speed speed,
                        ethtool_duplex duplex) {
     int sock, err;
     struct ethtool_cmd ecmd;
@@ -62,7 +62,7 @@ int setEthtoolSettings(char * dev, ethtool_speed speed,
     strcpy(ifr.ifr_name, dev);
 
     if (set_intf_up(ifr, sock) == -1) {
-        fprintf(stderr, "unable to bring up interface %s: %s", dev, 
+        fprintf(stderr, "unable to bring up interface %s: %s", dev,
                 strerror(errno));
         return -1;
     }

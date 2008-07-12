@@ -74,8 +74,8 @@ static int readDiskSig(char *,  uint32_t *);
 static int readMbrSig(char *, uint32_t *);
 
 /* This is the top level function that creates a disk list present in the
- * system, checks to see if unique signatures exist on the disks at offset 
- * 0x1b8.  If a unique signature exists then it will map BIOS disks to their 
+ * system, checks to see if unique signatures exist on the disks at offset
+ * 0x1b8.  If a unique signature exists then it will map BIOS disks to their
  * corresponding hd/sd device names.  Otherwise, we'll avoid mapping drives.
  */
 
@@ -109,10 +109,10 @@ static int readDiskSig(char *device, uint32_t *disksig) {
 
     fd = open(device, O_RDONLY);
     if (fd < 0) {
-#ifdef STANDALONE 
-        fprintf(stderr, "Error opening device %s: %s\n ", device, 
+#ifdef STANDALONE
+        fprintf(stderr, "Error opening device %s: %s\n ", device,
                 strerror(errno));
-#endif 
+#endif
         return -errno;
     }
 
@@ -121,7 +121,7 @@ static int readDiskSig(char *device, uint32_t *disksig) {
         close(fd);
 
 #ifdef STANDALONE
-        fprintf(stderr, "Error seeking to MBRSIG_OFFSET in %s: %s\n", 
+        fprintf(stderr, "Error seeking to MBRSIG_OFFSET in %s: %s\n",
                 device, strerror(errno));
 #endif
         return -1;
@@ -132,7 +132,7 @@ static int readDiskSig(char *device, uint32_t *disksig) {
         close(fd);
 
 #ifdef STANDALONE
-        fprintf(stderr, "Failed to read signature from %s\n", device); 
+        fprintf(stderr, "Failed to read signature from %s\n", device);
 #endif
         return -1;
     }
@@ -152,7 +152,7 @@ static int mapBiosDisks(struct device** devices,const char *path) {
     dirHandle = opendir(path);
     if(!dirHandle){
 #ifdef STANDALONE
-        fprintf(stderr, "Failed to open directory %s: %s\n", path, 
+        fprintf(stderr, "Failed to open directory %s: %s\n", path,
                 strerror(errno));
 #endif
         return 0;
@@ -172,7 +172,7 @@ static int mapBiosDisks(struct device** devices,const char *path) {
             continue;
         }
         ret = sscanf((entry->d_name+9), "%x", &biosNum);
-        
+
         sigFileName = malloc(strlen(path) + strlen(entry->d_name) + 20);
         sprintf(sigFileName, "%s/%s/%s", path, entry->d_name, SIG_FILE);
         if (readMbrSig(sigFileName, &mbrSig) == 0) {
@@ -187,7 +187,7 @@ static int mapBiosDisks(struct device** devices,const char *path) {
                         continue;
                     closedir(dirHandle);
                     return 0;
-                } 
+                }
 
                 if (mbrSig == currentSig) {
                     foundDisk=currentDev;
@@ -196,17 +196,17 @@ static int mapBiosDisks(struct device** devices,const char *path) {
             }
 
             if (i==1) {
-                if(!addToHashTable(mbrSigToName, (uint32_t)biosNum, 
+                if(!addToHashTable(mbrSigToName, (uint32_t)biosNum,
                                (*foundDisk)->device)) {
                     closedir(dirHandle);
                     return 0;
                 }
             }
-        } 
+        }
     }
     closedir(dirHandle);
     return 1;
-} 
+}
 
 
 static int readMbrSig(char *filename, uint32_t *int_sig){
@@ -231,7 +231,7 @@ static int readMbrSig(char *filename, uint32_t *int_sig){
 
     fclose(fh);
     return 0;
-}                                                   
+}
 
 
 static struct diskMapTable* initializeHashTable(int size) {
@@ -268,16 +268,16 @@ static struct diskMapEntry * lookupHashItem(struct diskMapTable *hashTable,
     struct diskMapEntry *hashItem;
 
     index = itemKey % (hashTable->tableSize);
-    for (hashItem = hashTable->table[index]; 
-         (hashItem != NULL) && (hashItem->key != itemKey); 
-         hashItem = hashItem->next) { 
+    for (hashItem = hashTable->table[index];
+         (hashItem != NULL) && (hashItem->key != itemKey);
+         hashItem = hashItem->next) {
         ;
     }
     return hashItem;
 }
 
 
-static int addToHashTable(struct diskMapTable *hashTable, 
+static int addToHashTable(struct diskMapTable *hashTable,
                           uint32_t itemKey, char *diskName) {
     int index;
     struct diskMapEntry *diskSigToNameEntry;

@@ -20,7 +20,7 @@
 
 # A dummy
 def pyfire():
-	from pyfire.translate import _, textdomain
-	
-	textdomain("pyfire")
-	print _("This is a dummy")
+    from pyfire.translate import _, textdomain
+
+    textdomain("pyfire")
+    print _("This is a dummy")

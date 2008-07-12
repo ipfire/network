@@ -87,7 +87,7 @@ sub createinclude(){
   open(DATEI, "<${General::swroot}/backup/include") || die "Can not open include file";
   my @Zeilen = <DATEI>;
   close(DATEI);
-  
+
   foreach (@Zeilen){
   if ( $_ =~ /\*/){
     my @files = `ls $_`;

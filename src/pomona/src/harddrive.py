@@ -28,90 +28,90 @@ log = logging.getLogger("pomona")
 
 # Install from one or more iso images
 class HardDriveInstallMethod(InstallMethod):
-	def getMethodUri(self):
-		return "file://%s" % self.tree
+    def getMethodUri(self):
+        return "file://%s" % self.tree
 
-	def copyFileToTemp(self, filename):
-		wasmounted = self.mediaIsMounted
-		self.switchMedia(1, filename)
-		    
-		path = ImageInstallMethod.copyFileToTemp(self, filename)
-		
-		self.switchMedia(wasmounted)
-		return path
+    def copyFileToTemp(self, filename):
+        wasmounted = self.mediaIsMounted
+        self.switchMedia(1, filename)
 
-	def badPackageError(self, pkgname):
-		return _("The file %s cannot be opened.  This is due to a missing "
-						 "file or perhaps a corrupt package.  Please verify your "
-						 "installation images and that you have all the required "
-						 "media.\n\n"
-						 "If you reboot, your system will be left in an inconsistent "
-						 "state that will likely require reinstallation.\n\n") % pkgname
+        path = ImageInstallMethod.copyFileToTemp(self, filename)
 
-	# mounts disc image cdNum under self.tree
-	def mountMedia(self, cdNum):
-		if self.mediaIsMounted:
-			raise SystemError, "trying to mount already-mounted iso image!"
+        self.switchMedia(wasmounted)
+        return path
 
-		self.mountDirectory()
+    def badPackageError(self, pkgname):
+        return _("The file %s cannot be opened.  This is due to a missing "
+                                         "file or perhaps a corrupt package.  Please verify your "
+                                         "installation images and that you have all the required "
+                                         "media.\n\n"
+                                         "If you reboot, your system will be left in an inconsistent "
+                                         "state that will likely require reinstallation.\n\n") % pkgname
 
-		retry = True
-		while retry:
-			try:
-				isoImage = self.isoDir + '/' + self.path + '/' + self.discImages[cdNum]
-				
-				isys.makeDevInode("loop3", "/tmp/loop3")
-				isys.losetup("/tmp/loop3", isoImage, readOnly = 1)
-				
-				isys.mount("loop3", self.tree, fstype = 'iso9660', readOnly = 1);
-				self.mediaIsMounted = cdNum
-				
-				retry = False
-			except:
-		        ans = self.messageWindow( _("Missing ISO 9660 Image"),
-		                                  _("The installer has tried to mount "
-		                                    "image #%s, but cannot find it on "
-		                                    "the hard drive.\n\n"
-		                                    "Please copy this image to the "
-		                                    "drive and click Retry. Click Reboot "
-		                                    " to abort the installation.")
-		                                    % (cdNum,), type="custom",
-		                              custom_icon="warning",
-		                                    custom_buttons=[_("_Reboot"),
-		                                              _("Re_try")])
-		        if ans == 0:
-		            sys.exit(0)
-		        elif ans == 1:
-		            self.discImages = findIsoImages(self.isoPath, self.messageWindow)
+# mounts disc image cdNum under self.tree
+    def mountMedia(self, cdNum):
+        if self.mediaIsMounted:
+            raise SystemError, "trying to mount already-mounted iso image!"
+
+        self.mountDirectory()
+
+        retry = True
+        while retry:
+            try:
+                isoImage = self.isoDir + '/' + self.path + '/' + self.discImages[cdNum]
+
+                isys.makeDevInode("loop3", "/tmp/loop3")
+                isys.losetup("/tmp/loop3", isoImage, readOnly = 1)
+
+                isys.mount("loop3", self.tree, fstype = 'iso9660', readOnly = 1);
+                self.mediaIsMounted = cdNum
+
+                retry = False
+            except:
+            ans = self.messageWindow( _("Missing ISO 9660 Image"),
+                                      _("The installer has tried to mount "
+                                        "image #%s, but cannot find it on "
+                                        "the hard drive.\n\n"
+                                        "Please copy this image to the "
+                                        "drive and click Retry. Click Reboot "
+                                        " to abort the installation.")
+                                        % (cdNum,), type="custom",
+                                  custom_icon="warning",
+                                        custom_buttons=[_("_Reboot"),
+                                                  _("Re_try")])
+            if ans == 0:
+                sys.exit(0)
+            elif ans == 1:
+                self.discImages = findIsoImages(self.isoPath, self.messageWindow)
 
     def umountMedia(self):
-	if self.mediaIsMounted:
-	    isys.umount(self.tree)
-	    isys.makeDevInode("loop3", "/tmp/loop3")
-	    isys.unlosetup("/tmp/loop3")
-	    self.umountDirectory()
-	    self.mediaIsMounted = 0
+        if self.mediaIsMounted:
+            isys.umount(self.tree)
+            isys.makeDevInode("loop3", "/tmp/loop3")
+            isys.unlosetup("/tmp/loop3")
+            self.umountDirectory()
+            self.mediaIsMounted = 0
 
     # This mounts the directory containing the iso images, and places the
     # mount point in self.isoDir. It's only used directly by __init__;
     # everything else goes through switchMedia
     def mountDirectory(self):
-	if (self.isoDirIsMounted):
-	    raise SystemError, "trying to mount already-mounted image!"
-	
-	f = open("/proc/mounts", "r")
-	l = f.readlines()
-	f.close()
+        if (self.isoDirIsMounted):
+            raise SystemError, "trying to mount already-mounted image!"
 
-	for line in l:
-	    s = string.split(line)
-	    if s[0] == "/dev/" + self.device:
-		self.isoDir = s[1] + "/"
-		return
-	
+        f = open("/proc/mounts", "r")
+        l = f.readlines()
+        f.close()
+
+        for line in l:
+            s = string.split(line)
+            if s[0] == "/dev/" + self.device:
+                self.isoDir = s[1] + "/"
+                return
+
         try:
-            isys.mount(self.device, "/tmp/isodir", fstype = self.fstype, 
-                       readOnly = 1);
+            isys.mount(self.device, "/tmp/isodir", fstype = self.fstype,
+                        readOnly = 1);
         except SystemError, msg:
             log.error("couldn't mount ISO source directory: %s" % msg)
             self.messageWindow(_("Couldn't Mount ISO Source"),
@@ -127,14 +127,14 @@ class HardDriveInstallMethod(InstallMethod):
             sys.exit(0)
 
 
-	self.isoDir = "/tmp/isodir/"
-	self.isoDirIsMounted = 1
+        self.isoDir = "/tmp/isodir/"
+        self.isoDirIsMounted = 1
 
     def umountDirectory(self):
-	if self.isoDirIsMounted:
-	    isys.umount(self.isoDir)
-	    self.isoDirIsMounted = 0
-	
+        if self.isoDirIsMounted:
+            isys.umount(self.isoDir)
+            self.isoDirIsMounted = 0
+
     # return reference to file specified on ISO #1
     # mounts ISO #1, copies file to destdir, umounts ISO #1
     # will probably do bad things if called during package installation
@@ -161,7 +161,7 @@ class HardDriveInstallMethod(InstallMethod):
         self.switchMedia(1)
 
     def systemUnmounted(self):
-	self.umountMedia()
+        self.umountMedia()
 
     def filesDone(self):
         # we're trying to unmount the source image at the end.  if it
@@ -173,8 +173,8 @@ class HardDriveInstallMethod(InstallMethod):
 
     # we cannot remove the partition we are hosting hard drive install from
     def protectedPartitions(self):
-	return [self.device]
-    
+        return [self.device]
+
     def __init__(self, rootPath, intf):
         """@param method hd://device:fstype:/path"""
         #method = method[5:]
@@ -183,19 +183,19 @@ class HardDriveInstallMethod(InstallMethod):
         #fstype = tmpmethod[0:tmpmethod.index("/")]
         #path = tmpmethod[tmpmethod.index("/") + 1:]
 
-	ImageInstallMethod.__init__(self, rootPath, intf)
+        ImageInstallMethod.__init__(self, rootPath, intf)
 
-	self.device = device
-	self.path = path
-	self.fstype = fstype
+        self.device = device
+        self.path = path
+        self.fstype = fstype
         self.isoDirIsMounted = 0
         self.mediaIsMounted = 0
-	self.messageWindow = intf.messageWindow
+        self.messageWindow = intf.messageWindow
         self.currentMedia = []
         self.tree = "/tmp/isomedia/"
 
         # Mount the partition containing the ISO images just long enough for
         # us to build up a list of all the path names.
-	self.mountDirectory()
-	self.discImages = findIsoImages(self.isoDir + '/' + self.path, self.messageWindow)
+        self.mountDirectory()
+        self.discImages = findIsoImages(self.isoDir + '/' + self.path, self.messageWindow)
         self.umountDirectory()

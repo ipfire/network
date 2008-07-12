@@ -30,7 +30,7 @@ struct kmapHeader {
     int magic;
     int numEntries;
 };
-        
+
 struct kmapInfo {
     int size;
     char name[KMAP_NAMELEN];

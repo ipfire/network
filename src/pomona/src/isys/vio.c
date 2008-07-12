@@ -72,7 +72,7 @@ int isVioConsole(void) {
 
     if (isviocons != -1)
 	return isviocons;
-    
+
     fd = open("/proc/tty/drivers", O_RDONLY);
     if (fd < 0) {
 	fprintf(stderr, "failed to open /proc/tty/drivers!\n");
@@ -95,7 +95,7 @@ int isVioConsole(void) {
 		isviocons = 1;
 		break;
 	    }
-	}		
+	}
         start = strchr(start, '\n');
         if (start)
 	    start++;

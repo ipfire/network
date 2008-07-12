@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# this is a sample block script for guardian. This should work with ipchains. 
+# this is a sample block script for guardian. This should work with ipchains.
 # This command gets called by guardian as such:
 #  guardian_block.sh <source_ip>
 # and the script will issue a command to block all traffic from that source ip

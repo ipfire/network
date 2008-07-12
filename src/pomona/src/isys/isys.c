@@ -192,7 +192,7 @@ static PyObject * doLoChangeFd(PyObject * s, PyObject * args) {
     int loopfd;
     int targfd;
 
-    if (!PyArg_ParseTuple(args, "ii", &loopfd, &targfd)) 
+    if (!PyArg_ParseTuple(args, "ii", &loopfd, &targfd))
 	return NULL;
     if (ioctl(loopfd, LOOP_CHANGE_FD, targfd)) {
 	PyErr_SetFromErrno(PyExc_SystemError);
@@ -209,7 +209,7 @@ static PyObject * doLoSetup(PyObject * s, PyObject * args) {
     struct loop_info loopInfo;
     char * loopName;
 
-    if (!PyArg_ParseTuple(args, "iis", &loopfd, &targfd, &loopName)) 
+    if (!PyArg_ParseTuple(args, "iis", &loopfd, &targfd, &loopName))
 	return NULL;
     if (ioctl(loopfd, LOOP_SET_FD, targfd)) {
 	PyErr_SetFromErrno(PyExc_SystemError);
@@ -241,7 +241,7 @@ static PyObject * doGetOpt(PyObject * s, PyObject * pyargs) {
     const char ** argv;
     char strBuf[3];
 
-    if (!PyArg_ParseTuple(pyargs, "OsO", &argList, &shortArgs, &longArgs)) 
+    if (!PyArg_ParseTuple(pyargs, "OsO", &argList, &shortArgs, &longArgs))
 	return NULL;
 
     if (!(PyList_Check(argList))) {
@@ -330,7 +330,7 @@ static PyObject * doGetOpt(PyObject * s, PyObject * pyargs) {
 	    argument = poptGetOptArg(optCon);
 	else
 	    argument = NULL;
-	    
+
 	if (options[rc].longName) {
 	    str = alloca(strlen(options[rc].longName) + 3);
 	    sprintf(str, "--%s", options[rc].longName);
@@ -341,7 +341,7 @@ static PyObject * doGetOpt(PyObject * s, PyObject * pyargs) {
 
 	if (argument) {
 	    argument = strcpy(alloca(strlen(argument) + 1), argument);
-	    PyList_Append(retList, 
+	    PyList_Append(retList,
 			    Py_BuildValue("(ss)", str, argument));
 	} else {
 	    PyList_Append(retList, Py_BuildValue("(ss)", str, ""));
@@ -354,8 +354,8 @@ static PyObject * doGetOpt(PyObject * s, PyObject * pyargs) {
 
 	error = alloca(i) + 50;
 
-	sprintf(error, "bad argument %s: %s\n", 
-		poptBadOption(optCon, POPT_BADOPTION_NOALIAS), 
+	sprintf(error, "bad argument %s: %s\n",
+		poptBadOption(optCon, POPT_BADOPTION_NOALIAS),
 		poptStrerror(rc));
 
 	PyErr_SetString(PyExc_TypeError, error);
@@ -394,7 +394,7 @@ static PyObject * doMount(PyObject * s, PyObject * args) {
 			  &flags)) return NULL;
 
     rc = doPwMount(device, mntpoint, fs, flags);
-    if (rc == IMOUNT_ERR_ERRNO) 
+    if (rc == IMOUNT_ERR_ERRNO)
 	PyErr_SetFromErrno(PyExc_SystemError);
     else if (rc) {
         PyObject *tuple = PyTuple_New(2);
@@ -425,7 +425,7 @@ static PyObject * doSwapoff (PyObject * s, PyObject * args) {
 	PyErr_SetFromErrno(PyExc_SystemError);
 	return NULL;
     }
-    
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -439,7 +439,7 @@ static PyObject * doSwapon (PyObject * s, PyObject * args) {
 	PyErr_SetFromErrno(PyExc_SystemError);
 	return NULL;
     }
-    
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -468,14 +468,14 @@ void init_isys(void) {
 
 static int get_bits(unsigned long long v) {
     int  b = 0;
-    
+
     if ( v & 0xffffffff00000000LLU ) { b += 32; v >>= 32; }
     if ( v & 0xffff0000LLU ) { b += 16; v >>= 16; }
     if ( v & 0xff00LLU ) { b += 8; v >>= 8; }
     if ( v & 0xf0LLU ) { b += 4; v >>= 4; }
     if ( v & 0xcLLU ) { b += 2; v >>= 2; }
     if ( v & 0x2LLU ) b++;
-    
+
     return v ? b + 1 : b;
 }
 
@@ -512,7 +512,7 @@ static PyObject * doLoadKeymap (PyObject * s, PyObject * args) {
 	PyErr_SetFromErrno(PyExc_SystemError);
 	return NULL;
     }
-    
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -561,12 +561,12 @@ static PyObject * doReadE2fsLabel(PyObject * s, PyObject * args) {
     }
 
     memset(buf, 0, sizeof(buf));
-    strncpy(buf, fsys->super->s_volume_name, 
+    strncpy(buf, fsys->super->s_volume_name,
 	    sizeof(fsys->super->s_volume_name));
 
     ext2fs_close(fsys);
 
-    return Py_BuildValue("s", buf); 
+    return Py_BuildValue("s", buf);
 }
 
 static PyObject * doExt2Dirty(PyObject * s, PyObject * args) {
@@ -588,7 +588,7 @@ static PyObject * doExt2Dirty(PyObject * s, PyObject * args) {
 
     ext2fs_close(fsys);
 
-    return Py_BuildValue("i", !clean); 
+    return Py_BuildValue("i", !clean);
 }
 
 static PyObject * doExt2HasJournal(PyObject * s, PyObject * args) {
@@ -609,7 +609,7 @@ static PyObject * doExt2HasJournal(PyObject * s, PyObject * args) {
 
     ext2fs_close(fsys);
 
-    return Py_BuildValue("i", hasjournal); 
+    return Py_BuildValue("i", hasjournal);
 }
 
 static PyObject * doEjectCdrom(PyObject * s, PyObject * args) {
@@ -674,7 +674,7 @@ static PyObject * doisIsoImage(PyObject * s, PyObject * args) {
     if (!PyArg_ParseTuple(args, "s", &fn)) return NULL;
 
     rc = fileIsIso(fn);
-    
+
     return Py_BuildValue("i", rc);
 }
 
@@ -717,7 +717,7 @@ static PyObject * printObject (PyObject * o, PyObject * args) {
 
     if (!PyArg_ParseTuple(args, "O", &obj))
 	return NULL;
-    
+
     snprintf(buf, 256, "<%s object at %lx>", obj->ob_type->tp_name,
 	     (long) obj);
 
@@ -727,7 +727,7 @@ static PyObject * printObject (PyObject * o, PyObject * args) {
 static PyObject *
 py_bind_textdomain_codeset(PyObject * o, PyObject * args) {
     char *domain, *codeset, *ret;
-	
+
     if (!PyArg_ParseTuple(args, "ss", &domain, &codeset))
 	return NULL;
 
@@ -750,7 +750,7 @@ static PyObject * doProbeBiosDisks(PyObject * s, PyObject * args) {
 static PyObject * doGetBiosDisk(PyObject * s, PyObject * args) {
     char *mbr_sig;
     char *diskname;
-            
+
     if (!PyArg_ParseTuple(args, "s", &mbr_sig)) return NULL;
 
     if ((diskname = getBiosDisk(mbr_sig)))

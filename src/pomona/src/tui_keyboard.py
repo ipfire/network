@@ -22,30 +22,30 @@ import logging
 log = logging.getLogger("pomona")
 
 class KeyboardWindow:
-	def __call__(self, screen, pomona):
-		if flags.virtpconsole:
-			return INSTALL_NOOP
-		
-		keyboards = pomona.id.keyboard.modelDict.keys()
-		keyboards.sort()
+    def __call__(self, screen, pomona):
+        if flags.virtpconsole:
+            return INSTALL_NOOP
 
-		if pomona.id.keyboard.beenset:
-			default = pomona.id.keyboard.get()
-		else:
-			default = pomona.id.instLanguage.getDefaultKeyboard()
+        keyboards = pomona.id.keyboard.modelDict.keys()
+        keyboards.sort()
 
-		(button, choice) = \
-			ListboxChoiceWindow(screen, _("Keyboard Selection"),
-																	_("Which model keyboard is attached to this computer?"), keyboards, 
-				buttons = [TEXT_OK_BUTTON, TEXT_BACK_BUTTON], width = 30, scroll = 1, height = 8,
-				default = default, help = "kybd")
-        
-		if button == TEXT_BACK_CHECK:
-			return INSTALL_BACK
+        if pomona.id.keyboard.beenset:
+            default = pomona.id.keyboard.get()
+        else:
+            default = pomona.id.instLanguage.getDefaultKeyboard()
 
-		pomona.id.keyboard.set(keyboards[choice])
-		pomona.id.keyboard.beenset = 1
+        (button, choice) = \
+                ListboxChoiceWindow(screen, _("Keyboard Selection"),
+                                                                                                                                _("Which model keyboard is attached to this computer?"), keyboards,
+                        buttons = [TEXT_OK_BUTTON, TEXT_BACK_BUTTON], width = 30, scroll = 1, height = 8,
+                        default = default, help = "kybd")
 
-		pomona.id.keyboard.activate()
+        if button == TEXT_BACK_CHECK:
+            return INSTALL_BACK
 
-		return INSTALL_OK
+        pomona.id.keyboard.set(keyboards[choice])
+        pomona.id.keyboard.beenset = 1
+
+        pomona.id.keyboard.activate()
+
+        return INSTALL_OK

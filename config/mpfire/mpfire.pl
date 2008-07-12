@@ -5,7 +5,7 @@ require "${General::swroot}/lang.pl";
 require "${General::swroot}/header.pl";
 
 my $filename = "";
-my $debug = 0; 
+my $debug = 0;
 
 if (  `/etc/init.d/mpd status` =~/not running/ ){
 system("/etc/init.d/mpd start >/dev/null");
@@ -61,7 +61,7 @@ elsif ($ARGV[0] eq 'next') {
   }
 elsif ( $ARGV[0] eq 'prev' ) {
   if ($debug){print "Previous Song\n";}
-  system("mpc prev >/dev/null");  
+  system("mpc prev >/dev/null");
   }
 elsif ($ARGV[0] eq 'song') {
   my $song = `mpc \| head -2 | grep -v volume`;
@@ -86,11 +86,11 @@ elsif ($ARGV[0] eq 'volume') {
 }
 
 sub clearplaylist(){
-  system("mpc clear >/dev/null");  
+  system("mpc clear >/dev/null");
   }
 
 sub shuffle(){
-  system("mpc random >/dev/null");  
+  system("mpc random >/dev/null");
   }
 
 sub checkplaylist(){
@@ -111,5 +111,5 @@ sub checkmute(){
  if ( $Master[7] =~ /off/ ){
   if ($debug){print "Master was muted - umuting.\n";}
   system("amixer set Master toggle >/dev/null");
-  } 
+  }
 }

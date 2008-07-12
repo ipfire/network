@@ -31,8 +31,8 @@ my @current = ();
 if (open(FILE, "$filename")) {
     @current = <FILE>;
     close(FILE);
-    unless(@current) { 
-	exit 0; 
+    unless(@current) {
+	exit 0;
     }
 } else {
     &General::log('Dynamic DNS failure : unable to open config file.');
@@ -141,7 +141,7 @@ if ($ip ne $ipcache) {
 				my @ddnscommand = ('/usr/bin/noip','-c',"${General::swroot}/ddns/noipsettings",'-i',"$ip");
 
 				my $result = system(@ddnscommand);
-				if ( $result != 0) { 
+				if ( $result != 0) {
 					&General::log("Dynamic DNS ip-update for $settings{'HOSTNAME'}.$settings{'DOMAIN'} : failure");
 				} else {
 					&General::log("Dynamic DNS ip-update for $settings{'HOSTNAME'}.$settings{'DOMAIN'} : success");
@@ -292,7 +292,7 @@ if ($ip ne $ipcache) {
 				# Internal setting that can be used to override the DNS server
 				# where the update is applied. It can be of use when testing
 				# against a private DNS server.
- 
+
 				my $masterServer="";
 
 				# Prepare the nsupdate command script to remove and re-add the
@@ -425,7 +425,7 @@ if ($ip ne $ipcache) {
 			       #$GET_CMD .= "Content-Type: application/x-www-form-urlencoded\r\n";
 				$GET_CMD .= "\r\n";
 				print $sock "$GET_CMD";
-																												
+
 				my $out = '';
 				while(<$sock>) {
 					$out .= $_;
@@ -522,7 +522,7 @@ if ($ip ne $ipcache) {
 				}
 
 				if (($settings{'SERVICE'} eq 'dyndns-custom' ||
-				    $settings{'SERVICE'} eq 'easydns' ||  
+				    $settings{'SERVICE'} eq 'easydns' ||
 				    $settings{'SERVICE'} eq 'zoneedit') && $settings{'HOSTNAME'} eq '') {
 				    $settings{'HOSTDOMAIN'} = $settings{'DOMAIN'};
 				} else {
@@ -532,7 +532,7 @@ if ($ip ne $ipcache) {
 				my @ddnscommand = ('/usr/bin/ez-ipupdate', '-a', "$ip", '-S', "$settings{'SERVICE'}", '-u', "$settings{'LOGIN'}:$settings{'PASSWORD'}", '-h', "$settings{'HOSTDOMAIN'}", "$settings{'WILDCARDS'}", '-q');
 
 				my $result = system(@ddnscommand);
-				if ( $result != 0) { 
+				if ( $result != 0) {
 					&General::log("Dynamic DNS ip-update for $settings{'HOSTDOMAIN'}: failure");
 				} else {
 					&General::log("Dynamic DNS ip-update for $settings{'HOSTDOMAIN'}: success");
@@ -552,7 +552,7 @@ if ($ip ne $ipcache) {
 		close(IPCACHE);
 		exit 1;
 	}
-	
+
 }
 exit 0;
 
@@ -622,4 +622,4 @@ old code for selfhost.de
 				}
 
 
-			
+

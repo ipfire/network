@@ -20,435 +20,435 @@ import inutil
 import bootloader
 
 class BootloaderChoiceWindow:
-	def __call__(self, screen, pomona):
-		# XXX need more text here
-		t = TextboxReflowed(53, _("Which boot loader would you like to use?"))
-		
-		if pomona.dispatch.stepInSkipList("instbootloader"):
-			useGrub = 0
-			noBl = 1
-		else:
-			useGrub = 1
-			noBl = 0
+    def __call__(self, screen, pomona):
+        # XXX need more text here
+        t = TextboxReflowed(53, _("Which boot loader would you like to use?"))
 
-		blradio = RadioGroup()
-		grub = blradio.add(_("Use GRUB Boot Loader"), "grub", useGrub)
-		skipbl = blradio.add(_("No Boot Loader"), "nobl", noBl)
-		buttons = ButtonBar(screen, [TEXT_OK_BUTTON, TEXT_BACK_BUTTON])
-		
-		grid = GridFormHelp(screen, _("Boot Loader Configuration"),
-																	"btloadinstall", 1, 5)
-		grid.add(t, 0, 0, (0,0,0,1))
-		grid.add(grub, 0, 1, (0,0,0,0))
-		grid.add(skipbl, 0, 3, (0,0,0,1))
-		grid.add(buttons, 0, 4, growx = 1)
+        if pomona.dispatch.stepInSkipList("instbootloader"):
+            useGrub = 0
+            noBl = 1
+        else:
+            useGrub = 1
+            noBl = 0
 
-		while 1:
-			result = grid.run()
-			
-			button = buttons.buttonPressed(result)
-			  
-			if button == TEXT_BACK_CHECK:
-				screen.popWindow()
-				return INSTALL_BACK
-			
-			if blradio.getSelection() == "nobl":
-				rc = ButtonChoiceWindow(screen, _("Skip Boot Loader"),
-							_("You have elected not to install "
-								"any boot loader, which is not recommended "
-								"unless you have an advanced need. Booting "
-								"your system into Linux directly from the "
-								"hard drive almost always requires a boot "
-								"loader.\n\n"
-								"Are you sure you want to skip boot loader "
-								"installation?"),
-							[ (_("Yes"), "yes"), (_("No"), "no") ], width = 50)
-				if rc == "no":
-					continue
-					
-				pomona.dispatch.skipStep("instbootloader", skip = (rc == "yes"))
-				pomona.dispatch.skipStep("bootloaderadvanced", skip = (rc == "yes"))
+        blradio = RadioGroup()
+        grub = blradio.add(_("Use GRUB Boot Loader"), "grub", useGrub)
+        skipbl = blradio.add(_("No Boot Loader"), "nobl", noBl)
+        buttons = ButtonBar(screen, [TEXT_OK_BUTTON, TEXT_BACK_BUTTON])
 
-				# kind of a hack...
-				pomona.id.bootloader.defaultDevice = None
-			else:
-				pomona.dispatch.skipStep("instbootloader", 0)
-				pomona.dispatch.skipStep("bootloaderadvanced", 0)
+        grid = GridFormHelp(screen, _("Boot Loader Configuration"),
+                                                                                                                                "btloadinstall", 1, 5)
+        grid.add(t, 0, 0, (0,0,0,1))
+        grid.add(grub, 0, 1, (0,0,0,0))
+        grid.add(skipbl, 0, 3, (0,0,0,1))
+        grid.add(buttons, 0, 4, growx = 1)
 
-			screen.popWindow()
-			return INSTALL_OK
+        while 1:
+            result = grid.run()
+
+            button = buttons.buttonPressed(result)
+
+            if button == TEXT_BACK_CHECK:
+                screen.popWindow()
+                return INSTALL_BACK
+
+            if blradio.getSelection() == "nobl":
+                rc = ButtonChoiceWindow(screen, _("Skip Boot Loader"),
+                                        _("You have elected not to install "
+                                                "any boot loader, which is not recommended "
+                                                "unless you have an advanced need. Booting "
+                                                "your system into Linux directly from the "
+                                                "hard drive almost always requires a boot "
+                                                "loader.\n\n"
+                                                "Are you sure you want to skip boot loader "
+                                                "installation?"),
+                                        [ (_("Yes"), "yes"), (_("No"), "no") ], width = 50)
+                if rc == "no":
+                    continue
+
+                pomona.dispatch.skipStep("instbootloader", skip = (rc == "yes"))
+                pomona.dispatch.skipStep("bootloaderadvanced", skip = (rc == "yes"))
+
+                # kind of a hack...
+                pomona.id.bootloader.defaultDevice = None
+            else:
+                pomona.dispatch.skipStep("instbootloader", 0)
+                pomona.dispatch.skipStep("bootloaderadvanced", 0)
+
+            screen.popWindow()
+            return INSTALL_OK
 
 class BootloaderAppendWindow:
-	def __call__(self, screen, pomona):
-		if pomona.dispatch.stepInSkipList("instbootloader"):
-			return INSTALL_NOOP
-        
-		t = TextboxReflowed(53, _("A few systems need to pass special options "
-															"to the kernel at boot time to function "
-															"properly. If you need to pass boot options to the "
-															"kernel, enter them now. If you don't need any or "
-															"aren't sure, leave this blank."))
+    def __call__(self, screen, pomona):
+        if pomona.dispatch.stepInSkipList("instbootloader"):
+            return INSTALL_NOOP
 
-		entry = Entry(48, scroll = 1, returnExit = 1)
-		entry.set(pomona.id.bootloader.args.get())
+        t = TextboxReflowed(53, _("A few systems need to pass special options "
+                                                                                                                "to the kernel at boot time to function "
+                                                                                                                "properly. If you need to pass boot options to the "
+                                                                                                                "kernel, enter them now. If you don't need any or "
+                                                                                                                "aren't sure, leave this blank."))
 
-		cb = Checkbox(_("Force use of LBA32 (not normally required)"))
-		if pomona.id.bootloader.forceLBA32:
-			cb.setValue("*")
+        entry = Entry(48, scroll = 1, returnExit = 1)
+        entry.set(pomona.id.bootloader.args.get())
 
-		buttons = ButtonBar(screen, [TEXT_OK_BUTTON, TEXT_BACK_BUTTON])
+        cb = Checkbox(_("Force use of LBA32 (not normally required)"))
+        if pomona.id.bootloader.forceLBA32:
+            cb.setValue("*")
 
-		grid = GridFormHelp(screen, _("Boot Loader Configuration"), "kernelopts", 1, 5)
-		grid.add(t, 0, 0, padding = (0, 0, 0, 1))
+        buttons = ButtonBar(screen, [TEXT_OK_BUTTON, TEXT_BACK_BUTTON])
 
-		grid.add(entry, 0, 2, padding = (0, 0, 0, 1))
-		grid.add(cb, 0, 3, padding = (0,0,0,1))
-		grid.add(buttons, 0, 4, growx = 1)
+        grid = GridFormHelp(screen, _("Boot Loader Configuration"), "kernelopts", 1, 5)
+        grid.add(t, 0, 0, padding = (0, 0, 0, 1))
 
-		while 1:
-			result = grid.run()
-			button = buttons.buttonPressed(result)
-			
-			if button == TEXT_BACK_CHECK:
-				screen.popWindow()
-				return INSTALL_BACK
+        grid.add(entry, 0, 2, padding = (0, 0, 0, 1))
+        grid.add(cb, 0, 3, padding = (0,0,0,1))
+        grid.add(buttons, 0, 4, growx = 1)
 
-			if cb.selected() and not pomona.id.bootloader.forceLBA32:
-				rc = pomona.intf.messageWindow(_("Warning"),
-									_("If LBA32 is not supported by your system's BIOS, "
-										"forcing its use can prevent your machine from "
-										"booting.\n\n"
-										"Would you like to continue and force LBA32 mode?"),
-									type = "yesno")
+        while 1:
+            result = grid.run()
+            button = buttons.buttonPressed(result)
 
-				if rc != 1:
-					continue
+            if button == TEXT_BACK_CHECK:
+                screen.popWindow()
+                return INSTALL_BACK
 
-			pomona.id.bootloader.args.set(entry.value())
-			pomona.id.bootloader.setForceLBA(cb.selected())
+            if cb.selected() and not pomona.id.bootloader.forceLBA32:
+                rc = pomona.intf.messageWindow(_("Warning"),
+                                                        _("If LBA32 is not supported by your system's BIOS, "
+                                                                "forcing its use can prevent your machine from "
+                                                                "booting.\n\n"
+                                                                "Would you like to continue and force LBA32 mode?"),
+                                                        type = "yesno")
 
-			screen.popWindow()
-			return INSTALL_OK
+                if rc != 1:
+                    continue
+
+            pomona.id.bootloader.args.set(entry.value())
+            pomona.id.bootloader.setForceLBA(cb.selected())
+
+            screen.popWindow()
+            return INSTALL_OK
 
 class BootloaderLocationWindow:
-	def __call__(self, screen, pomona):
-		if pomona.dispatch.stepInSkipList("instbootloader"):
-			return INSTALL_NOOP
+    def __call__(self, screen, pomona):
+        if pomona.dispatch.stepInSkipList("instbootloader"):
+            return INSTALL_NOOP
 
-		choices = pomona.id.fsset.bootloaderChoices(pomona.id.diskset, pomona.id.bootloader)
-		if len(choices.keys()) == 1:
-			pomona.id.bootloader.setDevice(choices[choices.keys()[0]][0])
-			return INSTALL_NOOP
-		if len(choices.keys()) == 0:
-			return INSTALL_NOOP
+        choices = pomona.id.fsset.bootloaderChoices(pomona.id.diskset, pomona.id.bootloader)
+        if len(choices.keys()) == 1:
+            pomona.id.bootloader.setDevice(choices[choices.keys()[0]][0])
+            return INSTALL_NOOP
+        if len(choices.keys()) == 0:
+            return INSTALL_NOOP
 
-		format = "/dev/%-11s %s" 
-		locations = []
-		devices = []
-		default = 0
+        format = "/dev/%-11s %s"
+        locations = []
+        devices = []
+        default = 0
 
-		keys = choices.keys()
-		keys.reverse()
-		for key in keys:
-			(device, desc) = choices[key]
-			if device == pomona.id.bootloader.getDevice():
-				default = len(locations)
-				locations.append (format % (device, _(desc)))
-				devices.append(device)
+        keys = choices.keys()
+        keys.reverse()
+        for key in keys:
+            (device, desc) = choices[key]
+            if device == pomona.id.bootloader.getDevice():
+                default = len(locations)
+                locations.append (format % (device, _(desc)))
+                devices.append(device)
 
-		(rc, sel) = ListboxChoiceWindow (screen, _("Boot Loader Configuration"),
-									_("Where do you want to install the boot loader?"),
-									locations, default = default,
-									buttons = [ TEXT_OK_BUTTON, TEXT_BACK_BUTTON ],
-									help = "bootloaderlocation")
+        (rc, sel) = ListboxChoiceWindow (screen, _("Boot Loader Configuration"),
+                                                                _("Where do you want to install the boot loader?"),
+                                                                locations, default = default,
+                                                                buttons = [ TEXT_OK_BUTTON, TEXT_BACK_BUTTON ],
+                                                                help = "bootloaderlocation")
 
-		if rc == TEXT_BACK_CHECK:
-			return INSTALL_BACK
+        if rc == TEXT_BACK_CHECK:
+            return INSTALL_BACK
 
-		pomona.id.bootloader.setDevice(devices[sel])
-		return INSTALL_OK
+        pomona.id.bootloader.setDevice(devices[sel])
+        return INSTALL_OK
 
 class BootloaderImagesWindow:
-	def validBootloaderLabel(self, label):
-		i=0
-		while i < len(label):
-			cur = label[i]
-			if cur == '#' or cur == '$' or cur == '=':
-				return 0
-			elif cur == ' ' and not self.bl.useGrub():
-				return 0
-			i = i + 1
+    def validBootloaderLabel(self, label):
+        i=0
+        while i < len(label):
+            cur = label[i]
+            if cur == '#' or cur == '$' or cur == '=':
+                return 0
+            elif cur == ' ' and not self.bl.useGrub():
+                return 0
+            i = i + 1
 
-		return 1
+        return 1
 
-    
-	def editItem(self, screen, partition, itemLabel, allowNone=0):
-		devLabel = Label(_("Device") + ":")
-		bootLabel = Label(_("Boot label") + ":")
-		device = Label("/dev/" + partition)
-		newLabel = Entry (20, scroll = 1, returnExit = 1, text = itemLabel)
 
-		buttons = ButtonBar(screen, [TEXT_OK_BUTTON, (_("Clear"), "clear"),
-												(_("Cancel"), "cancel")])
+    def editItem(self, screen, partition, itemLabel, allowNone=0):
+        devLabel = Label(_("Device") + ":")
+        bootLabel = Label(_("Boot label") + ":")
+        device = Label("/dev/" + partition)
+        newLabel = Entry (20, scroll = 1, returnExit = 1, text = itemLabel)
 
-		subgrid = Grid(2, 2)
-		subgrid.setField(devLabel, 0, 0, anchorLeft = 1)
-		subgrid.setField(device, 1, 0, padding = (1, 0, 0, 0), anchorLeft = 1)
-		subgrid.setField(bootLabel, 0, 1, anchorLeft = 1)
-		subgrid.setField(newLabel, 1, 1, padding = (1, 0, 0, 0), anchorLeft = 1)
-		g = GridFormHelp(screen, _("Edit Boot Label"), "bootlabel", 1, 2)
-		g.add(subgrid, 0, 0, padding = (0, 0, 0, 1))
-		g.add(buttons, 0, 1, growx = 1)
+        buttons = ButtonBar(screen, [TEXT_OK_BUTTON, (_("Clear"), "clear"),
+                                                                                        (_("Cancel"), "cancel")])
 
-		result = ""
-		while (result != TEXT_OK_CHECK and result != TEXT_F12_CHECK and result != newLabel):
-			result = g.run()
+        subgrid = Grid(2, 2)
+        subgrid.setField(devLabel, 0, 0, anchorLeft = 1)
+        subgrid.setField(device, 1, 0, padding = (1, 0, 0, 0), anchorLeft = 1)
+        subgrid.setField(bootLabel, 0, 1, anchorLeft = 1)
+        subgrid.setField(newLabel, 1, 1, padding = (1, 0, 0, 0), anchorLeft = 1)
+        g = GridFormHelp(screen, _("Edit Boot Label"), "bootlabel", 1, 2)
+        g.add(subgrid, 0, 0, padding = (0, 0, 0, 1))
+        g.add(buttons, 0, 1, growx = 1)
 
-			if (buttons.buttonPressed(result)):
-				result = buttons.buttonPressed(result)
+        result = ""
+        while (result != TEXT_OK_CHECK and result != TEXT_F12_CHECK and result != newLabel):
+            result = g.run()
 
-			if (result == "cancel"):
-				screen.popWindow ()
-				return itemLabel
-			elif (result == "clear"):
-				newLabel.set("")
-			elif (result == TEXT_OK_CHECK or result == TEXT_F12_CHECK or result == newLabel):
-				if not allowNone and not newLabel.value():
-					ButtonChoiceWindow(screen, _("Invalid Boot Label"),
-																	   _("Boot label may not be empty."),
-																			[ TEXT_OK_BUTTON ])
-					result = ""
-				elif not self.validBootloaderLabel(newLabel.value()):
-					ButtonChoiceWindow(screen, _("Invalid Boot Label"),
-																		 _("Boot label contains "
-																			 "illegal characters."),
-																			[ TEXT_OK_BUTTON ])
-					result = ""
+            if (buttons.buttonPressed(result)):
+                result = buttons.buttonPressed(result)
 
-			screen.popWindow()
+            if (result == "cancel"):
+                screen.popWindow ()
+                return itemLabel
+            elif (result == "clear"):
+                newLabel.set("")
+            elif (result == TEXT_OK_CHECK or result == TEXT_F12_CHECK or result == newLabel):
+                if not allowNone and not newLabel.value():
+                    ButtonChoiceWindow(screen, _("Invalid Boot Label"),
+                                                                                                                       _("Boot label may not be empty."),
+                                                                                                                                    [ TEXT_OK_BUTTON ])
+                    result = ""
+                elif not self.validBootloaderLabel(newLabel.value()):
+                    ButtonChoiceWindow(screen, _("Invalid Boot Label"),
+                                                                                                                             _("Boot label contains "
+                                                                                                                                     "illegal characters."),
+                                                                                                                                    [ TEXT_OK_BUTTON ])
+                    result = ""
 
-			return newLabel.value()
+            screen.popWindow()
 
-	def formatDevice(self, label, device, default):
-		if default == device:
-			default = '*'
-		else:
-			default = ""
+            return newLabel.value()
 
-		if not label:
-			label = ""
-	    
-		return "   %-4s  %-25s %-25s" % ( default, label, "/dev/" + device)
+    def formatDevice(self, label, device, default):
+        if default == device:
+            default = '*'
+        else:
+            default = ""
 
-	def __call__(self, screen, pomona):
-		if pomona.dispatch.stepInSkipList("instbootloader"):
-			return INSTALL_NOOP
-        
-		self.bl = pomona.id.bootloader
+        if not label:
+            label = ""
 
-		images = self.bl.images.getImages()
-		default = self.bl.images.getDefault()
+        return "   %-4s  %-25s %-25s" % ( default, label, "/dev/" + device)
 
-		listboxLabel = Label(     "%-7s  %-25s %-12s" %
-										( _("Default"), _("Boot label"), _("Device")))
-		listbox = Listbox(5, scroll = 1, returnExit = 1)
+    def __call__(self, screen, pomona):
+        if pomona.dispatch.stepInSkipList("instbootloader"):
+            return INSTALL_NOOP
 
-		sortedKeys = images.keys()
-		sortedKeys.sort()
+        self.bl = pomona.id.bootloader
 
-		for dev in sortedKeys:
-			(label, longlabel, isRoot) = images[dev]
-			if not self.bl.useGrub():
-				listbox.append(self.formatDevice(label, dev, default), dev)
-			else:
-				listbox.append(self.formatDevice(longlabel, dev, default), dev)                
+        images = self.bl.images.getImages()
+        default = self.bl.images.getDefault()
 
-			listbox.setCurrent(dev)
+        listboxLabel = Label(     "%-7s  %-25s %-12s" %
+                                                                        ( _("Default"), _("Boot label"), _("Device")))
+        listbox = Listbox(5, scroll = 1, returnExit = 1)
 
-		buttons = ButtonBar(screen, [ TEXT_OK_BUTTON, (_("Edit"), "edit"), 
-								TEXT_BACK_BUTTON ])
+        sortedKeys = images.keys()
+        sortedKeys.sort()
 
-		text = TextboxReflowed(55,
-					_("The boot manager %s uses can boot other " 
-						"operating systems as well.  Please tell me " 
-						"what partitions you would like to be able to boot " 
-						"and what label you want to use for each of them.") % (name,))
+        for dev in sortedKeys:
+            (label, longlabel, isRoot) = images[dev]
+            if not self.bl.useGrub():
+                listbox.append(self.formatDevice(label, dev, default), dev)
+            else:
+                listbox.append(self.formatDevice(longlabel, dev, default), dev)
 
-		g = GridFormHelp(screen, _("Boot Loader Configuration"), 
-											"bootloaderlabels", 1, 4)
-		g.add(text, 0, 0, anchorLeft = 1)
-		g.add(listboxLabel, 0, 1, padding = (0, 1, 0, 0), anchorLeft = 1)
-		g.add(listbox, 0, 2, padding = (0, 0, 0, 1), anchorLeft = 1)
-		g.add(buttons, 0, 3, growx = 1)
-		g.addHotKey("F2")
-		g.addHotKey("F4")
-		screen.pushHelpLine(_(" <Space> select | <F2> select default | <F4> delete | <F12> next screen>"))        
+            listbox.setCurrent(dev)
 
-		rootdev = pomona.id.fsset.getEntryByMountPoint("/").device.getDevice()
+        buttons = ButtonBar(screen, [ TEXT_OK_BUTTON, (_("Edit"), "edit"),
+                                                        TEXT_BACK_BUTTON ])
 
-		result = None
-		while (result != TEXT_OK_CHECK and result != TEXT_BACK_CHECK and result != TEXT_F12_CHECK):
-			result = g.run()
-			if (buttons.buttonPressed(result)):
-				result = buttons.buttonPressed(result)
+        text = TextboxReflowed(55,
+                                _("The boot manager %s uses can boot other "
+                                        "operating systems as well.  Please tell me "
+                                        "what partitions you would like to be able to boot "
+                                        "and what label you want to use for each of them.") % (name,))
 
-			if (result == "edit" or result == listbox):
-				item = listbox.current()
-				(label, longlabel, type) = images[item]
-				if self.bl.useGrub():
-					label = longlabel
-				if label == None:
-					label = ""
+        g = GridFormHelp(screen, _("Boot Loader Configuration"),
+                                                                                "bootloaderlabels", 1, 4)
+        g.add(text, 0, 0, anchorLeft = 1)
+        g.add(listboxLabel, 0, 1, padding = (0, 1, 0, 0), anchorLeft = 1)
+        g.add(listbox, 0, 2, padding = (0, 0, 0, 1), anchorLeft = 1)
+        g.add(buttons, 0, 3, growx = 1)
+        g.addHotKey("F2")
+        g.addHotKey("F4")
+        screen.pushHelpLine(_(" <Space> select | <F2> select default | <F4> delete | <F12> next screen>"))
 
-				label = self.editItem(screen, item, label, allowNone = (rootdev != item and item != default))
-				images[item] = (label, label, type)
-				if (default == item and not label):
-					default = ""
-					listbox.replace(self.formatDevice(label, item, default), item)
-					listbox.setCurrent(item)
-				elif result == "F2":
-					item = listbox.current()
-					(label, longlabel, isRoot) = images[item]
-					if self.bl.useGrub():
-						label = longlabel
-                
-				if (label):
-					if (default):
-						(oldLabel, oldLong, oldIsRoot) = images[default]
-						if self.bl.useGrub():
-							oldLabel = oldLong
-						listbox.replace(self.formatDevice(oldLabel, default, ""), default)
-						default = item
-						listbox.replace(self.formatDevice(label, item, default), item)
-			    	listbox.setCurrent(item)
-			elif result == "F4":
-				item = listbox.current()
-                
-				(label, longlabel, isRoot) = images[item]
-				if rootdev != item:
-					del images[item]
-					listbox.delete(item)
-					if default == item:
-						default = ""
-				else:
-					pomona.intf.messageWindow(_("Cannot Delete"),
-																		_("This boot target cannot be "
-																			"deleted because it is for "
-																			"the %s system you are about "
-																			"to install.") %(name,))
-                    
+        rootdev = pomona.id.fsset.getEntryByMountPoint("/").device.getDevice()
 
-			screen.popHelpLine()
-			screen.popWindow()
+        result = None
+        while (result != TEXT_OK_CHECK and result != TEXT_BACK_CHECK and result != TEXT_F12_CHECK):
+            result = g.run()
+            if (buttons.buttonPressed(result)):
+                result = buttons.buttonPressed(result)
 
-		if (result == TEXT_BACK_CHECK):
-			return INSTALL_BACK
+            if (result == "edit" or result == listbox):
+                item = listbox.current()
+                (label, longlabel, type) = images[item]
+                if self.bl.useGrub():
+                    label = longlabel
+                if label == None:
+                    label = ""
 
-		if not default:
-			default = rootdev
+                label = self.editItem(screen, item, label, allowNone = (rootdev != item and item != default))
+                images[item] = (label, label, type)
+                if (default == item and not label):
+                    default = ""
+                    listbox.replace(self.formatDevice(label, item, default), item)
+                    listbox.setCurrent(item)
+                elif result == "F2":
+                    item = listbox.current()
+                    (label, longlabel, isRoot) = images[item]
+                    if self.bl.useGrub():
+                        label = longlabel
 
-		# copy our version over
-		self.bl.images.images = {}
-		for (dev, (label, longlabel, isRoot)) in images.items():
-			self.bl.images.images[dev] = (label, longlabel, isRoot)
-			self.bl.images.setDefault(default)
+                if (label):
+                    if (default):
+                        (oldLabel, oldLong, oldIsRoot) = images[default]
+                        if self.bl.useGrub():
+                            oldLabel = oldLong
+                        listbox.replace(self.formatDevice(oldLabel, default, ""), default)
+                        default = item
+                        listbox.replace(self.formatDevice(label, item, default), item)
+                listbox.setCurrent(item)
+            elif result == "F4":
+                item = listbox.current()
 
-		return INSTALL_OK
+                (label, longlabel, isRoot) = images[item]
+                if rootdev != item:
+                    del images[item]
+                    listbox.delete(item)
+                    if default == item:
+                        default = ""
+                else:
+                    pomona.intf.messageWindow(_("Cannot Delete"),
+                                                                                                                            _("This boot target cannot be "
+                                                                                                                                    "deleted because it is for "
+                                                                                                                                    "the %s system you are about "
+                                                                                                                                    "to install.") %(name,))
+
+
+            screen.popHelpLine()
+            screen.popWindow()
+
+        if (result == TEXT_BACK_CHECK):
+            return INSTALL_BACK
+
+        if not default:
+            default = rootdev
+
+        # copy our version over
+        self.bl.images.images = {}
+        for (dev, (label, longlabel, isRoot)) in images.items():
+            self.bl.images.images[dev] = (label, longlabel, isRoot)
+            self.bl.images.setDefault(default)
+
+        return INSTALL_OK
 
 class BootloaderPasswordWindow:
-	def usepasscb(self, *args):
-		flag = FLAGS_RESET
-		if not self.checkbox.selected():
-			flag = FLAGS_SET
-		self.entry1.setFlags(FLAG_DISABLED, flag)
-		self.entry2.setFlags(FLAG_DISABLED, flag)        
-        
-	def __call__(self, screen, pomona):
-		if pomona.dispatch.stepInSkipList("instbootloader"):
-			return INSTALL_NOOP
+    def usepasscb(self, *args):
+        flag = FLAGS_RESET
+        if not self.checkbox.selected():
+            flag = FLAGS_SET
+        self.entry1.setFlags(FLAG_DISABLED, flag)
+        self.entry2.setFlags(FLAG_DISABLED, flag)
 
-		intf = pomona.intf
-		self.bl = pomona.id.bootloader
-		
-		if not self.bl.useGrub():
-			return INSTALL_NOOP
+    def __call__(self, screen, pomona):
+        if pomona.dispatch.stepInSkipList("instbootloader"):
+            return INSTALL_NOOP
 
-		buttons = ButtonBar(screen, [TEXT_OK_BUTTON, TEXT_BACK_BUTTON])
+        intf = pomona.intf
+        self.bl = pomona.id.bootloader
 
-		text = TextboxReflowed(55,
-							_("A boot loader password prevents users from passing arbitrary "
-								"options to the kernel.  For highest security, you "
-								"should set a password, but a password is not "
-								"necessary for more casual users."))
+        if not self.bl.useGrub():
+            return INSTALL_NOOP
 
-		g = GridFormHelp(screen, _("Boot Loader Configuration"), "grubpasswd", 1, 6)
-		g.add(text, 0, 0, (0,0,0,1), anchorLeft = 1)
+        buttons = ButtonBar(screen, [TEXT_OK_BUTTON, TEXT_BACK_BUTTON])
 
-		self.checkbox = Checkbox(_("Use a GRUB Password"))
-		g.add(self.checkbox, 0, 1, (0,0,0,1))
+        text = TextboxReflowed(55,
+                                                _("A boot loader password prevents users from passing arbitrary "
+                                                        "options to the kernel.  For highest security, you "
+                                                        "should set a password, but a password is not "
+                                                        "necessary for more casual users."))
 
-		if self.bl.password:
-			self.checkbox.setValue("*")
+        g = GridFormHelp(screen, _("Boot Loader Configuration"), "grubpasswd", 1, 6)
+        g.add(text, 0, 0, (0,0,0,1), anchorLeft = 1)
 
-		pw = self.bl.pure
-		if not pw:
-			pw = ""
+        self.checkbox = Checkbox(_("Use a GRUB Password"))
+        g.add(self.checkbox, 0, 1, (0,0,0,1))
 
-		self.entry1 = Entry (24, password = 1, text = pw)
-		self.entry2 = Entry (24, password = 1, text = pw)
-		passgrid = Grid (2, 2)
-		passgrid.setField (Label (_("Boot Loader Password:")), 0, 0, (0, 0, 1, 0), anchorLeft = 1)
-		passgrid.setField (Label (_("Confirm:")), 0, 1, (0, 0, 1, 0), anchorLeft = 1)
-		passgrid.setField (self.entry1, 1, 0)
-		passgrid.setField (self.entry2, 1, 1)
-		g.add (passgrid, 0, 2, (0, 0, 0, 1))
+        if self.bl.password:
+            self.checkbox.setValue("*")
 
-		self.checkbox.setCallback(self.usepasscb, None)
-		self.usepasscb()
-		
-		g.add(buttons, 0, 3, growx=1)
+        pw = self.bl.pure
+        if not pw:
+            pw = ""
 
-		while 1:
-			result = g.run()
+        self.entry1 = Entry (24, password = 1, text = pw)
+        self.entry2 = Entry (24, password = 1, text = pw)
+        passgrid = Grid (2, 2)
+        passgrid.setField (Label (_("Boot Loader Password:")), 0, 0, (0, 0, 1, 0), anchorLeft = 1)
+        passgrid.setField (Label (_("Confirm:")), 0, 1, (0, 0, 1, 0), anchorLeft = 1)
+        passgrid.setField (self.entry1, 1, 0)
+        passgrid.setField (self.entry2, 1, 1)
+        g.add (passgrid, 0, 2, (0, 0, 0, 1))
 
-			if (buttons.buttonPressed(result)):
-				result = buttons.buttonPressed(result)
+        self.checkbox.setCallback(self.usepasscb, None)
+        self.usepasscb()
 
-			if result == TEXT_BACK_CHECK:
-				screen.popWindow()
-				return INSTALL_BACK
+        g.add(buttons, 0, 3, growx=1)
 
-			if not self.checkbox.selected():
-				self.bl.setPassword(None)
-				screen.popWindow()
-				return INSTALL_OK
+        while 1:
+            result = g.run()
 
-			pw = self.entry1.value()
-			confirm = self.entry2.value()
+            if (buttons.buttonPressed(result)):
+                result = buttons.buttonPressed(result)
 
-			if pw != confirm:
-				pomona.intf.messageWindow(_("Passwords Do Not Match"),
-																	_("Passwords do not match"))
-				continue
+            if result == TEXT_BACK_CHECK:
+                screen.popWindow()
+                return INSTALL_BACK
 
-			if len(pw) < 1:
-				pomona.intf.messageWindow(_("Password Too Short"),
-																	_("Boot loader password is too short"))
-				continue
+            if not self.checkbox.selected():
+                self.bl.setPassword(None)
+                screen.popWindow()
+                return INSTALL_OK
 
-			if len(pw) < 6:
-				rc = pomona.intf.messageWindow(_("Warning"),
-													_("Your boot loader password is shorter than "
-														"six characters.  We recommend a longer "
-														"boot loader password."
-														"\n\n"
-														"Would you like to continue with this "
-														"password?"),
-													type = "yesno")
-				if rc == 0:
-					continue
+            pw = self.entry1.value()
+            confirm = self.entry2.value()
 
-			self.bl.setPassword(pw, isCrypted = 0)            
+            if pw != confirm:
+                pomona.intf.messageWindow(_("Passwords Do Not Match"),
+                                                                                                                        _("Passwords do not match"))
+                continue
 
-			screen.popWindow()
-			return INSTALL_OK
+            if len(pw) < 1:
+                pomona.intf.messageWindow(_("Password Too Short"),
+                                                                                                                        _("Boot loader password is too short"))
+                continue
+
+            if len(pw) < 6:
+                rc = pomona.intf.messageWindow(_("Warning"),
+                                                                                        _("Your boot loader password is shorter than "
+                                                                                                "six characters.  We recommend a longer "
+                                                                                                "boot loader password."
+                                                                                                "\n\n"
+                                                                                                "Would you like to continue with this "
+                                                                                                "password?"),
+                                                                                        type = "yesno")
+                if rc == 0:
+                    continue
+
+            self.bl.setPassword(pw, isCrypted = 0)
+
+            screen.popWindow()
+            return INSTALL_OK

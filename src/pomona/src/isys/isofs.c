@@ -22,7 +22,7 @@
 #include <unistd.h>
 
 #define BLOCK_SIZE 2048
- 
+
 /* returns 1 if file is an ISO, 0 otherwise */
 int fileIsIso(const char * file) {
     int blkNum;
@@ -50,6 +50,6 @@ int fileIsIso(const char * file) {
 	}
     }
 
-    close(fd); 
+    close(fd);
     return 0;
 }

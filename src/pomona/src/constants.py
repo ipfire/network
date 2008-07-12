@@ -64,20 +64,20 @@ REQUEST_PROTECTED = 8
 MAX_PART_SIZE = 1024*1024*1024
 
 class Translator:
-	"""A simple class to facilitate on-the-fly translation for newt buttons"""
-	def __init__(self, button, check):
-		self.button = button
-		self.check = check
+    """A simple class to facilitate on-the-fly translation for newt buttons"""
+    def __init__(self, button, check):
+        self.button = button
+        self.check = check
 
-	def __getitem__(self, which):
-		if which == 0:
-			return _(self.button)
-		elif which == 1:
-			return self.check
-		raise IndexError
+    def __getitem__(self, which):
+        if which == 0:
+            return _(self.button)
+        elif which == 1:
+            return self.check
+        raise IndexError
 
-	def __len__(self):
-		return 2
+    def __len__(self):
+        return 2
 
 TEXT_OK_STR = N_("OK")
 TEXT_OK_CHECK  = "ok"

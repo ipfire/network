@@ -44,11 +44,11 @@ typedef uint8_t u8;
 /* returns 1 for link, 0 for no link, -1 for unknown */
 int get_link_status(char *ifname);
 
-typedef enum ethtool_speed_t { ETHTOOL_SPEED_UNSPEC = -1, 
-                               ETHTOOL_SPEED_10 = SPEED_10, 
+typedef enum ethtool_speed_t { ETHTOOL_SPEED_UNSPEC = -1,
+                               ETHTOOL_SPEED_10 = SPEED_10,
                                ETHTOOL_SPEED_100 = SPEED_100,
                                ETHTOOL_SPEED_1000 = SPEED_1000 } ethtool_speed;
-typedef enum ethtool_duplex_t { ETHTOOL_DUPLEX_UNSPEC = -1, 
+typedef enum ethtool_duplex_t { ETHTOOL_DUPLEX_UNSPEC = -1,
                                 ETHTOOL_DUPLEX_HALF = DUPLEX_HALF,
                                 ETHTOOL_DUPLEX_FULL = DUPLEX_FULL } ethtool_duplex;
 

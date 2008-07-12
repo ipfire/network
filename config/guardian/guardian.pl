@@ -43,9 +43,9 @@ $broadcastaddr =~ s/\d+$/255/;
 # This is the target hash. If a packet was destened to any of these, then the
 # sender of that packet will get denied, unless it is on the ignore list..
 
-%targethash = ( "$networkaddr" => 1, 
+%targethash = ( "$networkaddr" => 1,
               "$broadcastaddr" => 1,
-              "0" => 1,   # This is what gets sent to &checkem if no 
+              "0" => 1,   # This is what gets sent to &checkem if no
                           # destination was found.
               "$hostipaddr" => 1);
 
@@ -61,39 +61,39 @@ if (!defined($opt_d)) {
 } else { print "Running in debug mode..\n"; }
 
 open (ALERT, $alert_file) or die "can't open alert file: $alert_file: $!\n";
-seek (ALERT, 0, 2); # set the position to EOF. 
+seek (ALERT, 0, 2); # set the position to EOF.
 # this is the same as a tail -f :)
 $counter=0;
 open (ALERT2, "/var/log/messages" ) or die "can't open /var/log/messages: $!\n";
-seek (ALERT2, 0, 2); # set the position to EOF. 
+seek (ALERT2, 0, 2); # set the position to EOF.
 # this is the same as a tail -f :)
 
-for (;;) { 
-  sleep 1; 
-  if (seek(ALERT,0,1)){ 
-    while (<ALERT>) { 
+for (;;) {
+  sleep 1;
+  if (seek(ALERT,0,1)){
+    while (<ALERT>) {
       chop;
 			  if (defined($opt_d)) {print "$_\n";}
-        if (/\[\*\*\]\s+(.*)\s+\[\*\*\]/){ 
+        if (/\[\*\*\]\s+(.*)\s+\[\*\*\]/){
           $type=$1;
         }
         if (/(\d+\.\d+\.\d+\.\d+):\d+ -\> (\d+\.\d+\.\d+\.\d+):\d+/) {
           &checkem ($1, $2, $type);
         }
         if ($_=~/Portscan/) {
-          my @array=split(/ /,$_);&checkem ($array[5], $hostipaddr, "Portscan was detected.");} 
-    } 
-  } 
+          my @array=split(/ /,$_);&checkem ($array[5], $hostipaddr, "Portscan was detected.");}
+    }
+  }
 
-  sleep 1; 
-  if (seek(ALERT2,0,1)){ 
-    while (<ALERT2>) { 
+  sleep 1;
+  if (seek(ALERT2,0,1)){
+    while (<ALERT2>) {
       chop;
         if ($_=~/.*sshd.*Failed password for root from.*/) {
-          my @array=split(/ /,$_);&checkssh ($array[10], "possible SSH-Bruteforce Attack");} 
-    } 
-  } 
-  # Run this stuff every 30 seconds.. 
+          my @array=split(/ /,$_);&checkssh ($array[10], "possible SSH-Bruteforce Attack");}
+    }
+  }
+  # Run this stuff every 30 seconds..
   if ($counter == 30) {
     &remove_blocks; # This might get moved elsewhere, depending on how much load
 		    # it puts on the system..
@@ -105,36 +105,36 @@ for (;;) {
 sub check_log_name {
   my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
       $atime,$mtime,$ctime,$blksize,$blocks) = stat($alert_file);
-  if ($size < $previous_size) {   # The filesize is smaller than last 
+  if ($size < $previous_size) {   # The filesize is smaller than last
      close (ALERT);               # we checked, so we need to reopen it
-     open (ALERT, "$alert_file"); # This should still work in our main while 
+     open (ALERT, "$alert_file"); # This should still work in our main while
      $previous_size=$size;        # loop (I hope)
      write_log ("Log filename changed. Reopening $alert_file\n");
-  } else {               
+  } else {
     $previous_size=$size;
   }
 }
-  
+
 
 sub checkem {
   my ($source, $dest,$type) = @_;
   my $flag=0;
   return 1 if ($source eq $hostipaddr); # this should prevent is from nuking
-                                       # ourselves 
-  return 1 if ($source eq $gatewayaddr); # or our gateway 
+                                       # ourselves
+  return 1 if ($source eq $gatewayaddr); # or our gateway
   if ($ignore{$source} == 1) { # check our ignore list..
      &write_log("$source\t$type\n");
      &write_log("Ignoring attack because $source is in my ignore list\n");
      return 1;
   }
   # if the offending packet was sent to us, the network, or the broadcast, then
-  if ($targethash{$dest} == 1) {   
+  if ($targethash{$dest} == 1) {
     &ipchain ($source, $dest, $type);
   }
   # you will see this if the destination was not in the $targethash, and the
-  # packet was not ignored before the target check.. 
-  else { 
-    &write_log ("Odd.. source = $source, dest = $dest - No action done.\n"); 
+  # packet was not ignored before the target check..
+  else {
+    &write_log ("Odd.. source = $source, dest = $dest - No action done.\n");
     if (defined ($opt_d)) {
       foreach $key (keys %targethash) {
         &write_log ("targethash{$key} = $targethash{$key}\n");
@@ -147,17 +147,17 @@ sub checkssh {
   my ($source,$type) = @_;
   my $flag=0;
   return 1 if ($source eq $hostipaddr); # this should prevent is from nuking
-                                       # ourselves 
-  return 1 if ($source eq $gatewayaddr); # or our gateway 
-  if ($sshhash{$dest} eq "" ){ $sshhash{$dest} = 1; } 
+                                       # ourselves
+  return 1 if ($source eq $gatewayaddr); # or our gateway
+  if ($sshhash{$dest} eq "" ){ $sshhash{$dest} = 1; }
   if ($sshhash{$dest} >= 3 ) {
-    &write_log ("source = $source, count $sshhash{$dest} - blocking for ssh attack.\n");   
+    &write_log ("source = $source, count $sshhash{$dest} - blocking for ssh attack.\n");
     &ipchain ($source, "", $type);
   }
   # you will see this if the destination was not in the $sshhash, and the
-  # packet was not ignored before the target check.. 
-  else { 
-    &write_log ("Odd.. source = $source, ssh count only $sshhash{$dest} - No action done.\n"); 
+  # packet was not ignored before the target check..
+  else {
+    &write_log ("Odd.. source = $source, ssh count only $sshhash{$dest} - No action done.\n");
     if (defined ($opt_d)) {
       foreach $key (keys %sshhash) {
         &write_log ("sshhash{$key} = %sshhash{$key}\n");
@@ -167,7 +167,7 @@ sub checkssh {
   }
 }
 
-sub ipchain { 
+sub ipchain {
   my ($source, $dest, $type) = @_;
   &write_log ("$source\t$type\n");
   if ($hash{$source} eq "") {
@@ -176,17 +176,17 @@ sub ipchain {
     $hash{$source} = time() + $TimeLimit;
   } else {
     # We have already blocked this one, but snort detected another attack. So
-    # we should update the time blocked.. 
+    # we should update the time blocked..
     $hash{$source} = time() + $TimeLimit;
   }
 }
-  
+
 sub build_ignore_hash {
 #  This would cause is to ignore all broadcasts if it
 #  got set.. However if unset, then the attacker could spoof the packet to make
 #  it look like it came from the network, and a reply to the spoofed packet
-#  could be seen if the attacker were on the local network. 
-#  $ignore{$networkaddr}=1; 
+#  could be seen if the attacker were on the local network.
+#  $ignore{$networkaddr}=1;
 
 # same thing as above, just with the broadcast instead of the network.
 #  $ignore{$broadcastaddr}=1;
@@ -243,13 +243,13 @@ configuration file\n";
     if (/HostIpAddr\s+(.*)/) {
        $hostipaddr = $1;
     }
-    if (/HostGatewayByte\s+(.*)/) { 
+    if (/HostGatewayByte\s+(.*)/) {
        $hostgatewaybyte = $1;
     }
 #    if (/ipchainsPath\s+(.*)/) {
 #       $ipchains_path = $1;
 #    }
-  } 
+  }
   if ($interface eq "") {
     die "Fatal! Interface is undefined.. Please define it in $opt_o with keyword Interface\n";
   }
@@ -261,7 +261,7 @@ configuration file\n";
     print "Warning! HostIpAddr is undefined! Attempting to guess..\n";
     $hostipaddr = &get_ip($interface);
     print "Got it.. your HostIpAddr is $hostipaddr\n";
-  } 
+  }
   if ($ignorefile eq "") {
     print "Warning! IgnoreFile is undefined.. going with default ignore list (hostname and gateway)!\n";
   }
@@ -279,10 +279,10 @@ configuration file\n";
   foreach $mypath (split (/:/, $ENV{PATH})) {
     if (-x "$mypath/guardian_block.sh") {
       $blockpath = "$mypath/guardian_block.sh";
-    } 
+    }
     if (-x "$mypath/guardian_unblock.sh") {
       $unblockpath = "$mypath/guardian_unblock.sh";
-    } 
+    }
   }
   if ($blockpath eq "") {
     print "Error! Could not find guardian_block.sh. Please consult the README. \n";
@@ -291,7 +291,7 @@ configuration file\n";
   if ($unblockpath eq "") {
     print "Warning! Could not find guardian_unblock.sh. Guardian will not be\n";
     print "able to remove blocked ip addresses. Please consult the README file\n";
-  } 
+  }
   if ($TimeLimit eq "") {
     print "Warning! Time limit not defined. Defaulting to absurdly long time limit\n";
     $TimeLimit = 999999999;
@@ -326,7 +326,7 @@ sub daemonize {
     close(STDERR);
     print "Testing...\n";
   }
-}                                              
+}
 
 sub get_ip {
   my ($interface) = $_[0];
@@ -334,12 +334,12 @@ sub get_ip {
   open (IFCONFIG, "/bin/netstat -iee |grep $interface -A7 |");
   while (<IFCONFIG>) {
     if ($OS eq "FreeBSD") {
-      if (/inet (\d+\.\d+\.\d+\.\d+)/) { 
+      if (/inet (\d+\.\d+\.\d+\.\d+)/) {
 	$ip = $1;
       }
-    } 
+    }
     if ($OS eq "Linux") {
-      if (/inet addr:(\d+\.\d+\.\d+\.\d+)/) { 
+      if (/inet addr:(\d+\.\d+\.\d+\.\d+)/) {
 	$ip = $1;
       }
     }

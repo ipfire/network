@@ -18,7 +18,7 @@
  */
 
 /* we use gzlib when linked against dietlibc, but otherwise, we should use
-   zlib.  it would make more sense to do the defines in the other direction, 
+   zlib.  it would make more sense to do the defines in the other direction,
    but that causes symbol wackiness because both gunzip_open and gzip_open in
    gzlib are gzopen from zlib
 */

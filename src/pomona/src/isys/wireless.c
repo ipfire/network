@@ -39,7 +39,7 @@ static struct iwreq get_wreq(char * ifname) {
     struct iwreq wreq;
 
     memset(&wreq, 0, sizeof(wreq));
-    strncpy(wreq.ifr_name, ifname, IFNAMSIZ);    
+    strncpy(wreq.ifr_name, ifname, IFNAMSIZ);
     return wreq;
 }
 
@@ -72,7 +72,7 @@ int is_wireless_interface(char * ifname) {
 
 /* set the essid for ifname to essid.  if essid is NULL, do automatically */
 int set_essid(char * ifname, char * essid) {
-    int sock; 
+    int sock;
     struct iwreq wreq;
 
     memset(&wreq, 0, sizeof (wreq));
@@ -107,8 +107,8 @@ int set_essid(char * ifname, char * essid) {
 }
 
 char * get_essid(char * ifname) {
-    int sock; 
-    struct iwreq wreq; 
+    int sock;
+    struct iwreq wreq;
 
     memset(&wreq, 0, sizeof (wreq));
 
@@ -122,7 +122,7 @@ char * get_essid(char * ifname) {
     close(sock);
 
     if (rc < 0) {
-        fprintf(stderr, "failed to get essid for %s: %s\n", ifname, 
+        fprintf(stderr, "failed to get essid for %s: %s\n", ifname,
                 strerror(errno));
         return NULL;
     }
@@ -185,10 +185,10 @@ static int parse_wep_key(char * in, unsigned char * key) {
 }
 
 int set_wep_key(char * ifname, char * key) {
-    int sock; 
-    struct iwreq wreq; 
+    int sock;
+    struct iwreq wreq;
     unsigned char thekey[IW_ENCODING_TOKEN_MAX];
-    
+
     if (strlen(key) > IW_ENCODING_TOKEN_MAX) {
         fprintf(stderr, "wep key too long\n");
         return -1;
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
     if (!is_wireless_interface(argv[1])) {
         fprintf(stderr, "%s isn't a wireless interface!\n", argv[1]);
         exit(2);
-    } 
+    }
 
     /*    if (set_essid(argv[1], NULL) < 0) {
         fprintf(stderr, "Unable to set essid to %s\n", argv[2]);

@@ -29,79 +29,79 @@ from pyfire.config import ConfigFile
 import keyboard_models
 
 class Keyboard(ConfigFile):
-	def __init__(self):
-		self.type = "PC"
-		self.beenset = 0
-		self.info = {}
+    def __init__(self):
+        self.type = "PC"
+        self.beenset = 0
+        self.info = {}
 
-		# default to us
-		self.info["KEYTABLE"] = "us"
-		self.info["KEYBOARDTYPE"] = "pc"
+        # default to us
+        self.info["KEYTABLE"] = "us"
+        self.info["KEYBOARDTYPE"] = "pc"
 
-		self._mods = keyboard_models.KeyboardModels()
+        self._mods = keyboard_models.KeyboardModels()
 
-	def _get_models(self):
-		return self._mods.get_models()
+    def _get_models(self):
+        return self._mods.get_models()
 
-	modelDict = property(_get_models)
+    modelDict = property(_get_models)
 
-	def set(self, keytable):
-		self.info["KEYTABLE"] = keytable
+    def set(self, keytable):
+        self.info["KEYTABLE"] = keytable
 
-	def get(self):
-		return self.info["KEYTABLE"]
+    def get(self):
+        return self.info["KEYTABLE"]
 
-	def getKeymapName(self):
-		kbd = self.modelDict[self.get()]
-		if not kbd:
-			return ""
-		(name, layout, model, variant, options) = kbd
-		return name
-      
-	def __getitem__(self, item):
-		table = self.info["KEYTABLE"]
-		if not self.modelDict.has_key(table):
-			raise KeyError, "No such keyboard type %s" % (table,)
+    def getKeymapName(self):
+        kbd = self.modelDict[self.get()]
+        if not kbd:
+            return ""
+        (name, layout, model, variant, options) = kbd
+        return name
 
-		kb = self.modelDict[table]
-		if item == "rules":
-			return "xorg"
-		elif item == "model":
-			return kb[2]
-		elif item == "layout":
-			return kb[1]
-		elif item == "variant":
-			return kb[3]
-		elif item == "options":
-			return kb[4]
-		elif item == "name":
-			return kb[0]
-		elif item == "keytable":
-			return table
-		else:
-			raise KeyError, item
+    def __getitem__(self, item):
+        table = self.info["KEYTABLE"]
+        if not self.modelDict.has_key(table):
+            raise KeyError, "No such keyboard type %s" % (table,)
 
-	#def read(self, instPath = "/"):
-	#	ConfigFile.read(self, instPath + "/etc/sysconfig/keyboard")
-	#	self.beenset = 1
+        kb = self.modelDict[table]
+        if item == "rules":
+            return "xorg"
+        elif item == "model":
+            return kb[2]
+        elif item == "layout":
+            return kb[1]
+        elif item == "variant":
+            return kb[3]
+        elif item == "options":
+            return kb[4]
+        elif item == "name":
+            return kb[0]
+        elif item == "keytable":
+            return table
+        else:
+            raise KeyError, item
 
-	def write(self, instPath = "/"):
-		ConfigFile.write(self, instPath + "/etc/sysconfig/keyboard")
+    #def read(self, instPath = "/"):
+    #       ConfigFile.read(self, instPath + "/etc/sysconfig/keyboard")
+    #       self.beenset = 1
 
-	def activate(self):
-		console_kbd = self.get()
-		if not console_kbd:
-			return
+    def write(self, instPath = "/"):
+        ConfigFile.write(self, instPath + "/etc/sysconfig/keyboard")
 
-		# Call loadkeys to change the console keymap
-		if os.access("/bin/loadkeys", os.X_OK):
-			command = "/bin/loadkeys"
-		elif os.access("/usr/bin/loadkeys", os.X_OK):
-			command = "/usr/bin/loadkeys"
-		else:
-			command = "/bin/loadkeys"
-		argv = [ command, console_kbd ]
+    def activate(self):
+        console_kbd = self.get()
+        if not console_kbd:
+            return
 
-		### XXX Don't run this at the moment because redirect doesn't work
-		if os.access(argv[0], os.X_OK) == 1:
-			executil.execWithRedirect(argv[0], argv, stdout="/dev/tty5", stderr="/dev/tty5")
+        # Call loadkeys to change the console keymap
+        if os.access("/bin/loadkeys", os.X_OK):
+            command = "/bin/loadkeys"
+        elif os.access("/usr/bin/loadkeys", os.X_OK):
+            command = "/usr/bin/loadkeys"
+        else:
+            command = "/bin/loadkeys"
+        argv = [ command, console_kbd ]
+
+        ### XXX Don't run this at the moment because redirect doesn't work
+        if os.access(argv[0], os.X_OK) == 1:
+            executil.execWithRedirect(argv[0], argv, stdout="/dev/tty5", stderr="/dev/tty5")

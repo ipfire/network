@@ -17,24 +17,24 @@ from pyfire.translate import _
 from constants import *
 
 class FinishedWindow:
-	def __call__ (self, screen, pomona):
-		bootstr = ""
-		
-		floppystr = _("Press <Enter> to end the installation process.\n\n")
-		bottomstr = _("<Enter> to exit")
-		
-		screen.pushHelpLine(string.center(bottomstr, screen.width))
+    def __call__ (self, screen, pomona):
+        bootstr = ""
 
-		txt = _("Congratulations, your %s installation is "
-						"complete.\n\n"
-						"%s%s") %(name, floppystr, bootstr)
-		foo = _("For information on errata (updates and bug fixes), visit "
-						"%s.\n\n"
-						"Information on using your "
-						"system is available in the %s wiki at "
-						"%s.") %(bugurl, name, wikiurl,)
+        floppystr = _("Press <Enter> to end the installation process.\n\n")
+        bottomstr = _("<Enter> to exit")
 
-		rc = ButtonChoiceWindow(screen, _("Complete"), txt,
-						[ _("Reboot") ], help = "finished", width=60)
+        screen.pushHelpLine(string.center(bottomstr, screen.width))
 
-		return INSTALL_OK
+        txt = _("Congratulations, your %s installation is "
+                                        "complete.\n\n"
+                                        "%s%s") %(name, floppystr, bootstr)
+        foo = _("For information on errata (updates and bug fixes), visit "
+                                        "%s.\n\n"
+                                        "Information on using your "
+                                        "system is available in the %s wiki at "
+                                        "%s.") %(bugurl, name, wikiurl,)
+
+        rc = ButtonChoiceWindow(screen, _("Complete"), txt,
+                                        [ _("Reboot") ], help = "finished", width=60)
+
+        return INSTALL_OK

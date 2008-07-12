@@ -192,7 +192,7 @@ static int groupForSMP(int mode) {
     mpfps_t     mpfps;
     int		rc = 0;
     int		ncpus = 0;
-        
+
     /* open physical memory for access to MP structures */
     if ( (pfd = open( "/dev/mem", O_RDONLY )) < 0 ) {
 	return 0;
@@ -214,7 +214,7 @@ static int groupForSMP(int mode) {
 	/* go to the config table */
 	mpcth_t     cth;
 	int count, i;
-	    
+
 	paddr = (vm_offset_t) mpfps.pap;
 	if (seekEntry( paddr ))
 	    return 0;
@@ -444,11 +444,11 @@ int detectHT(void) {
     int htflag = 0;
     uint32_t ebx = 0;
     int smp_num_siblings = 0;
-    
+
     f = fopen("/proc/cpuinfo", "r");
     if (f) {
 	char buff[1024];
-	
+
 	while (fgets (buff, 1024, f) != NULL) {
 	    if (!strncmp (buff, "flags\t\t:", 8)) {
 		if (strstr(buff, " ht ") ||
@@ -467,7 +467,7 @@ int detectHT(void) {
 
     ebx = cpuid_ebx(1);
     smp_num_siblings = (ebx & 0xff0000) >> 16;
-    
+
     if (smp_num_siblings >= 2)
 	return 1;
     return 0;

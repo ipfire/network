@@ -20,43 +20,43 @@ import logging
 log = logging.getLogger("pomona")
 
 class LanguageWindow:
-	def __call__(self, screen, pomona):
-		id = pomona.id
-		languages = id.instLanguage.available()
-		languages.sort()
-		
-		current = id.instLanguage.getCurrent()
-		
-		height = min((8, len(languages)))
-		buttons = [TEXT_OK_BUTTON, TEXT_BACK_BUTTON]
+    def __call__(self, screen, pomona):
+        id = pomona.id
+        languages = id.instLanguage.available()
+        languages.sort()
 
-		translated = []
-		for lang in languages:
-			translated.append((_(lang), id.instLanguage.getNickByName(lang)))
-		
-		(button, choice) = \
-			ListboxChoiceWindow(screen, _("Language Selection"),
-			_("What language would you like to use during the "
-				"installation process?"), translated, 
-			buttons, width = 30, default = _(current), scroll = 1,
-			height = height, help = "lang")
+        current = id.instLanguage.getCurrent()
 
-		if button == TEXT_BACK_CHECK:
-			return INSTALL_BACK
+        height = min((8, len(languages)))
+        buttons = [TEXT_OK_BUTTON, TEXT_BACK_BUTTON]
 
-		if id.instLanguage.getFontFile(choice) == "none":
-			ButtonChoiceWindow(screen, "Language Unavailable",
-			                   "%s display is unavailable in text mode.  The "
-			                   "installation will continue in English." % (choice,),
-			                   buttons=[TEXT_OK_BUTTON])
-			id.instLanguage.setRuntimeDefaults(choice)
-			id.timezone.setTimezoneInfo(id.instLanguage.getDefaultTimeZone())
-			return INSTALL_OK
+        translated = []
+        for lang in languages:
+            translated.append((_(lang), id.instLanguage.getNickByName(lang)))
 
-		id.instLanguage.setRuntimeLanguage(choice)
-		id.instLanguage.setDefault(choice)
-		id.timezone.setTimezoneInfo(id.instLanguage.getDefaultTimeZone())
-	
-		pomona.intf.drawFrame()
-	
-		return INSTALL_OK
+        (button, choice) = \
+                ListboxChoiceWindow(screen, _("Language Selection"),
+                _("What language would you like to use during the "
+                        "installation process?"), translated,
+                buttons, width = 30, default = _(current), scroll = 1,
+                height = height, help = "lang")
+
+        if button == TEXT_BACK_CHECK:
+            return INSTALL_BACK
+
+        if id.instLanguage.getFontFile(choice) == "none":
+            ButtonChoiceWindow(screen, "Language Unavailable",
+                               "%s display is unavailable in text mode.  The "
+                               "installation will continue in English." % (choice,),
+                               buttons=[TEXT_OK_BUTTON])
+            id.instLanguage.setRuntimeDefaults(choice)
+            id.timezone.setTimezoneInfo(id.instLanguage.getDefaultTimeZone())
+            return INSTALL_OK
+
+        id.instLanguage.setRuntimeLanguage(choice)
+        id.instLanguage.setDefault(choice)
+        id.timezone.setTimezoneInfo(id.instLanguage.getDefaultTimeZone())
+
+        pomona.intf.drawFrame()
+
+        return INSTALL_OK

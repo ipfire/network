@@ -20,18 +20,18 @@ from constants_text import *
 from autopart import PARTMETHOD_TYPE_DESCR_TEXT
 
 class PartitionMethod:
-	def __call__(self, screen, partitions, instclass):
-		rc = ButtonChoiceWindow(screen, _("Disk Partitioning Setup"),
-																		_(PARTMETHOD_TYPE_DESCR_TEXT),
-														[ (_("Autopartition"), "auto"),
-															(_("Disk Druid"), "ds"), TEXT_BACK_BUTTON ],
-														width = 50, help = "parttool")
+    def __call__(self, screen, partitions, instclass):
+        rc = ButtonChoiceWindow(screen, _("Disk Partitioning Setup"),
+                                                                                                                                        _(PARTMETHOD_TYPE_DESCR_TEXT),
+                                                                                                        [ (_("Autopartition"), "auto"),
+                                                                                                                (_("Disk Druid"), "ds"), TEXT_BACK_BUTTON ],
+                                                                                                        width = 50, help = "parttool")
 
-		if rc == TEXT_BACK_CHECK:
-			return INSTALL_BACK
-		elif rc == "ds":
-			partitions.useAutopartitioning = 0
-		else:
-			partitions.useAutopartitioning = 1
+        if rc == TEXT_BACK_CHECK:
+            return INSTALL_BACK
+        elif rc == "ds":
+            partitions.useAutopartitioning = 0
+        else:
+            partitions.useAutopartitioning = 1
 
-		return INSTALL_OK
+        return INSTALL_OK
