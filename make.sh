@@ -460,6 +460,7 @@ installer_build() {
 	ipfire_make strace
 	ipfire_make cpio
 	ipfire_make lzma
+	ipfire_make reiserfsprogs
 	ipfire_make pyfire
 	ipfire_make pomona
 	ipfire_make busybox
