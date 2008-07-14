@@ -186,6 +186,16 @@ define LOAD
 		python $(DIR_TOOLS)/downloader $(URL_IPFIRE)/$@
 endef
 
+ifeq "$(STAGE)" "installer"
+define PYTHON_COMPILE
+	find $(INSTALLER_DIR)/usr/lib/python*/ -name *.py | xargs /usr/local/bin/py-compile
+endef
+else
+define PYTHON_COMPILE
+	find /usr/lib/python*/ -name *.py | xargs /usr/local/bin/py-compile
+endef
+endif
+
 define PAK
 	# Bringing the files to their right place.
 	@rm -rf /install/packages/package
