@@ -29,6 +29,14 @@ if [ $# = 0 ]; then
     exit 1
 fi
 
+files=""
+for i in $*; do
+	if [ -e ${i}c ] && [ -e ${i}o ]; then
+		continue # all files we want are already there
+	fi
+	files="$files $i"
+done
+
 # if basedir was given, then it should be prepended to filenames before
 # byte compilation.
 if [ -z "$basedir" ]; then
@@ -40,12 +48,12 @@ fi
 $PYTHON -c "
 import sys, os, string, py_compile
 
-files = '''$*'''
+files = '''$files'''
 print 'Byte-compiling python modules...'
 for file in string.split(files):
     $trans
     if not os.path.exists(path) or not (len(path) >= 3 and path[-3:] == '.py'):
-	continue
+        continue
     print file,
     sys.stdout.flush()
     py_compile.compile(path)
@@ -55,12 +63,12 @@ print" || exit $?
 $PYTHON -O -c "
 import sys, os, string, py_compile
 
-files = '''$*'''
+files = '''$files'''
 print 'Byte-compiling python modules (optimised versions) ...'
 for file in string.split(files):
     $trans
     if not os.path.exists(path) or not (len(path) >= 3 and path[-3:] == '.py'):
-	continue
+        continue
     print file,
     sys.stdout.flush()
     py_compile.compile(path)
