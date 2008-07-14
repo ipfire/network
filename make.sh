@@ -129,6 +129,7 @@ base_build() {
 	ipfire_make make
 	ipfire_make attr
 	ipfire_make libcap2
+	ipfire_make paxctl
 	ipfire_make autoconf
 	ipfire_make automake
 	ipfire_make bash
