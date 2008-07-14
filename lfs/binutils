@@ -93,6 +93,7 @@ ifeq "$(PASS)" "2"
 		AR=$(IFS_TARGET)-ar \
 		RANLIB=$(IFS_TARGET)-ranlib \
 		../$(THISAPP)/configure \
+			--target=$(IFS_TARGET) \
 			--prefix=$(TOOLS_DIR) \
 			--disable-nls \
 			--with-lib-path=$(TOOLS_DIR)/lib

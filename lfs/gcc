@@ -39,6 +39,10 @@ else
 	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
 endif
 
+ifeq "$(MACHINE)" "i586"
+	CONFIGURE_ARGS = --disable-decimal-float
+endif
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -89,7 +93,8 @@ endif
 			--enable-checking=none \
 			--with-mpfr=$(TOOLS_DIR) \
 			--with-gmp=$(TOOLS_DIR) \
-			--disable-werror
+			--disable-werror \
+			$(CONFIGURE_ARGS)
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/gcc-build && make install
 
@@ -138,7 +143,8 @@ endif
 			--disable-bootstrap \
 			--disable-werror \
 			--disable-nls \
-			--disable-libgomp
+			--disable-libgomp \
+			$(CONFIGURE_ARGS)
 	## Libgomp was disabled here because it doesn't want to compile ##
 	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
 	cd $(DIR_SRC)/gcc-build && make install
