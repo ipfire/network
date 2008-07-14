@@ -62,5 +62,7 @@ ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && python setup.py install --prefix=$(INSTALLER_DIR)/usr
 endif
 
+	$(PYTHON_COMPILE)
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

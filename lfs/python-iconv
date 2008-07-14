@@ -64,5 +64,7 @@ ifeq "$(STAGE)" "installer"
 		make install DESTDIR=$(INSTALLER_DIR)
 endif
 
+	$(PYTHON_COMPILE)
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

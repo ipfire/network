@@ -57,5 +57,8 @@ $(TARGET):
 		PYTHONHOME=$(INSTALLER_DIR)/usr \
 		make all install \
 		libdir=$(INSTALLER_DIR)/usr/lib/python2.5/site-packages
+
+	$(PYTHON_COMPILE)
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

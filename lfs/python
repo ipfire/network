@@ -95,5 +95,7 @@ ifeq "$(STAGE)" "installer"
 		PYTHON_DISABLE_MODULES="$(PYTHON_DISABLE_MODULES)"
 endif
 
+	$(PYTHON_COMPILE)
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
