@@ -37,7 +37,6 @@ install: all
 			-e "s/KVER/$(KVER)/g" \
 			-i $(PYTHONLIBDIR)/constants.py
 
-	sh ../py-compile $(PYTHONLIBDIR)/*.py
 	-mkdir -p $(DESTDIR)/sbin
 	#ln -svf ../usr/lib/$(PSNAME)/installer.py $(DESTDIR)/sbin/$(PSNAME)
 	install -m 755 $(PSNAME) $(DESTDIR)/sbin/$(PSNAME)
