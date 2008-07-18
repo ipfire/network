@@ -36,6 +36,9 @@ SSP=1
 PIE=1
 PAX=1
 
+# Embedded build
+EMBEDDED=0
+
 # Parallelism flag
 PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
 DISTCC_HOSTS=localhost
@@ -397,6 +400,7 @@ ipfire_make() {
 		SSP=$SSP \
 		PIE=$PIE \
 		PAX=$PAX \
+		EMBEDDED=$EMBEDDED \
 		LOGFILE=`echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g"` \
 		bash -x -c "cd /usr/src/lfs && \
 		$EXTRA_MAKE make -f $* LFS_BASEDIR=/usr/src install" >>$LOGFILE 2>&1
@@ -523,6 +527,20 @@ prepareenv() {
 	fi
 
 	export SSP PIE PAX
+
+	##############################################################################
+	# Embedded build                                                             #
+	##############################################################################
+
+	echo -ne "Embedded build"
+	if [ $EMBEDDED -eq 1 ]; then
+		beautify message ON
+		check_loop || exiterror "Can't build flash images on this machine."
+	else
+		beautify message OFF
+	fi
+
+	export EMBEDDED
 
 	##############################################################################
 	# Building Linux From Scratch system configuration                           #

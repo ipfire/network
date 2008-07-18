@@ -185,3 +185,12 @@ check_user() {
 		exit 1
 	fi
 }
+
+check_loop() {
+	for i in $(seq 0 7); do
+		if [ -e /dev/loop/$i ] || [ -e /dev/loop$i ]; then
+			return 0
+		fi
+	done
+	return 1
+}

@@ -482,21 +482,32 @@ packages_build() {
 	build_spy set stage ${STAGE} &
 
 	toolchain_make strip
-	ipfire_make initramfs
 
 	# Generate ChangeLog
 	git_log
 
-	# Generating list of packages used
+	if [ ${EMBEDDED} -eq 0 ]; then
+		ipfire_make initramfs
 
-	ipfire_make cdrom
-	
-	# Check if there is a loop device for building in virtual environments
-	#if [ -e /dev/loop/0 ] || [ -e /dev/loop0 ]; then
-	#	ipfire_make usb-stick
-	#fi
-	mv $LFS/$IMAGES_DIR/{*.iso,*.tgz,*.img.gz} $BASEDIR >> $LOGFILE 2>&1
+		ipfire_make cdrom
 
+		if check_loop; then
+			#ipfire_make usb-stick
+			:
+		else
+			echo -n "Can't build usb-key images on this machine"
+			beautify message WARN
+		fi
+		mv $LFS/$IMAGES_DIR/{*.iso,*.tgz,*.img.gz} $BASEDIR >> $LOGFILE 2>&1
+	else
+		if check_loop; then
+			# We put here the code that is done when
+			# we do an embedded build
+			:
+		fi
+	fi
+
+	# Build packages
 	for i in $(ls -1 $BASEDIR/src/rootfiles/extras); do
 		if [ -e $BASEDIR/lfs/$i ]; then
 			echo -n $i
