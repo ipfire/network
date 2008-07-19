@@ -116,25 +116,25 @@ class PartitionWindow:
                 if part.type & parted.PARTITION_EXTENDED:
                     if extendedParent:
                         raise RuntimeError, ("can't handle more than"
-                                                                                                         "one extended partition per disk")
+                                             "one extended partition per disk")
                     extendedParent = part.num
                     indent = 2 * " "
                 elif part.type & parted.PARTITION_LOGICAL:
                     if not extendedParent:
                         raise RuntimeError("crossed logical partition "
-                                                                                                 "before extended")
+                                           "before extended")
                     indent = 4 * " "
                 else:
                     indent = 2 * " "
 
                 if part.type & parted.PARTITION_FREESPACE:
                     self.lb.append(["%s%s" %(indent, _("Free space")),
-                                                                                    "%d" %(start),
-                                                                                    "%d" %(end),
-                                                                                    "%dM" %(size),
-                                                                                    "%s" %(ptype),
-                                                                                    ""], part,
-                                                                                    [LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT])
+                                    "%d" %(start),
+                                    "%d" %(end),
+                                    "%dM" %(size),
+                                    "%s" %(ptype),
+                                    ""], part,
+                                    [LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT])
 
                 else:
                     dev = devify(get_partition_name(part))
@@ -142,12 +142,12 @@ class PartitionWindow:
                     if dev.startswith("/dev/"):
                         dev = dev[5:]
                     self.lb.append(["%s%s" %(indent, dev),
-                                                                                    "%d" %(start),
-                                                                                    "%d" %(end),
-                                                                                    "%dM" %(size),
-                                                                                    "%s" %(ptype),
-                                                                                    "%s" %(mount)], part,
-                                                                                    [LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT])
+                                    "%d" %(start),
+                                    "%d" %(end),
+                                    "%dM" %(size),
+                                    "%s" %(ptype),
+                                    "%s" %(mount)], part,
+                                    [LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT])
                 part = disk.next_partition(part)
 
     def refresh(self):
@@ -174,8 +174,8 @@ class PartitionWindow:
                 log.error("Failed to restore original info")
 
             self.intf.messageWindow(_("Error Partitioning"),
-                                                                                                            _("Could not allocate requested partitions: %s.")
-                                                                                                    % (msg))
+                                    _("Could not allocate requested partitions: %s.")
+                                    % (msg))
             rc = -1
         except PartitioningWarning, msg:
             rc = ButtonChoiceWindow(self.screen, _("Warning"), _("Warning: %s") %(msg),
@@ -230,8 +230,7 @@ class PartitionWindow:
         return (mount, mountgrid)
 
     # make the list of available filesystems and its label
-    def makeFsList(self, request, usecallback=1, uselabel=1, usetypes=None,
-                                                                    ignorefs = None):
+    def makeFsList(self, request, usecallback=1, uselabel=1, usetypes=None, ignorefs = None):
         subgrid = Grid(1, 2)
         row = 0
         # filesystem type selection
@@ -444,11 +443,11 @@ class PartitionWindow:
                 badblocksCB.setFlags(FLAG_DISABLED, flag)
 
         poplevel = GridFormHelp(self.screen, _("File System Options"),
-                                                                                                                                                                 "fsoption", 1, 6)
+                                               "fsoption", 1, 6)
         row = 0
         poplevel.add(TextboxReflowed(40, _("Please choose how you would "
-                                                                                                                                                 "like to prepare the file system "
-                                                                                                                                                 "on this partition.")), 0, 0)
+                                           "like to prepare the file system "
+                                           "on this partition.")), 0, 0)
         row = row + 1
         subgrid = Grid(2, 5)
         srow = 0
@@ -459,7 +458,7 @@ class PartitionWindow:
             badblocksCB = None
 
         noformatrb = SingleRadioButton(_("Leave unchanged (preserve data)"),
-                                                                                                                                        None, not format and not migrate)
+                                       None, not format and not migrate)
         subgrid.setField(noformatrb, 0, srow, (0,0,0,1),anchorLeft = 1)
 
         srow = srow + 1
@@ -493,7 +492,7 @@ class PartitionWindow:
             migtypes = origrequest.origfstype.getMigratableFSTargets()
 
             (migtype, miggrid) = self.makeFsList(origrequest, usecallback = 0,
-                                                                                                                                                                    uselabel = 0, usetypes = migtypes)
+                                                 uselabel = 0, usetypes = migtypes)
 
             if newfstype and newfstype.getName() in migtypes:
                 migtype.setCurrent(newfstype)
@@ -629,8 +628,8 @@ class PartitionWindow:
             popbb = ButtonBar(self.screen, (TEXT_OK_BUTTON, TEXT_CANCEL_BUTTON))
         else:
             popbb = ButtonBar(self.screen, (TEXT_OK_BUTTON,
-                                                                                    (_("File System Options"), "fsopts"),
-                                                                                    TEXT_CANCEL_BUTTON))
+                             (_("File System Options"), "fsopts"),
+                              TEXT_CANCEL_BUTTON))
         poplevel.add(popbb, 0, row, (0,1,0,0), growx = 1)
 
         while 1:
@@ -685,7 +684,7 @@ class PartitionWindow:
                 if origrequest.start == None:
                     if invalidInteger(size.value()):
                         self.intf.messageWindow(_("Invalid Entry for Partition Size"),
-                                                                                                                                invalidInteger(size.value()))
+                                                invalidInteger(size.value()))
                         continue
                     request.size = int(size.value())
 
@@ -717,7 +716,7 @@ class PartitionWindow:
                 else:
                     if invalidInteger(start.value()):
                         self.intf.messageWindow(_("Invalid Entry for Starting Cylinder"),
-                                                                                                                                invalidInteger(start.value()))
+                                                invalidInteger(start.value()))
                         continue
 
                     request.start = int(start.value())
@@ -731,7 +730,7 @@ class PartitionWindow:
                     if cyltype == "end":
                         if invalidInteger(end.value()):
                             self.intf.messageWindow(_("Invalid Entry for End Cylinder"),
-                                                                                                                                    invalidInteger(end.value()))
+                                                    invalidInteger(end.value()))
                             continue
 
                         request.end = int(end.value())
@@ -739,7 +738,7 @@ class PartitionWindow:
                     elif cyltype == "size":
                         if invalidInteger(size.value()):
                             self.intf.messageWindow(_("Invalid Entry for Partition Size"),
-                                                                                                                                    invalidInteger(size.value()))
+                                                    invalidInteger(size.value()))
                             continue
                         request.end = None
                         request.size = int(size.value())
@@ -841,17 +840,17 @@ class PartitionWindow:
         self.g = GridFormHelp(screen, _("Partitioning"), "partition", 1, 5)
 
         self.lb = CListbox(height=10, cols=6,
-                                                        col_widths=[17,6,6,7,10,12],
-                                                        scroll=1, returnExit = 1,
-                                                        width=70, col_pad=2,
-                                                        col_labels=[_('Device'), _('Start'), _('End'), _('Size'), _('Type'), _('Mount Point')],
-                                                        col_label_align=[CENTER, CENTER,CENTER,CENTER,CENTER,CENTER])
+                           col_widths=[17,6,6,7,10,12],
+                           scroll=1, returnExit = 1,
+                           width=70, col_pad=2,
+                           col_labels=[_('Device'), _('Start'), _('End'), _('Size'), _('Type'), _('Mount Point')],
+                           col_label_align=[CENTER, CENTER,CENTER,CENTER,CENTER,CENTER])
         self.g.add(self.lb, 0, 1)
 
         self.bb = ButtonBar (screen, ((_("New"), "new", "F2"),
-                                                                                                (_("Edit"), "edit", "F3"),
-                                                                                                (_("Delete"), "delete", "F4"),
-                                                                                                TEXT_OK_BUTTON, TEXT_BACK_BUTTON))
+                                      (_("Edit"), "edit", "F3"),
+                                      (_("Delete"), "delete", "F4"),
+                                      TEXT_OK_BUTTON, TEXT_BACK_BUTTON))
 
         screen.pushHelpLine( _("    F1-Help     F2-New      F3-Edit   F4-Delete    F5-Reset    F12-OK        "))
 
@@ -884,7 +883,7 @@ class PartitionWindow:
             else:
                 if not self.partitions.getRequestByMountPoint("/"):
                     self.intf.messageWindow(_("No Root Partition"),
-                                                                                                                    _("Installation requires a / partition."))
+                                            _("Installation requires a / partition."))
                     continue
 
                 (errors, warnings) = self.partitions.sanityCheckAllRequests(self.diskset)
@@ -926,14 +925,14 @@ class PartitionTypeWindow:
             g = GridFormHelp(screen, _("Partitioning Type"), "autopart", 1, 6)
 
             txt = TextboxReflowed(65, _("Installation requires partitioning "
-                                                                                                                            "of your hard drive.  The default "
-                                                                                                                            "layout is reasonable for most "
-                                                                                                                            "users.  You can either choose "
-                                                                                                                            "to use this or create your own."))
+                                        "of your hard drive.  The default "
+                                        "layout is reasonable for most "
+                                        "users.  You can either choose "
+                                        "to use this or create your own."))
             g.add(txt, 0, 0, (0, 0, 0, 0))
 
             opts = ((_("Remove all partitions on selected drives and create default layout"), CLEARPART_TYPE_ALL),
-                                            (_("Create custom layout"), -1))
+                    (_("Create custom layout"), -1))
             typebox = Listbox(height = len(opts), scroll = 0)
             for (txt, val) in opts:
                 typebox.append(txt, val)
@@ -948,7 +947,7 @@ class PartitionTypeWindow:
             # list of drives to select which to clear
             subgrid = Grid(1, 2)
             subgrid.setField(TextboxReflowed(55, _("Which drive(s) do you want to "
-                                                                                                                                                                     "use for this installation?")), 0, 0)
+                                                   "use for this installation?")), 0, 0)
             drivelist = CheckboxTree(height=2, scroll=1)
             subgrid.setField(drivelist, 0, 1)
             g.add(subgrid, 0, 2, (0, 1, 0, 0))
@@ -1030,8 +1029,8 @@ class PartitionTypeWindow:
 
         if partmethod_ans != -1:
             reviewLayout = pomona.intf.messageWindow(_("Review Partition Layout"),
-                                                                                                                    _("Review and modify partitioning layout?"),
-                                                                                                                    type = "yesno")
+                                                     _("Review and modify partitioning layout?"),
+                                                     type = "yesno")
 
             if reviewLayout != 1:
                 pomona.dispatch.skipStep("partition", skip = 1)

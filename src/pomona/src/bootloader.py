@@ -57,7 +57,7 @@ def bootloaderSetupChoices(pomona):
     if not bootDev:
         bootDev = pomona.id.fsset.getEntryByMountPoint("/boot")
     part = partedUtils.get_partition_by_name(pomona.id.diskset.disks,
-                                                                                                                                                                            bootDev.device.getDevice())
+                                             bootDev.device.getDevice())
     if part and partedUtils.end_sector_to_cyl(part.geom.dev, part.geom.end) >= 1024:
         pomona.id.bootloader.above1024 = 1
 
@@ -115,16 +115,16 @@ def writeBootloader(pomona):
     dosync()
     try:
         pomona.id.bootloader.write(pomona.rootPath, pomona.id.fsset, pomona.id.bootloader,
-                                                                                                                        pomona.id.instLanguage, kernelList, otherList, defaultDev,
-                                                                                                                        pomona.intf)
+                                   pomona.id.instLanguage, kernelList, otherList, defaultDev,
+                                   pomona.intf)
         w.pop()
     except BootyNoKernelWarning:
         w.pop()
         if pomona.intf:
             pomona.intf.messageWindow(_("Warning"),
-                                                                                                                    _("No kernel packages were installed on your "
-                                                                                                                            "system.  Your boot loader configuration "
-                                                                                                                            "will not be changed."))
+                                      _("No kernel packages were installed on your "
+                                        "system.  Your boot loader configuration "
+                                        "will not be changed."))
     dosync()
 
 # return instance of the appropriate bootloader for our arch

@@ -64,7 +64,7 @@ def printNewRequestsCyl(diskset, newRequest):
         part = partedUtils.get_partition_by_name(diskset.disks, req.device)
 ##      print req
 ##      print "Start Cyl:%s    End Cyl: %s" % (partedUtils.start_sector_to_cyl(part.geom.dev, part.geom.start),
-##                                                                                                                                                                      partedUtils.end_sector_to_cyl(part.geom.dev, part.geom.end))
+##                                             partedUtils.end_sector_to_cyl(part.geom.dev, part.geom.end))
 
 def printFreespaceitem(part):
     return partedUtils.get_partition_name(part), part.geom.start, part.geom.end, partedUtils.getPartSizeMB(part)
@@ -259,7 +259,7 @@ def fitSized(diskset, requests, primOnly = 0, newParts = None):
 
     for num in number:
         for request in todo[num]:
-#                       print "\nInserting ->",request
+#           print "\nInserting ->",request
             if requests.isBootable(request):
                 isBoot = 1
             else:
@@ -274,7 +274,7 @@ def fitSized(diskset, requests, primOnly = 0, newParts = None):
                 # drives.  this keeps us on the first possible drive
                 if isBoot and largestPart[1]:
                     break
-##                      print "Trying drive", drive
+##              print "Trying drive", drive
                 disk = diskset.disks[drive]
                 numPrimary = len(partedUtils.get_primary_partitions(disk))
                 numLogical = len(partedUtils.get_logical_partitions(disk))
@@ -589,9 +589,9 @@ def growParts(diskset, requests, newParts):
                         maxsect = long(maxfree) + startSize
                         imposedMax = 1
 
-#                                       print "freesize, max, maxfree = ",freeSize[drive],maxsect, maxfree
-#                                       print "freeSizeMB, maxMB = ", freeSize[drive] * sector_size/(1024.0 * 1024.0), maxsect * sector_size/(1024.0*1024.0), largestFree[drive] * sector_size/(1024.0*1024.0)
-#                                       print "startsize = ",startSize
+#                   print "freesize, max, maxfree = ",freeSize[drive],maxsect, maxfree
+#                   print "freeSizeMB, maxMB = ", freeSize[drive] * sector_size/(1024.0 * 1024.0), maxsect * sector_size/(1024.0*1024.0), largestFree[drive] * sector_size/(1024.0*1024.0)
+#                   print "startsize = ",startSize
 
                     min = startSize
                     max = maxsect
@@ -599,15 +599,15 @@ def growParts(diskset, requests, newParts):
                     cur = max - (diff / 2)
                     lastDiff = 0
 
-#                                       binary search
-##                              print "start min, max, cur, diffs = ",min,max,cur,diff,lastDiff
+#                   binary search
+##                  print "start min, max, cur, diffs = ",min,max,cur,diff,lastDiff
                     inner_iter = 0
                     ret = PARTITION_SUCCESS # request succeeded with initial size
                     while (max != min) and (lastDiff != diff) and (inner_iter < 2000):
-##                                      printNewRequestsCyl(diskset, newRequest)
+##                      printNewRequestsCyl(diskset, newRequest)
 
                         # XXX need to request in sectors preferably, more accurate
-##                                      print "trying cur=%s" % cur
+##                      print "trying cur=%s" % cur
                         request.requestSize = (cur*sector_size)/1024.0/1024.0
 
                         # try adding
@@ -617,44 +617,44 @@ def growParts(diskset, requests, newParts):
                         except PartitioningError, msg:
                             ret = PARTITION_FAIL
                             max = cur
-##                                                      print "!!!!!!!!!!! processPartitioning failed - %s" % msg
+##                          print "!!!!!!!!!!! processPartitioning failed - %s" % msg
 
                         lastDiff = diff
                         diff = max - min
 
-#                                               print min, max, diff, cylsectors
-#                                               print diskset.diskState()
+#                       print min, max, diff, cylsectors
+#                       print diskset.diskState()
 
                         cur = max - (diff / 2)
 
                         inner_iter = inner_iter + 1
-#                                               print "sizes at end of loop - cur: %s min:%s max:%s diff:%s lastDiff:%s" % (cur,min,max,diff,lastDiff)
+#                       print "sizes at end of loop - cur: %s min:%s max:%s diff:%s lastDiff:%s" % (cur,min,max,diff,lastDiff)
 
-#                                               freeSize[drive] = freeSize[drive] - (min - startSize)
-#                                               print "shrinking freeSize to ",freeSize[drive], lastFreeSize
-#                                               if freeSize[drive] < 0:
-#                                                       print "freesize < 0!"
-#                                                       freeSize[drive] = 0
+#                       freeSize[drive] = freeSize[drive] - (min - startSize)
+#                       print "shrinking freeSize to ",freeSize[drive], lastFreeSize
+#                       if freeSize[drive] < 0:
+#                               print "freesize < 0!"
+#                               freeSize[drive] = 0
 
                     # we could have failed on the last try, in which case we
                     # should go back to the smaller size
                     if ret == PARTITION_FAIL:
-#                                               print "growing finally failed at size", min
+#                       print "growing finally failed at size", min
                         request.requestSize = min*sector_size/1024.0/1024.0
                         processPartitioning(diskset, newRequest, newParts)
 
-#                                       print "end min, max, cur, diffs = ",min,max,cur,diff,lastDiff
-#                                       print "%s took %s loops" % (request.mountpoint, inner_iter)
+#                   print "end min, max, cur, diffs = ",min,max,cur,diff,lastDiff
+#                   print "%s took %s loops" % (request.mountpoint, inner_iter)
                     lastFreeSize = freeSize[drive]
                     (free, freeSize, largestFree) = getFreeSpace(diskset)
-#                                       print Freespace(free)
+#                   print Freespace(free)
 
                     if ret == PARTITION_FAIL or (max == maxsect and imposedMax):
-#                                               print "putting ",request.uniqueID,request.mountpoint," in grownList"
+#                       print "putting ",request.uniqueID,request.mountpoint," in grownList"
                         grownList.append(request.uniqueID)
                         growSize[drive] = growSize[drive] - origSize[request.uniqueID]
                         if growSize[drive] < 0:
-#                                                       print "growsize < 0!"
+#                           print "growsize < 0!"
                             growSize[drive] = 0
 
 def setPreexistParts(diskset, requests):
@@ -809,7 +809,7 @@ def doPartitioning(diskset, requests, doRefresh = 1):
     elif ret != PARTITION_SUCCESS:
         # more specific message?
         raise PartitioningWarning, _("Boot partition %s may not meet booting constraints for your architecture.") %(requests.getBootableRequest()[0].mountpoint,)
-#               raise PartitioningWarning, _("Boot partition %s may not meet booting constraints for your architecture.  Creation of a boot disk is highly encouraged.") %(requests.getBootableRequest()[0].mountpoint,)
+#       raise PartitioningWarning, _("Boot partition %s may not meet booting constraints for your architecture.  Creation of a boot disk is highly encouraged.") %(requests.getBootableRequest()[0].mountpoint,)
 
 # given clearpart specification execute it
 # probably want to reset diskset and partition request lists before calling
@@ -998,19 +998,19 @@ def doAutoPartition(pomona):
         errors = req.sanityCheckRequest(partitions)
         if errors:
             pomona.intf.messageWindow(_("Automatic Partitioning Errors"),
-                               _("The following errors occurred with your "
-                                 "partitioning:\n\n%s\n\n"
-                                 "Press 'OK' to reboot your system.") %
-                               (errors,), custom_icon='error')
+                                      _("The following errors occurred with your "
+                                        "partitioning:\n\n%s\n\n"
+                                        "Press 'OK' to reboot your system.")
+                                      % (errors,), custom_icon='error')
             sys.exit(0)
 
     try:
         doPartitioning(diskset, partitions, doRefresh = 0)
     except PartitioningWarning, msg:
         pomona.intf.messageWindow(_("Warnings During Automatic Partitioning"),
-                                                                                                                _("Following warnings occurred during automatic "
-                                                                                                                        "partitioning:\n\n%s") % (msg.value,),
-                                                                                                                custom_icon='warning')
+                                  _("Following warnings occurred during automatic "
+                                    "partitioning:\n\n%s") % (msg.value,),
+                                  custom_icon='warning')
     except PartitioningError, msg:
         # restore drives to original state
         diskset.refreshDevices()
@@ -1062,11 +1062,11 @@ def autoCreatePartitionRequests(autoreq):
             ptype = fsset.fileSystemTypeGetDefault()
 
         newrequest = partRequests.PartitionSpec(ptype,
-                                                                                                                                                                        mountpoint = mntpt,
-                                                                                                                                                                        size = minsize,
-                                                                                                                                                                        maxSizeMB = maxsize,
-                                                                                                                                                                        grow = grow,
-                                                                                                                                                                        format = format)
+                                                mountpoint = mntpt,
+                                                size = minsize,
+                                                maxSizeMB = maxsize,
+                                                grow = grow,
+                                                format = format)
 
         requests.append(newrequest)
 
@@ -1128,24 +1128,24 @@ def setDefaultPartitioning(partitions, clear = CLEARPART_TYPE_ALL, doClear = 1):
 
 # XXX hack but these are common strings to TUI
 PARTMETHOD_TYPE_DESCR_TEXT = N_("Automatic Partitioning sets partitions "
-                                                                                                                                "based on the selected installation type. "
-                                                                                                                                "You also "
-                                                                                                                                "can customize the partitions once they "
-                                                                                                                                "have been created.\n\n"
-                                                                                                                                "The manual disk partitioning tool, Disk Druid, "
-                                                                                                                                "allows you "
-                                                                                                                                "to create partitions in an interactive "
-                                                                                                                                "environment. You can set the file system "
-                                                                                                                                "types, mount points, partition sizes, and more.")
+                                "based on the selected installation type. "
+                                "You also "
+                                "can customize the partitions once they "
+                                "have been created.\n\n"
+                                "The manual disk partitioning tool, Disk Druid, "
+                                "allows you "
+                                "to create partitions in an interactive "
+                                "environment. You can set the file system "
+                                "types, mount points, partition sizes, and more.")
 
 AUTOPART_DISK_CHOICE_DESCR_TEXT = N_("Before automatic partitioning can be "
-                                                                                                                                                 "set up by the installation program, you "
-                                                                                                                                                 "must choose how to use the space on "
-                                                                                                                                                 "your hard drives.")
+                                     "set up by the installation program, you "
+                                     "must choose how to use the space on "
+                                     "your hard drives.")
 
 CLEARPART_TYPE_ALL_DESCR_TEXT = N_("Remove all partitions on this system")
 
 CLEARPART_TYPE_ALL_WARNING_MSG = N_("You have chosen to remove "
-                                                                                                                                                "all partitions (ALL DATA) on the "
-                                                                                                                                                "following drives:%s\nAre you sure you "
-                                                                                                                                                "want to do this?")
+                                    "all partitions (ALL DATA) on the "
+                                    "following drives:%s\nAre you sure you "
+                                    "want to do this?")

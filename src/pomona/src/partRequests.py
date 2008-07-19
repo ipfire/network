@@ -52,10 +52,9 @@ class DeleteSpec:
 class RequestSpec:
     """Generic Request specification."""
     def __init__(self, fstype, size = None, mountpoint = None, format = None,
-                                                     badblocks = None, preexist = 0, fslabel = None,
-                                                     migrate = None, origfstype = None, bytesPerInode = 4096):
+                 badblocks = None, preexist = 0, fslabel = None,
+                 migrate = None, origfstype = None, bytesPerInode = 4096):
         """Create a generic RequestSpec.
-
         This should probably never be externally used.
         """
 
@@ -100,14 +99,14 @@ class RequestSpec:
             fsname = "None"
 
         str = ("Generic Request -- mountpoint: %(mount)s  uniqueID: %(id)s\n"
-                                 "  type: %(fstype)s  format: %(format)s  badblocks: %(bb)s\n"
-                                 "  device: %(dev)s  migrate: %(migrate)s  fslabel: %(fslabel)s\n"
-                                 "  bytesPerInode:  %(bytesPerInode)s  options: '%(fsopts)s'"
-                                % {"mount": self.mountpoint, "id": self.uniqueID,
-                                         "fstype": fsname, "format": self.format, "bb": self.badblocks,
-                                         "dev": self.device, "migrate": self.migrate,
-                                         "fslabel": self.fslabel, "bytesPerInode": self.bytesPerInode,
-                                         "fsopts": self.fsopts})
+               "  type: %(fstype)s  format: %(format)s  badblocks: %(bb)s\n"
+               "  device: %(dev)s  migrate: %(migrate)s  fslabel: %(fslabel)s\n"
+               "  bytesPerInode:  %(bytesPerInode)s  options: '%(fsopts)s'"
+               % {"mount": self.mountpoint, "id": self.uniqueID,
+                  "fstype": fsname, "format": self.format, "bb": self.badblocks,
+                  "dev": self.device, "migrate": self.migrate,
+                  "fslabel": self.fslabel, "bytesPerInode": self.bytesPerInode,
+                  "fsopts": self.fsopts})
         return str
 
     def getActualSize(self, partitions, diskset):
@@ -131,9 +130,9 @@ class RequestSpec:
             mountpoint = self.mountpoint
 
         entry = fsset.FileSystemSetEntry(device, mountpoint, self.fstype,
-                                                                                                                                         origfsystem=self.origfstype,
-                                                                                                                                         bytesPerInode=self.bytesPerInode,
-                                                                                                                                         options=self.fsopts)
+                                         origfsystem=self.origfstype,
+                                         bytesPerInode=self.bytesPerInode,
+                                         options=self.fsopts)
         if self.format:
             entry.setFormat(self.format)
 
@@ -163,9 +162,9 @@ class RequestSpec:
     def doMountPointLinuxFSChecks(self):
         """Return an error string if the mountpoint is not valid for Linux FS."""
         mustbeonroot = ('/bin','/dev','/sbin','/etc','/lib','/root',
-                                                                        '/mnt', 'lost+found', '/proc')
+                        '/mnt', 'lost+found', '/proc')
         mustbeonlinuxfs = ('/', '/boot', '/var', '/tmp', '/usr', '/home',
-                                                                                 '/usr/share', '/usr/lib' )
+                           '/usr/share', '/usr/lib' )
 
         # these are symlinks so you cant make them mount points
         otherexcept = ('/var/mail', '/usr/tmp')
@@ -179,12 +178,12 @@ class RequestSpec:
         if self.fstype.isMountable():
             if self.mountpoint in mustbeonroot:
                 return _("This mount point is invalid. The %s directory must "
-                                                 "be on the / file system.") % (self.mountpoint,)
+                         "be on the / file system.") % (self.mountpoint,)
             elif self.mountpoint in otherexcept:
                 return _("The mount point %s cannot be used.  It must "
-                                                 "be a symbolic link for proper system "
-                                                 "operation.  Please select a different "
-                                                 "mount point.") % (self.mountpoint,)
+                         "be a symbolic link for proper system "
+                         "operation.  Please select a different "
+                         "mount point.") % (self.mountpoint,)
 
             if not self.fstype.isLinuxNativeFS():
                 if self.mountpoint in mustbeonlinuxfs:
@@ -209,8 +208,8 @@ class RequestSpec:
                 if request.mountpoint == mntpt:
                     if (not self.uniqueID or request.uniqueID != self.uniqueID):
                         return _("The mount point \"%s\" is already in use, "
-                                                         "please choose a different mount point."
-                                                % (mntpt))
+                                 "please choose a different mount point."
+                               % (mntpt))
         return None
 
     def doSizeSanityCheck(self):
@@ -223,10 +222,9 @@ class RequestSpec:
 
         if self.size and self.size > self.fstype.getMaxSizeMB():
             return (_("The size of the %s partition (%10.2f MB) "
-                                                    "exceeds the maximum size of %10.2f MB.")
-                                            % (self.fstype.getName(), self.size,
-                                                     self.fstype.getMaxSizeMB()))
-
+                      "exceeds the maximum size of %10.2f MB.")
+                    % (self.fstype.getName(), self.size,
+                       self.fstype.getMaxSizeMB()))
         return None
 
     # set skipMntPtExistCheck to non-zero if you want to handle this
@@ -303,10 +301,10 @@ class PartitionSpec(RequestSpec):
     """Object to define a requested partition."""
 
     def __init__(self, fstype, size = None, mountpoint = None,
-                                                            preexist = 0, migrate = None, grow = 0, maxSizeMB = None,
-                                                            start = None, end = None, drive = None, primary = None,
-                                                            format = None, multidrive = None, bytesPerInode = 4096,
-                                                            fslabel = None):
+                 preexist = 0, migrate = None, grow = 0, maxSizeMB = None,
+                 start = None, end = None, drive = None, primary = None,
+                 format = None, multidrive = None, bytesPerInode = 4096,
+                 fslabel = None):
         """Create a new PartitionSpec object.
 
         fstype is the fsset filesystem type.
@@ -334,10 +332,10 @@ class PartitionSpec(RequestSpec):
             origfs = None
 
         RequestSpec.__init__(self, fstype = fstype, size = size,
-                                                                                                mountpoint = mountpoint, format = format,
-                                                                                                preexist = preexist, migrate = None,
-                                                                                                origfstype = origfs, bytesPerInode = bytesPerInode,
-                                                                                                fslabel = fslabel)
+                             mountpoint = mountpoint, format = format,
+                             preexist = preexist, migrate = None,
+                             origfstype = origfs, bytesPerInode = bytesPerInode,
+                             fslabel = fslabel)
         self.type = REQUEST_NEW
 
         self.grow = grow
@@ -371,20 +369,20 @@ class PartitionSpec(RequestSpec):
             pre = "Existing"
 
         str = ("%(n)s Part Request -- mountpoint: %(mount)s uniqueID: %(id)s\n"
-                                 "  type: %(fstype)s  format: %(format)s  badblocks: %(bb)s\n"
-                                 "  device: %(dev)s drive: %(drive)s  primary: %(primary)s\n"
-                                 "  size: %(size)s  grow: %(grow)s  maxsize: %(max)s\n"
-                                 "  start: %(start)s  end: %(end)s  migrate: %(migrate)s  "
-                                 "  fslabel: %(fslabel)s  origfstype: %(origfs)s\n"
-                                 "  bytesPerInode: %(bytesPerInode)s  options: '%(fsopts)s'"
-                                % {"n": pre, "mount": self.mountpoint, "id": self.uniqueID,
-                                         "fstype": fsname, "format": self.format, "dev": self.device,
-                                         "drive": self.drive, "primary": self.primary,
-                                         "size": self.size, "grow": self.grow, "max": self.maxSizeMB,
-                                         "start": self.start, "end": self.end, "bb": self.badblocks,
-                                         "migrate": self.migrate, "fslabel": self.fslabel,
-                                         "origfs": oldfs, "bytesPerInode": self.bytesPerInode,
-                                         "fsopts": self.fsopts})
+               "  type: %(fstype)s  format: %(format)s  badblocks: %(bb)s\n"
+               "  device: %(dev)s drive: %(drive)s  primary: %(primary)s\n"
+               "  size: %(size)s  grow: %(grow)s  maxsize: %(max)s\n"
+               "  start: %(start)s  end: %(end)s  migrate: %(migrate)s  "
+               "  fslabel: %(fslabel)s  origfstype: %(origfs)s\n"
+               "  bytesPerInode: %(bytesPerInode)s  options: '%(fsopts)s'"
+               % {"n": pre, "mount": self.mountpoint, "id": self.uniqueID,
+                  "fstype": fsname, "format": self.format, "dev": self.device,
+                  "drive": self.drive, "primary": self.primary,
+                  "size": self.size, "grow": self.grow, "max": self.maxSizeMB,
+                  "start": self.start, "end": self.end, "bb": self.badblocks,
+                  "migrate": self.migrate, "fslabel": self.fslabel,
+                  "origfs": oldfs, "bytesPerInode": self.bytesPerInode,
+                  "fsopts": self.fsopts})
         return str
 
 
@@ -412,12 +410,12 @@ class PartitionSpec(RequestSpec):
 
         if (self.size and self.maxSizeMB and (self.size > self.maxSizeMB)):
             return (_("The size of the requested partition (size = %s MB) "
-                                                    "exceeds the maximum size of %s MB.")
-                                            % (self.size, self.maxSizeMB))
+                      "exceeds the maximum size of %s MB.")
+                    % (self.size, self.maxSizeMB))
 
         if self.size and self.size < 0:
             return _("The size of the requested partition is "
-                                             "negative! (size = %s MB)") % (self.size)
+                     "negative! (size = %s MB)") % (self.size)
 
         if self.start and self.start < 1:
             return _("Partitions can't start below the first cylinder.")
@@ -431,9 +429,9 @@ class NewPartitionSpec(PartitionSpec):
     """Object to define a NEW requested partition."""
 
     def __init__(self, fstype, size = None, mountpoint = None,
-                                                            grow = 0, maxSizeMB = None,
-                                                            start = None, end = None,
-                                                            drive = None, primary = None, format = None):
+                 grow = 0, maxSizeMB = None,
+                 start = None, end = None,
+                 drive = None, primary = None, format = None):
         """Create a new NewPartitionSpec object.
 
         fstype is the fsset filesystem type.
@@ -449,18 +447,18 @@ class NewPartitionSpec(PartitionSpec):
         """
 
         PartitionSpec.__init__(self, fstype = fstype, size = size,
-                                                                                                        mountpoint = mountpoint, grow = grow,
-                                                                                                        maxSizeMB = maxSizeMB, start = start,
-                                                                                                        end = end, drive = drive, primary = primary,
-                                                                                                        format = format, preexist = 0)
+                               mountpoint = mountpoint, grow = grow,
+                               maxSizeMB = maxSizeMB, start = start,
+                               end = end, drive = drive, primary = primary,
+                               format = format, preexist = 0)
         self.type = REQUEST_NEW
 
 class PreexistingPartitionSpec(PartitionSpec):
     """Request to represent partitions which already existed."""
 
     def __init__(self, fstype, size = None, start = None, end = None,
-                                                            drive = None, format = None, migrate = None,
-                                                            mountpoint = None):
+                 drive = None, format = None, migrate = None,
+                 mountpoint = None):
         """Create a new PreexistingPartitionSpec object.
 
         fstype is the fsset filesystem type.
@@ -474,7 +472,7 @@ class PreexistingPartitionSpec(PartitionSpec):
         """
 
         PartitionSpec.__init__(self, fstype = fstype, size = size,
-                                                                                                        start = start, end = end, drive = drive,
-                                                                                                        format = format, migrate = migrate,
-                                                                                                        mountpoint = mountpoint, preexist = 1)
+                               start = start, end = end, drive = drive,
+                               format = format, migrate = migrate,
+                               mountpoint = mountpoint, preexist = 1)
         self.type = REQUEST_PREEXIST

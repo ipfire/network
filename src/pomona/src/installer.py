@@ -83,12 +83,12 @@ def checkMemory():
         from snack import SnackScreen, ButtonChoiceWindow
 
         screen = SnackScreen()
-        ButtonChoiceWindow(screen, _('Fatal Error'),
-                                                                                                                 _('You do not have enough RAM to install %s '
-                                                                                                                         'on this machine.\n'
-                                                                                                                         '\n'
-                                                                                                                         'Press <return> to reboot your system.\n')
-                                                                                                                %(name,), buttons = (_("OK"),))
+        ButtonChoiceWindow(screen, _("Fatal Error"),
+                                   _("You do not have enough RAM to install %s "
+                                     "on this machine.\n"
+                                     "\n"
+                                     "Press <return> to reboot your system.\n")
+                                    % (name,), buttons = (_("OK"),))
         screen.finish()
         sys.exit(0)
 

@@ -36,7 +36,7 @@ class KeyboardWindow:
 
         (button, choice) = \
                 ListboxChoiceWindow(screen, _("Keyboard Selection"),
-                                                                                                                                _("Which model keyboard is attached to this computer?"), keyboards,
+                                            _("Which model keyboard is attached to this computer?"), keyboards,
                         buttons = [TEXT_OK_BUTTON, TEXT_BACK_BUTTON], width = 30, scroll = 1, height = 8,
                         default = default, help = "kybd")
 

@@ -66,15 +66,15 @@ def syncDataToDisk(dev, mntpt, instRoot = "/"):
     # and xfs is even more "special" (#117968)
     if fsset.isValidXFS(dev):
         pyfire.executil.execWithRedirect("/usr/sbin/xfs_freeze",
-                                                                                                                                        ["/usr/sbin/xfs_freeze", "-f", mntpt],
-                                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                                        stderr = "/dev/tty5",
-                                                                                                                                        root = instRoot)
-        pyfire.executil.execWithRedirect( "/usr/sbin/xfs_freeze",
-                                                                                                                                        ["/usr/sbin/xfs_freeze", "-u", mntpt],
-                                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                                        stderr = "/dev/tty5",
-                                                                                                                                        root = instRoot)
+                                         ["/usr/sbin/xfs_freeze", "-f", mntpt],
+                                         stdout = "/dev/tty5",
+                                         stderr = "/dev/tty5",
+                                         root = instRoot)
+        pyfire.executil.execWithRedirect("/usr/sbin/xfs_freeze",
+                                         ["/usr/sbin/xfs_freeze", "-u", mntpt],
+                                         stdout = "/dev/tty5",
+                                         stderr = "/dev/tty5",
+                                         root = instRoot)
 
 class BootyNoKernelWarning:
     def __init__ (self, value=""):
@@ -110,7 +110,7 @@ class KernelArguments:
         newArgs = []
         # look for kernel arguments we know should be preserved and add them
         ourargs = ["speakup_synth=", "apic", "noapic", "apm=", "ide=nodma",
-                                                 "noht", "acpi=", "video=", "pci="]
+                   "noht", "acpi=", "video=", "pci="]
         f = open("/proc/cmdline")
         cmdline = f.read()[:-1]
         f.close()
@@ -121,7 +121,6 @@ class KernelArguments:
                     newArgs.append(arg)
 
         self.args = " ".join(newArgs)
-
 
 class BootImages:
     """A collection to keep track of boot images available on the system.
@@ -209,7 +208,7 @@ class BootImages:
         slash = fsset.getEntryByMountPoint('/')
         if not slash or not slash.device or not slash.fsystem:
             raise ValueError,("Trying to pick boot devices but do not have a "
-                                                                                    "sane root partition.  Aborting install.")
+                              "sane root partition. Aborting install.")
         devs.append((slash.device.getDevice(), slash.fsystem.getName()))
 
         devs.sort()
@@ -479,8 +478,7 @@ class x86BootloaderInfo(bootloaderInfo):
             # XXX hack city.  If they're not the sort of thing that'll
             # be in the device map, they shouldn't still be in the list.
             if not drive.startswith('md'):
-                f.write("(%s)     /dev/%s\n" % (self.grubbyDiskName(drive),
-                                            drive))
+                f.write("(%s)     /dev/%s\n" % (self.grubbyDiskName(drive), drive))
         f.close()
 
         args = "--stage2=/boot/grub/stage2 "
@@ -490,13 +488,11 @@ class x86BootloaderInfo(bootloaderInfo):
         sysconf = '/etc/sysconfig/grub'
         if os.access (instRoot + sysconf, os.R_OK):
             self.perms = os.stat(instRoot + sysconf)[0] & 0777
-            os.rename(instRoot + sysconf,
-                                                    instRoot + sysconf + '.backup')
+            os.rename(instRoot + sysconf, instRoot + sysconf + '.backup')
         # if it's an absolute symlink, just get it out of our way
         elif (os.path.islink(instRoot + sysconf) and
                                 os.readlink(instRoot + sysconf)[0] == '/'):
-            os.rename(instRoot + sysconf,
-                                                    instRoot + sysconf + '.backup')
+            os.rename(instRoot + sysconf, instRoot + sysconf + '.backup')
         f = open(instRoot + sysconf, 'w+')
         f.write("boot=/dev/%s\n" %(grubTarget,))
         # XXX forcelba never gets read back...
@@ -518,7 +514,7 @@ class x86BootloaderInfo(bootloaderInfo):
                 stage1Target = self.grubbyPartitionName(gtPart)
 
             cmd += "install %s%s/stage1 d %s %s/stage2 p %s%s/grub.conf" % \
-                          (args, grubPath, stage1Target, grubPath, bPart, grubPath)
+                   (args, grubPath, stage1Target, grubPath, bPart, grubPath)
             cmds.append(cmd)
 
         log.info("GRUB commands:")
@@ -532,9 +528,9 @@ class x86BootloaderInfo(bootloaderInfo):
 
         # copy the stage files over into /boot
         pyfire.executil.execWithRedirect("/usr/sbin/grub-install",
-                                                                                                                                        ["/usr/sbin/grub-install", "--just-copy"],
-                                                                                                                                        stdout = "/dev/tty5", stderr = "/dev/tty5",
-                                                                                                                                        root = instRoot)
+                                         ["/usr/sbin/grub-install", "--just-copy"],
+                                         stdout = "/dev/tty5", stderr = "/dev/tty5",
+                                         root = instRoot)
 
         # really install the bootloader
         for cmd in cmds:
@@ -550,12 +546,12 @@ class x86BootloaderInfo(bootloaderInfo):
             else:
                 syncDataToDisk(bootDev, "/", instRoot)
 
-            pyfire.executil.execWithRedirect('/usr/sbin/grub' ,
-                                                                                [ "grub",  "--batch", "--no-floppy",
-                                                                                  "--device-map=/boot/grub/device.map" ],
-                                                                                stdin = p[0],
-                                                                                stdout = "/dev/tty5", stderr = "/dev/tty5",
-                                                                                root = instRoot)
+            pyfire.executil.execWithRedirect("/usr/sbin/grub" ,
+                                             [ "grub",  "--batch", "--no-floppy",
+                                             "--device-map=/boot/grub/device.map" ],
+                                             stdin = p[0],
+                                             stdout = "/dev/tty5", stderr = "/dev/tty5",
+                                             root = instRoot)
             os.close(p[0])
 
         return ""
@@ -579,10 +575,8 @@ class x86BootloaderInfo(bootloaderInfo):
         else:
             return "(%s)" %(self.grubbyDiskName(name))
 
-    def write(self, instRoot, fsset, bl, langs, kernelList, chainList,
-                                            defaultDev, intf):
-        out = self.writeGrub(instRoot, fsset, bl, langs, kernelList,
-                                                                                                chainList, defaultDev)
+    def write(self, instRoot, fsset, bl, langs, kernelList, chainList, defaultDev, intf):
+        out = self.writeGrub(instRoot, fsset, bl, langs, kernelList, chainList, defaultDev)
 
     def getArgList(self):
         args = bootloaderInfo.getArgList(self)
@@ -591,7 +585,6 @@ class x86BootloaderInfo(bootloaderInfo):
             args.append("--lba32")
         if self.password:
             args.append("--md5pass=%s" %(self.password))
-
 
         # XXX add location of bootloader here too
 
@@ -655,5 +648,5 @@ def getRootDevName(initrd, fsset, rootDev, instRoot):
 
 # returns a product name to use for the boot loader string
 def getProductName():
-        # XXX Check /etc/ipfire-release here...
+    # XXX Check /etc/ipfire-release here...
     return "IPFire Linux"

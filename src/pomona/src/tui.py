@@ -15,10 +15,10 @@ log = logging.getLogger("pomona")
 stepToClasses = {
                 "accounts" : ("tui_userauth", "RootPasswordWindow"),
                 "bootloader" : ("tui_bootloader", ("BootloaderChoiceWindow",
-                                                                                                                                                         "BootloaderAppendWindow",
-                                                                                                                                                         "BootloaderPasswordWindow")),
+                                                   "BootloaderAppendWindow",
+                                                   "BootloaderPasswordWindow")),
                 "bootloaderadvanced" : ("tui_bootloader", ("BootloaderImagesWindow",
-                                                                                                                                                                                         "BootloaderLocationWindow")),
+                                                           "BootloaderLocationWindow")),
                 "complete" : ("tui_complete", "FinishedWindow"),
                 "confirminstall" : ("tui_confirm", "BeginInstallWindow"),
                 "install"  : ("tui_progress", "setupForInstall"),
@@ -96,8 +96,7 @@ class OkCancelWindow:
         return self.rc
 
     def __init__(self, screen, title, text):
-        rc = ButtonChoiceWindow(screen, title, text,
-                                                                                                        buttons=[TEXT_OK_BUTTON, _("Cancel")])
+        rc = ButtonChoiceWindow(screen, title, text, buttons=[TEXT_OK_BUTTON, _("Cancel")])
         if rc == string.lower(_("Cancel")):
             self.rc = 1
         else:
@@ -113,7 +112,7 @@ class ExceptionWindow:
     def run(self):
         log.info ("in run, screen = %s" % self.screen)
         self.rc = ButtonChoiceWindow(self.screen, _("Exception Occurred"),
-                                                                                                                                self.text, self.buttons)
+                                                  self.text, self.buttons)
 
     def getrc(self):
         return 0
@@ -187,18 +186,18 @@ class InstallInterface:
                     try:
                         found = imputil.imp.find_module(file)
                         loaded = imputil.imp.load_module(classNames[step],
-                                                                                                                                                                found[0], found[1],
-                                                                                                                                                                found[2])
+                                                         found[0], found[1],
+                                                         found[2])
                         nextWindow = loaded.__dict__[classNames[step]]
                         break
                     except ImportError, e:
                         rc = ButtonChoiceWindow(self.screen, _("Error!"),
-                                                                                                                                _("An error occurred when attempting "
-                                                                                                                                        "to load an pomona interface "
-                                                                                                                                        "component.\n\nclassName = %s\n\n"
-                                                                                                                                        "Error: %s")
-                                                                                                                        % (classNames[step],e),
-                                                                                                                                buttons=[_("Exit"), _("Retry")])
+                                                             _("An error occurred when attempting "
+                                                               "to load an pomona interface "
+                                                               "component.\n\nclassName = %s\n\n"
+                                                               "Error: %s")
+                                                             % (classNames[step],e),
+                                                                buttons=[_("Exit"), _("Retry")])
 
                         if rc == string.lower(_("Exit")):
                             sys.exit(0)
@@ -224,10 +223,10 @@ class InstallInterface:
             if step == -1:
                 if not pomona.dispatch.canGoBack():
                     ButtonChoiceWindow(self.screen, _("Cancelled"),
-                                                                                                                                                    _("I can't go to the previous step "
-                                                                                                                                                            "from here. You will have to try "
-                                                                                                                                                            "again."),
-                                                                                                                                                    buttons=[_("OK")])
+                                                    _("I can't go to the previous step "
+                                                      "from here. You will have to try "
+                                                      "again."),
+                                                    buttons=[_("OK")])
                     pomona.dispatch.gotoPrev()
             else:
                 pomona.dispatch.gotoNext()
@@ -289,9 +288,9 @@ class InstallInterface:
 
             if not f:
                 ButtonChoiceWindow(screen, _("Help not available"),
-                                                                                                                         _("No help is available for this "
-                                                                                                                                 "step of the install."),
-                                                                                        buttons=[TEXT_OK_BUTTON])
+                                           _("No help is available for this "
+                                             "step of the install."),
+                                           buttons=[TEXT_OK_BUTTON])
                 return None
 
             lines = f.readlines()
@@ -353,10 +352,10 @@ class InstallInterface:
         return exnWin
 
     def messageWindow(self, title, text, type="ok", default = None,
-                                                                                    custom_icon=None, custom_buttons=[]):
+                      custom_icon=None, custom_buttons=[]):
         if type == "ok":
             ButtonChoiceWindow(self.screen, title, text,
-                                                                                            buttons=[TEXT_OK_BUTTON])
+                               buttons=[TEXT_OK_BUTTON])
         elif type == "yesno":
             if default and default == "no":
                 btnlist = [TEXT_NO_BUTTON, TEXT_YES_BUTTON]
@@ -405,7 +404,7 @@ class InstallInterface:
         rc = None
         while not buttonToAction.has_key(rc):
             rc = ButtonChoiceWindow(self.screen, exc.type_string, exc.message,
-                                                                                                            buttons=buttons)
+                                    buttons=buttons)
 
         return buttonToAction[rc]
 

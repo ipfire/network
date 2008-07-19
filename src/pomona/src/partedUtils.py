@@ -58,13 +58,11 @@ def get_flags(part):
 
 def start_sector_to_cyl(device, sector):
     """Return the closest cylinder (round down) to sector on device."""
-    return int(math.floor((float(sector)
-                                            / (device.heads * device.sectors)) + 1))
+    return int(math.floor((float(sector) / (device.heads * device.sectors)) + 1))
 
 def end_sector_to_cyl(device, sector):
     """Return the closest cylinder (round up) to sector on device."""
-    return int(math.ceil(float((sector + 1))
-                                            / (device.heads * device.sectors)))
+    return int(math.ceil(float((sector + 1)) / (device.heads * device.sectors)))
 
 def start_cyl_to_sector(device, cyl):
     "Return the sector corresponding to cylinder as a starting cylinder."
@@ -80,13 +78,11 @@ def getPartSize(partition):
 
 def getPartSizeMB(partition):
     """Return the size of partition in megabytes."""
-    return (partition.geom.length * partition.geom.dev.sector_size
-                                            / 1024.0 / 1024.0)
+    return (partition.geom.length * partition.geom.dev.sector_size / 1024.0 / 1024.0)
 
 def getDeviceSizeMB(dev):
     """Return the size of dev in megabytes."""
-    return (float(dev.heads * dev.cylinders * dev.sectors) / (1024 * 1024)
-                                            * dev.sector_size)
+    return (float(dev.heads * dev.cylinders * dev.sectors) / (1024 * 1024) * dev.sector_size)
 
 def get_partition_by_name(disks, partname):
     """Return the parted part object associated with partname.
@@ -230,16 +226,16 @@ def checkDiskLabel(disk, intf):
 
     if intf:
         rc = intf.messageWindow(_("Warning"),
-                                                                                                        _("/dev/%s currently has a %s partition "
-                                                                                                                "layout.  To use this drive for "
-                                                                                                                "the installation of %s, it must be "
-                                                                                                                "re-initialized, causing the loss of "
-                                                                                                                "ALL DATA on this drive.\n\n"
-                                                                                                                "Would you like to re-initialize this "
-                                                                                                                "drive?")
-                                                                                                        %(disk.dev.path[5:], disk.type.name, name),
-                                                                                                                type="custom", custom_buttons = [ _("_Ignore drive"),
-                                                                                                                _("_Re-initialize drive") ], custom_icon="question")
+                                _("/dev/%s currently has a %s partition "
+                                  "layout.  To use this drive for "
+                                  "the installation of %s, it must be "
+                                  "re-initialized, causing the loss of "
+                                  "ALL DATA on this drive.\n\n"
+                                  "Would you like to re-initialize this "
+                                  "drive?")
+                                %(disk.dev.path[5:], disk.type.name, name),
+                                  type="custom", custom_buttons = [ _("_Ignore drive"),
+                                  _("_Re-initialize drive") ], custom_icon="question")
 
         if rc == 0:
             return 1
@@ -271,8 +267,7 @@ def hasProtectedPartitions(drive, pomona):
 # didn't probe as one type or another.
 def validateFsType(part):
     # we only care about primary and logical partitions
-    if not part.type in (parted.PARTITION_PRIMARY,
-                                                                                     parted.PARTITION_LOGICAL):
+    if not part.type in (parted.PARTITION_PRIMARY,  parted.PARTITION_LOGICAL):
         return
     # if the partition already has a type, no need to search
     if part.fs_type:
@@ -394,8 +389,8 @@ class DiskSet:
         for drive in drives:
             disk = self.disks[drive]
             func = lambda part: (part.is_active() and
-                                            not (part.get_flag(parted.PARTITION_RAID)
-                                            or part.get_flag(parted.PARTITION_LVM)))
+                          not (part.get_flag(parted.PARTITION_RAID)
+                          or part.get_flag(parted.PARTITION_LVM)))
             parts = filter_partitions(disk, func)
             for part in parts:
                 node = get_partition_name(part)
@@ -416,9 +411,8 @@ class DiskSet:
             disk = self.disks[drive]
             part = disk.next_partition()
             while part:
-                if (part.is_active()
-                                and (part.get_flag(parted.PARTITION_RAID)
-                                or part.get_flag(parted.PARTITION_LVM))):
+                if (part.is_active() and (part.get_flag(parted.PARTITION_RAID)
+                        or part.get_flag(parted.PARTITION_LVM))):
                     pass
                 elif (part.fs_type and part.fs_type.name in fsset.getUsableLinuxFs()):
                     node = get_partition_name(part)
@@ -550,7 +544,7 @@ class DiskSet:
                 recreate = 0
                 if zeroMbr:
                     log.error("zeroMBR was set and invalid partition table "
-                                                            "found on %s" % (dev.path[5:]))
+                              "found on %s" % (dev.path[5:]))
                     recreate = 1
                 elif intf is None:
                     DiskSet.skippedDisks.append(drive)
@@ -561,14 +555,14 @@ class DiskSet:
                     # if pomona is None here, we are called from labelFactory
                     if self.pomona is not None:
                         rc = intf.messageWindow(_("Warning"),
-                                                                                                                        _("The partition table on device %s was unreadable. "
-                                                                                                                                "To create new partitions it must be initialized, "
-                                                                                                                                "causing the loss of ALL DATA on this drive.\n\n"
-                                                                                                                                "This operation will override any previous "
-                                                                                                                                "installation choices about which drives to "
-                                                                                                                                "ignore.\n\n"
-                                                                                                                                "Would you like to initialize this drive, "
-                                                                                                                                "erasing ALL DATA?") % (format,), type = "yesno")
+                                                _("The partition table on device %s was unreadable. "
+                                                  "To create new partitions it must be initialized, "
+                                                  "causing the loss of ALL DATA on this drive.\n\n"
+                                                  "This operation will override any previous "
+                                                  "installation choices about which drives to "
+                                                  "ignore.\n\n"
+                                                  "Would you like to initialize this drive, "
+                                                  "erasing ALL DATA?") % (format,), type = "yesno")
                         if rc == 0:
                             DiskSet.skippedDisks.append(drive)
                             continue
@@ -598,17 +592,17 @@ class DiskSet:
             # check for more than 15 partitions (libata limit)
             if drive.startswith('sd') and disk.get_last_partition_num() > 15:
                 rc = intf.messageWindow(_("Warning"),
-                                                                                                                _("The drive /dev/%s has more than 15 "
-                                                                                                                        "partitions on it.  The SCSI "
-                                                                                                                        "subsystem in the Linux kernel does "
-                                                                                                                        "not allow for more than 15 partitons "
-                                                                                                                        "at this time.  You will not be able "
-                                                                                                                        "to make changes to the partitioning "
-                                                                                                                        "of this disk or use any partitions "
-                                                                                                                        "beyond /dev/%s15 in %s")
-                                                                                                                % (drive, drive, name), type="custom",
-                                                                                                                        custom_buttons = [_("_Reboot"), _("_Continue")],
-                                                                                                                        custom_icon="warning")
+                                        _("The drive /dev/%s has more than 15 "
+                                          "partitions on it.  The SCSI "
+                                          "subsystem in the Linux kernel does "
+                                          "not allow for more than 15 partitons "
+                                          "at this time.  You will not be able "
+                                          "to make changes to the partitioning "
+                                          "of this disk or use any partitions "
+                                          "beyond /dev/%s15 in %s")
+                                        % (drive, drive, name), type="custom",
+                                           custom_buttons = [_("_Reboot"), _("_Continue")],
+                                           custom_icon="warning")
                 if rc == 0:
                     sys.exit(0)
 
@@ -642,7 +636,7 @@ class DiskSet:
             part = disk.next_partition ()
             while part:
                 if part.type in (parted.PARTITION_PRIMARY,
-                                                                                 parted.PARTITION_LOGICAL):
+                                 parted.PARTITION_LOGICAL):
                     device = get_partition_name(part)
                     if part.fs_type:
                         ptype = part.fs_type.name
@@ -658,18 +652,18 @@ class DiskSet:
         rc = ""
         for disk in self.disks.values():
             rc = rc + ("%s: %s length %ld, maximum "
-                                                     "primary partitions: %d\n"
-                                                    % (disk.dev.path,
-                                                             disk.dev.model,
-                                                             disk.dev.length,
-                                                             disk.max_primary_partition_count))
+                       "primary partitions: %d\n"
+                       % (disk.dev.path,
+                          disk.dev.model,
+                          disk.dev.length,
+                          disk.max_primary_partition_count))
 
             part = disk.next_partition()
             if part:
                 rc = rc + ("Device    Type         Filesystem   Start      "
-                                                         "End        Length        Flags\n")
+                           "End        Length        Flags\n")
                 rc = rc + ("------    ----         ----------   -----      "
-                                                         "---        ------        -----\n")
+                           "---        ------        -----\n")
             while part:
                 if not part.type & parted.PARTITION_METADATA:
                     device = ""
@@ -680,8 +674,8 @@ class DiskSet:
                         fs_type_name = part.fs_type.name
                     partFlags = get_flags (part)
                     rc = rc + ("%-9s %-12s %-12s %-10ld %-10ld %-10ld %7s\n"
-                                                    % (device, part.type_name, fs_type_name,
-                                                             part.geom.start, part.geom.end, part.geom.length, partFlags))
+                        % (device, part.type_name, fs_type_name,
+                           part.geom.start, part.geom.end, part.geom.length, partFlags))
                     part = disk.next_partition(part)
         return rc
 
@@ -689,10 +683,10 @@ class DiskSet:
         """Check that there are valid disk devices."""
         if len(self.disks.keys()) == 0:
             self.pomona.intf.messageWindow(_("No Drives Found"),
-                                                                                                                                     _("An error has occurred - no valid devices were "
-                                                                                                                                             "found on which to create new file systems. "
-                                                                                                                                             "Please check your hardware for the cause "
-                                                                                                                                             "of this problem."))
+                                           _("An error has occurred - no valid devices were "
+                                             "found on which to create new file systems. "
+                                             "Please check your hardware for the cause "
+                                             "of this problem."))
             return True
         return False
 

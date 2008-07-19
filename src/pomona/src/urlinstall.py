@@ -65,7 +65,7 @@ def urlretrieve(location, file, callback=None):
 
     if callback is not None:
         callback.callback(CB_START, title=_("Downloading"), text=_("Retrieving %s")
-                                                                                % os.path.basename(urlparse.urlparse(location).path))
+            % os.path.basename(urlparse.urlparse(location).path))
 
     # if they dont want a status callback just do it in one big swoop
     if callback is None:
@@ -90,11 +90,11 @@ def urlretrieve(location, file, callback=None):
 class UrlInstallMethod(InstallMethod):
     def badPackageError(self, pkgname):
         return _("The file %s cannot be opened.  This is due to a missing "
-                                         "file or perhaps a corrupt package.  Please verify your "
-                                         "mirror contains all required packages, and try using a "
-                                         "different one.\n\n"
-                                         "If you reboot, your system will be left in an inconsistent "
-                                         "state that will likely require reinstallation.\n\n") % pkgname
+                 "file or perhaps a corrupt package.  Please verify your "
+                 "mirror contains all required packages, and try using a "
+                 "different one.\n\n"
+                 "If you reboot, your system will be left in an inconsistent "
+                 "state that will likely require reinstallation.\n\n") % pkgname
 
     def getFilename(self, filename, callback=None, destdir=None, retry=1):
         if destdir is None:
@@ -112,7 +112,7 @@ class UrlInstallMethod(InstallMethod):
                 rc=urlretrieve(fullPath, file, callback=callback)
             except IOError, (errnum, msg):
                 log.critical("IOError %s occurred getting %s: %s"
-                                                                % (errnum, fullPath.replace("%", "%%"), str(msg)))
+                    % (errnum, fullPath.replace("%", "%%"), str(msg)))
 
                 if not retry:
                     raise FileCopyException
@@ -178,11 +178,11 @@ class UrlInstallMethod(InstallMethod):
             except Exception, e:
                 log.error("exception in unmountCD: %s" %(e,))
                 self.messageWindow(_("Error"),
-                                                                                         _("An error occurred unmounting the disc. "
-                                                                                                 "Please make sure you're not accessing "
-                                                                                                 "%s from the shell on tty2 "
-                                                                                                 "and then click OK to retry.")
-                                                                                         % ("/mnt/source",))
+                                   _("An error occurred unmounting the disc. "
+                                     "Please make sure you're not accessing "
+                                     "%s from the shell on tty2 "
+                                     "and then click OK to retry.")
+                                   % ("/mnt/source",))
 
     def filesDone(self):
         for file in REQUIRED_FILES:

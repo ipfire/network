@@ -115,11 +115,11 @@ class Partitions:
                 drive = partedUtils.get_partition_drive(part)
 
                 spec = partRequests.PreexistingPartitionSpec(ptype,
-                                                                                                                                                                                                 size = size,
-                                                                                                                                                                                                 start = start,
-                                                                                                                                                                                                 end = end,
-                                                                                                                                                                                                 drive = drive,
-                                                                                                                                                                                                 format = format)
+                                                             size = size,
+                                                             start = start,
+                                                             end = end,
+                                                             drive = drive,
+                                                             format = format)
                 spec.device = fsset.PartedPartitionDevice(part).getDevice()
 
                 # set label if makes sense
@@ -302,20 +302,20 @@ class Partitions:
         accepting a partition will be run on the requests as well.
         """
         checkSizes = [('/usr', 250), ('/tmp', 50), ('/var', 384),
-                                                                ('/home', 100), ('/boot', 75)]
+                      ('/home', 100), ('/boot', 75)]
         warnings = []
         errors = []
 
         slash = self.getRequestByMountPoint('/')
         if not slash:
             errors.append(_("You have not defined a root partition (/), "
-                                                                            "which is required for installation of %s "
-                                                                            "to continue.") % (name,))
+                            "which is required for installation of %s "
+                            "to continue.") % (name,))
 
         if slash and slash.getActualSize(self, diskset) < 250:
             warnings.append(_("Your root partition is less than 250 "
-                                                                                    "megabytes which is usually too small to "
-                                                                                    "install %s.") % (name,))
+                              "megabytes which is usually too small to "
+                              "install %s.") % (name,))
 
         bootreqs = self.getBootableRequest() or []
         # FIXME: missing a check to ensure this is gpt.
@@ -331,9 +331,8 @@ class Partitions:
             if int(num) > 4:
                 print dev, num
                 errors.append(_("Your boot partition isn't on one of "
-                                                                                "the first four partitions and thus "
-                                                                                "won't be bootable."))
-
+                                "the first four partitions and thus "
+                                "won't be bootable."))
 
         for (mount, size) in checkSizes:
             req = self.getRequestByMountPoint(mount)
@@ -341,9 +340,9 @@ class Partitions:
                 continue
             if req.getActualSize(self, diskset) < size:
                 warnings.append(_("Your %s partition is less than %s "
-                                                                                        "megabytes which is lower than recommended "
-                                                                                        "for a normal %s install.")
-                                                                                % (mount, size, name))
+                                  "megabytes which is lower than recommended "
+                                  "for a normal %s install.")
+                                % (mount, size, name))
 
         foundSwap = 0
         swapSize = 0
@@ -375,11 +374,11 @@ class Partitions:
 
         if usesUSB:
             warnings.append(_("Installing on a USB device.  This may "
-                                                                                    "or may not produce a working system."))
+                              "or may not produce a working system."))
 
         if usesFireWire:
             warnings.append(_("Installing on a FireWire device.  This may "
-                                                                                    "or may not produce a working system."))
+                              "or may not produce a working system."))
 
         bootreqs = self.getBootableRequest()
         if bootreqs:
@@ -392,15 +391,15 @@ class Partitions:
 
         if foundSwap == 0:
             warnings.append(_("You have not specified a swap partition.  "
-                                                                                    "Although not strictly required in all cases, "
-                                                                                    "it will significantly improve performance for "
-                                                                                    "most installations."))
+                              "Although not strictly required in all cases, "
+                              "it will significantly improve performance for "
+                              "most installations."))
 
         # XXX number of swaps not exported from kernel and could change
         if foundSwap >= 32:
             warnings.append(_("You have specified more than 32 swap devices.  "
-                                                                                    "The kernel for %s only supports 32 "
-                                                                                    "swap devices.") % (name,))
+                              "The kernel for %s only supports 32 "
+                              "swap devices.") % (name,))
 
         mem = inutil.memInstalled()
         rem = mem % 16384
@@ -410,9 +409,9 @@ class Partitions:
 
         if foundSwap and (swapSize < (mem - 8)) and (mem < 1024):
             warnings.append(_("You have allocated less swap space (%dM) than "
-                                                                                    "available RAM (%dM) on your system.  This "
-                                                                                    "could negatively impact performance.")
-                                                                            % (swapSize, mem))
+                              "available RAM (%dM) on your system.  This "
+                              "could negatively impact performance.")
+                            % (swapSize, mem))
 
         if warnings == []:
             warnings = None
@@ -478,7 +477,7 @@ class Partitions:
             if request.preexist:
                 drive = partedUtils.get_partition_drive(partition)
                 delete = partRequests.DeleteSpec(drive, partition.geom.start,
-                                                                                                                                                 partition.geom.end)
+                                                 partition.geom.end)
                 self.addDelete(delete)
 
     def containsImmutablePart(self, part):

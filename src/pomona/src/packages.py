@@ -85,7 +85,7 @@ def setupTimezone(pomona):
 
     try:
         inutil.execWithRedirect("/sbin/hwclock", args, stdin = None,
-                                                                                                        stdout = "/dev/tty5", stderr = "/dev/tty5")
+                                stdout = "/dev/tty5", stderr = "/dev/tty5")
     except RuntimeError:
         log.error("Failed to set clock")
 
@@ -101,20 +101,20 @@ def betaNagScreen(pomona):
 
     while 1:
         rc = pomona.intf.messageWindow( _("Warning! This is pre-release software!"),
-                                                                                                                                        _("Thank you for downloading this "
-                                                                                                                                                "pre-release of %s.\n\n"
-                                                                                                                                                "This is not a final "
-                                                                                                                                                "release and is not intended for use "
-                                                                                                                                                "on production systems.  The purpose of "
-                                                                                                                                                "this release is to collect feedback "
-                                                                                                                                                "from testers, and it is not suitable "
-                                                                                                                                                "for day to day usage.\n\n"
-                                                                                                                                                "To report feedback, please visit:\n\n"
-                                                                                                                                                "   %s\n\n"
-                                                                                                                                                "and file a report against '%s'.\n")
-                                                                                                                                        %(name, bugurl, name),
-                                                                                                                                                type="custom", custom_icon="warning",
-                                                                                                                                                custom_buttons=[_("_Exit"), _("_Install anyway")])
+                                        _("Thank you for downloading this "
+                                          "pre-release of %s.\n\n"
+                                          "This is not a final "
+                                          "release and is not intended for use "
+                                          "on production systems.  The purpose of "
+                                          "this release is to collect feedback "
+                                          "from testers, and it is not suitable "
+                                          "for day to day usage.\n\n"
+                                          "To report feedback, please visit:\n\n"
+                                          "   %s\n\n"
+                                          "and file a report against '%s'.\n")
+                                        % (name, bugurl, name),
+                                           type="custom", custom_icon="warning",
+                                           custom_buttons=[_("_Exit"), _("_Install anyway")])
 
         if not rc:
             msg =  _("Your system will now be rebooted...")

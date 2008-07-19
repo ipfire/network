@@ -27,11 +27,11 @@ class RootPasswordWindow:
         toplevel = GridFormHelp(screen, _("Root Password"), "rootpw", 1, 3)
 
         toplevel.add(TextboxReflowed(37, _("Pick a root password. You must "
-                                                                                                                                                 "type it twice to ensure you know "
-                                                                                                                                                 "it and do not make a typing mistake. "
-                                                                                                                                                 "Remember that the "
-                                                                                                                                                 "root password is a critical part "
-                                                                                                                                                 "of system security!")), 0, 0, (0, 0, 0, 1))
+                                           "type it twice to ensure you know "
+                                           "it and do not make a typing mistake. "
+                                           "Remember that the root password is"
+                                           "a critical part of system "
+                                           "security!")), 0, 0, (0, 0, 0, 1))
 
         entry1 = Entry(24, password = 1, text = pomona.id.rootPassword["password"])
         entry2 = Entry(24, password = 1, text = pomona.id.rootPassword["password"])
@@ -55,17 +55,17 @@ class RootPasswordWindow:
 
             if len(entry1.value ()) < 6:
                 ButtonChoiceWindow(screen, _("Password Length"),
-                                                        _("The root password must be at least 6 characters long."),
-                                                        buttons = [ TEXT_OK_BUTTON ], width = 50)
+                                           _("The root password must be at least 6 characters long."),
+                                            buttons = [ TEXT_OK_BUTTON ], width = 50)
             elif entry1.value() != entry2.value():
                 ButtonChoiceWindow(screen, _("Password Mismatch"),
-                                                        _("The passwords you entered were different. Please try again."),
-                                                        buttons = [ TEXT_OK_BUTTON ], width = 50)
+                                           _("The passwords you entered were different. Please try again."),
+                                            buttons = [ TEXT_OK_BUTTON ], width = 50)
             elif has_bad_chars(entry1.value()):
                 ButtonChoiceWindow(screen, _("Error with Password"),
-                                                        _("Requested password contains non-ASCII characters, "
-                                                                "which are not allowed."),
-                                                        buttons = [ TEXT_OK_BUTTON ], width = 50)
+                                           _("Requested password contains non-ASCII characters, "
+                                             "which are not allowed."),
+                                            buttons = [ TEXT_OK_BUTTON ], width = 50)
             else:
                 break
 

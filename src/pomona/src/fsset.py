@@ -187,8 +187,8 @@ class FileSystemType:
     def badblocksDevice(self, entry, windowCreator, chroot='/'):
         if windowCreator:
             w = windowCreator(_("Checking for Bad Blocks"),
-                                                                                    _("Checking for bad blocks on /dev/%s...")
-                                                                            % (entry.device.getDevice(),), 100)
+                              _("Checking for bad blocks on /dev/%s...")
+                              % (entry.device.getDevice(),), 100)
         else:
             w = None
 
@@ -380,10 +380,10 @@ class reiserfsFileSystem(FileSystemType):
         os.close(p[1])
 
         rc = inutil.execWithRedirect("mkreiserfs",
-                                                                                                                        [devicePath],
-                                                                                                                        stdin = p[0],
-                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                        stderr = "/dev/tty5", searchPath = 1)
+                                     [devicePath],
+                                     stdin = p[0],
+                                     stdout = "/dev/tty5",
+                                     stderr = "/dev/tty5", searchPath = 1)
 
         if rc:
             raise SystemError
@@ -392,9 +392,9 @@ class reiserfsFileSystem(FileSystemType):
         devicePath = entry.device.setupDevice(chroot)
         label = labelFactory.createLabel(entry.mountpoint, self.maxLabelChars)
         rc = inutil.execWithRedirect("reiserfstune",
-                                                                                                                        ["--label", label, devicePath],
-                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                        stderr = "/dev/tty5", searchPath = 1)
+                                     ["--label", label, devicePath],
+                                     stdout = "/dev/tty5",
+                                     stderr = "/dev/tty5", searchPath = 1)
         if rc:
             raise SystemError
         entry.setLabel(label)
@@ -418,10 +418,10 @@ class xfsFileSystem(FileSystemType):
         devicePath = entry.device.setupDevice(chroot)
 
         rc = inutil.execWithRedirect("mkfs.xfs",
-                                                                                                                        ["-f", "-l", "internal",
-                                                                                                                         "-i", "attr=2", devicePath],
-                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                        stderr = "/dev/tty5", searchPath = 1)
+                                     ["-f", "-l", "internal",
+                                      "-i", "attr=2", devicePath],
+                                     stdout = "/dev/tty5",
+                                     stderr = "/dev/tty5", searchPath = 1)
 
         if rc:
             raise SystemError
@@ -431,9 +431,9 @@ class xfsFileSystem(FileSystemType):
         label = labelFactory.createLabel(entry.mountpoint, self.maxLabelChars)
         db_cmd = "label " + label
         rc = inutil.execWithRedirect("xfs_db",
-                                                                                                                        ["-x", "-c", db_cmd, devicePath],
-                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                        stderr = "/dev/tty5", searchPath = 1)
+                                     ["-x", "-c", db_cmd, devicePath],
+                                     stdout = "/dev/tty5",
+                                     stderr = "/dev/tty5", searchPath = 1)
         if rc:
             raise SystemError
         entry.setLabel(label)
@@ -455,9 +455,9 @@ class extFileSystem(FileSystemType):
         label = labelFactory.createLabel(entry.mountpoint, self.maxLabelChars)
 
         rc = inutil.execWithRedirect("e2label",
-                                                                                                                        [devicePath, label],
-                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                        stderr = "/dev/tty5", searchPath = 1)
+                                     [devicePath, label],
+                                     stdout = "/dev/tty5",
+                                     stderr = "/dev/tty5", searchPath = 1)
         if rc:
             raise SystemError
         entry.setLabel(label)
@@ -473,8 +473,8 @@ class extFileSystem(FileSystemType):
         log.info("Format command:  %s\n" % str(args))
 
         rc = ext2FormatFilesystem(args, "/dev/tty5",
-                                                                                                                progress,
-                                                                                                                entry.mountpoint)
+                                  progress,
+                                  entry.mountpoint)
         if rc:
             raise SystemError
 
@@ -492,10 +492,10 @@ class extFileSystem(FileSystemType):
             return
 
         rc = inutil.execWithRedirect("tune2fs",
-                                                                                                                        ["-c0", "-i0", "-Odir_index",
-                                                                                                                         "-ouser_xattr,acl", devicePath],
-                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                        stderr = "/dev/tty5", searchPath = 1)
+                                     ["-c0", "-i0", "-Odir_index",
+                                      "-ouser_xattr,acl", devicePath],
+                                     stdout = "/dev/tty5",
+                                     stderr = "/dev/tty5", searchPath = 1)
 
 class ext2FileSystem(extFileSystem):
     def __init__(self):
@@ -509,10 +509,9 @@ class ext2FileSystem(extFileSystem):
 
         if not entry.fsystem or not entry.origfsystem:
             raise RuntimeError, ("Trying to migrate fs w/o fsystem or "
-                                                                                             "origfsystem set")
+                                 "origfsystem set")
         if entry.fsystem.getName() != "ext3":
-            raise RuntimeError, ("Trying to migrate ext2 to something other "
-                                                                                             "than ext3")
+            raise RuntimeError, ("Trying to migrate ext2 to something other than ext3")
 
         # if journal already exists skip
         if isys.ext2HasJournal(devicePath):
@@ -520,9 +519,9 @@ class ext2FileSystem(extFileSystem):
             return
 
         rc = inutil.execWithRedirect("tune2fs",
-                                                                                                                        ["-j", devicePath ],
-                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                        stderr = "/dev/tty5", searchPath = 1)
+                                     ["-j", devicePath ],
+                                     stdout = "/dev/tty5",
+                                     stderr = "/dev/tty5", searchPath = 1)
 
         if rc:
             raise SystemError
@@ -532,14 +531,14 @@ class ext2FileSystem(extFileSystem):
         # At least we can avoid leaving them with a system which won't boot
         if not isys.ext2HasJournal(devicePath):
             log.warning("Migration of %s attempted but no journal exists after "
-                                                            "running tune2fs.\n" % (devicePath))
+                        "running tune2fs.\n" % (devicePath))
             if message:
                 rc = message(_("Error"),
-                                                                 _("An error occurred migrating %s to ext3.  It is "
-                                                                         "possible to continue without migrating this "
-                                                                         "file system if desired.\n\n"
-                                                                         "Would you like to continue without migrating %s?")
-                                                                % (devicePath, devicePath), type = "yesno")
+                             _("An error occurred migrating %s to ext3.  It is "
+                               "possible to continue without migrating this "
+                               "file system if desired.\n\n"
+                               "Would you like to continue without migrating %s?")
+                             % (devicePath, devicePath), type = "yesno")
                 if rc == 0:
                     sys.exit(0)
                     entry.fsystem = entry.origfsystem ### XXX what is this?
@@ -608,10 +607,10 @@ class swapFileSystem(FileSystemType):
     def formatDevice(self, entry, progress, chroot='/'):
         file = entry.device.setupDevice(chroot)
         rc = inutil.execWithRedirect("mkswap",
-                                                                                                                        ['-v1', file],
-                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                        stderr = "/dev/tty5",
-                                                                                                                        searchPath = 1)
+                                     ["-v1", file],
+                                     stdout = "/dev/tty5",
+                                     stderr = "/dev/tty5",
+                                     searchPath = 1)
         if rc:
             raise SystemError
 
@@ -628,10 +627,10 @@ class swapFileSystem(FileSystemType):
             swapLabel = "SWAP-%s" % (devName)
         label = labelFactory.createLabel(swapLabel, self.maxLabelChars)
         rc = inutil.execWithRedirect("mkswap",
-                                                                                                                        ['-v1', "-L", label, file],
-                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                        stderr = "/dev/tty5",
-                                                                                                                        searchPath = 1)
+                                     ["-v1", "-L", label, file],
+                                     stdout = "/dev/tty5",
+                                     stderr = "/dev/tty5",
+                                     searchPath = 1)
         if rc:
             raise SystemError
         entry.setLabel(label)
@@ -670,8 +669,8 @@ class FATFileSystem(FileSystemType):
         args.extend(devArgs)
 
         rc = inutil.execWithRedirect("mkdosfs", args,
-                                                                                                                        stdout = "/dev/tty5",
-                                                                                                                        stderr = "/dev/tty5", searchPath = 1)
+                                     stdout = "/dev/tty5",
+                                     stderr = "/dev/tty5", searchPath = 1)
         if rc:
             raise SystemError
 
@@ -853,10 +852,10 @@ class FileSystemSet:
 
                 ### debuggin'
                 #log.info ("fsset at %s\n"
-                #                                       "adding entry for %s\n"
-                #                                       "entry object %s, class __dict__ is %s",
-                #                                       self, entry.mountpoint, entry,
-                #                                       isys.printObject(entry.__dict__))
+                #          "adding entry for %s\n"
+                #          "entry object %s, class __dict__ is %s",
+                #          self, entry.mountpoint, entry,
+                #          isys.printObject(entry.__dict__))
 
         insertAt = 0
 
@@ -908,9 +907,9 @@ class FileSystemSet:
                     device = devify(entry.device.getDevice())
                 fstab = fstab + entry.device.getComment()
                 fstab = fstab + format % (device, entry.mountpoint,
-                                                                                                                        entry.fsystem.getName(),
-                                                                                                                        entry.options, entry.fsck,
-                                                                                                                        entry.order)
+                                          entry.fsystem.getName(),
+                                          entry.options, entry.fsck,
+                                          entry.order)
         return fstab
 
     def mtab(self):
@@ -928,9 +927,9 @@ class FileSystemSet:
                 else:
                     options = "rw"
                 mtab = mtab + format % (devify(entry.device.getDevice()),
-                                                                                                                entry.mountpoint,
-                                                                                                                entry.fsystem.getName(),
-                                                                                                                options)
+                                        entry.mountpoint,
+                                        entry.fsystem.getName(),
+                                        options)
         return mtab
 
 
@@ -1041,12 +1040,12 @@ class FileSystemSet:
             except SystemError:
                 if self.messageWindow:
                     self.messageWindow(_("Error"),
-                                                                                             _("An error occurred trying to "
-                                                                                                     "initialize swap on device %s.  This "
-                                                                                                     "problem is serious, and the install "
-                                                                                                     "cannot continue.\n\n"
-                                                                                                     "Press <Enter> to reboot your system.")
-                                                                                            % (entry.device.getDevice(),))
+                                       _("An error occurred trying to "
+                                         "initialize swap on device %s.  This "
+                                         "problem is serious, and the install "
+                                         "cannot continue.\n\n"
+                                         "Press <Enter> to reboot your system.")
+                                       % (entry.device.getDevice(),))
                 sys.exit(0)
 
         for entry in formatted:
@@ -1092,39 +1091,39 @@ class FileSystemSet:
                 except OldSwapError:
                     if self.messageWindow:
                         msg = _("The swap device:\n\n     /dev/%s\n\n"
-                                                        "is a version 0 Linux swap partition. If you "
-                                                        "want to use this device, you must reformat as "
-                                                        "a version 1 Linux swap partition. If you skip "
-                                                        "it, the installer will ignore it during the "
-                                                        "installation.") % (entry.device.getDevice())
+                                "is a version 0 Linux swap partition. If you "
+                                "want to use this device, you must reformat as "
+                                "a version 1 Linux swap partition. If you skip "
+                                "it, the installer will ignore it during the "
+                                "installation.") % (entry.device.getDevice())
 
                         swapErrorDialog(msg, _("Reformat"), entry)
                 except SuspendError:
                     if self.messageWindow:
                         if upgrading:
                             msg = _("The swap device:\n\n     /dev/%s\n\n"
-                                                            "in your /etc/fstab file is currently in "
-                                                            "use as a software suspend partition, "
-                                                            "which means your system is hibernating. "
-                                                            "To perform an upgrade, please shut down "
-                                                            "your system rather than hibernating it.") \
-                                                    % (entry.device.getDevice())
+                                    "in your /etc/fstab file is currently in "
+                                    "use as a software suspend partition, "
+                                    "which means your system is hibernating. "
+                                    "To perform an upgrade, please shut down "
+                                    "your system rather than hibernating it.") \
+                                  % (entry.device.getDevice())
                         else:
                             msg = _("The swap device:\n\n     /dev/%s\n\n"
-                                                            "in your /etc/fstab file is currently in "
-                                                            "use as a software suspend partition, "
-                                                            "which means your system is hibernating. "
-                                                            "If you are performing a new install, "
-                                                            "make sure the installer is set "
-                                                            "to format all swap partitions.") \
-                                                    % (entry.device.getDevice())
+                                    "in your /etc/fstab file is currently in "
+                                    "use as a software suspend partition, "
+                                    "which means your system is hibernating. "
+                                    "If you are performing a new install, "
+                                    "make sure the installer is set "
+                                    "to format all swap partitions.") \
+                                   % (entry.device.getDevice())
 
                         # choose your own adventure swap partitions...
                         msg = msg + _("\n\nChoose Skip if you want the "
-                              "installer to ignore this partition during "
-                              "the upgrade.  Choose Format to reformat "
-                              "the partition as swap space.  Choose Reboot "
-                              "to restart the system.")
+                                      "installer to ignore this partition during "
+                                      "the upgrade.  Choose Format to reformat "
+                                      "the partition as swap space.  Choose Reboot "
+                                      "to restart the system.")
 
                         swapErrorDialog(msg, _("Format"), entry)
                     else:
@@ -1134,25 +1133,25 @@ class FileSystemSet:
                     if self.messageWindow:
                         if upgrading:
                             self.messageWindow(_("Error"),
-                                                                                                            _("Error enabling swap device "
-                                                                                                            "%s: %s\n\n"
-                                                                                                            "The /etc/fstab on your "
-                                                                                                            "upgrade partition does not "
-                                                                                                            "reference a valid swap "
-                                                                                                            "partition.\n\n"
-                                                                                                            "Press OK to reboot your "
-                                                                                                            "system.")
-                                                                                                    % (entry.device.getDevice(), msg))
+                                               _("Error enabling swap device "
+                                                 "%s: %s\n\n"
+                                                 "The /etc/fstab on your "
+                                                 "upgrade partition does not "
+                                                 "reference a valid swap "
+                                                 "partition.\n\n"
+                                                 "Press OK to reboot your "
+                                                 "system.")
+                                               % (entry.device.getDevice(), msg))
                         else:
                             self.messageWindow(_("Error"),
-                                                                                                    _("Error enabling swap device "
-                                                                                                     "%s: %s\n\n"
-                                                                                                     "This most likely means this "
-                                                                                                     "swap partition has not been "
-                                                                                                     "initialized.\n\n"
-                                                                                                     "Press OK to reboot your "
-                                                                                                     "system.")
-                                                                                            % (entry.device.getDevice(), msg))
+                                               _("Error enabling swap device "
+                                                 "%s: %s\n\n"
+                                                 "This most likely means this "
+                                                 "swap partition has not been "
+                                                 "initialized.\n\n"
+                                                 "Press OK to reboot your "
+                                                 "system.")
+                                               % (entry.device.getDevice(), msg))
                     sys.exit(0)
 
     def labelEntry(self, entry, chroot):
@@ -1199,23 +1198,23 @@ class FileSystemSet:
                 log.error("Bad blocks detected on device %s",entry.device.getDevice())
                 if self.messageWindow:
                     self.messageWindow(_("Error"),
-                                                                                            _("Bad blocks have been detected on "
-                                                                                                    "device /dev/%s. We do "
-                                                                                                    "not recommend you use this device."
-                                                                                                    "\n\n"
-                                                                                                    "Press <Enter> to reboot your system")
-                                                                                            % (entry.device.getDevice(),))
+                                       _("Bad blocks have been detected on "
+                                         "device /dev/%s. We do "
+                                         "not recommend you use this device."
+                                         "\n\n"
+                                         "Press <Enter> to reboot your system")
+                                       % (entry.device.getDevice(),))
                 sys.exit(0)
 
             except SystemError:
                 if self.messageWindow:
                     self.messageWindow(_("Error"),
-                                                                                             _("An error occurred searching for "
-                                                                                                    "bad blocks on %s.  This problem is "
-                                                                                                    "serious, and the install cannot "
-                                                                                                    "continue.\n\n"
-                                                                                                    "Press <Enter> to reboot your system.")
-                                                                                                    % (entry.device.getDevice(),))
+                                       _("An error occurred searching for "
+                                         "bad blocks on %s.  This problem is "
+                                         "serious, and the install cannot "
+                                         "continue.\n\n"
+                                         "Press <Enter> to reboot your system.")
+                                       % (entry.device.getDevice(),))
                 sys.exit(0)
 
     def makeFilesystems(self, chroot='/'):
@@ -1232,12 +1231,12 @@ class FileSystemSet:
             except SystemError:
                 if self.messageWindow:
                     self.messageWindow(_("Error"),
-                                                                                             _("An error occurred trying to "
-                                                                                                    "format %s.  This problem is "
-                                                                                                    "serious, and the install cannot "
-                                                                                                    "continue.\n\n"
-                                                                                                    "Press <Enter> to reboot your system.")
-                                                                                            % (entry.device.getDevice(),))
+                                       _("An error occurred trying to "
+                                         "format %s.  This problem is "
+                                         "serious, and the install cannot "
+                                         "continue.\n\n"
+                                         "Press <Enter> to reboot your system.")
+                                    % (entry.device.getDevice(),))
                 sys.exit(0)
 
         for entry in formatted:
@@ -1281,12 +1280,12 @@ class FileSystemSet:
             except SystemError:
                 if self.messageWindow:
                     self.messageWindow(_("Error"),
-                                                                                             _("An error occurred trying to "
-                                                                                                     "migrate %s.  This problem is "
-                                                                                                     "serious, and the install cannot "
-                                                                                                     "continue.\n\n"
-                                                                                                     "Press <Enter> to reboot your system.")
-                                                                                            % (entry.device.getDevice(),))
+                                       _("An error occurred trying to "
+                                         "migrate %s.  This problem is "
+                                         "serious, and the install cannot "
+                                         "continue.\n\n"
+                                         "Press <Enter> to reboot your system.")
+                                       % (entry.device.getDevice(),))
                 sys.exit(0)
 
             self.migratedfs = 1
@@ -1309,21 +1308,21 @@ class FileSystemSet:
                 if self.messageWindow:
                     if num == errno.EEXIST:
                         self.messageWindow(_("Invalid mount point"),
-                                                                                                 _("An error occurred when trying "
-                                                                                                        "to create %s.  Some element of "
-                                                                                                        "this path is not a directory. "
-                                                                                                        "This is a fatal error and the "
-                                                                                                        "install cannot continue.\n\n"
-                                                                                                        "Press <Enter> to reboot your "
-                                                                                                        "system.") % (entry.mountpoint,))
+                                           _("An error occurred when trying "
+                                             "to create %s.  Some element of "
+                                             "this path is not a directory. "
+                                             "This is a fatal error and the "
+                                             "install cannot continue.\n\n"
+                                             "Press <Enter> to reboot your "
+                                             "system.") % (entry.mountpoint,))
                     else:
                         self.messageWindow(_("Invalid mount point"),
-                                                                                                 _("An error occurred when trying "
-                                                                                                         "to create %s: %s.  This is "
-                                                                                                         "a fatal error and the install "
-                                                                                                         "cannot continue.\n\n"
-                                                                                                         "Press <Enter> to reboot your "
-                                                                                                         "system.") % (entry.mountpoint, msg))
+                                           _("An error occurred when trying "
+                                             "to create %s: %s.  This is "
+                                             "a fatal error and the install "
+                                             "cannot continue.\n\n"
+                                             "Press <Enter> to reboot your "
+                                             "system.") % (entry.mountpoint, msg))
                     sys.exit(0)
             except SystemError, (num, msg):
                 if raiseErrors:
@@ -1332,14 +1331,14 @@ class FileSystemSet:
                 if self.messageWindow:
                     if not entry.fsystem.isLinuxNativeFS():
                         ret = self.messageWindow(_("Unable to mount filesystem"),
-                                                                                                                         _("An error occurred mounting "
-                                                                                                                                "device %s as %s.  You may "
-                                                                                                                                "continue installation, but "
-                                                                                                                                "there may be problems.") %
-                                                                                                                                (entry.device.getDevice(),
-                                                                                                                                entry.mountpoint),
-                                                                                                                                type="custom", custom_icon="warning",
-                                                                                                                                custom_buttons=[_("_Reboot"), _("_Continue")])
+                                                 _("An error occurred mounting "
+                                                   "device %s as %s.  You may "
+                                                   "continue installation, but "
+                                                   "there may be problems.")
+                                                 % (entry.device.getDevice(),
+                                                    entry.mountpoint),
+                                                    type="custom", custom_icon="warning",
+                                                    custom_buttons=[_("_Reboot"), _("_Continue")])
 
                         if ret == 0:
                             sys.exit(0)
@@ -1348,18 +1347,18 @@ class FileSystemSet:
                     else:
                         if pomona.id.getUpgrade() and not entry.getLabel():
                             errStr = _("Error mounting device %s as %s: "
-                                                                     "%s\n\n"
-                                                                     "Devices in /etc/fstab should be "
-                                                                     "specified by label, not by device name."
-                                                                     "\n\n"
-                                                                     "Press OK to reboot your system.") % (entry.device.getDevice(), entry.mountpoint, msg)
+                                       "%s\n\n"
+                                       "Devices in /etc/fstab should be "
+                                       "specified by label, not by device name."
+                                       "\n\n"
+                                       "Press OK to reboot your system.") % (entry.device.getDevice(), entry.mountpoint, msg)
                         else:
                             errStr = _("Error mounting device %s as %s: "
-                                                                    "%s\n\n"
-                                                                    "This most likely means this "
-                                                                    "partition has not been formatted."
-                                                                    "\n\n"
-                                                                    "Press OK to reboot your system.") % (entry.device.getDevice(), entry.mountpoint, msg)
+                                       "%s\n\n"
+                                       "This most likely means this "
+                                       "partition has not been formatted."
+                                       "\n\n"
+                                       "Press OK to reboot your system.") % (entry.device.getDevice(), entry.mountpoint, msg)
 
                         self.messageWindow(_("Error"), errStr)
 
@@ -1416,7 +1415,7 @@ class FileSystemSet:
             isys.umount(instPath + '/proc/bus/usb', removeDir = 0)
             log.info("Umount USB OK")
         except:
-#                       log.error("Umount USB Fail")
+#           log.error("Umount USB Fail")
             pass
 
         # take a slice so we don't modify self.entries
@@ -1430,10 +1429,10 @@ class FileSystemSet:
 
 class FileSystemSetEntry:
     def __init__ (self, device, mountpoint,
-                                                            fsystem=None, options=None,
-                                                            origfsystem=None, migrate=0,
-                                                            order=-1, fsck=-1, format=0,
-                                                            badblocks = 0, bytesPerInode=4096):
+                  fsystem=None, options=None,
+                  origfsystem=None, migrate=0,
+                  order=-1, fsck=-1, format=0,
+                  badblocks = 0, bytesPerInode=4096):
         if not fsystem:
             fsystem = fileSystemTypeGet("ext2")
         self.device = device
@@ -1463,8 +1462,8 @@ class FileSystemSetEntry:
             self.order = order
             if format and not fsystem.isFormattable():
                 raise RuntimeError, ("file system type %s is not formattable, "
-                                                                                                 "but has been added to fsset with format "
-                                                                                                 "flag on" % fsystem.getName())
+                                     "but has been added to fsset with format "
+                                     "flag on" % fsystem.getName())
         self.format = format
         self.badblocks = badblocks
         self.bytesPerInode = bytesPerInode
@@ -1476,16 +1475,16 @@ class FileSystemSetEntry:
         # but it's too late now
         if (self.migrate == 1) and (self.origfsystem is not None):
             self.origfsystem.mount(device, "%s" % (self.mountpoint,),
-                                                                                                            readOnly = readOnly,
-                                                                                                            bindMount = isinstance(self.device,
-                                                                                                            BindMountDevice),
-                                                                                                            instroot = chroot)
+                                   readOnly = readOnly,
+                                   bindMount = isinstance(self.device,
+                                   BindMountDevice),
+                                   instroot = chroot)
         else:
             self.fsystem.mount(device, "%s" % (self.mountpoint,),
-                                                                                            readOnly = readOnly,
-                                                                                            bindMount = isinstance(self.device,
-                                                                                            BindMountDevice),
-                                                                                            instroot = chroot)
+                               readOnly = readOnly,
+                               bindMount = isinstance(self.device,
+                               BindMountDevice),
+                               instroot = chroot)
 
         self.mountcount = self.mountcount + 1
 
@@ -1541,13 +1540,13 @@ class FileSystemSetEntry:
             mntpt = self.mountpoint
 
         str = ("fsentry -- device: %(device)s   mountpoint: %(mountpoint)s\n"
-                                 "  fsystem: %(fsystem)s format: %(format)s\n"
-                                 "  ismounted: %(mounted)s  options: '%(options)s'\n"
-                                 "  bytesPerInode: %(bytesPerInode)s label: %(label)s\n"
-                                % {"device": self.device.getDevice(), "mountpoint": mntpt,
-                                        "fsystem": self.fsystem.getName(), "format": self.format,
-                                        "mounted": self.mountcount, "options": self.options,
-                                        "bytesPerInode": self.bytesPerInode, "label": self.label})
+               "  fsystem: %(fsystem)s format: %(format)s\n"
+               "  ismounted: %(mounted)s  options: '%(options)s'\n"
+               "  bytesPerInode: %(bytesPerInode)s label: %(label)s\n"
+               % {"device": self.device.getDevice(), "mountpoint": mntpt,
+                  "fsystem": self.fsystem.getName(), "format": self.format,
+                  "mounted": self.mountcount, "options": self.options,
+                  "bytesPerInode": self.bytesPerInode, "label": self.label})
         return str
 
 
@@ -1669,7 +1668,7 @@ class SwapFileDevice(Device):
                 isys.ddfile(file, self.size, None)
             else:
                 raise SystemError, (0, "swap file creation necessary, but "
-                                                                                        "required size is unknown.")
+                                       "required size is unknown.")
         return file
 
 # This is a device that describes a swap file that is sitting on
@@ -1731,26 +1730,26 @@ def readFstab(pomona):
         elif intf is not None:
             try:
                 intf.messageWindow(_("Duplicate Labels"),
-                                                                                         _("Multiple devices on your system are "
-                                                                                                 "labelled %s.  Labels across devices must be "
-                                                                                                 "unique for your system to function "
-                                                                                                 "properly.\n\n"
-                                                                                                 "Please fix this problem and restart the "
-                                                                                                 "installation process.")
-                                                                                                % (label,), type="custom", custom_icon="error",
-                                                                                                        custom_buttons=[_("_Reboot")])
+                                   _("Multiple devices on your system are "
+                                     "labelled %s.  Labels across devices must be "
+                                     "unique for your system to function "
+                                     "properly.\n\n"
+                                     "Please fix this problem and restart the "
+                                     "installation process.")
+                                   % (label,), type="custom", custom_icon="error",
+                                     custom_buttons=[_("_Reboot")])
             except TypeError:
                 intf.messageWindow(_("Invalid Label"),
-                                                                                         _("An invalid label was found on device "
-                                                                                                 "%s.  Please fix this problem and restart "
-                                                                                                 "the installation process.")
-                                                                                                % (device,), type="custom", custom_icon="error",
-                                                                                                        custom_buttons=[_("_Reboot")])
+                                   _("An invalid label was found on device "
+                                     "%s.  Please fix this problem and restart "
+                                     "the installation process.")
+                                   % (device,), type="custom", custom_icon="error",
+                                     custom_buttons=[_("_Reboot")])
 
                 sys.exit(0)
         else:
             log.warning("Duplicate labels for %s, but no intf so trying "
-                                                            "to continue" % (label,))
+                        "to continue" % (label,))
 
     # mark these labels found on the system as used so the factory
     # doesn't give them to another device
@@ -1814,7 +1813,7 @@ def readFstab(pomona):
                 device = makeDevice(labelToDevice[label])
             else:
                 log.warning ("fstab file has LABEL=%s, but this label "
-                                                                 "could not be found on any file system", label)
+                             "could not be found on any file system", label)
                 # bad luck, skip this entry.
                 continue
         elif fields[2] == "swap" and not fields[0].startswith('/dev/'):
@@ -1849,7 +1848,7 @@ def readFstab(pomona):
                 pass
 
         entry = FileSystemSetEntry(device, fields[1], fsystem, fields[3],
-                           origfsystem=fsystem)
+                                   origfsystem=fsystem)
         if label:
             entry.setLabel(label)
         fsset.add(entry)
@@ -1968,7 +1967,7 @@ def allocateLoopback(file):
 def ext2FormatFilesystem(argList, messageFile, windowCreator, mntpoint):
     if windowCreator:
         w = windowCreator(_("Formatting"),
-                                                                                _("Formatting %s file system...") % (mntpoint,), 100)
+                          _("Formatting %s file system...") % (mntpoint,), 100)
     else:
         w = None
 

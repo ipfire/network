@@ -134,8 +134,8 @@ class PomonaPakfire:
 
         extractor = \
                 subprocess.Popen(command, shell=True,
-                                                                                 stdout=subprocess.PIPE,
-                                                                                 stdin=subprocess.PIPE)
+                                 stdout=subprocess.PIPE,
+                                 stdin=subprocess.PIPE)
 
         cb.callback(CB_START, title=_("Base system"), text=_("Installing base system..."))
 
@@ -222,10 +222,8 @@ class PakfireBackend(PomonaBackend):
     def kernelVersionList(self, pomona):
         kernelVersions = []
 
-        tag2desc = {
-                                                        "-smp" : _("Symmetric multiprocessing"),
-                                                        "-xen" : _("Xen guest"),
-                                                 }
+        tag2desc = { "-smp" : _("Symmetric multiprocessing"),
+                     "-xen" : _("Xen guest"), }
 
         kernelName = "%skernel-%s" % (sname, kernelVersion)
 
@@ -258,7 +256,7 @@ class PakfireProgress:
             self.window.set(float(current)/total * self.incr + self.current)
         else:
             warnings.warn("PakfireProgress.progressbar called when popped",
-                                                                            RuntimeWarning, stacklevel=2)
+                          RuntimeWarning, stacklevel=2)
 
     def pop(self):
         self.window.pop()
@@ -273,4 +271,4 @@ class PakfireProgress:
             self.window.set(self.current)
         else:
             warnings.warn("PakfireProgress.set called when popped",
-                                                                            RuntimeWarning, stacklevel=2)
+                          RuntimeWarning, stacklevel=2)

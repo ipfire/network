@@ -29,8 +29,8 @@ log = logging.getLogger("pomona")
 class PomonaBackend:
     def __init__(self, method, instPath):
         """Abstract backend class all backends should inherit from this
-                 @param method: Object of InstallMethod type
-                 @param instPath: root path for the installation to occur"""
+           @param method: Object of InstallMethod type
+           @param instPath: root path for the installation to occur"""
 
         self.method = method
         self.instPath = instPath

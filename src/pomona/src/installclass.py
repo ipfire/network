@@ -77,7 +77,7 @@ class BaseInstallClass:
     skipkey = False
 
     def setBootloader(self, id, location=None, forceLBA=0, password=None,
-                                                                            md5pass=None, appendLine="", driveorder = []):
+                      md5pass=None, appendLine="", driveorder = []):
         if appendLine:
             id.bootloader.args.set(appendLine)
             id.bootloader.setForceLBA(forceLBA)
@@ -99,7 +99,7 @@ class BaseInstallClass:
                     new.append(drive)
                 else:
                     log.warning("requested drive %s in boot drive order "
-                                                                    "doesn't exist" %(drive,))
+                                "doesn't exist" %(drive,))
             id.bootloader.drivelist = new
 
     def setIgnoredDisks(self, id, drives):
@@ -117,47 +117,47 @@ class BaseInstallClass:
     def setSteps(self, pomona):
         dispatch = pomona.dispatch
         dispatch.setStepList(
-                "language",
-                "keyboard",
-                "welcome",
-                "findrootparts",
-                "betanag",
-                "installtype",
-                "partitionobjinit",
-                "parttype",
-                "autopartitionexecute",
-                "partition",
-         "partitiondone",
-         "bootloadersetup",
-         "bootloader",
-         "networkdevicecheck",
-         "network",
-         "timezone",
-         "accounts",
-         "reposetup",
-         "basepkgsel",
-         "tasksel",
-         "postselection",
-         "confirminstall",
-         "install",
-         "enablefilesystems",
-         "migratefilesystems",
-         "setuptime",
-         "preinstallconfig",
-         "installpackages",
-         "postinstallconfig",
-         "writeconfig",
-         "firstboot",
-         "instbootloader",
-         "dopostaction",
-         "postscripts",
-         "writexconfig",
-         "writeksconfig",
-         "writeregkey",
-         "methodcomplete",
-         "copylogs",
-         "setfilecon",
-         "complete"
+            "language",
+            "keyboard",
+            "welcome",
+            "findrootparts",
+            "betanag",
+            "installtype",
+            "partitionobjinit",
+            "parttype",
+            "autopartitionexecute",
+            "partition",
+            "partitiondone",
+            "bootloadersetup",
+            "bootloader",
+            "networkdevicecheck",
+            "network",
+            "timezone",
+            "accounts",
+            "reposetup",
+            "basepkgsel",
+            "tasksel",
+            "postselection",
+            "confirminstall",
+            "install",
+            "enablefilesystems",
+            "migratefilesystems",
+            "setuptime",
+            "preinstallconfig",
+            "installpackages",
+            "postinstallconfig",
+            "writeconfig",
+            "firstboot",
+            "instbootloader",
+            "dopostaction",
+            "postscripts",
+            "writexconfig",
+            "writeksconfig",
+            "writeregkey",
+            "methodcomplete",
+            "copylogs",
+            "setfilecon",
+            "complete"
         )
 
     def setZeroMbr(self, id, zeroMbr):
@@ -176,7 +176,7 @@ class BaseInstallClass:
         id.instLanguage.setRuntimeLanguage(nick)
 
     def setDefaultPartitioning(self, partitions, clear = CLEARPART_TYPE_ALL,
-                                                                                                                    doClear = 1):
+                               doClear = 1):
         autorequests = [ ("/", None, 1024, None, 1, 1, 1) ]
 
         bootreq = getAutopartitionBoot()
@@ -237,7 +237,7 @@ class InstallClass(BaseInstallClass):
     def setInstallData(self, pomona):
         BaseInstallClass.setInstallData(self, pomona)
         BaseInstallClass.setDefaultPartitioning(self, pomona.id.partitions,
-                                                                                                                                                                        CLEARPART_TYPE_ALL)
+                                                CLEARPART_TYPE_ALL)
 
     def setSteps(self, pomona):
         dispatch = pomona.dispatch

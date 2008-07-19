@@ -37,7 +37,7 @@ class BootloaderChoiceWindow:
         buttons = ButtonBar(screen, [TEXT_OK_BUTTON, TEXT_BACK_BUTTON])
 
         grid = GridFormHelp(screen, _("Boot Loader Configuration"),
-                                                                                                                                "btloadinstall", 1, 5)
+                                    "btloadinstall", 1, 5)
         grid.add(t, 0, 0, (0,0,0,1))
         grid.add(grub, 0, 1, (0,0,0,0))
         grid.add(skipbl, 0, 3, (0,0,0,1))
@@ -55,13 +55,13 @@ class BootloaderChoiceWindow:
             if blradio.getSelection() == "nobl":
                 rc = ButtonChoiceWindow(screen, _("Skip Boot Loader"),
                                         _("You have elected not to install "
-                                                "any boot loader, which is not recommended "
-                                                "unless you have an advanced need. Booting "
-                                                "your system into Linux directly from the "
-                                                "hard drive almost always requires a boot "
-                                                "loader.\n\n"
-                                                "Are you sure you want to skip boot loader "
-                                                "installation?"),
+                                          "any boot loader, which is not recommended "
+                                          "unless you have an advanced need. Booting "
+                                          "your system into Linux directly from the "
+                                          "hard drive almost always requires a boot "
+                                          "loader.\n\n"
+                                          "Are you sure you want to skip boot loader "
+                                          "installation?"),
                                         [ (_("Yes"), "yes"), (_("No"), "no") ], width = 50)
                 if rc == "no":
                     continue
@@ -84,10 +84,10 @@ class BootloaderAppendWindow:
             return INSTALL_NOOP
 
         t = TextboxReflowed(53, _("A few systems need to pass special options "
-                                                                                                                "to the kernel at boot time to function "
-                                                                                                                "properly. If you need to pass boot options to the "
-                                                                                                                "kernel, enter them now. If you don't need any or "
-                                                                                                                "aren't sure, leave this blank."))
+                                  "to the kernel at boot time to function "
+                                  "properly. If you need to pass boot options to the "
+                                  "kernel, enter them now. If you don't need any or "
+                                  "aren't sure, leave this blank."))
 
         entry = Entry(48, scroll = 1, returnExit = 1)
         entry.set(pomona.id.bootloader.args.get())
@@ -115,11 +115,11 @@ class BootloaderAppendWindow:
 
             if cb.selected() and not pomona.id.bootloader.forceLBA32:
                 rc = pomona.intf.messageWindow(_("Warning"),
-                                                        _("If LBA32 is not supported by your system's BIOS, "
-                                                                "forcing its use can prevent your machine from "
-                                                                "booting.\n\n"
-                                                                "Would you like to continue and force LBA32 mode?"),
-                                                        type = "yesno")
+                                               _("If LBA32 is not supported by your system's BIOS, "
+                                                 "forcing its use can prevent your machine from "
+                                                 "booting.\n\n"
+                                                 "Would you like to continue and force LBA32 mode?"),
+                                                type = "yesno")
 
                 if rc != 1:
                     continue
@@ -157,10 +157,10 @@ class BootloaderLocationWindow:
                 devices.append(device)
 
         (rc, sel) = ListboxChoiceWindow (screen, _("Boot Loader Configuration"),
-                                                                _("Where do you want to install the boot loader?"),
-                                                                locations, default = default,
-                                                                buttons = [ TEXT_OK_BUTTON, TEXT_BACK_BUTTON ],
-                                                                help = "bootloaderlocation")
+                                                 _("Where do you want to install the boot loader?"),
+                                                 locations, default = default,
+                                                 buttons = [ TEXT_OK_BUTTON, TEXT_BACK_BUTTON ],
+                                                 help = "bootloaderlocation")
 
         if rc == TEXT_BACK_CHECK:
             return INSTALL_BACK
@@ -189,7 +189,7 @@ class BootloaderImagesWindow:
         newLabel = Entry (20, scroll = 1, returnExit = 1, text = itemLabel)
 
         buttons = ButtonBar(screen, [TEXT_OK_BUTTON, (_("Clear"), "clear"),
-                                                                                        (_("Cancel"), "cancel")])
+                                                     (_("Cancel"), "cancel")])
 
         subgrid = Grid(2, 2)
         subgrid.setField(devLabel, 0, 0, anchorLeft = 1)
@@ -215,14 +215,14 @@ class BootloaderImagesWindow:
             elif (result == TEXT_OK_CHECK or result == TEXT_F12_CHECK or result == newLabel):
                 if not allowNone and not newLabel.value():
                     ButtonChoiceWindow(screen, _("Invalid Boot Label"),
-                                                                                                                       _("Boot label may not be empty."),
-                                                                                                                                    [ TEXT_OK_BUTTON ])
+                                               _("Boot label may not be empty."),
+                                               [ TEXT_OK_BUTTON ])
                     result = ""
                 elif not self.validBootloaderLabel(newLabel.value()):
                     ButtonChoiceWindow(screen, _("Invalid Boot Label"),
-                                                                                                                             _("Boot label contains "
-                                                                                                                                     "illegal characters."),
-                                                                                                                                    [ TEXT_OK_BUTTON ])
+                                               _("Boot label contains "
+                                                 "illegal characters."),
+                                               [ TEXT_OK_BUTTON ])
                     result = ""
 
             screen.popWindow()
@@ -249,8 +249,8 @@ class BootloaderImagesWindow:
         images = self.bl.images.getImages()
         default = self.bl.images.getDefault()
 
-        listboxLabel = Label(     "%-7s  %-25s %-12s" %
-                                                                        ( _("Default"), _("Boot label"), _("Device")))
+        listboxLabel = Label("%-7s  %-25s %-12s" %
+                            (_("Default"), _("Boot label"), _("Device")))
         listbox = Listbox(5, scroll = 1, returnExit = 1)
 
         sortedKeys = images.keys()
@@ -268,14 +268,13 @@ class BootloaderImagesWindow:
         buttons = ButtonBar(screen, [ TEXT_OK_BUTTON, (_("Edit"), "edit"),
                                                         TEXT_BACK_BUTTON ])
 
-        text = TextboxReflowed(55,
-                                _("The boot manager %s uses can boot other "
-                                        "operating systems as well.  Please tell me "
-                                        "what partitions you would like to be able to boot "
-                                        "and what label you want to use for each of them.") % (name,))
+        text = TextboxReflowed(55, _("The boot manager %s uses can boot other "
+                                     "operating systems as well.  Please tell me "
+                                     "what partitions you would like to be able to boot "
+                                     "and what label you want to use for each of them.") % (name,))
 
         g = GridFormHelp(screen, _("Boot Loader Configuration"),
-                                                                                "bootloaderlabels", 1, 4)
+                                   "bootloaderlabels", 1, 4)
         g.add(text, 0, 0, anchorLeft = 1)
         g.add(listboxLabel, 0, 1, padding = (0, 1, 0, 0), anchorLeft = 1)
         g.add(listbox, 0, 2, padding = (0, 0, 0, 1), anchorLeft = 1)
@@ -332,11 +331,10 @@ class BootloaderImagesWindow:
                         default = ""
                 else:
                     pomona.intf.messageWindow(_("Cannot Delete"),
-                                                                                                                            _("This boot target cannot be "
-                                                                                                                                    "deleted because it is for "
-                                                                                                                                    "the %s system you are about "
-                                                                                                                                    "to install.") %(name,))
-
+                                              _("This boot target cannot be "
+                                                "deleted because it is for "
+                                                "the %s system you are about "
+                                                "to install.") %(name,))
 
             screen.popHelpLine()
             screen.popWindow()
@@ -375,11 +373,10 @@ class BootloaderPasswordWindow:
 
         buttons = ButtonBar(screen, [TEXT_OK_BUTTON, TEXT_BACK_BUTTON])
 
-        text = TextboxReflowed(55,
-                                                _("A boot loader password prevents users from passing arbitrary "
-                                                        "options to the kernel.  For highest security, you "
-                                                        "should set a password, but a password is not "
-                                                        "necessary for more casual users."))
+        text = TextboxReflowed(55, _("A boot loader password prevents users from passing arbitrary "
+                                     "options to the kernel.  For highest security, you "
+                                     "should set a password, but a password is not "
+                                     "necessary for more casual users."))
 
         g = GridFormHelp(screen, _("Boot Loader Configuration"), "grubpasswd", 1, 6)
         g.add(text, 0, 0, (0,0,0,1), anchorLeft = 1)
@@ -428,23 +425,23 @@ class BootloaderPasswordWindow:
 
             if pw != confirm:
                 pomona.intf.messageWindow(_("Passwords Do Not Match"),
-                                                                                                                        _("Passwords do not match"))
+                                          _("Passwords do not match"))
                 continue
 
             if len(pw) < 1:
                 pomona.intf.messageWindow(_("Password Too Short"),
-                                                                                                                        _("Boot loader password is too short"))
+                                          _("Boot loader password is too short"))
                 continue
 
             if len(pw) < 6:
                 rc = pomona.intf.messageWindow(_("Warning"),
-                                                                                        _("Your boot loader password is shorter than "
-                                                                                                "six characters.  We recommend a longer "
-                                                                                                "boot loader password."
-                                                                                                "\n\n"
-                                                                                                "Would you like to continue with this "
-                                                                                                "password?"),
-                                                                                        type = "yesno")
+                                               _("Your boot loader password is shorter than "
+                                                 "six characters.  We recommend a longer "
+                                                 "boot loader password."
+                                                 "\n\n"
+                                                 "Would you like to continue with this "
+                                                 "password?"),
+                                               type = "yesno")
                 if rc == 0:
                     continue
 

@@ -72,8 +72,8 @@ class InstallerLog:
 
     # Add a simple handler - file or stream, depending on what we're given.
     def addFileHandler(self, file, addToLogger, minLevel=DEFAULT_LEVEL,
-                                                                                    fmtStr="%(asctime)s %(levelname)-8s: %(message)s",
-                                                                                    autoSetLevel=True):
+                       fmtStr="%(asctime)s %(levelname)-8s: %(message)s",
+                       autoSetLevel=True):
         if type (file) == type ("string"):
             logfileHandler = logging.FileHandler(file)
         else:
@@ -91,7 +91,7 @@ class InstallerLog:
 
     # Add a handler for remote syslogs.
     def addSysLogHandler(self, logger, host, port=SYSLOG_UDP_PORT,
-                                                                                                    minLevel=DEFAULT_LEVEL):
+                         minLevel=DEFAULT_LEVEL):
         fmt = logging.Formatter("%(levelname)-8s %(message)s")
         syslogHandler = SysLogHandler((host, port))
         syslogHandler.setLevel(minLevel)

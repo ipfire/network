@@ -19,20 +19,20 @@ from pyfire.translate import _
 class BeginInstallWindow:
     def __call__ (self, screen, pomona):
         rc = ButtonChoiceWindow(screen, _("Installation to begin"),
-                                                                                                                                        _("Now, we got all information we need for "
-                                                                                                                                                "installation. If there is something you "
-                                                                                                                                                "want change you can still go back. "
-                                                                                                                                                "If not choose OK to start."),
-                                                                                                                                        buttons = [ _("OK"), _("Back") ],
-                                                                                                                                        help = "begininstall")
+                                        _("Now, we got all information we need for "
+                                          "installation. If there is something you "
+                                          "want change you can still go back. "
+                                          "If not choose OK to start."),
+                                        buttons = [ _("OK"), _("Back") ],
+                                        help = "begininstall")
         if rc == string.lower(_("Back")):
             return INSTALL_BACK
 
         if rc == 0:
             rc2 = pomona.intf.messageWindow(_("Reboot?"),
-                                                                                                                                            _("The system will be rebooted now."),
-                                                                                                                                            type="custom", custom_icon="warning",
-                                                                                                                                            custom_buttons=[_("_Back"), _("_Reboot")])
+                                            _("The system will be rebooted now."),
+                                            type="custom", custom_icon="warning",
+                                            custom_buttons=[_("_Back"), _("_Reboot")])
             if rc2 == 1:
                 sys.exit(0)
             else:

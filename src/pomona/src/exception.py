@@ -28,7 +28,7 @@ def dumpClass(instance, fd, level=0, parentkey="", skipList=[]):
         fd.write("%s\n" % (instance,))
         return
     fd.write("%s instance, containing members:\n" %
-                                    (instance.__class__.__name__))
+             (instance.__class__.__name__))
     pad = ' ' * ((level) * 2)
 
     for key, value in instance.__dict__.items():
@@ -40,7 +40,7 @@ def dumpClass(instance, fd, level=0, parentkey="", skipList=[]):
         # Don't dump objects that are in our skip list, though ones that are
         # None are probably okay.
         if eval("instance.%s is not None" % key) and \
-                        eval("id(instance.%s)" % key) in skipList:
+                eval("id(instance.%s)" % key) in skipList:
             continue
 
     if type(value) == types.ListType:
@@ -170,8 +170,8 @@ def copyExceptionToRemote(intf):
         elif childpid == 0:
             # child process - run scp
             args = ["scp", "-oNumberOfPasswordPrompts=1",
-                                            "-oStrictHostKeyChecking=no"] + portArgs + \
-                                     ["/tmp/anacdump.txt", "%s@%s:%s" % (user, host, path)]
+                    "-oStrictHostKeyChecking=no"] + portArgs + \
+                   ["/tmp/anacdump.txt", "%s@%s:%s" % (user, host, path)]
             os.execvp("scp", args)
 
             # parent process
@@ -253,15 +253,15 @@ def handleException(pomona, (type, value, tb)):
 
             if scpRc == 0:
                 pomona.intf.messageWindow(_("Dump Written"),
-                                                                                                                                 _("Your system's state has been successfully written to "
-                                                                                                                                         "the remote host.  Your system will now be rebooted."),
-                                                                                                                                type="custom", custom_icon="info",
-                                                                                                                                custom_buttons=[_("_Reboot")])
+                                          _("Your system's state has been successfully written to "
+                                            "the remote host.  Your system will now be rebooted."),
+                                          type="custom", custom_icon="info",
+                                          custom_buttons=[_("_Reboot")])
                 sys.exit(0)
             elif scpRc == 1:
                 continue
             elif scpRc == 2:
                 pomona.intf.messageWindow(_("Dump Not Written"),
-                                                                                                                                 _("There was a problem writing the system state to the "
-                                                                                                                                         "remote host."))
+                                          _("There was a problem writing the system state to the "
+                                            "remote host."))
                 continue

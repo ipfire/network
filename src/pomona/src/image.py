@@ -36,21 +36,21 @@ class CdromInstallMethod(InstallMethod):
             except Exception, e:
                 log.error("exception when umounting media: %s" % (e,))
                 self.messageWindow(_("Error"),
-                                                                                         _("An error occurred unmounting the disc. "
-                                                                                                 "Please make sure you're not accessing "
-                                                                                                 "the disk from the shell on tty2 "
-                                                                                                 "and then click OK to retry."))
+                                   _("An error occurred unmounting the disc. "
+                                     "Please make sure you're not accessing "
+                                     "the disk from the shell on tty2 "
+                                     "and then click OK to retry."))
 
     def ejectMedia(self):
         isys.ejectCdrom(self.device)
 
     def badPackageError(self, pkgname):
         return _("The file %s cannot be opened.  This is due to a missing "
-                                         "file or perhaps a corrupt package.  Please verify your "
-                                         "installation images and that you have all the required "
-                                         "media.\n\n"
-                                         "If you reboot, your system will be left in an inconsistent "
-                                         "state that will likely require reinstallation.\n\n") % pkgname
+                 "file or perhaps a corrupt package.  Please verify your "
+                 "installation images and that you have all the required "
+                 "media.\n\n"
+                 "If you reboot, your system will be left in an inconsistent "
+                 "state that will likely require reinstallation.\n\n") % pkgname
 
     def getFilename(self, filename, callback=None, destdir=None, retry=1):
         return self.tree + "/" + filename
@@ -90,7 +90,7 @@ class CdromInstallMethod(InstallMethod):
                         else:
                             w.pop()
                             self.messageWindow(_("Wrong CDROM"),
-                                    _("That's not the correct %s CDROM in /dev/%s.") % (name, dev,))
+                                               _("That's not the correct %s CDROM in /dev/%s.") % (name, dev,))
                             isys.umount(SOURCE_PATH)
                             isys.ejectCdrom(dev)
                     else:
@@ -106,7 +106,7 @@ class CdromInstallMethod(InstallMethod):
                 self.intf.beep()
 
             self.messageWindow(_("Insert CDROM"),
-                            _("Please insert the %s disc to continue.") % (name,))
+                               _("Please insert the %s disc to continue.") % (name,))
 
     def unlinkFilename(self, fullName):
         pass

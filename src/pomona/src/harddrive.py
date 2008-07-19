@@ -42,11 +42,11 @@ class HardDriveInstallMethod(InstallMethod):
 
     def badPackageError(self, pkgname):
         return _("The file %s cannot be opened.  This is due to a missing "
-                                         "file or perhaps a corrupt package.  Please verify your "
-                                         "installation images and that you have all the required "
-                                         "media.\n\n"
-                                         "If you reboot, your system will be left in an inconsistent "
-                                         "state that will likely require reinstallation.\n\n") % pkgname
+                 "file or perhaps a corrupt package.  Please verify your "
+                 "installation images and that you have all the required "
+                 "media.\n\n"
+                 "If you reboot, your system will be left in an inconsistent "
+                 "state that will likely require reinstallation.\n\n") % pkgname
 
 # mounts disc image cdNum under self.tree
     def mountMedia(self, cdNum):
@@ -76,9 +76,9 @@ class HardDriveInstallMethod(InstallMethod):
                                         "drive and click Retry. Click Reboot "
                                         " to abort the installation.")
                                         % (cdNum,), type="custom",
-                                  custom_icon="warning",
-                                        custom_buttons=[_("_Reboot"),
-                                                  _("Re_try")])
+                                           custom_icon="warning",
+                                           custom_buttons=[_("_Reboot"),
+                                           _("Re_try")])
             if ans == 0:
                 sys.exit(0)
             elif ans == 1:
