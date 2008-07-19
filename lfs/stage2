@@ -95,6 +95,11 @@ $(TARGET) :
 	for i in $(DIR_SRC)/config/etc/*; do \
 		[ -f $$i ] && cp $$i /etc; \
 	done
+
+ifeq "$(EMBEDDED)" "1"
+	# Enable serial on console 7
+	sed -e "s/^#7/7/" -i /etc/inittab
+endif
 	
 	ln -sf /proc/mounts /etc/mtab
 	

@@ -93,5 +93,16 @@ $(TARGET) :
 	    [ -f $$i ] && cp -vf $$i /boot/grub; \
 	done
 
+ifeq "$(EMBEDDED)" "1"
+	# Enable serial console on embedded build
+	sed -e "s/^#serial/serial/" \
+	    -e "s/@SERIAL@/console=ttyS0,9600n8/g" \
+	    -i /boot/grub/grub.conf
+else
+	# Remove the placeholder @SERIAL@ on non-embedded build
+	sed -e "s/@SERIAL@//g" \
+	    -i /boot/grub/grub.conf
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
