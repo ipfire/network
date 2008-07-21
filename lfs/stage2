@@ -96,7 +96,7 @@ $(TARGET) :
 		[ -f $$i ] && cp $$i /etc; \
 	done
 
-ifeq "$(EMBEDDED)" "1"
+ifeq "$(EMB)" "1"
 	# Enable serial on console 7
 	sed -e "s/^#7/7/" -i /etc/inittab
 endif

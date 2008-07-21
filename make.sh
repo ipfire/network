@@ -486,7 +486,7 @@ packages_build() {
 	# Generate ChangeLog
 	git_log
 
-	if [ ${EMBEDDED} -eq 0 ]; then
+	if [ ${EMB} -eq 0 ]; then
 		ipfire_make initramfs
 
 		ipfire_make cdrom
