@@ -741,3 +741,20 @@ putsource() {
 	[ -n "$NEW_FILES" ] && scp -2C $NEW_FILES ${IPFIRE_USER}@${URL_SOURCE}
 	cd $BASEDIR
 }
+
+puttarget() {
+	check_user
+	URL_TARGET=$(grep URL_TARGET lfs/Config | awk '{ print $3 }')
+	DIR="${BASEDIR}/${HOSTNAME}/$(date '+%Y%m%d-%k')/"
+
+	rm -rf ${DIR} 2>/dev/null
+	mkdir -p ${DIR}
+
+	[ -e "${BASEDIR}/packages" ] && cp -al ${BASEDIR}/packages ${DIR}
+	cp -l ${BASEDIR}/${SNAME}-${VERSION}.${MACHINE}.iso ${DIR}
+
+	cd $BASEDIR && \
+	scp -2C -r ${HOSTNAME} ${IPFIRE_USER}@${URL_TARGET} || :
+
+	rm -rf ${DIR} 2>/dev/null
+}
