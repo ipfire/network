@@ -140,6 +140,17 @@ toolchain)
 	esac
 	;;
 
+target)
+	case "$2" in
+		put|push|upload)
+			puttarget
+			;;
+		*)
+			usage
+			;;
+	esac
+	;;
+
 check)
 	check_sanity $2
 	;;

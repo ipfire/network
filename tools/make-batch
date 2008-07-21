@@ -62,6 +62,7 @@ batch_attach() {
 batch_run() {	
 	gettoolchain
 	$0 build | tee $BATCHLOG
+	[ $? -eq 0 ] && puttarget
 	batch_mail
 }
 
