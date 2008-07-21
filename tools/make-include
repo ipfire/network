@@ -61,6 +61,8 @@ fi
 BASEDIR=`echo $FULLPATH | sed "s/\/$BASENAME//g"`
 export BASEDIR
 
+HOSTNAME=${HOSTNAME-$(hostname -f || hostname)}
+
 . $BASEDIR/tools/make-beautify	# Load this very early
 
 ###############################################################################
