@@ -28,7 +28,6 @@ all:
 install: all
 	-mkdir -p $(PYTHONLIBDIR)
 	cp -f *.py $(PYTHONLIBDIR)
-	#py-compile $(PYTHONLIBDIR)/*.py
 
 clean:
 	rm -f *.o *.so *.pyc *.pyo
