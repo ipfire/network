@@ -56,4 +56,5 @@ $(TARGET) :
 		SNAME=$(SNAME) VERSION=$(VERSION) KVER=$(KVER)
 	cd $(DIR_APP) && make clean
 	
+	$(PYTHON_COMPILE)
 	@$(POSTBUILD)
