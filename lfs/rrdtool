@@ -53,9 +53,12 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr/share/$(PKG_NAME) \
-			--exec-prefix=/usr --mandir=/usr/share/man --disable-perl --disable-tcl \
-	    --enable-local-libpng --enable-local-zlib --with-pic --enable-latin2
+	cd $(DIR_APP) && ./configure \
+			--prefix=/usr \
+			--disable-perl \
+			--disable-tcl \
+			--disable-static \
+			--enable-latin2
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
