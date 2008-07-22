@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = collectd
-VER        = 4.2.3
+VER        = 4.4.2
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -54,14 +54,65 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -e "s/-Werror//g" -i src/Makefile.in
-	cd $(DIR_APP) && ./configure --prefix=/usr --localstatedir=/var \
-		--disable-{apache,apple_sensors,csv,ipvs,memcached,mysql,netlink,nginx,nut} \
-		--disable-{perl,serial,snmp,tape,vserver,wireless,xmms} \
-		--enable-{apcups,battery,cpu{,freq},df,disk,dns,email,entropy,exec,hddtemp} \
-		--enable-{interface,iptables,irq,load,logfile,mbmon,memory,multimeter} \
-		--enable-{network,nfs,ntpd,ping,processes,rrdtool,sensors,swap,syslog} \
-		--enable-{tcpconns,unixsock,users} \
-		--with-rrdtool=/usr/share/rrdtool/
+	cd $(DIR_APP) && KERNEL_DIR=/usr/include \
+		./configure \
+			--prefix=/usr \
+			--sysconfdir=/etc \
+			--localstatedir=/var \
+			--disable-apache \
+			--enable-apcups \
+			--disable-apple_sensors \
+			--disable-ascent \
+			--enable-battery \
+			--enable-cpu \
+			--enable-cpufreq \
+			--disable-csv \
+			--enable-df \
+			--enable-disk \
+			--enable-dns \
+			--enable-email \
+			--enable-entropy \
+			--enable-exec \
+			--enable-hddtemp \
+			--enable-interface \
+			--enable-iptables \
+			--disable-ipmi \
+			--disable-ipvs \
+			--enable-irq \
+			--disable-libvirt \
+			--enable-load \
+			--enable-logfile \
+			--disable-mbmon \
+			--disable-memcached \
+			--enable-memory \
+			--disable-multimeter \
+			--disable-mysql \
+			--disable-netlink \
+			--enable-network \
+			--enable-nfs \
+			--disable-nginx \
+			--enable-ntpd \
+			--disable-nut \
+			--disable-perl \
+			--enable-ping \
+			--disable-powerdns \
+			--enable-processes \
+			--enable-rrdtool \
+			--enable-sensors \
+			--enable-serial \
+			--enable-swap \
+			--enable-syslog \
+			--enable-tail \
+			--disable-tape \
+			--enable-tcpconns \
+			--disable-teamspeak2 \
+			--enable-unixsock \
+			--enable-users \
+			--enable-uuid \
+			--disable-vmem \
+			--disable-vserver \
+			--enable-wireless \
+			--disable-xmms
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/collectd.conf /etc/
