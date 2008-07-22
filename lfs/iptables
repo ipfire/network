@@ -56,18 +56,24 @@ $(TARGET) :
 	
 	#cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-imq-1.patch
 	
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-			--libdir=/lib \
-			--mandir=/usr/share/man \
+	cd $(DIR_APP) && ./configure \
+			--prefix=/usr \
+			--bindir=/bin \
 			--sbindir=/sbin \
-			--enable-libipq \
+			--libdir=/lib \
+			--libexecdir=/lib \
+			--sysconfdir=/etc \
+			--mandir=/usr/share/man \
+			--with-kernel=/usr \
+			--with-kbuild=/usr \
+			--with-ksource=/usr \
 			--enable-devel \
-			--with-kernel=$(DIR_SRC)/linux-$(KVER)
+			--enable-libipq
 
-	cd $(DIR_APP) && sed -i 's/name="$$node/name="node/' iptables.xslt
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	cd $(DIR_APP) && install -v -m644 iptables.xslt /lib/iptables
-	
+
+	cd $(DIR_APP) && install -m 644 libiptc/libiptc.a /lib
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
