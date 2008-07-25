@@ -745,7 +745,7 @@ putsource() {
 puttarget() {
 	check_user
 	URL_TARGET=$(grep URL_TARGET lfs/Config | awk '{ print $3 }')
-	DIR="${BASEDIR}/${HOSTNAME}/$(date '+%Y%m%d-%k')/"
+	DIR="${BASEDIR}/${HOSTNAME}/$(date '+%Y%m%d-%0k')/"
 
 	# If there is no iso, we do nothing.
 	[ -e "${BASEDIR}/${SNAME}-${VERSION}.${MACHINE}.iso" ] || return 0
