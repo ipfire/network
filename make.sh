@@ -104,6 +104,7 @@ base_build() {
 	build_spy set stage ${STAGE} &
 
 	ipfire_make stage2
+	ipfire_make initscripts
 	ipfire_make gmp
 	ipfire_make mpfr
 	ipfire_make linux
@@ -288,7 +289,6 @@ ipfire_build() {
 	ipfire_make parted
 	ipfire_make memtest86+
 	#ipfire_make pakfire
-	#ipfire_make initscripts
 	ipfire_make chkconfig
 	
 	ipfire_make pyfire
