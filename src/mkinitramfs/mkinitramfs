@@ -1,0 +1,871 @@
+#!/bin/sh
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+#                                                                             #
+# This script will create an initramfs with selected modules.                 #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Init Stage 1                                                                #
+###############################################################################
+
+THISAPP=$(basename "${0}")
+kernel="$(uname -r)"
+
+VERBOSE="y"
+
+withusb="1" # make this as an option
+fstab="/etc/fstab"
+modulefile=/etc/modprobe.conf
+
+LD_SO_CONF=/etc/ld.so.conf
+LD_SO_CONF_D=/etc/ld.so.conf.d/
+
+###############################################################################
+# Usage                                                                       #
+###############################################################################
+usage() {
+	echo "${THISAPP}: usage"
+	echo "  -k KERNELVERSION Use KERNELVERSION (default: $KERNELVERSION)"
+	echo "  -f FILE          Use FILE as output file."
+	echo "  -v               Be verbose."
+	echo "  -h               This help message."
+	exit 1 # End
+}
+
+vecho() {
+	[ -n "$VERBOSE" ] && echo "$@"
+}
+
+error()
+{
+	echo "$@" >&2
+}
+
+cemit()
+{
+    cat >> $RCFILE
+}
+
+emit()
+{
+    echo "$@" >> $RCFILE
+}
+
+qpushd() {
+    pushd "$1" >/dev/null 2>&1
+}
+
+qpopd() {
+    popd >/dev/null 2>&1
+}
+
+access() {
+    [ "$@" ]
+}
+
+read_link() {
+	READLINK=$(readlink $1)
+	if grep -q "^/" <<< $READLINK; then
+		echo $READLINK
+	else
+		echo "$(dirname $1)/$READLINK"
+	fi
+}
+
+resolve_device_name() {
+	if [[ "$1" =~ "^/dev/" ]]; then
+		echo $1
+	else
+		findfs "$1"
+	fi
+}
+
+# resolve a device node to its major:minor numbers in decimal or hex
+get_numeric_dev() {
+	(	fmt="%d:%d"
+		if [ "$1" == "hex" ]; then
+			fmt="%x:%x"
+		fi
+		ls -lH "$2" | awk '{ sub(/,/, "", $5); printf("'"$fmt"'", $5, $6); }'
+	) 2>/dev/null
+}
+
+moduledep() {
+	vecho -n "Looking for deps of module $1"
+	deps=""
+	deps=$(modprobe --set-version $kernel --show-depends $1 2>/dev/null | awk '/^insmod / { print gensub(".*/","","g",$2) }' | while read foo ; do [ "${foo%%.ko}" != "$1" ] && echo -n "${foo%%.ko} " ; done)
+	[ -n "$deps" ] && vecho ": $deps" || vecho
+}
+
+locatemodule() {
+	fmPath=$(modprobe --set-version $kernel --show-depends $1 2>/dev/null | awk '/^insmod / { print $2; }' | tail -1)
+	if [ -n "$fmPath" -a -f "$fmPath" ]; then
+		return 0
+	fi
+	for modExt in o.gz o ko ; do
+		for modDir in /lib/modules/$kernel/updates /lib/modules/$kernel ; do
+			if [ -d $modDir ]; then
+				fmPath=$(findone $modDir -name $1.$modExt)
+				if [ -n "$fmPath" -a -f "$fmPath" ]; then
+					return 0
+				fi
+			fi
+		done
+	done
+	return 1
+}
+
+expandModules() {
+	items=$*
+
+	for m in $items ; do
+		char=$(echo $m | cut -c1)
+		if [ $char = '=' ]; then
+			NAME=$(echo $m | cut -c2-)
+			if [ "$NAME" = "ata" ]; then
+				MODS="$MODS $(cat /lib/modules/$kernel/modules.block |egrep '(ata|ahci)' |sed -e 's/.ko//')"
+			else
+				MODS="$MODS $(cat /lib/modules/$kernel/modules.$NAME |sed -e 's/.ko//')"
+			fi
+		else
+			MODS="$MODS $m"
+		fi
+	done
+	echo $MODS
+}
+
+scsi_wait_scan="no"
+findmodule() {
+	skiperrors=""
+
+	if [ $1 == "--skiperrors" ]; then
+		skiperrors=--skiperrors
+		shift
+	fi
+
+	local modName=$1
+
+	if [ "$modName" = "off" -o "$modName" = "null" ]; then
+		return
+	fi
+
+	if [ "$modName" != "${modName##-}" ]; then
+		skiperrors=--skiperrors
+		modName="${modName##-}"
+	fi
+
+	case "$MODULES " in
+		*"/$modName.ko "*) return ;;
+	esac
+
+	if echo $builtins | egrep -q '(^| )'$modName'( |$)' ; then
+		vecho "module $modName assumed to be built in"
+		return
+    fi
+
+	# special cases
+	if [ "$modName" = "i2o_block" ]; then
+		findmodule i2o_core
+		findmodule -i2o_pci
+		modName="i2o_block"
+	elif [ "$modName" = "ppa" ]; then
+		findmodule parport
+		findmodule parport_pc
+		modName="ppa"
+	elif [ "$modName" = "sbp2" ]; then
+		findmodule ieee1394
+		findmodule ohci1394
+		modName="sbp2"
+	elif [ "$modName" = "fw-sbp2" ]; then
+		findmodule fw-core
+		findmodule fw-ohci
+		modName="fw-sbp2"
+	elif [ "$modName" = "firewire-sbp2" ]; then
+		findmodule firewire-core
+		findmodule firewire-ohci
+		modName="firewire-sbp2"
+	elif [ "$modName" = "usb-storage" -o "$modName" = "ub" ]; then
+		usbModName="$modName"
+	fi
+
+	if [ -n "$usbModName" \
+		 -a "$modName" != "uhci-hcd" \
+		 -a "$modName" != "ohci-hcd" \
+		 -a "$modName" != "ehci-hcd" ]; then
+		withusb=1
+		findmodule ehci-hcd
+		findmodule ohci-hcd
+		findmodule uhci-hcd
+
+		usbModName=""
+	fi
+
+	locatemodule $modName
+
+	if [ ! -f "$fmPath" ]; then
+		if [ -n "$skiperrors" ]; then
+			return
+		fi
+
+		# ignore the absence of the scsi modules
+		for n in $PRESCSIMODS; do
+			if [ "$n" = "$modName" ]; then
+				return;
+			fi
+		done;
+
+		if [ -n "$allowmissing" ]; then
+			error "WARNING: No module $modName found for kernel $kernel, continuing anyway"
+			return
+		fi
+
+		error "No module $modName found for kernel $kernel, aborting."
+		exit 1
+	fi
+
+	# only need to add each module once
+	[[ "$MODULES" =~ "$modName" ]] || MODULES="$MODULES $modName"
+
+	# need to handle prescsimods here -- they need to go _after_ scsi_mod
+	if [ "$modName" = "scsi_mod" ]; then
+		for n in $PRESCSIMODS ; do
+			findmodule $n
+		done
+		locatemodule scsi_wait_scan
+		if [ -n "$fmPath" -a -f "$fmPath" ]; then
+			scsi_wait_scan="yes"
+		fi
+	fi
+}
+
+findone() {
+    find "$@" | awk '{ print $1; exit; }'
+}
+
+findall() {
+    find "$@"
+}
+
+finddevnoinsys() {
+	majmin="$1"
+	if [ -n "$majmin" ]; then
+		dev=$(for x in /sys/block/* ; do findall $x/ -name dev ; done | while read device ; do \
+			echo "$majmin" | cmp -s $device && echo $device ; done)
+		if [ -n "$dev" ]; then
+			dev=${dev%%/dev}
+			dev=${dev%%/}
+			echo "$dev"
+			return 0
+		fi
+	fi
+	return 1
+}
+
+findblockdevinsys() {
+	devname=$(resolve_device_name "$1")
+	if [[ "$devname" =~ ^/sys/block/ ]]; then
+		echo "$devname"
+	fi
+	majmin=$(get_numeric_dev dec $devname)
+	finddevnoinsys "$majmin"
+}
+
+slavestried=""
+findstoragedriverinsys () {
+	while [ ! -L device ]; do
+		for slave in $(ls -d slaves/* 2>/dev/null) ; do
+			slavename=${slave##*/}
+			case " $slavestried " in
+				*" $slavename "*)
+					continue
+					;;
+				*)
+					slavestried="$slavestried $slavename"
+					qpushd $slave
+					findstoragedriverinsys
+					qpopd
+					;;
+			esac
+		done
+		[ "$PWD" = "/sys" ] && return
+		cd ..
+	done
+	cd $(read_link ./device)
+	if echo $PWD | grep -q /virtio-pci/ ; then
+		findmodule virtio_pci
+	fi
+	while [ "$PWD" != "/sys/devices" ]; do
+		deps=
+		if [ -f modalias ]; then
+			moduledep $(cat modalias)
+		fi
+
+		[ -z "$deps" -a -L driver/module ] && \
+			deps=$(basename $(read_link driver/module))
+		for driver in $deps ; do
+			findmodule $driver
+		done
+		cd ..
+	done
+}
+
+findstoragedriver () {
+	for device in $@ ; do
+		case " $handleddevices " in
+			*" $device "*)
+				continue ;;
+			*) handleddevices="$handleddevices $device" ;;
+		esac
+		vecho "Looking for driver for device $device"
+		if [[ "$device" =~ ^/sys ]]; then
+			device=${device##*/}
+		fi
+		sysfs=""
+		device=$(echo "$device" | sed 's,/,!,g')
+		if [ -d /sys/block/$device/ ]; then
+			sysfs="/sys/block/$device"
+		else
+			sysfs=$(for x in /sys/block/* ; do findone $x/ -type d -name $device; done)
+		fi
+		[ -z "$sysfs" ] && return
+		qpushd $sysfs
+		findstoragedriverinsys
+		qpopd
+	done
+}
+
+RTLD=""
+DSO_DEPS=""
+get_dso_deps() {
+	bin="$1" ; shift
+	DSO_DEPS=""
+
+	declare -a FILES
+	declare -a NAMES
+
+	LDSO=$(readelf -l $bin 2>/dev/null | awk -F': ' '/Requesting program interpreter:/ { print $2 }' | tr -d ']')
+	[ -z "$LDSO" -o "$LDSO" == "$bin" ] && LDSO="$RTLD"
+	[ -z "$LDSO" -o "$LDSO" == "$bin" ] && return 1
+	[ -z "$RTLD" ] && RTLD="$LDSO"
+
+	# I still hate shell.
+	declare -i n=0
+	while read NAME I0 FILE ADDR I1 ; do
+		[ "$FILE" == "not" ] && FILE="$FILE $ADDR"
+		NAMES[$n]="$NAME"
+		FILES[$n]="$FILE"
+		let n++
+	done << EOF
+		$(LD_TRACE_PRELINKING=1 LD_WARN= LD_TRACE_LOADED_OBJECTS=1 \
+			$LDSO $bin 2>/dev/null)
+EOF
+
+	[ ${#FILES[*]} -eq 0 ] && return 1
+
+	# we don't want the name of the binary in the list
+	if [ "${FILES[0]}" == "$bin" ]; then
+		FILES[0]=""
+		NAMES[0]=""
+		[ ${#FILES[*]} -eq 1 ] && return 1
+	fi
+
+	declare -i n=0
+	while [ $n -lt ${#FILES[*]} ]; do
+		FILE="${FILES[$n]}"
+		if [ "$FILE" == "not found" ]; then
+			cat 1>&2 <<EOF
+There are missing files on your system.  The dynamic object $bin
+requires ${NAMES[$n]} n order to properly function.  mkinitrd cannot continue.
+EOF
+			exit 1
+		fi
+		case "$FILE" in
+			/lib*|/usr/lib*)
+				TLIBDIR=`echo "$FILE" | sed 's,\(/lib[^/]*\)/.*$,\1,'`
+				BASE=`basename "$FILE"`
+				# Prefer base libraries rather than their optimized
+				# variants.
+				if [ -f "$TLIBDIR/$BASE" ]; then
+					FILE="$TLIBDIR/$BASE"
+				fi
+				FILES[$n]="$FILE"
+				;;
+		esac
+		dynamic="yes"
+		let n++
+	done
+
+	DSO_DEPS="${FILES[@]}"
+}
+
+indent_chars=""
+inst() {
+	if [ "$#" != "2" -a "$#" != "3" ];then
+		echo "usage: inst <file> <root> [<destination file>]"
+		return 1
+	fi
+	local file="$1" ; shift
+	local root="${1%%/}/" ; shift
+	local dest="${1##/}" ; shift
+	[ -z "$dest" ] && dest="${file##/}"
+
+	local old_indent_chars=${indent_chars}
+	indent_chars="${indent_chars}  "
+	indent=${indent_chars:2}
+
+	mkdir -p "$root/$(dirname $dest)"
+
+	local RET=0
+	local target=""
+	[ -L "$file" ] && target=$(read_link "$file")
+	if [ -n "$target" -a "$dest" != "$target" ]; then
+		if [ -e "$root$dest" ]; then
+			#vecho "${indent}$root/$dest already exists"
+			RET=0
+		else
+			vecho "${indent}$file -> $root$dest"
+			ln -sf "$target" "$root$dest"
+
+			inst "$target" "$root"
+			l=`echo "$x" | sed -n 's,\(/lib[^/]*\)/.*$,\1,p'`
+			if [ -n "$l" ]; then
+				inst "$x" "$root" "$l"/`basename "$x"`
+			else
+				inst "$x" "$root"
+			fi
+			RET=$?
+			indent_chars=${old_indent_chars}
+			return $RET
+		fi
+	fi
+
+	local SHEBANG=$(dd if="$file" bs=2 count=1 2>/dev/null)
+	if [ "$SHEBANG" == '#!' ]; then
+		# We're intentionally not playing the "what did this moron run
+		# in his shell script" game.  There's nothing but pain in that.
+		local interp=$(head -1 "$file" | sed 's/^#! *//')
+		inst "$interp" "$root"
+		RET=$?
+		indent_chars=${old_indent_chars}
+		return $RET
+	fi
+
+	if [ -e "$root$dest" ]; then
+		#vecho "${indent}$root$dest already exists"
+		RET=0
+	else
+		if [ -n "$target" -a -L "$target" ]; then
+			inst "$target" "$root"
+			RET=$?
+		else
+			vecho "${indent}$file -> $root$dest"
+			cp -alL "$file" "$root$dest"
+
+			get_dso_deps "$file"
+			local DEPS="$DSO_DEPS"
+			for x in $DEPS ; do
+				TLIBDIR=`echo "$x" | sed 's,\(/lib[^/]*\)/.*$,\1,'`
+				BASE=`basename "$x"`
+				inst "$x" "$root" "$TLIBDIR/$BASE"
+			done
+			RET=$?
+		fi
+	fi
+	indent_chars=${old_indent_chars}
+	return $RET
+}
+
+installmodule()
+{
+	MODULE=$1
+	fmPath=""
+	locatemodule $MODULE
+	MODULE=$fmPath
+	if [ -z "$MODULE" ]; then
+		return
+	fi
+	if [ -x /usr/bin/strip ]; then
+		/usr/bin/strip -g $verbose $MODULE -o $MNTIMAGE/lib/modules/$kernel/$(basename $MODULE)
+	else
+		inst "$MODULE" "$MNTIMAGE" "/lib/modules/$kernel/$(basename $MODULE)"
+	fi
+	for fw in $(/sbin/modinfo -F firmware $MODULE 2>/dev/null); do
+		if [ -f /lib/firmware/$fw ]; then
+			inst "/lib/firmware/$fw" "$MNTIMAGE" "/firmware/$fw"
+		fi
+	done
+}
+
+# This loops to make sure it resolves dependencies of dependencies of...
+resdeps () {
+	items="$*"
+
+	before=1
+	after=2
+
+	while [ $before != $after ]; do
+		before=`echo $items | wc -c`
+		list=""
+
+		for i in $items; do
+			deps=""
+			moduledep $i
+			list="$list $deps"
+
+			# need to handle prescsimods here -- they need to go _after_ scsi_mod
+			if [ "$i" = "scsi_mod" ]; then
+				list="$list $PRESCSIMODS"
+				MODULES="$MODULES $PRESCSIMODS"
+				PRESCSIMODS=""
+
+				locatemodule scsi_wait_scan
+				if [ -n "$fmPath" -a -f "$fmPath" ]; then
+					scsi_wait_scan="yes"
+				fi
+			fi
+
+		done
+		items=$(for n in $items $list; do echo $n; done | sort -u)
+		after=`echo $items | wc -c`
+	done
+
+	resolved=$items
+}
+
+# exclude specific modules
+# (must be done before resolution of deps)
+excludemods() {
+	items="$*"
+	output=""
+	for i in $items; do
+		for x in $excludemodules; do
+			if [ "$i" = "$x" ]; then
+				continue 2
+			fi
+		done
+		output="$output $i"
+	done
+	echo $output
+}
+
+###############################################################################
+# Parse command line                                                          #
+###############################################################################
+
+while getopts ':k:f:vh' arg; do
+	if [ "${OPTARG:0:1}" = "-" ]; then
+		echo "error: optional argument to '-$arg' begins with a '-'"
+		echo "  you probably don't want this....aborting."
+		usage
+	fi
+	case "$arg" in
+		k) kernel="$OPTARG" ;;
+		f) target="$OPTARG" ;;
+		v) VERBOSE="y" ;;
+		h|?) usage ;;
+		:) echo "${OPTARG} requires a value..."; usage ;;
+		*) echo "invalid argument '$arg'"; usage ;;
+	esac
+done
+shift $(($OPTIND - 1))
+
+###############################################################################
+# Init Stage 2                                                                #
+###############################################################################
+
+TMPDIR=""
+for t in /tmp /var/tmp /root ${PWD}; do
+	if [ ! -d $t ]; then continue; fi
+	if ! access -w $t ; then continue; fi
+
+	fs=$(df -T $t 2>/dev/null | awk '{line=$1;} END {printf $2;}')
+	if [ "$fs" != "tmpfs" ]; then
+		TMPDIR=$t
+		break
+	fi
+done
+
+if [ -z "$TMPDIR" ]; then
+	error "no temporary directory could be found."
+	exit 1
+fi
+
+if [ $TMPDIR = "/root" -o $TMPDIR = "${PWD}" ]; then
+	error "WARNING: using $TMPDIR for temporary files"
+fi
+
+if [ "$withusb" == "1" ]; then
+	findmodule ehci-hcd
+	findmodule ohci-hcd
+	findmodule uhci-hcd
+fi
+
+[ -z "$rootfs" ] && rootfs=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/") { print $3; }}' $fstab)
+[ -z "$rootopts" ] && rootopts=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/") { print $4; }}' $fstab)
+[ -z "$rootopts" ] && rootopts="defaults"
+
+# in case the root filesystem is modular
+findmodule -${rootfs}
+
+[ -z "$rootdev" ] && rootdev=$(awk '/^[ \t]*[^#]/ { if ($2 == "/") { print $1; }}' $fstab)
+
+# check if it's root by label
+rdev=$rootdev
+if [[ "$rdev" =~ "^(UUID=|LABEL=)" ]]; then
+	rdev=$(resolve_device_name "$rdev")
+fi
+rootopts=$(echo $rootopts | sed -e 's/^r[ow],//' -e 's/,_netdev//' -e 's/_netdev//' -e 's/,r[ow],$//' -e 's/,r[ow],/,/' -e 's/^r[ow]$/defaults/' -e 's/$/,ro/')
+physdev=$(findblockdevinsys "$rdev")
+physdev=${physdev##*/dev/}
+if [ -n "$physdev" ]; then
+	vecho "Found root device $physdev for $rdev"
+else
+	physdev="$rdev"
+fi
+
+findstoragedriver ${rdev##/dev/}
+
+for n in $basicmodules; do
+    findmodule $n
+done
+
+for n in $CONFMODS; do
+    findmodule $n
+done
+
+vecho "Using modules: $MODULES"
+
+MNTIMAGE=`mktemp -d ${TMPDIR}/initrd.XXXXXX`
+IMAGE=`mktemp ${TMPDIR}/initrd.img.XXXXXX`
+RCFILE=$MNTIMAGE/init
+
+if [ -z "$MNTIMAGE" -o -z "$IMAGE" ]; then
+	error "Error creating temporaries.  Try again"
+	exit 1
+fi
+
+mkdir -p $MNTIMAGE
+mkdir -p $MNTIMAGE/firmware
+mkdir -p $MNTIMAGE/lib/modules/$kernel
+mkdir -p $MNTIMAGE/bin
+mkdir -p $MNTIMAGE/etc
+mkdir -p $MNTIMAGE/dev
+mkdir -p $MNTIMAGE/lib
+mkdir -p $MNTIMAGE/proc
+mkdir -p $MNTIMAGE/sys
+mkdir -p $MNTIMAGE/sysroot
+
+vecho "Building initrd in $MNTIMAGE"
+
+for i in $(cd /usr/lib/mkinitramfs; ls -1 bin); do
+	inst /usr/lib/mkinitramfs/bin/$i "$MNTIMAGE" /bin/$i
+done
+for i in $(cd /usr/lib/mkinitramfs; ls -1 sbin); do
+	inst /usr/lib/mkinitramfs/sbin/$i "$MNTIMAGE" /sbin/$i
+done	
+
+if [ -n "$excludemodules" ]; then
+	MODULES=$(excludemods $MODULES)
+	availmodules=$(excludemods $availmodules)
+fi
+resdeps $MODULES $availmodules
+for MODULE in $resolved; do
+	installmodule $MODULE
+done
+
+mknod $MNTIMAGE/dev/ram0 b 1 0
+mknod $MNTIMAGE/dev/ram1 b 1 1
+ln -sf ram1 $MNTIMAGE/dev/ram
+
+mknod $MNTIMAGE/dev/null c 1 3
+mknod $MNTIMAGE/dev/zero c 1 5
+mknod $MNTIMAGE/dev/systty c 4 0 
+for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 ; do
+	mknod $MNTIMAGE/dev/tty$i c 4 $i
+done
+for i in 0 1 2 3 ; do
+	mknod $MNTIMAGE/dev/ttyS$i c 4 $(($i + 64))
+done
+mknod $MNTIMAGE/dev/tty c 5 0
+mknod $MNTIMAGE/dev/console c 5 1
+mknod $MNTIMAGE/dev/ptmx c 5 2
+
+echo -n >| $RCFILE
+cemit << EOF
+#!/bin/sh
+
+mount -t proc /proc /proc
+#setquiet
+echo Mounting proc filesystem
+echo Mounting sysfs filesystem
+mount -t sysfs /sys /sys
+echo Creating /dev
+mount -o mode=0755 -t tmpfs /dev /dev
+mkdir /dev/pts
+mount -t devpts -o gid=5,mode=620 /dev/pts /dev/pts
+mkdir /dev/shm
+echo Creating initial device nodes
+mknod /dev/null c 1 3
+mknod /dev/zero c 1 5
+mknod /dev/systty c 4 0
+mknod /dev/tty c 5 0
+mknod /dev/console c 5 1
+mknod /dev/ptmx c 5 2
+EOF
+
+# XXX really we need to openvt too, in case someting changes the
+# color palette and then changes vts on fbcon before gettys start.
+# (yay, fbcon bugs!)
+for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 ; do
+	emit "mknod /dev/tty$i c 4 $i"
+done
+
+for i in 0 1 2 3 ; do
+	emit "mknod /dev/ttyS$i c 4 $(($i + 64))"
+done
+
+#emit "echo Setting up hotplug."
+#emit "hotplug"
+
+#emit "echo Creating block device nodes."
+#emit "mkblkdevs"
+
+if [ "$scsi_wait_scan" == "yes" ]; then
+	vecho "Adding module scsi_wait_scan"
+	installmodule scsi_wait_scan
+fi
+
+depmod -a -b $MNTIMAGE $kernel
+if [ $? -ne 0 ]; then
+	error "\"depmod -a $kernel\" failed."
+	exit 1
+fi
+
+usb_mounted="prep"
+for MODULE in $MODULES; do
+	text=""
+	module=`echo $MODULE | sed -e "s|.*/||" -e "s/\.k\?o$//"`
+	fullmodule=`echo $MODULE | sed "s|.*/||"`
+
+	options=`sed -n -e ':a' -e '/\\\\$/N; s/\\\\\n//; ta' -e "s/^options[ 	][ 	]*$module[ 	][ 	]*//p" $modulefile 2>/dev/null`
+    
+	if [ -n "$options" ]; then
+		vecho "Adding module $module$text with options $options"
+	else
+		vecho "Adding module $module$text"
+	fi
+
+	# we mount usbfs before the first module *after* the HCDs
+	if [ "$usb_mounted" == "prep" ]; then
+		if [[ "$module" =~ ".hci[_-]hcd" ]]; then
+			usb_mounted="no"
+		fi
+	elif [ "$usb_mounted" == "no" ]; then
+		if [[ ! "$module" =~ ".hci[_-]hcd" ]]; then
+			usb_mounted=yes
+			emit "mount -t usbfs /proc/bus/usb /proc/bus/usb"
+		fi
+	fi
+
+	if [ -n "$options" ]; then
+		echo "options $module $options" >> $MNTIMAGE/etc/modprobe.conf
+	fi
+
+	emit "echo \"Loading $module module\""
+	emit "modprobe -q $module"
+        
+	# Hack - we need a delay after loading usb-storage to give things
+	#        time to settle down before we start looking a block devices
+	if [ "$module" = "usb-storage" -o "$module" = "ub" ]; then
+		emit "echo Waiting for driver initialization."
+		emit "stabilized /proc/bus/usb/devices"
+	fi
+	# Firewire likes to change the subsystem name every 3 hours. :/
+	if [ "$module" = "sbp2" ]; then
+		emit "echo Waiting for driver initialization."
+		emit "stabilized /sys/bus/ieee1394/drivers/sbp2"
+	fi
+	if [ "$module" = "fw-sbp2" -o "$module" = "firewire-sbp2" ]; then
+		emit "echo Waiting for driver initialization."
+		emit "stabilized /sys/bus/firewire/drivers/sbp2"
+	fi
+	if [ "${module::5}" == "pata_" -o "$module" == "ata_piix" -o "$module" == "ahci" -o "${module::5}" == "sata_" -o "$module" == "ibmvscsic" ]; then
+		emit "echo Waiting for driver initialization."
+		emit "stabilized --hash --interval 250 /proc/scsi/scsi"
+	fi
+done
+unset usb_mounted
+
+if [ -n "$availmodules" ]; then
+	cemit <<EOF
+echo "Loading available PCI drivers"
+loadDrivers
+EOF
+fi
+
+# HACK: module loading + device creation isn't necessarily synchronous...
+# this will make sure that we have all of our devices before trying
+# things like RAID or LVM
+emit "mkblkdevs"
+
+emit "echo Creating root device."
+# mkrootdev does "echo /dev/root /sysroot ext3 defaults,ro 0 0 >/etc/fstab"
+emit "mkrootdev -t $rootfs -o $rootopts $rootdev"
+
+emit "echo Mounting root filesystem."
+emit "mount /sysroot"
+
+emit "echo Setting up other filesystems."
+emit "setuproot"
+
+emit "echo Switching to new root and running init."
+emit "switchroot"
+emit "echo Booting has failed."
+emit "sleep -1"
+
+chmod +x $RCFILE
+
+if [ "$dynamic" == "yes" ]; then
+	vecho "This initrd uses dynamic shared objects."
+	vecho "Adding dynamic linker configuration files."
+	[ -n "$LD_SO_CONF" ] && inst "$LD_SO_CONF" "$MNTIMAGE" /etc/ld.so.conf
+	#mkdir -p $MNTIMAGE/etc/ld.so.conf.d
+	#for x in $(find $LD_SO_CONF_D -type f) ; do
+	#	inst "$x" "$MNTIMAGE" "/etc/ld.so.conf.d/$(basename "$x")"
+	#done
+
+	vecho "Running ldconfig"
+	ldconfig -r "$MNTIMAGE"
+	if [ $? -ne 0 ]; then
+		error tmpdir is $MNTIMAGE
+		exit 1
+	fi
+fi
+
+(cd $MNTIMAGE; findall . | cpio -H newc --quiet -o) >| $IMAGE || exit 1
+
+gzip -9 < $IMAGE >| $target || rc=1
+rm -rf $MNTIMAGE $IMAGE
+
+exit $rc
