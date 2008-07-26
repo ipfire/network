@@ -53,7 +53,16 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && cp -vf $(DIR_CONFIG)/$(PKG_NAME)/.config .config
+	cd $(DIR_APP) && cp -vf $(DIR_CONFIG)/$(PKG_NAME)/$(STAGE).config .config
+
+ifeq "$(STAGE)" "misc"
+	sed -e "s@^CONFIG_PREFIX=.*@CONFIG_PREFIX=\"/usr/lib/mkinitramfs\"@g" \
+		-i $(DIR_APP)/.config
+	cd $(DIR_APP) && make
+	cd $(DIR_APP) && make install
+endif
+
+ifeq "$(STAGE)" "installer"
 	sed -e "s@^CONFIG_PREFIX=.*@CONFIG_PREFIX=\"$(INSTALLER_DIR)\"@g" \
 		-i $(DIR_APP)/.config
 	cd $(DIR_APP) && make ARCH=i386 \
@@ -73,5 +82,7 @@ $(TARGET) :
 	-mkdir -p $(INSTALLER_DIR)/usr/share/udhcpc/
 	install -m 755 -v $(DIR_CONF)/busybox/default.script \
 		$(INSTALLER_DIR)/usr/share/udhcpc/
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
