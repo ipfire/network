@@ -24,12 +24,11 @@
 
 include Config
 
-PKG_NAME   = busybox
-VER        = 1.10.0
+PKG_NAME   = mkinitramfs
+VER        = ipfire
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.bz2
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+DIR_APP    = $(DIR_SOURCE)/$(PKG_NAME)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -37,52 +36,15 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+install : $(TARGET)
 
-install: $(TARGET)
-
-download : $(objects)
-
-$(objects) :
-	@$(LOAD)
+download :
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(TARGET) :
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && cp -vf $(DIR_CONFIG)/$(PKG_NAME)/$(STAGE).config .config
-
-ifeq "$(STAGE)" "misc"
-	sed -e "s@^CONFIG_PREFIX=.*@CONFIG_PREFIX=\"/usr/lib/mkinitramfs\"@g" \
-		-i $(DIR_APP)/.config
-	cd $(DIR_APP) && make
-	cd $(DIR_APP) && make install
-endif
-
-ifeq "$(STAGE)" "installer"
-	sed -e "s@^CONFIG_PREFIX=.*@CONFIG_PREFIX=\"$(INSTALLER_DIR)\"@g" \
-		-i $(DIR_APP)/.config
-	cd $(DIR_APP) && make ARCH=i386 \
-		CROSS_COMPILE=$(UCLIBC_TARGET)- \
-		CROSS=$(UCLIBC_TARGET)- \
-		oldconfig
-	cd $(DIR_APP) && make ARCH=i386 \
-		CROSS_COMPILE=$(UCLIBC_TARGET)- \
-		CROSS=$(UCLIBC_TARGET)- \
-		$(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make ARCH=i386 \
-		CROSS_COMPILE=$(UCLIBC_TARGET)- \
-		CROSS=$(UCLIBC_TARGET)- \
-		PREFIX=$(INSTALLER_DIR) \
-		install
-	-rm -vf $(INSTALLER_DIR)/linuxrc
-	-mkdir -p $(INSTALLER_DIR)/usr/share/udhcpc/
-	install -m 755 -v $(DIR_CONF)/busybox/default.script \
-		$(INSTALLER_DIR)/usr/share/udhcpc/
-endif
-
-	@rm -rf $(DIR_APP)
+	install -m 755 $(DIR_APP)/$(PKG_NAME) /sbin/$(PKG_NAME)
 	@$(POSTBUILD)

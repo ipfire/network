@@ -24,6 +24,7 @@ import errno
 import parted
 import sys
 import struct
+import time
 import partitioning
 import partedUtils
 import types
@@ -163,9 +164,12 @@ class FileSystemType:
         if not self.isMountable():
             return
         inutil.mkdirChain("%s/%s" %(instroot, mountpoint))
+        log.debug("mounting %s on %s/%s as %s" %(device, instroot,
+                                                 mountpoint, self.getMountName()))
         isys.mount(device, "%s/%s" %(instroot, mountpoint),
-                fstype = self.getName(),
-                readOnly = readOnly, bindMount = bindMount)
+                   fstype = self.getMountName(),
+                   readOnly = readOnly, bindMount = bindMount,
+                   options = self.defaultOptions)
 
     def umount(self, device, path):
         isys.umount(path, removeDir = 0)
@@ -177,6 +181,9 @@ class FileSystemType:
             if self.name.find(" ") != -1:
                 return "\"%s\"" %(self.name,)
         return self.name
+
+    def getMountName(self, quoted = 0):
+        return self.getName(quoted)
 
     def getNeededPackages(self):
         return self.packages
@@ -896,19 +903,30 @@ class FileSystemSet:
             new.add(entry)
         return new
 
-    def fstab(self):
+    def fstab (self):
         format = "%-23s %-23s %-7s %-15s %d %d\n"
-        fstab = ""
+        fstab = """
+#
+# /etc/fstab
+# Created by pomona on %s
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or vol_id(8) for more info
+#
+""" % time.asctime()
+
         for entry in self.entries:
             if entry.mountpoint:
-                if entry.getLabel():
+                if entry.getUuid() and entry.device.doLabel is not None:
+                    device = "UUID=%s" %(entry.getUuid(),)
+                elif entry.getLabel() and entry.device.doLabel is not None:
                     device = "LABEL=%s" % (entry.getLabel(),)
                 else:
                     device = devify(entry.device.getDevice())
                 fstab = fstab + entry.device.getComment()
                 fstab = fstab + format % (device, entry.mountpoint,
-                                          entry.fsystem.getName(),
-                                          entry.options, entry.fsck,
+                                          entry.fsystem.getMountName(),
+                                          entry.getOptions(), entry.fsck,
                                           entry.order)
         return fstab
 
@@ -1508,6 +1526,12 @@ class FileSystemSetEntry:
     def getMountPoint(self):
         return self.mountpoint
 
+    def getOptions(self):
+        options = self.options
+        if not options:
+            options = self.fsystem.getDefaultOptions(self.mountpoint)
+        return options + self.device.getDeviceOptions()
+
     def setFormat (self, state):
         if self.migrate and state:
             raise ValueError, "Trying to set format bit on when migrate is set!"
@@ -1530,6 +1554,9 @@ class FileSystemSetEntry:
     def getLabel (self):
         return self.label
 
+    def getUuid (self):
+        return isys.readFSUuid(self.device.getDevice())
+
     def setLabel (self, label):
         self.label = label
 
@@ -1542,11 +1569,11 @@ class FileSystemSetEntry:
         str = ("fsentry -- device: %(device)s   mountpoint: %(mountpoint)s\n"
                "  fsystem: %(fsystem)s format: %(format)s\n"
                "  ismounted: %(mounted)s  options: '%(options)s'\n"
-               "  bytesPerInode: %(bytesPerInode)s label: %(label)s\n"
-               % {"device": self.device.getDevice(), "mountpoint": mntpt,
-                  "fsystem": self.fsystem.getName(), "format": self.format,
-                  "mounted": self.mountcount, "options": self.options,
-                  "bytesPerInode": self.bytesPerInode, "label": self.label})
+               "  label: %(label)s fsprofile: %(fsprofile)s\n"%
+               {"device": self.device.getDevice(), "mountpoint": mntpt,
+                "fsystem": self.fsystem.getName(), "format": self.format,
+                "mounted": self.mountcount, "options": self.getOptions(),
+                "label": self.label, "fsprofile": self.fsprofile})
         return str
 
 

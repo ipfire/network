@@ -335,6 +335,9 @@ misc_build() {
 	#
 	ipfire_make nasm
 	ipfire_make syslinux
+
+	ipfire_make busybox
+	ipfire_make mkinitramfs
 	
 	#ipfire_make squid
 	#ipfire_make squidguard		## CAN THIS BE BANISHED BY ANYTHING BETTER?
