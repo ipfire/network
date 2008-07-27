@@ -19,20 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-###############################################################################
-#                                                                             #
-# This script will create an initramfs with selected modules.                 #
-#                                                                             #
-###############################################################################
-
-###############################################################################
-# Init Stage 1                                                                #
-###############################################################################
-
 THISAPP=$(basename "${0}")
-kernel="$(uname -r)"
-
-VERBOSE="y"
 
 withusb="1" # make this as an option
 fstab="/etc/fstab"
@@ -41,20 +28,29 @@ modulefile=/etc/modprobe.conf
 LD_SO_CONF=/etc/ld.so.conf
 LD_SO_CONF_D=/etc/ld.so.conf.d/
 
-###############################################################################
-# Usage                                                                       #
-###############################################################################
 usage() {
-	echo "${THISAPP}: usage"
-	echo "  -k KERNELVERSION Use KERNELVERSION (default: $KERNELVERSION)"
-	echo "  -f FILE          Use FILE as output file."
-	echo "  -v               Be verbose."
-	echo "  -h               This help message."
-	exit 1 # End
+	if [ "$1" == "-n" ]; then
+		cmd=echo
+	else
+		cmd=error
+	fi
+
+	$cmd "usage: `basename $0` [--version] [--help] [-v] [-f] [--preload <module>]"
+	$cmd "       [--force-scsi-probe | --omit-scsi-modules]"
+	$cmd "       [--with=<module>] [--builtin=<module>]"
+	$cmd "       [--fstab=<fstab>] <initrd-image> <kernel-version>"
+	$cmd ""
+	$cmd "       (ex: `basename $0` /boot/initrd-2.2.5-15.img 2.2.5-15)"
+
+	if [ "$1" == "-n" ]; then
+		exit 0
+	else
+		exit 1
+	fi
 }
 
 vecho() {
-	[ -n "$VERBOSE" ] && echo "$@"
+	[ -n "$verbose" ] && echo "$@"
 }
 
 error()
@@ -64,24 +60,24 @@ error()
 
 cemit()
 {
-    cat >> $RCFILE
+	cat >> $RCFILE
 }
 
 emit()
 {
-    echo "$@" >> $RCFILE
+	echo "$@" >> $RCFILE
 }
 
 qpushd() {
-    pushd "$1" >/dev/null 2>&1
+	pushd "$1" >/dev/null 2>&1
 }
 
 qpopd() {
-    popd >/dev/null 2>&1
+	popd >/dev/null 2>&1
 }
 
 access() {
-    [ "$@" ]
+	[ "$@" ]
 }
 
 read_link() {
@@ -94,10 +90,10 @@ read_link() {
 }
 
 resolve_device_name() {
-	if [[ "$1" =~ "^/dev/" ]]; then
+	if [[ "$1" =~ ^/dev ]]; then
 		echo $1
 	else
-		findfs "$1"
+		findfs $1
 	fi
 }
 
@@ -323,7 +319,7 @@ findstoragedriverinsys () {
 
 		[ -z "$deps" -a -L driver/module ] && \
 			deps=$(basename $(read_link driver/module))
-		for driver in $deps ; do
+		for driver in $deps; do
 			findmodule $driver
 		done
 		cd ..
@@ -364,7 +360,7 @@ get_dso_deps() {
 	declare -a FILES
 	declare -a NAMES
 
-	LDSO=$(readelf -l $bin 2>/dev/null | awk -F': ' '/Requesting program interpreter:/ { print $2 }' | tr -d ']')
+	LDSO="/lib/ld-linux.so.2"
 	[ -z "$LDSO" -o "$LDSO" == "$bin" ] && LDSO="$RTLD"
 	[ -z "$LDSO" -o "$LDSO" == "$bin" ] && return 1
 	[ -z "$RTLD" ] && RTLD="$LDSO"
@@ -569,30 +565,153 @@ excludemods() {
 	echo $output
 }
 
-###############################################################################
-# Parse command line                                                          #
-###############################################################################
+savedargs=$*
+while [ $# -gt 0 ]; do
+	case $1 in
+		--fstab*)
+			if [ "$1" != "${1##--fstab=}" ]; then
+				fstab=${1##--fstab=}
+			else
+				fstab=$2
+				shift
+			fi
+			;;
 
-while getopts ':k:f:vh' arg; do
-	if [ "${OPTARG:0:1}" = "-" ]; then
-		echo "error: optional argument to '-$arg' begins with a '-'"
-		echo "  you probably don't want this....aborting."
-		usage
-	fi
-	case "$arg" in
-		k) kernel="$OPTARG" ;;
-		f) target="$OPTARG" ;;
-		v) VERBOSE="y" ;;
-		h|?) usage ;;
-		:) echo "${OPTARG} requires a value..."; usage ;;
-		*) echo "invalid argument '$arg'"; usage ;;
+		--with-usb*)
+			if [ "$1" != "${1##--with-usb=}" ]; then
+				usbmodule=${1##--with-usb=}
+			else
+				usbmodule="usb-storage"
+			fi
+			basicmodules="$basicmodules $usbmodule"
+			unset usbmodule
+			;;
+
+		--without-usb)
+			withusb=0
+			;;
+
+		--with-avail*)
+			if [ "$1" != "${1##--with-avail=}" ]; then
+				modname=${1##--with-avail=}
+			else
+				modname=$2
+				shift
+			fi
+
+			availmodules="$availmodules $modname"
+			;;
+
+		--without*)
+			if [ "$1" != "${1##--without=}" ]; then
+				modname=${1##--without=}
+			else
+				modname=$2
+				shift
+			fi
+
+			excludemodules="$excludemodules $modname"
+			;;
+
+		--with*)
+			if [ "$1" != "${1##--with=}" ]; then
+				modname=${1##--with=}
+			else
+				modname=$2
+				shift
+			fi
+
+			basicmodules="$basicmodules $modname"
+			;;
+
+		--builtin*)
+			if [ "$1" != "${1##--builtin=}" ]; then
+				modname=${1##--builtin=}
+			else
+				modname=$2
+				shift
+			fi
+
+			builtins="$builtins $modname"
+			;;
+
+		-v)
+			verbose=-v
+			;;
+
+		-f)
+			force=1
+			;;
+		--preload*)
+			if [ "$1" != "${1##--preload=}" ]; then
+				modname=${1##--preload=}
+			else
+				modname=$2
+				shift
+			fi
+			PREMODS="$PREMODS $modname"
+			;;
+
+		--force-scsi-probe)
+			forcescsi=1
+			;;
+
+		--omit-scsi-modules)
+			PRESCSIMODS=""
+			noscsi=1
+			;;
+
+		--allow-missing)
+			allowmissing=yes
+			;;
+
+		--rootdev*)
+			if [ "$1" != "${1##--rootdev=}" ]; then
+				rootdev="${1##--rootdev=}"
+			else
+				rootdev="$2"
+				shift
+			fi
+			;;
+
+		--rootfs*)
+			if [ "$1" != "${1##--rootfs=}" ]; then
+				rootfs="${1##--rootfs=}"
+			else
+				rootfs="$2"
+				shift
+			fi
+			;;
+
+		--rootopts*)
+			if [ "$1" != "${1##--rootopts=}" ]; then
+				rootopts="${1##--rootopts=}"
+			else
+				rootopts="$2"
+				shift
+			fi
+			;;
+
+		--help)
+			usage -n
+			;;
+		*)
+			if [ -z "$target" ]; then
+				target=$1
+			elif [ -z "$kernel" ]; then
+				kernel=$1
+			else
+				usage
+			fi
+			;;
 	esac
-done
-shift $(($OPTIND - 1))
 
-###############################################################################
-# Init Stage 2                                                                #
-###############################################################################
+	shift
+done
+
+if [ -z "$target" -o -z "$kernel" ]; then
+	usage
+fi
 
 TMPDIR=""
 for t in /tmp /var/tmp /root ${PWD}; do
@@ -830,8 +949,7 @@ fi
 emit "mkblkdevs"
 
 emit "echo Creating root device."
-# mkrootdev does "echo /dev/root /sysroot ext3 defaults,ro 0 0 >/etc/fstab"
-emit "mkrootdev -t $rootfs -o $rootopts $rootdev"
+emit "echo '$rootdev /sysroot $rootfs $rootopts 0 0' > /etc/fstab" 
 
 emit "echo Mounting root filesystem."
 emit "mount /sysroot"
@@ -840,9 +958,9 @@ emit "echo Setting up other filesystems."
 emit "setuproot"
 
 emit "echo Switching to new root and running init."
-emit "switchroot"
+emit "switch_root /sysroot /sbin/init"
 emit "echo Booting has failed."
-emit "sleep -1"
+emit "sleep 600"
 
 chmod +x $RCFILE
 
