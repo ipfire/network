@@ -28,7 +28,7 @@ PKG_NAME   = mkinitramfs
 VER        = ipfire
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DIR_APP    = $(DIR_SOURCE)/$(THISAPP)
+DIR_APP    = $(DIR_SOURCE)/$(PKG_NAME)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -46,5 +46,5 @@ download :
 
 $(TARGET) :
 	@$(PREBUILD)
-	install -m 755 $(DIR_APP)/$(THISAPP) /sbin/$(THISAPP)
+	install -m 755 $(DIR_APP)/$(PKG_NAME) /sbin/$(PKG_NAME)
 	@$(POSTBUILD)
