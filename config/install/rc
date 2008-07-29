@@ -121,8 +121,8 @@ log_success_msg "Starting the HAL Daemon..."
 # Detecting hardware                                                           #
 ################################################################################
 
-# IDE modules
-MODULES="ide-generic ide-cd ide-disk"
+# net and storage modules
+MODULES="mii pcnet32 mptbase mptscsih scsi_transport_spi libata ata_piix"
 
 # USB modules
 MODULES="$MODULES uhci-hcd ehci-hcd ohci-hcd sd_mod sr_mod"
@@ -138,6 +138,9 @@ for MODULE in $MODULES; do
 	modprobe -q $MODULE
 done
 
+log_success_msg "Running hardware detection..."
+
+sleep 3 # Wait a little bit for the loaded modules/devices
 
 ################################################################################
 # Now check what mode= was passed to the kernel                                #

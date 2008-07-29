@@ -58,7 +58,6 @@ $(TARGET) :
 	-mkdir -pv "$(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/bin"
 	-mkdir -pv "$(UCLIBC_CC_CORE_STATIC_DIR)/bin"
 
-
 	### Prepare the installer's directory
 	#
 	-mkdir -p $(INSTALLER_DIR)/{bin,sbin,lib,dev,etc,mnt/{source,target}}
@@ -74,19 +73,5 @@ $(TARGET) :
 
 	cp -f /usr/share/{pci,usb}.ids			$(INSTALLER_DIR)/usr/share
 	cp -fval /usr/share/zoneinfo			$(INSTALLER_DIR)/usr/share
-
-	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/{drivers,fs,lib/lzo}
-	cp -af \
-		/lib/modules/$(KVER)/kernel/drivers/{ata,block,cdrom,dma,firewire} \
-		/lib/modules/$(KVER)/kernel/drivers/{hid,ide,net,pcmcia,scsi,ssb,usb} \
-		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/drivers
-	cp -af \
-		/lib/modules/$(KVER)/kernel/fs/{exportfs,ext{2,3},fat,jbd,mbcache.ko} \
-		/lib/modules/$(KVER)/kernel/fs/{msdos,ntfs,reiser{4,fs},udf,vfat,xfs} \
-		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/fs
-	cp -af \
-		/lib/modules/$(KVER)/kernel/lib/lzo/lzo_{,de}compress.ko \
-		$(INSTALLER_DIR)/lib/modules/$(KVER)/kernel/lib/lzo
-	cp -f /lib/modules/$(KVER)/modules.* $(INSTALLER_DIR)/lib/modules/$(KVER)
 
 	@$(POSTBUILD)

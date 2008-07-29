@@ -150,6 +150,21 @@ ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && make ARCH=x86 headers_check
 	cd $(DIR_APP) && make ARCH=x86 INSTALL_HDR_PATH=dest headers_install
 	cd $(DIR_APP) && cp -rv dest/include/* $(UCLIBC_SYSROOT_DIR)/usr/include
+
+	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)
+	cp -avf /lib/modules/$(KVER)/kernel $(INSTALLER_DIR)/lib/modules/$(KVER)/
+	
+	cd $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel && \
+		rm -rf \
+			arch \
+			crypto \
+			drivers/{crypto,hwmon,i2c,leds,media,parport,power,rtc,w1} \
+			drivers/net/ppp* \
+			fs/{cifs,configfs,fuse,lockd,nfs*,ntfs,smbfs} \
+			net \
+			sound
+
+	depmod -a -b $(INSTALLER_DIR) $(KVER)
 endif
 
 	@rm -rf $(DIR_APP)
