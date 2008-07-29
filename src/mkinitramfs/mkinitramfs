@@ -802,7 +802,10 @@ for i in $(cd /usr/lib/mkinitramfs; ls -1 bin); do
 done
 for i in $(cd /usr/lib/mkinitramfs; ls -1 sbin); do
 	inst /usr/lib/mkinitramfs/sbin/$i "$MNTIMAGE" /sbin/$i
-done	
+done
+
+inst /sbin/modprobe "$MNTIMAGE" /sbin/modprobe
+inst /bin/mount "$MNTIMAGE" /bin/mount
 
 if [ -n "$excludemodules" ]; then
 	MODULES=$(excludemods $MODULES)
@@ -835,8 +838,11 @@ cemit << EOF
 #!/bin/sh
 
 mount -t proc /proc /proc
-#setquiet
 echo Mounting proc filesystem
+
+# Silencing kernel
+echo >/proc/sys/kernel/printk "1 4 1 7"
+
 echo Mounting sysfs filesystem
 mount -t sysfs /sys /sys
 echo Creating /dev
@@ -864,11 +870,11 @@ for i in 0 1 2 3 ; do
 	emit "mknod /dev/ttyS$i c 4 $(($i + 64))"
 done
 
-#emit "echo Setting up hotplug."
-#emit "hotplug"
+emit "echo Setting up hotplug."
+emit "echo /sbin/mdev > /proc/sys/kernel/hotplug"
 
-#emit "echo Creating block device nodes."
-#emit "mkblkdevs"
+emit "echo Creating block device nodes."
+emit "mdev -s"
 
 if [ "$scsi_wait_scan" == "yes" ]; then
 	vecho "Adding module scsi_wait_scan"
@@ -943,10 +949,7 @@ loadDrivers
 EOF
 fi
 
-# HACK: module loading + device creation isn't necessarily synchronous...
-# this will make sure that we have all of our devices before trying
-# things like RAID or LVM
-emit "mkblkdevs"
+emit "mdev -s"
 
 emit "echo Creating root device."
 emit "echo '$rootdev /sysroot $rootfs $rootopts 0 0' > /etc/fstab" 
@@ -954,13 +957,19 @@ emit "echo '$rootdev /sysroot $rootfs $rootopts 0 0' > /etc/fstab"
 emit "echo Mounting root filesystem."
 emit "mount /sysroot"
 
-emit "echo Setting up other filesystems."
-emit "setuproot"
+cemit << EOF
+echo Setting up other filesystems.
+mount --bind /dev  /sysroot/dev
 
-emit "echo Switching to new root and running init."
-emit "switch_root /sysroot /sbin/init"
-emit "echo Booting has failed."
-emit "sleep 600"
+echo Switching to new root and running init.
+umount /proc
+umount /sys
+
+exec switch_root -c /dev/console /sysroot /sbin/init
+
+echo exec switch_root failed, debugging time again...
+/bin/ash
+EOF
 
 chmod +x $RCFILE
 
