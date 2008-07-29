@@ -105,27 +105,27 @@ ifeq "$(STAGE)" "ipfire"
 	
 	cd $(DIR_APP) && make mrproper
 
-	-[ "$(TARGET)" == "i586" ] && \
+	-[ "$(IFS_ARCH)" == "i586" ] && \
 			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 						-e "s/^# CONFIG_MPENTIUMIII is not set/CONFIG_MPENTIUMII=y/" \
 						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
 	
-	-[ "$(TARGET)" == "i486" ] && \
+	-[ "$(IFS_ARCH)" == "i486" ] && \
 			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 						-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
 						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
 
-	-[ "$(TARGET)" == "via-c7" ] && \
+	-[ "$(IFS_ARCH)" == "via-c7" ] && \
 			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 						-e "s/^# CONFIG_MVIAC7 is not set/CONFIG_MVIAC7=y/" \
 						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
 	
-	-[ "$(TARGET)" == "via-c3" ] && \
+	-[ "$(IFS_ARCH)" == "via-c3" ] && \
 			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 						-e "s/^# CONFIG_MVIAC3_2 is not set/CONFIG_MVIAC3_2=y/" \
 						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
 	
-	# if no $(TARGET) matched use the default
+	# if no $(IFS_ARCH) matches use the default i686 configuration
 	[ ! -e "$(DIR_APP)/.config" ] && cp -f $(DIR_CONF)/kernel/kernel.config \
 		$(DIR_APP)/.config
 
