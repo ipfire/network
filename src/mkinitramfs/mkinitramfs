@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
@@ -21,7 +21,6 @@
 
 THISAPP=$(basename "${0}")
 
-withusb="1" # make this as an option
 fstab="/etc/fstab"
 modulefile=/etc/modprobe.conf
 
@@ -761,6 +760,10 @@ if [ -n "$physdev" ]; then
 	vecho "Found root device $physdev for $rdev"
 else
 	physdev="$rdev"
+fi
+
+if [ -n "$physdev" -a "$physdev" != "$rdev" ]; then
+	findstoragedriver ${physdev##/dev/}
 fi
 
 findstoragedriver ${rdev##/dev/}
