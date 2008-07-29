@@ -29,96 +29,97 @@ HOSTNAME=ipfire.localdomain
 # Mounting early filesystems                                                   #
 ################################################################################
 
-boot_mesg -n "Mounting kernel-based file systems:" ${INFO}
+message="Mounting kernel-based file systems:"
 
-boot_mesg -n " /proc" ${NORMAL}
-mount -n -t proc proc /proc || failed=1
+if ! mountpoint /proc > /dev/null; then
+    message="${message}${INFO} /proc${NORMAL}"
+    mount -n /proc || failed=1
+fi
 
-boot_mesg -n " /sys" ${NORMAL}
-mount -n -t sysfs sysfs /sys || failed=1
-
-boot_mesg "" ${NORMAL}
+if ! mountpoint /sys > /dev/null; then
+    message="${message}${INFO} /sys${NORMAL}"
+    mount -n /sys || failed=1
+fi
 
 (exit ${failed})
-evaluate_retval
+evaluate_retval standard
 
 
 ################################################################################
 # Setting kernel parameters                                                    #
 ################################################################################
 
-boot_mesg "Silencing kernel..."
+message="Silencing kernel..."
 echo >/proc/sys/kernel/printk "1 4 1 7"
-evaluate_retval
+evaluate_retval standard
 
-boot_mesg "Disabling screen blanking..."
+message="Disabling screen blanking..."
 echo -n -e "\033[9;0]"
-evaluate_retval
+evaluate_retval standard
 
 
 ################################################################################
 # Starting udev daemon                                                         #
 ################################################################################
 
-boot_mesg "Mounting /dev"
+message="Mounting /dev"
 mount -n -t tmpfs tmpfs /dev -o mode=755
-evaluate_retval
+evaluate_retval standard
 
-boot_mesg "Populating /dev with device nodes..."
+message="Populating /dev with device nodes..."
 echo > /proc/sys/kernel/hotplug
 
 cp -a /lib/udev/devices/* /dev
 /sbin/udevd --daemon
 /sbin/udevtrigger
 /sbin/udevsettle
-evaluate_retval
+evaluate_retval standard
 
 
 ################################################################################
 # Setting up local networking                                                  #
 ################################################################################
 
-boot_mesg "Bringing up the loopback interface..."
+message="Bringing up the loopback interface..."
 ip addr add 127.0.0.1/8 label lo dev lo
 ip link set lo up
-evaluate_retval
+evaluate_retval standard
 
-boot_mesg "Setting hostname to ${HOSTNAME}..."
-hostname ${HOSTNAME}
-evaluate_retval
+message="Setting hostname to ${HOSTNAME}..."
+hostname "${HOSTNAME}"
+evaluate_retval standard
 
 
 ################################################################################
 # Starting syslog daemon                                                       #
 ################################################################################
 
-boot_mesg "Starting system log daemon..."
-syslogd -O /dev/tty4 $SYSLOGD_EXTRA
-evaluate_retval
+message="system log daemon..."
+start_daemon /sbin/syslogd -O /dev/tty4
+evaluate_retval start
+
 
 ################################################################################
 # Starting dbus daemon                                                         #
 ################################################################################
 
-boot_mesg "Starting the D-Bus Messagebus Daemon..."
-dbus-uuidgen --ensure
-dbus-daemon --system
-evaluate_retval
+message="Starting the D-Bus Messagebus Daemon..."
+/usr/bin/dbus-uuidgen --ensure
+/usr/bin/dbus-daemon --system
+evaluate_retval standard
+
 
 ################################################################################
 # Starting hal daemon                                                          #
 ################################################################################
 
-boot_mesg "Starting the HAL Daemon..."
-hald --use-syslog &
-echo_ok
+/usr/sbin/hald --use-syslog &
+log_success_msg "Starting the HAL Daemon..."
+
 
 ################################################################################
 # Detecting hardware                                                           #
 ################################################################################
-
-#boot_mesg "Detecting hardware..."
-#echo_ok
 
 # IDE modules
 MODULES="ide-generic ide-cd ide-disk"
@@ -134,7 +135,7 @@ for MODULE in $MODULES; do
 	if grep -Eqe "^$MODULE " /proc/modules; then
 		continue
 	fi
-	modprobe $MODULE
+	modprobe -q $MODULE
 done
 
 
@@ -165,7 +166,7 @@ esac
 
 INTERFACES=""
 NETWORK=off
-for i in $(seq 0 9); do
+for i in $(/usr/bin/seq 0 9); do
 	link_status=`ip link show eth${i} 2> /dev/null`
 	if [ -n "${link_status}" ]; then
 		INTERFACES="${INTERFACES} eth${i}"
