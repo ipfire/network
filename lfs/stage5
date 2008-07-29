@@ -68,8 +68,6 @@ $(TARGET) :
 	cp -af $(DIR_CONF)/install/* /etc/issue /etc/group $(INSTALLER_DIR)/etc/
 	grep -v "^root" /etc/passwd >> $(INSTALLER_DIR)/etc/passwd
 
-	cp -f $(DIR_SOURCE)/initscripts/core/$(SNAME)-functions \
-		$(INSTALLER_DIR)/etc/functions
 	chmod 755 $(INSTALLER_DIR)/etc/{halt,rc}
 	ln -sf etc/rc					$(INSTALLER_DIR)/init
 	ln -sf /proc/mounts				$(INSTALLER_DIR)/etc/mtab
