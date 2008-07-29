@@ -419,9 +419,10 @@ class x86BootloaderInfo(bootloaderInfo):
             initrd = "/boot/initrd-%s%s.img" % (kernelVersion, kernelTag,)
 
             # make initramfs
-            pyfire.executil.execWithRedirect("/sbin/mkinitramfs",
-                                         ["/sbin/mkinitramfs", "-v", "%s" % initrd,
-                                                                                  "%s%s" % (kernelVersion, kernelTag,), ],
+            pyfire.executil.execWithRedirect("/sbin/shell-wrapper",
+                                         ["/sbin/shell-wrapper",
+                                          "/sbin/mkinitramfs", "-v", "%s" % initrd,
+                                          "%s%s" % (kernelVersion, kernelTag,), ],
                                          stdout = "/dev/tty5", stderr = "/dev/tty5",
                                          root = instRoot)
 
