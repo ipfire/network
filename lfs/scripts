@@ -1,0 +1,70 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include Config
+
+PKG_NAME   = scripts
+VER        = LFS
+
+THISAPP    = $(PKG_NAME)-$(VER)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+BIN        = readhash
+SBIN       = shell-wrapper
+USR_BIN    = py-compile setddns.pl vpn-watch
+USR_SBIN   =
+
+###############################################################################
+# Top-level Rules
+###############################################################################
+
+install : $(TARGET)
+
+download :
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(TARGET) :
+	@$(PREBUILD)
+
+	for i in $(BIN); do \
+		install -m 755 $(DIR_SOURCE)/scripts/$$i /bin/$$i; \
+	done
+	
+	for i in $(SBIN); do \
+		install -m 755 $(DIR_SOURCE)/scripts/$$i /sbin/$$i; \
+	done
+
+	for i in $(USR_BIN); do \
+		install -m 755 $(DIR_SOURCE)/scripts/$$i /usr/bin/$$i; \
+	done
+	
+	#for i in $(USR_SBIN); do \
+	#	install -m 755 $(DIR_SOURCE)/scripts/$$i /usr/sbin/$$i; \
+	#done
+
+	@$(POSTBUILD)

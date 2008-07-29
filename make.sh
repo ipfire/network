@@ -104,6 +104,7 @@ base_build() {
 	build_spy set stage ${STAGE} &
 
 	ipfire_make stage2
+	ipfire_make scripts
 	ipfire_make initscripts
 	ipfire_make gmp
 	ipfire_make mpfr
