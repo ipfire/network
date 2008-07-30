@@ -105,29 +105,25 @@ ifeq "$(STAGE)" "ipfire"
 	
 	cd $(DIR_APP) && make mrproper
 
-	-[ "$(IFS_ARCH)" == "i586" ] && \
-			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-						-e "s/^# CONFIG_MPENTIUMIII is not set/CONFIG_MPENTIUMII=y/" \
-						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
-	
-	-[ "$(IFS_ARCH)" == "i486" ] && \
-			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-						-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
-						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
-
-	-[ "$(IFS_ARCH)" == "via-c7" ] && \
-			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-						-e "s/^# CONFIG_MVIAC7 is not set/CONFIG_MVIAC7=y/" \
-						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
-	
-	-[ "$(IFS_ARCH)" == "via-c3" ] && \
-			sed 	-e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-						-e "s/^# CONFIG_MVIAC3_2 is not set/CONFIG_MVIAC3_2=y/" \
-						< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config
-	
-	# if no $(IFS_ARCH) matches use the default i686 configuration
-	[ ! -e "$(DIR_APP)/.config" ] && cp -f $(DIR_CONF)/kernel/kernel.config \
-		$(DIR_APP)/.config
+	if [ "$(IFS_ARCH)" == "i586" ]; then \
+		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+			-e "s/^# CONFIG_MPENTIUMIII is not set/CONFIG_MPENTIUMII=y/" \
+			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
+	elif [ "$(IFS_ARCH)" == "i486" ]; then \
+		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+			-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
+			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
+	elif [ "$(IFS_ARCH)" == "via-c7" ]; then \
+		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+			-e "s/^# CONFIG_MVIAC7 is not set/CONFIG_MVIAC7=y/" \
+			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
+	elif [ "$(IFS_ARCH)" == "via-c3" ]; then \
+		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+			-e "s/^# CONFIG_MVIAC3_2 is not set/CONFIG_MVIAC3_2=y/" \
+			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
+	else \
+		cp -f $(DIR_CONF)/kernel/kernel.config $(DIR_APP)/.config; \
+	fi
 
 	cd $(DIR_APP) && yes "" | make oldconfig
 
