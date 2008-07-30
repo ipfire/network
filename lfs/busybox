@@ -56,10 +56,8 @@ $(TARGET) :
 	cd $(DIR_APP) && cp -vf $(DIR_CONFIG)/$(PKG_NAME)/$(STAGE).config .config
 
 ifeq "$(STAGE)" "misc"
-	sed -e "s@^CONFIG_PREFIX=.*@CONFIG_PREFIX=\"/usr/lib/mkinitramfs\"@g" \
-		-i $(DIR_APP)/.config
-	cd $(DIR_APP) && make
-	cd $(DIR_APP) && make install
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && install -m 755 -v busybox /bin/busybox
 endif
 
 ifeq "$(STAGE)" "installer"
