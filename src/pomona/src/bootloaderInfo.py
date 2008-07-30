@@ -419,9 +419,8 @@ class x86BootloaderInfo(bootloaderInfo):
             initrd = "/boot/initrd-%s%s.img" % (kernelVersion, kernelTag,)
 
             # make initramfs
-            pyfire.executil.execWithRedirect("/sbin/shell-wrapper",
-                                         ["/sbin/shell-wrapper",
-                                          "/sbin/mkinitramfs", "-v", "%s" % initrd,
+            pyfire.executil.execWithRedirect("/sbin/mkinitramfs",
+                                         ["/sbin/mkinitramfs", "-v", "-f", "%s" % initrd,
                                           "%s%s" % (kernelVersion, kernelTag,), ],
                                          stdout = "/dev/tty5", stderr = "/dev/tty5",
                                          root = instRoot)
@@ -644,7 +643,9 @@ def getRootDevName(initrd, fsset, rootDev, instRoot):
         return "/dev/%s" % (rootDev,)
     try:
         rootEntry = fsset.getEntryByMountPoint("/")
-        if rootEntry.getLabel() is not None and rootEntry.device.doLabel is not None:
+        if rootEntry.getUuid() is not None:
+            return "UUID=%s" %(rootEntry.getUuid(),)
+        elif rootEntry.getLabel() is not None and rootEntry.device.doLabel is not None:
             return "LABEL=%s" %(rootEntry.getLabel(),)
         return "/dev/%s" %(rootDev,)
     except:

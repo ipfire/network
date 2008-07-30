@@ -180,12 +180,6 @@ class PakfireBackend(PomonaBackend):
 
         self.pompak = PomonaPakfire(pomona)
 
-        # we need to have a /dev during install and now that udev is
-        # handling /dev, it gets to be more fun.  so just bind mount the
-        # installer /dev
-        isys.mount("/dev", "%s/dev" %(pomona.rootPath,), bindMount = 1)
-        #pomona.id.fsset.mkDevRoot(pomona.rootPath)
-
         pomona.method.doPreInstall(pomona)
 
     def doInstall(self, pomona):
@@ -206,6 +200,11 @@ class PakfireBackend(PomonaBackend):
     def doPostInstall(self, pomona):
         w = pomona.intf.waitWindow(_("Post Install"),
                                    _("Performing post install configuration..."))
+
+        # we need to have a /dev after install and now that udev is
+        # handling /dev, it gets to be more fun.  so just bind mount the
+        # installer /dev
+        isys.mount("/dev", "%s/dev" %(pomona.rootPath,), bindMount = 1)
 
         PomonaBackend.doPostInstall(self, pomona)
         w.pop()

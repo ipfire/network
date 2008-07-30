@@ -712,6 +712,8 @@ if [ -z "$target" -o -z "$kernel" ]; then
 	usage
 fi
 
+sleep 10 # Just wait a time...
+
 TMPDIR=""
 for t in /tmp /var/tmp /root ${PWD}; do
 	if [ ! -d $t ]; then continue; fi
@@ -800,13 +802,8 @@ mkdir -p $MNTIMAGE/sysroot
 
 vecho "Building initrd in $MNTIMAGE"
 
-for i in $(cd /usr/lib/mkinitramfs; ls -1 bin); do
-	inst /usr/lib/mkinitramfs/bin/$i "$MNTIMAGE" /bin/$i
-done
-for i in $(cd /usr/lib/mkinitramfs; ls -1 sbin); do
-	inst /usr/lib/mkinitramfs/sbin/$i "$MNTIMAGE" /sbin/$i
-done
-
+inst /bin/busybox "$MNTIMAGE" /bin/busybox
+inst /bin/busybox "$MNTIMAGE" /bin/sh
 inst /sbin/modprobe "$MNTIMAGE" /sbin/modprobe
 inst /bin/mount "$MNTIMAGE" /bin/mount
 
@@ -839,21 +836,55 @@ mknod $MNTIMAGE/dev/ptmx c 5 2
 echo -n >| $RCFILE
 cemit << EOF
 #!/bin/sh
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+INIT=/sbin/init
 
 mount -t proc /proc /proc
 echo Mounting proc filesystem
 
+busybox --install -s
+
+for CMD in \$(cat /proc/cmdline); do
+	case "\$CMD" in
+		init=*)
+			INIT=\${CMD#init=}
+			;;
+	esac
+done
+#echo Parse kernel line
+
 # Silencing kernel
 echo >/proc/sys/kernel/printk "1 4 1 7"
 
-echo Mounting sysfs filesystem
 mount -t sysfs /sys /sys
-echo Creating /dev
+echo Mounting sysfs filesystem
+
 mount -o mode=0755 -t tmpfs /dev /dev
+echo Creating /dev
+
 mkdir /dev/pts
 mount -t devpts -o gid=5,mode=620 /dev/pts /dev/pts
+
 mkdir /dev/shm
-echo Creating initial device nodes
 mknod /dev/null c 1 3
 mknod /dev/zero c 1 5
 mknod /dev/systty c 4 0
@@ -873,11 +904,14 @@ for i in 0 1 2 3 ; do
 	emit "mknod /dev/ttyS$i c 4 $(($i + 64))"
 done
 
-emit "echo Setting up hotplug."
-emit "echo /sbin/mdev > /proc/sys/kernel/hotplug"
+cemit << EOF
+echo Creating initial device nodes
+mdev -s
+echo Creating block device nodes.
 
-emit "echo Creating block device nodes."
-emit "mdev -s"
+echo Setting up hotplug.
+echo /sbin/mdev > /proc/sys/kernel/hotplug
+EOF
 
 if [ "$scsi_wait_scan" == "yes" ]; then
 	vecho "Adding module scsi_wait_scan"
@@ -927,20 +961,20 @@ for MODULE in $MODULES; do
 	#        time to settle down before we start looking a block devices
 	if [ "$module" = "usb-storage" -o "$module" = "ub" ]; then
 		emit "echo Waiting for driver initialization."
-		emit "stabilized /proc/bus/usb/devices"
+		emit "#stabilized /proc/bus/usb/devices"
 	fi
 	# Firewire likes to change the subsystem name every 3 hours. :/
 	if [ "$module" = "sbp2" ]; then
 		emit "echo Waiting for driver initialization."
-		emit "stabilized /sys/bus/ieee1394/drivers/sbp2"
+		emit "#stabilized /sys/bus/ieee1394/drivers/sbp2"
 	fi
 	if [ "$module" = "fw-sbp2" -o "$module" = "firewire-sbp2" ]; then
 		emit "echo Waiting for driver initialization."
-		emit "stabilized /sys/bus/firewire/drivers/sbp2"
+		emit "#stabilized /sys/bus/firewire/drivers/sbp2"
 	fi
 	if [ "${module::5}" == "pata_" -o "$module" == "ata_piix" -o "$module" == "ahci" -o "${module::5}" == "sata_" -o "$module" == "ibmvscsic" ]; then
 		emit "echo Waiting for driver initialization."
-		emit "stabilized --hash --interval 250 /proc/scsi/scsi"
+		emit "#stabilized --hash --interval 250 /proc/scsi/scsi"
 	fi
 done
 unset usb_mounted
@@ -952,26 +986,26 @@ loadDrivers
 EOF
 fi
 
-emit "mdev -s"
-
-emit "echo Creating root device."
-emit "echo '$rootdev /sysroot $rootfs $rootopts 0 0' > /etc/fstab" 
-
-emit "echo Mounting root filesystem."
-emit "mount /sysroot"
-
 cemit << EOF
-echo Setting up other filesystems.
-mount --bind /dev  /sysroot/dev
+mdev -s
 
-echo Switching to new root and running init.
-umount /proc
-umount /sys
+echo '$rootdev /sysroot $rootfs $rootopts 0 0' > /etc/fstab
+echo Creating root device.
 
-exec switch_root -c /dev/console /sysroot /sbin/init
+mount /sysroot
+echo Mounting root filesystem.
 
-echo exec switch_root failed, debugging time again...
-/bin/ash
+echo > /proc/sys/kernel/hotplug
+
+#umount /dev  || umount -l /dev
+umount /proc || umount -l /proc
+umount /sys  || umount -l /sys
+echo Switching to new root and running \$INIT.
+
+exec switch_root -c /dev/console /sysroot \$INIT
+
+echo exec switch_root failed...
+/bin/sh
 EOF
 
 chmod +x $RCFILE
