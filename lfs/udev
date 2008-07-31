@@ -25,8 +25,7 @@
 include Config
 
 PKG_NAME   = udev
-VER        = 113
-CONFVER    = 20080217
+VER        = 125
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -38,8 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-usb_id-1.patch \
-	$(PKG_NAME)-config-$(CONFVER).tar.bz2
+objects = $(DL_FILE)
 
 install : $(TARGET)
 
@@ -55,13 +53,11 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && tar -jxf $(DIR_DL)/$(PKG_NAME)-config-$(CONFVER).tar.bz2
-	
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-usb_id-1.patch
 
 ifeq "$(STAGE)" "base"
 	install -dv /lib/{firmware,udev/devices/{pts,shm}}
 	-mknod -m0666 /lib/udev/devices/null c 1 3
+	-mknod -m0600 /lib/udev/devices/kmsg c 1 11
 	ln -sfv /proc/self/fd /lib/udev/devices/fd
 	ln -sfv /proc/self/fd/0 /lib/udev/devices/stdin
 	ln -sfv /proc/self/fd/1 /lib/udev/devices/stdout
@@ -71,14 +67,14 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make EXTRAS="`echo extras/*/`" $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make DESTDIR=/ EXTRAS="`echo extras/*/`" install
 
-	cd $(DIR_APP) && cp -v etc/udev/rules.d/[0-9]* /etc/udev/rules.d/
+	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules /etc/udev/rules.d/
 
-	cd $(DIR_APP)/$(PKG_NAME)-config-$(CONFVER) && make install
 endif
 
 ifeq "$(STAGE)" "installer"
 	install -dv $(INSTALLER_DIR)/lib/{firmware,udev/devices/{pts,shm}}
 	-mknod -m0666 $(INSTALLER_DIR)/lib/udev/devices/null c 1 3
+	-mknod -m0600 $(INSTALLER_DIR)/lib/udev/devices/kmsg c 1 11
 	ln -sfv /proc/self/fd $(INSTALLER_DIR)/lib/udev/devices/fd
 	ln -sfv /proc/self/fd/0 $(INSTALLER_DIR)/lib/udev/devices/stdin
 	ln -sfv /proc/self/fd/1 $(INSTALLER_DIR)/lib/udev/devices/stdout
@@ -93,9 +89,8 @@ ifeq "$(STAGE)" "installer"
 	ln -svf ../../lib/$$(readlink $(INSTALLER_DIR)/lib/libvolume_id.so.0) \
 		$(INSTALLER_DIR)/usr/lib/libvolume_id.so
 
-	cd $(DIR_APP) && cp -vf etc/udev/rules.d/[0-9]* $(INSTALLER_DIR)/etc/udev/rules.d/
-	
-	cd $(DIR_APP)/$(PKG_NAME)-config-$(CONFVER) && make install DESTDIR=$(INSTALLER_DIR)
+	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules $(INSTALLER_DIR)/etc/udev/rules.d/
+
 endif
 	
 	@rm -rf $(DIR_APP)
