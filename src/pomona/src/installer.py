@@ -20,6 +20,7 @@
 ###############################################################################
 
 import sys, os, re
+import users
 from optparse import OptionParser
 import inutil, isys, dispatch
 from flags import flags
@@ -172,6 +173,7 @@ if __name__ == "__main__":
 
     pomona.id = instClass.installDataClass(pomona)
     instClass.setInstallData(pomona)
+    users.createLuserConf(pomona.rootPath)
 
     pomona.setDispatch()
 

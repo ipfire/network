@@ -23,7 +23,7 @@ import fsset
 import bootloader
 import partitions
 import partedUtils
-#import users
+import users
 from flags import *
 from constants import *
 
@@ -64,10 +64,10 @@ class InstallData:
         #self.timezone.write(pomona.rootPath)
         #self.network.write(pomona.rootPath)
 
-        #self.users = users.Users()
+        self.users = users.Users()
 
         # User should already exist, just without a password.
-        #self.users.setRootPassword(self.rootPassword["password"])
+        self.users.setRootPassword(self.rootPassword["password"])
 
     def __init__(self, pomona):
         self.instLanguage = language.Language()
