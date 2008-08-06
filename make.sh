@@ -246,6 +246,7 @@ ipfire_build() {
 	ipfire_make br2684ctl
 	ipfire_make etherwake
 	ipfire_make beep
+	ipfire_make libuser
 	
 	### Building vpn stuff
 	#
@@ -458,6 +459,8 @@ installer_build() {
 	ipfire_make python-parted
 	ipfire_make python-urlgrabber
 	ipfire_make python-iconv
+	ipfire_make pam
+	ipfire_make libuser
 	ipfire_make slang
 	ipfire_make newt
 	ipfire_make bash
