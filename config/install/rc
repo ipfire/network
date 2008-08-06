@@ -71,8 +71,8 @@ echo > /proc/sys/kernel/hotplug
 
 cp -a /lib/udev/devices/* /dev
 /sbin/udevd --daemon
-/sbin/udevtrigger
-/sbin/udevsettle
+/sbin/udevadm trigger
+/sbin/udevadm settle
 evaluate_retval standard
 
 
