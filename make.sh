@@ -244,6 +244,7 @@ ipfire_build() {
 	ipfire_make fontconfig
 	ipfire_make pixman
 	ipfire_make cairo
+	ipfire_make pango
 	ipfire_make lzo
 	ipfire_make lsof
 	ipfire_make br2684ctl
