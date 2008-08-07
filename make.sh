@@ -242,6 +242,7 @@ ipfire_build() {
 	ipfire_make libart
 	ipfire_make freetype
 	ipfire_make fontconfig
+	ipfire_make pixman
 	ipfire_make lzo
 	ipfire_make lsof
 	ipfire_make br2684ctl
