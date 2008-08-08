@@ -68,21 +68,21 @@ class HardDriveInstallMethod(InstallMethod):
 
                 retry = False
             except:
-            ans = self.messageWindow( _("Missing ISO 9660 Image"),
-                                      _("The installer has tried to mount "
-                                        "image #%s, but cannot find it on "
-                                        "the hard drive.\n\n"
-                                        "Please copy this image to the "
-                                        "drive and click Retry. Click Reboot "
-                                        " to abort the installation.")
-                                        % (cdNum,), type="custom",
+                ans = self.messageWindow(_("Missing ISO 9660 Image"),
+                                         _("The installer has tried to mount "
+                                           "image #%s, but cannot find it on "
+                                           "the hard drive.\n\n"
+                                           "Please copy this image to the "
+                                           "drive and click Retry. Click Reboot "
+                                           " to abort the installation.")
+                                         % (cdNum,), type="custom",
                                            custom_icon="warning",
                                            custom_buttons=[_("_Reboot"),
                                            _("Re_try")])
-            if ans == 0:
-                sys.exit(0)
-            elif ans == 1:
-                self.discImages = findIsoImages(self.isoPath, self.messageWindow)
+                if ans == 0:
+                    sys.exit(0)
+                elif ans == 1:
+                    self.discImages = findIsoImages(self.isoPath, self.messageWindow)
 
     def umountMedia(self):
         if self.mediaIsMounted:
