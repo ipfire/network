@@ -227,7 +227,7 @@ class InstallInterface:
                                                       "from here. You will have to try "
                                                       "again."),
                                                     buttons=[_("OK")])
-                    pomona.dispatch.gotoPrev()
+                pomona.dispatch.gotoPrev()
             else:
                 pomona.dispatch.gotoNext()
 
