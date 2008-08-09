@@ -67,7 +67,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make EXTRAS="`echo extras/*/`" $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make DESTDIR=/ EXTRAS="`echo extras/*/`" install
 
-	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules /etc/udev/rules.d/
+	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules /lib/udev/rules.d/
 
 endif
 
@@ -89,7 +89,7 @@ ifeq "$(STAGE)" "installer"
 	ln -svf ../../lib/$$(readlink $(INSTALLER_DIR)/lib/libvolume_id.so.0) \
 		$(INSTALLER_DIR)/usr/lib/libvolume_id.so
 
-	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules $(INSTALLER_DIR)/etc/udev/rules.d/
+	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules $(INSTALLER_DIR)/lib/udev/rules.d/
 
 endif
 	
