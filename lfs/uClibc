@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = uClibc
-VER        = 20080623
+VER        = 20080807
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -39,7 +39,7 @@ TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(LOCALE_FILE)
+objects = $(DL_FILE) $(LOCALE_FILE) $(THISAPP)-aio.patch
 
 install : $(TARGET)
 
@@ -55,6 +55,8 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-aio.patch
 
 	## Copy configuration
 	cp -f $(DIR_CONF)/$(PKG_NAME)/.config $(DIR_APP)/.config
