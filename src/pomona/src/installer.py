@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     ### Set up i18n
     #
-    from pyfire.translate import _, textdomain #, addPoPath
+    from pyfire.translate import _, textdomain
     textdomain("pomona")
 
     ### Reading command line options
@@ -153,9 +153,6 @@ if __name__ == "__main__":
     from exception import handleException
     import warnings, signal
 
-    instClass = None        # the install class to use
-
-    # Now that we've got arguments, do some extra processing.
     instClass = getInstClass()
 
     checkMemory()

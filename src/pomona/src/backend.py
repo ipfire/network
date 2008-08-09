@@ -52,6 +52,9 @@ class PomonaBackend:
         log.warning("doInstall not implemented for backend!")
         pass
 
+    def postAction(self, pomona):
+        pass
+
     def kernelVersionList(self):
         return []
 

@@ -223,6 +223,9 @@ class BaseInstallClass:
     def __init__(self, expert):
         pass
 
+    def postAction(self, pomona):
+        pomona.backend.postAction(pomona)
+
 # we need to be able to differentiate between this and custom
 class DefaultInstall(BaseInstallClass):
     def __init__(self, expert):

@@ -31,7 +31,7 @@ import logging
 log = logging.getLogger("pomona")
 
 def doPostAction(pomona):
-    pomona.id.instClass.postAction(pomona, flags.serial)
+    pomona.id.instClass.postAction(pomona)
 
 def copyPomonaLogs(pomona):
     log.info("Copying pomona logs")
@@ -60,6 +60,15 @@ def turnOnFilesystems(pomona):
     pomona.id.fsset.turnOnSwap(pomona.rootPath)
     pomona.id.fsset.makeFilesystems(pomona.rootPath)
     pomona.id.fsset.mountFilesystems(pomona)
+
+def doMigrateFilesystems(pomona):
+    if pomona.dir == DISPATCH_BACK:
+        return DISPATCH_NOOP
+
+    if pomona.id.fsset.haveMigratedFilesystems():
+        return DISPATCH_NOOP
+
+    pomona.id.fsset.migrateFilesystems(pomona)
 
 def setupTimezone(pomona):
     # we don't need this going backwards
