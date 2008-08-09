@@ -24,13 +24,14 @@
 
 include Config
 
-VER        = 2.6.STABLE16
+PKG_NAME   = squid
+VER        = 3.0.STABLE8
 
-THISAPP    = squid-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -38,30 +39,12 @@ TARGET     = $(DIR_INFO)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
-
-$(DL_FILE)_MD5 = 849bee6f269e6c773f215fd4b41de0e3
-
-install : $(TARGET)
-
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+install: $(TARGET)
 
 download : $(objects)
 
-md5 : $(subst %,%_MD5,$(objects))
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
 $(objects) :
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
@@ -70,38 +53,63 @@ $(subst %,%_MD5,$(objects)) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--datadir=/usr/lib/squid \
+			--libexecdir=/usr/lib/squid \
+			--localstatedir=/var \
+			--sysconfdir=/etc/squid \
+			--enable-storeio="aufs,coss,diskd,null,ufs" \
+			--enable-removal-policies="heap,lru" \
+			--enable-icmp \
+			--enable-delay-pools \
+			--disable-esi \
+			--disable-icap-client \
+			--enable-useragent-log \
+			--enable-referrer-log \
+			--disable-wccp \
+			--disable-wccpv2 \
+			--enable-kill-parent-hack \
+			--disable-snmp \
+			--enable-arp-acl \
+			--enable-htcp \
+			--enable-ssl \
+			--enable-forw-via-db \
+			--disable-cache-digests \
+			--enable-poll \
+			--enable-select \
+			--disable-kqueue \
+			--enable-epoll \
+			--enable-http-violations \
+			--enable-linux-netfilter \
+			--disable-ident-lookups \
+			--enable-internal-dns \
+			--enable-auth=basic,ntlm \
+			--enable-basic-auth-helpers="LDAP,MSNT,multi-domain-NTLM,PAM,NCSA,SMB,squid_radius_auth" \
+			--enable-ntlm-auth-helpers="SMB" \
+			--enable-ntlm-fail-open \
+			--enable-unlinkd \
+			\
+			--with-pthreads \
+			--with-aio \
+			--with-dl \
+			--with-large-files
 
-	cd $(DIR_APP) && ./configure --prefix=/usr --disable-nls \
-	   --datadir=/usr/lib/squid \
-	   --mandir=/usr/share/man --libexecdir=/usr/lib/squid \
-	   --localstatedir=/var --sysconfdir=/etc/squid \
-	   --disable-poll --disable-snmp --disable-icmp --disable-wccp \
-	   --disable-http-violations --disable-ident-lookups \
-	   --enable-storeio="aufs,coss,diskd,ufs" --enable-ssl \
-	   --enable-underscores --enable-ntlm-fail-open --enable-arp-acl \
-	   --enable-http-violations --enable-auth=basic,ntlm \
-	   --enable-removal-policies="heap,lru" \
-	   --enable-delay-pools --enable-linux-netfilter \
-	   --enable-basic-auth-helpers="NCSA,SMB,MSNT,LDAP,multi-domain-NTLM" \
-	   --enable-ntlm-auth-helpers="SMB" \
-	   --enable-useragent-log \
-	   --enable-referer-log \
-	   --with-pthreads --with-dl
-
-	cd $(DIR_APP) && make $(MAKETUNING)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
-	rm -f /etc/squid/squid.conf
-	ln -sf /var/ipfire/proxy/squid.conf /etc/squid/squid.conf
-	rm -f /etc/squid/errors
-	ln -sf /usr/lib/squid/errors/English /etc/squid/errors
+	rm -vf /etc/squid/squid.conf
+	ln -svf $(CONFIG_ROOT)/proxy/squid.conf /etc/squid/squid.conf
+	rm -vf /etc/squid/errors
+	ln -svf /usr/lib/squid/errors/English /etc/squid/errors
 
-	-mkdir -p /var/log/cache /var/log/squid
+	-mkdir -pv /var/log/cache /var/log/squid
 	touch /var/log/squid/access.log
-	chown -R squid:squid /var/log/squid /var/log/cache
-	
+	chown -Rv squid:squid /var/log/squid /var/log/cache
+
 	chown squid:squid /var/log/squid
-	ln -sf /usr/lib/squid /usr/lib/squid/auth
+	ln -svf /usr/lib/squid /usr/lib/squid/auth
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

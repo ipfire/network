@@ -336,7 +336,8 @@ misc_build() {
 	#ipfire_make tcpdump
 	ipfire_make htop
 	ipfire_make nano
-	
+	ipfire_make squid
+
 	### Assembler
 	#
 	ipfire_make nasm
@@ -344,8 +345,7 @@ misc_build() {
 
 	ipfire_make busybox
 	ipfire_make mkinitramfs
-	
-	#ipfire_make squid
+
 	#ipfire_make squidguard		## CAN THIS BE BANISHED BY ANYTHING BETTER?
 	#ipfire_make calamaris		## CAN THIS BE BANISHED BY ANYTHING BETTER?
 	#ipfire_make vsftpd
