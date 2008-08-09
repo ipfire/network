@@ -21,14 +21,11 @@ from bootloader import writeBootloader, bootloaderSetupChoices
 from packages import turnOnFilesystems, betaNagScreen, setupTimezone
 from partitioning import partitionObjectsInitialize, partitioningComplete
 
-#from packages import doMigrateFilesystems
-#from packages import doPostAction
-#from packages import copyAnacondaLogs
-#from packages import firstbootConfiguration
+from packages import doMigrateFilesystems
+from packages import doPostAction
+from packages import copyPomonaLogs
 #
-#from packages import setFileCons
 #from flags import flags
-#from network import networkDeviceCheck
 #from installmethod import doMethodComplete
 
 #from backend import doPostSelection, doRepoSetup, doBasePackageSelect
@@ -37,10 +34,6 @@ from backend import writeConfiguration
 
 import logging
 log = logging.getLogger("pomona")
-
-# These are all of the install steps, in order. Note that upgrade and
-# install steps are the same thing! Upgrades skip install steps, while
-# installs skip upgrade steps.
 
 #
 # items are one of
@@ -66,7 +59,6 @@ installSteps = [
                 ("bootloadersetup", bootloaderSetupChoices, ),
                 ("bootloader", ),
                 ("bootloaderadvanced", ),
-                #("networkdevicecheck", networkDeviceCheck, ),
                 #("network", ),
                 ("timezone", ),
                 ("accounts", ),
@@ -77,18 +69,18 @@ installSteps = [
                 #("postselection", doPostSelection, ),
                 ("confirminstall", ),
                 ("install", ),
+                ("migratefilesystems", doMigrateFilesystems, ),
                 ("enablefilesystems", turnOnFilesystems, ),
                 ("setuptime", setupTimezone, ),
                 ("preinstallconfig", doPreInstall, ),
                 ("installpackages", doInstall, ),
                 ("postinstallconfig", doPostInstall, ),
                 ("writeconfig", writeConfiguration, ),
-                #("firstboot", firstbootConfiguration, ),
                 ("instbootloader", writeBootloader, ),
-                #("copylogs", copyPomonaLogs, ),
+                ("copylogs", copyPomonaLogs, ),
                 #("methodcomplete", doMethodComplete, ),
                 #("postscripts", runPostScripts, ),
-                #("dopostaction", doPostAction, ),
+                ("dopostaction", doPostAction, ),
                 ("complete", ),
         ]
 
@@ -168,10 +160,9 @@ class Dispatcher:
 
         while self.step >= self.firstStep and self.step < len(installSteps) \
                         and (self.stepInSkipList(self.step) or self.stepIsDirect(self.step)):
-
             if self.stepIsDirect(self.step) and not self.stepInSkipList(self.step):
                 (stepName, stepFunc) = installSteps[self.step]
-                log.info("moving (%d) to step %s" %(self._getDir(), stepName))
+                log.info("moving (%d) to step %s" % (self._getDir(), stepName))
                 rc = stepFunc(self.pomona)
                 if rc in [DISPATCH_BACK, DISPATCH_FORWARD]:
                     self._setDir(rc)
@@ -190,7 +181,7 @@ class Dispatcher:
             self.step = len(installSteps) - 1
             while self.skipSteps.has_key(installSteps[self.step][0]):
                 self.step = self.step - 1
-        log.info("moving (%d) to step %s" %(self._getDir(), installSteps[self.step][0]))
+        log.info("moving (%d) to step %s" % (self._getDir(), installSteps[self.step][0]))
 
     def currentStep(self):
         if self.step == None:
