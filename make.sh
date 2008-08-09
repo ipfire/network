@@ -450,6 +450,7 @@ installer_build() {
 	ipfire_make glib
 	ipfire_make readline
 	ipfire_make e2fsprogs
+	#ipfire_make xfsprogs
 	ipfire_make util-linux-ng
 	ipfire_make parted
 	ipfire_make expat

@@ -37,7 +37,8 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-build-1.patch
 
 install: $(TARGET)
 
@@ -53,11 +54,42 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "$(SNAME)"
 	cd $(DIR_APP) && make DEBUG=-DNDEBUG INSTALL_USER=root INSTALL_GROUP=root \
 		LOCAL_CONFIGURE_OPTIONS="--enable-readline=yes" #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	chmod -v 755 /lib/libhandle.so*
 	rm -f /lib/libhandle.{a,la,so}
 	ln -svf ../../lib/libhandle.so.1 /usr/lib/libhandle.so
+endif
+
+ifeq "$(STAGE)" "installer"
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-build-1.patch
+	cd $(DIR_APP) && sed -e "s/^AC_PACKAGE_NEED_LIO_LISTIO//" -i configure.in
+	cd $(DIR_APP) && autoconf
+	cd $(DIR_APP) && $(U_TOOLS) \
+		LIBTOOL="$$(which libtool) --tag=CC" \
+		INSTALL_USER=root \
+		INSTALL_GROUP=root \
+		./configure \
+			--host=$(UCLIBC_TARGET) \
+			--target=$(UCLIBC_TARGET) \
+			--prefix=/usr \
+			--exec-prefix=/ \
+			--libdir=/usr/lib \
+			--enable-readline=yes \
+			--disable-rpath
+	cd $(DIR_APP) && sed -e "s/@librt@/-lrt/" -i include/builddefs
+	cd $(DIR_APP) && \
+		PATH=$(UCLIBC_DIR)/$(UCLIBC_TARGET)/bin:$(PATH) \
+			make DEBUG=-DNDEBUG #$(PARALLELISMFLAGS)
+	exit 1
+	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
+	chmod -v 755 $(INSTALLER_DIR)/lib/libhandle.so*
+	rm -f $(INSTALLER_DIR)/lib/libhandle.{a,la,so}
+	ln -svf ../../lib/libhandle.so.1 $(INSTALLER_DIR)/usr/lib/libhandle.so
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
