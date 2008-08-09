@@ -146,7 +146,7 @@ endif
 			--disable-libgomp \
 			$(CONFIGURE_ARGS)
 	## Libgomp was disabled here because it doesn't want to compile ##
-	cd $(DIR_SRC)/gcc-build && make -j $(PARALLELISM)
+	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/gcc-build && make install
 	ln -svf ../include-fixed/syslimits.h \
 		$(TOOLS_DIR)/lib/gcc/$(IFS_TARGET)/$(VER)/include/syslimits.h
