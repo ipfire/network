@@ -27,7 +27,7 @@ evaluate_retval standard
 
 
 message="Sending all processes the TERM signal..."
-killall5 -15
+/usr/bin/killall5 -15
 error_value=${?}
 
 sleep 3
@@ -36,7 +36,7 @@ sleep 3
 evaluate_retval standard
 
 message="Sending all processes the KILL signal..."
-killall5 -9
+/usr/bin/killall5 -9
 error_value=${?}
 
 sleep 3
