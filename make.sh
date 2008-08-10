@@ -504,7 +504,7 @@ packages_build() {
 		ipfire_make cdrom
 
 		if check_loop; then
-			#ipfire_make usb-key
+			: #ipfire_make usb-key
 		else
 			echo -n "Can't build usb-key images on this machine"
 			beautify message WARN
