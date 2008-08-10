@@ -1,0 +1,121 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include Config
+
+VER = ipfire
+
+THISAPP    = images
+
+#ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
+PASS       = $(firstword $(MAKEFILE_LIST))
+
+ifeq "$(PASS)" "pxe"
+	PREFIX = $(SNAME)-$(VERSION)
+else
+	PREFIX = isolinux
+endif
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+###############################################################################
+# Top-level Rules
+###############################################################################
+
+install : $(TARGET)
+
+download :
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(TARGET) : 
+	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
+
+ifeq "$(PASS)" "pxe"
+	mkdir -pv $(CDROM_DIR)/{pxelinux.cfg,$(PREFIX)}
+else # cdrom
+	mkdir -pv $(CDROM_DIR)/{isolinux,doc}
+
+	find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
+		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq > $(CDROM_DIR)/archive.files
+
+	cd / && cpio -o -H newc < $(CDROM_DIR)/archive.files \
+		> $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp 2>$(CDROM_DIR)/archive.errors
+
+	@cat $(CDROM_DIR)/archive.errors
+	@if grep -q "No such file or directory" < $(CDROM_DIR)/archive.errors; then \
+		exit 1; \
+	fi
+
+	lzma_sdk e $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp \
+		$(CDROM_DIR)/$(SNAME)-$(VERSION).img
+
+	# These files won't be included in the iso
+	@rm -f $(CDROM_DIR)/archive.{files,errors} $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp
+
+	# Other files
+	sed 's/VERSION/$(VERSION)/' $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README
+	cp -vf $(DIR_SRC)/doc/COPYING $(CDROM_DIR)
+	cp -vf $(DIR_SRC)/doc/{ChangeLog,packages-list.txt} $(CDROM_DIR)/doc
+endif
+
+	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/$(PREFIX)/initrd0
+	cp -vf /boot/ipfirekernel-$(KVER) $(CDROM_DIR)/$(PREFIX)/$(SNAME)0
+
+	cp -vf /usr/lib/syslinux/vesamenu.c32 \
+		$(DIR_CONF)/bootloader/splash.{jpg,lss} \
+		$(DIR_CONF)/bootloader/*.msg \
+			$(CDROM_DIR)/$(PREFIX)/
+
+ifeq "$(PASS)" "pxe"
+	cp -vf /usr/lib/syslinux/pxelinux.0 $(CDROM_DIR)/
+	sed -e "s/VERSION/$(VERSION)/g" \
+		-e "s@$(SNAME)0@$(PREFIX)/$(SNAME)0@g" \
+		-e "s@initrd0@$(PREFIX)/initrd0@g" \
+		$(DIR_CONF)/bootloader/installer.conf \
+		> $(CDROM_DIR)/pxelinux.cfg/$(SNAME)-pxe-$(VERSION).model
+
+	cd $(CDROM_DIR) && \
+		tar cfz $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).pxe.tar.gz *
+else
+	cp -vf /usr/lib/syslinux/isolinux.bin $(CDROM_DIR)/$(PREFIX)/
+	sed -e "s/VERSION/$(VERSION)/g" \
+		$(DIR_CONF)/bootloader/installer.conf \
+		> $(CDROM_DIR)/$(PREFIX)/isolinux.cfg
+	cp -vf /usr/lib/memtest86+/memtest.bin $(CDROM_DIR)/$(PREFIX)/memtest
+
+	# info file
+	echo -e "Release: $(NAME)-$(VERSION)" \
+		"\nBuild host: $$(hostname)\nDate: $$(date)" \
+		"\nMD5: $$(md5sum $(CDROM_DIR)/$(SNAME)-$(VERSION).img | awk '{ print $$1 }')" \
+		> $(CDROM_DIR)/.$(SNAME)info
+
+	cd $(CDROM_DIR) && mkisofs -J -r -V "$(NAME)_$(VERSION)" \
+		-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
+		-boot-info-table . > $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).iso
+endif
+	
+	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info

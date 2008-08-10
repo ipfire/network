@@ -500,16 +500,16 @@ packages_build() {
 	if [ ${EMB} -eq 0 ]; then
 		ipfire_make initramfs
 
+		ipfire_make pxe
 		ipfire_make cdrom
 
 		if check_loop; then
-			#ipfire_make usb-stick
-			:
+			#ipfire_make usb-key
 		else
 			echo -n "Can't build usb-key images on this machine"
 			beautify message WARN
 		fi
-		mv $LFS/$IMAGES_DIR/{*.iso,*.tgz,*.img.gz} $BASEDIR >> $LOGFILE 2>&1
+		mv $LFS/$IMAGES_DIR/{*.iso,*.tar.gz,*.img.gz} $BASEDIR >$LOGFILE 2>&1
 	else
 		if check_loop; then
 			# We put here the code that is done when
