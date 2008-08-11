@@ -61,7 +61,8 @@ ifeq "$(STAGE)" "ipfire"
 			--docdir=/usr/share/doc/pcre-$(VER) \
 			--enable-utf8 \
 			--enable-pcregrep-libz \
-			--enable-pcregrep-libbz2
+			--enable-pcregrep-libbz2 \
+			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	mv -v /usr/lib/libpcre.so.* /lib/
