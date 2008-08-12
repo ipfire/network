@@ -112,6 +112,8 @@ endif
 endif
 
 ifeq "$(STAGE)" "base"
+	if [ ! -e /bin/pwd ]; then ln -sfn $(TOOLS_DIR)/bin/pwd /bin/pwd; fi
+
 	tar jxf $(DIR_DL)/glibc-libidn-$(VER).tar.bz2 -C $(DIR_APP)
 	cd $(DIR_APP) && mv glibc-libidn-$(VER) libidn
 ifeq "$(SSP)" "1"
@@ -203,6 +205,8 @@ endif
 	echo -e "# Begin /etc/ld.so.conf\n"	>> /etc/ld.so.conf
 	echo -e "/usr/local/lib\n"		>> /etc/ld.so.conf
 	echo    "# End /etc/ld.so.conf"		>> /etc/ld.so.conf
+
+	if [ -h /bin/pwd ]; then rm -f /bin/pwd; fi
 endif
 
 	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build
