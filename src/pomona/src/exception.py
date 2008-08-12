@@ -100,10 +100,10 @@ def dumpException(out, text, tb, pomona):
         while trace.tb_next:
             trace = trace.tb_next
         frame = trace.tb_frame
-        out.write ("\nLocal variables in innermost frame:\n")
+        out.write("\nLocal variables in innermost frame:\n")
         try:
             for (key, value) in frame.f_locals.items():
-                out.write ("%s: %s\n" % (key, value))
+                out.write("%s: %s\n" % (key, value))
         except:
             pass
 
@@ -128,92 +128,9 @@ def dumpException(out, text, tb, pomona):
             out.write("\nException occurred during %s file copy:\n" % (file,))
             traceback.print_exc(None, out)
 
-# Returns 0 on success, 1 on cancel, 2 on error.
-def copyExceptionToRemote(intf):
-    import pty
-
-    scpWin = intf.scpWindow()
-    while 1:
-        # Bail if they hit the cancel button.
-        scpWin.run()
-        scpInfo = scpWin.getrc()
-
-        if scpInfo == None:
-            scpWin.pop()
-            return 1
-
-        (host, path, user, password) = scpInfo
-
-        if host.find(":") != -1:
-            (host, port) = host.split(":")
-
-            # Try to convert the port to an integer just as a check to see
-            # if it's a valid port number.  If not, they'll get a chance to
-            # correct the information when scp fails.
-            try:
-                int(port)
-                portArgs = ["-P", port]
-            except ValueError:
-                portArgs = []
-        else:
-            portArgs = []
-
-        # Thanks to Will Woods <wwoods@redhat.com> for the scp control
-        # here and in scpAuthenticate.
-
-        # Fork ssh into its own pty
-        (childpid, master) = pty.fork()
-        if childpid < 0:
-            log.critical("Could not fork process to run scp")
-            scpWin.pop()
-            return 2
-        elif childpid == 0:
-            # child process - run scp
-            args = ["scp", "-oNumberOfPasswordPrompts=1",
-                    "-oStrictHostKeyChecking=no"] + portArgs + \
-                   ["/tmp/anacdump.txt", "%s@%s:%s" % (user, host, path)]
-            os.execvp("scp", args)
-
-            # parent process
-            try:
-                childstatus = scpAuthenticate(master, childpid, password)
-            except OSError:
-                scpWin.pop()
-                return 2
-
-        os.close(master)
-
-        if os.WIFEXITED(childstatus) and os.WEXITSTATUS(childstatus) == 0:
-            return 0
-        else:
-            scpWin.pop()
-            return 2
-
-def scpAuthenticate(master, childpid, password):
-    while 1:
-        # Read up to password prompt.  Propagate OSError exceptions, which
-        # can occur for anything that causes scp to immediately die (bad
-        # hostname, host down, etc.)
-        buf = os.read(master, 4096)
-        if buf.find("'s password: ") != -1:
-            os.write(master, password+"\n")
-            # read the space and newline that get echoed back
-            os.read(master, 2)
-            break
-
-    while 1:
-        buf = ""
-        try:
-            buf = os.read(master, 4096)
-        except (OSError, EOFError):
-            break
-
-    (pid, childstatus) = os.waitpid (childpid, 0)
-    return childstatus
-
 # Reverse the order that tracebacks are printed so people will hopefully quit
 # giving us the least useful part of the exception in bug reports.
-def formatException (type, value, tb):
+def formatException(type, value, tb):
     lst = traceback.format_tb(tb)
     lst.reverse()
     lst.insert(0, 'Traceback (most recent call first):\n')
@@ -228,12 +145,12 @@ def handleException(pomona, (type, value, tb)):
     sys.excepthook = sys.__excepthook__
 
     # get traceback information
-    list = formatException (type, value, tb)
-    text = joinfields (list, "")
+    list = formatException(type, value, tb)
+    text = joinfields(list, "")
 
     # save to local storage first
     out = open("/tmp/instdump.txt", "w")
-    dumpException (out, text, tb, pomona)
+    dumpException(out, text, tb, pomona)
     out.close()
 
     win = pomona.intf.exceptionWindow(text, "/tmp/instdump.txt")
@@ -246,22 +163,5 @@ def handleException(pomona, (type, value, tb)):
         rc = win.getrc()
 
         if rc == 0:
-            pomona.intf.__del__ ()
+            pomona.intf.__del__()
             os.kill(os.getpid(), signal.SIGKILL)
-        elif rc == 1:
-            scpRc = copyExceptionToRemote(pomona.intf)
-
-            if scpRc == 0:
-                pomona.intf.messageWindow(_("Dump Written"),
-                                          _("Your system's state has been successfully written to "
-                                            "the remote host.  Your system will now be rebooted."),
-                                          type="custom", custom_icon="info",
-                                          custom_buttons=[_("_Reboot")])
-                sys.exit(0)
-            elif scpRc == 1:
-                continue
-            elif scpRc == 2:
-                pomona.intf.messageWindow(_("Dump Not Written"),
-                                          _("There was a problem writing the system state to the "
-                                            "remote host."))
-                continue

@@ -392,7 +392,7 @@ class x86BootloaderInfo(bootloaderInfo):
         f.write('#          root %s\n' % self.grubbyPartitionName(bootDevs[0]))
         f.write("#          kernel %svmlinuz-version ro "
                 "root=/dev/%s\n" % (cfPath, rootDev))
-        f.write("#          initrd %sinitrd-version.img\n" % (cfPath))
+        f.write("#          initrd %sinitramfs-version.img\n" % (cfPath))
         f.write("#boot=/dev/%s\n" % (grubTarget))
 
         # keep track of which devices are used for the device.map
@@ -422,14 +422,7 @@ class x86BootloaderInfo(bootloaderInfo):
         for (kernelName, kernelVersion, kernelTag, kernelDesc) in kernelList:
             kernelFile = "%s%skernel%s" % (cfPath, sname, kernelTag,)
 
-            initrd = "/boot/initrd-%s%s.img" % (kernelVersion, kernelTag,)
-
-            # make initramfs
-            pyfire.executil.execWithRedirect("/sbin/mkinitramfs",
-                                         ["/sbin/mkinitramfs", "-v", "-f", "%s" % initrd,
-                                          "%s%s" % (kernelVersion, kernelTag,), ],
-                                         stdout = "/dev/tty5", stderr = "/dev/tty5",
-                                         root = instRoot)
+            initrd = "/boot/initramfs-%s%s.img" % (kernelVersion, kernelTag,)
 
             f.write('title %s (%s - %s)\n' % (name, kernelDesc, kernelVersion))
             f.write('\troot %s\n' % self.grubbyPartitionName(bootDevs[0]))
@@ -443,7 +436,8 @@ class x86BootloaderInfo(bootloaderInfo):
             f.write('\n')
 
             if os.access (instRoot + initrd, os.R_OK):
-                f.write('\tinitrd %sinitrd-%s%s.img\n' % (cfPath, kernelVersion, kernelTag,))
+                # initrd is built in backend.postInstall
+                f.write('\tinitrd %sinitramfs-%s%s.img\n' % (cfPath, kernelVersion, kernelTag,))
 
         for (label, longlabel, device) in chainList:
             if ((not longlabel) or (longlabel == "")):

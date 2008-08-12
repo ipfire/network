@@ -148,17 +148,15 @@ if __name__ == "__main__":
         pdb.set_trace()
 
     log.info (_("Starting text installation..."))
-    import instdata
-    from tui import InstallInterface
-    from exception import handleException
-    import warnings, signal
 
     instClass = getInstClass()
 
     checkMemory()
 
+    from tui import InstallInterface
     pomona.intf = InstallInterface()
 
+    import warnings, signal
     warnings.showwarning = PomonaShowWarning
 
     # reset python's default SIGINT handler
@@ -184,6 +182,7 @@ if __name__ == "__main__":
     #       anaconda.dispatch.skipStep("keyboard", permanent = 1)
     #       instClass.setKeyboard(anaconda.id, opts.keymap)
 
+    from exception import handleException
     sys.excepthook = lambda type, value, tb, pomona=pomona: handleException(pomona, (type, value, tb))
 
     try:

@@ -34,6 +34,7 @@ urlparse.uses_fragment.append('media')
 
 import inutil
 import isys
+import pyfire
 
 def size_string(size):
     def number_format(s):
@@ -206,17 +207,26 @@ class PakfireBackend(PomonaBackend):
         # installer /dev
         isys.mount("/dev", "%s/dev" %(pomona.rootPath,), bindMount = 1)
 
-        PomonaBackend.doPostInstall(self, pomona)
-        w.pop()
-
-        ### XXX this is from pre
         # write out the fstab
         pomona.id.fsset.write(pomona.rootPath)
         # rootpath mode doesn't have this file around
         if os.access("/tmp/modprobe.conf", os.R_OK):
             shutil.copyfile("/tmp/modprobe.conf",
                             pomona.rootPath + "/etc/modprobe.conf")
+
         ### XXX pomona.id.network.write(pomona.rootPath)
+
+        for (kernelName, kernelVersion, kernelTag, kernelDesc) in self.kernelVersionList(pomona):
+            initrd = "/boot/initramfs-%s%s.img" % (kernelVersion, kernelTag,)
+            log.info("mkinitramfs: creating %s" % initrd)
+            pyfire.executil.execWithRedirect("/sbin/mkinitramfs",
+                                            ["/sbin/mkinitramfs", "-v", "-f", "%s" % initrd,
+                                             "%s%s" % (kernelVersion, kernelTag,), ],
+                                            stdout = "/dev/tty5", stderr = "/dev/tty5",
+                                            root = pomona.rootPath)
+
+        PomonaBackend.doPostInstall(self, pomona)
+        w.pop()
 
     def kernelVersionList(self, pomona):
         kernelVersions = []

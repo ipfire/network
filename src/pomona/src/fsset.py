@@ -153,7 +153,6 @@ class FileSystemType:
         self.migratetofs = None
         self.extraFormatArgs = []
         self.maxLabelChars = 16
-        self.packages = []
 
     def isKernelFS(self):
         """Returns True if this is an in-kernel pseudo-filesystem."""
@@ -376,7 +375,6 @@ class reiserfsFileSystem(FileSystemType):
         self.linuxnativefs = 1
         self.supported = -1
         self.name = "reiserfs"
-        self.packages = [ "reiserfs-utils" ] ### XXX do we need this?
 
         self.maxSizeMB = 8 * 1024 * 1024
 
@@ -419,7 +417,6 @@ class xfsFileSystem(FileSystemType):
         self.maxSizeMB = 16 * 1024 * 1024
         self.maxLabelChars = 12
         self.supported = -1
-        self.packages = [ "xfsprogs" ] ### XXX do we need this?
 
     def formatDevice(self, entry, progress, chroot='/'):
         devicePath = entry.device.setupDevice(chroot)
@@ -455,7 +452,6 @@ class extFileSystem(FileSystemType):
         self.checked = 1
         self.linuxnativefs = 1
         self.maxSizeMB = 8 * 1024 * 1024
-        self.packages = [ "e2fsprogs" ] ### XXX do we need this?
 
     def labelDevice(self, entry, chroot):
         devicePath = entry.device.setupDevice(chroot)
@@ -548,9 +544,9 @@ class ext2FileSystem(extFileSystem):
                              % (devicePath, devicePath), type = "yesno")
                 if rc == 0:
                     sys.exit(0)
-                    entry.fsystem = entry.origfsystem ### XXX what is this?
-                else:
-                    extFileSystem.setExt3Options(self, entry, message, chroot)
+            entry.fsystem = entry.origfsystem ### XXX what is this?
+        else:
+            extFileSystem.setExt3Options(self, entry, message, chroot)
 
 fileSystemTypeRegister(ext2FileSystem())
 
@@ -663,23 +659,10 @@ class FATFileSystem(FileSystemType):
     def __init__(self):
         FileSystemType.__init__(self)
         self.partedFileSystemType = parted.file_system_type_get("fat32")
-        self.formattable = 1
+        self.formattable = 0
         self.checked = 0
         self.maxSizeMB = 1024 * 1024
         self.name = "vfat"
-        self.packages = [ "dosfstools" ]
-
-    def formatDevice(self, entry, progress, chroot='/'):
-        devicePath = entry.device.setupDevice(chroot)
-        devArgs = self.getDeviceArgs(entry.device)
-        args = [ devicePath ]
-        args.extend(devArgs)
-
-        rc = inutil.execWithRedirect("mkdosfs", args,
-                                     stdout = "/dev/tty5",
-                                     stderr = "/dev/tty5", searchPath = 1)
-        if rc:
-            raise SystemError
 
 fileSystemTypeRegister(FATFileSystem())
 
@@ -758,10 +741,6 @@ class AutoFileSystem(PsudoFileSystem):
         if not self.isMountable():
             return
         inutil.mkdirChain("%s/%s" %(instroot, mountpoint))
-        if flags.selinux:
-            ret = isys.resetFileContext(mountpoint, instroot)
-            log.info("set SELinux context for mountpoint %s to %s" %(mountpoint, ret))
-
         for fs in getFStoTry (device):
             try:
                 isys.mount (device, mountpoint, fstype = fs, readOnly = readOnly,
