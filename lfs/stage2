@@ -62,17 +62,17 @@ $(TARGET) :
 	-mkdir -pv /var/{opt,cache,lib/{misc,locate},local}
 	
 	# Check for some important links and create them if they don't exist
-	if [ ! -e /bin/bash	]; then ln -sfn $(TOOLS_DIR)/bin/bash	/bin/bash && ln -sf bash /bin/sh; fi
-	if [ ! -e /bin/cat	]; then ln -sfn $(TOOLS_DIR)/bin/cat	/bin/cat;		fi
-	if [ ! -e /bin/echo	]; then ln -sfn $(TOOLS_DIR)/bin/echo	/bin/echo;	fi
-	if [ ! -e /bin/grep	]; then ln -sfn $(TOOLS_DIR)/bin/grep	/bin/grep;	fi
-	if [ ! -e /bin/pwd	]; then ln -sfn $(TOOLS_DIR)/bin/pwd	/bin/pwd;		fi
-	if [ ! -e /bin/stty	]; then ln -sfn $(TOOLS_DIR)/bin/stty	/bin/stty;	fi
+	#if [ ! -e /bin/bash ]; then ln -sfn $(TOOLS_DIR)/bin/bash /bin/bash && ln -sf bash /bin/sh; fi
+	#if [ ! -e /bin/cat  ]; then ln -sfn $(TOOLS_DIR)/bin/cat  /bin/cat;  fi
+	#if [ ! -e /bin/echo ]; then ln -sfn $(TOOLS_DIR)/bin/echo /bin/echo; fi
+	#if [ ! -e /bin/grep ]; then ln -sfn $(TOOLS_DIR)/bin/grep /bin/grep; fi
+	#if [ ! -e /bin/pwd  ]; then ln -sfn $(TOOLS_DIR)/bin/pwd  /bin/pwd;  fi
+	#if [ ! -e /bin/stty ]; then ln -sfn $(TOOLS_DIR)/bin/stty /bin/stty; fi
 	
-	if [ ! -e /usr/bin/perl	]; then ln -sfn $(TOOLS_DIR)/bin/perl	/usr/bin/perl; fi
+	#if [ ! -e /usr/bin/perl ]; then ln -sfn $(TOOLS_DIR)/bin/perl /usr/bin/perl; fi
 	
-	[ ! -e /lib/libgcc_s.so.1		] && ln -sfn $(TOOLS_DIR)/lib/libgcc_s.so{,.1} 	/usr/lib/
-	[ ! -e /lib/libstdc++.so.6	] && ln -sfn $(TOOLS_DIR)/lib/libstdc++.so{,.6}	/usr/lib/
+	#[ ! -e /lib/libgcc_s.so.1 ] && ln -sfn $(TOOLS_DIR)/lib/libgcc_s.so{,.1} /usr/lib/
+	#[ ! -e /lib/libstdc++.so.6 ] && ln -sfn $(TOOLS_DIR)/lib/libstdc++.so{,.6} /usr/lib/
 	
 	# Creating an empty mtab
 	touch /etc/mtab		#ln -sf /proc/mounts /etc/mtab
