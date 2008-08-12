@@ -36,7 +36,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 CONFIGURE_ARGS = --disable-mmx --disable-sse2
 
 ifeq "$(IFS_ARCH)" "via-c7"
-	CONFIGURE_ARGS = --enable-mmx --enable-sse2
+	CONFIGURE_ARGS = --enable-mmx #--enable-sse2
 endif
 
 ###############################################################################
