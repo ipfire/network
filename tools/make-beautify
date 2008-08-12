@@ -132,12 +132,12 @@ beautify() {
 			MESSAGE="$3"
 			echo -ne "${BOLD}${MESSAGE}${NORMAL}${SET_RESULT_COL}${BRACKET_L}"
 			case "$2" in
-				DONE) echo -ne "${DONE} DONE ${NORMAL}";;
-				WARN) echo -ne "${WARN} WARN ${NORMAL}";;
-				FAIL) echo -ne "${FAIL} FAIL ${NORMAL}";;
-				SKIP) echo -ne "${SKIP} SKIP ${NORMAL}";;
-				ON|ENAB*) echo -ne "${DONE} ENAB ${NORMAL}";;
-				OFF|DISA*) echo -ne "${FAIL} DISA ${NORMAL}";;
+				DONE) echo -ne " ${DONE}DONE${NORMAL} ";;
+				WARN) echo -ne " ${WARN}WARN${NORMAL} ";;
+				FAIL) echo -ne " ${FAIL}FAIL${NORMAL} ";;
+				SKIP) echo -ne " ${SKIP}SKIP${NORMAL} ";;
+				ON|ENAB*)  echo -ne " ${DONE}ENAB${NORMAL} ";;
+				OFF|DISA*) echo -ne " ${FAIL}DISA${NORMAL} ";;
 			esac
 			echo -ne "${BRACKET_R}\n"
 			;;
@@ -176,9 +176,9 @@ beautify() {
 			SET_TIME_COL_REAL=`position_cursor $RESULT_COL $PKG_TIME -3`
 			echo -ne "${SET_TIME_COL}${BRACKET_L} ${BOLD}${SET_TIME_COL_REAL}$PKG_TIME${NORMAL} ${BRACKET_R}"
 			case "$RESULT" in
-				DONE) echo -ne "${SET_RESULT_COL}${BRACKET_L}${DONE} DONE ${NORMAL}${BRACKET_R}\n";;
-				FAIL) echo -ne "${SET_RESULT_COL}${BRACKET_L}${FAIL} FAIL ${NORMAL}${BRACKET_R}\n";;
-				SKIP) echo -ne "${SET_RESULT_COL}${BRACKET_L}${SKIP} SKIP ${NORMAL}${BRACKET_R}\n";;
+				DONE) echo -ne "${SET_RESULT_COL}${BRACKET_L} ${DONE}DONE${NORMAL} ${BRACKET_R}\n";;
+				FAIL) echo -ne "${SET_RESULT_COL}${BRACKET_L} ${FAIL}FAIL${NORMAL} ${BRACKET_R}\n";;
+				SKIP) echo -ne "${SET_RESULT_COL}${BRACKET_L} ${SKIP}SKIP${NORMAL} ${BRACKET_R}\n";;
 			esac
 			;;
 	esac

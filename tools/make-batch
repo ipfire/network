@@ -31,6 +31,7 @@ batch_start() {
 		exit 1
 	fi
 
+	git checkout -f # Remove all local changes !!!
 	git_pull --batch
 
 	if [ -e "$FAILED" ]; then
