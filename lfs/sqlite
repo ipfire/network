@@ -54,7 +54,11 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	-mkdir $(DIR_SRC)/sqlite-build
-	cd $(DIR_SRC)/sqlite-build && $(DIR_APP)/configure --prefix=/usr --disable-tcl
+	cd $(DIR_SRC)/sqlite-build && \
+		$(DIR_APP)/configure \
+			--prefix=/usr \
+			--disable-tcl \
+			--disable-static
 	cd $(DIR_SRC)/sqlite-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/sqlite-build && make install
 	@rm -rf $(DIR_APP) $(DIR_SRC)/sqlite-build
