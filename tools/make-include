@@ -198,7 +198,7 @@ stdumount() {
 exiterror() {
 	stdumount
 	dialogerror $*
-	build_spy error
+	build_spy error &
 	touch $FAILED
 	rm -f $RUNNING 2>/dev/null
 	exit 1
@@ -466,11 +466,9 @@ prepareenv() {
 	
 	# Set SCHED_BATCH
 	if [ -x /usr/bin/schedtool ]; then
-		echo -ne "Setting kernel schedular to SCHED_BATCH"
 		/usr/bin/schedtool -B $$
-		if [ $? -eq 0 ]; then
-			beautify message DONE
-		else
+		if [ $? -ne 0 ]; then
+			echo -ne "Setting kernel schedular to SCHED_BATCH"
 			beautify message FAIL
 		fi
 	fi
@@ -478,30 +476,25 @@ prepareenv() {
 	##############################################################################
 	# Checking if running as root user                                           #
 	##############################################################################
-	echo -ne "Checking if we're running as root user"
 	if [ `id -u` != 0 ]; then
+		echo -ne "Checking if we're running as root user"
 		beautify message FAIL
 		exiterror "Not building as root"
-	else
-		beautify message DONE
 	fi
 
 
 	##############################################################################
 	# Checking for necessary temporary space                                     #
 	##############################################################################
-	echo -ne "Checking for necessary space on disk $BASE_DEV"
 	BASE_DEV=`df -P -k $BASEDIR | tail -n 1 | awk '{ print $1 }'`
 	BASE_ASPACE=`df -P -k $BASEDIR | tail -n 1 | awk '{ print $4 }'`
 	if (( 2048000 > $BASE_ASPACE )); then
 		BASE_USPACE=`du -skx $BASEDIR | awk '{print $1}'`
 		if (( 2048000 - $BASE_USPACE > $BASE_ASPACE )); then
+			echo -ne "Checking for necessary space on disk $BASE_DEV"
 			beautify message FAIL
 			exiterror "Not enough temporary space available, need at least 2GB on $BASE_DEV"
 		fi
-		beautify message DONE
-	else
-		beautify message DONE
 	fi
 
 	##############################################################################
@@ -544,6 +537,22 @@ prepareenv() {
 	fi
 
 	export EMB
+
+	##############################################################################
+	# Checking CPU features                                                      #
+	##############################################################################
+
+	CHECK_CPU=""
+	if [ 'via-c7' = $TARGET ]; then
+		CHECK_CPU="sse sse2 pne"
+	elif [ 'via-c3' = $TARGET ]; then
+		CHECK_CPU="3dnow"
+	fi
+
+	for flag in $CHECK_CPU; do
+		check_cpu $flag || \
+			exiterror "Your system doesn't support needed cpu feature \"$flag\" to build target $TARGET."
+	done
 
 	##############################################################################
 	# Building Linux From Scratch system configuration                           #
@@ -618,7 +627,7 @@ build() {
 	clear
 	#a prebuilt toolchain package is only used if found in cache
 	if [ ! -d $BASEDIR/cache ]; then
-		exiterror "Use make.sh downloadsrc first!"
+		exiterror "Use make.sh source get first!"
 	fi
 	cd $BASEDIR/cache/toolchains
 	PACKAGE=`ls -v -r $TOOLCHAINNAME.tar.bz2 2> /dev/null | head -n 1`
@@ -630,7 +639,7 @@ build() {
 	echo -ne "Building for ${BOLD}${TARGET} (${MACHINE}) on ${MACHINE_REAL}${NORMAL}\n"
 
 	build_spy_send_profile &
-	build_spy compiling
+	build_spy compiling &
 
 	if [ -f $BASEDIR/log_${MACHINE}/02_base/stage2-LFS ]; then
 		prepareenv

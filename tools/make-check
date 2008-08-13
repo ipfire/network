@@ -193,3 +193,10 @@ check_loop() {
 	done
 	return 1
 }
+
+CPU_FLAGS=$(grep ^flags /proc/cpuinfo)
+check_cpu() {
+	FLAG=$1;
+	grep -q $FLAG <<< $CPU_FLAGS
+	return $?
+}
