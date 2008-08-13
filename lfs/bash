@@ -95,7 +95,6 @@ ifeq "$(STAGE)" "installer"
 			--bindir=/bin \
 			--without-bash-malloc \
 			--with-installed-readline \
-			--with-curses \
 			--enable-alias
 	cd $(DIR_APP) && make CC=$(U_CC) CC_FOR_BUILD="$(HOST_GCC)" #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make CC=$(U_CC) install DESTDIR=$(INSTALLER_DIR)
