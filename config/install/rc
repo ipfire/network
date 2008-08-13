@@ -177,15 +177,14 @@ for i in $(/usr/bin/seq 0 9); do
 done
 
 for i in ${INTERFACES}; do
-	boot_mesg "Starting network (dhcp) on ${i}..."
 	ip link set ${i} up && \
 		udhcpc -Sn -i ${i} >/dev/null 2>&1 && \
-		echo_ok && \
+		log_success_msg "Starting network (dhcp) on ${i}..." && \
 		NETWORK=on && \
 		break
 	
 	ip link set ${i} down
-	echo_failure
+	log_failure_msg "Starting network (dhcp) on ${i}..."
 done
 
 if [ "$NETWORK" == "on" ]; then
