@@ -115,7 +115,8 @@ endif
 		../$(THISAPP)/configure \
 			--prefix=/usr \
 			--enable-shared \
-			--disable-werror
+			--disable-werror \
+			--disable-static
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install
 
