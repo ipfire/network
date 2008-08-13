@@ -116,11 +116,6 @@ endif
 # Common end-of-installation logic for Stage 2 and beyond.
 #
 ifneq "$(STAGE)" "toolchain"
-ifeq  "$(STAGE)" "installer"
-	ROOTFILES_DIR = $(DIR_SOURCE)/rootfiles/installer
-else
-	ROOTFILES_DIR = $(DIR_SOURCE)/rootfiles/core $(DIR_SOURCE)/rootfiles/extras
-endif
 define POSTBUILD
 	@echo "Install done; saving file list to $(TARGET) ..."
 	@$(FIND_FILES) > $(DIR_SRC)/lsalrnew
@@ -135,32 +130,39 @@ define POSTBUILD
 	# $(TARGET)_rootfile : ROOTFILE with KVER replacement
 	# $(TARGET) : log result with {commented|include|added} files
 	if [ -s "$(TARGET)_diff" ]; then \
-		LFS_SCRIPT=$(firstword $(MAKEFILE_LIST)); \
-		ROOTFILE=$$(find $(ROOTFILES_DIR) -maxdepth 1 -type f -name $$LFS_SCRIPT | head -1); \
+		LFS_SCRIPT="$(STAGE_ORDER).$(firstword $(MAKEFILE_LIST))"; \
+		if [ "x$(PASS)" != "x" ]; then LFS_SCRIPT="$$LFS_SCRIPT.$(PASS)"; fi; \
+		ROOTFILE=$$(find $(DIR_SOURCE)/rootfiles/core $(DIR_SOURCE)/rootfiles/extras $(DIR_SOURCE)/rootfiles/installer -maxdepth 1 -type f -name $$LFS_SCRIPT | head -1); \
 		if [ "$$ROOTFILE" = "" ]; then \
 			touch $(TARGET)_missing_rootfile; \
 			ROOTFILE=$(TARGET)_missing_rootfile ; \
 			echo "error $$LFS_SCRIPT not found in $(DIR_SOURCE)/rootfiles"; \
 		fi; \
-		sed	-e "s@KVER@$(KVER)@g"					\
-			-e "s@UCLIBC_DIR@$(UCLIBC_DIR)@g"			\
-			-e "s@UCLIBC_TARGET@$(UCLIBC_TARGET)@g"			\
-			-e "s@INSTALLER_DIR@$(INSTALLER_DIR)@g"			\
-			-e "s@^/@@g" -e "s@^#/@#@g"				\
-			$$ROOTFILE > $(TARGET)_rootfile;			\
-		echo 'open (F,"$(TARGET)_rootfile");				\
-		    while (<F>) { $$allfile{$$_} = "x" };close (F);		\
-		    while (<>) {						\
-			if ( defined ($$allfile{"#$$_"}) )	{print "#$$_"}	\
-			elsif ( defined ($$allfile{$$_}) )	{print $$_}	\
-			else				{print "+$$_"}		\
-		    };								\
-		' > /tmp/perl.pl;						\
-		perl /tmp/perl.pl	<$(TARGET)_diff  > $(TARGET);		\
+		sed	-e "s@KVER@$(KVER)@g" \
+			-e "s@UCLIBC_DIR@$(UCLIBC_DIR)@g" \
+			-e "s@UCLIBC_TARGET@$(UCLIBC_TARGET)@g" \
+			-e "s@INSTALLER_DIR@$(INSTALLER_DIR)@g" \
+			-e "s@^/@@g" -e "s@^#/@#@g" \
+			$$ROOTFILE > $(TARGET)_rootfile; \
+		echo 'open (F,"$(TARGET)_rootfile"); \
+		    while (<F>) { $$allfile{$$_} = "x" };close (F); \
+		    while (<>) { \
+			if ( defined ($$allfile{"#$$_"}) ) {print "#$$_"} \
+			elsif ( defined ($$allfile{$$_}) ) {print $$_} \
+			else {print "+$$_"} \
+		    }; \
+		' > /tmp/perl.pl; \
+		perl /tmp/perl.pl < $(TARGET)_diff \
+		| sed -e "s@$(KVER)@KVER@g" \
+			-e "s@$${UCLIBC_DIR:1}@UCLIBC_DIR@g" \
+			-e "s@$(UCLIBC_TARGET)@UCLIBC_TARGET@g" \
+			-e "s@$${INSTALLER_DIR:1}@INSTALLER_DIR@g" \
+		> $(TARGET); \
 		rm -f $(TARGET)_rootfile; \
 		if [ "$$ROOTFILE" != "" ]; then \
 			if ! cmp -s $(TARGET) $$ROOTFILE; then \
 				touch $(TARGET)_changed; \
+				if ! grep -q "^+" $(TARGET); then cp -f $(TARGET) $$ROOTFILE; fi; \
 			fi; \
 		fi; \
 	else \
