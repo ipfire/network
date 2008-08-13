@@ -95,12 +95,17 @@ ifeq "$(PASS)" "pxe"
 	sed -e "s/VERSION/$(VERSION)/g" \
 		-e "s@$(SNAME)0@$(PREFIX)/$(SNAME)0@g" \
 		-e "s@initrd0@$(PREFIX)/initrd0@g" \
+		-e "s@splash@$(PREFIX)/splash@g" \
+		-e "s@vesamenu.c32@$(PREFIX)/vesamenu.c32@g" \
 		$(DIR_CONF)/bootloader/installer.conf \
 		> $(CDROM_DIR)/pxelinux.cfg/$(SNAME)-pxe-$(VERSION).model
 
+	sed -e "s@splash@$(PREFIX)/splash@g" \
+		-i $(CDROM_DIR)/$(PREFIX)/boot.msg
+
 	cd $(CDROM_DIR) && \
 		tar cfz $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).pxe.tar.gz *
-else
+else # cdrom
 	cp -vf /usr/lib/syslinux/isolinux.bin $(CDROM_DIR)/$(PREFIX)/
 	sed -e "s/VERSION/$(VERSION)/g" \
 		$(DIR_CONF)/bootloader/installer.conf \
