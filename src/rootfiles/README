@@ -1,0 +1,38 @@
+
+
+## In Version 3 of IPFire we introduce a new storage model of the rootfiles. ##
+
+
+
+I.	There are three folders:
+
+	src/rootfiles/core
+		... which stores the packages that will be in the iso.
+	src/rootfiles/extra
+		... for each file in here, we run the packager.
+	src/rootfiles/installer
+		... the files that get into the initramfs of the installer.
+
+
+II.	Naming of the files:
+
+	Every file has two or three parts in his name:
+
+		02.binutils
+		|  `-- Name of the package (must be the same as the script in lfs/.)
+		`----- Order of the stage.
+
+		02.gcc.1
+		       `-- If there is a PASS= variable, this is the value of it.
+
+	Some packages may be runned twice or more times during the
+	build process. Because there are some new parts of the scripts
+	that can auto-update the rootfiles, we now need to handle each pass
+	by its own.
+
+
+III.	Special namespaces:
+
+	There may be some files that are created by the make.sh script.
+	To handle them we can use the prefix 00.XXX.
+
