@@ -520,11 +520,12 @@ packages_build() {
 
 	# Build packages
 	for i in $(ls -1 $BASEDIR/src/rootfiles/extras); do
-		if [ -e $BASEDIR/lfs/$i ]; then
-			echo -n $i
+		package=$(cut -d. -f2 <<< $i)
+		if [ -e $BASEDIR/lfs/$package ]; then
+			echo -n $package
 			beautify message SKIP
 		else
-			echo -n $i
+			echo -n $package
 			beautify message SKIP
 		fi
 	done
