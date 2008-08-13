@@ -21,6 +21,7 @@
 
 usage() {
 	cat doc/make.sh-usage
+	exit 1
 }
 
 case "$1" in
@@ -152,7 +153,27 @@ target)
 	;;
 
 check)
-	check_sanity $2
+	case "$2" in
+		cpu)
+			[ -z "$3" ] && usage
+			if check_cpu $3; then
+				echo -n "CPU has flag $3"
+				beautify message DONE
+			else
+				dialogerror "CPU hasn't got flag $3"
+				exit 1
+			fi
+			;;
+		rootfiles)
+			check_rootfiles $3
+			;;
+		sanity)
+			check_sanity $3
+			;;
+		*)
+			usage
+			;;
+	esac
 	;;
 
 g[iu]t)
