@@ -109,13 +109,19 @@ git_commit() {
 }
 
 git_diff() {
+	DIFF_NAME="ipfire-diff-$(date '+%Y%m%d-%0k%0M').diff"
+
 	check_sanity --fix
 
 	echo -ne "Make a local diff to last revision"
-	git diff HEAD > ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff
+	git diff HEAD > $DIFF_NAME
 	evaluate
-	echo "Diff was successfully saved to ipfire-diff-$(date +'%Y-%m-%d-%H:%M').diff"
-	git diff HEAD --stat
+	if [ -s $DIFF_NAME ]; then # if diff file is empty
+		echo "Diff was successfully saved to $DIFF_NAME"
+		git diff HEAD --stat
+	else
+		rm -f $DIFF_NAME
+	fi
 }
 
 git_log() {
