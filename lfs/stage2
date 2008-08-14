@@ -117,12 +117,6 @@ endif
 	    [ -f $$i ] && cp $$i /etc/profile.d; \
 	done
 	
-	# Scripts
-	for i in `find $(DIR_SRC)/src/scripts -maxdepth 1 -type f`; do \
-	    sed "s+CONFIG_ROOT+$(CONFIG_ROOT)+g" $$i > /usr/local/bin/`basename $$i`; \
-	    chmod 755 /usr/local/bin/`basename $$i`; \
-	done
-	
 	# Nobody user
 	-mkdir -p /home/nobody
 	chown -R nobody:nobody /home/nobody
