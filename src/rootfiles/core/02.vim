@@ -1,5 +1,6 @@
 etc/vimrc
 #usr/bin/ex
+#usr/bin/gvimtutor
 #usr/bin/rview
 #usr/bin/rvim
 usr/bin/vi

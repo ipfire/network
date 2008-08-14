@@ -1,6 +1,7 @@
 #usr/bin/bison
 #usr/bin/yacc
-#usr/lib/liby.a
+#usr/lib/liby.so
+#usr/lib/liby.so.2.3
 #usr/share/aclocal
 #usr/share/aclocal/bison-i18n.m4
 #usr/share/bison
