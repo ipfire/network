@@ -544,7 +544,7 @@ prepareenv() {
 
 	CHECK_CPU=""
 	if [ 'via-c7' = $TARGET ]; then
-		CHECK_CPU="sse sse2 pne"
+		CHECK_CPU="sse sse2 pni"
 	elif [ 'via-c3' = $TARGET ]; then
 		CHECK_CPU="3dnow"
 	fi
