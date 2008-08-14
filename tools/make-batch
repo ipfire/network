@@ -72,22 +72,12 @@ batch_run() {
 # A function to send an email to the developers                               #
 ###############################################################################
 batch_mail() {
-	SUBJECT="IPFire.org ${HOSTNAME-$(hostname -f || hostname)} Build"
-	MAILLOG=$BASEDIR/log_${MACHINE}/_mail.body.$$
+	MAIL_SUBJECT="[build.ipfire.org - ${HOSTNAME-$(hostname -f || hostname)}] - ${SUBJECT}"
 
-	> $MAILLOG ## Empty the log
-
-	## Form the message header
-	echo -e "From: $MAIL_FROM\nTo: $MAIL_TO" >> $MAILLOG
-	echo -e "Subject: $SUBJECT\n" >> $MAILLOG
-
-	## Remove the colors when sending an email
-	#  This has to be done better by anything else
-	sed -e 's@.\[.;..m@@g' < $BATCHLOG >> $MAILLOG
+	for i in MAIL_SERVER MAIL_TO MAIL_FROM MAIL_USER MAIL_PASS MAIL_SUBJECT; do
+		[ -n "${!i}" ] && export ${i}="${!i}"
+	done
 
 	## Send the email
-	python tools/sendEmail < $MAILLOG
-	evaluate
-
-	rm -f $MAILLOG
+	sed -e 's@.\[.;..m@@g' < $BATCHLOG | python tools/sendEmail
 }
