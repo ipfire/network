@@ -377,7 +377,6 @@ misc_build() {
 	#ipfire_make cyrus-imapd
 	#ipfire_make clamav
 	#ipfire_make alsa
-	#ipfire_make mpg123
 	#ipfire_make mpfire
 	#ipfire_make guardian
 	#ipfire_make libid3tag
