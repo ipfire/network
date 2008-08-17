@@ -42,7 +42,7 @@ FULLVER    = $(VER)$(LOCALVERSION)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) reiser4-for-2.6.25.patch
+objects = $(DL_FILE) reiser4-for-2.6.25.patch squashfs3.3-linux-$(VER).patch
 
 ifeq "$(PAX)" "1"
 	objects += grsecurity-2.1.12-$(VER)-200806092111.patch
@@ -78,6 +78,7 @@ endif
 	### Reiser4
 	#
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/reiser4-for-2.6.25.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/squashfs3.3-linux-$(VER).patch
 
 ifeq "$(PAX)" "1"
 	### GrSecurity
