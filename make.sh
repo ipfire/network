@@ -181,8 +181,9 @@ ipfire_build() {
 	ipfire_make stage3
 	ipfire_make lzma
 
-	ipfire_make linux
-	
+	ipfire_make linux	
+	ipfire_make aufs
+
 	### Building some general stuff
 	#   STAGE 1
 	ipfire_make pkg-config
