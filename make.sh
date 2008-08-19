@@ -507,7 +507,7 @@ packages_build() {
 			echo -n "Can't build usb-key images on this machine"
 			beautify message WARN
 		fi
-		mv $LFS/$IMAGES_DIR/{*.iso,*.tar.gz,*.img.gz} $BASEDIR >$LOGFILE 2>&1
+		mv $LFS/$IMAGES_DIR/{*.iso,*.tar.gz,*.img.gz} $BASEDIR >>$LOGFILE 2>&1
 	else
 		if check_loop; then
 			# We put here the code that is done when
