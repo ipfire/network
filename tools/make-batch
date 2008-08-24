@@ -79,5 +79,5 @@ batch_mail() {
 	done
 
 	## Send the email
-	sed -e 's@.\[.;..m@@g' < $BATCHLOG | python tools/sendEmail
+	python tools/alog2html < $BATCHLOG | python tools/sendEmail
 }
