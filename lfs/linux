@@ -78,6 +78,9 @@ endif
 	### Reiser4
 	#
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/reiser4-for-2.6.25.patch
+
+	### Squashfs
+	#
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/linux-2.6-squashfs-1.patch
 
 ifeq "$(PAX)" "1"
@@ -140,8 +143,8 @@ ifeq "$(STAGE)" "ipfire"
 	# keep the source code in $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
 	cp -fal $(DIR_APP) $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
 
-	ln -svf $(DIR_APP)$(LOCALVERSION) /lib/modules/$(KVER)/build
-	ln -svf $(DIR_APP)$(LOCALVERSION) /lib/modules/$(KVER)/source
+	ln -svf $(DIR_SRC)/$(PKG_NAME)-$(FULLVER) /lib/modules/$(KVER)/build
+	ln -svf $(DIR_SRC)/$(PKG_NAME)-$(FULLVER) /lib/modules/$(KVER)/source
 	-mkdir -pv /lib/modules/$(KVER)/extra
 endif
 
@@ -153,7 +156,7 @@ ifeq "$(STAGE)" "installer"
 	cd $(DIR_APP) && cp -rv dest/include/* $(UCLIBC_SYSROOT_DIR)/usr/include
 
 	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)
-	cp -avf /lib/modules/$(KVER)/kernel $(INSTALLER_DIR)/lib/modules/$(KVER)/
+	cp -avf /lib/modules/$(KVER)/{extra,kernel} $(INSTALLER_DIR)/lib/modules/$(KVER)/
 	
 	cd $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel && \
 		rm -rf \
