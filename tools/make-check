@@ -96,15 +96,6 @@ check_rootfiles() {
 
 			# Remove leading pluses and replace them by '#'
 			sed -e "s/^+/#/g" -i $BASEDIR/src/rootfiles/*/*
-
-			# Fix UCLIBC_DIR and UCLIBC_TARGET
-			sed -e "s@${UCLIBC_DIR:1}@UCLIBC_DIR@g" \
-			    -e "s@${UCLIBC_TARGET}@UCLIBC_TARGET@g" \
-				-i $BASEDIR/src/rootfiles/installer/*
-
-			# Fix INSTALLER_DIR
-			sed -e "s@${INSTALLER_DIR:1}/@INSTALLER_DIR/@g" \
-				-i $BASEDIR/src/rootfiles/installer/*
 			;;
 		"")
 			: # If no option was given we do nothing.
