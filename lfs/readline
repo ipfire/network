@@ -56,8 +56,6 @@ $(TARGET) :
 	cd $(DIR_APP) && sed -i '/MV.*old/d' Makefile.in
 	cd $(DIR_APP) && sed -i '/{OLDSUFF}/c:' support/shlib-install
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-5.patch
-
-ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib  --disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) SHLIB_LIBS=-lncurses
 	cd $(DIR_APP) && make install
@@ -65,19 +63,5 @@ ifeq "$(STAGE)" "base"
 	rm -fv /lib/lib{readline,history}.so
 	ln -sfv ../../lib/libreadline.so.5 /usr/lib/libreadline.so
 	ln -sfv ../../lib/libhistory.so.5 /usr/lib/libhistory.so
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && libtoolize -f
-	cd $(DIR_APP) && autoconf --force
-	cd $(DIR_APP) && $(U_TOOLS) bash_cv_func_sigsetjmp=yes \
-		./configure \
-			--prefix=/usr \
-			--host=$(UCLIBC_TARGET) \
-			--with-curses
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) SHLIB_LIBS=-lncurses
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
-endif
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
