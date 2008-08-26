@@ -53,8 +53,6 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-
-ifeq "$(STAGE)" "$(SNAME)"
 	cd $(DIR_APP) && \
 		./configure --prefix=/usr \
 			--sysconfdir=/etc \
@@ -62,20 +60,5 @@ ifeq "$(STAGE)" "$(SNAME)"
 			--localstatedir=/var
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && $(U_TOOLS) \
-		./configure --prefix=/usr \
-			--host=$(UCLIBC_TARGET) \
-			--sysconfdir=/etc \
-			--libexecdir=/usr/lib/hal \
-			--localstatedir=/var \
-			--disable-policy-kit \
-			--with-hwdata=/usr/share
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
-endif
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
