@@ -54,8 +54,6 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-abi_breakage-1.patch
-
-ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && \
 		./configure --prefix=/usr \
 			--docdir=/usr/share/doc/pcre-$(VER) \
@@ -67,17 +65,5 @@ ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && make install
 	mv -v /usr/lib/libpcre.so.* /lib/
 	ln -v -sf ../../lib/libpcre.so.0 /usr/lib/libpcre.so
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && \
-		./configure --prefix=/usr \
-			--host=$(UCLIBC_TARGET) \
-			--enable-utf8 \
-			--disable-cpp
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
-endif
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
