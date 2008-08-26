@@ -37,8 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	$(THISAPP)-no-rpl-defines.patch
+objects = $(DL_FILE)
 
 install: $(TARGET)
 
@@ -55,8 +54,6 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP)
 	@cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-
-ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && \
 		./configure --prefix=/usr \
 			--without-readline \
@@ -67,23 +64,5 @@ ifeq "$(STAGE)" "ipfire"
 			--with-gnu-ld
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-no-rpl-defines.patch
-	cd $(DIR_APP) && \
-		./configure --prefix=/usr \
-			--host=$(UCLIBC_TARGET) \
-			--without-readline \
-			--disable-nls \
-			--disable-Werror \
-			--disable-dependency-tracking \
-			--disable-debug \
-			--with-gnu-ld \
-			--disable-static
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
-endif
-	
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
