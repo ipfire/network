@@ -33,17 +33,11 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-PYTHON_DISABLE_MODULES = dbm zipfile \
-	gdbm bsddb _tkinter nis _codecs_kr _codecs_jp _codecs_cn \
-	_codecs_tw _codecs_hk bz2
-
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-gdbm-1.patch \
-	$(THISAPP)-crosscompile-3.patch \
-	$(THISAPP)-disable_modules_and_ssl.patch
+objects = $(DL_FILE) $(THISAPP)-gdbm-1.patch
 
 install: $(TARGET)
 
@@ -59,41 +53,12 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-
-ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-gdbm-1.patch
 	cd $(DIR_APP) && OPT="$(CFLAGS)" ./configure --prefix=/usr \
 						 --enable-shared \
 						 --disable-ipv6
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-crosscompile-3.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disable_modules_and_ssl.patch
-	cd $(DIR_APP) && ./configure
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) python Parser/pgen
-	cd $(DIR_APP) && mv -vf python hostpython
-	cd $(DIR_APP) && mv -vf Parser/pgen Parser/hostpgen
-	cd $(DIR_APP) && make distclean
-	cd $(DIR_APP) && sed -i -e '/^HOSTPYTHON/s:=.*:=./hostpython:' \
-				-e '/^HOSTPGEN/s:=.*:=./Parser/hostpgen:' \
-				Makefile.pre.in
-	-rm -rf $(DIR_APP)/Lib/test $(INSTALLER_DIR)/usr/lib/python2.5/test
-	cd $(DIR_APP) && OPT="$(CFLAGS)" $(U_TOOLS) ./configure \
-						--prefix=/usr \
-						--host=$(UCLIBC_TARGET) \
-						--enable-shared \
-						--disable-ipv6 \
-						--with-cxx=no
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
-		HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen \
-		PYTHON_DISABLE_MODULES="$(PYTHON_DISABLE_MODULES)"
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR) \
-		HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen \
-		PYTHON_DISABLE_MODULES="$(PYTHON_DISABLE_MODULES)"
-endif
 
 	$(PYTHON_COMPILE)
 
