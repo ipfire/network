@@ -92,19 +92,5 @@ ifeq "$(STAGE)" "base"
 	ln -sfv libncurses.a /usr/lib/libcurses.a
 endif
 
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-coverity_fixes-1.patch
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-			--target=$(UCLIBC_TARGET) \
-			--host=$(UCLIBC_TARGET) \
-			--with-shared \
-			--without-debug \
-			--enable-widec
-	cd $(DIR_APP) && sed -e "s/#include <ncurses_dll.h>/&\n#include <wchar.h>/" \
-		-i ncurses/curses.priv.h
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
-endif
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
