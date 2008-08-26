@@ -75,13 +75,5 @@ ifeq "$(STAGE)" "base"
 	#setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep /bin/umount
 endif
 
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && ./configure --target=$(UCLIBC_TARGET) \
-						--host=$(UCLIBC_TARGET) \
-						--disable-nls
-	cd $(DIR_APP) && make -C disk-utils mkswap $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && cp -vf disk-utils/mkswap $(INSTALLER_DIR)/sbin/mkswap
-endif
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
