@@ -3,25 +3,29 @@
 import os
 import smtplib
 
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEText import MIMEText
+#from email.MIMEImage import MIMEImage
+
 try:
 	server = "%s" % os.environ["MAIL_SERVER"]
 except KeyError:
 	server = "mail01.tremer.info"
 
 try:
-	toaddrs = "To: %s" % os.environ["MAIL_TO"]
+	toaddrs = "%s" % os.environ["MAIL_TO"]
 except KeyError:
-	toaddrs = "To: developers@ipfire.org"
+	toaddrs = "developers@ipfire.org"
 
 try:
-	fromaddr = "From: %s" % os.environ["MAIL_FROM"]
+	fromaddr = "%s" % os.environ["MAIL_FROM"]
 except KeyError:
-	fromaddr = "From: build@ipfire.org"
+	fromaddr = "build@ipfire.org"
 
 try:
-	subject = "Subject: %s" % os.environ["MAIL_SUBJECT"]
+	subject = "%s" % os.environ["MAIL_SUBJECT"]
 except KeyError:
-	subject = "Subject: No subject given"
+	subject = "No subject given"
 
 auth=True
 try:
@@ -30,23 +34,27 @@ try:
 except KeyError:
 	auth=False
 
-body = header = ""
+text = ""
 while 1:
 	try:
 		line = raw_input()
 	except EOFError:
 		break
-	body = body + line + "\r\n"
+	text += line + "\r\n"
 
-for i in fromaddr, toaddrs, subject:
-	header = header + i + "\r\n"
-	
-msg = header + "\r\n" + body # An empty line to finish the header + add the body
+# Create message
+msg = MIMEMultipart('related')
+msg['Subject'] = subject
+msg['From'] = fromaddr
+msg['To'] = toaddrs
+msg.preamble = 'This is a multi-part message in MIME format.'
+
+msg.attach(MIMEText(text, 'html'))
 
 server = smtplib.SMTP(server)
 #server.set_debuglevel(1)
 if auth:
 	server.login(user, password)
 
-server.sendmail(fromaddr, toaddrs, msg)
+server.sendmail(fromaddr, toaddrs, msg.as_string())
 server.quit()
