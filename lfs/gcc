@@ -48,12 +48,9 @@ endif
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-uClibc_conf-1.patch \
-	$(THISAPP)-uClibc_c99-snprintf.patch \
 	$(THISAPP)-fstack_protector-1.patch \
 	$(THISAPP)-fortify_source-2.patch \
-	$(THISAPP)-fpie-1.patch \
-	$(THISAPP)-libintl.patch
+	$(THISAPP)-fpie-1.patch
 
 install : $(TARGET)
 
@@ -189,83 +186,6 @@ endif
 
 	ln -sfv ../usr/bin/cpp /lib
 	ln -sfv gcc /usr/bin/cc
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc_conf-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uClibc_c99-snprintf.patch
-ifeq "$(PASS)" "1"
-	### Copying headers to install area of bootstrap gcc,
-	#   so it can build libgcc2
-	mkdir -pv $(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/include
-	cp -rfv $(UCLIBC_HEADERS_DIR)/* $(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/include
-ifeq "$(PIE)" "1"
-	## Enable -fPIC by default
-	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
-		-i gcc/config/i386/linux.h
-endif
-	cd $(DIR_SRC)/gcc-build && CC_FOR_BUILD="$(HOST_GCC)" ../$(THISAPP)/configure \
-						--target=$(UCLIBC_TARGET) \
-						--prefix=$(UCLIBC_CC_CORE_STATIC_DIR) \
-						--with-local-prefix=$(UCLIBC_SYSROOT_DIR) \
-						--with-mpfr=$(UCLIBC_DIR) \
-						--with-gmp=$(UCLIBC_DIR) \
-						--disable-multilib \
-						--with-newlib \
-						--with-sysroot=$(UCLIBC_SYSROOT_DIR) \
-						--enable-__cxa_atexit \
-						--disable-nls \
-						--enable-threads=no \
-						--enable-symvers=gnu \
-						--enable-languages=c \
-						--disable-shared \
-						--enable-target-optspace \
-						--disable-decimal-float
-	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS) all-gcc all-target-libgcc
-	cd $(DIR_SRC)/gcc-build && make install-gcc install-target-libgcc
-	ln -svf ../include-fixed/syslimits.h \
-		$(UCLIBC_CC_CORE_STATIC_DIR)/lib/gcc/$(UCLIBC_TARGET)/$(VER)/include/syslimits.h
-	ln -svf ../include-fixed/limits.h \
-		$(UCLIBC_CC_CORE_STATIC_DIR)/lib/gcc/$(UCLIBC_TARGET)/$(VER)/include/limits.h
-endif
-
-ifeq "$(PASS)" "2"
-ifeq "$(PIE)" "1"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fpie-1.patch
-endif
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libintl.patch
-	cd $(DIR_SRC)/gcc-build && CC_FOR_BUILD="$(HOST_GCC)" ../$(THISAPP)/configure \
-						--target=$(UCLIBC_TARGET) \
-						--prefix=$(UCLIBC_DIR) \
-						--with-local-prefix=$(UCLIBC_SYSROOT_DIR) \
-						--with-mpfr=$(UCLIBC_DIR) \
-						--with-gmp=$(UCLIBC_DIR) \
-						--disable-multilib \
-						--with-sysroot=$(UCLIBC_SYSROOT_DIR) \
-						--enable-__cxa_atexit \
-						--disable-nls \
-						--enable-threads=posix \
-						--enable-symvers=gnu \
-						--enable-c99 \
-						--enable-long-long \
-						--enable-languages=c,c++ \
-						--enable-target-optspace \
-						--enable-shared \
-						--disable-decimal-float \
-						--disable-libgomp \
-						--disable-libssp \
-						--disable-libmudflap
-	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
-	cd $(DIR_SRC)/gcc-build && make install
-	ln -svf ../include-fixed/syslimits.h \
-		$(UCLIBC_DIR)/lib/gcc/$(UCLIBC_TARGET)/$(VER)/include/syslimits.h
-	ln -svf ../include-fixed/limits.h \
-		$(UCLIBC_DIR)/lib/gcc/$(UCLIBC_TARGET)/$(VER)/include/limits.h
-
-	ln -svf $(UCLIBC_DIR)/bin/$(UCLIBC_TARGET)-gcc \
-		$(UCLIBC_DIR)/bin/$(UCLIBC_TARGET)-cc
-	cp -vaf $(UCLIBC_DIR)/$(UCLIBC_TARGET)/lib/* $(UCLIBC_SYSROOT_DIR)/usr/lib
-endif
 endif
 
 	@rm -rf $(DIR_APP) $(DIR_SRC)/gcc-build
