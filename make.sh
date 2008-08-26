@@ -295,6 +295,7 @@ ipfire_build() {
 	ipfire_make cpio
 	ipfire_make cdrtools
 	ipfire_make parted
+	ipfire_make python-parted
 	ipfire_make memtest86+
 	#ipfire_make pakfire
 	ipfire_make chkconfig
@@ -345,7 +346,8 @@ misc_build() {
 	ipfire_make nasm
 	ipfire_make syslinux
 
-	ipfire_make busybox
+	ipfire_make bootutils
+	ipfire_make mkinitramfs
 
 	#ipfire_make squidguard		## CAN THIS BE BANISHED BY ANYTHING BETTER?
 	#ipfire_make calamaris		## CAN THIS BE BANISHED BY ANYTHING BETTER?
@@ -419,9 +421,7 @@ misc_build() {
 ################################################################################
 installer_build() {
 
-	PATH=${TOOLS_DIR}/usr/bin:${UCLIBC_DIR}/bin:${UCLIBC_DIR}/usr/bin
-	PATH=$PATH:${UCLIBC_CC_CORE_STATIC_DIR}/bin:/bin:/usr/bin
-	PATH=$PATH:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
+	PATH=${TOOLS_DIR}/usr/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/${MACHINE_REAL}-linux/bin
 	STAGE_ORDER=05
 	STAGE=installer
 
@@ -431,52 +431,8 @@ installer_build() {
 	build_spy set stage ${STAGE} &
 
 	ipfire_make stage5
-	ipfire_make ccache
-	ipfire_make gmp
-	ipfire_make mpfr
-	ipfire_make linux
-	ipfire_make binutils
-	ipfire_make uClibc		PASS=1
-	ipfire_make gcc			PASS=1
-	ipfire_make uClibc		PASS=2
-	ipfire_make gettext		PASS=1
-	ipfire_make gcc			PASS=2
-	ipfire_make gettext		PASS=2
-	ipfire_make udev
-	ipfire_make pciutils
-	ipfire_make zlib
-	ipfire_make ncurses
-	ipfire_make pcre
-	ipfire_make popt
-	ipfire_make glib
-	ipfire_make readline
-	ipfire_make e2fsprogs
-	#ipfire_make xfsprogs
-	ipfire_make util-linux-ng
-	ipfire_make parted
-	ipfire_make expat
-	ipfire_make dbus
-	ipfire_make dbus-glib
-	ipfire_make hal
-	ipfire_make hal-info
-	ipfire_make openssl
-	ipfire_make python
-	ipfire_make python-dbus
-	ipfire_make python-parted
-	ipfire_make python-urlgrabber
-	ipfire_make python-iconv
-	ipfire_make pam
-	ipfire_make libuser
-	ipfire_make slang
-	ipfire_make newt
-	ipfire_make bash
-	ipfire_make strace
-	ipfire_make cpio
-	ipfire_make lzma
-	ipfire_make reiserfsprogs
-	ipfire_make pyfire
-	ipfire_make pomona
-	ipfire_make busybox
+	#ipfire_make initramfs
+	#ipfire_make pomona
 }
 
 ################################################################################
