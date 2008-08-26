@@ -53,8 +53,6 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-
-ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && LDFLAGS="-z muldefs" \
 		./configure CPIO_MT_PROG=mt \
 			--prefix=/usr \
@@ -63,21 +61,5 @@ ifeq "$(STAGE)" "ipfire"
 			--with-rmt=/usr/sbin/rmt
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && LDFLAGS="-z muldefs" \
-		./configure CPIO_MT_PROG=mt \
-			--prefix=/usr \
-			--target=$(UCLIBC_TARGET) \
-			--host=$(UCLIBC_TARGET)
-			--bindir=/bin \
-			--libexecdir=/tmp \
-			--with-rmt=/usr/sbin/rmt \
-			--disable-nls
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
-endif
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
