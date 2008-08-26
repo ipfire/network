@@ -24,17 +24,14 @@
 
 include Config
 
-PKG_NAME   = scripts
-VER        = LFS
+PKG_NAME   = mkinitramfs
+VER        = ipfire
 
 THISAPP    = $(PKG_NAME)-$(VER)
+DIR_APP    = $(DIR_SOURCE)/$(PKG_NAME)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-BIN        = readhash
-SBIN       = 
-USR_BIN    = py-compile setddns.pl vpn-watch
-USR_SBIN   =
 
 ###############################################################################
 # Top-level Rules
@@ -50,21 +47,7 @@ download :
 
 $(TARGET) :
 	@$(PREBUILD)
-
-	for i in $(BIN); do \
-		install -m 755 $(DIR_SOURCE)/scripts/$$i /bin/$$i; \
-	done
-	
-	for i in $(SBIN); do \
-		install -m 755 $(DIR_SOURCE)/scripts/$$i /sbin/$$i; \
-	done
-
-	for i in $(USR_BIN); do \
-		install -m 755 $(DIR_SOURCE)/scripts/$$i /usr/bin/$$i; \
-	done
-	
-	#for i in $(USR_SBIN); do \
-	#	install -m 755 $(DIR_SOURCE)/scripts/$$i /usr/sbin/$$i; \
-	#done
-
+	install -m 755 $(DIR_APP)/mkinitramfs /sbin/mkinitramfs
+	install -m 755 $(DIR_APP)/mkliveramfs /sbin/mkliveramfs
+	install -m 644 $(DIR_APP)/functions /usr/libexec/initramfs-functions
 	@$(POSTBUILD)
