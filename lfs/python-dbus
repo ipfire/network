@@ -54,28 +54,9 @@ $(TARGET):
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
-ifeq "$(STAGE)" "$(SNAME)"
 	cd $(DIR_APP) && ./configure --prefix=/usr
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && \
-		DBUS_CFLAGS="-I$(INSTALLER_DIR)/usr/include/dbus-1.0 -I$(INSTALLER_DIR)/usr/lib/dbus-1.0/include" \
-		DBUS_LIBS="$(INSTALLER_DIR)/usr/lib/libdbus-1.so" \
-		DBUS_GLIB_CFLAGS="-I$(INSTALLER_DIR)/usr/include/glib-2.0 -I$(INSTALLER_DIR)/usr/lib/glib-2.0/include" \
-		DBUS_GLIB_LIBS="$(INSTALLER_DIR)/usr/lib/libglib-2.0.so $(INSTALLER_DIR)/usr/lib/libgobject-2.0.so $(INSTALLER_DIR)/usr/lib/libgmodule-2.0.so $(INSTALLER_DIR)/usr/lib/libgthread-2.0.so" \
-		LIBS="$(INSTALLER_DIR)/usr/lib/libdbus-1.so" \
-		LDFLAGS="-L$(INSTALLER_DIR)/lib/ -L$(INSTALLER_DIR)/usr/lib/ -ldbus-1 $(INSTALLER_DIR)/usr/lib/libdbus-1.so" \
-		./configure \
-			--prefix=/usr \
-			--host=$(UCLIBC_TARGET)
-	sed -e "s@^PYTHON_INCLUDES = .*@PYTHON_INCLUDES = -I$(INSTALLER_DIR)/usr/include/python2.5@g" \
-		-i $(DIR_APP)/{.,_dbus_{,glib_}bindings}/Makefile
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
-endif
 
 	$(PYTHON_COMPILE)
 
