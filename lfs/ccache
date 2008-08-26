@@ -53,8 +53,6 @@ $(objects) :
 
 $(TARGET) : 
 	@$(PREBUILD)
-
-ifeq "$(STAGE)" "toolchain"
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -p0 < $(DIR_PATCHES)/$(THISAPP).patch
 	cd $(DIR_APP) && CFLAGS="-O2 -static" ./configure --prefix=$(PREFIX)
@@ -66,12 +64,4 @@ ifeq "$(STAGE)" "toolchain"
 	done
 	$(PREFIX)/bin/ccache -z
 	@rm -rf $(DIR_APP)
-endif
-
-ifeq "$(STAGE)" "installer"
-	ln -sf ccache $(PREFIX)/bin/$(UCLIBC_TARGET)-gcc
-	ln -sf ccache $(PREFIX)/bin/$(UCLIBC_TARGET)-g++
-	ln -sf ccache $(PREFIX)/bin/$(UCLIBC_TARGET)-cc
-endif
-
 	@$(POSTBUILD)
