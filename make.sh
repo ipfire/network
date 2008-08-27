@@ -78,7 +78,6 @@ toolchain_build() {
 	toolchain_make sed
 	toolchain_make tar
 	toolchain_make texinfo
-	#toolchain_make bison
 	toolchain_make flex
 	toolchain_make bc
 	toolchain_make util-linux-ng
