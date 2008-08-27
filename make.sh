@@ -204,6 +204,7 @@ ipfire_build() {
 	ipfire_make popt
 	ipfire_make libusb
 	ipfire_make bc
+	ipfire_make mingetty
 	
 	### Building some network stuff
 	#
