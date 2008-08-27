@@ -60,7 +60,6 @@ toolchain_build() {
 	toolchain_make adjust-toolchain
 	toolchain_make binutils		PASS=2
 	toolchain_make gcc		PASS=2
-	#toolchain_make dejagnu		# Maybe this can be dropped
 	toolchain_make ncurses
 	toolchain_make bash
 	toolchain_make bzip2
