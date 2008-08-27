@@ -29,6 +29,6 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALLNLSDIR = $(DESTDIR)/usr/share/locale
 
 PYTHONLIBDIR = $(DESTDIR)/usr/lib/$(PSNAME)
-PYTHONINCLUDE= $(DESTDIR)/usr/include/python2.5/
+PYTHONINCLUDE= /usr/include/python2.5/
 
 CC = $(CROSS)gcc

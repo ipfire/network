@@ -432,8 +432,7 @@ installer_build() {
 	build_spy set stage ${STAGE} &
 
 	ipfire_make stage5
-	#ipfire_make initramfs
-	#ipfire_make pomona
+	ipfire_make pomona
 }
 
 ################################################################################
