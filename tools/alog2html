@@ -21,7 +21,8 @@
 # Author: 08-2008 - Heiner Schmeling                                          #
 ###############################################################################
 
-HEAD="""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+### define variables
+HEADER='''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
        "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -43,7 +44,6 @@ HEAD="""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 .b {font-weight:bold}
 
 .bggray {background-color:#eeeeee;}
-.bggray2 {background-color:#cccccc;}
 
 .tal {text-align:left;}
 .tar {text-align:right;}
@@ -52,146 +52,105 @@ HEAD="""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 </head>
 <body>
 <TABLE BORDER="0" cellspacing="0">
-"""
+'''
 
-FOOT="""</TABLE>
+FOOTER='''</TABLE>
 </body>
 </html>
-"""
+'''
 
-sESC="\x1b["
-sNORMAL="0;"
-sBOLD="1;"
-sBLACK="30m"
-sRED="31m"
-sGREEN="32m"
-sYELLOW="33m"
-sBLUE="34m"
-sMAGENTA="35m"
-sCYAN="36m"
-sWHITE="37m"
-sRESET="39m"
+sESC='\x1b['
+sBEL='\x07'
+sSpace='\x20'
+lineNr = 0																		# Counter for readed lines
+hg_colStr=''																	# define variable for Backgroundcolor
 
-# Define color for messages
-BOLD=sESC+sBOLD+sRESET
-DONE=sESC+sBOLD+sGREEN
-SKIP=sESC+sBOLD+sBLUE
-WARN=sESC+sBOLD+sMAGENTA
-FAIL=sESC+sBOLD+sRED
-NORMAL=sESC+sNORMAL+sRESET
+### definition for lots of variable 'linelist'
+##  linelist=[[pos,fgcolor,hgcolor,bold,text]]
+# pos     = current Cursorposition
+# fgcolor = Vordergrund Farbe
+# hgcolor = Hintergrund Farbe
+# bold    = ist Bold aktiv (0/1)
+# text    = Text
 
-DEBUG = 0					  # for debugging 0=Off 1=On
 
-lineNr = 0						# Counter for readed lines
+print HEADER
 
-print HEAD					# print HTML-Header
-
-#linelist=[[pos,fgcolor,hgcolor,bold,text]] # definition der Variablenliste 'linelist' 
-## pos     = aktuelle Cursorposition
-## fgcolor = Vordergrund Farbe
-## hgcolor = Hintergrund Farbe
-## bold    = ist Bold aktiv (0/1)
-## text    = Text
-
-hg_colStr=''					# define variable for Backgroundcolor
-
+### beginning
 while 1:
 	try:
-		line = raw_input()		# read from standard device
-		lineNr += 1				# increment counter
+		line = raw_input()														# read from standard device
+		lineNr += 1																# increment linecounter
 	except EOFError:
-		break					# break/exit is "End Of File"
+		break																	# break/exit is "End Of File"
 
 
-	if len(line)>0 and line[-1]=='\x0d' :		# evtl. vorhandenen '/r' entfernen
+	if len(line)>0 and line[-1]=='\x0d' :										# evtl. vorhandenen '/r' entfernen
 		line=line[:-1]
+	line=line.replace(sBEL,sSpace).strip()
 
-	isBoldOn = 0				# is Bold active ?
-	
-	linelist = []				# define emty list
+	isBoldOn = 0																# is Bold active ?
+	linelist = []																# define emty list
 
-	new_String = ""
+	new_String = ''
 	new_line_split = []
 	colStr = ""
 	BoldOn=""
 	pos = 0
 
-	line_split = line.split(sESC)		# Split readed line with sESC separator
-	cnt_line_split = len(line_split)	# len/count of line_split
+	line_split = line.split(sESC)												# Split readed line with sESC separator
+	cnt_line_split = len(line_split)											# len/count of line_split
 
-	if DEBUG : print DONE + "Line#:",str(lineNr),"\tSplit:",str(cnt_line_split)+ NORMAL
-
+### decode escape sequences
 	for splitNr in range(0,cnt_line_split):
 
-		lsStr = line_split[splitNr]		# string of array (line split string)
+		lsStr = line_split[splitNr]												# string of array (line split string)
 
-		if DEBUG : print '\n_'+lsStr+'_'
+		num_cnt = 0																# count for numbers
 
-		num_cnt = 0								# count for numbers
-
-		if splitNr == 0 :						# split nr 0 have not EscapeSequences
+		if splitNr == 0 :														# split nr 0 have not EscapeSequences
 			new_String=line_split[0]
 			if len(lsStr)>0:
 				test_ = [pos,colStr,hg_colStr,BoldOn,lsStr]
 				linelist.append(test_)
 				pos +=len(lsStr)
 		else:
-			lsStr_len = len(lsStr)				# Ueberpruefung der Teilstring-Laenge
+			lsStr_len = len(lsStr)												# Ueberpruefung der Teilstring-Laenge
 			if lsStr_len > 5 :
 				lsStr_len = 5
-			if DEBUG : print "-%i-" %lsStr_len	# Dump der maximal zu Ueberpruefenden Laenge
 
 			for x1 in range(0,lsStr_len):
 				found=''
 				zeichen=lsStr[x1]
-				if DEBUG : print zeichen ,
-
 				if zeichen == ";" :
 					if num_cnt == 1 :
 						if lsStr[x1-1] == '0' and isBoldOn == 1:
 							isBoldOn = 0
 							BoldOn=""
-							if DEBUG : print '</B>'
-							#new_String +='</B>'
-							new_line_split.append('</B>')
 						elif lsStr[x1-1] == '1' and isBoldOn == 0:
 							isBoldOn = 1
 							BoldOn=" b"
-							if DEBUG : print '<B>'
-							#new_String +='<B>'
-							new_line_split.append('<B>')
 						else:
-							print FAIL+'ERROR: BOLD nicht 0 oder 1'+NORMAL
+							print 'ERROR: BOLD nicht 0 oder 1'
 					else:
-						print FAIL+'ERROR: >2 Zahlen in fuer BOLD'+NORMAL
-					if DEBUG : print '#;#%i' %num_cnt
-					num_cnt = 0				# reset count for numbers
+						print 'ERROR: >2 Zahlen in fuer BOLD'
+					num_cnt = 0													# reset count for numbers
 					continue
 				elif zeichen.isdigit() :
 					num_cnt += 1
-					if DEBUG : print '#'
 					continue
-				elif zeichen == "J" :
-					found="J"
-					if DEBUG : print FAIL+'#J#'+NORMAL
-					new_String +='#J#'
+				elif zeichen == 'J' :
+					found='J'
 					break
-				elif zeichen == "H" :
-					found="H"
-					if DEBUG : print DONE+'#H#'+NORMAL
-					new_String +='#H#'
+				elif zeichen == 'H' :
+					found='H'
 					break
-				elif zeichen == "G" :
-					found="G"
-					if DEBUG : print SKIP+'#G#'+NORMAL
-					xx = str(lsStr[x1-num_cnt:x1])
-					new_String +='<TAB_'+xx+'>'
-					new_line_split.append('<TAB_'+xx+'>')
-					pos = eval(xx)
+				elif zeichen == 'G' :
+					found='G'
+					pos = int(lsStr[x1-num_cnt:x1])
 					break
-				elif zeichen == "m" :
-					found="m"
-					if DEBUG : print BOLD+'#m#'+NORMAL
+				elif zeichen == 'm' :
+					found='m'
 					color = lsStr[x1-1]
 					if color == '0' :
 						colStr='white'
@@ -212,14 +171,10 @@ while 1:
 					elif color == '8' :
 						colStr='888'
 					elif color == '9' :
-						colStr=''			# reset Color
-
-					#if colStr<>'' : new_String +='<'+ colStr + '>'
-					new_line_split.append('<'+ colStr + '>')
+						colStr=''												# reset Color
 					break
 
 			if found <> '' :
-				if DEBUG : print "|%s|%i" % (found, num_cnt)
 				if colStr<>'' or BoldOn<>'' :
 					new_String +='<span class="%s%s">%s</span>' % (colStr,BoldOn,lsStr[x1+1:])
 				else:
@@ -233,27 +188,24 @@ while 1:
 				pos +=len(_lsStr)
 			new_line_split.append(_lsStr)
 
-### Starte Tabelle <tr>
-	if lineNr % 2 != 0 :					# teile durch 2, ist der Rest nicht Null
+### begin table <tr>
+	if lineNr % 2 != 0 :
 		print '<tr class="bggray">'
 	else :
-		print '<tr class="bggray2">'
+		print '<tr>'
 
-### Erster Tabelleneintrag 'ZeilenNummer'
+### first table entry 'linecounter'
 	print '\t<td class="tar">%d: </td>' % (lineNr)
 
-### Zweiter Tabelleneintrag 'Beschreibung'
-	#for indexNr in range(0,len(linelist)):
+### other table entrys
 	linelist_cnt=len(linelist)
 	if linelist_cnt > 0 :
 
-		cnt_bracket=0							# Count string '[' for Tab's
+		cnt_bracket=0															# Count string '[' for Tab's
 		for cnt in range(0,linelist_cnt): 
 			cnt_bracket+=linelist[cnt][4].count('[')
 
-		if DEBUG : print '\t<td class="tar">%d</td>' % (linelist_cnt)			# Test
-
-		if linelist[0][4].count('*') == 3 and linelist_cnt == 5 :				# Find 3x'*'
+		if linelist[0][4].count('*') == 3 and linelist_cnt == 5 :				# Find 3 x '*'
 			for cnt in range(0,13):
 				if cnt == 0 : print '\t<td class="b">%s</td>' % (linelist[0][4])
 				elif cnt == 2 : print '\t<td class="tac b">%s</td>' % (linelist[1][4])
@@ -279,8 +231,7 @@ while 1:
 				start = 1
 			else :
 				start = 0
-			for cnt in range(start, 13-cnt_bracket*3 ) :			# Fill empty tabs
-				#print '\t<td>%d</td>' %(cnt)
+			for cnt in range(start, 13-cnt_bracket*3 ) :						# Fill empty tabs
 				print '\t<td></td>'
 
 			for cnt in range(cnt_tabs,linelist_cnt) :
@@ -291,18 +242,10 @@ while 1:
 				print linelist[cnt][4]+'</td>'
 
 	else :
-		if DEBUG : print '\t<td class="tar">0</td>'	# Fill Tab 2 for dummy
-		for cnt in range(0, 13) :			# Fill empty tabs
-			#print '\t<td>%d</td>' %(cnt)
+		for cnt in range(0, 13) :												# Fill empty tabs
 			print '\t<td></td>'
 
+### close table </tr>
+	print '</tr>'
 
-### Beende Tabelle </tr>
-	print '</tr >'
-
-#	print line_split
-	##print lineNr,linelist_cnt,cnt_bracket, cnt_tabs, linelist,'<br>'
-	#print "%3d %s<br>" %(lineNr,new_String)
-	if DEBUG : print new_line_split
-#print FAIL+"Hallo Welt"+NORMAL,"ist OK:",DONE+"ja"+NORMAL
-print FOOT
+print FOOTER
