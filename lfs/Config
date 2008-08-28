@@ -82,7 +82,8 @@ KGCC=$(HOST_GCC)
 define FIND_FILES
 	cd $(LFS)/ && $(TOOLS_DIR)/bin/find -mount \
 	-not -path '.$(TOOLS_DIR)*' -not -path './tmp*' -not -path './usr/src*' \
-	-not -path './dev*' -not -path './proc*' -not -path './sys*'
+	-not -path './dev*' -not -path './proc*' -not -path './sys*' \
+	-not -path '.$(INSTALLER_DIR)*'
 endef
 
 # This is common starting logic for builds.
@@ -118,7 +119,7 @@ define POSTBUILD
 	if [ -s "$(TARGET)_diff" ]; then \
 		LFS_SCRIPT="$(STAGE_ORDER).$(firstword $(MAKEFILE_LIST))"; \
 		if [ "x$(PASS)" != "x" ]; then LFS_SCRIPT="$$LFS_SCRIPT.$(PASS)"; fi; \
-		ROOTFILE=$$(find $(DIR_SOURCE)/rootfiles/core $(DIR_SOURCE)/rootfiles/extras $(DIR_SOURCE)/rootfiles/installer -maxdepth 1 -type f -name $$LFS_SCRIPT | head -1); \
+		ROOTFILE=$$(find $(DIR_SOURCE)/rootfiles/core $(DIR_SOURCE)/rootfiles/extras -maxdepth 1 -type f -name $$LFS_SCRIPT | head -1); \
 		if [ "$$ROOTFILE" = "" ]; then \
 			touch $(TARGET)_missing_rootfile; \
 			ROOTFILE=$(TARGET)_missing_rootfile ; \
