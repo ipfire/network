@@ -31,18 +31,13 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-ifneq "$(STAGE)" "installer"
-	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
-else
-	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-endif
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	$(THISAPP)-no_nis.patch
+objects = $(DL_FILE)
 
 install: $(TARGET)
 
@@ -59,7 +54,6 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)	
 
-ifeq "$(STAGE)" "$(SNAME)"
 ifeq "$(PASS)" "1"
 	cd $(DIR_APP) && ./configure --libdir=/lib --sbindir=/lib/security \
             --enable-securedir=/lib/security \
@@ -86,60 +80,10 @@ endif
 ifeq "$(PASS)" "2"
 	useradd -D -b /home
 	sed -i 's/yes/no/' /etc/default/useradd
-	install -v -m644 /etc/login.defs /etc/login.defs.orig
-	for FUNCTION in LASTLOG_ENAB MAIL_CHECK_ENAB \
-	                PORTTIME_CHECKS_ENAB CONSOLE \
-	                MOTD_FILE NOLOGINS_FILE PASS_MIN_LEN \
-	                SU_WHEEL_ONLY MD5_CRYPT_ENAB \
-	                CONSOLE_GROUPS ENVIRON_FILE \
-	                ULIMIT ENV_TZ ENV_HZ ENV_SUPATH \
-	                ENV_PATH QMAIL_DIR MAIL_DIR MAIL_FILE \
-	                CHFN_AUTH FAILLOG_ENAB QUOTAS_ENAB FTMP_FILE \
-	                OBSCURE_CHECKS_ENAB CRACKLIB_DICTPATH \
-	                PASS_CHANGE_TRIES PASS_ALWAYS_WARN ISSUE_FILE; do \
-	    sed -i "s/^$$FUNCTION/# &/" /etc/login.defs; \
-	done
-	
+	install -v -m644 $(DIR_CONFIG)/pam/login.defs /etc/login.defs
+	install -v -m644 $(DIR_CONFIG)/pam/pam_env.conf /etc/security/pam_env.conf
 	install -v -d -m755 /etc/pam.d
-	cp $(DIR_CONFIG)/pam/dir/* /etc/pam.d
-	
-	if [ -f /etc/login.access ]; then \
-		mv -v /etc/login.access /etc/login.access.NOUSE; \
-	fi
-	
-	if [ -f /etc/limits ]; then \
-		mv -v /etc/limits /etc/limits.NOUSE; \
-	fi
-	
-	for PROGRAM in chpasswd chgpasswd groupadd groupdel groupmems \
-								groupmod newusers useradd userdel usermod; do \
-		install -v -m644 /etc/pam.d/chage /etc/pam.d/$$PROGRAM; \
-		sed -i "s/chage/$$PROGRAM/" /etc/pam.d/$$PROGRAM; \
-	done
-	
-	ENV_PATH=`grep '^ENV_PATH' /etc/login.defs.orig | \
-		awk '{ print $$2 }' | sed 's/PATH=//'` && \
-		echo 'PATH        DEFAULT='`echo "$${ENV_PATH}"` \
-		'        OVERRIDE=$${PATH}' \
-		>> /etc/security/pam_env.conf && \
-		unset ENV_PATH
-endif
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-no_nis.patch
-	cd $(DIR_APP) && \
-		./configure \
-			--host=$(UCLIBC_TARGET) \
-			--libdir=/lib \
-			--sbindir=/lib/security \
-			--enable-securedir=/lib/security \
-			--disable-rpath \
-			--disable-static \
-			--disable-db
-	cd $(DIR_APP) && sed -e "s/ modules po conf doc / /g" -i Makefile
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
+	cp -vf $(DIR_CONFIG)/pam.d/* /etc/pam.d/
 endif
 
 	@rm -rf $(DIR_APP)

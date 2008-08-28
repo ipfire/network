@@ -53,10 +53,10 @@ $(objects) :
 $(TARGET):
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) &&  $(U_TOOLS) \
-		PYTHONHOME=$(INSTALLER_DIR)/usr \
+
+	cd $(DIR_APP) && PYTHONHOME=/usr \
 		make all install \
-		libdir=$(INSTALLER_DIR)/usr/lib/python2.5/site-packages
+		libdir=/usr/lib/python2.5/site-packages
 
 	$(PYTHON_COMPILE)
 

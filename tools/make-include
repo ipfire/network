@@ -107,8 +107,6 @@ if [ 'i686' = $TARGET -o 'i586' = $TARGET \
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
 	CFLAGS="-march=${MACHINE} -O2 -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
-	UCLIBC_TARGET=${MACHINE}-pc-linux-uclibc
-	UCLIBC_CFLAGS="-march=${MACHINE} -Os -pipe"
 elif [ 'via-c7' = $TARGET ]; then
 	MACHINE=i686
 	MACHINE_REAL=${MACHINE_REAL}
@@ -116,8 +114,6 @@ elif [ 'via-c7' = $TARGET ]; then
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
 	CFLAGS="-march=${MACHINE} -mmmx -msse -msse2 -msse3 -O2 -pipe"
 	CXXFLAGS="${CFLAGS}"
-	UCLIBC_TARGET=${MACHINE}-pc-linux-uclibc
-	UCLIBC_CFLAGS="-march=i386 -Os -pipe"
 elif [ 'via-c3' = $TARGET ]; then
 	MACHINE=i586
 	MACHINE_REAL=${MACHINE_REAL}
@@ -125,8 +121,6 @@ elif [ 'via-c3' = $TARGET ]; then
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
 	CFLAGS="-march=c3 -m3dnow -O2 -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
-	UCLIBC_TARGET=${MACHINE}-pc-linux-uclibc
-	UCLIBC_CFLAGS="-march=${MACHINE} -Os -pipe"
 elif [ 'geodelx' = $TARGET ]; then
 	MACHINE=i586
 	MACHINE_REAL=${MACHINE_REAL}
@@ -134,8 +128,6 @@ elif [ 'geodelx' = $TARGET ]; then
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
 	CFLAGS="-march=geode -Os -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
-	UCLIBC_TARGET=${MACHINE}-pc-linux-uclibc
-	UCLIBC_CFLAGS="-march=geode -Os -pipe"
 else
 	beautify message FAIL
 	echo "Not a valid target arch (i686|i586|i486|via-c7|via-c3|geodelx) - $TARGET"
@@ -148,7 +140,7 @@ mkdir $BASEDIR/log_${MACHINE}/ 2>/dev/null
 TOOLS_DIR=/tools_${MACHINE}
 
 # Set up /installer
-INSTALLER_DIR=/installer
+INSTALLER_DIR=/pomona
 
 # A place to build the iso
 CDROM_DIR=/cdrom
@@ -158,13 +150,6 @@ IMAGES_DIR=/images
 
 # include machine in TOOLCHAINNAME
 TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-t${TARGET}-m${MACHINE}
-
-# The place where all uclibc files are stored in
-UCLIBC_DIR=/usr/${UCLIBC_TARGET}
-UCLIBC_CC_CORE_STATIC_DIR=${UCLIBC_DIR}/gcc-core-static
-
-#UCLIBC_SYSROOT_DIR=${UCLIBC_DIR}/${UCLIBC_TARGET}/sys-root
-UCLIBC_SYSROOT_DIR=${INSTALLER_DIR}
 
 # Files that indicates that we are running or failed
 RUNNING=$BASEDIR/.running
@@ -373,15 +358,6 @@ ipfire_make() {
 	if grep -qEi 'KERNEL_MOD = yes' $1 ; then
 		unset EXTRA_MAKE
 	fi
-	
-	local MYCFLAGS MYCXXFLAGS
-	if [ "${STAGE}" = "installer" ]; then
-		MYCFLAGS=${UCLIBC_CFLAGS}
-		MYCXXFLAGS=${UCLIBC_CFLAGS}
-	else
-		MYCFLAGS=${CFLAGS}
-		MYCXXFLAGS=${CXXFLAGS}
-	fi
 
 	local PKG_TIME_START=`date +%s`
 	chroot $LFS $TOOLS_DIR/bin/env -i \
@@ -404,14 +380,10 @@ ipfire_make() {
 		INSTALLER_DIR=$INSTALLER_DIR \
 		CDROM_DIR=$CDROM_DIR \
 		IMAGES_DIR=$IMAGES_DIR \
-		UCLIBC_DIR=$UCLIBC_DIR \
-		UCLIBC_SYSROOT_DIR=$UCLIBC_SYSROOT_DIR \
-		UCLIBC_TARGET=$UCLIBC_TARGET \
-		UCLIBC_CC_CORE_STATIC_DIR=${UCLIBC_CC_CORE_STATIC_DIR} \
 		MACHINE="$MACHINE" \
 		MACHINE_REAL="$MACHINE_REAL" \
-		CFLAGS="$MYCFLAGS" \
-		CXXFLAGS="$MYCXXFLAGS" \
+		CFLAGS="$CFLAGS" \
+		CXXFLAGS="$CXXFLAGS" \
 		IFS_HOST="$IFS_HOST" \
 		IFS_TARGET="$IFS_TARGET" \
 		IFS_ARCH="$TARGET" \
@@ -600,7 +572,7 @@ prepareenv() {
 	unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
 
 	# Make some extra directories
-	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,cdrom} 2>/dev/null
+	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,cdrom,$INSTALLER_DIR,$IMAGES_DIR} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
 	mkdir -p $BASEDIR/cache/{toolchains,patches,tarballs} 2>/dev/null
 	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
@@ -626,6 +598,8 @@ prepareenv() {
 	mount --bind $BASEDIR/src				$LFS/usr/src/src
 	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR	$LFS/$TOOLS_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$CDROM_DIR	$LFS/$CDROM_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR	$LFS/$INSTALLER_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$IMAGES_DIR	$LFS/$IMAGES_DIR
 
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache
@@ -688,8 +662,10 @@ build() {
 	beautify build_stage "Building miscellaneous"
 	misc_build
 
+if [ "${EMB}" -eq "0" ]; then
 	beautify build_stage "Building installer"
 	installer_build
+fi
 
 	beautify build_stage "Building packages"
 	packages_build

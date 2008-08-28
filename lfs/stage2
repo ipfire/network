@@ -95,6 +95,8 @@ $(TARGET) :
 	for i in $(DIR_SRC)/config/etc/*; do \
 		[ -f $$i ] && cp $$i /etc; \
 	done
+	-mkdir -pv /etc/modprobe.d
+	cp -av $(DIR_CONF)/modprobe.d/* /etc/modprobe.d/
 
 ifeq "$(EMB)" "1"
 	# Enable serial on console 7

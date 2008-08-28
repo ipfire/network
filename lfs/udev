@@ -54,7 +54,6 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
-ifeq "$(STAGE)" "base"
 	install -dv /lib/{firmware,udev/devices/{pts,shm}}
 	-mknod -m0666 /lib/udev/devices/null c 1 3
 	-mknod -m0600 /lib/udev/devices/kmsg c 1 11
@@ -69,29 +68,5 @@ ifeq "$(STAGE)" "base"
 
 	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules /lib/udev/rules.d/
 
-endif
-
-ifeq "$(STAGE)" "installer"
-	install -dv $(INSTALLER_DIR)/lib/{firmware,udev/devices/{pts,shm}}
-	-mknod -m0666 $(INSTALLER_DIR)/lib/udev/devices/null c 1 3
-	-mknod -m0600 $(INSTALLER_DIR)/lib/udev/devices/kmsg c 1 11
-	ln -sfv /proc/self/fd $(INSTALLER_DIR)/lib/udev/devices/fd
-	ln -sfv /proc/self/fd/0 $(INSTALLER_DIR)/lib/udev/devices/stdin
-	ln -sfv /proc/self/fd/1 $(INSTALLER_DIR)/lib/udev/devices/stdout
-	ln -sfv /proc/self/fd/2 $(INSTALLER_DIR)/lib/udev/devices/stderr
-	ln -sfv /proc/kcore $(INSTALLER_DIR)/lib/udev/devices/core
-
-	cd $(DIR_APP) && make EXTRAS="`echo extras/*/`" \
-		CROSS_COMPILE=$(UCLIBC_TARGET)- $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make DESTDIR=$(INSTALLER_DIR) EXTRAS="`echo extras/*/`" \
-		CROSS_COMPILE=$(UCLIBC_TARGET)- install
-	
-	ln -svf ../../lib/$$(readlink $(INSTALLER_DIR)/lib/libvolume_id.so.0) \
-		$(INSTALLER_DIR)/usr/lib/libvolume_id.so
-
-	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules $(INSTALLER_DIR)/lib/udev/rules.d/
-
-endif
-	
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

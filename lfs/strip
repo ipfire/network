@@ -54,8 +54,8 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "packages"
-	-$(TOOLS_DIR)/bin/find $(LFS){,$(INSTALLER_DIR)}/{,usr/}{bin,lib,sbin} -type f -exec \
+	-$(TOOLS_DIR)/bin/find $(LFS)/{,usr/}{bin,lib,sbin} -type f -exec \
 		$(TOOLS_DIR)/bin/strip --strip-debug '{}' ';' &>/dev/null
-	-$(TOOLS_DIR)/bin/find $(LFS){,$(INSTALLER_DIR)}/{,usr/}{bin,sbin} -type f -exec \
+	-$(TOOLS_DIR)/bin/find $(LFS)/{,usr/}{bin,sbin} -type f -exec \
 		$(TOOLS_DIR)/bin/strip --strip-all '{}' ';' &>/dev/null
 endif

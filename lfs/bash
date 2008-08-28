@@ -85,21 +85,5 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make install
 endif
 
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP)/support && touch configure.ac; libtoolize -f
-	cd $(DIR_APP)/support && autoconf --force
-	cd $(DIR_APP) && CCFLAGS_FOR_BUILD="$(CFLAGS)" \
-		ac_cv_func_setvbuf_reversed=no \
-		./configure --prefix=/usr \
-			--host=$(UCLIBC_TARGET) \
-			--bindir=/bin \
-			--without-bash-malloc \
-			--with-installed-readline \
-			--enable-alias
-	cd $(DIR_APP) && make CC=$(U_CC) CC_FOR_BUILD="$(HOST_GCC)" #$(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make CC=$(U_CC) install DESTDIR=$(INSTALLER_DIR)
-	ln -svf bash $(INSTALLER_DIR)/bin/sh
-endif
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

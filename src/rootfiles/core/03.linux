@@ -5,6 +5,7 @@ boot/ipfirekernel-KVER
 lib/modules
 lib/modules/KVER
 #lib/modules/KVER/build
+lib/modules/KVER/extra
 lib/modules/KVER/kernel
 lib/modules/KVER/kernel/arch
 lib/modules/KVER/kernel/arch/x86
@@ -35,7 +36,7 @@ lib/modules/KVER/kernel/crypto/seqiv.ko
 lib/modules/KVER/kernel/crypto/serpent.ko
 lib/modules/KVER/kernel/crypto/sha1_generic.ko
 lib/modules/KVER/kernel/crypto/sha256_generic.ko
-lib/modules/KVER/kernel/crypto/sha512.ko
+lib/modules/KVER/kernel/crypto/sha512_generic.ko
 lib/modules/KVER/kernel/crypto/twofish.ko
 lib/modules/KVER/kernel/crypto/twofish_common.ko
 lib/modules/KVER/kernel/drivers
@@ -81,6 +82,7 @@ lib/modules/KVER/kernel/drivers/ata/pata_pdc202xx_old.ko
 lib/modules/KVER/kernel/drivers/ata/pata_radisys.ko
 lib/modules/KVER/kernel/drivers/ata/pata_rz1000.ko
 lib/modules/KVER/kernel/drivers/ata/pata_sc1200.ko
+lib/modules/KVER/kernel/drivers/ata/pata_sch.ko
 lib/modules/KVER/kernel/drivers/ata/pata_serverworks.ko
 lib/modules/KVER/kernel/drivers/ata/pata_sil680.ko
 lib/modules/KVER/kernel/drivers/ata/pata_sis.ko
@@ -202,7 +204,6 @@ lib/modules/KVER/kernel/drivers/i2c
 lib/modules/KVER/kernel/drivers/i2c/algos
 lib/modules/KVER/kernel/drivers/i2c/algos/i2c-algo-bit.ko
 lib/modules/KVER/kernel/drivers/i2c/algos/i2c-algo-pca.ko
-lib/modules/KVER/kernel/drivers/i2c/algos/i2c-algo-pcf.ko
 lib/modules/KVER/kernel/drivers/i2c/busses
 lib/modules/KVER/kernel/drivers/i2c/busses/i2c-ali1535.ko
 lib/modules/KVER/kernel/drivers/i2c/busses/i2c-ali1563.ko
@@ -215,6 +216,7 @@ lib/modules/KVER/kernel/drivers/i2c/busses/i2c-i810.ko
 lib/modules/KVER/kernel/drivers/i2c/busses/i2c-nforce2.ko
 lib/modules/KVER/kernel/drivers/i2c/busses/i2c-ocores.ko
 lib/modules/KVER/kernel/drivers/i2c/busses/i2c-parport-light.ko
+lib/modules/KVER/kernel/drivers/i2c/busses/i2c-pca-platform.ko
 lib/modules/KVER/kernel/drivers/i2c/busses/i2c-piix4.ko
 lib/modules/KVER/kernel/drivers/i2c/busses/i2c-prosavage.ko
 lib/modules/KVER/kernel/drivers/i2c/busses/i2c-savage4.ko
@@ -236,7 +238,6 @@ lib/modules/KVER/kernel/drivers/i2c/chips/max6875.ko
 lib/modules/KVER/kernel/drivers/i2c/chips/pcf8574.ko
 lib/modules/KVER/kernel/drivers/i2c/chips/pcf8575.ko
 lib/modules/KVER/kernel/drivers/i2c/chips/pcf8591.ko
-lib/modules/KVER/kernel/drivers/i2c/chips/tps65010.ko
 lib/modules/KVER/kernel/drivers/i2c/chips/tsl2550.ko
 lib/modules/KVER/kernel/drivers/i2c/i2c-core.ko
 lib/modules/KVER/kernel/drivers/i2c/i2c-dev.ko
@@ -247,8 +248,21 @@ lib/modules/KVER/kernel/drivers/input/serio/serport.ko
 lib/modules/KVER/kernel/drivers/leds
 lib/modules/KVER/kernel/drivers/leds/led-class.ko
 lib/modules/KVER/kernel/drivers/media
+lib/modules/KVER/kernel/drivers/media/common
+lib/modules/KVER/kernel/drivers/media/common/tuners
+lib/modules/KVER/kernel/drivers/media/common/tuners/mt20xx.ko
+lib/modules/KVER/kernel/drivers/media/common/tuners/tda8290.ko
+lib/modules/KVER/kernel/drivers/media/common/tuners/tda9887.ko
+lib/modules/KVER/kernel/drivers/media/common/tuners/tea5761.ko
+lib/modules/KVER/kernel/drivers/media/common/tuners/tea5767.ko
+lib/modules/KVER/kernel/drivers/media/common/tuners/tuner-simple.ko
+lib/modules/KVER/kernel/drivers/media/common/tuners/tuner-types.ko
+lib/modules/KVER/kernel/drivers/media/common/tuners/tuner-xc2028.ko
+lib/modules/KVER/kernel/drivers/media/common/tuners/xc5000.ko
 lib/modules/KVER/kernel/drivers/media/video
 lib/modules/KVER/kernel/drivers/media/video/compat_ioctl32.ko
+lib/modules/KVER/kernel/drivers/media/video/uvc
+lib/modules/KVER/kernel/drivers/media/video/uvc/uvcvideo.ko
 lib/modules/KVER/kernel/drivers/media/video/v4l1-compat.ko
 lib/modules/KVER/kernel/drivers/media/video/v4l2-common.ko
 lib/modules/KVER/kernel/drivers/media/video/v4l2-int-device.ko
@@ -272,8 +286,8 @@ lib/modules/KVER/kernel/drivers/net/8139too.ko
 lib/modules/KVER/kernel/drivers/net/8390.ko
 lib/modules/KVER/kernel/drivers/net/acenic.ko
 lib/modules/KVER/kernel/drivers/net/amd8111e.ko
-lib/modules/KVER/kernel/drivers/net/atl1
-lib/modules/KVER/kernel/drivers/net/atl1/atl1.ko
+lib/modules/KVER/kernel/drivers/net/atlx
+lib/modules/KVER/kernel/drivers/net/atlx/atl1.ko
 lib/modules/KVER/kernel/drivers/net/b44.ko
 lib/modules/KVER/kernel/drivers/net/bnx2.ko
 lib/modules/KVER/kernel/drivers/net/bonding
@@ -325,8 +339,6 @@ lib/modules/KVER/kernel/drivers/net/r8169.ko
 lib/modules/KVER/kernel/drivers/net/sc92031.ko
 lib/modules/KVER/kernel/drivers/net/sis190.ko
 lib/modules/KVER/kernel/drivers/net/sis900.ko
-lib/modules/KVER/kernel/drivers/net/sk98lin
-lib/modules/KVER/kernel/drivers/net/sk98lin/sk98lin.ko
 lib/modules/KVER/kernel/drivers/net/skge.ko
 lib/modules/KVER/kernel/drivers/net/sky2.ko
 lib/modules/KVER/kernel/drivers/net/slhc.ko
@@ -377,6 +389,7 @@ lib/modules/KVER/kernel/drivers/pcmcia/pcmcia.ko
 lib/modules/KVER/kernel/drivers/pcmcia/pcmcia_core.ko
 lib/modules/KVER/kernel/drivers/power
 lib/modules/KVER/kernel/drivers/power/ds2760_battery.ko
+lib/modules/KVER/kernel/drivers/power/olpc_battery.ko
 lib/modules/KVER/kernel/drivers/rtc
 lib/modules/KVER/kernel/drivers/rtc/rtc-cmos.ko
 lib/modules/KVER/kernel/drivers/rtc/rtc-core.ko
@@ -386,6 +399,7 @@ lib/modules/KVER/kernel/drivers/rtc/rtc-ds1511.ko
 lib/modules/KVER/kernel/drivers/rtc/rtc-ds1553.ko
 lib/modules/KVER/kernel/drivers/rtc/rtc-ds1672.ko
 lib/modules/KVER/kernel/drivers/rtc/rtc-ds1742.ko
+lib/modules/KVER/kernel/drivers/rtc/rtc-fm3130.ko
 lib/modules/KVER/kernel/drivers/rtc/rtc-isl1208.ko
 lib/modules/KVER/kernel/drivers/rtc/rtc-lib.ko
 lib/modules/KVER/kernel/drivers/rtc/rtc-m41t80.ko
@@ -467,6 +481,7 @@ lib/modules/KVER/kernel/drivers/ssb/ssb.ko
 lib/modules/KVER/kernel/drivers/usb
 lib/modules/KVER/kernel/drivers/usb/class
 lib/modules/KVER/kernel/drivers/usb/class/cdc-acm.ko
+lib/modules/KVER/kernel/drivers/usb/class/cdc-wdm.ko
 lib/modules/KVER/kernel/drivers/usb/class/usblp.ko
 lib/modules/KVER/kernel/drivers/usb/core
 lib/modules/KVER/kernel/drivers/usb/core/usbcore.ko
@@ -526,6 +541,8 @@ lib/modules/KVER/kernel/fs/reiserfs
 lib/modules/KVER/kernel/fs/reiserfs/reiserfs.ko
 lib/modules/KVER/kernel/fs/smbfs
 lib/modules/KVER/kernel/fs/smbfs/smbfs.ko
+lib/modules/KVER/kernel/fs/squashfs
+lib/modules/KVER/kernel/fs/squashfs/squashfs.ko
 lib/modules/KVER/kernel/fs/udf
 lib/modules/KVER/kernel/fs/udf/udf.ko
 lib/modules/KVER/kernel/fs/vfat
@@ -565,6 +582,7 @@ lib/modules/KVER/kernel/net/bridge/netfilter/ebt_limit.ko
 lib/modules/KVER/kernel/net/bridge/netfilter/ebt_log.ko
 lib/modules/KVER/kernel/net/bridge/netfilter/ebt_mark.ko
 lib/modules/KVER/kernel/net/bridge/netfilter/ebt_mark_m.ko
+lib/modules/KVER/kernel/net/bridge/netfilter/ebt_nflog.ko
 lib/modules/KVER/kernel/net/bridge/netfilter/ebt_pkttype.ko
 lib/modules/KVER/kernel/net/bridge/netfilter/ebt_redirect.ko
 lib/modules/KVER/kernel/net/bridge/netfilter/ebt_snat.ko
@@ -715,7 +733,6 @@ lib/modules/KVER/kernel/sound/core/snd-hwdep.ko
 lib/modules/KVER/kernel/sound/core/snd-page-alloc.ko
 lib/modules/KVER/kernel/sound/core/snd-pcm.ko
 lib/modules/KVER/kernel/sound/core/snd-rawmidi.ko
-lib/modules/KVER/kernel/sound/core/snd-rtctimer.ko
 lib/modules/KVER/kernel/sound/core/snd-timer.ko
 lib/modules/KVER/kernel/sound/core/snd.ko
 lib/modules/KVER/kernel/sound/drivers
@@ -754,6 +771,8 @@ lib/modules/KVER/kernel/sound/pci/au88x0
 lib/modules/KVER/kernel/sound/pci/au88x0/snd-au8810.ko
 lib/modules/KVER/kernel/sound/pci/au88x0/snd-au8820.ko
 lib/modules/KVER/kernel/sound/pci/au88x0/snd-au8830.ko
+lib/modules/KVER/kernel/sound/pci/aw2
+lib/modules/KVER/kernel/sound/pci/aw2/snd-aw2.ko
 lib/modules/KVER/kernel/sound/pci/ca0106
 lib/modules/KVER/kernel/sound/pci/ca0106/snd-ca0106.ko
 lib/modules/KVER/kernel/sound/pci/cs46xx

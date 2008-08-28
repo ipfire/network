@@ -54,13 +54,7 @@ $(TARGET):
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
-ifeq "$(STAGE)" "$(SNAME)"
 	cd $(DIR_APP) && python setup.py install
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && python setup.py install --prefix=$(INSTALLER_DIR)/usr
-endif
 
 	$(PYTHON_COMPILE)
 

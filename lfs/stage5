@@ -45,33 +45,6 @@ download :
 
 $(TARGET) :
 	@$(PREBUILD)
-	
-	### Prepare the toolchain's directory
-	#
-	for i in bin sbin lib include; do \
-		mkdir -pv $(UCLIBC_DIR)/$${i}; \
-	done
-	for i in usr/include usr/lib lib; do \
-		mkdir -pv $(UCLIBC_SYSROOT_DIR)/$${i}; \
-		mkdir -pv $(INSTALLER_DIR)/$${i}; \
-	done
-	-mkdir -pv "$(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/bin"
-	-mkdir -pv "$(UCLIBC_CC_CORE_STATIC_DIR)/bin"
-
-	### Prepare the installer's directory
-	#
-	-mkdir -p $(INSTALLER_DIR)/{bin,sbin,lib,dev,etc,mnt/{source,target}}
-	-mkdir -p $(INSTALLER_DIR)/{root,proc,tmp,sys,var/run}
-	-mkdir -p $(INSTALLER_DIR)/usr/{bin,sbin,share}
-
-	cp -af $(DIR_CONF)/install/* /etc/issue /etc/group $(INSTALLER_DIR)/etc/
-	grep -v "^root" /etc/passwd >> $(INSTALLER_DIR)/etc/passwd
-
-	chmod 755 $(INSTALLER_DIR)/etc/{halt,rc}
-	ln -sf etc/rc					$(INSTALLER_DIR)/init
-	ln -sf /proc/mounts				$(INSTALLER_DIR)/etc/mtab
-
-	cp -f /usr/share/{pci,usb}.ids			$(INSTALLER_DIR)/usr/share
-	cp -fval /usr/share/zoneinfo			$(INSTALLER_DIR)/usr/share
-
+	-mkdir -pv $(INSTALLER_DIR)/{etc,sbin,usr/lib}
+	cp -avf $(DIR_SOURCE)/install/* $(INSTALLER_DIR)
 	@$(POSTBUILD)

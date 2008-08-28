@@ -52,14 +52,7 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 
-ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && make install
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && make install DESTDIR=$(INSTALLER_DIR)
-endif
-
 	cd $(DIR_APP) && make clean
 
 	$(PYTHON_COMPILE)

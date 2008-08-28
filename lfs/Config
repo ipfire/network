@@ -72,20 +72,6 @@ VPATH = $(DIR_DL):$(DIR_PATCHES)
 HOST_GCC=ccache /usr/bin/gcc
 KGCC=$(HOST_GCC)
 
-ifeq "$(STAGE)" "installer"
-	UCLIBC_HEADERS_DIR=$(UCLIBC_SYSROOT_DIR)/usr/include
-	U_CC=${UCLIBC_TARGET}-gcc
-	U_CXX=${UCLIBC_TARGET}-g++
-	U_AR=${UCLIBC_TARGET}-ar
-	U_AS=${UCLIBC_TARGET}-as
-	U_RANLIB=${UCLIBC_TARGET}-ranlib
-	U_LD=${UCLIBC_TARGET}-ld
-	U_STRIP=${UCLIBC_TARGET}-strip
-	U_TOOLS=CC=$(U_CC) CXX=$(U_CXX) AR=$(U_AR) \
-		AS=$(U_AS) RANLIB=$(U_RANLIB) \
-		LD=$(U_LD) STRIP=$(U_STRIP)
-endif
-
 ###############################################################################
 # Common Macro Definitions
 ###############################################################################
@@ -96,7 +82,8 @@ endif
 define FIND_FILES
 	cd $(LFS)/ && $(TOOLS_DIR)/bin/find -mount \
 	-not -path '.$(TOOLS_DIR)*' -not -path './tmp*' -not -path './usr/src*' \
-	-not -path './dev*' -not -path './proc*' -not -path './sys*'
+	-not -path './dev*' -not -path './proc*' -not -path './sys*' \
+	-not -path '.$(INSTALLER_DIR)*'
 endef
 
 # This is common starting logic for builds.
@@ -132,16 +119,13 @@ define POSTBUILD
 	if [ -s "$(TARGET)_diff" ]; then \
 		LFS_SCRIPT="$(STAGE_ORDER).$(firstword $(MAKEFILE_LIST))"; \
 		if [ "x$(PASS)" != "x" ]; then LFS_SCRIPT="$$LFS_SCRIPT.$(PASS)"; fi; \
-		ROOTFILE=$$(find $(DIR_SOURCE)/rootfiles/core $(DIR_SOURCE)/rootfiles/extras $(DIR_SOURCE)/rootfiles/installer -maxdepth 1 -type f -name $$LFS_SCRIPT | head -1); \
+		ROOTFILE=$$(find $(DIR_SOURCE)/rootfiles/core $(DIR_SOURCE)/rootfiles/extras -maxdepth 1 -type f -name $$LFS_SCRIPT | head -1); \
 		if [ "$$ROOTFILE" = "" ]; then \
 			touch $(TARGET)_missing_rootfile; \
 			ROOTFILE=$(TARGET)_missing_rootfile ; \
 			echo "error $$LFS_SCRIPT not found in $(DIR_SOURCE)/rootfiles"; \
 		fi; \
 		sed	-e "s@KVER@$(KVER)@g" \
-			-e "s@UCLIBC_DIR@$(UCLIBC_DIR)@g" \
-			-e "s@UCLIBC_TARGET@$(UCLIBC_TARGET)@g" \
-			-e "s@INSTALLER_DIR@$(INSTALLER_DIR)@g" \
 			-e "s@^/@@g" -e "s@^#/@#@g" \
 			$$ROOTFILE > $(TARGET)_rootfile; \
 		echo 'open (F,"$(TARGET)_rootfile"); \
@@ -153,11 +137,7 @@ define POSTBUILD
 		    }; \
 		' > /tmp/perl.pl; \
 		perl /tmp/perl.pl < $(TARGET)_diff \
-		| sed -e "s@$(KVER)@KVER@g" \
-			-e "s@$${UCLIBC_DIR:1}@UCLIBC_DIR@g" \
-			-e "s@$(UCLIBC_TARGET)@UCLIBC_TARGET@g" \
-			-e "s@$${INSTALLER_DIR:1}@INSTALLER_DIR@g" \
-		> $(TARGET); \
+		| sed -e "s@$(KVER)@KVER@g" > $(TARGET); \
 		rm -f $(TARGET)_rootfile; \
 		if [ "$$ROOTFILE" != "" ]; then \
 			if ! cmp -s $(TARGET) $$ROOTFILE; then \
@@ -194,16 +174,9 @@ define LOAD
 		python $(DIR_TOOLS)/downloader $(URL_IPFIRE)/$@
 endef
 
-ifeq "$(STAGE)" "installer"
-define PYTHON_COMPILE
-	find $(INSTALLER_DIR)/usr/lib/{python*,pomona}/ -name *.py | \
-		xargs /usr/bin/py-compile
-endef
-else
 define PYTHON_COMPILE
 	find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 endef
-endif
 
 define PAK
 	# Bringing the files to their right place.

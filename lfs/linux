@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = linux
-VER        = 2.6.25.6
+VER        = 2.6.26.2
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -42,14 +42,14 @@ FULLVER    = $(VER)$(LOCALVERSION)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) reiser4-for-2.6.25.patch
+objects = $(DL_FILE) reiser4-for-2.6.25.patch linux-2.6-squashfs-1.patch
 
 ifeq "$(PAX)" "1"
-	objects += grsecurity-2.1.12-$(VER)-200806092111.patch
+	objects += grsecurity-2.1.12-$(VER)-200808171148.patch
 endif
 
 ifeq "$(SSP)" "1"
-	objects += linux-2.6.25-frandom-1.patch
+	#objects += linux-2.6.25-frandom-1.patch
 endif
 
 install : $(TARGET)
@@ -72,17 +72,21 @@ $(TARGET) :
 ifeq "$(SSP)" "1"
 	### frandom
 	#
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/linux-2.6.25-frandom-1.patch
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/linux-2.6.25-frandom-1.patch
 endif
 
 	### Reiser4
 	#
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/reiser4-for-2.6.25.patch
 
+	### Squashfs
+	#
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/linux-2.6-squashfs-1.patch
+
 ifeq "$(PAX)" "1"
 	### GrSecurity
 	#
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grsecurity-2.1.12-$(VER)-200806092111.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grsecurity-2.1.12-$(VER)-200808171148.patch
 	rm -f $(DIR_APP)/localversion-grsec
 endif
 
@@ -102,7 +106,6 @@ ifeq "$(STAGE)" "base"
 endif
 
 ifeq "$(STAGE)" "ipfire"
-	
 	cd $(DIR_APP) && make mrproper
 
 	if [ "$(IFS_ARCH)" == "i586" ]; then \
@@ -126,41 +129,22 @@ ifeq "$(STAGE)" "ipfire"
 	fi
 
 	cd $(DIR_APP) && yes "" | make oldconfig
-
-	# keep the source code in $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
-	cp -fal $(DIR_APP) $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
 	
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make modules_install
 	
-	cd $(DIR_APP) && cp -v arch/x86/boot/bzImage /boot/ipfirekernel-$(FULLVER)
+	cd $(DIR_APP) && cp -v arch/x86/boot/bzImage /boot/$(SNAME)kernel-$(FULLVER)
 	cd $(DIR_APP) && cp -v System.map /boot/System.map-$(FULLVER)
 	
-	ln -svf ipfirekernel-$(FULLVER) /boot/ipfirekernel
+	ln -svf $(SNAME)kernel-$(FULLVER) /boot/$(SNAME)kernel
 	ln -svf System.map-$(FULLVER) /boot/System.map
-endif
 
-ifeq "$(STAGE)" "installer"
-	-mkdir -pv $(UCLIBC_SYSROOT_DIR)/usr/include
-	cd $(DIR_APP) && make mrproper
-	cd $(DIR_APP) && make ARCH=x86 headers_check
-	cd $(DIR_APP) && make ARCH=x86 INSTALL_HDR_PATH=dest headers_install
-	cd $(DIR_APP) && cp -rv dest/include/* $(UCLIBC_SYSROOT_DIR)/usr/include
+	# keep the source code in $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
+	cp -fal $(DIR_APP) $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
 
-	-mkdir -p $(INSTALLER_DIR)/lib/modules/$(KVER)
-	cp -avf /lib/modules/$(KVER)/kernel $(INSTALLER_DIR)/lib/modules/$(KVER)/
-	
-	cd $(INSTALLER_DIR)/lib/modules/$(KVER)/kernel && \
-		rm -rf \
-			arch \
-			crypto \
-			drivers/{crypto,hwmon,i2c,leds,media,parport,power,rtc,w1} \
-			drivers/net/ppp* \
-			fs/{cifs,configfs,fuse,lockd,nfs*,ntfs,smbfs} \
-			net \
-			sound
-
-	depmod -a -b $(INSTALLER_DIR) $(KVER)
+	ln -svf $(DIR_SRC)/$(PKG_NAME)-$(FULLVER) /lib/modules/$(KVER)/build
+	ln -svf $(DIR_SRC)/$(PKG_NAME)-$(FULLVER) /lib/modules/$(KVER)/source
+	-mkdir -pv /lib/modules/$(KVER)/extra
 endif
 
 	@rm -rf $(DIR_APP)

@@ -28,7 +28,6 @@ VER = ipfire
 
 THISAPP    = images
 
-#ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
 PASS       = $(firstword $(MAKEFILE_LIST))
 
 ifeq "$(PASS)" "pxe"
@@ -57,24 +56,25 @@ $(TARGET) :
 ifeq "$(PASS)" "pxe"
 	mkdir -pv $(CDROM_DIR)/{pxelinux.cfg,$(PREFIX)}
 else # cdrom
-	mkdir -pv $(CDROM_DIR)/{isolinux,doc}
+	mkdir -pv $(CDROM_DIR)/{isolinux,doc,tmp}
 
 	find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
 		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq > $(CDROM_DIR)/archive.files
 
-	cd / && cpio -o -H newc < $(CDROM_DIR)/archive.files \
-		> $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp 2>$(CDROM_DIR)/archive.errors
+	cd / && cpio -pd $(CDROM_DIR)/tmp < $(CDROM_DIR)/archive.files \
+		2>$(CDROM_DIR)/archive.errors
 
 	@cat $(CDROM_DIR)/archive.errors
 	@if grep -q "No such file or directory" < $(CDROM_DIR)/archive.errors; then \
 		exit 1; \
 	fi
 
-	lzma_sdk e $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp \
-		$(CDROM_DIR)/$(SNAME)-$(VERSION).img
+	cd $(CDROM_DIR)/tmp && mksquashfs * $(CDROM_DIR)/$(SNAME)-$(VERSION).img
+
+	cd $(INSTALLER_DIR) && mksquashfs * $(CDROM_DIR)/pomona-$(VERSION).overlay
 
 	# These files won't be included in the iso
-	@rm -f $(CDROM_DIR)/archive.{files,errors} $(CDROM_DIR)/$(SNAME)-$(VERSION).img.tmp
+	@rm -rf $(CDROM_DIR)/archive.{files,errors} $(CDROM_DIR)/tmp
 
 	# Other files
 	sed 's/VERSION/$(VERSION)/' $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README
@@ -92,7 +92,9 @@ endif
 
 ifeq "$(PASS)" "pxe"
 	cp -vf /usr/lib/syslinux/pxelinux.0 $(CDROM_DIR)/
-	sed -e "s/VERSION/$(VERSION)/g" \
+	sed	-e "s/SNAME/$(SNAME)/g" \
+		-e "s/NAME/$(NAME)/g" \
+		-e "s/VERSION/$(VERSION)/g" \
 		-e "s@$(SNAME)0@$(PREFIX)/$(SNAME)0@g" \
 		-e "s@initrd0@$(PREFIX)/initrd0@g" \
 		-e "s@splash@$(PREFIX)/splash@g" \
@@ -107,7 +109,9 @@ ifeq "$(PASS)" "pxe"
 		tar cfz $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).pxe.tar.gz *
 else # cdrom
 	cp -vf /usr/lib/syslinux/isolinux.bin $(CDROM_DIR)/$(PREFIX)/
-	sed -e "s/VERSION/$(VERSION)/g" \
+	sed	-e "s/SNAME/$(SNAME)/g" \
+		-e "s/NAME/$(NAME)/g" \
+		-e "s/VERSION/$(VERSION)/g" \
 		$(DIR_CONF)/bootloader/installer.conf \
 		> $(CDROM_DIR)/$(PREFIX)/isolinux.cfg
 	cp -vf /usr/lib/memtest86+/memtest.bin $(CDROM_DIR)/$(PREFIX)/memtest

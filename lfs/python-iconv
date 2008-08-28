@@ -54,15 +54,7 @@ $(TARGET):
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
-ifeq "$(STAGE)" "$(SNAME)"
 	cd $(DIR_APP) && make install
-endif
-
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_APP) && \
-		PYTHONHOME=$(INSTALLER_DIR)/usr \
-		make install DESTDIR=$(INSTALLER_DIR)
-endif
 
 	$(PYTHON_COMPILE)
 

@@ -123,24 +123,5 @@ endif
 	cp -fv ../$(THISAPP)/include/libiberty.h /usr/include
 endif
 
-ifeq "$(STAGE)" "installer"
-	cd $(DIR_SRC)/binutils-build && ../$(THISAPP)/configure \
-						--target=$(UCLIBC_TARGET) \
-						--prefix=$(UCLIBC_DIR) \
-						--with-sysroot=$(UCLIBC_SYSROOT_DIR) \
-						--disable-multilib \
-						--disable-werror \
-						--disable-nls
-	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
-	cd $(DIR_SRC)/binutils-build && make install
-
-	for t in ar as ld strip; do \
-		ln -sfv $(UCLIBC_DIR)/bin/$(UCLIBC_TARGET)-$${t} \
-			$(UCLIBC_CC_CORE_STATIC_DIR)/$(UCLIBC_TARGET)/bin/$${t}; \
-		ln -sfv $(UCLIBC_DIR)/bin/$(UCLIBC_TARGET)-$${t} \
-			$(UCLIBC_CC_CORE_STATIC_DIR)/bin/$(UCLIBC_TARGET)-$${t}; \
-	done
-endif
-
 	@rm -rf $(DIR_APP) $(DIR_SRC)/binutils-build
 	@$(POSTBUILD)
