@@ -142,6 +142,7 @@ ifeq "$(STAGE)" "ipfire"
 	# keep the source code in $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
 	cp -fal $(DIR_APP) $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
 
+	rm -vf /lib/modules/$(KVER)/{build,source}
 	ln -svf $(DIR_SRC)/$(PKG_NAME)-$(FULLVER) /lib/modules/$(KVER)/build
 	ln -svf $(DIR_SRC)/$(PKG_NAME)-$(FULLVER) /lib/modules/$(KVER)/source
 	-mkdir -pv /lib/modules/$(KVER)/extra
