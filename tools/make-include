@@ -576,11 +576,10 @@ prepareenv() {
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
 	mkdir -p $BASEDIR/cache/{toolchains,patches,tarballs} 2>/dev/null
 	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
-	mkdir -p $LFS/dev/pts
-	mkdir -p $LFS/proc
-	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${MACHINE},src,ccache,distcc}
-	mkdir -p $LFS/{$INSTALLER_DIR,cdrom,images}
-	mkdir -p $LFS/etc
+	mkdir -p $LFS/{dev,etc,proc,sys} 2>/dev/null
+	mkdir -p $LFS/dev/pts 2>/dev/null
+	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${MACHINE},src,ccache,distcc} 2>/dev/null
+	mkdir -p $LFS/{$INSTALLER_DIR,cdrom,images} 2>/dev/null
 
 	mknod -m 600 $BASEDIR/build/dev/console c 5 1 2>/dev/null
 	mknod -m 666 $BASEDIR/build/dev/null c 1 3 2>/dev/null
@@ -588,6 +587,7 @@ prepareenv() {
 	# Make all sources and proc available under lfs build
 	mount --bind /dev					$LFS/dev
 	mount --bind /proc					$LFS/proc
+	mount --bind /sys					$LFS/sys
 	mount --bind $BASEDIR/cache				$LFS/usr/src/cache
 	mount --bind $BASEDIR/ccache				$LFS/usr/src/ccache
 	mount --bind $BASEDIR/distcc				$LFS/usr/src/distcc
