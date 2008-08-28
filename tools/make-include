@@ -140,7 +140,7 @@ mkdir $BASEDIR/log_${MACHINE}/ 2>/dev/null
 TOOLS_DIR=/tools_${MACHINE}
 
 # Set up /installer
-INSTALLER_DIR=/installer
+INSTALLER_DIR=/pomona
 
 # A place to build the iso
 CDROM_DIR=/cdrom
@@ -572,7 +572,7 @@ prepareenv() {
 	unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
 
 	# Make some extra directories
-	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,cdrom} 2>/dev/null
+	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,cdrom,$INSTALLER_DIR,$IMAGES_DIR} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
 	mkdir -p $BASEDIR/cache/{toolchains,patches,tarballs} 2>/dev/null
 	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
@@ -598,6 +598,8 @@ prepareenv() {
 	mount --bind $BASEDIR/src				$LFS/usr/src/src
 	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR	$LFS/$TOOLS_DIR
 	mount --bind $BASEDIR/build_${MACHINE}/$CDROM_DIR	$LFS/$CDROM_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR	$LFS/$INSTALLER_DIR
+	mount --bind $BASEDIR/build_${MACHINE}/$IMAGES_DIR	$LFS/$IMAGES_DIR
 
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache
@@ -660,8 +662,10 @@ build() {
 	beautify build_stage "Building miscellaneous"
 	misc_build
 
+if [ "${EMB}" -eq "0" ]; then
 	beautify build_stage "Building installer"
 	installer_build
+fi
 
 	beautify build_stage "Building packages"
 	packages_build
