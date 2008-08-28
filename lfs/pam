@@ -80,43 +80,10 @@ endif
 ifeq "$(PASS)" "2"
 	useradd -D -b /home
 	sed -i 's/yes/no/' /etc/default/useradd
-	install -v -m644 /etc/login.defs /etc/login.defs.orig
-	for FUNCTION in LASTLOG_ENAB MAIL_CHECK_ENAB \
-	                PORTTIME_CHECKS_ENAB CONSOLE \
-	                MOTD_FILE NOLOGINS_FILE PASS_MIN_LEN \
-	                SU_WHEEL_ONLY MD5_CRYPT_ENAB \
-	                CONSOLE_GROUPS ENVIRON_FILE \
-	                ULIMIT ENV_TZ ENV_HZ ENV_SUPATH \
-	                ENV_PATH QMAIL_DIR MAIL_DIR MAIL_FILE \
-	                CHFN_AUTH FAILLOG_ENAB QUOTAS_ENAB FTMP_FILE \
-	                OBSCURE_CHECKS_ENAB CRACKLIB_DICTPATH \
-	                PASS_CHANGE_TRIES PASS_ALWAYS_WARN ISSUE_FILE; do \
-	    sed -i "s/^$$FUNCTION/# &/" /etc/login.defs; \
-	done
-	
+	install -v -m644 $(DIR_CONFIG)/pam/login.defs /etc/login.defs
+	install -v -m644 $(DIR_CONFIG)/pam/pam_env.conf /etc/security/pam_env.conf
 	install -v -d -m755 /etc/pam.d
-	cp $(DIR_CONFIG)/pam/dir/* /etc/pam.d
-	
-	if [ -f /etc/login.access ]; then \
-		mv -v /etc/login.access /etc/login.access.NOUSE; \
-	fi
-	
-	if [ -f /etc/limits ]; then \
-		mv -v /etc/limits /etc/limits.NOUSE; \
-	fi
-	
-	for PROGRAM in chpasswd chgpasswd groupadd groupdel groupmems \
-								groupmod newusers useradd userdel usermod; do \
-		install -v -m644 /etc/pam.d/chage /etc/pam.d/$$PROGRAM; \
-		sed -i "s/chage/$$PROGRAM/" /etc/pam.d/$$PROGRAM; \
-	done
-	
-	ENV_PATH=`grep '^ENV_PATH' /etc/login.defs.orig | \
-		awk '{ print $$2 }' | sed 's/PATH=//'` && \
-		echo 'PATH        DEFAULT='`echo "$${ENV_PATH}"` \
-		'        OVERRIDE=$${PATH}' \
-		>> /etc/security/pam_env.conf && \
-		unset ENV_PATH
+	cp -vf $(DIR_CONFIG)/pam.d/* /etc/pam.d/
 endif
 
 	@rm -rf $(DIR_APP)
