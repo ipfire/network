@@ -31,9 +31,6 @@ THISAPP    = $(PKG_NAME)-$(VER)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-COMPRESS_CMD = gzip -9
-#COMPRESS_CMD = lzma_sdk e -si -so
-
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -47,17 +44,4 @@ download :
 ###############################################################################
 
 $(TARGET) :
-	find $(DIR_SOURCE)/rootfiles/installer -maxdepth 1 -type f | xargs cat | \
-		grep -v ^# | sed -e "s@INSTALLER_DIR@@g" -e "s@KVER@$(KVER)@g" \
-		-e "s@^/@@g" | sort | uniq > $(INSTALLER_DIR)/archive.files
-
-	cd $(INSTALLER_DIR) && cpio -o -H newc \
-		< $(INSTALLER_DIR)/archive.files 2>$(INSTALLER_DIR)/archive.errors \
-		| $(COMPRESS_CMD) > $(IMAGES_DIR)/initramfs-$(VERSION).img 
-
-	@cat $(INSTALLER_DIR)/archive.errors
-	@if grep -q "No such file or directory" < $(INSTALLER_DIR)/archive.errors; then \
-		exit 1; \
-	fi
-
-	@rm -rf $(INSTALLER_DIR)/archive.{files,errors}
+	/sbin/mkliveramfs -f -v $(IMAGES_DIR)/$(PKG_NAME)-$(VERSION).img $(KVER)
