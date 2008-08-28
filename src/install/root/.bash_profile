@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,31 +19,21 @@
 #                                                                             #
 ###############################################################################
 
-. /etc/functions
+LANG=en_US.UTF-8
+export LANG
 
-message="Unmounting all other currently mounted file systems..."
-umount -a -d -r &>/dev/null
-evaluate_retval standard
+mode=
 
+for o in $(cat /proc/cmdline) ; do
+    case $o in
+    mode=*)
+        mode=${o#mode=}
+        ;;
+    esac
+done
 
-message="Sending all processes the TERM signal..."
-/usr/bin/killall5 -15
-error_value=${?}
+if [ "$mode" = "install" ]; then
+	[[ "$(tty)" =~ "tty1" ]] && exec /sbin/pomona
+fi
 
-sleep 3
-
-(exit ${error_value})
-evaluate_retval standard
-
-message="Sending all processes the KILL signal..."
-/usr/bin/killall5 -9
-error_value=${?}
-
-sleep 3
-
-(exit ${error_value})
-evaluate_retval standard
-
-
-log_success_msg "Restarting system..."
-reboot -d -f -i
+exit 0
