@@ -135,7 +135,7 @@ git_log() {
 }
 
 git_export() {
-	git archive HEAD | gzip -9 > ${SNAME}-${VERSION}.tar.gz
+	git archive HEAD | gzip -9 > ${SNAME}-${VERSION}.source.tar.gz
 }
 
 ssh_cert() {
