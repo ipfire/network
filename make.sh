@@ -101,6 +101,7 @@ base_build() {
 
 	ipfire_make stage2
 	ipfire_make scripts
+	ipfire_make initd-tools
 	ipfire_make initscripts
 	ipfire_make gmp
 	ipfire_make mpfr
