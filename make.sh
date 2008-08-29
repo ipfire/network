@@ -234,7 +234,7 @@ ipfire_build() {
 	ipfire_make curl
 	ipfire_make gnupg
 	ipfire_make sudo
-	#ipfire_make libjpeg
+	ipfire_make libjpeg
 	ipfire_make libpng
 	ipfire_make libtiff
 	ipfire_make libart
