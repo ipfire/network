@@ -761,6 +761,7 @@ puttarget() {
 	[ -e "${BATCHLOG}" ] && \
 		python ${BASEDIR}/tools/alog2html < ${BATCHLOG} > ${DIR}/build_log.html
 	git_export; cp -l ${BASEDIR}/${SNAME}-${VERSION}.source.tar.gz ${DIR}
+	git_diff >/dev/null && cp -l ${DIFF_NAME} ${DIR}
 	cp -l ${BASEDIR}/${SNAME}-${VERSION}.${MACHINE}.iso ${DIR}
 
 	cd $BASEDIR && \

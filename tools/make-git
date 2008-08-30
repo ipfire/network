@@ -109,7 +109,7 @@ git_commit() {
 }
 
 git_diff() {
-	DIFF_NAME="ipfire-diff-$(date '+%Y%m%d-%0k%0M').diff"
+	DIFF_NAME="${BASEDIR}/ipfire-diff-$(date '+%Y%m%d-%0k%0M').diff"
 
 	check_sanity --fix
 
@@ -121,6 +121,7 @@ git_diff() {
 		git diff HEAD --stat
 	else
 		rm -f $DIFF_NAME
+		return 1
 	fi
 }
 
