@@ -759,7 +759,7 @@ puttarget() {
 
 	[ -e "${BASEDIR}/packages" ] && cp -al ${BASEDIR}/packages ${DIR}
 	[ -e "${BATCHLOG}" ] && \
-		python ${BASEDIR}/alog2html < ${BATCHLOG} > ${DIR}/build_log.html
+		python ${BASEDIR}/tools/alog2html < ${BATCHLOG} > ${DIR}/build_log.html
 	git_export; cp -l ${BASEDIR}/${SNAME}-${VERSION}.source.tar.gz ${DIR}
 	cp -l ${BASEDIR}/${SNAME}-${VERSION}.${MACHINE}.iso ${DIR}
 
