@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = initd-tools
-VER        = 20080831
+VER        = 0.1.1
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -55,9 +55,7 @@ $(TARGET) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
 	cd $(DIR_APP) && ./configure \
-			--prefix=/usr \
-			--disable-static \
-			--with-initdlibdir=/usr/lib/lsb
+			--prefix=/usr
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
