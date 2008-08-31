@@ -25,11 +25,11 @@
 include Config
 
 PKG_NAME   = initd-tools
-VER        = 20080828
+VER        = 20080831
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DIR_APP    = $(DIR_SRC)/$(PKG_NAME)
+DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -53,8 +53,7 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	
-	cd $(DIR_APP) && ./autogen.sh
+
 	cd $(DIR_APP) && ./configure \
 			--prefix=/usr \
 			--disable-static \
