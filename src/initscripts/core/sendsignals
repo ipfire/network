@@ -5,10 +5,10 @@
 # Provides:            sendsignals
 # Required-Start:
 # Should-Start:
-# Required-Stop:       $syslog
+# Required-Stop:       $local_fs swap localnet
 # Should-Stop:
-# Default-Start:       0 6
-# Default-Stop:
+# Default-Start:
+# Default-Stop:        0 6
 # Short-Description:   Attempts to kill remaining processes.
 # Description:         Attempts to kill remaining processes.
 # X-LFS-Default-Start:

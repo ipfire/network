@@ -1,36 +1,39 @@
 #!/bin/sh
-# Begin /etc/init.d/haldaemon
+# Begin /etc/init.d/messagebus
 
 ### BEGIN INIT INFO
-# Provides:            haldaemon
-# Required-Start:      messagebus
-# Should-Start:        $syslog
-# Required-Stop:       messagebus
-# Should-Stop:         $syslog
+# Provides:            messagebus
+# Required-Start:      $syslog
+# Should-Start:
+# Required-Stop:       $syslog
+# Should-Stop:
 # Default-Start:       2 3 4 5
-# Default-Stop:        0 1 6
-# Short-Description:   Hardware abstraction layer daemon.
-# Description:         Starts the hardware abstraction layer daemon.
+# Default-Stop:        1
+# Short-Description:   Messagebus Daemon.
+# Description:         Starts the dbus messagebus daemon.
 ### END INIT INFO
 
 . /lib/lsb/init-functions
 
-MESSAGE="HAL Daemon"
-BIN_FILE="/usr/sbin/hald"
+MESSAGE="D-Bus Messagebus Daemon"
+BIN_FILE="/usr/bin/dbus-daemon"
 
-pidfile=/var/run/hald/pid
+pidfile=/var/run/dbus/pid
+socket=/var/run/dbus/system_bus_socket
 
 chk_stat
 
 case "${1}" in
     start)
-        start_daemon -p ${pidfile} "${BIN_FILE}" --use-syslog
+        /usr/bin/dbus-uuidgen --ensure
+        start_daemon -p ${pidfile} "${BIN_FILE}" --system
         evaluate_retval start
         ;;
 
     stop)
         killproc -p ${pidfile} "${BIN_FILE}"
         evaluate_retval stop
+        rm -f "$socket" 2>/dev/null
         ;;
 
     force-reload)
@@ -70,4 +73,4 @@ case "${1}" in
         ;;
 esac
 
-# End /etc/init.d/haldaemon
+# End /etc/init.d/messagebus

@@ -50,8 +50,10 @@ $(TARGET) :
 	install -d -m 755 /etc/rc1.d
 	install -d -m 755 /etc/rc2.d
 	install -d -m 755 /etc/rc3.d
+	install -d -m 755 /etc/rc4.d
+	install -d -m 755 /etc/rc5.d
 	install -d -m 755 /etc/rc6.d
-	install -d -m 755 /etc/rcsysinit.d
+	install -d -m 755 /etc/rcS.d
 	install -d -m 755 /etc/init.d
 	install -d -m 755 /etc/init.d/boottemp
 	install -d -m 755 /etc/sysconfig
@@ -67,43 +69,7 @@ $(TARGET) :
 	install -m 644 $(DIR_APP)/lsb/manage-functions /lib/lsb/
 	install -m 644 $(DIR_APP)/etc/lsb-config /etc/lsb/
 
-#	ln -svf ../init.d/network     /etc/rc0.d/K80network
-	ln -svf ../init.d/sysklogd    /etc/rc0.d/K90sysklogd
-	ln -svf ../init.d/sendsignals /etc/rc0.d/S60sendsignals
-	ln -svf ../init.d/mountfs     /etc/rc0.d/S70mountfs
-	ln -svf ../init.d/swap        /etc/rc0.d/S80swap
-	ln -svf ../init.d/localnet    /etc/rc0.d/S90localnet
-	ln -svf ../init.d/halt        /etc/rc0.d/S99halt
-
-#	ln -svf ../init.d/network     /etc/rc1.d/K80network
-	ln -svf ../init.d/sysklogd    /etc/rc1.d/K90sysklogd
-
-#	ln -svf ../init.d/network     /etc/rc2.d/K80network
-	ln -svf ../init.d/sysklogd    /etc/rc2.d/K90sysklogd
-
-#	ln -svf ../init.d/network     /etc/rc3.d/S20network
-	ln -svf ../init.d/sysklogd    /etc/rc3.d/S10sysklogd
-
-#	ln -svf ../init.d/network     /etc/rc6.d/K80network
-	ln -svf ../init.d/sysklogd    /etc/rc6.d/K90sysklogd
-	ln -svf ../init.d/sendsignals /etc/rc6.d/S60sendsignals
-	ln -svf ../init.d/mountfs     /etc/rc6.d/S70mountfs
-	ln -svf ../init.d/swap        /etc/rc6.d/S80swap
-	ln -svf ../init.d/localnet    /etc/rc6.d/S90localnet
-	ln -svf ../init.d/reboot      /etc/rc6.d/S99reboot
-
-	ln -svf ../init.d/mountkernfs /etc/rcsysinit.d/S00mountkernfs
-	ln -svf ../init.d/sysctl      /etc/rcsysinit.d/S05sysctl
-	ln -svf ../init.d/modules     /etc/rcsysinit.d/S10modules
-	ln -svf ../init.d/udev        /etc/rcsysinit.d/S15udev
-	ln -svf ../init.d/swap        /etc/rcsysinit.d/S20swap
-	ln -svf ../init.d/setclock    /etc/rcsysinit.d/S25setclock
-	ln -svf ../init.d/checkfs     /etc/rcsysinit.d/S30checkfs
-	ln -svf ../init.d/mountfs     /etc/rcsysinit.d/S40mountfs
-	ln -svf ../init.d/udev_retry  /etc/rcsysinit.d/S45udev_retry
-	ln -svf ../init.d/cleanfs     /etc/rcsysinit.d/S50cleanfs
-	ln -svf ../init.d/console     /etc/rcsysinit.d/S70console
-	ln -svf ../init.d/localnet    /etc/rcsysinit.d/S80localnet
+	cd /etc/init.d && find . -type f -exec install_initd {} \;
 
 	for i in $(DIR_SRC)/src/initscripts/sysconfig/*; do \
 		install -v -m 644 $$i /etc/sysconfig/; \
