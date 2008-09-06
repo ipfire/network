@@ -8,67 +8,49 @@
 # Required-Stop:       $syslog
 # Should-Stop:
 # Default-Start:       2 3 4 5
-# Default-Stop:        1
+# Default-Stop:        0 1 6
 # Short-Description:   Messagebus Daemon.
 # Description:         Starts the dbus messagebus daemon.
 ### END INIT INFO
 
 . /lib/lsb/init-functions
 
-MESSAGE="D-Bus Messagebus Daemon"
+MESSAGE="the D-Bus Messagebus Daemon"
 BIN_FILE="/usr/bin/dbus-daemon"
 
-pidfile=/var/run/dbus/pid
-socket=/var/run/dbus/system_bus_socket
+CONFIGFILE=/etc/dbus-1/system.conf
+PIDFILE=/var/run/dbus/pid
+SOCKET=/var/run/dbus/system_bus_socket
 
 chk_stat
 
 case "${1}" in
     start)
-        /usr/bin/dbus-uuidgen --ensure
-        start_daemon -p ${pidfile} "${BIN_FILE}" --system
+        /usr/bin/dbus-uuidgen --ensure >/dev/null
+        start_daemon -p ${PIDFILE} "${BIN_FILE}" --config-file="${CONFIGFILE}"
         evaluate_retval start
         ;;
 
     stop)
-        killproc -p ${pidfile} "${BIN_FILE}"
+        killproc -p ${PIDFILE} "${BIN_FILE}"
         evaluate_retval stop
-        rm -f "$socket" 2>/dev/null
+        if [ -e "${SOCKET}" ]; then
+            rm "${SOCKET}" 2> /dev/null
+        fi
         ;;
 
-    force-reload)
-        reloadproc -force
-        evaluate_retval force-reload
-        ;;
-
-    restart)
+    restart|force-reload)
         $0 stop
+        sleep 1
         $0 start
         ;;
 
     status)
-        statusproc -p ${pidfile}
-        ;;
-
-    reload)
-        reloadproc
-        evaluate_retval reload
-        ;;
-
-    try-restart)
-        pidofproc "${BIN_FILE}" > /dev/null
-        if [ "${?}" -ne "0" ]; then
-            MESSAGE="${MESSAGE}: Not Running"
-        else
-            $0 stop
-            $0 start
-            exit 0
-        fi
-        evaluate_retval try-restart
+        statusproc -p ${PIDFILE}
         ;;
 
     *)
-        echo "Usage: ${0} {start|stop|{force-}reload|{try-}restart|status}"
+        echo "Usage: ${0} {start|stop|force-reload|restart|status}"
         exit 1
         ;;
 esac

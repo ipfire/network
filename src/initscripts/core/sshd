@@ -1,43 +1,38 @@
 #!/bin/sh
-# Begin $rc_base/init.d/sshd
+# Begin /etc/init.d/sshd
 
-# Based on sysklogd script from LFS-3.1 and earlier.
-# Rewritten by Gerard Beekmans  - gerard@linuxfromscratch.org
+. /lib/lsb/init-functions
 
-#$LastChangedBy: bdubbs $
-#$Date: 2006-04-15 17:34:16 -0500 (Sat, 15 Apr 2006) $
+MESSAGE="SSH Server"
+BIN_FILE="/usr/sbin/sshd"
 
-. /etc/sysconfig/rc
-. $rc_functions
+chk_stat
 
 case "$1" in
     start)
-    		[ -e "/var/ipfire/remote/enablessh" ] || exit 0 # SSH is not enabled
-        boot_mesg "Starting SSH Server..."
-        # Also prevent ssh from being killed by out of memory conditions
-        loadproc /usr/sbin/sshd 
-        sleep 3
-        echo "-16" >/proc/`cat /var/run/sshd.pid`/oom_adj
+        start_daemon "${BIN_FILE}"
+        evaluate_retval start
         ;;
 
     stop)
-        boot_mesg "Stopping SSH Server..."
-        killproc /usr/sbin/sshd
+        killproc "${BIN_FILE}"
+        evaluate_retval stop
         ;;
 
     reload)
-        boot_mesg "Reloading SSH Server..."
-        reloadproc /usr/sbin/sshd
+        killproc "${BIN_FILE}" -HUP
+        evaluate_retval reload
         ;;
 
     restart)
-        $0 stop
+        killproc "$BIN_FILE"
         sleep 1
-        $0 start
+        start_daemon "${BIN_FILE}"
+        evaluate_retval restart
         ;;
 
     status)
-        statusproc /usr/sbin/sshd
+        statusproc "${BIN_FILE}"
         ;;
 
     *)
@@ -46,4 +41,4 @@ case "$1" in
         ;;
 esac
 
-# End $rc_base/init.d/sshd
+# End /etc/init.d/sshd

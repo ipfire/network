@@ -1,41 +1,40 @@
 #!/bin/sh
-# Begin $rc_base/init.d/fcron
+# Begin /etc/init.d/sshd
 
-# Based on sysklogd script from LFS-3.1 and earlier.
-# Rewritten by Gerard Beekmans  - gerard@linuxfromscratch.org
+. /lib/lsb/init-functions
 
-#$LastChangedBy: bdubbs $
-#$Date: 2005-08-01 14:29:19 -0500 (Mon, 01 Aug 2005) $
+MESSAGE="F-Cron Daemon"
+BIN_FILE="/usr/sbin/fcron"
+PIDFILE="/var/run/fcron.pid"
 
-. /etc/sysconfig/rc
-. $rc_functions
+chk_stat
 
 case "$1" in
-	start)
-		boot_mesg "Starting fcron..."
-		loadproc /usr/sbin/fcron -y
-		# remove -y to reenable fcron logging
-		;;
+    start)
+        start_daemon -p "${PIDFILE}" "${BIN_FILE}"
+        evaluate_retval start
+        ;;
 
-	stop)
-		boot_mesg "Stopping fcron..."
-		killproc /usr/sbin/fcron
-		;;
+    stop)
+        killproc -p "${PIDFILE}" "${BIN_FILE}"
+        evaluate_retval stop
+        ;;
 
-	restart)
-		$0 stop
-		sleep 1
-		$0 start
-		;;
+    restart)
+        killproc -p "${PIDFILE}" "$BIN_FILE" 
+        sleep 1
+        start_daemon -p "${PIDFILE}" "${BIN_FILE}"
+        evaluate_retval restart
+        ;;
 
-	status)
-		statusproc /usr/sbin/fcron
-		;;
+    status)
+        statusproc -p "${PIDFILE}" "${BIN_FILE}"
+        ;;
 
-	*)
-		echo "Usage: $0 {start|stop|restart|status}"
-		exit 1
-		;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
 esac
 
-# End $rc_base/init.d/fcron
+# End /etc/init.d/sshd
