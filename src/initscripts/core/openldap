@@ -1,0 +1,55 @@
+#!/bin/sh
+# Begin /etc/init.d/openldap
+
+### BEGIN INIT INFO
+# Provides:            openldap
+# Required-Start:      $network
+# Should-Start:
+# Required-Stop:
+# Should-Stop:         netfs
+# Default-Start:       3 4 5
+# Default-Stop:        0 1 2 6
+# Short-Description:   Starts OpenLDAP slapd.
+# Description:         Starts OpenLDAP slapd daemon.
+# X-LFS-Default-Start: S25
+# X-LFS-Default-Stop:  K46
+# X-LFS-Provided-By:   BLFS
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+MESSAGE="OpenLDAP slapd"
+BIN_FILE="/usr/sbin/slapd"
+PIDFILE="/srv/ldap/run/slapd.pid"
+
+case "$1" in
+    start)
+        start_daemon "${BIN_FILE}"
+        evaluate_retval start
+    ;;
+
+    stop)
+        # slapd needs SIGINT
+        killproc -p "${PIDFILE}" "${BIN_FILE}" -INT
+	evaluate_retval stop
+    ;;
+
+    restart)
+        killproc -p "${PIDFILE}" "${BIN_FILE}" -INT &&
+        sleep 1 &&
+        start_daemon "${BIN_FILE}"
+	evaluate_retval restart
+    ;;
+
+    status)
+        statusproc
+    ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+    ;;
+
+esac
+
+# End $rc_base/init.d/openldap
