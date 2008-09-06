@@ -35,5 +35,3 @@ done
 if [ "$mode" = "install" ]; then
 	[[ "$(tty)" =~ "tty1" ]] && exec /sbin/pomona
 fi
-
-exit 0
