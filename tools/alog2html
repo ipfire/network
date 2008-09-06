@@ -235,11 +235,15 @@ while 1:
 				print '\t<td></td>'
 
 			for cnt in range(cnt_tabs,linelist_cnt) :
-				if linelist[cnt][1] or linelist[cnt][2] or linelist[cnt][3] :
-					print '\t<td class="tar '+linelist[cnt][1]+linelist[cnt][2]+linelist[cnt][3]+'">',
-				else :
-					print '\t<td>',
-				print linelist[cnt][4]+'</td>'
+				try:
+					if linelist[cnt][1] or linelist[cnt][2] or linelist[cnt][3] :
+						print '\t<td class="tar '+linelist[cnt][1]+linelist[cnt][2]+linelist[cnt][3]+'">',
+					else :
+						print '\t<td>',
+					print linelist[cnt][4]+'</td>'
+				except IndexError:
+					print '<p class="red b">traceerror line %s in modul alog2html : <span class="blue">%s</span></p>' % (lineNr, line)
+					break
 
 	else :
 		for cnt in range(0, 13) :												# Fill empty tabs
