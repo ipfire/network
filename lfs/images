@@ -70,6 +70,7 @@ else # cdrom
 	fi
 
 	cd $(CDROM_DIR)/tmp && mksquashfs * $(CDROM_DIR)/$(SNAME)-$(VERSION).img
+	cd $(CDROM_DIR) && unsquashfs -ls $(SNAME)-$(VERSION).img > $(SNAME)-$(VERSION).ls
 
 	cd $(INSTALLER_DIR) && mksquashfs * $(CDROM_DIR)/pomona-$(VERSION).overlay
 

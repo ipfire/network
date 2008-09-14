@@ -118,37 +118,34 @@ class PomonaPakfire:
         pass
 
     def extractFiles(self, cb, intf, id):
+        filename    = os.path.join(SOURCE_PATH, IMAGE_FILE)
+        filename_ls = os.path.join(SOURCE_PATH, IMAGE_FILE_LS)
 
-        BSIZE = 65535 # 64k
-
-        filename = "%s/%s" % (SOURCE_PATH, IMAGE_FILE,)
-        filesize = int(os.path.getsize(filename))
-        log.info("Source file %s has size of %dKB" % (filename, filesize / 1024,))
+        fd = open(filename_ls, 'r')
+        filesize = 0
+        while fd.readline():
+            filesize += 1
+        fd.close()
         cb.setSize(filesize)
 
-        fd = open(filename, 'rb')
+        filesize = int(os.path.getsize(filename))
+        log.info("Source file %s has size of %dKB" % (filename, filesize / 1024,))
 
-        command = \
-                "lzma_sdk d -si -so 2>/dev/tty5 | cpio -i --verbose -d >/dev/tty5 2>&1"
+        command = "unsquashfs -i -f -d %s %s 2>/dev/tty5" % (HARDDISK_PATH, filename,)
 
-        os.chdir(HARDDISK_PATH)
-
-        extractor = \
-                subprocess.Popen(command, shell=True,
+        extractor = subprocess.Popen(command, shell=True,
                                  stdout=subprocess.PIPE,
                                  stdin=subprocess.PIPE)
 
         cb.callback(CB_START, title=_("Base system"), text=_("Installing base system..."))
 
-        buf = fd.read(BSIZE)
-        tot = len(buf)
-        while len(buf) >  0:
+        buf = extractor.stdout.readline()
+        tot = 0
+        while buf != "":
+            tot += 1
             cb.callback(CB_PROGRESS, amount=tot)
-            extractor.stdin.write(buf)
-            buf = fd.read(BSIZE)
-            tot += len(buf)
+            buf = extractor.stdout.readline()
 
-        fd.close()
         cb.callback(CB_STOP)
 
 class PakfireBackend(PomonaBackend):
