@@ -1,25 +1,14 @@
-# translation of da1.po to
-# translation of da.po to
-# translation of da.po to Danish
-# Danish translation of anaconda
-# Copyright (C) 1999-2004 Red Hat, Inc.
-# This file is distributed under the same license as the anaconda package.
-# Keld Simonsen <keld@dkuug.dk>, 2004, 2005.
-# Martin Willemoes Hansen <mwh@sysrq.dk>, 2004.
-# Keld Simonsen <keld@rap.dk>, 2005, 2006, 2007.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: da\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-31 21:37+0000\n"
-"PO-Revision-Date: 2007-05-10 20:20+0200\n"
-"Last-Translator: Keld Simonsen <keld@rap.dk>\n"
+"POT-Creation-Date: 2008-04-19 21:25+0000\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Henrik Bro Larsen <hbrolarsen@aktinet.de>\n"
 "Language-Team:  <da@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.10.2\n"
 
 #: ../src/autopart.py:749
 #, python-format
@@ -74,7 +63,7 @@ msgid ""
 msgstr ""
 "Startpartitionen %s tilhører ikke en disk med tilstrækkeligt meget ledigt "
 "plads ved dets begyndelse som startprogrammet kan være på. Forsikr dig om at "
-"der findes 5 MB ledigt plads ved begyndelsen på disken som indeholder /boot"
+"der findes 5 MB ledigt plads ved begyndelsen af disken som indeholder /boot"
 
 #: ../src/autopart.py:802
 #, python-format
@@ -114,7 +103,7 @@ msgid ""
 msgstr ""
 "Kan ikke finde partition %s som skal bruges til %s.\n"
 "\n"
-"Tryk O.k. for at starte systemet igen."
+"Tryk O.k. for at genstarte systemet."
 
 #: ../src/autopart.py:1000 ../src/autopart.py:1033
 msgid "Automatic Partitioning Errors"
@@ -133,7 +122,7 @@ msgstr ""
 "\n"
 "%s\n"
 "\n"
-"Tryk O.k. for at starte systemet igen."
+"Tryk O.k. for at genstarte systemet."
 
 #: ../src/autopart.py:1010
 msgid "Warnings During Automatic Partitioning"
@@ -146,7 +135,7 @@ msgid ""
 "\n"
 "%s"
 msgstr ""
-"Følgende advarsler blev givet under automatisk partitionering:\n"
+"Følgende advarsler opstod under automatisk partitionering:\n"
 "\n"
 "%s"
 
@@ -155,7 +144,7 @@ msgid "Error Partitioning"
 msgstr "Fejl under partitionering"
 
 #: ../src/autopart.py:1021
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "Could not allocate requested partitions: \n"
 "\n"
@@ -173,7 +162,7 @@ msgid ""
 msgstr ""
 "\n"
 "\n"
-"Tryk 'O.k.' for at vælge et andet partitioneringsalternativ."
+"Tryk 'O.k.' for at vælge en anden partitioneringsoption."
 
 #: ../src/autopart.py:1034
 #, python-format
@@ -185,16 +174,16 @@ msgid ""
 "This can happen if there is not enough space on your hard drive(s) for the "
 "installation. %s"
 msgstr ""
-"De følgende fejl skete med din partitionering:\n"
+"De følgende fejl opstod med din partitionering:\n"
 "\n"
 "%s\n"
 "\n"
-"Dette kan ske hvis det ikke findes tilstrækkeligt med plads til "
+"Dette kan ske hvis der ikke findes tilstrækkeligt med plads til "
 "installationen på dine diske. %s"
 
-#: ../src/autopart.py:1109 ../src/bootloader.py:750 ../src/partedUtils.py:228
-#: ../src/partedUtils.py:557 ../src/partedUtils.py:594
-#: ../src/tui_bootloader.py:117 ../src/tui_bootloader.py:437
+#: ../src/autopart.py:1109 ../src/bootloader.py:124 ../src/partedUtils.py:232
+#: ../src/partedUtils.py:563 ../src/partedUtils.py:600
+#: ../src/tui_bootloader.py:117 ../src/tui_bootloader.py:440
 #: ../src/tui_partition.py:181
 msgid "Warning"
 msgstr "Advarsel"
@@ -209,7 +198,7 @@ msgid ""
 "mount points, partition sizes, and more."
 msgstr ""
 "Automatisk partitionering opsætter partitioner baseret på den valgte "
-"installationstype. Du kan også tilrette partitionerne efter at de er blevet "
+"installationstype. Du kan også tilpasse partitionerne efter at de er blevet "
 "oprettet.\n"
 "\n"
 "Værktøjet for manuel partitionering, Disk Druid, lader dig opsætte dine "
@@ -238,41 +227,40 @@ msgstr ""
 "Du har valgt at fjerne alle partitioner (ALLE DATA) på de følgende drev:%s\n"
 "Er du sikker på at du vil gøre dette?"
 
-#: ../src/bootloader.py:700
+#: ../src/bootloader.py:74
 msgid "Bootloader"
 msgstr "Opstartsindlæser"
 
-#: ../src/bootloader.py:700
+#: ../src/bootloader.py:74
 msgid "Installing bootloader..."
-msgstr "Installerer opstartsindlæser..."
+msgstr "Installerer bootloader..."
 
-#: ../src/bootloader.py:751
+#: ../src/bootloader.py:125
 msgid ""
 "No kernel packages were installed on your system.  Your boot loader "
 "configuration will not be changed."
 msgstr ""
-"Ingen kernepakker var installeret på dit system. Din konfiguration af "
-"opstartsindlæser vil ikke blive ændret."
+"Ingen kernel pakker blev installeret på dit system. Konfigurationen af din "
+"boot loader vil ikke blive ændret."
 
 #: ../src/constants.py:40
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "An unhandled exception has occurred.  This is most likely a bug.  Please "
 "save a copy of the detailed exception and file a bug report against pomona "
 "at %s"
 msgstr ""
 "En ubehandlet hændelse er sket. Dette er sandsynligvis en fejl. Kopiér den "
-"fulde tekst fra denne undtagelse, og udfyld så en  fejlrapport om anaconda "
-"på %s"
+"fulde tekst fra denne undtagelse, og udfyld så en fejlrapport om pomona på %s"
 
-#: ../src/constants.py:82 ../src/installer.py:92 ../src/tui.py:229
-#: ../src/tui.py:395 ../src/tui_confirm.py:26
+#: ../src/constants.py:82 ../src/installer.py:91 ../src/tui.py:231
+#: ../src/tui.py:397 ../src/tui_confirm.py:26
 msgid "OK"
 msgstr "O.k."
 
 #: ../src/constants.py:86 ../src/partIntfHelpers.py:148
-#: ../src/partIntfHelpers.py:390 ../src/tui.py:99 ../src/tui.py:100
-#: ../src/tui.py:398 ../src/tui_bootloader.py:192
+#: ../src/partIntfHelpers.py:390 ../src/tui.py:101 ../src/tui.py:102
+#: ../src/tui.py:400 ../src/tui_bootloader.py:192
 msgid "Cancel"
 msgstr "Annullér"
 
@@ -280,37 +268,61 @@ msgstr "Annullér"
 msgid "Back"
 msgstr "Tilbage"
 
-#: ../src/constants.py:94 ../src/tui.py:393 ../src/tui_bootloader.py:65
+#: ../src/constants.py:94 ../src/tui.py:395 ../src/tui_bootloader.py:65
 msgid "Yes"
 msgstr "Ja"
 
-#: ../src/constants.py:98 ../src/tui.py:394 ../src/tui_bootloader.py:65
+#: ../src/constants.py:98 ../src/tui.py:396 ../src/tui_bootloader.py:65
 msgid "No"
 msgstr "Nej"
 
 #: ../src/constants.py:102 ../src/tui_bootloader.py:268
-#: ../src/tui_partition.py:851
+#: ../src/tui_partition.py:852
 msgid "Edit"
 msgstr "Redigér"
 
-#: ../src/fsset.py:195
+#: ../src/exception.py:255
+msgid "Dump Written"
+msgstr ""
+
+#: ../src/exception.py:256
+msgid ""
+"Your system's state has been successfully written to the remote host.  Your "
+"system will now be rebooted."
+msgstr ""
+
+#: ../src/exception.py:259 ../src/fsset.py:1342 ../src/fsset.py:1741
+#: ../src/fsset.py:1748 ../src/harddrive.py:80 ../src/harddrive.py:126
+#: ../src/packages.py:121 ../src/partedUtils.py:610 ../src/tui_confirm.py:35
+msgid "_Reboot"
+msgstr "_Genstart"
+
+#: ../src/exception.py:264
+msgid "Dump Not Written"
+msgstr ""
+
+#: ../src/exception.py:265
+msgid "There was a problem writing the system state to the remote host."
+msgstr ""
+
+#: ../src/fsset.py:189
 msgid "Checking for Bad Blocks"
 msgstr "Kontrollerer for dårlige blokke"
 
-#: ../src/fsset.py:196
+#: ../src/fsset.py:190
 #, python-format
 msgid "Checking for bad blocks on /dev/%s..."
 msgstr "Kontrollerer for dårlige blokke på /dev/%s..."
 
-#: ../src/fsset.py:539 ../src/fsset.py:1039 ../src/fsset.py:1070
-#: ../src/fsset.py:1132 ../src/fsset.py:1143 ../src/fsset.py:1197
-#: ../src/fsset.py:1208 ../src/fsset.py:1230 ../src/fsset.py:1279
-#: ../src/fsset.py:1360 ../src/image.py:38 ../src/partIntfHelpers.py:287
+#: ../src/fsset.py:537 ../src/fsset.py:1043 ../src/fsset.py:1074
+#: ../src/fsset.py:1136 ../src/fsset.py:1147 ../src/fsset.py:1201
+#: ../src/fsset.py:1212 ../src/fsset.py:1234 ../src/fsset.py:1283
+#: ../src/fsset.py:1364 ../src/image.py:39 ../src/partIntfHelpers.py:287
 #: ../src/tui_source.py:129 ../src/urlinstall.py:180
 msgid "Error"
 msgstr "Fejl"
 
-#: ../src/fsset.py:540
+#: ../src/fsset.py:538
 #, python-format
 msgid ""
 "An error occurred migrating %s to ext3.  It is possible to continue without "
@@ -323,15 +335,15 @@ msgstr ""
 "\n"
 "Ønsker du at fortsætte uden at migrere %s?"
 
-#: ../src/fsset.py:973
+#: ../src/fsset.py:977
 msgid "First sector of boot partition"
 msgstr "Første sektor på opstartspartitionen"
 
-#: ../src/fsset.py:974
+#: ../src/fsset.py:978
 msgid "Master Boot Record (MBR)"
-msgstr "'Master Boot Record' (MBR)"
+msgstr "Master Boot Record (MBR)"
 
-#: ../src/fsset.py:1040
+#: ../src/fsset.py:1044
 #, python-format
 msgid ""
 "An error occurred trying to initialize swap on device %s.  This problem is "
@@ -344,15 +356,15 @@ msgstr ""
 "\n"
 "Tryk <Enter> for at starte systemet igen."
 
-#: ../src/fsset.py:1069
+#: ../src/fsset.py:1073
 msgid "Skip"
 msgstr "Overspring"
 
-#: ../src/fsset.py:1069 ../src/tui_complete.py:38
+#: ../src/fsset.py:1073 ../src/tui_complete.py:38
 msgid "Reboot"
 msgstr "Genstart"
 
-#: ../src/fsset.py:1090
+#: ../src/fsset.py:1094
 #, python-format
 msgid ""
 "The swap device:\n"
@@ -372,11 +384,11 @@ msgstr ""
 "du springer over det vil installationsprogrammet overspringe det under "
 "installationen."
 
-#: ../src/fsset.py:1097
+#: ../src/fsset.py:1101
 msgid "Reformat"
 msgstr "Omformatér"
 
-#: ../src/fsset.py:1101
+#: ../src/fsset.py:1105
 #, python-format
 msgid ""
 "The swap device:\n"
@@ -392,11 +404,11 @@ msgstr ""
 "     /dev/%s\n"
 "\n"
 "i din /etc/fstab-fil bruges i øjeblikket som en partition for "
-"programmelsuspendering, hvilket indebær at dit system er i hviletilstand. "
-"For at lave en opgradering bør du lukke dit system ned i stedet for at sætte "
-"det i hviletilstand."
+"programsuspendering, hvilket betyder at dit system er i hviletilstand. For "
+"at lave en opgradering bør du lukke dit system ned i stedet for at sætte det "
+"i hviletilstand."
 
-#: ../src/fsset.py:1109
+#: ../src/fsset.py:1113
 #, python-format
 msgid ""
 "The swap device:\n"
@@ -412,11 +424,11 @@ msgstr ""
 "     /dev/%s\n"
 "\n"
 "i din /etc/fstab-fil bruges i øjeblikket som en partition for "
-"programmelsuspendering, hvilket indebærer at dit system er i hviletilstand. "
-"Hvis du er i gang med en ny installation bør du se til at "
-"installationsprogrammet er sat op til at formatere alle swappartitioner."
+"programsuspendering, det vil sige at dit system er i hviletilstand. Hvis du "
+"er i gang med en ny installation bør du se til at installationsprogrammet er "
+"sat op til at formatere alle swappartitioner."
 
-#: ../src/fsset.py:1119
+#: ../src/fsset.py:1123
 msgid ""
 "\n"
 "\n"
@@ -426,15 +438,15 @@ msgid ""
 msgstr ""
 "\n"
 "\n"
-"Vælg Overspring hvis du ønsker at installationsprogrammet skal ignorere "
-"denne partition under opgraderingen. Vælg Formatér for at formatere "
+"Vælg overspring hvis du ønsker at installationsprogrammet skal ignorere "
+"denne partition under opgraderingen. Vælg Formatér for at genformatere "
 "partitionen som swapplads. Vælg Genstart for at genstarte systemet."
 
-#: ../src/fsset.py:1125
+#: ../src/fsset.py:1129
 msgid "Format"
 msgstr "Formatér"
 
-#: ../src/fsset.py:1133
+#: ../src/fsset.py:1137
 #, python-format
 msgid ""
 "Error enabling swap device %s: %s\n"
@@ -449,9 +461,9 @@ msgstr ""
 "Filen /etc/fstab på din opgraderingspartition henviser ikke til en gyldig "
 "swap-partition.\n"
 "\n"
-"Tryk O.k. for at starte systemet igen."
+"Tryk O.k. for at genstarte systemet."
 
-#: ../src/fsset.py:1144
+#: ../src/fsset.py:1148
 #, python-format
 msgid ""
 "Error enabling swap device %s: %s\n"
@@ -464,9 +476,9 @@ msgstr ""
 "\n"
 "Dette betyder sandsynligvis at swap-partitionen ikke er initieret.\n"
 "\n"
-"Tryk O.k. for at starte systemet igen."
+"Tryk O.k. for at genstarte systemet."
 
-#: ../src/fsset.py:1198
+#: ../src/fsset.py:1202
 #, python-format
 msgid ""
 "Bad blocks have been detected on device /dev/%s. We do not recommend you use "
@@ -477,9 +489,9 @@ msgstr ""
 "Der er fundet dårlige blokke på enhed /dev/%s. Vi anbefaler ikke at du "
 "bruger denne enhed.\n"
 "\n"
-"Tryk <Enter> for at starte systemet igen."
+"Tryk <Enter> for genstarte systemet."
 
-#: ../src/fsset.py:1209
+#: ../src/fsset.py:1213
 #, python-format
 msgid ""
 "An error occurred searching for bad blocks on %s.  This problem is serious, "
@@ -490,9 +502,9 @@ msgstr ""
 "En fejl opstod under søgning efter dårlige blokke på %s. Dette problem er "
 "alvorligt, og installationen kan ikke fortsætte.\n"
 "\n"
-"Tryk <Enter> for at starte systemet igen."
+"Tryk <Enter> for at genstarte systemet."
 
-#: ../src/fsset.py:1231
+#: ../src/fsset.py:1235
 #, python-format
 msgid ""
 "An error occurred trying to format %s.  This problem is serious, and the "
@@ -503,9 +515,9 @@ msgstr ""
 "Der opstod en fejl ved forsøg på formatering af %s. Dette problem er så "
 "alvorligt, at installationen ikke kan fortsætte.\n"
 "\n"
-"Tryk på retur for at genstarte systemet."
+"Tryk på return for at genstarte systemet."
 
-#: ../src/fsset.py:1280
+#: ../src/fsset.py:1284
 #, python-format
 msgid ""
 "An error occurred trying to migrate %s.  This problem is serious, and the "
@@ -516,13 +528,13 @@ msgstr ""
 "Der opstod en fejl ved migrering af %s. Dette problem er så alvorligt, at "
 "installationen ikke kan fortsætte.\n"
 "\n"
-"Tryk på retur for at genstarte systemet."
+"Tryk på return for at genstarte systemet."
 
-#: ../src/fsset.py:1307 ../src/fsset.py:1316
+#: ../src/fsset.py:1311 ../src/fsset.py:1320
 msgid "Invalid mount point"
 msgstr "Ugyldigt monteringspunkt"
 
-#: ../src/fsset.py:1308
+#: ../src/fsset.py:1312
 #, python-format
 msgid ""
 "An error occurred when trying to create %s.  Some element of this path is "
@@ -530,13 +542,13 @@ msgid ""
 "\n"
 "Press <Enter> to reboot your system."
 msgstr ""
-"Der opstod en fejl ved forsøg på oprettelse af %s. Et delnavn i denne sti er "
+"Der opstod en fejl ved forsøg på oprettelse af %s. Elementer af denne sti er "
 "ikke et katalog. Dette problem er så alvorligt, at installationen ikke kan "
 "fortsætte.\n"
 "\n"
-"Tryk på retur for at genstarte systemet."
+"Tryk på return for at genstarte systemet."
 
-#: ../src/fsset.py:1317
+#: ../src/fsset.py:1321
 #, python-format
 msgid ""
 "An error occurred when trying to create %s: %s.  This is a fatal error and "
@@ -547,32 +559,26 @@ msgstr ""
 "Der opstod en fejl ved forsøg på oprettelse af %s: %s. Dette problem er så "
 "alvorligt, at installationen ikke kan fortsætte.\n"
 "\n"
-"Tryk på retur for at genstarte systemet."
+"Tryk på return for at genstarte systemet."
 
-#: ../src/fsset.py:1330
+#: ../src/fsset.py:1334
 msgid "Unable to mount filesystem"
 msgstr "Kan ikke montere filsystem"
 
-#: ../src/fsset.py:1331
+#: ../src/fsset.py:1335
 #, python-format
 msgid ""
 "An error occurred mounting device %s as %s.  You may continue installation, "
 "but there may be problems."
 msgstr ""
 "Et fejl skete ved montering af enhed %s som %s.  Du kan fortsætte "
-"installationen men det kan komme problemer."
+"installationen men det kan opstå problemer."
 
-#: ../src/fsset.py:1338 ../src/fsset.py:1746 ../src/fsset.py:1753
-#: ../src/harddrive.py:80 ../src/harddrive.py:126 ../src/packages.py:130
-#: ../src/partedUtils.py:604 ../src/tui_confirm.py:35
-msgid "_Reboot"
-msgstr "_Genstart"
-
-#: ../src/fsset.py:1338 ../src/partedUtils.py:604
+#: ../src/fsset.py:1342 ../src/partedUtils.py:610
 msgid "_Continue"
 msgstr "_Fortsæt"
 
-#: ../src/fsset.py:1346
+#: ../src/fsset.py:1350
 #, python-format
 msgid ""
 "Error mounting device %s as %s: %s\n"
@@ -583,11 +589,11 @@ msgid ""
 msgstr ""
 "Fejl ved montering af enhed %s som %s: %s\n"
 "\n"
-"Enheder i /etc/fstab bør angives ved etikette, ikke ved enhedsnavn.\n"
+"Enheder i /etc/fstab bør angives ved label, ikke ved enhedsnavn.\n"
 "\n"
 "Tryk O.k. for at genstarte, dit system."
 
-#: ../src/fsset.py:1353
+#: ../src/fsset.py:1357
 #, python-format
 msgid ""
 "Error mounting device %s as %s: %s\n"
@@ -601,13 +607,13 @@ msgstr ""
 "Dette betyder højst sandsynligt at denne partition ikke er blevet "
 "formateret.\n"
 "\n"
-"Tryk O.k. for at genstarte, dit system."
+"Tryk O.k. for at genstarte dit system."
 
-#: ../src/fsset.py:1738
+#: ../src/fsset.py:1733
 msgid "Duplicate Labels"
-msgstr "Gentagne etiketter"
+msgstr "Doppelte etiketter"
 
-#: ../src/fsset.py:1739
+#: ../src/fsset.py:1734
 #, python-format
 msgid ""
 "Multiple devices on your system are labelled %s.  Labels across devices must "
@@ -616,15 +622,15 @@ msgid ""
 "Please fix this problem and restart the installation process."
 msgstr ""
 "Flere enheder på dit system er benævnt %s. Etiketter skal være unikke for "
-"hver enhed på dit system for atfungere rigtigt.\n"
+"hver enhed på dit system for at fungere rigtigt.\n"
 "\n"
 "Ret dette problem og genstart installationsprocessen."
 
-#: ../src/fsset.py:1748
+#: ../src/fsset.py:1743
 msgid "Invalid Label"
 msgstr "Ugyldig etikette"
 
-#: ../src/fsset.py:1749
+#: ../src/fsset.py:1744
 #, python-format
 msgid ""
 "An invalid label was found on device %s.  Please fix this problem and "
@@ -633,16 +639,16 @@ msgstr ""
 "En ugyldig etikette blev fundet på enhed %s. Ret dette problem og genstart "
 "installationsprocessen."
 
-#: ../src/fsset.py:1975
+#: ../src/fsset.py:1970
 msgid "Formatting"
 msgstr "Formaterer"
 
-#: ../src/fsset.py:1976
+#: ../src/fsset.py:1971
 #, python-format
 msgid "Formatting %s file system..."
 msgstr "Formaterer %s-filsystem..."
 
-#: ../src/harddrive.py:44 ../src/image.py:48
+#: ../src/harddrive.py:44 ../src/image.py:49
 #, python-format
 msgid ""
 "The file %s cannot be opened.  This is due to a missing file or perhaps a "
@@ -654,7 +660,7 @@ msgid ""
 "\n"
 msgstr ""
 "Filen %s kan ikke åbnes. Dette beror på en manglende fil eller måske en "
-"beskadiget pakke. Kontrollér dine systemmedier og at du har alle de "
+"beskadiget pakke. Kontrollér dine installationsmedier og at du har alle de "
 "nødvendige medier.\n"
 "\n"
 "Hvis du genstarter vil dit system være i en inkonsistent tilstand, som "
@@ -663,7 +669,7 @@ msgstr ""
 
 #: ../src/harddrive.py:71
 msgid "Missing ISO 9660 Image"
-msgstr "Mangler ISO 9660-aftryk"
+msgstr "Mangler ISO 9660-image"
 
 #: ../src/harddrive.py:72
 #, python-format
@@ -674,11 +680,11 @@ msgid ""
 "Please copy this image to the drive and click Retry. Click Reboot  to abort "
 "the installation."
 msgstr ""
-"Installeringsprogrammet har forsøgt at montere aftryk #%s, men kan ikke "
-"finde det på disken.\n"
+"Installeringsprogrammet har forsøgt at montere image #%s, men kan ikke finde "
+"det på disken.\n"
 "\n"
-"Kopiér gerne dette aftryk til drevet og klik Forsøg igen. Klik Genstart for "
-"at afbryde installationen."
+"Kopiér venligst dette image til drevet og klik forsøg igen. Klik genstart "
+"for at afbryde installationen."
 
 #: ../src/harddrive.py:81
 msgid "Re_try"
@@ -697,12 +703,11 @@ msgid ""
 "installation."
 msgstr ""
 "Der skete en fejl ved montering af kildeenheden %s. Dette kan ske hvis dine "
-"ISO-aftryk ligger på et avanceret lagringsmedie som LVM eller RAID, eller "
+"ISO-image ligger på et avancerede lagringsmedier som LVM eller RAID, eller "
 "hvis der var et problem med at montere en partition. Klik genstart for at "
 "afbryde installationen. "
 
-#: ../src/image.py:39
-#, fuzzy
+#: ../src/image.py:40
 msgid ""
 "An error occurred unmounting the disc. Please make sure you're not accessing "
 "the disk from the shell on tty2 and then click OK to retry."
@@ -710,32 +715,31 @@ msgstr ""
 "En fejl skete ved afmontering af cd-en. Forsikr dig venligst om at du ikke "
 "bruger %s fra skallen, og klik så O.k. for at prøve igen."
 
-#: ../src/image.py:79
+#: ../src/image.py:80
 #, fuzzy
 msgid "Probing CDROM"
 msgstr "Forkert cd-rom"
 
-#: ../src/image.py:80
-#, fuzzy, python-format
+#: ../src/image.py:81
+#, python-format
 msgid "Searching for a valid disc on /dev/%s..."
 msgstr "Kontrollerer for dårlige blokke på /dev/%s..."
 
-#: ../src/image.py:92
+#: ../src/image.py:93
 msgid "Wrong CDROM"
 msgstr "Forkert cd-rom"
 
-#: ../src/image.py:93
-#, fuzzy, python-format
+#: ../src/image.py:94
+#, python-format
 msgid "That's not the correct %s CDROM in /dev/%s."
 msgstr "Dette er ikke den korrekte %s-cd-rom"
 
-#: ../src/image.py:108
-#, fuzzy
+#: ../src/image.py:109
 msgid "Insert CDROM"
 msgstr "skift cd-rom"
 
-#: ../src/image.py:109
-#, fuzzy, python-format
+#: ../src/image.py:110
+#, python-format
 msgid "Please insert the %s disc to continue."
 msgstr "Indsæt venligst %s disk %d for at fortsætte."
 
@@ -743,315 +747,294 @@ msgstr "Indsæt venligst %s disk %d for at fortsætte."
 msgid "Install on System"
 msgstr "Installér på system"
 
-#: ../src/installclass.py:238
-#, fuzzy
+#: ../src/installclass.py:235
 msgid "IPFire"
-msgstr "Fri"
+msgstr "IPFire"
+
+#: ../src/installer.py:86
+msgid "Fatal Error"
+msgstr "Alvorlig fejl"
 
 #: ../src/installer.py:87
-#, fuzzy
-msgid "Fatal Error"
-msgstr "Fejl"
-
-#: ../src/installer.py:88
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "You do not have enough RAM to install %s on this machine.\n"
 "\n"
 "Press <return> to reboot your system.\n"
-msgstr "Du har ikke RAM nok til at installere %s på denne maskine."
+msgstr ""
+"Du har ikke RAM nok til at installere %s på denne maskine.\n"
+"Tast <return> for at genstarte systemet.\n"
 
-#: ../src/installer.py:150
-#, fuzzy
+#: ../src/installer.py:149
 msgid "Starting text installation..."
-msgstr "Starter grafisk installation..."
+msgstr "Starter text-baseret installation..."
 
 #: ../src/keyboard_models.py:46
 msgid "keyboard|Arabic (azerty)"
-msgstr ""
+msgstr "tastatur|Arabisk (azerty)"
 
 #: ../src/keyboard_models.py:49
 msgid "keyboard|Arabic (azerty/digits)"
-msgstr ""
+msgstr "tastatur|Arabisk (azerty/numerisk tastatur)"
 
 #: ../src/keyboard_models.py:52
 msgid "keyboard|Arabic (digits)"
-msgstr ""
+msgstr "tastatur|Arabisk (numerisk tastatur)"
 
 #: ../src/keyboard_models.py:55
 msgid "keyboard|Arabic (qwerty)"
-msgstr ""
+msgstr "tastatur|Arabisk (qwerty)"
 
 #: ../src/keyboard_models.py:58
 msgid "keyboard|Arabic (qwerty/digits)"
-msgstr ""
+msgstr "tastatur|arabisk (qwerty/numerisk tastatur)"
 
 #: ../src/keyboard_models.py:61
 msgid "keyboard|Belgian (be-latin1)"
-msgstr ""
+msgstr "tastatur|Belgisk (be-latin1)"
 
 #: ../src/keyboard_models.py:64
 msgid "keyboard|Bengali (Inscript)"
-msgstr ""
+msgstr "tastatur|Bengalsk (Inscript)"
 
 #: ../src/keyboard_models.py:67
 msgid "keyboard|Bengali (Probhat)"
-msgstr ""
+msgstr "tastatur|Bengalsk (Probhat)"
 
 #: ../src/keyboard_models.py:70
-#, fuzzy
 msgid "keyboard|Bulgarian"
-msgstr "Bulgarsk"
+msgstr "tastatur|Bulgarsk"
 
 #: ../src/keyboard_models.py:73
 msgid "keyboard|Bulgarian (Phonetic)"
-msgstr ""
+msgstr "tastatur|Bulgarsk (phonetisk)"
 
 #: ../src/keyboard_models.py:76
 msgid "keyboard|Brazilian (ABNT2)"
-msgstr ""
+msgstr "tastatur|Brasiliansk (ABNT2)"
 
 #: ../src/keyboard_models.py:79
 msgid "keyboard|French Canadian"
-msgstr ""
+msgstr "tastatur|fransk kanadisk"
 
 #: ../src/keyboard_models.py:82
-#, fuzzy
 msgid "keyboard|Croatian"
-msgstr "Kroatisk"
+msgstr "tastatur|Kroatisk"
 
 #: ../src/keyboard_models.py:85
 msgid "keyboard|Czech"
-msgstr ""
+msgstr "tastatur|Tjekkisk"
 
 #: ../src/keyboard_models.py:88
 msgid "keyboard|Czech (qwerty)"
-msgstr ""
+msgstr "tastatur|Tjekkisk (qwerty)"
 
 #: ../src/keyboard_models.py:91
 msgid "keyboard|German"
-msgstr ""
+msgstr "tastatur|Tysk"
 
 #: ../src/keyboard_models.py:94
 msgid "keyboard|German (latin1)"
-msgstr ""
+msgstr "tastatur|Tysk (latin1)"
 
 #: ../src/keyboard_models.py:97
 msgid "keyboard|German (latin1 w/ no deadkeys)"
-msgstr ""
+msgstr "tastatur|Tysk (latin1 uden døde taster)"
 
 #: ../src/keyboard_models.py:100
 msgid "keyboard|Devanagari (Inscript)"
-msgstr ""
+msgstr "tastatur|Devanagarisk (Inscript)"
 
 #: ../src/keyboard_models.py:103
 msgid "keyboard|Dvorak"
-msgstr ""
+msgstr "tastatur|Dvorak"
 
 #: ../src/keyboard_models.py:106
 msgid "keyboard|Danish"
-msgstr ""
+msgstr "tastatur|Dansk"
 
 #: ../src/keyboard_models.py:109
 msgid "keyboard|Danish (latin1)"
-msgstr ""
+msgstr "tastatur|Dansk (latin1)"
 
 #: ../src/keyboard_models.py:112
-#, fuzzy
 msgid "keyboard|Spanish"
-msgstr "Spansk"
+msgstr "tastatur|Spansk"
 
 #: ../src/keyboard_models.py:115
-#, fuzzy
 msgid "keyboard|Estonian"
-msgstr "Estisk"
+msgstr "tastatur|Estisk"
 
 #: ../src/keyboard_models.py:118
-#, fuzzy
 msgid "keyboard|Finnish"
-msgstr "Finsk"
+msgstr "tastatur|Finsk"
 
 #: ../src/keyboard_models.py:121
 msgid "keyboard|Finnish (latin1)"
-msgstr ""
+msgstr "tastatur|Finsk (latin1)"
 
 #: ../src/keyboard_models.py:124
 msgid "keyboard|French"
-msgstr ""
+msgstr "tastatur|Fransk"
 
 #: ../src/keyboard_models.py:127
 msgid "keyboard|French (latin9)"
-msgstr ""
+msgstr "tastatur|Fransk (latin9)"
 
 #: ../src/keyboard_models.py:130
 msgid "keyboard|French (latin1)"
-msgstr ""
+msgstr "tastatur|Fransk (latin1)"
 
 #: ../src/keyboard_models.py:133
 msgid "keyboard|French (pc)"
-msgstr ""
+msgstr "tastatur|Fransk (pc)"
 
 #: ../src/keyboard_models.py:136
 msgid "keyboard|Swiss French"
-msgstr ""
+msgstr "tastatur|Svejtsisk-fransk"
 
 #: ../src/keyboard_models.py:139
 msgid "keyboard|Swiss French (latin1)"
-msgstr ""
+msgstr "tastatur|Svejtsisk-fransk (latin1)"
 
 #: ../src/keyboard_models.py:142
 msgid "keyboard|Greek"
-msgstr ""
+msgstr "tastatur|græsk"
 
 #: ../src/keyboard_models.py:145
+#, fuzzy
 msgid "keyboard|Gujarati (Inscript)"
-msgstr ""
+msgstr "tastatur|Punjabi (Inscript)"
 
 #: ../src/keyboard_models.py:148
 msgid "keyboard|Punjabi (Inscript)"
-msgstr ""
+msgstr "tastatur|Punjabi (Inscript)"
 
 #: ../src/keyboard_models.py:151
-#, fuzzy
 msgid "keyboard|Hungarian"
-msgstr "Ungarsk"
+msgstr "tastatur|Ungarsk"
 
 #: ../src/keyboard_models.py:154
 msgid "keyboard|Hungarian (101 key)"
-msgstr ""
+msgstr "tastatur|Ungarsk (101 taster)"
 
 #: ../src/keyboard_models.py:157
-#, fuzzy
 msgid "keyboard|Icelandic"
-msgstr "Islandsk"
+msgstr "tastatur|Islandsk"
 
 #: ../src/keyboard_models.py:160
-#, fuzzy
 msgid "keyboard|Italian"
-msgstr "Italiensk"
+msgstr "tastatur|Italiensk"
 
 #: ../src/keyboard_models.py:163
 msgid "keyboard|Italian (IBM)"
-msgstr ""
+msgstr "tastatur|Italiensk (IBM)"
 
 #: ../src/keyboard_models.py:166
 msgid "keyboard|Italian (it2)"
-msgstr ""
+msgstr "tastatur|Italiensk (it2)"
 
 #: ../src/keyboard_models.py:169
-#, fuzzy
 msgid "keyboard|Japanese"
-msgstr "Japansk"
+msgstr "tastatur|Japansk"
 
 #: ../src/keyboard_models.py:172
 msgid "keyboard|Korean"
-msgstr ""
+msgstr "tastatur|Koreansk"
 
 #: ../src/keyboard_models.py:175
 msgid "keyboard|Latin American"
-msgstr ""
+msgstr "tastatur|latinamerika"
 
 #: ../src/keyboard_models.py:178
-#, fuzzy
 msgid "keyboard|Macedonian"
-msgstr "Makedonsk"
+msgstr "tastatur|Makedonsk"
 
 #: ../src/keyboard_models.py:181
 msgid "keyboard|Dutch"
-msgstr ""
+msgstr "tastatur|Hollandsk"
 
 #: ../src/keyboard_models.py:184
-#, fuzzy
 msgid "keyboard|Norwegian"
-msgstr "Norsk"
+msgstr "tastatur|Norsk"
 
 #: ../src/keyboard_models.py:187
 msgid "keyboard|Polish"
-msgstr ""
+msgstr "tastatur|Polsk"
 
 #: ../src/keyboard_models.py:190
-#, fuzzy
 msgid "keyboard|Portuguese"
-msgstr "Portugisisk"
+msgstr "tastatur|Portugisisk"
 
 #: ../src/keyboard_models.py:193
-#, fuzzy
 msgid "keyboard|Romanian"
-msgstr "Rumænsk"
+msgstr "tastatur|Rumænsk"
 
 #: ../src/keyboard_models.py:196
-#, fuzzy
 msgid "keyboard|Russian"
-msgstr "Russisk"
+msgstr "tastatur|Russisk"
 
 #: ../src/keyboard_models.py:199
-#, fuzzy
 msgid "keyboard|Serbian"
-msgstr "Tastaturvalg"
+msgstr "tastatur|Serbisk"
 
 #: ../src/keyboard_models.py:202
-#, fuzzy
 msgid "keyboard|Serbian (latin)"
-msgstr "Serbisk (Latinsk)"
+msgstr "tastatur|Serbisk (Latinsk)"
 
 #: ../src/keyboard_models.py:205
-#, fuzzy
 msgid "keyboard|Swedish"
-msgstr "Svensk"
+msgstr "tastatur|Svensk"
 
 #: ../src/keyboard_models.py:208
 msgid "keyboard|Swiss German"
-msgstr ""
+msgstr "tastatur|Svejtsisk-tysk"
 
 #: ../src/keyboard_models.py:211
 msgid "keyboard|Swiss German (latin1)"
-msgstr ""
+msgstr "tastatur|Svejtsisk-tysk (latin1)"
 
 #: ../src/keyboard_models.py:214
 msgid "keyboard|Slovak (qwerty)"
-msgstr ""
+msgstr "tastatur|Slovakisk (qwerty)"
 
 #: ../src/keyboard_models.py:217
-#, fuzzy
 msgid "keyboard|Slovenian"
-msgstr "Tastaturvalg"
+msgstr "tastatur||Slovensk"
 
 #: ../src/keyboard_models.py:220
 msgid "keyboard|Tamil (Inscript)"
-msgstr ""
+msgstr "tastatur|Tamilsk (Inscript)"
 
 #: ../src/keyboard_models.py:223
-#, fuzzy
 msgid "keyboard|Tamil (Typewriter)"
-msgstr "Tastaturtype"
+msgstr "tastatur|tamil (typewriter)"
 
 #: ../src/keyboard_models.py:226
-#, fuzzy
 msgid "keyboard|Turkish"
-msgstr "Tyrkisk"
+msgstr "tastatur|tyrkisk"
 
 #: ../src/keyboard_models.py:229
 msgid "keyboard|United Kingdom"
-msgstr ""
+msgstr "tastatur|United Kingdom"
 
 #: ../src/keyboard_models.py:232
-#, fuzzy
 msgid "keyboard|Ukrainian"
-msgstr "Ukrainsk"
+msgstr "tastatur|Ukrainsk"
 
 #: ../src/keyboard_models.py:235
 msgid "keyboard|U.S. International"
-msgstr ""
+msgstr "tastatur|U.S. international"
 
 #: ../src/keyboard_models.py:238
 msgid "keyboard|U.S. English"
-msgstr ""
+msgstr "tastatur|U.S. Engelsk"
 
-#: ../src/packages.py:112
+#: ../src/packages.py:103
 msgid "Warning! This is pre-release software!"
 msgstr "Advarsel! Dette er ikke færdigaftestet programmel!"
 
-#: ../src/packages.py:113
+#: ../src/packages.py:104
 #, python-format
 msgid ""
 "Thank you for downloading this pre-release of %s.\n"
@@ -1078,84 +1061,83 @@ msgstr ""
 "\n"
 "og udfylde en fejlrapport om '%s'.\n"
 
-#: ../src/packages.py:126
+#: ../src/packages.py:117
 msgid "_Exit"
 msgstr "_Afslut"
 
-#: ../src/packages.py:126
+#: ../src/packages.py:117
 msgid "_Install anyway"
 msgstr "_Installér alligevel"
 
-#: ../src/packages.py:129
+#: ../src/packages.py:120
 msgid "Your system will now be rebooted..."
 msgstr "Dit system vil nu blive genstartet.."
 
-#: ../src/packages.py:130 ../src/tui_confirm.py:35
+#: ../src/packages.py:121 ../src/tui_confirm.py:35
 msgid "_Back"
 msgstr "_Tilbage"
 
-#: ../src/packages.py:131
+#: ../src/packages.py:122
 msgid "Rebooting System"
 msgstr "Genstarter system"
 
-#: ../src/pakfireinstall.py:45
+#: ../src/pakfireinstall.py:44
 #, python-format
 msgid "%s MB"
 msgstr "%s MB"
 
-#: ../src/pakfireinstall.py:48
+#: ../src/pakfireinstall.py:47
 #, python-format
 msgid "%s KB"
 msgstr "%s kB"
 
-#: ../src/pakfireinstall.py:51
+#: ../src/pakfireinstall.py:50
 #, python-format
 msgid "%s Byte"
 msgstr "%s byte"
 
-#: ../src/pakfireinstall.py:53
+#: ../src/pakfireinstall.py:52
 #, python-format
 msgid "%s Bytes"
 msgstr "%s byte"
 
-#: ../src/pakfireinstall.py:141
+#: ../src/pakfireinstall.py:140
 msgid "Base system"
-msgstr ""
+msgstr "Basis system"
 
-#: ../src/pakfireinstall.py:141
-#, fuzzy
+#: ../src/pakfireinstall.py:140
 msgid "Installing base system..."
-msgstr "Installerer opstartsindlæser..."
+msgstr "Installerer basis systemet..."
 
-#: ../src/pakfireinstall.py:191
+#: ../src/pakfireinstall.py:196
 msgid "Install Starting"
 msgstr "Installationen starter"
 
-#: ../src/pakfireinstall.py:192
+#: ../src/pakfireinstall.py:197
 msgid "Starting install process.  This may take several minutes..."
-msgstr "Starter installationsproces. Dette kan tage adskillige minutter..."
+msgstr "Starter installationsproces. Dette kan tage op til flere minutter..."
 
-#: ../src/pakfireinstall.py:202
+#: ../src/pakfireinstall.py:207
 msgid "Post Install"
 msgstr "Efter installation"
 
-#: ../src/pakfireinstall.py:203
+#: ../src/pakfireinstall.py:208
 msgid "Performing post install configuration..."
 msgstr "Konfigurerer systemet efter installation..."
 
-#: ../src/pakfireinstall.py:234
+#: ../src/pakfireinstall.py:226
 msgid "Symmetric multiprocessing"
-msgstr ""
+msgstr "Symmetrisk multiprocessing"
 
-#: ../src/pakfireinstall.py:235
+#: ../src/pakfireinstall.py:227
 msgid "Xen guest"
-msgstr ""
+msgstr "Xen gæst"
+
+#: ../src/pakfireinstall.py:238
+msgid "Normal Boot"
+msgstr "Normal opstart"
 
 #: ../src/pakfireinstall.py:245
-msgid "Normal Boot"
-msgstr ""
-
-#: ../src/pakfireinstall.py:252
 msgid "Installation Progress"
 msgstr "Installationsfremskridt"
 
@@ -1166,8 +1148,7 @@ msgid ""
 "end with '/', and must contain printable characters and no spaces."
 msgstr ""
 "Monteringspunktet %s er ugyldigt. Monteringspunkter skal begynde med '/', "
-"kan ikke slutte med '/', og må bare indeholde udskrivbare tegn og ingen "
-"blanke."
+"kan ikke slutte med '/', og skal indeholde udskrivbare tegn og ingen blanke."
 
 #: ../src/partIntfHelpers.py:55
 msgid "Please specify a mount point for this partition."
@@ -1197,7 +1178,7 @@ msgstr ""
 
 #: ../src/partIntfHelpers.py:104
 msgid "This partition is holding the data for the hard drive install."
-msgstr "Denne partition indeholder dataene for harddiskinstallationen."
+msgstr "Denne partition indeholder data for harddiskinstallationen."
 
 #: ../src/partIntfHelpers.py:110
 msgid ""
@@ -1305,11 +1286,11 @@ msgstr "Formatér?"
 
 #: ../src/partIntfHelpers.py:300
 msgid "_Modify Partition"
-msgstr "_Ændr partition"
+msgstr "_Ændre partition"
 
 #: ../src/partIntfHelpers.py:300
 msgid "Do _Not Format"
-msgstr "Formatere _ikke"
+msgstr "Formater _ikke"
 
 #: ../src/partIntfHelpers.py:309
 msgid "Error with Partitioning"
@@ -1323,8 +1304,8 @@ msgid ""
 "\n"
 "%s"
 msgstr ""
-"Følgende kritiske fejl opstod med dit forespurgte partitionsoplæg. Disse "
-"fejl skal rettes op før du fortsætter med installationen af %s.\n"
+"Følgende kritiske fejl opstod med dit forespurgte partitionsskema. Disse "
+"fejl skal der rettes op på før du fortsætter med installationen af %s.\n"
 "\n"
 "%s"
 
@@ -1387,36 +1368,36 @@ msgstr ""
 "Er du sikker på at du vil nulstille partitionstabellen til oprindelig "
 "tilstand?"
 
-#: ../src/partRequests.py:180
-#, fuzzy, python-format
+#: ../src/partRequests.py:181
+#, python-format
 msgid ""
 "This mount point is invalid. The %s directory must be on the / file system."
 msgstr ""
 "Dette monteringspunkt er ugyldigt. Kataloget %s skal ligge på rodfilsystemet."
 
-#: ../src/partRequests.py:183
+#: ../src/partRequests.py:184
 #, python-format
 msgid ""
 "The mount point %s cannot be used.  It must be a symbolic link for proper "
 "system operation.  Please select a different mount point."
 msgstr ""
-"Monteringspunktet %s kan ikke bruges. Det skal være en symbolsk lænke for at "
+"Monteringspunktet %s kan ikke bruges. Det skal være et symbolsk link for at "
 "systemet kan fungere korrekt. Vælg et andet monteringspunkt."
 
-#: ../src/partRequests.py:190
+#: ../src/partRequests.py:191
 msgid "This mount point must be on a linux file system."
 msgstr "Dette monteringspunkt skal være på et linux-filsystem."
 
-#: ../src/partRequests.py:210
+#: ../src/partRequests.py:211
 #, python-format
 msgid ""
 "The mount point \"%s\" is already in use, please choose a different mount "
 "point."
 msgstr ""
-"Monteringspunktet %s er allerede i brug. Vælg venligst et andet "
+"Monteringspunktet \"%s\" er allerede i brug. Vælg venligst et andet "
 "monteringspunkt."
 
-#: ../src/partRequests.py:224
+#: ../src/partRequests.py:225
 #, python-format
 msgid ""
 "The size of the %s partition (%10.2f MB) exceeds the maximum size of %10.2f "
@@ -1425,7 +1406,7 @@ msgstr ""
 "Størrelsen på %s-partitionen (%10.2f Mb) overskrider maksimal størrelse på %"
 "10.2f Mb."
 
-#: ../src/partRequests.py:412
+#: ../src/partRequests.py:414
 #, python-format
 msgid ""
 "The size of the requested partition (size = %s MB) exceeds the maximum size "
@@ -1434,24 +1415,24 @@ msgstr ""
 "Størrelsen på forespurgt partition (størrelse = %s MB) overskrider maksimal "
 "størrelse på %s Mb. "
 
-#: ../src/partRequests.py:417
+#: ../src/partRequests.py:419
 #, python-format
 msgid "The size of the requested partition is negative! (size = %s MB)"
-msgstr "Størrelsen på forespurgt partition er negativ! (størrelse = %s Mb)"
+msgstr "Størrelsen på forespurgte partition er negativ! (størrelse = %s Mb)"
 
-#: ../src/partRequests.py:421
+#: ../src/partRequests.py:423
 msgid "Partitions can't start below the first cylinder."
 msgstr "Partitioner kan ikke starte før første cylinder."
 
-#: ../src/partRequests.py:424
+#: ../src/partRequests.py:426
 msgid "Partitions can't end on a negative cylinder."
 msgstr "Partitioner kan ikke slutte på en negativ cylinder."
 
-#: ../src/partedUtils.py:189 ../src/tui_partition.py:407
+#: ../src/partedUtils.py:193 ../src/tui_partition.py:408
 msgid "Foreign"
-msgstr "Dansk"
+msgstr "Fremmed"
 
-#: ../src/partedUtils.py:229
+#: ../src/partedUtils.py:233
 #, python-format
 msgid ""
 "/dev/%s currently has a %s partition layout.  To use this drive for the "
@@ -1466,15 +1447,15 @@ msgstr ""
 "\n"
 "Ønsker du at re-initiere dette diskdrev?"
 
-#: ../src/partedUtils.py:237
+#: ../src/partedUtils.py:241
 msgid "_Ignore drive"
 msgstr "Ignorér drev"
 
-#: ../src/partedUtils.py:238
+#: ../src/partedUtils.py:242
 msgid "_Re-initialize drive"
 msgstr "_Re-initialisér diskdrev"
 
-#: ../src/partedUtils.py:558
+#: ../src/partedUtils.py:564
 #, python-format
 msgid ""
 "The partition table on device %s was unreadable. To create new partitions it "
@@ -1489,11 +1470,11 @@ msgstr ""
 "skal den initieres, hvilket vil ødelægge ALLE DATA på denne enhed.\n"
 "\n"
 "Denne handling vil tilsidesætte alle tidligere valg under installationen om "
-"hvilke enheder som skal ignoreres.\n"
+"hvilke enheder der skal ignoreres.\n"
 "\n"
 "Vil du initiere denne enhed og fjerne ALLE DATA?"
 
-#: ../src/partedUtils.py:595
+#: ../src/partedUtils.py:601
 #, python-format
 msgid ""
 "The drive /dev/%s has more than 15 partitions on it.  The SCSI subsystem in "
@@ -1501,16 +1482,16 @@ msgid ""
 "You will not be able to make changes to the partitioning of this disk or use "
 "any partitions beyond /dev/%s15 in %s"
 msgstr ""
-"Diskdrevet /dev/%s har mere end 15 partitioner på den. SCSI-undersystemet i "
-"Linux-kernen tillader ikke mere end 15 partitoner i øjeblikket.  Du vil ikke "
-"kunne lave ændringer til partitioneringen af dette diskdrev eller bruge "
+"Diskdrevet /dev/%s indeholder mere end 15 partitioner. SCSI-undersystemet i "
+"Linux-kernen tillader i øjeblikket  ikke mere end 15 partitoner.  Du vil "
+"ikke kunne lave ændringer af partitioneringen af dette diskdrev eller bruge "
 "nogen partitioner ud over /dev/%s15 i %s"
 
-#: ../src/partedUtils.py:685
+#: ../src/partedUtils.py:691
 msgid "No Drives Found"
 msgstr "Ingen drev fundet"
 
-#: ../src/partedUtils.py:686
+#: ../src/partedUtils.py:692
 msgid ""
 "An error has occurred - no valid devices were found on which to create new "
 "file systems. Please check your hardware for the cause of this problem."
@@ -1529,7 +1510,7 @@ msgid ""
 "can no longer return to the disk editing screen. Would you like to continue "
 "with the installation process?"
 msgstr ""
-"Partitioneringsalternativene du har valgt er allerede aktiveret. Du vil ikke "
+"Partitionerings optionerne du har valgt er allerede aktiveret. Du vil ikke "
 "kunne gå tilbage til skærmen for redigering af diske. Vil du fortsætte "
 "installationsprocessen?"
 
@@ -1543,8 +1524,8 @@ msgid ""
 "immediately. To do this we'll have to write your new partition table to the "
 "disk immediately. Is that OK?"
 msgstr ""
-"Da du ikke har ret megen hukommelse på denne maskine, bliver vi nødt til slå "
-"swap til med det samme. For at gøre det er vi nødt at skrive den nye "
+"Da du ikke har ret megen hukommelse på denne maskine, bliver vi nødt til at "
+"starte swap med det samme. For at gøre det er vi nødt at skrive den nye "
 "partitionstabel på disken. Er det i orden?"
 
 #: ../src/partitions.py:311
@@ -1573,7 +1554,7 @@ msgstr ""
 "Din opstarts-partition er ikke en af de fire første partitioner og vil "
 "derfor ikke være startbar."
 
-#: ../src/partitions.py:342
+#: ../src/partitions.py:343
 #, python-format
 msgid ""
 "Your %s partition is less than %s megabytes which is lower than recommended "
@@ -1582,14 +1563,14 @@ msgstr ""
 "Din %s-partition er mindre end %s megabyte og dette er lavere end anbefalet "
 "for en almindelig installation af %s."
 
-#: ../src/partitions.py:376
+#: ../src/partitions.py:377
 msgid ""
 "Installing on a USB device.  This may or may not produce a working system."
 msgstr ""
 "Installerer på en USB-enhed. Dette kan give et fungerende system, men det er "
 "ikke sikkert."
 
-#: ../src/partitions.py:380
+#: ../src/partitions.py:381
 msgid ""
 "Installing on a FireWire device.  This may or may not produce a working "
 "system."
@@ -1597,7 +1578,7 @@ msgstr ""
 "Installerer på en FireWire-enhed. Dette kan give et fungerende system, men "
 "det er ikke sikkert."
 
-#: ../src/partitions.py:393
+#: ../src/partitions.py:394
 msgid ""
 "You have not specified a swap partition.  Although not strictly required in "
 "all cases, it will significantly improve performance for most installations."
@@ -1606,16 +1587,14 @@ msgstr ""
 "krav om dette i alle tilfælle, så vil det øge ydelsen for de fleste "
 "installationer."
 
-#: ../src/partitions.py:400
+#: ../src/partitions.py:401
 #, python-format
 msgid ""
 "You have specified more than 32 swap devices.  The kernel for %s only "
 "supports 32 swap devices."
 msgstr ""
-"Du har specificeret mere end 32 swap-enheder. Kernen for %s understøtter kun "
-"32 swap-enheder."
 
-#: ../src/partitions.py:411
+#: ../src/partitions.py:412
 #, python-format
 msgid ""
 "You have allocated less swap space (%dM) than available RAM (%dM) on your "
@@ -1624,20 +1603,20 @@ msgstr ""
 "Du har allokeret mindre swap-område (%dM) end tilgængelig RAM (%dM) i dit "
 "system. Dette kan have negativ indvirkning på ydelsen."
 
-#: ../src/partitions.py:502
+#: ../src/partitions.py:503
 msgid "the partition in use by the installer."
 msgstr "partitionen er i brug af installationsprogrammet."
 
-#: ../src/tui.py:114
+#: ../src/tui.py:116
 msgid "Exception Occurred"
 msgstr "Undtagelse hændte"
 
-#: ../src/tui.py:194
+#: ../src/tui.py:196
 msgid "Error!"
 msgstr "Fejl!"
 
-#: ../src/tui.py:195
-#, fuzzy, python-format
+#: ../src/tui.py:197
+#, python-format
 msgid ""
 "An error occurred when attempting to load an pomona interface component.\n"
 "\n"
@@ -1645,64 +1624,65 @@ msgid ""
 "\n"
 "Error: %s"
 msgstr ""
-"Et fejl skete ved forsøg at indlæse en grænsefladeskomponent for "
-"installationsprogrammet.\n"
+"Et fejl skete ved forsøg at indlæse en pomona interface komponent.\n"
 "\n"
-"className = %s"
+"className = %s\n"
+"\n"
+"Error: %s"
 
-#: ../src/tui.py:200 ../src/tui.py:202
+#: ../src/tui.py:202 ../src/tui.py:204
 msgid "Exit"
 msgstr "Afslut"
 
-#: ../src/tui.py:200 ../src/tui.py:396
+#: ../src/tui.py:202 ../src/tui.py:398
 msgid "Retry"
 msgstr "Prøv igen"
 
-#: ../src/tui.py:225
+#: ../src/tui.py:227
 msgid "Cancelled"
 msgstr "Annulleret"
 
-#: ../src/tui.py:226
+#: ../src/tui.py:228
 msgid "I can't go to the previous step from here. You will have to try again."
 msgstr "Jeg kan ikke gå til forrige trin herfra. Du skal prøve igen."
 
-#: ../src/tui.py:240
+#: ../src/tui.py:242
 #, python-format
 msgid "Welcome to %s"
 msgstr "Velkommen til %s"
 
-#: ../src/tui.py:243
+#: ../src/tui.py:245
 msgid ""
 " <F1> for help | <Tab> between elements | <Space> selects | <F12> next screen"
 msgstr ""
 " <F1> for hjælp | <Tab> imellem punkter | <Mellemrum> vælg | <F12> næste side"
 
-#: ../src/tui.py:245
+#: ../src/tui.py:247
 msgid ""
 "  <Tab>/<Alt-Tab> between elements   |  <Space> selects   |  <F12> next "
 "screen"
 msgstr ""
 "  <Tab>/<Alt-Tab> imellem punkter  | <Mellemrum> vælger  |  <F12> næste side"
 
-#: ../src/tui.py:290
+#: ../src/tui.py:292
 msgid "Help not available"
 msgstr "Ingen hjælp tilgængelig"
 
-#: ../src/tui.py:291
+#: ../src/tui.py:293
 msgid "No help is available for this step of the install."
 msgstr "Ingen hjælp er tilgængelig for dette trin af installationen."
 
-#: ../src/tui.py:392
+#: ../src/tui.py:394
 msgid "Fix"
 msgstr "Reparér"
 
-#: ../src/tui.py:397
+#: ../src/tui.py:399
 msgid "Ignore"
 msgstr "Ignorér"
 
 #: ../src/tui_bootloader.py:25
 msgid "Which boot loader would you like to use?"
-msgstr "Hvilken opstartsindlæser ønsker du at bruge?"
+msgstr "Hvilken boot loader ønsker du at bruge?"
 
 #: ../src/tui_bootloader.py:35
 msgid "Use GRUB Boot Loader"
@@ -1710,17 +1690,17 @@ msgstr "Brug GRUB opstartsindlæser"
 
 #: ../src/tui_bootloader.py:36
 msgid "No Boot Loader"
-msgstr "Ingen opstartsindlæser"
+msgstr "Ingen boot loader"
 
 #: ../src/tui_bootloader.py:39 ../src/tui_bootloader.py:101
-#: ../src/tui_bootloader.py:159 ../src/tui_bootloader.py:276
-#: ../src/tui_bootloader.py:381
+#: ../src/tui_bootloader.py:159 ../src/tui_bootloader.py:277
+#: ../src/tui_bootloader.py:384
 msgid "Boot Loader Configuration"
-msgstr "Konfiguration af opstartsindlæser"
+msgstr "Konfiguration af boot loader"
 
 #: ../src/tui_bootloader.py:56
 msgid "Skip Boot Loader"
-msgstr "Overspring opstartsindlæser"
+msgstr "Overspring boot loader"
 
 #: ../src/tui_bootloader.py:57
 msgid ""
@@ -1730,12 +1710,11 @@ msgid ""
 "\n"
 "Are you sure you want to skip boot loader installation?"
 msgstr ""
-"Du har valgt ikke at installere nogen opstartsindlæser, hvilket ikke er "
-"anbefalet, medmindre du har avancerede behov. En opstartsindlæser er næsten "
-"altid påkrævet for at genstarte dit system med Linux direkte fra "
-"harddisken.\n"
+"Du har valgt ikke at installere nogen boot loader, hvilket ikke er "
+"anbefalet, medmindre du har avancerede behov. En boot loader er næsten altid "
+"påkrævet for at genstarte dit system med Linux direkte fra harddisken.\n"
 "\n"
-"Er du sikker på, at du vil springe installationen af opstartsindlæser over?"
+"Er du sikker på, at du vil springe installationen af boot loaderen over?"
 
 #: ../src/tui_bootloader.py:86
 msgid ""
@@ -1766,10 +1745,10 @@ msgstr ""
 
 #: ../src/tui_bootloader.py:160
 msgid "Where do you want to install the boot loader?"
-msgstr "Hvor vil du installere opstartsindlæseren?"
+msgstr "Hvor vil du installere boot loaderen?"
 
 #: ../src/tui_bootloader.py:186 ../src/tui_bootloader.py:253
-#: ../src/tui_partition.py:846
+#: ../src/tui_partition.py:847
 msgid "Device"
 msgstr "Enhed"
 
@@ -1782,8 +1761,9 @@ msgid "Clear"
 msgstr "Ryd"
 
 #: ../src/tui_bootloader.py:199
+#, fuzzy
 msgid "Edit Boot Label"
-msgstr "Redigér opstartsnavn"
+msgstr "ugyldigt opstartsnavn"
 
 #: ../src/tui_bootloader.py:217 ../src/tui_bootloader.py:222
 msgid "Invalid Boot Label"
@@ -1801,7 +1781,7 @@ msgstr "Opstartsnavn indeholder ugyldige tegn."
 msgid "Default"
 msgstr "Standard"
 
-#: ../src/tui_bootloader.py:271
+#: ../src/tui_bootloader.py:272
 #, python-format
 msgid ""
 "The boot manager %s uses can boot other operating systems as well.  Please "
@@ -1812,16 +1792,16 @@ msgstr ""
 "operativsystemer. Angiv hvilke partitioner du gerne vil kunne starte samt "
 "hvilket navn du vil bruge for hvert af dem."
 
-#: ../src/tui_bootloader.py:284
+#: ../src/tui_bootloader.py:285
 msgid ""
 " <Space> select | <F2> select default | <F4> delete | <F12> next screen>"
 msgstr "<Mellemrum> vælg | <F2> vælg standard | <F4> slet | <F12> næste skærm>"
 
-#: ../src/tui_bootloader.py:333
+#: ../src/tui_bootloader.py:334
 msgid "Cannot Delete"
 msgstr "Kan ikke slette"
 
-#: ../src/tui_bootloader.py:334
+#: ../src/tui_bootloader.py:335
 #, python-format
 msgid ""
 "This boot target cannot be deleted because it is for the %s system you are "
@@ -1830,54 +1810,54 @@ msgstr ""
 "Dette opstartsmål kan ikke fjernes da det er beregnet til det %s-system du "
 "er ved at installere."
 
-#: ../src/tui_bootloader.py:376
+#: ../src/tui_bootloader.py:379
 msgid ""
 "A boot loader password prevents users from passing arbitrary options to the "
 "kernel.  For highest security, you should set a password, but a password is "
 "not necessary for more casual users."
 msgstr ""
-"En adgangskode for opstartsindlæseren hindrer brugere i at give tilfældige "
-"flag til kernen. For at få højest mulig sikkerhed bør du sætte en "
+"En adgangskode for boot loaderen hindrer brugere i at give tilfældige "
+"optioner til kernen. For at få højest mulig sikkerhed bør du sætte en "
 "adgangskode, men dette er ikke nødvendig for brugere med mindre krav til "
 "sikkerhed."
 
-#: ../src/tui_bootloader.py:384
+#: ../src/tui_bootloader.py:387
 msgid "Use a GRUB Password"
 msgstr "Brug adgangskode for GRUB"
 
-#: ../src/tui_bootloader.py:397
+#: ../src/tui_bootloader.py:400
 msgid "Boot Loader Password:"
-msgstr "Adgangskode for opstartsindlæser:"
+msgstr "Adgangskode for boot loaderen:"
 
-#: ../src/tui_bootloader.py:398
+#: ../src/tui_bootloader.py:401
 msgid "Confirm:"
 msgstr "Bekræft:"
 
-#: ../src/tui_bootloader.py:427
+#: ../src/tui_bootloader.py:430
 msgid "Passwords Do Not Match"
 msgstr "Adgangskoder er ikke ens."
 
-#: ../src/tui_bootloader.py:428
+#: ../src/tui_bootloader.py:431
 msgid "Passwords do not match"
 msgstr "Adgangskoder er ikke ens."
 
-#: ../src/tui_bootloader.py:432
+#: ../src/tui_bootloader.py:435
 msgid "Password Too Short"
 msgstr "Adgangskoden er for kort."
 
-#: ../src/tui_bootloader.py:433
+#: ../src/tui_bootloader.py:436
 msgid "Boot loader password is too short"
-msgstr "Opstartsindlæser-adgangskoden er for kort."
+msgstr "Boot loader adgangskoden er for kort."
 
-#: ../src/tui_bootloader.py:438
+#: ../src/tui_bootloader.py:441
 msgid ""
 "Your boot loader password is shorter than six characters.  We recommend a "
 "longer boot loader password.\n"
 "\n"
 "Would you like to continue with this password?"
 msgstr ""
-"Adgangskoden for opstartsindlæseren er kortere end seks tegn. Vi anbefaler "
-"en længere adgangskode for opstartsindlæseren.\n"
+"Adgangskoden for boot loaderen er kortere end seks tegn. Vi anbefaler en "
+"længere adgangskode for boot loaderen.\n"
 "\n"
 "Vil du fortsætte med denne adgangskode?"
 
@@ -1886,12 +1866,12 @@ msgid ""
 "Press <Enter> to end the installation process.\n"
 "\n"
 msgstr ""
-"Tryk <Retur> for at afslutte installationsprocessen.\n"
+"Tryk <enter> for at afslutte installationsprocessen.\n"
 "\n"
 
 #: ../src/tui_complete.py:24
 msgid "<Enter> to exit"
-msgstr "<Retur> for at afslutte"
+msgstr "<Enter> for at afslutte"
 
 #: ../src/tui_complete.py:28
 #, python-format
@@ -1905,17 +1885,15 @@ msgstr ""
 "%s%s"
 
 #: ../src/tui_complete.py:31
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "For information on errata (updates and bug fixes), visit %s.\n"
 "\n"
 "Information on using your system is available in the %s wiki at %s."
 msgstr ""
-"For information om errata (opdateringer og fejlrettelser), besøg http://www."
-"redhat.com/errata.\n"
+"For information om errata (opdateringer og fejlrettelser), besøg %s.\n"
 "\n"
-"Information om brug af systemet er tilgængelig i %s-brugerhåndbøgerne på "
-"http://www.redhat.com/docs."
+"Information om brug af systemet er tilgængelig i %s wiki på %s."
 
 #: ../src/tui_complete.py:37
 msgid "Complete"
@@ -1930,6 +1908,9 @@ msgid ""
 "Now, we got all information we need for installation. If there is something "
 "you want change you can still go back. If not choose OK to start."
 msgstr ""
+"Nu har vi alle informationerne vi har brug for installationen. Hvis der er "
+"noget du vil ændre kan du stadigvæk gå tilbage. Hvis ikke så klick OK for at "
+"starte."
 
 #: ../src/tui_confirm.py:32
 msgid "Reboot?"
@@ -1977,7 +1958,7 @@ msgstr "Udvidet"
 
 #: ../src/tui_partition.py:110
 msgid "None"
-msgstr "Ingenting"
+msgstr "Intet"
 
 #: ../src/tui_partition.py:177
 #, python-format
@@ -1991,7 +1972,7 @@ msgstr "Advarsel: %s"
 
 #: ../src/tui_partition.py:182
 msgid "Modify Partition"
-msgstr "Ændr partition"
+msgstr "Ændre partition"
 
 #: ../src/tui_partition.py:182
 msgid "Add anyway"
@@ -2006,175 +1987,175 @@ msgstr "<Ikke brugbar>"
 msgid "Mount Point:"
 msgstr "Monteringspunkt:"
 
-#: ../src/tui_partition.py:238
+#: ../src/tui_partition.py:239
 msgid "File System type:"
 msgstr "Filsystemtype:"
 
-#: ../src/tui_partition.py:269
+#: ../src/tui_partition.py:270
 msgid "Allowable Drives:"
 msgstr "Tilladte drev:"
 
-#: ../src/tui_partition.py:291 ../src/tui_partition.py:370
-#: ../src/tui_partition.py:418
+#: ../src/tui_partition.py:292 ../src/tui_partition.py:371
+#: ../src/tui_partition.py:419
 msgid "Size (MB):"
 msgstr "Størrelse (Mb):"
 
-#: ../src/tui_partition.py:323
+#: ../src/tui_partition.py:324
 msgid "Fixed Size:"
 msgstr "Fast størrelse:"
 
-#: ../src/tui_partition.py:325
+#: ../src/tui_partition.py:326
 msgid "Fill maximum size of (MB):"
 msgstr "Fyld maksimal størrelse på (Mb):"
 
-#: ../src/tui_partition.py:329
+#: ../src/tui_partition.py:330
 msgid "Fill all available space:"
 msgstr "Fyld al tilgængelig plads:"
 
-#: ../src/tui_partition.py:350
+#: ../src/tui_partition.py:351
 msgid "Start Cylinder:"
 msgstr "Startcylinder:"
 
-#: ../src/tui_partition.py:363
+#: ../src/tui_partition.py:364
 msgid "End Cylinder:"
 msgstr "Slutcylinder:"
 
-#: ../src/tui_partition.py:385
+#: ../src/tui_partition.py:386
 msgid "Number of spares?"
 msgstr "Antal reservediske?"
 
-#: ../src/tui_partition.py:399
+#: ../src/tui_partition.py:400
 msgid "File System Type:"
 msgstr "Filsystemtype:"
 
-#: ../src/tui_partition.py:412
+#: ../src/tui_partition.py:413
 msgid "File System Label:"
 msgstr "Filsystemetiket:"
 
-#: ../src/tui_partition.py:423
+#: ../src/tui_partition.py:424
 msgid "File System Option:"
 msgstr "Alternativ for filsystem:"
 
-#: ../src/tui_partition.py:426 ../src/tui_partition.py:654
+#: ../src/tui_partition.py:427 ../src/tui_partition.py:655
 #, python-format
 msgid "Format as %s"
 msgstr "Formatér som %s"
 
-#: ../src/tui_partition.py:428 ../src/tui_partition.py:656
+#: ../src/tui_partition.py:429 ../src/tui_partition.py:657
 #, python-format
 msgid "Migrate to %s"
 msgstr "Migrér til %s"
 
-#: ../src/tui_partition.py:430 ../src/tui_partition.py:658
+#: ../src/tui_partition.py:431 ../src/tui_partition.py:659
 msgid "Leave unchanged"
-msgstr "Lad være"
+msgstr "Forlad uforandret"
 
-#: ../src/tui_partition.py:445 ../src/tui_partition.py:631
+#: ../src/tui_partition.py:446 ../src/tui_partition.py:632
 msgid "File System Options"
 msgstr "Filsystemsvalgmuligheder"
 
-#: ../src/tui_partition.py:448
+#: ../src/tui_partition.py:449
 msgid ""
 "Please choose how you would like to prepare the file system on this "
 "partition."
 msgstr ""
 "Venligst vælg hvordan du ønsker at forberede filsystemet på denne partition."
 
-#: ../src/tui_partition.py:456
+#: ../src/tui_partition.py:457
 msgid "Check for bad blocks"
 msgstr "Se efter beskadigede blokke"
 
-#: ../src/tui_partition.py:460
+#: ../src/tui_partition.py:461
 msgid "Leave unchanged (preserve data)"
-msgstr "Lad den være (behold data)"
+msgstr "Forlad uforandret (behold data)"
 
-#: ../src/tui_partition.py:469
+#: ../src/tui_partition.py:470
 msgid "Format as:"
 msgstr "Formatér som:"
 
-#: ../src/tui_partition.py:488
+#: ../src/tui_partition.py:489
 msgid "Migrate to:"
 msgstr "Migrér til:"
 
-#: ../src/tui_partition.py:558
+#: ../src/tui_partition.py:559
 msgid "Add Partition"
 msgstr "Tilføj partition"
 
-#: ../src/tui_partition.py:600
+#: ../src/tui_partition.py:601
 msgid "Force to be a primary partition"
 msgstr "Tving til at være en primærpartition"
 
-#: ../src/tui_partition.py:686 ../src/tui_partition.py:740
+#: ../src/tui_partition.py:687 ../src/tui_partition.py:741
 msgid "Invalid Entry for Partition Size"
 msgstr "Ugyldig værdi for partitionsstørrelse"
 
-#: ../src/tui_partition.py:698
+#: ../src/tui_partition.py:699
 msgid "Invalid Entry for Maximum Size"
 msgstr "Ugyldig opføring for maksimum størrelse"
 
-#: ../src/tui_partition.py:718
+#: ../src/tui_partition.py:719
 msgid "Invalid Entry for Starting Cylinder"
 msgstr "Ugyldig værdi for startcylinder"
 
-#: ../src/tui_partition.py:732
+#: ../src/tui_partition.py:733
 msgid "Invalid Entry for End Cylinder"
 msgstr "Ugyldig værdi for slutcylinder"
 
-#: ../src/tui_partition.py:750 ../src/tui_partition.py:771
+#: ../src/tui_partition.py:751 ../src/tui_partition.py:772
 msgid "Error With Request"
 msgstr "Fejl med forespørgsel"
 
-#: ../src/tui_partition.py:840
+#: ../src/tui_partition.py:841
 msgid "Partitioning"
 msgstr "Partitionering"
 
-#: ../src/tui_partition.py:846
+#: ../src/tui_partition.py:847
 msgid "Start"
 msgstr "Start"
 
-#: ../src/tui_partition.py:846
+#: ../src/tui_partition.py:847
 msgid "End"
 msgstr "Slut"
 
-#: ../src/tui_partition.py:846
+#: ../src/tui_partition.py:847
 msgid "Size"
 msgstr "Størrelse"
 
-#: ../src/tui_partition.py:846
+#: ../src/tui_partition.py:847
 msgid "Type"
 msgstr "Type"
 
-#: ../src/tui_partition.py:846
+#: ../src/tui_partition.py:847
 msgid "Mount Point"
 msgstr "Monteringspunkt"
 
-#: ../src/tui_partition.py:850
+#: ../src/tui_partition.py:851
 msgid "New"
 msgstr "Ny"
 
-#: ../src/tui_partition.py:852
+#: ../src/tui_partition.py:853
 msgid "Delete"
 msgstr "Slet"
 
-#: ../src/tui_partition.py:855
+#: ../src/tui_partition.py:856
 msgid ""
 "    F1-Help     F2-New      F3-Edit   F4-Delete    F5-Reset    F12-OK        "
 msgstr ""
 "    F1-Hjælp    F2-Ny      F3-Redigér   F4-Fjern   F5-Nulstil  F12-O.k. "
 
-#: ../src/tui_partition.py:885
+#: ../src/tui_partition.py:886
 msgid "No Root Partition"
 msgstr "Ingen rodpartition"
 
-#: ../src/tui_partition.py:886
+#: ../src/tui_partition.py:887
 msgid "Installation requires a / partition."
-msgstr "Installationen kræver en /-partition."
+msgstr "Installationen kræver en / partition."
 
-#: ../src/tui_partition.py:925
+#: ../src/tui_partition.py:926
 msgid "Partitioning Type"
 msgstr "Partitionstype"
 
-#: ../src/tui_partition.py:927
+#: ../src/tui_partition.py:928
 msgid ""
 "Installation requires partitioning of your hard drive.  The default layout "
 "is reasonable for most users.  You can either choose to use this or create "
@@ -2184,29 +2165,29 @@ msgstr ""
 "fornuftig for de fleste brugere. Du kan enten vælge denne, eller lave din "
 "egen opdeling. "
 
-#: ../src/tui_partition.py:934
+#: ../src/tui_partition.py:935
 msgid "Remove all partitions on selected drives and create default layout"
 msgstr ""
 "Fjern alle partitioner på valgte partitioner og opret standardudlægning"
 
-#: ../src/tui_partition.py:935
+#: ../src/tui_partition.py:936
 msgid "Create custom layout"
-msgstr "Opret egendefineret layout"
+msgstr "Opret selvdefineret layout"
 
-#: ../src/tui_partition.py:949
+#: ../src/tui_partition.py:950
 msgid "Which drive(s) do you want to use for this installation?"
 msgstr "Hvilke drev vil du bruge til denne installation?"
 
-#: ../src/tui_partition.py:962
+#: ../src/tui_partition.py:963
 msgid "<Space>,<+>,<-> selection   |   <F2> Add drive   |   <F12> next screen"
 msgstr ""
 "<Mellemrum>,<+>,<-> valg   |   <F1> Tilføj drev   |   <F12> næste skærm"
 
-#: ../src/tui_partition.py:1031
+#: ../src/tui_partition.py:1032
 msgid "Review Partition Layout"
 msgstr "Vis igen de partitioner som oprettes"
 
-#: ../src/tui_partition.py:1032
+#: ../src/tui_partition.py:1033
 msgid "Review and modify partitioning layout?"
 msgstr "Vis igen (og ændr om det behøves) de partitioner som oprettes?"
 
@@ -2220,17 +2201,15 @@ msgstr "Auto-partition"
 
 #: ../src/tui_partmethod.py:27
 msgid "Disk Druid"
-msgstr "Diskdruide"
+msgstr "Diskdruid"
 
 #: ../src/tui_progress.py:50
-#, fuzzy
 msgid "File Installation"
-msgstr "Pakkeinstallation"
+msgstr "Fil-installation"
 
 #: ../src/tui_source.py:22
-#, fuzzy
 msgid "Source Type"
-msgstr "Kildedrev:"
+msgstr "Kildetype:"
 
 #: ../src/tui_source.py:24
 msgid ""
@@ -2238,19 +2217,21 @@ msgid ""
 "Mostly you will choose the disc here, but you are also able to install by "
 "HTTP, FTP hard disk or usb-key."
 msgstr ""
+"I installationen skal du vælge en kilde for installationsfilerne. Typisk vil "
+"du vælge en harddisk, men du vil også kunne installere fra HTTP, FTP "
+"harddisk eller usb-nøgle."
 
 #: ../src/tui_source.py:31
-#, fuzzy
 msgid "Install Disc"
-msgstr "_Installér %s"
+msgstr "Installationsdisk"
 
 #: ../src/tui_source.py:32
 msgid "Internet Source"
-msgstr ""
+msgstr "Internet kilde"
 
 #: ../src/tui_source.py:33
 msgid "External Drive"
-msgstr ""
+msgstr "Eksternt drev"
 
 #: ../src/tui_source.py:37 ../src/tui_welcome.py:9
 #, python-format
@@ -2258,54 +2239,56 @@ msgid "%s"
 msgstr "%s"
 
 #: ../src/tui_source.py:59
-#, fuzzy
 msgid "No CDROM found"
-msgstr "Cd fundet"
+msgstr "Ingen Cd fundet"
 
 #: ../src/tui_source.py:60
 msgid ""
 "You choosed to install from an installtion disc, but there was no cdrom "
 "drive found on the system. Please choose another installation method."
 msgstr ""
+"Du valgte at installere fra installations-disken, men der blev ikke fundet "
+"noget cdrom-drev på dette system. Vælg en anden installationsmethode."
 
 #: ../src/tui_source.py:84
-#, fuzzy
 msgid "Source URL"
-msgstr "Kildedrev:"
+msgstr "Kilde URL:"
 
 #: ../src/tui_source.py:86
 msgid ""
 "Enter a host you get the files from.You also must enter a path where the "
 "installer finds the files in."
 msgstr ""
+"Angiv en host som du modtager filerne fra. Du skal også angive en sti hvor "
+"instalationsprogrammet kan finde filerne."
 
 #: ../src/tui_source.py:94
-#, fuzzy
 msgid "Host:"
 msgstr "Værtsnavn"
 
 #: ../src/tui_source.py:95
 msgid "Path:"
-msgstr ""
+msgstr "Sti:"
 
 #: ../src/tui_source.py:115
-#, fuzzy
 msgid "Wrong Protocol"
-msgstr "Manglende protokol"
+msgstr "Forkert protokol"
 
 #: ../src/tui_source.py:116
 msgid ""
 "You entered a protocol that is not supported by Pomona. There are only "
 "http:// and ftp:// available."
 msgstr ""
+"Du har angivet et protokol som ikke er understøttet af Pomona. Der står kun "
+"http:// og ftp:// til rådighed."
 
 #: ../src/tui_source.py:120
 msgid "Syntax Error"
-msgstr ""
+msgstr "Syntaksfejl"
 
 #: ../src/tui_source.py:121
 msgid "The path of the URL must end with a /."
-msgstr ""
+msgstr "Stien af denne URL skal afslutte med et /."
 
 #: ../src/tui_source.py:130
 #, python-format
@@ -2314,6 +2297,9 @@ msgid ""
 "\n"
 "%s"
 msgstr ""
+"Der opstod en fejl da vi testede din angivne URL.\n"
+"\n"
+"%s"
 
 #: ../src/tui_timezone.py:62
 msgid "In which time zone are you located?"
@@ -2335,10 +2321,10 @@ msgstr "'root'-adgangskode"
 #, fuzzy
 msgid ""
 "Pick a root password. You must type it twice to ensure you know it and do "
-"not make a typing mistake. Remember that the root password isa critical part "
-"of system security!"
+"not make a typing mistake. Remember that the root password is a critical "
+"part of system security!"
 msgstr ""
-"Vælg en 'root'-adgangskode. Du skal skrive det to gange for at sikre at du "
+"Vælg en 'root'-adgangskode. Du skal skrive den to gange for at sikre at du "
 "ved hvad det er og ikke får tastet forkert. Husk at 'root'-adgangskoden er "
 "en afgørende del af systemets sikkerhed!"
 
@@ -2386,7 +2372,6 @@ msgstr ""
 "\n"
 
 #: ../src/urlinstall.py:40 ../src/urlinstall.py:67
-#, fuzzy
 msgid "Downloading"
 msgstr "Indlæser"
 
@@ -2395,9 +2380,9 @@ msgid "Connecting..."
 msgstr "Tilslutter..."
 
 #: ../src/urlinstall.py:67
-#, fuzzy, python-format
+#, python-format
 msgid "Retrieving %s"
-msgstr "Modtager"
+msgstr "Modtager %s"
 
 #: ../src/urlinstall.py:92
 #, python-format
@@ -2411,15 +2396,15 @@ msgid ""
 "\n"
 msgstr ""
 "Filen %s kan ikke åbnes. Dette beror på en manglende fil eller måske en "
-"beskadiget pakke. Kontrollér at dit spejl  indeholder alle de nødvendige "
-"pakker, eller prøv at bruge et andet spejl.\n"
+"beskadiget pakke. Kontrollér at din mirror indeholder alle de nødvendige "
+"pakker, eller prøv at bruge en anden mirror.\n"
 "\n"
 "Hvis du genstarter vil dit system være i en inkonsistent tilstand, som "
 "sandsynligvis vil kræve geninstallation.\n"
 "\n"
 
 #: ../src/urlinstall.py:181
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "An error occurred unmounting the disc. Please make sure you're not accessing "
 "%s from the shell on tty2 and then click OK to retry."
@@ -2435,6 +2420,5 @@ msgstr "Engelsk"
 msgid "German"
 msgstr "Tysk"
 
-#. generated from lang-table
-msgid "Danish"
-msgstr "Dansk"
+#~ msgid "Danish"
+#~ msgstr "Dansk"
