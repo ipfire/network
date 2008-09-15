@@ -53,10 +53,9 @@ download :
 $(TARGET) : 
 	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
 
-ifeq "$(PASS)" "pxe"
-	mkdir -pv $(CDROM_DIR)/{pxelinux.cfg,$(PREFIX)}
-else # cdrom
-	mkdir -pv $(CDROM_DIR)/{isolinux,doc,tmp}
+ifeq "$(PASS)" "$(THISAPP)"
+	@rm -f $(IMAGES_DIR)/$(SNAME)-$(VERSION).img
+	mkdir -pv $(CDROM_DIR)/tmp
 
 	find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
 		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq > $(CDROM_DIR)/archive.files
@@ -69,7 +68,17 @@ else # cdrom
 		exit 1; \
 	fi
 
-	cd $(CDROM_DIR)/tmp && mksquashfs * $(CDROM_DIR)/$(SNAME)-$(VERSION).img
+	cd $(CDROM_DIR)/tmp && mksquashfs * $(IMAGES_DIR)/$(SNAME)-$(VERSION).img
+endif
+
+ifeq "$(PASS)" "pxe"
+	mkdir -pv $(CDROM_DIR)/{pxelinux.cfg,$(PREFIX)}
+endif
+
+ifeq "$(PASS)" "cdrom"
+	mkdir -pv $(CDROM_DIR)/{isolinux,doc}
+
+	cp -vf $(IMAGES_DIR)/$(SNAME)-$(VERSION).img $(CDROM_DIR)
 	cd $(CDROM_DIR) && unsquashfs -ls $(SNAME)-$(VERSION).img > $(SNAME)-$(VERSION).ls
 
 	cd $(INSTALLER_DIR) && mksquashfs * $(CDROM_DIR)/pomona-$(VERSION).overlay
@@ -83,6 +92,7 @@ else # cdrom
 	cp -vf $(DIR_SRC)/doc/{ChangeLog,packages-list.txt} $(CDROM_DIR)/doc
 endif
 
+ifneq "$(PASS)" "$(THISAPP)"
 	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/$(PREFIX)/initrd0
 	cp -vf /boot/ipfirekernel-$(KVER) $(CDROM_DIR)/$(PREFIX)/$(SNAME)0
 
@@ -90,6 +100,7 @@ endif
 		$(DIR_CONF)/bootloader/splash.{jpg,lss} \
 		$(DIR_CONF)/bootloader/*.msg \
 			$(CDROM_DIR)/$(PREFIX)/
+endif
 
 ifeq "$(PASS)" "pxe"
 	cp -vf /usr/lib/syslinux/pxelinux.0 $(CDROM_DIR)/
@@ -108,7 +119,9 @@ ifeq "$(PASS)" "pxe"
 
 	cd $(CDROM_DIR) && \
 		tar cfz $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).pxe.tar.gz *
-else # cdrom
+endif
+
+ifeq "$(PASS)" "cdrom"
 	cp -vf /usr/lib/syslinux/isolinux.bin $(CDROM_DIR)/$(PREFIX)/
 	sed	-e "s/SNAME/$(SNAME)/g" \
 		-e "s/NAME/$(NAME)/g" \

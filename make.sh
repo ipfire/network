@@ -450,7 +450,7 @@ packages_build() {
 
 	if [ ${EMB} -eq 0 ]; then
 		ipfire_make initramfs
-
+		ipfire_make images
 		ipfire_make pxe
 		ipfire_make cdrom
 
