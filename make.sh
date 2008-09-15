@@ -290,6 +290,7 @@ ipfire_build() {
 	ipfire_make logrotate
 	#ipfire_make logwatch	
 	ipfire_make cpio
+	ipfire_make cdrtools
 	ipfire_make parted
 	ipfire_make python-parted
 	ipfire_make memtest86+
@@ -425,7 +426,6 @@ installer_build() {
 	build_spy set stage ${STAGE} &
 
 	ipfire_make stage5
-	ipfire_make cdrtools
 	ipfire_make pomona
 }
 
