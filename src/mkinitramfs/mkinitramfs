@@ -19,13 +19,12 @@
 #                                                                             #
 ###############################################################################
 
-THISAPP=$(basename "${0}")
+. /usr/libexec/initramfs-functions
 
-fstab="/etc/fstab"
-modulefile=/etc/modprobe.conf
-
-LD_SO_CONF=/etc/ld.so.conf
-LD_SO_CONF_D=/etc/ld.so.conf.d/
+if [ $UID != 0 ]; then
+	error "$0 must be run as root."
+	exit 1
+fi
 
 usage() {
 	if [ "$1" == "-n" ]; then
@@ -48,14 +47,11 @@ usage() {
 	fi
 }
 
-vecho() {
-	[ -n "$verbose" ] && echo "$@"
-}
+fstab="/etc/fstab"
+modulefile=/etc/modprobe.conf
 
-error()
-{
-	echo "$@" >&2
-}
+LD_SO_CONF=/etc/ld.so.conf
+LD_SO_CONF_D=/etc/ld.so.conf.d/
 
 cemit()
 {
@@ -65,18 +61,6 @@ cemit()
 emit()
 {
 	echo "$@" >> $RCFILE
-}
-
-qpushd() {
-	pushd "$1" >/dev/null 2>&1
-}
-
-qpopd() {
-	popd >/dev/null 2>&1
-}
-
-access() {
-	[ "$@" ]
 }
 
 read_link() {
@@ -104,50 +88,6 @@ get_numeric_dev() {
 		fi
 		ls -lH "$2" | awk '{ sub(/,/, "", $5); printf("'"$fmt"'", $5, $6); }'
 	) 2>/dev/null
-}
-
-moduledep() {
-	vecho -n "Looking for deps of module $1"
-	deps=""
-	deps=$(modprobe --set-version $kernel --show-depends $1 2>/dev/null | awk '/^insmod / { print gensub(".*/","","g",$2) }' | while read foo ; do [ "${foo%%.ko}" != "$1" ] && echo -n "${foo%%.ko} " ; done)
-	[ -n "$deps" ] && vecho ": $deps" || vecho
-}
-
-locatemodule() {
-	fmPath=$(modprobe --set-version $kernel --show-depends $1 2>/dev/null | awk '/^insmod / { print $2; }' | tail -1)
-	if [ -n "$fmPath" -a -f "$fmPath" ]; then
-		return 0
-	fi
-	for modExt in o.gz o ko ; do
-		for modDir in /lib/modules/$kernel/updates /lib/modules/$kernel ; do
-			if [ -d $modDir ]; then
-				fmPath=$(findone $modDir -name $1.$modExt)
-				if [ -n "$fmPath" -a -f "$fmPath" ]; then
-					return 0
-				fi
-			fi
-		done
-	done
-	return 1
-}
-
-expandModules() {
-	items=$*
-
-	for m in $items ; do
-		char=$(echo $m | cut -c1)
-		if [ $char = '=' ]; then
-			NAME=$(echo $m | cut -c2-)
-			if [ "$NAME" = "ata" ]; then
-				MODS="$MODS $(cat /lib/modules/$kernel/modules.block |egrep '(ata|ahci)' |sed -e 's/.ko//')"
-			else
-				MODS="$MODS $(cat /lib/modules/$kernel/modules.$NAME |sed -e 's/.ko//')"
-			fi
-		else
-			MODS="$MODS $m"
-		fi
-	done
-	echo $MODS
 }
 
 scsi_wait_scan="no"
@@ -254,14 +194,6 @@ findmodule() {
 	fi
 }
 
-findone() {
-    find "$@" | awk '{ print $1; exit; }'
-}
-
-findall() {
-    find "$@"
-}
-
 finddevnoinsys() {
 	majmin="$1"
 	if [ -n "$majmin" ]; then
@@ -348,204 +280,6 @@ findstoragedriver () {
 		findstoragedriverinsys
 		qpopd
 	done
-}
-
-RTLD=""
-DSO_DEPS=""
-get_dso_deps() {
-	bin="$1" ; shift
-	DSO_DEPS=""
-
-	declare -a FILES
-	declare -a NAMES
-
-	LDSO="/lib/ld-linux.so.2"
-	[ -z "$LDSO" -o "$LDSO" == "$bin" ] && LDSO="$RTLD"
-	[ -z "$LDSO" -o "$LDSO" == "$bin" ] && return 1
-	[ -z "$RTLD" ] && RTLD="$LDSO"
-
-	# I still hate shell.
-	declare -i n=0
-	while read NAME I0 FILE ADDR I1 ; do
-		[ "$FILE" == "not" ] && FILE="$FILE $ADDR"
-		NAMES[$n]="$NAME"
-		FILES[$n]="$FILE"
-		let n++
-	done << EOF
-		$(LD_TRACE_PRELINKING=1 LD_WARN= LD_TRACE_LOADED_OBJECTS=1 \
-			$LDSO $bin 2>/dev/null)
-EOF
-
-	[ ${#FILES[*]} -eq 0 ] && return 1
-
-	# we don't want the name of the binary in the list
-	if [ "${FILES[0]}" == "$bin" ]; then
-		FILES[0]=""
-		NAMES[0]=""
-		[ ${#FILES[*]} -eq 1 ] && return 1
-	fi
-
-	declare -i n=0
-	while [ $n -lt ${#FILES[*]} ]; do
-		FILE="${FILES[$n]}"
-		if [ "$FILE" == "not found" ]; then
-			cat 1>&2 <<EOF
-There are missing files on your system.  The dynamic object $bin
-requires ${NAMES[$n]} n order to properly function.  mkinitrd cannot continue.
-EOF
-			exit 1
-		fi
-		case "$FILE" in
-			/lib*|/usr/lib*)
-				TLIBDIR=`echo "$FILE" | sed 's,\(/lib[^/]*\)/.*$,\1,'`
-				BASE=`basename "$FILE"`
-				# Prefer base libraries rather than their optimized
-				# variants.
-				if [ -f "$TLIBDIR/$BASE" ]; then
-					FILE="$TLIBDIR/$BASE"
-				fi
-				FILES[$n]="$FILE"
-				;;
-		esac
-		dynamic="yes"
-		let n++
-	done
-
-	DSO_DEPS="${FILES[@]}"
-}
-
-indent_chars=""
-inst() {
-	if [ "$#" != "2" -a "$#" != "3" ];then
-		echo "usage: inst <file> <root> [<destination file>]"
-		return 1
-	fi
-	local file="$1" ; shift
-	local root="${1%%/}/" ; shift
-	local dest="${1##/}" ; shift
-	[ -z "$dest" ] && dest="${file##/}"
-
-	local old_indent_chars=${indent_chars}
-	indent_chars="${indent_chars}  "
-	indent=${indent_chars:2}
-
-	mkdir -p "$root/$(dirname $dest)"
-
-	local RET=0
-	local target=""
-	[ -L "$file" ] && target=$(read_link "$file")
-	if [ -n "$target" -a "$dest" != "$target" ]; then
-		if [ -e "$root$dest" ]; then
-			#vecho "${indent}$root/$dest already exists"
-			RET=0
-		else
-			vecho "${indent}$file -> $root$dest"
-			ln -sf "$target" "$root$dest"
-
-			inst "$target" "$root"
-			l=`echo "$x" | sed -n 's,\(/lib[^/]*\)/.*$,\1,p'`
-			if [ -n "$l" ]; then
-				inst "$x" "$root" "$l"/`basename "$x"`
-			else
-				inst "$x" "$root"
-			fi
-			RET=$?
-			indent_chars=${old_indent_chars}
-			return $RET
-		fi
-	fi
-
-	local SHEBANG=$(dd if="$file" bs=2 count=1 2>/dev/null)
-	if [ "$SHEBANG" == '#!' ]; then
-		# We're intentionally not playing the "what did this moron run
-		# in his shell script" game.  There's nothing but pain in that.
-		local interp=$(head -1 "$file" | sed 's/^#! *//')
-		inst "$interp" "$root"
-		RET=$?
-		indent_chars=${old_indent_chars}
-		return $RET
-	fi
-
-	if [ -e "$root$dest" ]; then
-		#vecho "${indent}$root$dest already exists"
-		RET=0
-	else
-		if [ -n "$target" -a -L "$target" ]; then
-			inst "$target" "$root"
-			RET=$?
-		else
-			vecho "${indent}$file -> $root$dest"
-			cp -alL "$file" "$root$dest"
-
-			get_dso_deps "$file"
-			local DEPS="$DSO_DEPS"
-			for x in $DEPS ; do
-				TLIBDIR=`echo "$x" | sed 's,\(/lib[^/]*\)/.*$,\1,'`
-				BASE=`basename "$x"`
-				inst "$x" "$root" "$TLIBDIR/$BASE"
-			done
-			RET=$?
-		fi
-	fi
-	indent_chars=${old_indent_chars}
-	return $RET
-}
-
-installmodule()
-{
-	MODULE=$1
-	fmPath=""
-	locatemodule $MODULE
-	MODULE=$fmPath
-	if [ -z "$MODULE" ]; then
-		return
-	fi
-	if [ -x /usr/bin/strip ]; then
-		/usr/bin/strip -g $verbose $MODULE -o $MNTIMAGE/lib/modules/$kernel/$(basename $MODULE)
-	else
-		inst "$MODULE" "$MNTIMAGE" "/lib/modules/$kernel/$(basename $MODULE)"
-	fi
-	for fw in $(/sbin/modinfo -F firmware $MODULE 2>/dev/null); do
-		if [ -f /lib/firmware/$fw ]; then
-			inst "/lib/firmware/$fw" "$MNTIMAGE" "/firmware/$fw"
-		fi
-	done
-}
-
-# This loops to make sure it resolves dependencies of dependencies of...
-resdeps () {
-	items="$*"
-
-	before=1
-	after=2
-
-	while [ $before != $after ]; do
-		before=`echo $items | wc -c`
-		list=""
-
-		for i in $items; do
-			deps=""
-			moduledep $i
-			list="$list $deps"
-
-			# need to handle prescsimods here -- they need to go _after_ scsi_mod
-			if [ "$i" = "scsi_mod" ]; then
-				list="$list $PRESCSIMODS"
-				MODULES="$MODULES $PRESCSIMODS"
-				PRESCSIMODS=""
-
-				locatemodule scsi_wait_scan
-				if [ -n "$fmPath" -a -f "$fmPath" ]; then
-					scsi_wait_scan="yes"
-				fi
-			fi
-
-		done
-		items=$(for n in $items $list; do echo $n; done | sort -u)
-		after=`echo $items | wc -c`
-	done
-
-	resolved=$items
 }
 
 # exclude specific modules
@@ -635,7 +369,7 @@ while [ $# -gt 0 ]; do
 			;;
 
 		-v)
-			verbose=-v
+			set_verbose true
 			;;
 
 		-f)
@@ -717,7 +451,7 @@ sleep 10 # Just wait a time...
 TMPDIR=""
 for t in /tmp /var/tmp /root ${PWD}; do
 	if [ ! -d $t ]; then continue; fi
-	if ! access -w $t ; then continue; fi
+	if ! test -w $t ; then continue; fi
 
 	fs=$(df -T $t 2>/dev/null | awk '{line=$1;} END {printf $2;}')
 	if [ "$fs" != "tmpfs" ]; then
@@ -802,10 +536,34 @@ mkdir -p $MNTIMAGE/sysroot
 
 vecho "Building initrd in $MNTIMAGE"
 
-inst /bin/busybox "$MNTIMAGE" /bin/busybox
-inst /bin/busybox "$MNTIMAGE" /bin/sh
-inst /sbin/modprobe "$MNTIMAGE" /sbin/modprobe
-inst /bin/mount "$MNTIMAGE" /bin/mount
+# Copy binaries over
+inst /bin/echo "$MNTIMAGE"
+inst /bin/sleep "$MNTIMAGE"
+inst /bin/bash "$MNTIMAGE"
+inst /bin/mount "$MNTIMAGE"
+inst /bin/umount "$MNTIMAGE"
+inst /bin/ls "$MNTIMAGE"
+inst /bin/mknod "$MNTIMAGE"
+inst /bin/mkdir "$MNTIMAGE"
+inst /bin/chmod "$MNTIMAGE"
+inst /bin/ln "$MNTIMAGE"
+inst /bin/cat "$MNTIMAGE"
+inst /bin/kill "$MNTIMAGE"
+inst /bin/pidof "$MNTIMAGE"
+inst /bin/rm "$MNTIMAGE"
+
+inst /sbin/udevd "$MNTIMAGE"
+inst /sbin/insmod "$MNTIMAGE"
+inst /sbin/modprobe "$MNTIMAGE"
+inst /sbin/switchroot "$MNTIMAGE"
+
+inst /sbin/killall5 "$MNTIMAGE"
+inst /sbin/udevadm "$MNTIMAGE"
+
+inst /lib/udev/vol_id "$MNTIMAGE"
+
+# symlink niceties
+ln -s bash $MNTIMAGE/bin/sh
 
 if [ -n "$excludemodules" ]; then
 	MODULES=$(excludemods $MODULES)
@@ -856,21 +614,10 @@ cemit << EOF
 #                                                                             #
 ###############################################################################
 
-INIT=/sbin/init
+export PATH=/sbin:/bin
 
 mount -t proc /proc /proc
 echo Mounting proc filesystem
-
-busybox --install -s
-
-for CMD in \$(cat /proc/cmdline); do
-	case "\$CMD" in
-		init=*)
-			INIT=\${CMD#init=}
-			;;
-	esac
-done
-#echo Parse kernel line
 
 # Silencing kernel
 echo >/proc/sys/kernel/printk "1 4 1 7"
@@ -905,12 +652,12 @@ for i in 0 1 2 3 ; do
 done
 
 cemit << EOF
+/sbin/udevd --daemon
 echo Creating initial device nodes
-mdev -s
-echo Creating block device nodes.
+/sbin/udevadm trigger
 
-echo Setting up hotplug.
-echo /sbin/mdev > /proc/sys/kernel/hotplug
+echo Creating block device nodes.
+/sbin/udevadm settle --timeout=30 || :
 EOF
 
 if [ "$scsi_wait_scan" == "yes" ]; then
@@ -987,25 +734,20 @@ EOF
 fi
 
 cemit << EOF
-mdev -s
-
 echo '$rootdev /sysroot $rootfs $rootopts 0 0' > /etc/fstab
-echo Creating root device.
 
-mount /sysroot
 echo Mounting root filesystem.
+mount /sysroot
 
-echo > /proc/sys/kernel/hotplug
+# stopping udev daemon
+kill \$(pidof udevd)
 
-#umount /dev  || umount -l /dev
-umount /proc || umount -l /proc
-umount /sys  || umount -l /sys
-echo Switching to new root and running \$INIT.
+echo Switching to new root and running init.
 
-exec switch_root -c /dev/console /sysroot \$INIT
+exec switchroot $(get_verbose) /sysroot
 
-echo exec switch_root failed...
-/bin/sh
+echo exec switchroot failed...
+bash
 EOF
 
 chmod +x $RCFILE

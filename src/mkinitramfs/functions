@@ -355,6 +355,13 @@ resdeps () {
     resolved="$items"
 }
 
+qpushd() {
+	pushd "$1" >/dev/null 2>&1
+}
+
+qpopd() {
+	popd >/dev/null 2>&1
+}
 
 
 # vim:ts=8:sw=4:sts=4:et

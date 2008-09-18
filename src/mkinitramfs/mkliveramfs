@@ -168,12 +168,9 @@ for f in $(find /usr/lib/terminfo -type f) ; do inst $f "$MNTIMAGE" ; done
 
 cat > init <<'EOF'
 #!/bin/sh
-echo "Mounting proc filesystem"
 mount -t proc proc /proc
-echo "Mounting sysfs filesystem"
 mount -t sysfs /sys /sys
 
-echo "Creating initial /dev"
 mount -t tmpfs -o mode=0755 udev /dev
 mknod /dev/console c 5 1
 mknod /dev/null c 1 3
