@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = xfsprogs
-VER        = 2.9.7
+VER        = 2.10.1
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP)-1.tar.gz
@@ -53,9 +53,16 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && make DEBUG=-DNDEBUG INSTALL_USER=root INSTALL_GROUP=root \
-		LOCAL_CONFIGURE_OPTIONS="--enable-readline=yes" #$(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install
+	cd $(DIR_APP) && DEBUG=-DNDEBUG \
+		./configure \
+			--prefix=/usr \
+			--bindir=/sbin \
+			--sbindir=/sbin \
+			--libdir=/lib \
+			--libexecdir=/usr/lib \
+			--enable-readline=yes
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install install-dev
 	chmod -v 755 /lib/libhandle.so*
 	rm -f /lib/libhandle.{a,la,so}
 	ln -svf ../../lib/libhandle.so.1 /usr/lib/libhandle.so
