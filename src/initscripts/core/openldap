@@ -31,14 +31,14 @@ case "$1" in
     stop)
         # slapd needs SIGINT
         killproc -p "${PIDFILE}" "${BIN_FILE}" -INT
-	evaluate_retval stop
+        evaluate_retval stop
     ;;
 
     restart)
         killproc -p "${PIDFILE}" "${BIN_FILE}" -INT &&
         sleep 1 &&
         start_daemon "${BIN_FILE}"
-	evaluate_retval restart
+        evaluate_retval restart
     ;;
 
     status)
