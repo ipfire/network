@@ -108,6 +108,7 @@ static PyObject * isWireless(PyObject * s, PyObject * args);
 static PyObject * doProbeBiosDisks(PyObject * s, PyObject * args);
 static PyObject * doGetBiosDisk(PyObject * s, PyObject * args);
 static PyObject * doGetBlkidData(PyObject * s, PyObject * args);
+static PyObject * doSegvHandler(PyObject *s, PyObject *args);
 
 static PyMethodDef isysModuleMethods[] = {
     { "ejectcdrom", (PyCFunction) doEjectCdrom, METH_VARARGS, NULL },
@@ -140,6 +141,7 @@ static PyMethodDef isysModuleMethods[] = {
     { "biosDiskProbe", (PyCFunction) doProbeBiosDisks, METH_VARARGS,NULL},
     { "getbiosdisk",(PyCFunction) doGetBiosDisk, METH_VARARGS,NULL},
     { "getblkid", (PyCFunction) doGetBlkidData, METH_VARARGS, NULL },
+    { "handleSegv", (PyCFunction) doSegvHandler, METH_VARARGS, NULL },
     { NULL, NULL, 0, NULL }
 } ;
 
@@ -786,6 +788,25 @@ static PyObject * doGetBlkidData(PyObject * s, PyObject * args) {
  out:
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+static PyObject * doSegvHandler(PyObject *s, PyObject *args) {
+    void *array[20];
+    size_t size;
+    char **strings;
+    size_t i;
+
+    signal(SIGSEGV, SIG_DFL); /* back to default */
+
+    size = backtrace (array, 20);
+    strings = backtrace_symbols (array, size);
+
+    printf ("Pomona received SIGSEGV!.  Backtrace:\n");
+    for (i = 0; i < size; i++)
+        printf ("%s\n", strings[i]);
+
+    free (strings);
+    exit(1);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4: */
