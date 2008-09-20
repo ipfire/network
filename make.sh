@@ -249,6 +249,7 @@ ipfire_build() {
 	ipfire_make etherwake
 	ipfire_make beep
 	ipfire_make libuser
+	ipfire_make directfb
 	
 	### Building vpn stuff
 	#
@@ -344,6 +345,7 @@ misc_build() {
 
 	ipfire_make bootutils
 	ipfire_make mkinitramfs
+	ipfire_make splashy
 
 	#ipfire_make squidguard		## CAN THIS BE BANISHED BY ANYTHING BETTER?
 	#ipfire_make calamaris		## CAN THIS BE BANISHED BY ANYTHING BETTER?
