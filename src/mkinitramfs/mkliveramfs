@@ -530,7 +530,8 @@ else
     mountoptions=" -o$rootflags"
 fi
 
-mount -n -t $rootfstype $mountoptions $thingtomount /device
+[ -d /mnt/source ] || mkdir -p /mnt/source
+mount -n -t $rootfstype $mountoptions $thingtomount /mnt/source
 RES=$?
 
 if [ "$RES" != "0" ] ; then
@@ -539,7 +540,7 @@ if [ "$RES" != "0" ] ; then
     echo "---------------------------------"
     echo
     echo "Dropping to a shell. "
-    echo "Mount /device and exit shell to continue. Good luck!"
+    echo "Mount /mnt/source and exit shell to continue. Good luck!"
     echo
     bash
 fi
@@ -547,35 +548,38 @@ fi
 # Now get ready to leave the initramfs
 #
 
-# only pass kernel command line if we're launching /sbin/init
-if [ "$init" == "/sbin/init" ] ; then
-    initargs=$(cat /proc/cmdline)
-else
-    initargs=""
-fi
 # mount ramdisk
-mount -n -t tmpfs none /tmpfs
-aufsmountoptions="br:/tmpfs=rw"
+[ -d /mnt/tmpfs ] || mkdir -p /mnt/tmpfs
+mount -n -t tmpfs none /mnt/tmpfs
+aufsmountoptions="br:/mnt/tmpfs=rw"
 
-OVERLAY=$(ls /device/*.overlay 2>/dev/null || true)
+OVERLAY=$(ls /mnt/source/*.overlay 2>/dev/null || true)
 if [ -n "$OVERLAY" ]; then
     if [ "$quiet" != "1" ] ; then
         echo "setting up overlay squashfs"
     fi
-    mount -t squashfs -o loop,ro $OVERLAY /overlayfs
-	aufsmountoptions="$aufsmountoptions:/overlayfs=ro"
+    [ -d /mnt/overlayfs ] || mkdir -p /mnt/overlayfs
+    mount -t squashfs -o loop,ro $OVERLAY /mnt/overlayfs
+	aufsmountoptions="$aufsmountoptions:/mnt/overlayfs=ro"
 fi
 
-SQUASHED=$(ls /device/*.img 2>/dev/null || true)
+SQUASHED=$(ls /mnt/source/*.img 2>/dev/null || true)
 if [ -n "$SQUASHED" ] ; then
     if [ "$quiet" != "1" ] ; then
         echo "setting up embedded squashfs"
     fi
-    mount -t squashfs -o loop,ro $SQUASHED /squashfs
-	aufsmountoptions="$aufsmountoptions:/squashfs=ro"
+    [ -d /mnt/squashfs ] || mkdir -p /mnt/squashfs
+    mount -t squashfs -o loop,ro $SQUASHED /mnt/squashfs
+	aufsmountoptions="$aufsmountoptions:/mnt/squashfs=ro"
 fi
 
 mount -t aufs -o $aufsmountoptions none /sysroot
+
+for i in source overlayfs squashfs tmpfs; do
+	mointpoint /mnt/$i >/dev/null || continue
+	mkdir -p /sysroot/mnt/ || :
+	mount --move /mnt/$i /sysroot/mnt/$i
+done
 
 if [ "$eshell" == "1" ] ; then
     echo "Shell requested on kernel commandline."
@@ -585,7 +589,6 @@ if [ "$eshell" == "1" ] ; then
 fi
 
 if [ -x /sysroot$init ] ; then
-
     # Leave initramfs and transition to rootfs
     kill `pidof udevd`
     if [ "$quiet" != "1" ] ; then
