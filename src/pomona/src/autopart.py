@@ -851,8 +851,6 @@ def doClearPartAction(pomona, partitions, diskset):
             #    a RAID or LVM device (#107319)
             # 5) the drive contains protected partitions and initAll is set
             if ((linuxOnly == 0) or (ptype and ptype.isLinuxNativeFS()) or
-                (initAll and
-                 partedUtils.hasProtectedPartitions(drive, pomona)) or
                 (not ptype and
                  partedUtils.isLinuxNativeByNumtype(part.native_type)) or
                 ((part.native_type == -1) and # the ptable doesn't have types
@@ -904,7 +902,6 @@ def doAutoPartition(pomona):
     if pomona.dir == DISPATCH_BACK:
         diskset.refreshDevices()
         partitions.setFromDisk(diskset)
-        partitions.setProtected(pomona.dispatch)
         partitions.autoPartitionRequests = []
         return
 
@@ -1015,7 +1012,6 @@ def doAutoPartition(pomona):
         # restore drives to original state
         diskset.refreshDevices()
         partitions.setFromDisk(diskset)
-        partitions.setProtected(pomona.dispatch)
         pomona.dispatch.skipStep("partition", skip = 0)
         pomona.intf.messageWindow(_("Error Partitioning"),
                _("Could not allocate requested partitions: \n\n"

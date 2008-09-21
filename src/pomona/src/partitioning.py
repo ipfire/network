@@ -28,9 +28,7 @@ from pyfire.translate import _
 def partitionObjectsInitialize(pomona):
     # read in drive info
     pomona.id.diskset.refreshDevices()
-
     pomona.id.partitions.setFromDisk(pomona.id.diskset)
-    pomona.id.partitions.setProtected(pomona.dispatch)
 
 def partitioningComplete(pomona):
     if pomona.dir == DISPATCH_BACK and pomona.id.fsset.isActive():

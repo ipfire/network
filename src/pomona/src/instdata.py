@@ -67,7 +67,7 @@ class InstallData:
         self.users = users.Users()
 
         # User should already exist, just without a password.
-        self.users.setRootPassword(self.rootPassword["password"])
+        self.users.setRootPassword(self.rootPassword["password"], algo="sha512")
 
     def __init__(self, pomona):
         self.instLanguage = language.Language()

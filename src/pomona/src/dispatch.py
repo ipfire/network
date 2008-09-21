@@ -24,9 +24,8 @@ from partitioning import partitionObjectsInitialize, partitioningComplete
 from packages import doMigrateFilesystems
 from packages import doPostAction
 from packages import copyPomonaLogs
-#
-#from flags import flags
-#from installmethod import doMethodComplete
+
+from flags import flags
 
 #from backend import doPostSelection, doRepoSetup, doBasePackageSelect
 from backend import doPreInstall, doPostInstall, doInstall
@@ -50,7 +49,6 @@ installSteps = [
                 ("betanag", betaNagScreen, ),
                 ("language", ),
                 ("keyboard", ),
-                ("source", ),
                 ("partitionobjinit", partitionObjectsInitialize, ),
                 ("parttype", ),
                 ("autopartitionexecute", doAutoPartition, ),
@@ -78,7 +76,6 @@ installSteps = [
                 ("writeconfig", writeConfiguration, ),
                 ("instbootloader", writeBootloader, ),
                 ("copylogs", copyPomonaLogs, ),
-                #("methodcomplete", doMethodComplete, ),
                 #("postscripts", runPostScripts, ),
                 ("dopostaction", doPostAction, ),
                 ("complete", ),
@@ -199,8 +196,6 @@ class Dispatcher:
         self.pomona.dir = DISPATCH_FORWARD
         self.step = None
         self.skipSteps = {}
-
-        self.method = pomona.method
         self.firstStep = 0
 
     def _getDir(self):

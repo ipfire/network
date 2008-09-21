@@ -18,17 +18,13 @@ from constants import *
 import logging
 log = logging.getLogger("pomona")
 
-class FileCopyException(Exception):
-    def __init__(self, s=""):
-        self.args = s
-
 class InstallMethod:
     def protectedPartitions(self):
         return None
 
     def getTempPath(self):
         root = self.rootPath
-        pathlist = [ "/var/tmp", "/tmp", "/." ]
+        pathlist = [ "/tmp", "/var/tmp", "/." ]
         tmppath = None
         for p in pathlist:
             if (os.access(root + p, os.X_OK)):
@@ -88,21 +84,3 @@ class InstallMethod:
     # only use this if you really know what you're doing.
     def postAction(self, pomona):
         pass
-
-# This handles any cleanup needed for the method.  It occurs *very* late
-# and is mainly used for unmounting media and ejecting the CD.  If we're on
-# a kickstart install, don't eject the CD since there's a command to do that
-# if the user wants.
-def doMethodComplete(pomona):
-    pomona.method.filesDone()
-
-    pomona.method.ejectMedia()
-
-    mtab = "/dev/root / ext3 ro 0 0\n"
-    for ent in pomona.id.fsset.entries:
-        if ent.mountpoint == "/":
-            mtab = "/dev/root / %s ro 0 0\n" %(ent.fsystem.name,)
-
-    f = open(pomona.rootPath + "/etc/mtab", "w+")
-    f.write(mtab)
-    f.close()

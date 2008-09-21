@@ -17,11 +17,11 @@ import warnings
 import locale
 import signal
 import subprocess
+import time
 
 import urlgrabber.progress
 import urlgrabber.grabber
 from urlgrabber.grabber import URLGrabber, URLGrabError
-from installmethod import FileCopyException
 from backend import PomonaBackend
 from constants import *
 from pyfire.translate import _
@@ -53,12 +53,10 @@ def size_string(size):
             return _("%s Bytes") %(number_format(size),)
 
 class PomonaCallback:
-    def __init__(self, pomona, method):
-        self.method = method
-
+    def __init__(self, pomona):
         self.messageWindow = pomona.intf.messageWindow
         self.waitWindow = pomona.intf.waitWindow
-        self.progress = pomona.id.instProgress ### XXX what's this?
+        self.progress = pomona.id.instProgress
         self.progressWindow = pomona.intf.progressWindow
 
         self.initWindow = None
@@ -109,13 +107,7 @@ class PomonaPakfire:
         self.pomona = pomona
 
     def run(self, cb, intf, id):
-
         self.extractFiles(cb, intf, id)
-
-        self.pomona.method.filesDone()
-
-    def checkMd5(self):
-        pass
 
     def extractFiles(self, cb, intf, id):
         filename    = os.path.join(SOURCE_PATH, IMAGE_FILE)
@@ -149,8 +141,8 @@ class PomonaPakfire:
         cb.callback(CB_STOP)
 
 class PakfireBackend(PomonaBackend):
-    def __init__(self, method, instPath):
-        PomonaBackend.__init__(self, method, instPath)
+    def __init__(self, instPath):
+        PomonaBackend.__init__(self, instPath)
 
     def selectBestKernel(self):
         """Find the best kernel package which is available and select it."""
@@ -165,28 +157,18 @@ class PakfireBackend(PomonaBackend):
 
     def doPreInstall(self, pomona):
         if pomona.dir == DISPATCH_BACK:
-            for d in ("/dev"): ### XXX proc, sys?
-                try:
-                    isys.umount(pomona.rootPath + d, removeDir = 0)
-                except Exception, e:
-                    log.error("unable to unmount %s: %s" %(d, e))
-            return
-
-        if self.method.systemMounted(pomona.id.fsset, pomona.rootPath):
-            pomona.id.fsset.umountFilesystems(pomona.rootPath)
             return DISPATCH_BACK
 
         self.pompak = PomonaPakfire(pomona)
 
-        pomona.method.doPreInstall(pomona)
-
     def doInstall(self, pomona):
         log.info("Preparing to install files")
 
-        cb = PomonaCallback(pomona, self.method)
+        cb = PomonaCallback(pomona)
 
         cb.initWindow = pomona.intf.waitWindow(_("Install Starting"),
                 _("Starting install process.  This may take several minutes..."))
+        time.sleep(2)
 
         self.pompak.run(cb, pomona.intf, pomona.id)
 

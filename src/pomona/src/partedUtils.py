@@ -244,25 +244,6 @@ def checkDiskLabel(disk, intf):
     else:
         return 1
 
-def hasProtectedPartitions(drive, pomona):
-    rc = False
-    if pomona is None:
-        return rc
-
-    try:
-        for protected in pomona.method.protectedPartitions():
-            if protected.startswith(drive):
-                part = protected[len(drive):]
-                if part[0] == "p":
-                    part = part[1:]
-                if part.isdigit():
-                    rc = True
-                    break
-    except:
-        pass
-
-    return rc
-
 # attempt to associate a parted filesystem type on a partition that
 # didn't probe as one type or another.
 def validateFsType(part):
@@ -416,15 +397,6 @@ class DiskSet:
                     pass
                 elif (part.fs_type and part.fs_type.name in fsset.getUsableLinuxFs()):
                     node = get_partition_name(part)
-
-                # In hard drive ISO method, don't try to mount the
-                # protected partitions because that'll throw up a
-                # useless error message.
-                protected = self.pomona.method.protectedPartitions()
-
-                if protected and node in protected:
-                    part = disk.next_partition(part)
-                    continue
 
                 try:
                     isys.mount(node, self.pomona.rootPath, part.fs_type.name)

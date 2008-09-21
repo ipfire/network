@@ -97,8 +97,6 @@ class Pomona:
     def __init__(self):
         self.intf = None
         self.id = None
-        self.method = None
-        self.methodstr = None
         self.rootPath = HARDDISK_PATH
         self.backend = None
 
@@ -107,7 +105,7 @@ class Pomona:
 
     def setBackend(self):
         from pakfireinstall import PakfireBackend
-        self.backend = PakfireBackend(self.method, self.rootPath)
+        self.backend = PakfireBackend(self.rootPath)
 
 if __name__ == "__main__":
     pomona = Pomona()
@@ -162,9 +160,7 @@ if __name__ == "__main__":
     # reset python's default SIGINT handler
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    #pomona.setMethod(instClass)
-
-    #pomona.setBackend(instClass)
+    pomona.setBackend()
 
     pomona.id = instClass.installDataClass(pomona)
     instClass.setInstallData(pomona)

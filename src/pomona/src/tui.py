@@ -24,7 +24,6 @@ stepToClasses = {
                 "install"  : ("tui_progress", "setupForInstall"),
                 "keyboard" : ("tui_keyboard", "KeyboardWindow"),
                 "language" : ("tui_language", "LanguageWindow"),
-                "source"   : ("tui_source", "SourceTypeWindow"),
                 "partition": ("tui_partition", ("PartitionWindow")),
                 "parttype" : ("tui_partition", "PartitionTypeWindow"),
                 "timezone" : ("tui_timezone", "TimezoneWindow"),

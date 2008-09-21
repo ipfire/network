@@ -420,19 +420,6 @@ class Partitions:
 
         return (errors, warnings)
 
-    def setProtected(self, dispatch):
-        """Set any partitions which should be protected to be so."""
-        pass
-        #protected = dispatch.method.protectedPartitions()
-        #if protected:
-        #       for device in protected:
-        #               log.info("%s is a protected partition" % (device))
-        #               request = self.getRequestByDeviceName(device)
-        #               if request is not None:
-        #                       request.setProtected(1)
-        #               else:
-        #                       log.info("no request, probably a removable drive")
-
     def copy(self):
         """Deep copy the object."""
         new = Partitions()
