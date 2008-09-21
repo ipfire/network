@@ -134,6 +134,7 @@ inst /bin/umount "$MNTIMAGE"
 inst /bin/ls "$MNTIMAGE"
 inst /bin/mknod "$MNTIMAGE"
 inst /bin/mkdir "$MNTIMAGE"
+inst /bin/mountpoint "$MNTIMAGE"
 inst /bin/chmod "$MNTIMAGE"
 inst /bin/ln "$MNTIMAGE"
 inst /bin/cat "$MNTIMAGE"
@@ -575,9 +576,9 @@ fi
 
 mount -t aufs -o $aufsmountoptions none /sysroot
 
-for i in source overlayfs squashfs tmpfs; do
-	mointpoint /mnt/$i >/dev/null || continue
-	mkdir -p /sysroot/mnt/ || :
+for i in $(cd /mnt; ls); do
+	mountpoint /mnt/$i >/dev/null || continue
+	mkdir -p /sysroot/mnt/$i || :
 	mount --move /mnt/$i /sysroot/mnt/$i
 done
 
