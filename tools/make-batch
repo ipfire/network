@@ -64,20 +64,25 @@ batch_attach() {
 batch_run() {	
 	gettoolchain
 	$0 build | tee $BATCHLOG
-	[ $? -eq 0 ] && puttarget
-	batch_mail
+	if [ "$?" == "0" ]; then
+		SUBJECT="Success!"
+		puttarget
+	else
+		SUBJECT="Failed :("
+	fi
+	SUBJECT=$SUBJECT batch_mail
 }
 
 ###############################################################################                   
 # A function to send an email to the developers                               #
 ###############################################################################
 batch_mail() {
-	MAIL_SUBJECT="[build.ipfire.org - ${HOSTNAME-$(hostname -f || hostname)}] - ${SUBJECT}"
+	MAIL_SUBJECT="[build.ipfire.org - ${HOSTNAME}] - ${SUBJECT}"
 
 	for i in MAIL_SERVER MAIL_TO MAIL_FROM MAIL_USER MAIL_PASS MAIL_SUBJECT; do
 		[ -n "${!i}" ] && export ${i}="${!i}"
 	done
 
 	## Send the email
-	python tools/alog2html < $BATCHLOG | python tools/sendEmail
+	tools/alog2html < $BATCHLOG | tools/sendEmail
 }
