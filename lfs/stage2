@@ -75,7 +75,7 @@ $(TARGET) :
 	#[ ! -e /lib/libstdc++.so.6 ] && ln -sfn $(TOOLS_DIR)/lib/libstdc++.so{,.6} /usr/lib/
 	
 	# Creating an empty mtab
-	touch /etc/mtab		#ln -sf /proc/mounts /etc/mtab
+	touch /etc/mtab
 	
 	# This trick is necessary in order to create two devices in the target /dev
 	# rather than in the host /dev
@@ -102,8 +102,6 @@ ifeq "$(EMB)" "1"
 	# Enable serial on console 7
 	sed -e "s/^#7/7/" -i /etc/inittab
 endif
-	
-	ln -sf /proc/mounts /etc/mtab
 	
 	echo "$(NAME) v$(VERSION) for $(MACHINE) - $(SLOGAN) (\l)" > /etc/issue
 	echo "===============================" >> /etc/issue
