@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pomona\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-04-19 21:25+0000\n"
-"PO-Revision-Date: 2008-04-10 17:17+0100\n"
+"POT-Creation-Date: 2008-09-21 22:57+0000\n"
+"PO-Revision-Date: 2008-09-22 00:38+0100\n"
 "Last-Translator: Michael Tremer <michael.tremer@ipfire.org>\n"
 "Language-Team: German\n"
 "MIME-Version: 1.0\n"
@@ -74,11 +74,11 @@ msgid ""
 "Boot partition %s may not meet booting constraints for your architecture."
 msgstr ""
 
-#: ../src/autopart.py:954
+#: ../src/autopart.py:951
 msgid "Requested Partition Does Not Exist"
 msgstr ""
 
-#: ../src/autopart.py:955
+#: ../src/autopart.py:952
 #, python-format
 msgid ""
 "Unable to locate partition %s to use for %s.\n"
@@ -86,11 +86,11 @@ msgid ""
 "Press 'OK' to reboot your system."
 msgstr ""
 
-#: ../src/autopart.py:1000 ../src/autopart.py:1033
+#: ../src/autopart.py:997 ../src/autopart.py:1029
 msgid "Automatic Partitioning Errors"
 msgstr ""
 
-#: ../src/autopart.py:1001
+#: ../src/autopart.py:998
 #, python-format
 msgid ""
 "The following errors occurred with your partitioning:\n"
@@ -100,11 +100,11 @@ msgid ""
 "Press 'OK' to reboot your system."
 msgstr ""
 
-#: ../src/autopart.py:1010
+#: ../src/autopart.py:1007
 msgid "Warnings During Automatic Partitioning"
 msgstr ""
 
-#: ../src/autopart.py:1011
+#: ../src/autopart.py:1008
 #, python-format
 msgid ""
 "Following warnings occurred during automatic partitioning:\n"
@@ -112,11 +112,11 @@ msgid ""
 "%s"
 msgstr ""
 
-#: ../src/autopart.py:1020 ../src/tui_partition.py:176
+#: ../src/autopart.py:1016 ../src/tui_partition.py:176
 msgid "Error Partitioning"
 msgstr ""
 
-#: ../src/autopart.py:1021
+#: ../src/autopart.py:1017
 #, python-format
 msgid ""
 "Could not allocate requested partitions: \n"
@@ -124,14 +124,14 @@ msgid ""
 "%s."
 msgstr ""
 
-#: ../src/autopart.py:1031
+#: ../src/autopart.py:1027
 msgid ""
 "\n"
 "\n"
 "Press 'OK' to choose a different partitioning option."
 msgstr ""
 
-#: ../src/autopart.py:1034
+#: ../src/autopart.py:1030
 #, python-format
 msgid ""
 "The following errors occurred with your partitioning:\n"
@@ -142,14 +142,14 @@ msgid ""
 "installation. %s"
 msgstr ""
 
-#: ../src/autopart.py:1109 ../src/bootloader.py:124 ../src/partedUtils.py:232
-#: ../src/partedUtils.py:563 ../src/partedUtils.py:600
-#: ../src/tui_bootloader.py:117 ../src/tui_bootloader.py:440
+#: ../src/autopart.py:1105 ../src/bootloader.py:750 ../src/partedUtils.py:228
+#: ../src/partedUtils.py:529 ../src/partedUtils.py:566
+#: ../src/tui_bootloader.py:117 ../src/tui_bootloader.py:437
 #: ../src/tui_partition.py:181
 msgid "Warning"
 msgstr "Warnung"
 
-#: ../src/autopart.py:1130
+#: ../src/autopart.py:1126
 msgid ""
 "Automatic Partitioning sets partitions based on the selected installation "
 "type. You also can customize the partitions once they have been created.\n"
@@ -159,17 +159,17 @@ msgid ""
 "mount points, partition sizes, and more."
 msgstr ""
 
-#: ../src/autopart.py:1141
+#: ../src/autopart.py:1137
 msgid ""
 "Before automatic partitioning can be set up by the installation program, you "
 "must choose how to use the space on your hard drives."
 msgstr ""
 
-#: ../src/autopart.py:1146
+#: ../src/autopart.py:1142
 msgid "Remove all partitions on this system"
 msgstr "Entferne alle Partitionen auf diesem System"
 
-#: ../src/autopart.py:1148
+#: ../src/autopart.py:1144
 #, python-format
 msgid ""
 "You have chosen to remove all partitions (ALL DATA) on the following drives:%"
@@ -180,21 +180,21 @@ msgstr ""
 "auf den folgenden Datenträgern zu entfernen: %s\n"
 "Sind Sie sich sicher?"
 
-#: ../src/bootloader.py:74
+#: ../src/bootloader.py:700
 msgid "Bootloader"
 msgstr "Bootloader"
 
-#: ../src/bootloader.py:74
+#: ../src/bootloader.py:700
 msgid "Installing bootloader..."
 msgstr "Installiere Bootloader..."
 
-#: ../src/bootloader.py:125
+#: ../src/bootloader.py:751
 msgid ""
 "No kernel packages were installed on your system.  Your boot loader "
 "configuration will not be changed."
 msgstr ""
 
-#: ../src/constants.py:40
+#: ../src/constants.py:41
 #, python-format
 msgid ""
 "An unhandled exception has occurred.  This is most likely a bug.  Please "
@@ -205,76 +205,51 @@ msgstr ""
 "Bug, wenn Sie diese Meldung sehen. Bitte sichern Sie eine detaillierte Kopie "
 "dieses Fehlers und senden Sie diese an den Bugtracker %s."
 
-#: ../src/constants.py:82 ../src/installer.py:91 ../src/tui.py:231
-#: ../src/tui.py:397 ../src/tui_confirm.py:26
+#: ../src/constants.py:83 ../src/installer.py:92 ../src/tui.py:228
+#: ../src/tui.py:394 ../src/tui_confirm.py:26
 msgid "OK"
 msgstr "OK"
 
-#: ../src/constants.py:86 ../src/partIntfHelpers.py:148
-#: ../src/partIntfHelpers.py:390 ../src/tui.py:101 ../src/tui.py:102
-#: ../src/tui.py:400 ../src/tui_bootloader.py:192
+#: ../src/constants.py:87 ../src/partIntfHelpers.py:148
+#: ../src/partIntfHelpers.py:390 ../src/tui.py:98 ../src/tui.py:99
+#: ../src/tui.py:397 ../src/tui_bootloader.py:192
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ../src/constants.py:90 ../src/tui_confirm.py:26 ../src/tui_confirm.py:28
+#: ../src/constants.py:91 ../src/tui_confirm.py:26 ../src/tui_confirm.py:28
 msgid "Back"
 msgstr "Zurück"
 
-#: ../src/constants.py:94 ../src/tui.py:395 ../src/tui_bootloader.py:65
+#: ../src/constants.py:95 ../src/tui.py:392 ../src/tui_bootloader.py:65
 msgid "Yes"
 msgstr "Ja"
 
-#: ../src/constants.py:98 ../src/tui.py:396 ../src/tui_bootloader.py:65
+#: ../src/constants.py:99 ../src/tui.py:393 ../src/tui_bootloader.py:65
 msgid "No"
 msgstr "Nein"
 
-#: ../src/constants.py:102 ../src/tui_bootloader.py:268
-#: ../src/tui_partition.py:852
+#: ../src/constants.py:103 ../src/tui_bootloader.py:268
+#: ../src/tui_partition.py:851
 msgid "Edit"
 msgstr "Bearbeiten"
 
-#: ../src/exception.py:255
-msgid "Dump Written"
-msgstr "Dump wurde geschrieben"
-
-#: ../src/exception.py:256
-msgid ""
-"Your system's state has been successfully written to the remote host.  Your "
-"system will now be rebooted."
-msgstr ""
-
-#: ../src/exception.py:259 ../src/fsset.py:1342 ../src/fsset.py:1741
-#: ../src/fsset.py:1748 ../src/harddrive.py:80 ../src/harddrive.py:126
-#: ../src/packages.py:121 ../src/partedUtils.py:610 ../src/tui_confirm.py:35
-msgid "_Reboot"
-msgstr ""
-
-#: ../src/exception.py:264
-msgid "Dump Not Written"
-msgstr "Dump wurde nicht geschrieben"
-
-#: ../src/exception.py:265
-msgid "There was a problem writing the system state to the remote host."
-msgstr ""
-
-#: ../src/fsset.py:189
+#: ../src/fsset.py:195
 msgid "Checking for Bad Blocks"
 msgstr "Untersuche nach defekten Blöcken"
 
-#: ../src/fsset.py:190
+#: ../src/fsset.py:196
 #, python-format
 msgid "Checking for bad blocks on /dev/%s..."
 msgstr "Untersuche /dev/%s nach defekten Blöcken..."
 
-#: ../src/fsset.py:537 ../src/fsset.py:1043 ../src/fsset.py:1074
-#: ../src/fsset.py:1136 ../src/fsset.py:1147 ../src/fsset.py:1201
-#: ../src/fsset.py:1212 ../src/fsset.py:1234 ../src/fsset.py:1283
-#: ../src/fsset.py:1364 ../src/image.py:39 ../src/partIntfHelpers.py:287
-#: ../src/tui_source.py:129 ../src/urlinstall.py:180
+#: ../src/fsset.py:539 ../src/fsset.py:1039 ../src/fsset.py:1070
+#: ../src/fsset.py:1132 ../src/fsset.py:1143 ../src/fsset.py:1197
+#: ../src/fsset.py:1208 ../src/fsset.py:1230 ../src/fsset.py:1279
+#: ../src/fsset.py:1360 ../src/image.py:38 ../src/partIntfHelpers.py:287
 msgid "Error"
 msgstr "Fehler"
 
-#: ../src/fsset.py:538
+#: ../src/fsset.py:540
 #, python-format
 msgid ""
 "An error occurred migrating %s to ext3.  It is possible to continue without "
@@ -283,15 +258,15 @@ msgid ""
 "Would you like to continue without migrating %s?"
 msgstr ""
 
-#: ../src/fsset.py:977
+#: ../src/fsset.py:973
 msgid "First sector of boot partition"
 msgstr "Erster Sektor der Boot-Partition"
 
-#: ../src/fsset.py:978
+#: ../src/fsset.py:974
 msgid "Master Boot Record (MBR)"
 msgstr "Boot-Sektor (MBR)"
 
-#: ../src/fsset.py:1044
+#: ../src/fsset.py:1040
 #, python-format
 msgid ""
 "An error occurred trying to initialize swap on device %s.  This problem is "
@@ -300,15 +275,15 @@ msgid ""
 "Press <Enter> to reboot your system."
 msgstr ""
 
-#: ../src/fsset.py:1073
+#: ../src/fsset.py:1069
 msgid "Skip"
 msgstr "Überspringen"
 
-#: ../src/fsset.py:1073 ../src/tui_complete.py:38
+#: ../src/fsset.py:1069 ../src/tui_complete.py:38
 msgid "Reboot"
 msgstr "Neustarten"
 
-#: ../src/fsset.py:1094
+#: ../src/fsset.py:1090
 #, python-format
 msgid ""
 "The swap device:\n"
@@ -320,11 +295,11 @@ msgid ""
 "installer will ignore it during the installation."
 msgstr ""
 
-#: ../src/fsset.py:1101
+#: ../src/fsset.py:1097
 msgid "Reformat"
 msgstr "Neu formatieren"
 
-#: ../src/fsset.py:1105
+#: ../src/fsset.py:1101
 #, python-format
 msgid ""
 "The swap device:\n"
@@ -336,7 +311,7 @@ msgid ""
 "down your system rather than hibernating it."
 msgstr ""
 
-#: ../src/fsset.py:1113
+#: ../src/fsset.py:1109
 #, python-format
 msgid ""
 "The swap device:\n"
@@ -348,7 +323,7 @@ msgid ""
 "make sure the installer is set to format all swap partitions."
 msgstr ""
 
-#: ../src/fsset.py:1123
+#: ../src/fsset.py:1119
 msgid ""
 "\n"
 "\n"
@@ -357,11 +332,11 @@ msgid ""
 "Reboot to restart the system."
 msgstr ""
 
-#: ../src/fsset.py:1129
+#: ../src/fsset.py:1125
 msgid "Format"
 msgstr "Formatieren"
 
-#: ../src/fsset.py:1137
+#: ../src/fsset.py:1133
 #, python-format
 msgid ""
 "Error enabling swap device %s: %s\n"
@@ -372,7 +347,7 @@ msgid ""
 "Press OK to reboot your system."
 msgstr ""
 
-#: ../src/fsset.py:1148
+#: ../src/fsset.py:1144
 #, python-format
 msgid ""
 "Error enabling swap device %s: %s\n"
@@ -382,7 +357,7 @@ msgid ""
 "Press OK to reboot your system."
 msgstr ""
 
-#: ../src/fsset.py:1202
+#: ../src/fsset.py:1198
 #, python-format
 msgid ""
 "Bad blocks have been detected on device /dev/%s. We do not recommend you use "
@@ -391,7 +366,7 @@ msgid ""
 "Press <Enter> to reboot your system"
 msgstr ""
 
-#: ../src/fsset.py:1213
+#: ../src/fsset.py:1209
 #, python-format
 msgid ""
 "An error occurred searching for bad blocks on %s.  This problem is serious, "
@@ -400,7 +375,7 @@ msgid ""
 "Press <Enter> to reboot your system."
 msgstr ""
 
-#: ../src/fsset.py:1235
+#: ../src/fsset.py:1231
 #, python-format
 msgid ""
 "An error occurred trying to format %s.  This problem is serious, and the "
@@ -409,7 +384,7 @@ msgid ""
 "Press <Enter> to reboot your system."
 msgstr ""
 
-#: ../src/fsset.py:1284
+#: ../src/fsset.py:1280
 #, python-format
 msgid ""
 "An error occurred trying to migrate %s.  This problem is serious, and the "
@@ -418,11 +393,11 @@ msgid ""
 "Press <Enter> to reboot your system."
 msgstr ""
 
-#: ../src/fsset.py:1311 ../src/fsset.py:1320
+#: ../src/fsset.py:1307 ../src/fsset.py:1316
 msgid "Invalid mount point"
 msgstr "Ungültiger Mount-Point"
 
-#: ../src/fsset.py:1312
+#: ../src/fsset.py:1308
 #, python-format
 msgid ""
 "An error occurred when trying to create %s.  Some element of this path is "
@@ -431,7 +406,7 @@ msgid ""
 "Press <Enter> to reboot your system."
 msgstr ""
 
-#: ../src/fsset.py:1321
+#: ../src/fsset.py:1317
 #, python-format
 msgid ""
 "An error occurred when trying to create %s: %s.  This is a fatal error and "
@@ -440,22 +415,27 @@ msgid ""
 "Press <Enter> to reboot your system."
 msgstr ""
 
-#: ../src/fsset.py:1334
+#: ../src/fsset.py:1330
 msgid "Unable to mount filesystem"
 msgstr ""
 
-#: ../src/fsset.py:1335
+#: ../src/fsset.py:1331
 #, python-format
 msgid ""
 "An error occurred mounting device %s as %s.  You may continue installation, "
 "but there may be problems."
 msgstr ""
 
-#: ../src/fsset.py:1342 ../src/partedUtils.py:610
+#: ../src/fsset.py:1338 ../src/fsset.py:1746 ../src/fsset.py:1753
+#: ../src/packages.py:130 ../src/partedUtils.py:576 ../src/tui_confirm.py:35
+msgid "_Reboot"
+msgstr ""
+
+#: ../src/fsset.py:1338 ../src/partedUtils.py:576
 msgid "_Continue"
 msgstr ""
 
-#: ../src/fsset.py:1350
+#: ../src/fsset.py:1346
 #, python-format
 msgid ""
 "Error mounting device %s as %s: %s\n"
@@ -465,7 +445,7 @@ msgid ""
 "Press OK to reboot your system."
 msgstr ""
 
-#: ../src/fsset.py:1357
+#: ../src/fsset.py:1353
 #, python-format
 msgid ""
 "Error mounting device %s as %s: %s\n"
@@ -475,11 +455,11 @@ msgid ""
 "Press OK to reboot your system."
 msgstr ""
 
-#: ../src/fsset.py:1733
+#: ../src/fsset.py:1738
 msgid "Duplicate Labels"
 msgstr ""
 
-#: ../src/fsset.py:1734
+#: ../src/fsset.py:1739
 #, python-format
 msgid ""
 "Multiple devices on your system are labelled %s.  Labels across devices must "
@@ -488,27 +468,33 @@ msgid ""
 "Please fix this problem and restart the installation process."
 msgstr ""
 
-#: ../src/fsset.py:1743
+#: ../src/fsset.py:1748
 msgid "Invalid Label"
 msgstr "Ungültiges Label"
 
-#: ../src/fsset.py:1744
+#: ../src/fsset.py:1749
 #, python-format
 msgid ""
 "An invalid label was found on device %s.  Please fix this problem and "
 "restart the installation process."
 msgstr ""
 
-#: ../src/fsset.py:1970
+#: ../src/fsset.py:1975
 msgid "Formatting"
 msgstr "Formatiere"
 
-#: ../src/fsset.py:1971
+#: ../src/fsset.py:1976
 #, python-format
 msgid "Formatting %s file system..."
 msgstr "Formatiere %s..."
 
-#: ../src/harddrive.py:44 ../src/image.py:49
+#: ../src/image.py:39
+msgid ""
+"An error occurred unmounting the disc. Please make sure you're not accessing "
+"the disk from the shell on tty2 and then click OK to retry."
+msgstr ""
+
+#: ../src/image.py:48
 #, python-format
 msgid ""
 "The file %s cannot be opened.  This is due to a missing file or perhaps a "
@@ -520,68 +506,31 @@ msgid ""
 "\n"
 msgstr ""
 
-#: ../src/harddrive.py:71
-msgid "Missing ISO 9660 Image"
-msgstr ""
-
-#: ../src/harddrive.py:72
-#, python-format
-msgid ""
-"The installer has tried to mount image #%s, but cannot find it on the hard "
-"drive.\n"
-"\n"
-"Please copy this image to the drive and click Retry. Click Reboot  to abort "
-"the installation."
-msgstr ""
-
-#: ../src/harddrive.py:81
-msgid "Re_try"
-msgstr "Wiederholen"
-
-#: ../src/harddrive.py:117
-msgid "Couldn't Mount ISO Source"
-msgstr ""
-
-#: ../src/harddrive.py:118
-#, python-format
-msgid ""
-"An error occurred mounting the source device %s.  This may happen if your "
-"ISO images are located on an advanced storage device like LVM or RAID, or if "
-"there was a problem mounting a partition.  Click reboot to abort the "
-"installation."
-msgstr ""
-
-#: ../src/image.py:40
-msgid ""
-"An error occurred unmounting the disc. Please make sure you're not accessing "
-"the disk from the shell on tty2 and then click OK to retry."
-msgstr ""
-
-#: ../src/image.py:80
+#: ../src/image.py:79
 msgid "Probing CDROM"
 msgstr "Suche CDROM"
 
-#: ../src/image.py:81
+#: ../src/image.py:80
 #, python-format
 msgid "Searching for a valid disc on /dev/%s..."
 msgstr "Suche nach einer gültigen CD in /dev/%s..."
 
-#: ../src/image.py:93
+#: ../src/image.py:92
 msgid "Wrong CDROM"
 msgstr "Falsche CDROM"
 
-#: ../src/image.py:94
+#: ../src/image.py:93
 #, python-format
 msgid "That's not the correct %s CDROM in /dev/%s."
 msgstr ""
 "Bei der eingelegten CDROM in /dev/%s handelt es sich nicht um die richtige "
 "CDROM für %s."
 
-#: ../src/image.py:109
+#: ../src/image.py:108
 msgid "Insert CDROM"
 msgstr "CDROM einlegen"
 
-#: ../src/image.py:110
+#: ../src/image.py:109
 #, python-format
 msgid "Please insert the %s disc to continue."
 msgstr "Bitte legen Sie die %s CD ein um fortzufahren."
@@ -590,15 +539,15 @@ msgstr "Bitte legen Sie die %s CD ein um fortzufahren."
 msgid "Install on System"
 msgstr ""
 
-#: ../src/installclass.py:235
+#: ../src/installclass.py:238
 msgid "IPFire"
 msgstr "IPFire"
 
-#: ../src/installer.py:86
+#: ../src/installer.py:87
 msgid "Fatal Error"
 msgstr "Fehler"
 
-#: ../src/installer.py:87
+#: ../src/installer.py:88
 #, python-format
 msgid ""
 "You do not have enough RAM to install %s on this machine.\n"
@@ -610,7 +559,7 @@ msgstr ""
 "\n"
 "Drücken Sie <Neustart> um das System neu zu starten.\n"
 
-#: ../src/installer.py:149
+#: ../src/installer.py:148
 msgid "Starting text installation..."
 msgstr "Starte Textinstallation..."
 
@@ -874,11 +823,11 @@ msgstr ""
 msgid "keyboard|U.S. English"
 msgstr ""
 
-#: ../src/packages.py:103
+#: ../src/packages.py:112
 msgid "Warning! This is pre-release software!"
 msgstr "Warnung! Dies ist noch nicht veröffentlichte Software!"
 
-#: ../src/packages.py:104
+#: ../src/packages.py:113
 #, python-format
 msgid ""
 "Thank you for downloading this pre-release of %s.\n"
@@ -905,85 +854,85 @@ msgstr ""
 "\n"
 "und senden einen Report über '%s'.\n"
 
-#: ../src/packages.py:117
+#: ../src/packages.py:126
 msgid "_Exit"
 msgstr "Ende"
 
-#: ../src/packages.py:117
+#: ../src/packages.py:126
 msgid "_Install anyway"
 msgstr ""
 
-#: ../src/packages.py:120
+#: ../src/packages.py:129
 msgid "Your system will now be rebooted..."
 msgstr "Ihr System wird jetzt neu gestartet..."
 
-#: ../src/packages.py:121 ../src/tui_confirm.py:35
+#: ../src/packages.py:130 ../src/tui_confirm.py:35
 msgid "_Back"
 msgstr "Zurück"
 
-#: ../src/packages.py:122
+#: ../src/packages.py:131
 msgid "Rebooting System"
 msgstr "Starte das System neu"
 
-#: ../src/pakfireinstall.py:44
+#: ../src/pakfireinstall.py:45
 #, python-format
 msgid "%s MB"
 msgstr "%s MB"
 
-#: ../src/pakfireinstall.py:47
+#: ../src/pakfireinstall.py:48
 #, python-format
 msgid "%s KB"
 msgstr "%s KB"
 
-#: ../src/pakfireinstall.py:50
+#: ../src/pakfireinstall.py:51
 #, python-format
 msgid "%s Byte"
 msgstr "%s Byte"
 
-#: ../src/pakfireinstall.py:52
+#: ../src/pakfireinstall.py:53
 #, python-format
 msgid "%s Bytes"
 msgstr "%s Bytes"
 
-#: ../src/pakfireinstall.py:140
+#: ../src/pakfireinstall.py:132
 msgid "Base system"
 msgstr ""
 
-#: ../src/pakfireinstall.py:140
+#: ../src/pakfireinstall.py:132
 msgid "Installing base system..."
 msgstr "Installiere Basissystem..."
 
-#: ../src/pakfireinstall.py:196
+#: ../src/pakfireinstall.py:169
 msgid "Install Starting"
 msgstr "Starte Installation"
 
-#: ../src/pakfireinstall.py:197
+#: ../src/pakfireinstall.py:170
 msgid "Starting install process.  This may take several minutes..."
 msgstr ""
 "Der Installationsprozess wird gestartet. Haben Sie einen Augenblick Geduld..."
 
-#: ../src/pakfireinstall.py:207
+#: ../src/pakfireinstall.py:181
 msgid "Post Install"
 msgstr ""
 
-#: ../src/pakfireinstall.py:208
+#: ../src/pakfireinstall.py:182
 #, fuzzy
 msgid "Performing post install configuration..."
 msgstr "Starte Textinstallation..."
 
-#: ../src/pakfireinstall.py:226
+#: ../src/pakfireinstall.py:213
 msgid "Symmetric multiprocessing"
 msgstr ""
 
-#: ../src/pakfireinstall.py:227
+#: ../src/pakfireinstall.py:214
 msgid "Xen guest"
 msgstr ""
 
-#: ../src/pakfireinstall.py:238
+#: ../src/pakfireinstall.py:224
 msgid "Normal Boot"
 msgstr ""
 
-#: ../src/pakfireinstall.py:245
+#: ../src/pakfireinstall.py:231
 msgid "Installation Progress"
 msgstr "Installationsprozess"
 
@@ -1115,9 +1064,8 @@ msgid "_Modify Partition"
 msgstr ""
 
 #: ../src/partIntfHelpers.py:300
-#, fuzzy
 msgid "Do _Not Format"
-msgstr "Formatieren"
+msgstr "_Nicht formatieren"
 
 #: ../src/partIntfHelpers.py:309
 msgid "Error with Partitioning"
@@ -1159,9 +1107,8 @@ msgid ""
 msgstr ""
 
 #: ../src/partIntfHelpers.py:346
-#, fuzzy
 msgid "Format Warning"
-msgstr "Formatiere"
+msgstr "Formatierungswarnung"
 
 #: ../src/partIntfHelpers.py:385
 #, python-format
@@ -1181,62 +1128,62 @@ msgid ""
 "Are you sure you want to reset the partition table to its original state?"
 msgstr ""
 
-#: ../src/partRequests.py:181
+#: ../src/partRequests.py:180
 #, python-format
 msgid ""
 "This mount point is invalid. The %s directory must be on the / file system."
 msgstr ""
 
-#: ../src/partRequests.py:184
+#: ../src/partRequests.py:183
 #, python-format
 msgid ""
 "The mount point %s cannot be used.  It must be a symbolic link for proper "
 "system operation.  Please select a different mount point."
 msgstr ""
 
-#: ../src/partRequests.py:191
+#: ../src/partRequests.py:190
 msgid "This mount point must be on a linux file system."
 msgstr ""
 
-#: ../src/partRequests.py:211
+#: ../src/partRequests.py:210
 #, python-format
 msgid ""
 "The mount point \"%s\" is already in use, please choose a different mount "
 "point."
 msgstr ""
 
-#: ../src/partRequests.py:225
+#: ../src/partRequests.py:224
 #, python-format
 msgid ""
 "The size of the %s partition (%10.2f MB) exceeds the maximum size of %10.2f "
 "MB."
 msgstr ""
 
-#: ../src/partRequests.py:414
+#: ../src/partRequests.py:412
 #, python-format
 msgid ""
 "The size of the requested partition (size = %s MB) exceeds the maximum size "
 "of %s MB."
 msgstr ""
 
-#: ../src/partRequests.py:419
+#: ../src/partRequests.py:417
 #, python-format
 msgid "The size of the requested partition is negative! (size = %s MB)"
 msgstr ""
 
-#: ../src/partRequests.py:423
+#: ../src/partRequests.py:421
 msgid "Partitions can't start below the first cylinder."
 msgstr ""
 
-#: ../src/partRequests.py:426
+#: ../src/partRequests.py:424
 msgid "Partitions can't end on a negative cylinder."
 msgstr ""
 
-#: ../src/partedUtils.py:193 ../src/tui_partition.py:408
+#: ../src/partedUtils.py:189 ../src/tui_partition.py:407
 msgid "Foreign"
 msgstr ""
 
-#: ../src/partedUtils.py:233
+#: ../src/partedUtils.py:229
 #, python-format
 msgid ""
 "/dev/%s currently has a %s partition layout.  To use this drive for the "
@@ -1246,16 +1193,15 @@ msgid ""
 "Would you like to re-initialize this drive?"
 msgstr ""
 
-#: ../src/partedUtils.py:241
-#, fuzzy
+#: ../src/partedUtils.py:237
 msgid "_Ignore drive"
-msgstr "Ignorieren"
+msgstr "_Ignoriere Laufwerk"
 
-#: ../src/partedUtils.py:242
+#: ../src/partedUtils.py:238
 msgid "_Re-initialize drive"
 msgstr ""
 
-#: ../src/partedUtils.py:564
+#: ../src/partedUtils.py:530
 #, python-format
 msgid ""
 "The partition table on device %s was unreadable. To create new partitions it "
@@ -1267,7 +1213,7 @@ msgid ""
 "Would you like to initialize this drive, erasing ALL DATA?"
 msgstr ""
 
-#: ../src/partedUtils.py:601
+#: ../src/partedUtils.py:567
 #, python-format
 msgid ""
 "The drive /dev/%s has more than 15 partitions on it.  The SCSI subsystem in "
@@ -1276,32 +1222,32 @@ msgid ""
 "any partitions beyond /dev/%s15 in %s"
 msgstr ""
 
-#: ../src/partedUtils.py:691
+#: ../src/partedUtils.py:657
 msgid "No Drives Found"
 msgstr "Keine Laufwerke gefunden"
 
-#: ../src/partedUtils.py:692
+#: ../src/partedUtils.py:658
 msgid ""
 "An error has occurred - no valid devices were found on which to create new "
 "file systems. Please check your hardware for the cause of this problem."
 msgstr ""
 
-#: ../src/partitioning.py:37
+#: ../src/partitioning.py:35
 msgid "Installation cannot continue."
 msgstr ""
 
-#: ../src/partitioning.py:38
+#: ../src/partitioning.py:36
 msgid ""
 "The partitioning options you have chosen have already been activated. You "
 "can no longer return to the disk editing screen. Would you like to continue "
 "with the installation process?"
 msgstr ""
 
-#: ../src/partitioning.py:66
+#: ../src/partitioning.py:64
 msgid "Low Memory"
 msgstr "Wenig Arbeitsspeicher"
 
-#: ../src/partitioning.py:67
+#: ../src/partitioning.py:65
 msgid ""
 "As you don't have much memory in this machine, we need to turn on swap space "
 "immediately. To do this we'll have to write your new partition table to the "
@@ -1335,7 +1281,7 @@ msgstr ""
 "Ihre Boot-Partition ist nicht eine der ersten vier Partitionen auf dem "
 "Datenträger und wird daher nicht bootbar sein."
 
-#: ../src/partitions.py:343
+#: ../src/partitions.py:342
 #, python-format
 msgid ""
 "Your %s partition is less than %s megabytes which is lower than recommended "
@@ -1344,14 +1290,14 @@ msgstr ""
 "Ihre %s-Partition ist kleiner als %s Megabytes, was für eine normale "
 "Installation von %s nicht empfohlen ist."
 
-#: ../src/partitions.py:377
+#: ../src/partitions.py:376
 msgid ""
 "Installing on a USB device.  This may or may not produce a working system."
 msgstr ""
 "Sie installieren auf einem USB-Laufwerk, was kein funktionierendes System "
 "produzieren könnte."
 
-#: ../src/partitions.py:381
+#: ../src/partitions.py:380
 msgid ""
 "Installing on a FireWire device.  This may or may not produce a working "
 "system."
@@ -1359,39 +1305,39 @@ msgstr ""
 "Sie installieren auf einem Firewire-Laufwerk, was kein funktionierendes "
 "System produzieren könnte."
 
-#: ../src/partitions.py:394
+#: ../src/partitions.py:393
 msgid ""
 "You have not specified a swap partition.  Although not strictly required in "
 "all cases, it will significantly improve performance for most installations."
 msgstr "Sie haben keine Swap-Partition angelegt."
 
-#: ../src/partitions.py:401
+#: ../src/partitions.py:400
 #, python-format
 msgid ""
 "You have specified more than 32 swap devices.  The kernel for %s only "
 "supports 32 swap devices."
 msgstr ""
 
-#: ../src/partitions.py:412
+#: ../src/partitions.py:411
 #, python-format
 msgid ""
 "You have allocated less swap space (%dM) than available RAM (%dM) on your "
 "system.  This could negatively impact performance."
 msgstr ""
 
-#: ../src/partitions.py:503
+#: ../src/partitions.py:489
 msgid "the partition in use by the installer."
 msgstr ""
 
-#: ../src/tui.py:116
+#: ../src/tui.py:113
 msgid "Exception Occurred"
 msgstr "Fehler aufgetreten"
 
-#: ../src/tui.py:196
+#: ../src/tui.py:193
 msgid "Error!"
 msgstr "Fehler!"
 
-#: ../src/tui.py:197
+#: ../src/tui.py:194
 #, python-format
 msgid ""
 "An error occurred when attempting to load an pomona interface component.\n"
@@ -1401,53 +1347,53 @@ msgid ""
 "Error: %s"
 msgstr ""
 
-#: ../src/tui.py:202 ../src/tui.py:204
+#: ../src/tui.py:199 ../src/tui.py:201
 msgid "Exit"
 msgstr "Ende"
 
-#: ../src/tui.py:202 ../src/tui.py:398
+#: ../src/tui.py:199 ../src/tui.py:395
 msgid "Retry"
 msgstr "Wiederholen"
 
-#: ../src/tui.py:227
+#: ../src/tui.py:224
 msgid "Cancelled"
 msgstr "Abgebrochen"
 
-#: ../src/tui.py:228
+#: ../src/tui.py:225
 msgid "I can't go to the previous step from here. You will have to try again."
 msgstr ""
 "Es konnte nicht zum vorhergeneden Installationsschritt gewechselt werden. "
 "Bitte wiederholen Sie den Schritt."
 
-#: ../src/tui.py:242
+#: ../src/tui.py:239
 #, python-format
 msgid "Welcome to %s"
 msgstr "Willkommen bei %s"
 
-#: ../src/tui.py:245
+#: ../src/tui.py:242
 msgid ""
 " <F1> for help | <Tab> between elements | <Space> selects | <F12> next screen"
 msgstr ""
 
-#: ../src/tui.py:247
+#: ../src/tui.py:244
 msgid ""
 "  <Tab>/<Alt-Tab> between elements   |  <Space> selects   |  <F12> next "
 "screen"
 msgstr ""
 
-#: ../src/tui.py:292
+#: ../src/tui.py:289
 msgid "Help not available"
 msgstr "Keine Hilfe verfügbar"
 
-#: ../src/tui.py:293
+#: ../src/tui.py:290
 msgid "No help is available for this step of the install."
 msgstr "Es ist keine Hilfe zu diesem Installationsschritt verfügbar."
 
-#: ../src/tui.py:394
+#: ../src/tui.py:391
 msgid "Fix"
 msgstr "Korrigieren"
 
-#: ../src/tui.py:399
+#: ../src/tui.py:396
 msgid "Ignore"
 msgstr "Ignorieren"
 
@@ -1464,8 +1410,8 @@ msgid "No Boot Loader"
 msgstr ""
 
 #: ../src/tui_bootloader.py:39 ../src/tui_bootloader.py:101
-#: ../src/tui_bootloader.py:159 ../src/tui_bootloader.py:277
-#: ../src/tui_bootloader.py:384
+#: ../src/tui_bootloader.py:159 ../src/tui_bootloader.py:276
+#: ../src/tui_bootloader.py:381
 msgid "Boot Loader Configuration"
 msgstr ""
 
@@ -1506,7 +1452,7 @@ msgid "Where do you want to install the boot loader?"
 msgstr ""
 
 #: ../src/tui_bootloader.py:186 ../src/tui_bootloader.py:253
-#: ../src/tui_partition.py:847
+#: ../src/tui_partition.py:846
 msgid "Device"
 msgstr "Partition"
 
@@ -1523,7 +1469,6 @@ msgid "Edit Boot Label"
 msgstr ""
 
 #: ../src/tui_bootloader.py:217 ../src/tui_bootloader.py:222
-#, fuzzy
 msgid "Invalid Boot Label"
 msgstr "Ungültiges Label"
 
@@ -1536,11 +1481,10 @@ msgid "Boot label contains illegal characters."
 msgstr ""
 
 #: ../src/tui_bootloader.py:253
-#, fuzzy
 msgid "Default"
-msgstr "Löschen"
+msgstr "Standard"
 
-#: ../src/tui_bootloader.py:272
+#: ../src/tui_bootloader.py:271
 #, python-format
 msgid ""
 "The boot manager %s uses can boot other operating systems as well.  Please "
@@ -1548,59 +1492,58 @@ msgid ""
 "want to use for each of them."
 msgstr ""
 
-#: ../src/tui_bootloader.py:285
+#: ../src/tui_bootloader.py:284
 msgid ""
 " <Space> select | <F2> select default | <F4> delete | <F12> next screen>"
 msgstr "<Leertaste>,<+>,<-> Auswahl | <F2> Laufwerk hinzufügen | <F12> Weiter"
 
-#: ../src/tui_bootloader.py:334
-#, fuzzy
+#: ../src/tui_bootloader.py:333
 msgid "Cannot Delete"
-msgstr "Löschen"
+msgstr "Kann nicht löschen"
 
-#: ../src/tui_bootloader.py:335
+#: ../src/tui_bootloader.py:334
 #, python-format
 msgid ""
 "This boot target cannot be deleted because it is for the %s system you are "
 "about to install."
 msgstr ""
 
-#: ../src/tui_bootloader.py:379
+#: ../src/tui_bootloader.py:376
 msgid ""
 "A boot loader password prevents users from passing arbitrary options to the "
 "kernel.  For highest security, you should set a password, but a password is "
 "not necessary for more casual users."
 msgstr ""
 
-#: ../src/tui_bootloader.py:387
+#: ../src/tui_bootloader.py:384
 msgid "Use a GRUB Password"
 msgstr "Benutze ein GRUB-Passwort"
 
-#: ../src/tui_bootloader.py:400
+#: ../src/tui_bootloader.py:397
 msgid "Boot Loader Password:"
 msgstr "Bootloader-Passwort:"
 
-#: ../src/tui_bootloader.py:401
+#: ../src/tui_bootloader.py:398
 msgid "Confirm:"
 msgstr "Bestätigen:"
 
-#: ../src/tui_bootloader.py:430
+#: ../src/tui_bootloader.py:427
 msgid "Passwords Do Not Match"
 msgstr ""
 
-#: ../src/tui_bootloader.py:431
+#: ../src/tui_bootloader.py:428
 msgid "Passwords do not match"
 msgstr "Die Passwörter stimmen nicht überein"
 
-#: ../src/tui_bootloader.py:435
+#: ../src/tui_bootloader.py:432
 msgid "Password Too Short"
 msgstr "Das Passwort ist zu kurz"
 
-#: ../src/tui_bootloader.py:436
+#: ../src/tui_bootloader.py:433
 msgid "Boot loader password is too short"
 msgstr "Das Bootloader-Passwort ist zu kurz"
 
-#: ../src/tui_bootloader.py:441
+#: ../src/tui_bootloader.py:438
 msgid ""
 "Your boot loader password is shorter than six characters.  We recommend a "
 "longer boot loader password.\n"
@@ -1702,9 +1645,8 @@ msgid "Extended"
 msgstr "Erweitert"
 
 #: ../src/tui_partition.py:110
-#, fuzzy
 msgid "None"
-msgstr "Nein"
+msgstr "Keins"
 
 #: ../src/tui_partition.py:177
 #, python-format
@@ -1712,9 +1654,9 @@ msgid "Could not allocate requested partitions: %s."
 msgstr "Konnte die Partition nicht finden: %s."
 
 #: ../src/tui_partition.py:181
-#, fuzzy, python-format
+#, python-format
 msgid "Warning: %s"
-msgstr "Warnung"
+msgstr "Warnung: %s"
 
 #: ../src/tui_partition.py:182
 msgid "Modify Partition"
@@ -1733,74 +1675,74 @@ msgstr "<Nicht verfügbar>"
 msgid "Mount Point:"
 msgstr "Einhängepunkt:"
 
-#: ../src/tui_partition.py:239
+#: ../src/tui_partition.py:238
 msgid "File System type:"
 msgstr "Dateisystem-Typ:"
 
-#: ../src/tui_partition.py:270
+#: ../src/tui_partition.py:269
 msgid "Allowable Drives:"
 msgstr ""
 
-#: ../src/tui_partition.py:292 ../src/tui_partition.py:371
-#: ../src/tui_partition.py:419
+#: ../src/tui_partition.py:291 ../src/tui_partition.py:370
+#: ../src/tui_partition.py:418
 msgid "Size (MB):"
 msgstr "Größe (MB):"
 
-#: ../src/tui_partition.py:324
+#: ../src/tui_partition.py:323
 msgid "Fixed Size:"
 msgstr "Feste Größe:"
 
-#: ../src/tui_partition.py:326
+#: ../src/tui_partition.py:325
 msgid "Fill maximum size of (MB):"
 msgstr "Maximale Größe in MB:"
 
-#: ../src/tui_partition.py:330
+#: ../src/tui_partition.py:329
 msgid "Fill all available space:"
 msgstr "Verfügbaren Speicherplatz ausfüllen:"
 
-#: ../src/tui_partition.py:351
+#: ../src/tui_partition.py:350
 msgid "Start Cylinder:"
 msgstr "Startzylinder:"
 
-#: ../src/tui_partition.py:364
+#: ../src/tui_partition.py:363
 msgid "End Cylinder:"
 msgstr "Endzylinder:"
 
-#: ../src/tui_partition.py:386
+#: ../src/tui_partition.py:385
 msgid "Number of spares?"
 msgstr ""
 
-#: ../src/tui_partition.py:400
+#: ../src/tui_partition.py:399
 msgid "File System Type:"
 msgstr "Dateisystem:"
 
-#: ../src/tui_partition.py:413
+#: ../src/tui_partition.py:412
 msgid "File System Label:"
 msgstr "Dateisystemlabel:"
 
-#: ../src/tui_partition.py:424
+#: ../src/tui_partition.py:423
 msgid "File System Option:"
 msgstr "Dateisystemoption:"
 
-#: ../src/tui_partition.py:427 ../src/tui_partition.py:655
-#, fuzzy, python-format
+#: ../src/tui_partition.py:426 ../src/tui_partition.py:654
+#, python-format
 msgid "Format as %s"
-msgstr "Formatieren"
+msgstr "Formatieren als %s"
 
-#: ../src/tui_partition.py:429 ../src/tui_partition.py:657
+#: ../src/tui_partition.py:428 ../src/tui_partition.py:656
 #, python-format
 msgid "Migrate to %s"
 msgstr "Migrieren zu %s"
 
-#: ../src/tui_partition.py:431 ../src/tui_partition.py:659
+#: ../src/tui_partition.py:430 ../src/tui_partition.py:658
 msgid "Leave unchanged"
 msgstr "Beibehalten"
 
-#: ../src/tui_partition.py:446 ../src/tui_partition.py:632
+#: ../src/tui_partition.py:445 ../src/tui_partition.py:631
 msgid "File System Options"
 msgstr "Dateisystemoptionen"
 
-#: ../src/tui_partition.py:449
+#: ../src/tui_partition.py:448
 msgid ""
 "Please choose how you would like to prepare the file system on this "
 "partition."
@@ -1808,104 +1750,101 @@ msgstr ""
 "Bitte wählen Sie, wie sie das Dateisystem für diese Partition vorbereiten "
 "wollen."
 
-#: ../src/tui_partition.py:457
-#, fuzzy
+#: ../src/tui_partition.py:456
 msgid "Check for bad blocks"
 msgstr "Untersuche nach defekten Blöcken"
 
-#: ../src/tui_partition.py:461
+#: ../src/tui_partition.py:460
 msgid "Leave unchanged (preserve data)"
 msgstr "Beibehalten (erhält die Daten)"
 
-#: ../src/tui_partition.py:470
-#, fuzzy
+#: ../src/tui_partition.py:469
 msgid "Format as:"
-msgstr "Formatieren"
+msgstr "Formatieren als:"
 
-#: ../src/tui_partition.py:489
+#: ../src/tui_partition.py:488
 msgid "Migrate to:"
 msgstr "Migrieren nach:"
 
-#: ../src/tui_partition.py:559
+#: ../src/tui_partition.py:558
 msgid "Add Partition"
 msgstr "Partition hinzufügen"
 
-#: ../src/tui_partition.py:601
+#: ../src/tui_partition.py:600
 msgid "Force to be a primary partition"
 msgstr "Erzwinge primäre Partition"
 
-#: ../src/tui_partition.py:687 ../src/tui_partition.py:741
+#: ../src/tui_partition.py:686 ../src/tui_partition.py:740
 msgid "Invalid Entry for Partition Size"
 msgstr "Ungültige Eingabe für die Partitionsgröße"
 
-#: ../src/tui_partition.py:699
+#: ../src/tui_partition.py:698
 msgid "Invalid Entry for Maximum Size"
 msgstr "Ungültige Eingabe für die maximale Größe"
 
-#: ../src/tui_partition.py:719
+#: ../src/tui_partition.py:718
 msgid "Invalid Entry for Starting Cylinder"
 msgstr "Ungültige Eingabe für den Startzylinder"
 
-#: ../src/tui_partition.py:733
+#: ../src/tui_partition.py:732
 msgid "Invalid Entry for End Cylinder"
 msgstr "Ungültige Eingabe für den Endzylinder"
 
-#: ../src/tui_partition.py:751 ../src/tui_partition.py:772
+#: ../src/tui_partition.py:750 ../src/tui_partition.py:771
 msgid "Error With Request"
 msgstr "Fehler im Request"
 
-#: ../src/tui_partition.py:841
-#, fuzzy
+#: ../src/tui_partition.py:840
 msgid "Partitioning"
-msgstr "Warnung"
+msgstr "Partitionierung"
 
-#: ../src/tui_partition.py:847
+#: ../src/tui_partition.py:846
 msgid "Start"
 msgstr "Startsektor"
 
-#: ../src/tui_partition.py:847
+#: ../src/tui_partition.py:846
 msgid "End"
 msgstr "Endsektor"
 
-#: ../src/tui_partition.py:847
+#: ../src/tui_partition.py:846
 msgid "Size"
 msgstr "Größe"
 
-#: ../src/tui_partition.py:847
+#: ../src/tui_partition.py:846
 msgid "Type"
 msgstr "Typ"
 
-#: ../src/tui_partition.py:847
+#: ../src/tui_partition.py:846
 #, fuzzy
 msgid "Mount Point"
 msgstr "Ungültiger Mount-Point"
 
-#: ../src/tui_partition.py:851
+#: ../src/tui_partition.py:850
 msgid "New"
 msgstr "Neu"
 
-#: ../src/tui_partition.py:853
+#: ../src/tui_partition.py:852
 msgid "Delete"
 msgstr "Löschen"
 
-#: ../src/tui_partition.py:856
+#: ../src/tui_partition.py:855
 msgid ""
 "    F1-Help     F2-New      F3-Edit   F4-Delete    F5-Reset    F12-OK        "
 msgstr " F1-Hilfe  F2-Neu  F3-Bearbeiten  F4-Löschen  F5-Zurücksetzen  F12-OK"
 
-#: ../src/tui_partition.py:886
+#: ../src/tui_partition.py:885
 msgid "No Root Partition"
 msgstr "Keine Root-Partition"
 
-#: ../src/tui_partition.py:887
+#: ../src/tui_partition.py:886
 msgid "Installation requires a / partition."
 msgstr "Die Installation erfordert die Konfiguration einer /-Partition."
 
-#: ../src/tui_partition.py:926
+#: ../src/tui_partition.py:925
 msgid "Partitioning Type"
 msgstr "Partitionstyp"
 
-#: ../src/tui_partition.py:928
+#: ../src/tui_partition.py:927
 msgid ""
 "Installation requires partitioning of your hard drive.  The default layout "
 "is reasonable for most users.  You can either choose to use this or create "
@@ -1915,27 +1854,27 @@ msgstr ""
 "Das Standardlayout genügt für die meisten Nutzer. Experten können eigene "
 "Anpassungen vornehmen."
 
-#: ../src/tui_partition.py:935
+#: ../src/tui_partition.py:934
 msgid "Remove all partitions on selected drives and create default layout"
 msgstr "Alle Partitionen löschen und Standardlayout erstellen"
 
-#: ../src/tui_partition.py:936
+#: ../src/tui_partition.py:935
 msgid "Create custom layout"
 msgstr "Benutzerdefiniertes Layout erstellen"
 
-#: ../src/tui_partition.py:950
+#: ../src/tui_partition.py:949
 msgid "Which drive(s) do you want to use for this installation?"
 msgstr "Welche(s) Laufwerk(e) möchten Sie für die Installation nutzen?"
 
-#: ../src/tui_partition.py:963
+#: ../src/tui_partition.py:962
 msgid "<Space>,<+>,<-> selection   |   <F2> Add drive   |   <F12> next screen"
 msgstr "<Leertaste>,<+>,<-> Auswahl | <F2> Laufwerk hinzufügen | <F12> Weiter"
 
-#: ../src/tui_partition.py:1032
+#: ../src/tui_partition.py:1031
 msgid "Review Partition Layout"
 msgstr "Ansicht des Partitionslayout"
 
-#: ../src/tui_partition.py:1033
+#: ../src/tui_partition.py:1032
 msgid "Review and modify partitioning layout?"
 msgstr "Möchten Sie das Partitionslayout ansehen oder bearbeiten?"
 
@@ -1952,106 +1891,8 @@ msgid "Disk Druid"
 msgstr "Disk Druid"
 
 #: ../src/tui_progress.py:50
-#, fuzzy
 msgid "File Installation"
-msgstr "Dateisystemoption:"
-
-#: ../src/tui_source.py:22
-msgid "Source Type"
-msgstr "Quelltyp"
-
-#: ../src/tui_source.py:24
-msgid ""
-"In installation you have to choose a source for the installation files. "
-"Mostly you will choose the disc here, but you are also able to install by "
-"HTTP, FTP hard disk or usb-key."
-msgstr ""
-"Bei der Installation haben Sie die Auswahl zwischen verschiedenen "
-"Quellmedien. Die Meisten werden hier die CD auswählen, jedoch ist auch eine "
-"Installation über HTTP, FTP, Festplatte oder USB-Stick möglich."
-
-#: ../src/tui_source.py:31
-msgid "Install Disc"
-msgstr "Installations-CD"
-
-#: ../src/tui_source.py:32
-msgid "Internet Source"
-msgstr "Internet-Quelle"
-
-#: ../src/tui_source.py:33
-msgid "External Drive"
-msgstr "Externes Laufwerk"
-
-#: ../src/tui_source.py:37 ../src/tui_welcome.py:9
-#, python-format
-msgid "%s"
-msgstr "%s"
-
-#: ../src/tui_source.py:59
-msgid "No CDROM found"
-msgstr "Keine Laufwerke gefunden"
-
-#: ../src/tui_source.py:60
-msgid ""
-"You choosed to install from an installtion disc, but there was no cdrom "
-"drive found on the system. Please choose another installation method."
-msgstr ""
-"Sie haben eine Installation mit CD ausgewählt, jedoch wurde kein CDROM-"
-"Laufwerk im System gefunden. Bitte wählen Sie eine andere "
-"Installationsmethode."
-
-#: ../src/tui_source.py:84
-msgid "Source URL"
-msgstr "Quell-URL"
-
-#: ../src/tui_source.py:86
-msgid ""
-"Enter a host you get the files from.You also must enter a path where the "
-"installer finds the files in."
-msgstr ""
-"Bitte geben Sie einen Server ein, von dem Sie die Installationsdateien "
-"beziehen. Weiterhin müssen Sie einen Pfad eingeben, in dem der Installer die "
-"Dateien auf dem Server findet."
-
-#: ../src/tui_source.py:94
-msgid "Host:"
-msgstr "Server:"
-
-#: ../src/tui_source.py:95
-msgid "Path:"
-msgstr "Pfad:"
-
-#: ../src/tui_source.py:115
-msgid "Wrong Protocol"
-msgstr "Ungültiges Protokoll"
-
-#: ../src/tui_source.py:116
-msgid ""
-"You entered a protocol that is not supported by Pomona. There are only "
-"http:// and ftp:// available."
-msgstr ""
-"Sie haben einen Protokolltyp eingegeben, der nicht von Pomona unterstützt "
-"wird. Unterstützt werden http:// und ftp://."
-
-#: ../src/tui_source.py:120
-#, fuzzy
-msgid "Syntax Error"
-msgstr "Fehler"
-
-#: ../src/tui_source.py:121
-msgid "The path of the URL must end with a /."
-msgstr "Der Pfad muss mit einem / enden."
-
-#: ../src/tui_source.py:130
-#, python-format
-msgid ""
-"When we tested your given URL there was an error.\n"
-"\n"
-"%s"
-msgstr ""
-"Bei einem Test der eingegebenen URL trat ein Fehler auf.\n"
-"\n"
-"%s"
+msgstr "Dateiinstallation"
 
 #: ../src/tui_timezone.py:62
 msgid "In which time zone are you located?"
@@ -2062,9 +1903,8 @@ msgid "System clock uses UTC"
 msgstr "Die Systemuhr ist auf UTC eingestellt."
 
 #: ../src/tui_timezone.py:83
-#, fuzzy
 msgid "Time Zone Selection"
-msgstr "Tastaturauswahl"
+msgstr "Zeitzonenauswahl"
 
 #: ../src/tui_userauth.py:27
 msgid "Root Password"
@@ -2073,8 +1913,8 @@ msgstr "Root-Passwort"
 #: ../src/tui_userauth.py:29
 msgid ""
 "Pick a root password. You must type it twice to ensure you know it and do "
-"not make a typing mistake. Remember that the root password is a critical "
-"part of system security!"
+"not make a typing mistake. Remember that the root password isa critical part "
+"of system security!"
 msgstr ""
 "Wählen Sie ein Root-Passwort. Es muss zweimal eingegeben werden um "
 "Tippfehler zu vermeiden. Bedenken Sie: Das Root-Passwort ist ein kritischer "
@@ -2115,6 +1955,11 @@ msgstr ""
 "Das eingegebene Passwort enthält nicht-ASCII-Zeichen, welche nicht erlaubt "
 "sind."
 
+#: ../src/tui_welcome.py:9
+#, python-format
+msgid "%s"
+msgstr "%s"
+
 #: ../src/tui_welcome.py:10
 #, python-format
 msgid ""
@@ -2124,45 +1969,6 @@ msgstr ""
 "Willkommen bei %s!\n"
 "\n"
 
-#: ../src/urlinstall.py:40 ../src/urlinstall.py:67
-msgid "Downloading"
-msgstr "Download"
-
-#: ../src/urlinstall.py:40
-msgid "Connecting..."
-msgstr "Verbinde..."
-
-#: ../src/urlinstall.py:67
-#, python-format
-msgid "Retrieving %s"
-msgstr "Lade %s"
-
-#: ../src/urlinstall.py:92
-#, python-format
-msgid ""
-"The file %s cannot be opened.  This is due to a missing file or perhaps a "
-"corrupt package.  Please verify your mirror contains all required packages, "
-"and try using a different one.\n"
-"\n"
-"If you reboot, your system will be left in an inconsistent state that will "
-"likely require reinstallation.\n"
-"\n"
-msgstr ""
-"Die Datei %s konnte nicht geöffnet werden. Es könnte sein, dass diese "
-"garnicht vorhanden oder beschädigt ist. Bitte überprüfen Sie ihren Server "
-"oder nutzen Sie einen anderen.\n"
-"\n"
-"Wenn Sie jetzt neustarten wird das System in einem inkonsistenten Zustand "
-"bleiben und eine Neuinstallation nötig sein.\n"
-"\n"
-
-#: ../src/urlinstall.py:181
-#, python-format
-msgid ""
-"An error occurred unmounting the disc. Please make sure you're not accessing "
-"%s from the shell on tty2 and then click OK to retry."
-msgstr ""
-
 #. generated from lang-table
 msgid "English"
 msgstr "Englisch"
@@ -2170,6 +1976,120 @@ msgstr "Englisch"
 #. generated from lang-table
 msgid "German"
 msgstr "Deutsch"
+
+#. generated from lang-table
+msgid "Danish"
+msgstr "Dänisch"
+
+#~ msgid "Dump Written"
+#~ msgstr "Dump wurde geschrieben"
+
+#~ msgid "Dump Not Written"
+#~ msgstr "Dump wurde nicht geschrieben"
+
+#~ msgid "Re_try"
+#~ msgstr "Wiederholen"
+
+#~ msgid "Source Type"
+#~ msgstr "Quelltyp"
+
+#~ msgid ""
+#~ "In installation you have to choose a source for the installation files. "
+#~ "Mostly you will choose the disc here, but you are also able to install by "
+#~ "HTTP, FTP hard disk or usb-key."
+#~ msgstr ""
+#~ "Bei der Installation haben Sie die Auswahl zwischen verschiedenen "
+#~ "Quellmedien. Die Meisten werden hier die CD auswählen, jedoch ist auch "
+#~ "eine Installation über HTTP, FTP, Festplatte oder USB-Stick möglich."
+
+#~ msgid "Install Disc"
+#~ msgstr "Installations-CD"
+
+#~ msgid "Internet Source"
+#~ msgstr "Internet-Quelle"
+
+#~ msgid "External Drive"
+#~ msgstr "Externes Laufwerk"
+
+#~ msgid "No CDROM found"
+#~ msgstr "Keine Laufwerke gefunden"
+
+#~ msgid ""
+#~ "You choosed to install from an installtion disc, but there was no cdrom "
+#~ "drive found on the system. Please choose another installation method."
+#~ msgstr ""
+#~ "Sie haben eine Installation mit CD ausgewählt, jedoch wurde kein CDROM-"
+#~ "Laufwerk im System gefunden. Bitte wählen Sie eine andere "
+#~ "Installationsmethode."
+
+#~ msgid "Source URL"
+#~ msgstr "Quell-URL"
+
+#~ msgid ""
+#~ "Enter a host you get the files from.You also must enter a path where the "
+#~ "installer finds the files in."
+#~ msgstr ""
+#~ "Bitte geben Sie einen Server ein, von dem Sie die Installationsdateien "
+#~ "beziehen. Weiterhin müssen Sie einen Pfad eingeben, in dem der Installer "
+#~ "die Dateien auf dem Server findet."
+
+#~ msgid "Host:"
+#~ msgstr "Server:"
+
+#~ msgid "Path:"
+#~ msgstr "Pfad:"
+
+#~ msgid "Wrong Protocol"
+#~ msgstr "Ungültiges Protokoll"
+
+#~ msgid ""
+#~ "You entered a protocol that is not supported by Pomona. There are only "
+#~ "http:// and ftp:// available."
+#~ msgstr ""
+#~ "Sie haben einen Protokolltyp eingegeben, der nicht von Pomona unterstützt "
+#~ "wird. Unterstützt werden http:// und ftp://."
+
+#, fuzzy
+#~ msgid "Syntax Error"
+#~ msgstr "Fehler"
+
+#~ msgid "The path of the URL must end with a /."
+#~ msgstr "Der Pfad muss mit einem / enden."
+
+#~ msgid ""
+#~ "When we tested your given URL there was an error.\n"
+#~ "\n"
+#~ "%s"
+#~ msgstr ""
+#~ "Bei einem Test der eingegebenen URL trat ein Fehler auf.\n"
+#~ "\n"
+#~ "%s"
+
+#~ msgid "Downloading"
+#~ msgstr "Download"
+
+#~ msgid "Connecting..."
+#~ msgstr "Verbinde..."
+
+#~ msgid "Retrieving %s"
+#~ msgstr "Lade %s"
+
+#~ msgid ""
+#~ "The file %s cannot be opened.  This is due to a missing file or perhaps a "
+#~ "corrupt package.  Please verify your mirror contains all required "
+#~ "packages, and try using a different one.\n"
+#~ "\n"
+#~ "If you reboot, your system will be left in an inconsistent state that "
+#~ "will likely require reinstallation.\n"
+#~ "\n"
+#~ msgstr ""
+#~ "Die Datei %s konnte nicht geöffnet werden. Es könnte sein, dass diese "
+#~ "garnicht vorhanden oder beschädigt ist. Bitte überprüfen Sie ihren Server "
+#~ "oder nutzen Sie einen anderen.\n"
+#~ "\n"
+#~ "Wenn Sie jetzt neustarten wird das System in einem inkonsistenten Zustand "
+#~ "bleiben und eine Neuinstallation nötig sein.\n"
+#~ "\n"
 
 #, fuzzy
 #~ msgid "Preparing transaction from installation source..."
