@@ -104,6 +104,7 @@ endif
 #
 ifneq "$(STAGE)" "toolchain"
 define POSTBUILD
+	@rm -rf /etc/default
 	@echo "Install done; saving file list to $(TARGET) ..."
 	@$(FIND_FILES) > $(DIR_SRC)/lsalrnew
 	@diff $(DIR_SRC)/lsalr $(DIR_SRC)/lsalrnew | grep '^> ' | sed 's+^> \./++' | sort > $(TARGET)_diff
