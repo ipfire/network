@@ -65,6 +65,6 @@ $(TARGET) :
 	cd $(DIR_APP) && sed -e "s/-Werror//g" -i src/Makefile
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	rm -rf /etc/{console-tools,default,lsb-base-logging.sh} /usr/share/initramfs-tools
+	rm -rf /etc/{console-tools,lsb-base-logging.sh} /usr/share/initramfs-tools
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
