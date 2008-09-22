@@ -58,5 +58,6 @@ $(TARGET) :
 	cd $(DIR_APP) && make install_doc_dir=/usr/share/doc/slang-$(VER) \
 		SLSH_DOC_DIR=/usr/share/doc/slang-$(VER)/slsh install-all
 	chmod -v 755 /usr/lib/libslang.so.$(VER) /usr/lib/slang/v2/modules/*.so
+	$(PYTHON_COMPILE)
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
