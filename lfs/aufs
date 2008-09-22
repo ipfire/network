@@ -56,6 +56,7 @@ $(TARGET) :
 	cd $(DIR_APP) && sed -e "s/\$$(shell uname -r)/$(KVER)/g" -i local.mk
 	cd $(DIR_APP) && make -f local.mk $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && install -m 755 -p mount.aufs umount.aufs auplink aulchown /sbin
+	echo FLUSH=ALL > /etc/default/auplink
 	cd $(DIR_APP) && cp -fv aufs.ko /lib/modules/$(KVER)/extra/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
