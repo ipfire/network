@@ -131,10 +131,11 @@ ifeq "$(PASS)" "cdrom"
 	cp -vf /usr/lib/memtest86+/memtest.bin $(CDROM_DIR)/$(PREFIX)/memtest
 
 	# info file
-	echo -e "Release: $(NAME)-$(VERSION)" \
-		"\nBuild host: $$(hostname)\nDate: $$(date)" \
-		"\nMD5: $$(md5sum $(CDROM_DIR)/$(SNAME)-$(VERSION).img | awk '{ print $$1 }')" \
-		> $(CDROM_DIR)/.$(SNAME)info
+	echo "Release: $(NAME)-$(VERSION)" >> $(CDROM_DIR)/.$(SNAME)info
+	echo "Build host: $$(hostname)" >> $(CDROM_DIR)/.$(SNAME)info
+	echo "Date: $$(date)" >> $(CDROM_DIR)/.$(SNAME)info
+	echo "SHA1: $$(sha1sum $(CDROM_DIR)/$(SNAME)-$(VERSION).img | awk '{ print $$1 }')" \
+		>> $(CDROM_DIR)/.$(SNAME)info
 
 	cd $(CDROM_DIR) && mkisofs -J -r -V "$(NAME)_$(VERSION)" \
 		-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
