@@ -86,7 +86,7 @@ MNTIMAGE=$TEMPDIR/initramfs_dir
 cd initramfs_dir
 
 # Make directory structure
-mkdir -p bin sbin dev device sys proc lib lib/udev sysroot tmpfs overlayfs squashfs \
+mkdir -p bin sbin dev device sys proc lib lib/udev sysroot \
 	etc etc/udev etc/udev/rules.d lib/udev/rules.d
 
 inst /sbin/losetup "$MNTIMAGE"
