@@ -55,7 +55,7 @@ $(TARGET) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
 	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/usr/lib/$(PKG_NAME) \
-		--disable-ipv6 --with-ldap --with-openssl=/usr/include
+		--with-ldap --with-openssl=/usr/include
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	
