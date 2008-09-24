@@ -569,8 +569,10 @@ if [ -n "$excludemodules" ]; then
 	MODULES=$(excludemods $MODULES)
 	availmodules=$(excludemods $availmodules)
 fi
-resdeps $MODULES $availmodules
-for MODULE in $resolved; do
+resdeps MODULES
+resmods="$resolved"
+resdeps availmodules
+for MODULE in $resmods $resolved; do
 	installmodule $MODULE
 done
 
