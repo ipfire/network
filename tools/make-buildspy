@@ -19,27 +19,14 @@
 #                                                                             #
 ###############################################################################
 
+BUILD_SPY_FILENAME=$BASEDIR/.build_spy
+
 build_spy() {
-	## Do nothing if UUID is not set
-	[ -z "${UUID}" ] && return
-
-	ACTION=$1; KEY=$2; shift 2
-	VAL="$*"
-
-	DATA="uuid=${UUID}&action=${ACTION}"
-	if [ "${ACTION}" == "set" ]; then
-		DATA+="&key=${KEY}&val=\"${VAL}\""
-	elif [ "${ACTION}" == "error" ]; then
-		## if we send an error we append
-		#  the last 10 lines of $LOGFILE
-		LOG=$(tail -n 10 ${LOGFILE})
-		DATA+="&log=${LOG}"
-	fi
-
-	wget -q -O /dev/null --user-agent="${NAME}BuildSpy/${VERSION}" \
-		--post-data="${DATA}" \
-		http://build.ipfire.org/build.py
+	local KEY VAL 
+	KEY=$1; shift 1
+	echo -n "&${KEY}=$*" >> $BUILD_SPY_FILENAME
 }
+
 
 build_spy_send_profile() {
 	MEM_SIZE=$[ $(grep "^MemTotal:" /proc/meminfo | awk '{ print $2 }') * 1024 ]
@@ -52,11 +39,27 @@ build_spy_send_profile() {
 	CPU_NAME=$(grep "^model name" --max-count=1 /proc/cpuinfo | \
 			awk -F': ' '{ print $2 }')
 
-	build_spy set hostname $HOSTNAME
-	build_spy set cpu_mhz  $CPU_MHZ
-	build_spy set cpu_cnt  $CPU_CNT
-	build_spy set cpu_mips $CPU_MIPS
-	build_spy set cpu_name $CPU_NAME
-	build_spy set mem_size $MEM_SIZE
-	build_spy set distcc   ${DISTCC_PORT-3632}
+	build_spy hostname $HOSTNAME
+	build_spy cpu_mhz  $CPU_MHZ
+	build_spy cpu_cnt  $CPU_CNT
+	build_spy cpu_mips $CPU_MIPS
+	build_spy cpu_name $CPU_NAME
+	build_spy mem_size $MEM_SIZE
+	build_spy distcc   ${DISTCC_PORT-3632}
 }
+
+if [ "$(basename $0)" == "make-buildspy" ]; then
+	sleep 10
+	while [ -e $BASEDIR/.running ]; do
+		DATA=$(cat $BUILD_SPY_FILENAME 2>/dev/null || true)
+		> $BUILD_SPY_FILENAME
+
+		[ -n "$DATA" ] && \
+			wget -q -O /dev/null --user-agent="${NAME}BuildSpy/${VERSION}" \
+				--post-data="action=set&uuid=${UUID}${DATA}" \
+				http://build.ipfire.org/rpc.py
+
+		sleep 10
+	done
+	rm -f $BUILD_SPY_FILENAME
+fi

@@ -118,7 +118,7 @@ toolchain)
 			# Check if host can build the toolchain
 			check_toolchain
 
-			build_spy compiling
+			build_spy state compiling
 
 			toolchain_build
 
@@ -133,7 +133,7 @@ toolchain)
 
 			stdumount
 
-			build_spy idle
+			build_spy state idle
 			;;
 		*)
 			usage

@@ -45,7 +45,7 @@ toolchain_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-toolchain.log"
 	export LOGFILE
 
-	build_spy set stage ${STAGE} &
+	build_spy stage ${STAGE}
 
 	toolchain_make stage1
 	# make distcc first so that CCACHE_PREFIX works immediately
@@ -97,7 +97,7 @@ base_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-base.log"
 	export LOGFILE
 
-	build_spy set stage ${STAGE} &
+	build_spy stage ${STAGE}
 
 	ipfire_make stage2
 	ipfire_make scripts
@@ -171,7 +171,7 @@ ipfire_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-ipfire.log"
 	export LOGFILE
 
-	build_spy set stage ${STAGE} &
+	build_spy stage ${STAGE}
 
 	### Building the configuration dirs and files
 	#
@@ -326,7 +326,7 @@ misc_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-misc.log"
 	export LOGFILE
 
-	build_spy set stage ${STAGE} &
+	build_spy stage ${STAGE}
 
 	ipfire_make stage4
 	
@@ -428,7 +428,7 @@ installer_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-installer.log"
 	export LOGFILE
 
-	build_spy set stage ${STAGE} &
+	build_spy stage ${STAGE}
 
 	ipfire_make stage5
 	ipfire_make pomona
@@ -446,7 +446,7 @@ packages_build() {
 	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-packages.log"
 	export LOGFILE
 
-	build_spy set stage ${STAGE} &
+	build_spy stage ${STAGE}
 
 	toolchain_make strip
 

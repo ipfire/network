@@ -187,7 +187,7 @@ stdumount() {
 exiterror() {
 	stdumount
 	dialogerror $*
-	build_spy error &
+	build_spy state error
 	touch $FAILED
 	rm -f $RUNNING 2>/dev/null
 	exit 1
@@ -291,7 +291,7 @@ lfsmakecommoncheck()
 		exiterror "Download error in $1"
 	fi
 
-	build_spy set package $1 &
+	build_spy package $1
 
 	return 0	# pass all!
 } # End of lfsmakecommoncheck()
@@ -622,16 +622,17 @@ build() {
 		exiterror "Use make.sh source get first!"
 	fi
 	cd $BASEDIR/cache/toolchains
-	PACKAGE=`ls -v -r $TOOLCHAINNAME.tar.bz2 2> /dev/null | head -n 1`
+	PACKAGE=`ls -v -r $TOOLCHAINNAME.tar.bz2 2>/dev/null | head -n 1`
 	#only restore on a clean disk
 
 	local BLD_TIME_START=`date +%s`
-	touch $RUNNING; rm -f $FAILED 2>/dev/null
+	touch $RUNNING; rm -f $FAILED $BUILD_SPY_FILENAME 2>/dev/null
 
 	echo -ne "Building for ${BOLD}${TARGET} (${MACHINE}) on ${MACHINE_REAL}${NORMAL}\n"
 
-	build_spy_send_profile &
-	build_spy compiling &
+	build_spy_send_profile
+	build_spy state compiling
+	BASEDIR=$BASEDIR UUID=$UUID $BASEDIR/tools/make-buildspy &
 
 	if [ -f $BASEDIR/log_${MACHINE}/02_base/stage2-LFS ]; then
 		prepareenv
@@ -675,8 +676,8 @@ fi
 	ls -sh $BASEDIR/${SNAME}-${VERSION}.${MACHINE}.iso
 
 	local BLD_TIME_END=`date +%s`
-	build_spy set duration $[ $BLD_TIME_END - $BLD_TIME_START ]
-	build_spy idle
+	build_spy duration $[ $BLD_TIME_END - $BLD_TIME_START ]
+	build_spy state idle
 	rm -f $RUNNING
 }
 
