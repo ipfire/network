@@ -69,8 +69,8 @@ class RootPasswordWindow:
             else:
                 break
 
-        entry1.set("")
-        entry2.set("")
+            entry1.set("")
+            entry2.set("")
 
         screen.popWindow()
         pomona.id.rootPassword["password"] = entry1.value()
