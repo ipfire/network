@@ -29,28 +29,13 @@ build_spy() {
 
 
 build_spy_send_profile() {
-	MEM_SIZE=$[ $(grep "^MemTotal:" /proc/meminfo | awk '{ print $2 }') * 1024 ]
-
-	CPU_CNT=$(grep "^processor" < /proc/cpuinfo | wc -l)
-	CPU_MHZ=$(grep "^cpu MHz" --max-count=1 /proc/cpuinfo | \
-			awk -F': ' '{ print $2 }')
-	CPU_MIPS=$[ $(grep "^bogomips" --max-count=1 /proc/cpuinfo | \
-			awk '{ print $3 }' | awk -F. '{ print $1 }') * ${CPU_CNT} ]
-	CPU_NAME=$(grep "^model name" --max-count=1 /proc/cpuinfo | \
-			awk -F': ' '{ print $2 }')
-
 	build_spy hostname $HOSTNAME
-	build_spy cpu_mhz  $CPU_MHZ
-	build_spy cpu_cnt  $CPU_CNT
-	build_spy cpu_mips $CPU_MIPS
-	build_spy cpu_name $CPU_NAME
-	build_spy mem_size $MEM_SIZE
 	build_spy distcc   ${DISTCC_PORT-3632}
 }
 
 if [ "$(basename $0)" == "make-buildspy" ]; then
 	sleep 10
-	while [ -e $BASEDIR/.running ]; do
+	while true; do
 		DATA=$(cat $BUILD_SPY_FILENAME 2>/dev/null || true)
 		> $BUILD_SPY_FILENAME
 
@@ -59,6 +44,7 @@ if [ "$(basename $0)" == "make-buildspy" ]; then
 				--post-data="action=set&uuid=${UUID}${DATA}" \
 				http://build.ipfire.org/rpc.py
 
+		[ -e $BASEDIR/.running ] || break
 		sleep 10
 	done
 	rm -f $BUILD_SPY_FILENAME
