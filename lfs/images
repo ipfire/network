@@ -38,6 +38,11 @@ endif
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+ROOTFILES  = $(DIR_SOURCE)/rootfiles/core
+ifeq "$(BUILD_DEBUG)" "1"
+	ROOTFILES += $(DIR_SOURCE)/rootfiles/debug
+endif
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -57,7 +62,7 @@ ifeq "$(PASS)" "$(THISAPP)"
 	@rm -f $(IMAGES_DIR)/$(SNAME)-$(VERSION).img
 	mkdir -pv $(CDROM_DIR)/tmp
 
-	find $(DIR_SOURCE)/rootfiles/core -maxdepth 1 -type f | xargs cat | \
+	find $(ROOTFILES) -maxdepth 1 -type f | xargs cat | \
 		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq > $(CDROM_DIR)/archive.files
 
 	cd / && cpio -pd $(CDROM_DIR)/tmp < $(CDROM_DIR)/archive.files \
