@@ -22,6 +22,8 @@
 LANG=en_US.UTF-8
 export LANG
 
+command=/sbin/pomona
+debug=off
 mode=
 
 for o in $(cat /proc/cmdline) ; do
@@ -29,9 +31,12 @@ for o in $(cat /proc/cmdline) ; do
     mode=*)
         mode=${o#mode=}
         ;;
+    debug)
+        debug=on
     esac
 done
 
 if [ "$mode" = "install" ]; then
-	[[ "$(tty)" =~ "tty1" ]] && exec /sbin/pomona
+	[ "$debug" == "on" ] && command="strace -ff -F -o /tmp/strace.log $command"
+	[[ "$(tty)" =~ "tty1" ]] && exec $command
 fi
