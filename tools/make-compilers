@@ -21,7 +21,7 @@
 
 ccache_stats() {
 	if [ -e $BASEDIR/ccache ]; then
-		PATH=$PATH:build_${MACHINE}/tools_${MACHINE}/usr/sbin \
+		PATH=$PATH:build_${MACHINE}/tools_${MACHINE}/usr/bin \
 		CCACHE_DIR=${BASEDIR}/ccache \
 		ccache -s
 	else
@@ -37,7 +37,7 @@ distcc_mon() {
 	if [ -e $BASEDIR/distcc ]; then
 		while sleep $INTERVAL; do
 			clear
-			PATH=$PATH:build_${MACHINE}/tools_${MACHINE}/usr/sbin \
+			PATH=$PATH:build_${MACHINE}/tools_${MACHINE}/usr/bin \
 			DISTCC_DIR=${BASEDIR}/distcc \
 			distccmon-text
 		done
