@@ -39,7 +39,7 @@ CFLAGS    += -fPIC
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-autotools.patch
 
 install : $(TARGET)
 
@@ -55,7 +55,9 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr --shared --libdir=/lib
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-autotools.patch
+	cd $(DIR_APP) && autoreconf --install
+	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib --disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	rm -v /lib/libz.so
