@@ -58,13 +58,18 @@ distccd_start() {
 }
 
 distccd_stop() {
-	echo "Stopping distcc daemon"
+	echo -n "Stopping distcc daemon"
 	killall distccd
 	if [ "$?" -eq "0" ]; then
 		beautify message DONE
 	else
 		beautify message FAIL
 	fi
+}
+
+distccd_restart() {
+	distccd_stop
+	distccd_start
 }
 
 if [ "$(basename $0)" == "make-compilers" ]; then
