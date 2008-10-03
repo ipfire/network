@@ -48,7 +48,7 @@ distcc_mon() {
 }
 
 distccd_start() {
-	echo "Running distcc daemon"
+	echo -n "Running distcc daemon"
 	TOOLS_DIR=$TOOLS_DIR $BASEDIR/tools/make-compilers &
 	if [ "$?" -eq "0" ]; then
 		beautify message DONE
@@ -72,7 +72,7 @@ if [ "$(basename $0)" == "make-compilers" ]; then
 	pidof distccd >/dev/null && exit 1
 
 	# Run distccd
-	DISTCCD_PATH=$TOOLS_DIR/bin:$(ls $TOOLS_DIR/libexec/gcc/*-pc-linux-gnu/*/) \
+	DISTCCD_PATH=$TOOLS_DIR/bin:$(echo $TOOLS_DIR/libexec/gcc/*-pc-linux-gnu/*/) \
 		$TOOLS_DIR/usr/bin/distccd --daemon --allow 0.0.0.0/0 \
 		--user nobody --nice 10 --jobs 4 &>/dev/null
 
