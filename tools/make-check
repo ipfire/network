@@ -58,7 +58,7 @@ check_toolchain() {
 	check_common "/bin/sh links bash?"		"if ! which sh; then echo \"command not found\"; fi"
 	check_common "GNU Binutils"	"2.12"		"ld --version | head -n1 | cut -d\" \" -f3-" "Binutils: "
 	check_common "GNU Bison"	"1.875"		"bison --version | head -n1"
-	check_common "/usr/bin/yacc links bison?"	"if ! which yacc; then echo \"command not found\"; fi"
+	#check_common "/usr/bin/yacc links bison?"	"if ! which yacc; then echo \"command not found\"; fi"
 	check_common "Bzip2"		"1.0.2"		"bzip2 --version 2>&1 < /dev/null | head -n1 | cut -d\" \" -f1,6-"
 	check_common "Coreutils"	"5.0"		"chown --version | head -n1 | cut -d\")\" -f2" "Coreutils:"
 	check_common "Diffutils"	"2.8"		"diff --version | head -n1"
