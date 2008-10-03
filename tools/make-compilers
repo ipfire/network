@@ -51,7 +51,14 @@ distcc_mon() {
 
 distccd_start() {
 	echo -n "Running distcc daemon"
-	TOOLS_DIR=$TOOLS_DIR $BASEDIR/tools/make-compilers &
+
+	if [ "$DISTCC_PORT" == "0" ]; then
+		beautify message DISA
+		return
+	fi
+
+	TOOLS_DIR=$TOOLS_DIR DISTCC_PORT=$DISTCC_PORT \
+		$BASEDIR/tools/make-compilers &
 	if [ "$?" -eq "0" ]; then
 		beautify message DONE
 	else
@@ -76,12 +83,12 @@ distccd_restart() {
 
 if [ "$(basename $0)" == "make-compilers" ]; then
 	# Exit, when distccd is already running
-	pidof distccd >/dev/null && exit 1
+	pidof distccd &>/dev/null && exit
 
 	# Run distccd
 	DISTCCD_PATH=$TOOLS_DIR/bin:$(echo $TOOLS_DIR/libexec/gcc/*-pc-linux-gnu/*/) \
 		$TOOLS_DIR/usr/bin/distccd --daemon --allow 0.0.0.0/0 \
-		--user nobody --nice 10 --jobs 4 &>/dev/null
+		--user nobody --nice 10 --jobs 4 --port ${DISTCC_PORT-3632} &>/dev/null
 
 	# When $TOOLS_DIR is not available (esp. gcc) --> exit
 	while pidof distccd >/dev/null && [ -x $TOOLS_DIR/bin/gcc ]; do
