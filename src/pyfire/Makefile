@@ -21,7 +21,7 @@
 NAME = pyFire
 SNAME = pyfire
 
-PYTHONLIBDIR  = $(DESTDIR)/usr/lib/python2.5/site-packages/$(SNAME)
+PYTHONLIBDIR  = $(DESTDIR)/usr/lib/python2.6/site-packages/$(SNAME)
 
 all:
 
