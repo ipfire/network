@@ -37,6 +37,8 @@ distcc_mon() {
 	if [ -e $BASEDIR/distcc ]; then
 		while sleep $INTERVAL; do
 			clear
+			echo "$NAME - Distcc monitor - Cancel with ctrl+c"
+			echo
 			PATH=$PATH:build_${MACHINE}/tools_${MACHINE}/usr/bin \
 			DISTCC_DIR=${BASEDIR}/distcc \
 			distccmon-text
