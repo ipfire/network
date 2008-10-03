@@ -60,6 +60,7 @@ $(TARGET) :
 	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib --disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+	cd $(DIR_APP) && cp -pfv zconf.h zlib.h /usr/include
 	rm -v /lib/libz.so
 	ln -sfv ../../lib/libz.so.$(VER) /usr/lib/libz.so
 	@rm -rf $(DIR_APP)
