@@ -64,11 +64,11 @@ batch_attach() {
 batch_run() {	
 	gettoolchain
 	$0 build | tee $BATCHLOG
-	if [ "$?" == "0" ]; then
+	if [ -e $FAILED ]; then
+		SUBJECT="Failed :("
+	else
 		SUBJECT="Success!"
 		puttarget
-	else
-		SUBJECT="Failed :("
 	fi
 	SUBJECT=$SUBJECT batch_mail
 }
