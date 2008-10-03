@@ -61,13 +61,25 @@ batch)
 	esac
 	;;
 
-stats)
-	# show some stats about the compiler(s)
+ccache)
+	# ccache options
 	case "$2" in
-		ccache)
+		stats)
 			ccache_stats
 			;;
-		distcc)
+	esac
+	;;
+
+distcc|distccd)
+	# distcc(d) commands
+	case "$2" in
+		start)
+			distccd_start
+			;;
+		stop)
+			distccd_stop
+			;;
+		stats|mon)
 			distcc_mon
 			;;
 	esac

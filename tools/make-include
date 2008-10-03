@@ -655,7 +655,10 @@ build() {
 			prepareenv
 		fi
 	fi
-	
+
+	# Run distcc daemon
+	distccd_start
+
 	beautify build_stage "Building base"
 	base_build
 
