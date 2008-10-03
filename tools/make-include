@@ -46,6 +46,7 @@ BUILD_DEBUG=0
 # Parallelism flag
 PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
 DISTCC_HOSTS=localhost
+DISTCC_PORT=3632
 
 PWD=`pwd`
 BASENAME=`basename $0`

@@ -88,7 +88,7 @@ if [ "$(basename $0)" == "make-compilers" ]; then
 	# Run distccd
 	DISTCCD_PATH=$TOOLS_DIR/bin:$(echo $TOOLS_DIR/libexec/gcc/*-pc-linux-gnu/*/) \
 		$TOOLS_DIR/usr/bin/distccd --daemon --allow 0.0.0.0/0 \
-		--user nobody --nice 10 --jobs 4 --port ${DISTCC_PORT-3632} &>/dev/null
+		--user nobody --nice 10 --jobs 4 --port $DISTCC_PORT &>/dev/null
 
 	# When $TOOLS_DIR is not available (esp. gcc) --> exit
 	while pidof distccd >/dev/null && [ -x $TOOLS_DIR/bin/gcc ]; do
