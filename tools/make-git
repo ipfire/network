@@ -49,6 +49,7 @@ git_pull() {
 	if [ "$1" = "--batch" ]; then
 		shift
 		git pull $* | grep -q "Already up-to-date." || rm -f $FAILED
+		[ -e $FAILED ] || distccd_restart
 	else
 		if [ "$CURRENT_BRANCH" == "master" ]; then
 			if ! (git status | grep -q "working directory clean"); then
