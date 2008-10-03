@@ -123,14 +123,14 @@ base_build() {
 	ipfire_make libtool
 	ipfire_make perl
 	ipfire_make readline
+	ipfire_make autoconf
+	ipfire_make automake
 	ipfire_make zlib
 	ipfire_make gettext
 	ipfire_make make
 	ipfire_make attr
 	ipfire_make libcap2
 	ipfire_make paxctl
-	ipfire_make autoconf
-	ipfire_make automake
 	ipfire_make bash
 	ipfire_make bzip2
 	ipfire_make diffutils
