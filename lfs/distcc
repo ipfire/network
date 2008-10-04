@@ -60,8 +60,9 @@ $(TARGET) :
 			--with-included-popt \
 			--without-avahi
 	cd $(DIR_APP) && sed -e "s/-Werror//g" -i Makefile
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
+		distcc distccd distccmon-text lsdistcc
+	cd $(DIR_APP) && make install-programs
 	#ln -sf distcc $(PREFIX)/bin/gcc
 	#ln -sf distcc $(PREFIX)/bin/g++
 	#ln -sf distcc $(PREFIX)/bin/cc
