@@ -20,30 +20,41 @@
 
 include ../Makefile.inc
 
-SUBDIRS = isys
+CFLAGS +=  -I$(PYTHONINCLUDE) -I/usr/include -I.. -I.
 
-all: subdirs
+OBJECTS = devices.o imount.o smp.o linkdetect.o \
+	lang.o isofs.o vio.o eddsupport.o str.o \
+	wireless.o ethtool.o
 
-install: all
-	-mkdir -p $(PYTHONLIBDIR)
-	cp -f *.py ../lang-{table,names} $(PYTHONLIBDIR)
-	chmod 755 $(PYTHONLIBDIR)/installer.py
-	for d in $(SUBDIRS); do make -C $$d install; [ $$? = 0 ] || exit 1; done
-	
-	sed -e "s/VERSION/$(VERSION)/g" \
-			-e "s/SNAME/$(SNAME)/g" \
-			-e "s/PNAME/$(PNAME)/g" \
-			-e "s/NAME/$(NAME)/g" \
-			-e "s/KVER/$(KVER)/g" \
-			-i $(PYTHONLIBDIR)/constants.py
+SOBJECTS = $(patsubst %.o,%.lo,$(OBJECTS))
+SOURCES = $(patsubst %.o,%.c,$(OBJECTS)) isys.c
+LOADLIBES = -lpci -lpopt -lext2fs -lz -lpci -lblkid
+PYMODULES = _isys.so
 
-	-mkdir -p $(DESTDIR)/sbin
-	#ln -svf ../usr/lib/$(PSNAME)/installer.py $(DESTDIR)/sbin/$(PSNAME)
-	install -m 755 $(PSNAME) $(DESTDIR)/sbin/$(PSNAME)
+all: depend $(PYMODULES) libisys.a
+
+%.lo: %.c
+	$(CC) -c $(CFLAGS) -fPIC -o $@ $<
+
+_isys.so: isys.lo $(SOBJECTS)
+	$(CC) -shared -g -fPIC -o $@ isys.lo $(SOBJECTS) $(LOADLIBES) $(LDFLAGS)
+
+libisys.a: libisys.a($(OBJECTS))
+
+filtertest: filtertest.o libisys.a
 
 clean:
-	rm -f *.o *.so *.pyc *.pyo
-	for d in $(SUBDIRS); do make -C $$d clean; [ $$? = 0 ] || exit 1; done
+	rm -f *.o *.so *.lo *.a *.pyc $(TARGET) $(SOBJECTS)
+	rm -f $(OBJECTS)
+	rm -f depend
 
-subdirs:
-	for d in $(SUBDIRS); do make -C $$d everything; [ $$? = 0 ] || exit 1; done
+install: all
+	install -s $(PYMODULES) $(PYTHONLIBDIR)
+	install -m 644 isys.py $(PYTHONLIBDIR)
+
+depend:
+	$(CPP) -M $(CFLAGS) $(SOURCES) > depend
+
+ifeq (depend,$(wildcard depend))
+include depend
+endif

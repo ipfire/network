@@ -20,9 +20,9 @@
 
 include Makefile.inc
 
-SUBDIRS = src po
+SUBDIRS = isys po
 
-all: subdirs
+all: lang-names subdirs
 
 lang-names: lang-table
 	PYTHONPATH="./src/:." LANG=en_US.UTF-8 \
@@ -30,19 +30,25 @@ lang-names: lang-table
 	mv lang-names.tmp lang-names
 
 install: all
-	@if [ "$(DESTDIR)" = "" ]; then \
-		echo " "; \
-		echo "ERROR: A destdir is required"; \
-		exit 1; \
-	fi
 	for d in $(SUBDIRS); do \
 		make DESTDIR=`cd $(DESTDIR); pwd` -C $$d install; \
 		[ $$? = 0 ] || exit 1; \
 	done
+	-mkdir -p $(PYTHONLIBDIR)
+	cp -f *.py lang-{table,names} $(PYTHONLIBDIR)
+	chmod 755 $(PYTHONLIBDIR)/installer.py
+	sed -e "s/VERSION/$(VERSION)/g" \
+		-e "s/SNAME/$(SNAME)/g" \
+		-e "s/PNAME/$(PNAME)/g" \
+		-e "s/NAME/$(NAME)/g" \
+		-e "s/KVER/$(KVER)/g" \
+		-i $(PYTHONLIBDIR)/constants.py
+	-mkdir -p $(DESTDIR)/sbin
+	install -m 755 $(PSNAME) $(DESTDIR)/sbin/$(PSNAME)
 
 clean:
+	rm -vf *.o *.so *.pyc *.pyo lang-names{,.tmp}
 	for d in $(SUBDIRS); do make -C $$d clean; done
-	rm -rf lang-names{,.tmp}
 
 subdirs:
 	for d in $(SUBDIRS); do make -C $$d; [ $$? = 0 ] || exit 1; done

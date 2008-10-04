@@ -23,6 +23,8 @@
 PNAME = Pomona
 PSNAME = pomona
 
+DESTDIR=$(INSTALLER_DIR)
+
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_DATA = ${INSTALL} -m 644
