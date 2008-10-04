@@ -36,7 +36,9 @@ for o in $(cat /proc/cmdline) ; do
     esac
 done
 
-if [ "$mode" = "install" ]; then
-	[ "$debug" == "on" ] && command="strace -ff -F -o /tmp/strace.log $command"
-	[[ "$(tty)" =~ "tty1" ]] && exec $command
+if [ "$mode" = "install" ] && [[ "$(tty)" =~ "tty1" ]]; then
+	if [ "$debug" == "on" ]; then
+		command="strace -ff -F -o /tmp/strace.log $command --debug"
+	fi
+	exec $command
 fi

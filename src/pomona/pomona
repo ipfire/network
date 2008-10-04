@@ -25,11 +25,20 @@
 #                                                                             #
 ###############################################################################
 
-export LIBUSER_CONF=/etc/libuser.conf
-
 echo "Running the Pomona Text Installer..."
-sleep 2
+sleep 3
 
-python /usr/lib/pomona/installer.py
+python /usr/lib/pomona/installer.py $@
 
+for i in $@; do
+	if [ "$i" == "--debug" ]; then
+		echo
+		echo "We are running in debug mode!"
+		echo
+		echo "So, rebooting is paused and you can do some things on the"
+		echo "other shells. If you are finished, press ENTER."
+		read
+		break
+	fi
+done
 reboot
