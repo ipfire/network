@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = distcc
-VER        = 2.18.3
+VER        = 3.0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -53,7 +53,13 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && CFLAGS="-O2 -static" ./configure --prefix=$(PREFIX)
+	cd $(DIR_APP) && \
+		CFLAGS="-O2 -static" \
+		./configure \
+			--prefix=$(PREFIX) \
+			--with-included-popt \
+			--without-avahi
+	cd $(DIR_APP) && sed -e "s/-Werror//g" -i Makefile
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	#ln -sf distcc $(PREFIX)/bin/gcc
