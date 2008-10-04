@@ -25,6 +25,7 @@ from optparse import OptionParser
 import inutil, isys, dispatch
 from flags import flags
 from constants import *
+import signal
 
 # Make sure messages sent through python's warnings module get logged.
 def PomonaShowWarning(message, category, filename, lineno, file=sys.stderr):
@@ -35,6 +36,9 @@ def setupEnvironment():
         os.environ["LANG"] = "en_US.UTF-8"
     os.environ['HOME'] = '/tmp'
     os.environ['LC_NUMERIC'] = 'C'
+
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal.signal(signal.SIGSEGV, isys.handleSegv)
 
 def getInstClass():
     from installclass import DefaultInstall
