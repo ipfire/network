@@ -30,11 +30,12 @@ lang-names: lang-table
 	mv lang-names.tmp lang-names
 
 install: all
+	-mkdir -p $(PYTHONLIBDIR)
+	[ -d "$(PYTHONLIBDIR)" ]
 	for d in $(SUBDIRS); do \
 		make DESTDIR=`cd $(DESTDIR); pwd` -C $$d install; \
 		[ $$? = 0 ] || exit 1; \
 	done
-	-mkdir -p $(PYTHONLIBDIR)
 	cp -f *.py lang-{table,names} $(PYTHONLIBDIR)
 	chmod 755 $(PYTHONLIBDIR)/installer.py
 	sed -e "s/VERSION/$(VERSION)/g" \
