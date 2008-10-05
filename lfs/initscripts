@@ -32,6 +32,34 @@ DIR_APP    = $(DIR_SOURCE)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+SCRIPTS = \
+	checkfs \
+	cleanfs \
+	console \
+	dhcp \
+	fcron \
+	haldaemon \
+	halt \
+	localnet \
+	messagebus \
+	mISDN \
+	modules \
+	mountfs \
+	mountkernfs \
+	network \
+	ntpd \
+	openldap \
+	random \
+	reboot \
+	sendsignals \
+	setclock \
+	sshd \
+	swap \
+	sysctl \
+	sysklogd \
+	udev \
+	udev_retry
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -69,7 +97,9 @@ $(TARGET) :
 	install -m 644 $(DIR_APP)/lsb/manage-functions /lib/lsb/
 	install -m 644 $(DIR_APP)/etc/lsb-config /etc/lsb/
 
-	cd /etc/init.d && find . -type f -exec install_initd {} \;
+	cd /etc/init.d && for i in $(SCRIPTS); do \
+		sleep 1; install_initd $$i; \
+	done
 
 	for i in $(DIR_SRC)/src/initscripts/sysconfig/*; do \
 		install -v -m 644 $$i /etc/sysconfig/; \
