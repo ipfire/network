@@ -616,19 +616,38 @@ cemit << EOF
 #                                                                             #
 ###############################################################################
 
-export PATH=/sbin:/bin
+quiet() {
+	return [ "$quiet" != "1" ]
+}
+
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+export TERM=linux
 
 mount -t proc /proc /proc
-echo Mounting proc filesystem
+mount -t sysfs /sys /sys
+
+# Declare all variables here.. mostly for housekeeping
+#
+quiet=0
+
+# Parse kernel commandline options
+#
+for o in `cat /proc/cmdline` ; do
+    case $o in
+    quiet)
+        quiet=1
+        ;;
+    esac
+done
+
+if quiet; then
+    echo "kernel commandline: `cat /proc/cmdline`"
+fi
 
 # Silencing kernel
 echo >/proc/sys/kernel/printk "1 4 1 7"
 
-mount -t sysfs /sys /sys
-echo Mounting sysfs filesystem
-
 mount -o mode=0755 -t tmpfs /dev /dev
-echo Creating /dev
 
 mkdir /dev/pts
 mount -t devpts -o gid=5,mode=620 /dev/pts /dev/pts
@@ -655,10 +674,12 @@ done
 
 cemit << EOF
 /sbin/udevd --daemon
-echo Creating initial device nodes
+quiet && \
+	echo Creating initial device nodes
 /sbin/udevadm trigger
 
-echo Creating block device nodes.
+quiet && \
+	echo Creating block device nodes.
 /sbin/udevadm settle --timeout=30 || :
 EOF
 
@@ -703,26 +724,26 @@ for MODULE in $MODULES; do
 		echo "options $module $options" >> $MNTIMAGE/etc/modprobe.conf
 	fi
 
-	emit "echo \"Loading $module module\""
+	emit "quiet && echo \"Loading $module module\""
 	emit "modprobe -q $module"
         
 	# Hack - we need a delay after loading usb-storage to give things
 	#        time to settle down before we start looking a block devices
 	if [ "$module" = "usb-storage" -o "$module" = "ub" ]; then
-		emit "echo Waiting for driver initialization."
+		emit "quiet && echo Waiting for driver initialization."
 		emit "#stabilized /proc/bus/usb/devices"
 	fi
 	# Firewire likes to change the subsystem name every 3 hours. :/
 	if [ "$module" = "sbp2" ]; then
-		emit "echo Waiting for driver initialization."
+		emit "quiet && echo Waiting for driver initialization."
 		emit "#stabilized /sys/bus/ieee1394/drivers/sbp2"
 	fi
 	if [ "$module" = "fw-sbp2" -o "$module" = "firewire-sbp2" ]; then
-		emit "echo Waiting for driver initialization."
+		emit "quiet && echo Waiting for driver initialization."
 		emit "#stabilized /sys/bus/firewire/drivers/sbp2"
 	fi
 	if [ "${module::5}" == "pata_" -o "$module" == "ata_piix" -o "$module" == "ahci" -o "${module::5}" == "sata_" -o "$module" == "ibmvscsic" ]; then
-		emit "echo Waiting for driver initialization."
+		emit "quiet && echo Waiting for driver initialization."
 		emit "#stabilized --hash --interval 250 /proc/scsi/scsi"
 	fi
 done
@@ -730,7 +751,8 @@ unset usb_mounted
 
 if [ -n "$availmodules" ]; then
 	cemit <<EOF
-echo "Loading available PCI drivers"
+quiet && \
+	echo "Loading available PCI drivers"
 loadDrivers
 EOF
 fi
@@ -738,15 +760,20 @@ fi
 cemit << EOF
 echo '$rootdev /sysroot $rootfs $rootopts 0 0' > /etc/fstab
 
-echo Mounting root filesystem.
+quiet && \
+	echo Mounting root filesystem.
 mount /sysroot
 
 # stopping udev daemon
 kill \$(pidof udevd)
 
-echo Switching to new root and running init.
+quiet && \
+	echo Switching to new root and running init.
 
-exec switchroot $(get_verbose) /sysroot
+quiet && \
+	switchrootoptions="-v"
+
+exec switchroot $switchrootoptions /sysroot
 
 echo exec switchroot failed...
 bash
