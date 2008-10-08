@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = glibc
-VER        = 2.7
+VER        = 2.8-20080929
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -57,7 +57,6 @@ endif
 ###############################################################################
 
 objects = $(DL_FILE) \
-	glibc-libidn-$(VER).tar.bz2 \
 	$(THISAPP)-pt_pax-1.patch \
 	$(THISAPP)-ssp_hp-timing-1.patch \
 	$(THISAPP)-arc4_prng-1.patch \
@@ -114,11 +113,9 @@ endif
 ifeq "$(STAGE)" "base"
 	if [ ! -e /bin/pwd ]; then ln -sfn $(TOOLS_DIR)/bin/pwd /bin/pwd; fi
 
-	tar jxf $(DIR_DL)/glibc-libidn-$(VER).tar.bz2 -C $(DIR_APP)
-	cd $(DIR_APP) && mv glibc-libidn-$(VER) libidn
 ifeq "$(SSP)" "1"
 ifeq "$(MACHINE)" "i686"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ssp_hp-timing-1.patch
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ssp_hp-timing-1.patch
 endif
 	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-wur-1.patch
 endif
