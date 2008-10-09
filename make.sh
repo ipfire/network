@@ -128,6 +128,7 @@ base_build() {
 	ipfire_make zlib
 	ipfire_make gettext
 	ipfire_make make
+	ipfire_make libidn
 	ipfire_make attr
 	ipfire_make libcap2
 	ipfire_make paxctl
@@ -142,7 +143,7 @@ base_build() {
 	ipfire_make grep
 	ipfire_make groff
 	ipfire_make gzip
-	ipfire_make inetutils
+	ipfire_make iputils
 	ipfire_make iproute2
 	ipfire_make kbd
 	ipfire_make less
@@ -196,7 +197,6 @@ ipfire_build() {
 	ipfire_make python-iconv
 	ipfire_make libxml2
 	ipfire_make libxslt
-	#ipfire_make libidn		### Do we need this?
 	ipfire_make pcre
 	ipfire_make popt
 	ipfire_make libusb
