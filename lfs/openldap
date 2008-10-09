@@ -25,13 +25,15 @@
 include Config
 
 PKG_NAME   = openldap
-VER        = 2.3.32
+VER        = 2.4.11
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.gz
+DL_FILE    = $(THISAPP).tgz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+CFLAGS    += -D_GNU_SOURCE
 
 ###############################################################################
 # Top-level Rules
