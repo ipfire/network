@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = strongswan
-VER        = 4.1.10
+VER        = 4.2.7
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -58,7 +58,7 @@ $(TARGET) :
 			--prefix=/usr \
 			--sysconfdir=/etc \
 			--libexecdir=/usr/lib \
-			--with-uid=99 --with-gid=99 \
+			--with-user=nobody \
 			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
