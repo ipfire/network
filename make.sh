@@ -196,6 +196,7 @@ ipfire_build() {
 	ipfire_make python-iconv
 	ipfire_make libxml2
 	ipfire_make libxslt
+	#ipfire_make libidn		### Do we need this?
 	ipfire_make pcre
 	ipfire_make popt
 	ipfire_make libusb
