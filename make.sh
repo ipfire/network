@@ -156,7 +156,7 @@ base_build() {
 	ipfire_make sysvinit
 	ipfire_make tar
 	ipfire_make texinfo
-	ipfire_make udev					## NEED TO INSTALL CONFIG
+	ipfire_make udev
 	ipfire_make util-linux-ng
 	ipfire_make vim
 }
