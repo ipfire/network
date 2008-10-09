@@ -24,20 +24,34 @@
 
 include Config
 
-PKG_NAME   = inetutils
-VER        = 1.5
+PKG_NAME   = iputils
+VER        = s20071127
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.gz
+DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+CFLAGS    += -fpie
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-no_server_man_pages-2.patch
+objects = $(DL_FILE) \
+	$(THISAPP)-addrcache.patch \
+	$(THISAPP)-arping-infiniband.patch \
+	$(THISAPP)-arping_timeout.patch \
+	$(THISAPP)-countermeasures.patch \
+	$(THISAPP)-idn.patch \
+	$(THISAPP)-open-max.patch \
+	$(THISAPP)-output.patch \
+	$(THISAPP)-ping-subint.patch \
+	$(THISAPP)-ping_cleanup.patch \
+	$(THISAPP)-rh.patch \
+	$(THISAPP)-traffic_class.patch \
+	$(THISAPP)-warnings.patch
 
 install : $(TARGET)
 
@@ -52,17 +66,35 @@ $(objects) :
 
 $(TARGET) : 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-no_server_man_pages-2.patch
-	#cd $(DIR_APP) && sed 's/4775/0755/' -i.orig2 ping/Makefile.in
-	cd $(DIR_APP) && ./configure --prefix=/usr --libexecdir=/usr/sbin \
-		--sysconfdir=/etc --localstatedir=/var \
-		--disable-ifconfig --disable-logger --disable-syslogd \
-		--disable-whois --disable-servers \
-		--disable-rcp --disable-rlogin --disable-rsh
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install
-	mv -v /usr/bin/ping /bin
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-addrcache.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-arping-infiniband.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-arping_timeout.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-countermeasures.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-idn.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-open-max.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ping-subint.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ping_cleanup.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-rh.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-traffic_class.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-warnings.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-output.patch
+
+	cd $(DIR_APP) && LDFLAGS=-pie make $(PARALLELISMFLAGS)
+
+	cd $(DIR_APP) && install -cp clockdiff	/usr/sbin/
+	cd $(DIR_APP) && install -cp arping		/sbin/
+	cd $(DIR_APP) && install -cp ping		/bin/
+	cd $(DIR_APP) && install -cp rdisc		/sbin/
+	cd $(DIR_APP) && install -cp ping6		/bin/
+	cd $(DIR_APP) && install -cp tracepath	/bin/
+	cd $(DIR_APP) && install -cp tracepath6	/bin/
+	ln -svf ../../sbin/arping		/usr/sbin/arping
+	ln -svf ../../bin/ping6			/usr/sbin/
+	ln -svf ../../bin/tracepath		/usr/sbin/
+	ln -svf ../../bin/tracepath6	/usr/sbin/
+
 	#setcap cap_net_admin=ep /bin/ping
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
