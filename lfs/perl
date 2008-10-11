@@ -25,10 +25,10 @@
 include Config
 
 PKG_NAME   = perl
-VER        = 5.8.8
+VER        = 5.10.0
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.bz2
+DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
@@ -39,8 +39,11 @@ XMLPARSER  = XML-Parser-2.34
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-libc-2.patch $(XMLPARSER).tar.gz \
-	$(THISAPP)-asm-page-h-compile-failure.patch
+objects = $(DL_FILE) \
+	$(THISAPP)-libc-1.patch \
+	$(THISAPP)-page-1.patch \
+	$(THISAPP)-security_fix-1.patch \
+	$(XMLPARSER).tar.gz
 
 install : $(TARGET)
 
@@ -59,11 +62,11 @@ $(TARGET) :
 		cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libc-2.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-asm-page-h-compile-failure.patch
-	cd $(DIR_APP) && mv -v makedepend.SH{,.orig}
-	cd $(DIR_APP) && sed 's/command /command[ -]/' makedepend.SH.orig > makedepend.SH
-	
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libc-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-page-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-security_fix-1.patch
+	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
+
 	cd $(DIR_APP) && ./configure.gnu --prefix=$(TOOLS_DIR) -Dstatic_ext='Data/Dumper Fcntl IO POSIX'
 	
 	cd $(DIR_APP) && make perl utilities ext/Errno/pm_to_blib $(PARALLELISMFLAGS)
@@ -76,9 +79,16 @@ endif
 ifeq "$(STAGE)" "base"
 	echo "127.0.0.1 localhost $(hostname)" > /etc/hosts
 
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-asm-page-h-compile-failure.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-page-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-security_fix-1.patch
 
 	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
+
+	cd $(DIR_APP) && sed -i -e "s|BUILD_ZLIB\s*= True|BUILD_ZLIB = False|" \ 
+							-e "s|INCLUDE\s*= ./zlib-src|INCLUDE = /usr/include|" \ 
+							-e "s|LIB\s*= ./zlib-src|LIB = /usr/lib|" \ 
+							ext/Compress/Raw/Zlib/config.in
+
 	cd $(DIR_APP) && ./configure.gnu --prefix=/usr \
 		-Dman1dir=/usr/share/man/man1 -Dman3dir=/usr/share/man/man3 \
 		-Dpager="/usr/bin/less -isR"
