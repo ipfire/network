@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = man-db
-VER        = 2.5.1
+VER        = 2.5.2
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -54,14 +54,16 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -i -e '\%\t/usr/man%d' -e '\%\t/usr/local/man%d' src/man_db.conf.in
-	cd $(DIR_APP) && echo -e "#define WEB_BROWSER \"exec /usr/bin/lynx\"" >> include/manconfig.h.in
-	cd $(DIR_APP) && echo -e "#define COL \"/usr/bin/col\"" >> include/manconfig.h.in
-	cd $(DIR_APP) && echo -e "#define VGRIND \"/usr/bin/vgrind\"" >> include/manconfig.h.in
-	cd $(DIR_APP) && echo -e "#define GRAP \"/usr/bin/grap\"" >> include/manconfig.h.in
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-																--libexecdir=/usr/lib \
-																--sysconfdir=/etc \
-																--disable-setuid
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--libexecdir=/usr/lib \
+			--sysconfdir=/etc \
+			--disable-setuid \
+			--with-browser=/usr/bin/lynx \ 
+			--with-col=/usr/bin/col \
+			--with-vgrind=/usr/bin/vgrind \ 
+			--with-grap=/usr/bin/grap
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
