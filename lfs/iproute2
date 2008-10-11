@@ -55,6 +55,5 @@ $(TARGET) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) SBINDIR=/sbin
 	cd $(DIR_APP) && make SBINDIR=/sbin install
-	cd $(DIR_APP) && mv -v /sbin/arpd /usr/sbin
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
