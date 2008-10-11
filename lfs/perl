@@ -59,7 +59,7 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/$(XMLPARSER) && \
-		cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+		cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libc-1.patch
@@ -84,9 +84,9 @@ ifeq "$(STAGE)" "base"
 
 	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
 
-	cd $(DIR_APP) && sed -i -e "s|BUILD_ZLIB\s*= True|BUILD_ZLIB = False|" \ 
-							-e "s|INCLUDE\s*= ./zlib-src|INCLUDE = /usr/include|" \ 
-							-e "s|LIB\s*= ./zlib-src|LIB = /usr/lib|" \ 
+	cd $(DIR_APP) && sed -i -e "s|BUILD_ZLIB\s*= True|BUILD_ZLIB = False|" \
+							-e "s|INCLUDE\s*= ./zlib-src|INCLUDE = /usr/include|" \
+							-e "s|LIB\s*= ./zlib-src|LIB = /usr/lib|" \
 							ext/Compress/Raw/Zlib/config.in
 
 	cd $(DIR_APP) && ./configure.gnu --prefix=/usr \

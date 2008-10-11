@@ -76,7 +76,7 @@ $(TARGET) :
 	ln -svf ../../lib/$$(readlink /lib/libvolume_id.so) /usr/lib/libvolume_id.so 
 	rm -v /lib/lib{udev,volume_id}.so
 	mv -v /lib/pkgconfig/lib{udev,volume_id}.pc /usr/lib/pkgconfig 
-	rmdir -v /lib/pkgconfig
+	rm -rfv /lib/pkgconfig
 
 	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules /lib/udev/rules.d/
 
