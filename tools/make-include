@@ -689,6 +689,7 @@ fi
 
 gettoolchain() {
 	check_user
+	[ -d "${DIR_TOOLCHAIN}" ] || mkdir -p ${DIR_TOOLCHAIN}
 	if [ ! -f $BASEDIR/cache/toolchains/$TOOLCHAINNAME.tar.bz2 ]; then
 		URL_TOOLCHAIN=$(grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }')
 		DIR_TOOLCHAIN="$BASEDIR/cache/toolchains"
