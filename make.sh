@@ -291,7 +291,7 @@ ipfire_build() {
 	ipfire_make ez-ipupdate
 	ipfire_make noip
 	ipfire_make lighttpd
-	#ipfire_make collectd
+	ipfire_make collectd
 	ipfire_make logrotate
 	#ipfire_make logwatch	
 	ipfire_make cpio
