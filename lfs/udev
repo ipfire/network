@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = udev
-VER        = 125
+VER        = 130
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -62,9 +62,21 @@ $(TARGET) :
 	ln -sfv /proc/self/fd/1 /lib/udev/devices/stdout
 	ln -sfv /proc/self/fd/2 /lib/udev/devices/stderr
 	ln -sfv /proc/kcore /lib/udev/devices/core
+	
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/ \
+			--includedir=/usr/include \
+			--datarootdir=/usr/share
 
-	cd $(DIR_APP) && make EXTRAS="`echo extras/*/`" $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make DESTDIR=/ EXTRAS="`echo extras/*/`" install
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install
+
+	ln -svf ../../lib/$$(readlink /lib/libudev.so) /usr/lib/libudev.so 
+	ln -svf ../../lib/$$(readlink /lib/libvolume_id.so) /usr/lib/libvolume_id.so 
+	rm -v /lib/lib{udev,volume_id}.so
+	mv -v /lib/pkgconfig/lib{udev,volume_id}.pc /usr/lib/pkgconfig 
+	rmdir -v /lib/pkgconfig
 
 	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules /lib/udev/rules.d/
 
