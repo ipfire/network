@@ -121,11 +121,11 @@ base_build() {
 	ipfire_make ncurses
 	ipfire_make procps
 	ipfire_make libtool
-	ipfire_make perl
-	ipfire_make readline
 	ipfire_make autoconf
 	ipfire_make automake
 	ipfire_make zlib
+	ipfire_make perl
+	ipfire_make readline
 	ipfire_make gettext
 	ipfire_make make
 	ipfire_make libidn
