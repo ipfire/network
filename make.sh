@@ -231,9 +231,9 @@ ipfire_build() {
 	ipfire_make slang
 	ipfire_make newt
 	ipfire_make cyrus-sasl
-	#ipfire_make openldap
-	#ipfire_make pam_ldap
-	#ipfire_make nss_ldap
+	ipfire_make openldap
+	ipfire_make pam_ldap
+	ipfire_make nss_ldap
 	ipfire_make sqlite
 	ipfire_make curl
 	ipfire_make gnupg
