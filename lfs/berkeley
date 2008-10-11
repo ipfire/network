@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = db
-VER        = 4.7.25
+VER        = 4.6.21
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -37,7 +37,7 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-upstream_fixes-1.patch
+objects = $(DL_FILE) $(THISAPP)-fixes-1.patch
 
 install : $(TARGET)
 
@@ -53,7 +53,7 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-upstream_fixes-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-1.patch
 	cd $(DIR_APP)/build_unix && \
 		../dist/configure \
 			--prefix=/usr \
