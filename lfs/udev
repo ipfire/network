@@ -54,7 +54,6 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
-	@rm -rf /lib/udev/devices/* || true
 	install -dv /lib/{firmware,udev/devices/{pts,shm}}
 	-mknod -m0666 /lib/udev/devices/null c 1 3
 	-mknod -m0600 /lib/udev/devices/kmsg c 1 11
@@ -66,13 +65,18 @@ $(TARGET) :
 	
 	cd $(DIR_APP) && \
 		./configure \
-			--prefix=/usr \
-			--exec-prefix="" \
-			--sysconfdir=/etc \
-			--sbindir=/sbin
+			--prefix=/ \
+			--includedir=/usr/include \
+			--datarootdir=/usr/share
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	ln -svf ../../lib/$$(readlink /lib/libudev.so) /usr/lib/libudev.so 
+	ln -svf ../../lib/$$(readlink /lib/libvolume_id.so) /usr/lib/libvolume_id.so 
+	rm -v /lib/lib{udev,volume_id}.so
+	mv -v /lib/pkgconfig/lib{udev,volume_id}.pc /usr/lib/pkgconfig 
+	rm -rfv /lib/pkgconfig
 
 	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules /lib/udev/rules.d/
 
