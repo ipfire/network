@@ -61,8 +61,12 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && ./configure --prefix=/usr --bindir=/bin --libexecdir=/usr/sbin
-		cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && CC="gcc -std=gnu99 -fgnu89-inline" \
+		./configure \
+			--prefix=/usr \
+			--bindir=/bin \
+			--libexecdir=/usr/sbin
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
 
