@@ -40,6 +40,7 @@ FULLVER    = $(VER)$(LOCALVERSION)
 
 # Patches
 REISER4_PATCH  = reiser4-for-$(VER)-rc1.patch
+SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
 
 ###############################################################################
 # Top-level Rules
@@ -86,7 +87,7 @@ endif
 
 	### Squashfs
 	#
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/linux-2.6-squashfs-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(SQUASHFS_PATCH)
 
 ifeq "$(PAX)" "1"
 	### GrSecurity
