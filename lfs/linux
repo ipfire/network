@@ -38,11 +38,16 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 LOCALVERSION = -ipfire1
 FULLVER    = $(VER)$(LOCALVERSION)
 
+# Patches
+REISER4_PATCH  = reiser4-for-$(VER)-rc1.patch
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) reiser4-for-2.6.25.patch linux-2.6-squashfs-1.patch
+objects = $(DL_FILE) \
+	$(REISER4_PATCH) \
+	linux-2.6-squashfs-1.patch
 
 ifeq "$(PAX)" "1"
 	#objects += grsecurity-2.1.12-$(VER)-200808171148.patch
@@ -77,7 +82,7 @@ endif
 
 	### Reiser4
 	#
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/reiser4-for-2.6.25.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(REISER4_PATCH)
 
 	### Squashfs
 	#
