@@ -39,6 +39,8 @@ LOCALVERSION = -ipfire1
 FULLVER    = $(VER)$(LOCALVERSION)
 
 # Patches
+FRANDOM_PATCH  = linux-2.6.25-frandom-1.patch
+GRSEC_PATCH    = grsecurity-2.1.12-$(VER)-200808171148.patch
 REISER4_PATCH  = reiser4-for-$(VER)-rc1.patch
 SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
 
@@ -48,14 +50,14 @@ SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
 
 objects = $(DL_FILE) \
 	$(REISER4_PATCH) \
-	linux-2.6-squashfs-1.patch
+	$(SQUASHFS_PATCH)
 
 ifeq "$(PAX)" "1"
-	#objects += grsecurity-2.1.12-$(VER)-200808171148.patch
+	#objects += $(GRSEC_PATCH)
 endif
 
 ifeq "$(SSP)" "1"
-	#objects += linux-2.6.25-frandom-1.patch
+	#objects += $(FRANDOM_PATCH)
 endif
 
 install : $(TARGET)
@@ -78,7 +80,7 @@ $(TARGET) :
 ifeq "$(SSP)" "1"
 	### frandom
 	#
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/linux-2.6.25-frandom-1.patch
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(FRANDOM_PATCH)
 endif
 
 	### Reiser4
@@ -92,7 +94,7 @@ endif
 ifeq "$(PAX)" "1"
 	### GrSecurity
 	#
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grsecurity-2.1.12-$(VER)-200808171148.patch
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(GRSEC_PATCH)
 	#rm -f $(DIR_APP)/localversion-grsec
 endif
 
