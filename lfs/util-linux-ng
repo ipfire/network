@@ -65,7 +65,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && sed -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
 	    -i $$(grep -rl '/etc/adjtime' .)
 	mkdir -pv /var/lib/hwclock
-	cd $(DIR_APP) && ./configure
+	cd $(DIR_APP) && ./configure --enable-arch --enable-partx --enable-write
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
