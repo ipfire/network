@@ -64,6 +64,7 @@ batch_attach() {
 batch_run() {	
 	gettoolchain
 	$0 build | tee $BATCHLOG
+	sleep 5
 	if [ -e $FAILED ]; then
 		SUBJECT="Failed :("
 	else
