@@ -13,7 +13,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008  Michael Tremer & Christian Schmidt                #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -90,13 +90,13 @@ endef
 #
 ifneq "$(STAGE)" "toolchain"
 define PREBUILD
-	echo "====================================== Installing $(THISAPP) ..."
+	echo "===================================== Installing $(THISAPP) ..."
 	echo "Install started; saving file list to $(DIR_SRC)/lsalr ..."
 	if [ ! -f $(DIR_SRC)/lsalr ]; then $(FIND_FILES) > $(DIR_SRC)/lsalr; fi
 endef
 else
 define PREBUILD
-	echo "====================================== Installing $(THISAPP) ..."
+	echo "===================================== Installing $(THISAPP) ..."
 endef
 endif
 
@@ -178,28 +178,6 @@ define PYTHON_COMPILE
 	find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 endef
 
-define PAK
-	# Bringing the files to their right place.
-	@rm -rf /install/packages/package
-	@mkdir -p /install/packages/package
-	if [ -e "/usr/src/src/paks/$(PROG)" ]; then \
-		cp -f /usr/src/src/paks/$(PROG)/{,un}install.sh /usr/src/src/paks/$(PROG)/update.sh \
-		/install/packages/package; \
-	else \
-		cp -f /usr/src/src/paks/default/{,un}install.sh /usr/src/src/paks/default/update.sh \
-		/install/packages/package; \
-	fi
-	sed -e "s/KVER/$(KVER)/g" < $(DIR_SOURCE)/rootfiles/packages/$(PROG) > /install/packages/package/ROOTFILES 
-	chmod 755 /install/packages/package/{{,un}install,update}.sh
-	cd / && tar cf /install/packages/package/files --files-from=/install/packages/package/ROOTFILES --exclude='#*' \
-		--preserve --numeric-owner
-	-cat /install/packages/package/ROOTFILES | grep -v "#" > /install/packages/package/ROOTFILES 
-	cd /install/packages/package && tar cf ../$(PROG)-$(VER)-$(PAK_VER).ipfire --files-from=/usr/src/src/paks/files
-	rm -rf /install/packages/package
-	sed -e s/NAME/$(PROG)/g \
-			-e s/VER/$(VER)/g \
-			-e s/RELEASE/$(PAK_VER)/g \
-			-e s/DEPS/$(DEPS)/g \
-			-e s/SIZE/`ls -l \/install\/packages\/$(PROG)-$(VER)-$(PAK_VER).ipfire | awk '{ print $$5 }'`/g \
-	  < /usr/src/src/pakfire/meta > /install/packages/meta-$(PROG)
+define INSTALL_INITSCRIPT
+	install -v -m 754 $(DIR_SOURCE)/initscripts/extras/$(PKG_NAME) /etc/init.d/
 endef
