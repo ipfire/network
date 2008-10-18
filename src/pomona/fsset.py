@@ -452,15 +452,94 @@ class extFileSystem(FileSystemType):
         self.checked = 1
         self.linuxnativefs = 1
         self.maxSizeMB = 8 * 1024 * 1024
+        self.supportsFsProfiles = True
+        self.fsProfileSpecifier = "-T"
+        self.resizable = True
+        self.bootable = True
+
+    def resize(self, entry, size, progress, chroot='/'):
+        devicePath = entry.device.setupDevice(chroot)
+
+        log.info("checking %s prior to resize" %(devicePath,))
+        w = None
+        if progress:
+            w = progress(_("Checking"),
+                         _("Checking filesystem on %s...") %(devicePath),
+                         100, pulse = True)
+
+        rc = iutil.execWithPulseProgress("e2fsck", ["-f", "-p", "-C", "0", devicePath],
+                                         stdout="/tmp/resize.out",
+                                         stderr="/tmp/resize.out",
+                                         progress = w)
+        if rc >= 4:
+            raise ResizeError, ("Check of %s failed" %(devicePath,), devicePath)
+        if progress:
+            w.pop()
+            w = progress(_("Resizing"),
+                         _("Resizing filesystem on %s...") %(devicePath),
+                         100, pulse = True)
+
+        log.info("resizing %s" %(devicePath,))
+        rc = iutil.execWithPulseProgress("resize2fs",
+                                         ["-p", devicePath, "%sM" %(size,)],
+                                         stdout="/tmp/resize.out",
+                                         stderr="/tmp/resize.out",
+                                         progress = w)
+        if progress:
+            w.pop()
+        if rc:
+            raise ResizeError, ("Resize of %s failed" %(devicePath,), devicePath)
+
+    def getMinimumSize(self, device):
+        """Return the minimum filesystem size in megabytes"""
+        devicePath = "/dev/%s" % (device,)
+
+        # FIXME: it'd be nice if we didn't have to parse this out ourselves
+        buf = iutil.execWithCapture("dumpe2fs",
+                                    ["-h", devicePath],
+                                    stderr = "/dev/tty5")
+        blocks = free = bs = 0
+        for l in buf.split("\n"):
+            if l.startswith("Free blocks"):
+                try:
+                    free = l.split()[2]
+                    free = int(free)
+                except Exception, e:
+                    log.warning("error determining free blocks on %s: %s" %(devicePath, e))
+                    free = 0
+            elif l.startswith("Block size"):
+                try:
+                    bs = l.split()[2]
+                    bs = int(bs)
+                except Exception, e:
+                    log.warning("error determining block size of %s: %s" %(devicePath, e))
+                    bs = 0
+            elif l.startswith("Block count"):
+                try:
+                    blocks = l.split()[2]
+                    blocks = int(blocks)
+                except Exception, e:
+                    log.warning("error determining block count of %s: %s" %(devicePath, e))
+                    blocks = 0
+
+        if free == 0 or bs == 0:
+            log.warning("Unable to determinine minimal size for %s", devicePath)
+            return 1
+
+        used = math.ceil((blocks - free) * bs / 1024.0 / 1024.0)
+        log.info("used size of %s is %s" %(devicePath, used))
+        # FIXME: should we bump this beyond the absolute minimum?
+        return used
 
     def labelDevice(self, entry, chroot):
         devicePath = entry.device.setupDevice(chroot)
-        label = labelFactory.createLabel(entry.mountpoint, self.maxLabelChars)
+        label = self.createLabel(entry.mountpoint, self.maxLabelChars,
+                                 kslabel = entry.label)
 
-        rc = inutil.execWithRedirect("e2label",
-                                     [devicePath, label],
-                                     stdout = "/dev/tty5",
-                                     stderr = "/dev/tty5", searchPath = 1)
+        rc = iutil.execWithRedirect("e2label",
+                                    [devicePath, label],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
         if rc:
             raise SystemError
         entry.setLabel(label)
@@ -468,8 +547,11 @@ class extFileSystem(FileSystemType):
     def formatDevice(self, entry, progress, chroot='/'):
         devicePath = entry.device.setupDevice(chroot)
         devArgs = self.getDeviceArgs(entry.device)
-        args = [ "mke2fs", devicePath, "-i", str(entry.bytesPerInode) ]
+        args = [ "mke2fs", devicePath ]
 
+        fsProfileArgs = self.getFsProfileArgs()
+        if fsProfileArgs:
+            args.extend(fsProfileArgs)
         args.extend(devArgs)
         args.extend(self.extraFormatArgs)
 
@@ -486,7 +568,7 @@ class extFileSystem(FileSystemType):
         isys.ext2Clobber(device)
 
     # this is only for ext3 filesystems, but migration is a method
-    # of the ext2 fstype, so it needs to be here.  XXX should be moved
+    # of the ext2 fstype, so it needs to be here.  FIXME should be moved
     def setExt3Options(self, entry, message, chroot='/'):
         devicePath = entry.device.setupDevice(chroot)
 
@@ -494,11 +576,11 @@ class extFileSystem(FileSystemType):
         if not isys.ext2HasJournal(devicePath):
             return
 
-        rc = inutil.execWithRedirect("tune2fs",
-                                     ["-c0", "-i0", "-Odir_index",
-                                      "-ouser_xattr,acl", devicePath],
-                                     stdout = "/dev/tty5",
-                                     stderr = "/dev/tty5", searchPath = 1)
+        rc = iutil.execWithRedirect("tune2fs",
+                                    ["-c0", "-i0",
+                                     "-ouser_xattr,acl", devicePath],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
 
 class ext2FileSystem(extFileSystem):
     def __init__(self):
@@ -514,17 +596,18 @@ class ext2FileSystem(extFileSystem):
             raise RuntimeError, ("Trying to migrate fs w/o fsystem or "
                                  "origfsystem set")
         if entry.fsystem.getName() != "ext3":
-            raise RuntimeError, ("Trying to migrate ext2 to something other than ext3")
+            raise RuntimeError, ("Trying to migrate ext2 to something other "
+                                 "than ext3")
 
         # if journal already exists skip
         if isys.ext2HasJournal(devicePath):
             log.info("Skipping migration of %s, has a journal already.\n" % devicePath)
             return
 
-        rc = inutil.execWithRedirect("tune2fs",
-                                     ["-j", devicePath ],
-                                     stdout = "/dev/tty5",
-                                     stderr = "/dev/tty5", searchPath = 1)
+        rc = iutil.execWithRedirect("tune2fs",
+                                    ["-j", devicePath ],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
 
         if rc:
             raise SystemError
@@ -537,16 +620,17 @@ class ext2FileSystem(extFileSystem):
                         "running tune2fs.\n" % (devicePath))
             if message:
                 rc = message(_("Error"),
-                             _("An error occurred migrating %s to ext3.  It is "
-                               "possible to continue without migrating this "
-                               "file system if desired.\n\n"
-                               "Would you like to continue without migrating %s?")
+                        _("An error occurred migrating %s to ext3.  It is "
+                          "possible to continue without migrating this "
+                          "file system if desired.\n\n"
+                          "Would you like to continue without migrating %s?")
                              % (devicePath, devicePath), type = "yesno")
                 if rc == 0:
                     sys.exit(0)
-            entry.fsystem = entry.origfsystem ### XXX what is this?
+            entry.fsystem = entry.origfsystem
         else:
             extFileSystem.setExt3Options(self, entry, message, chroot)
+
 
 fileSystemTypeRegister(ext2FileSystem())
 
@@ -554,14 +638,47 @@ class ext3FileSystem(extFileSystem):
     def __init__(self):
         extFileSystem.__init__(self)
         self.name = "ext3"
-        self.extraFormatArgs = [ "-j" ]
+        self.extraFormatArgs = [ "-t", "ext3" ]
         self.partedFileSystemType = parted.file_system_type_get("ext3")
+        self.migratetofs = ['ext4dev']
 
     def formatDevice(self, entry, progress, chroot='/'):
         extFileSystem.formatDevice(self, entry, progress, chroot)
         extFileSystem.setExt3Options(self, entry, progress, chroot)
 
+    def migrateFileSystem(self, entry, message, chroot='/'):
+        devicePath = entry.device.setupDevice(chroot)
+
+        if not entry.fsystem or not entry.origfsystem:
+            raise RuntimeError, ("Trying to migrate fs w/o fsystem or "
+                                 "origfsystem set")
+        if entry.fsystem.getName() != "ext4dev":
+            raise RuntimeError, ("Trying to migrate ext3 to something other "
+                                 "than ext4")
+
+        # This is only needed as long as ext4 is actually "ext4dev"
+        rc = iutil.execWithRedirect("tune2fs",
+                                    ["-E", "test_fs", devicePath ],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
+        if rc:
+            raise SystemError
+
 fileSystemTypeRegister(ext3FileSystem())
+
+class ext4FileSystem(extFileSystem):
+    def __init__(self):
+        extFileSystem.__init__(self)
+        self.name = "ext4dev"
+        self.partedFileSystemType = parted.file_system_type_get("ext3")
+        self.extraFormatArgs = [ "-t", "ext4dev" ]
+        self.bootable = False
+
+    def formatDevice(self, entry, progress, chroot='/'):
+        extFileSystem.formatDevice(self, entry, progress, chroot)
+        extFileSystem.setExt3Options(self, entry, progress, chroot)
+
+fileSystemTypeRegister(ext4FileSystem())
 
 class swapFileSystem(FileSystemType):
     enabledSwaps = {}
