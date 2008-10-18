@@ -414,6 +414,7 @@ misc_build() {
 
 	### Debugging
 	#
+	ipfire_make gdb
 	ipfire_make strace
 }
 
