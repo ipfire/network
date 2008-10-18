@@ -279,6 +279,12 @@ lfsmakecommoncheck()
 		fi
 	done
 
+	# On debug build, we don't strip
+	if [ "$1" == "strip" -a "$BUILD_DEBUG" == "1" ]; then
+		beautify result SKIP
+		return 1;
+	fi
+
 	# Don't create addons?
 	local EXTRA=`grep ^EXTRA $BASEDIR/lfs/$1 | awk '{print $3}'`
 	if [ "$EXTRA" == "yes" -a "$BUILD_EXTRAS" == "0" ]; then
