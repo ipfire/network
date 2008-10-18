@@ -135,6 +135,14 @@ else
 	exit 1
 fi
 
+# Make debugging symbols
+if [ "$BUILD_DEBUG" == "1" ]; then
+	CFLAGS=$(sed -e "s/-O[123s]/-O/g" <<< $CFLAGS)
+	CFLAGS="$CFLAGS -g"
+	CXXFLAGS=$(sed -e "s/-O[123s]/-O/g" <<< $CXXFLAGS)
+	CXXFLAGS="$CXXFLAGS -g"
+fi
+
 mkdir $BASEDIR/log_${MACHINE}/ 2>/dev/null
 
 # Set up what used to be /tools
