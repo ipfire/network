@@ -73,7 +73,7 @@ ifeq "$(PASS)" "$(THISAPP)"
 		exit 1; \
 	fi
 
-	cd $(CDROM_DIR)/tmp && mksquashfs * $(IMAGES_DIR)/$(SNAME)-$(VERSION).img
+	cd $(CDROM_DIR)/tmp && mksquashfs * $(IMAGES_DIR)/$(SNAME)-$(VERSION).img -b 1M
 endif
 
 ifeq "$(PASS)" "pxe"
@@ -86,7 +86,7 @@ ifeq "$(PASS)" "cdrom"
 	cp -vf $(IMAGES_DIR)/$(SNAME)-$(VERSION).img $(CDROM_DIR)
 	cd $(CDROM_DIR) && unsquashfs -ls $(SNAME)-$(VERSION).img > $(SNAME)-$(VERSION).ls
 
-	cd $(INSTALLER_DIR) && mksquashfs * $(CDROM_DIR)/pomona-$(VERSION).overlay
+	cd $(INSTALLER_DIR) && mksquashfs * $(CDROM_DIR)/pomona-$(VERSION).overlay -b 1M
 
 	# These files won't be included in the iso
 	@rm -rf $(CDROM_DIR)/archive.{files,errors} $(CDROM_DIR)/tmp
