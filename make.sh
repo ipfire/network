@@ -215,6 +215,7 @@ ipfire_build() {
 	ipfire_make libnetfilter_queue
 	ipfire_make libnetfilter_conntrack
 	ipfire_make libnetfilter_log
+	ipfire_make python-netfilter_conntrack
 	ipfire_make dnsmasq
 	ipfire_make l7-protocols
 	ipfire_make bridge-utils
