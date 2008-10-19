@@ -18,6 +18,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #                                                                             #
 ###############################################################################
+###############################################################################
+#
+# Define default vars
+#
+###############################################################################
 
 # Default target
 TARGET=i686
@@ -58,6 +63,82 @@ DISTCC_PORT=3632
 
 # Default hostname
 HOSTNAME=${HOSTNAME-$(hostname -f || hostname)}
+
+###############################################################################
+#
+# Read the local configuration to override the environment variables
+#
+###############################################################################
+
+if ! [ -e .config ]; then
+	sed -e "s/@UUID@/$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid)/" \
+	    -e "s/^#UUID=/UUID=/" < $BASEDIR/.config-default > $BASEDIR/.config
+fi
+
+. $BASEDIR/.config
+
+###############################################################################
+#
+# Variables that are not modifyable by .config
+#
+###############################################################################
+
+if [ 'i686' = $MACHINE_REAL \
+	-o 'i586' = $MACHINE_REAL \
+	-o 'i486' = $MACHINE_REAL \
+	-o 'x86_64' = $MACHINE_REAL ]; then
+	IFS_HOST="$(echo $MACHTYPE | sed "s/$(echo $MACHTYPE | cut -d- -f2)/cross/")"
+else
+	beautify message FAIL
+	echo "Can't determine your architecture - $MACHINE_REAL"
+	exit 1
+fi
+
+if [ 'i686' = $TARGET -o 'i586' = $TARGET \
+	-o 'i486' = $TARGET ]; then
+	MACHINE=${TARGET}
+	MACHINE_REAL=${MACHINE_REAL}
+	LINKER=/lib/ld-linux.so.2
+	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	CFLAGS="-march=${MACHINE} -O2 -pipe -fomit-frame-pointer"
+	CXXFLAGS="${CFLAGS}"
+elif [ 'via-c7' = $TARGET ]; then
+	MACHINE=i686
+	MACHINE_REAL=${MACHINE_REAL}
+	LINKER=/lib/ld-linux.so.2
+	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	CFLAGS="-march=${MACHINE} -mmmx -msse -msse2 -msse3 -O2 -pipe"
+	CXXFLAGS="${CFLAGS}"
+elif [ 'via-c3' = $TARGET ]; then
+	MACHINE=i586
+	MACHINE_REAL=${MACHINE_REAL}
+	LINKER=/lib/ld-linux.so.2
+	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	CFLAGS="-march=c3 -m3dnow -O2 -pipe -fomit-frame-pointer"
+	CXXFLAGS="${CFLAGS}"
+elif [ 'geodelx' = $TARGET ]; then
+	MACHINE=i586
+	MACHINE_REAL=${MACHINE_REAL}
+	LINKER=/lib/ld-linux.so.2
+	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	CFLAGS="-march=geode -Os -pipe -fomit-frame-pointer"
+	CXXFLAGS="${CFLAGS}"
+else
+	beautify message FAIL
+	echo "Not a valid target arch (i686|i586|i486|via-c7|via-c3|geodelx) - $TARGET"
+	exit 1
+fi
+
+# Make debugging symbols
+if [ "$BUILD_DEBUG" == "1" ]; then
+	CFLAGS=$(sed -e "s/-O[123s]/-O/g" <<< $CFLAGS)
+	CFLAGS="$CFLAGS -g"
+	CXXFLAGS=$(sed -e "s/-O[123s]/-O/g" <<< $CXXFLAGS)
+	CXXFLAGS="$CXXFLAGS -g"
+fi
+
+# include machine in TOOLCHAINNAME
+TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-t${TARGET}-m${MACHINE}
 
 # Set up what used to be /tools
 TOOLS_DIR=/tools_${MACHINE}
