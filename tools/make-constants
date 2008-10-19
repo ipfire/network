@@ -1,0 +1,76 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# Default target
+TARGET=i686
+
+# Configuration rootdir
+CONFIG_ROOT=/etc/$SNAME
+
+# Nice level
+NICE=10
+
+# Read in kernel version
+KVER=$(grep --max-count=1 VER lfs/linux | awk '{ print $3 }' | tr -d '\n'; grep --max-count=1 LOCALVERSION lfs/linux | awk '{ print $3 }' | tail -1)
+
+# Read in machine type
+MACHINE_REAL=$(uname -m)
+
+# Read in our tag
+GIT_TAG=$(git tag | tail -1)
+
+# Default Security options
+SSP=1
+PIE=1
+PAX=1
+
+# Embedded build
+EMB=0
+
+# Default building options
+BUILD_EXTRAS=1
+BUILD_DEBUG=0
+
+# Default parallelism options
+PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
+
+# Default distcc options
+DISTCC_HOSTS=localhost
+DISTCC_PORT=3632
+
+# Default hostname
+HOSTNAME=${HOSTNAME-$(hostname -f || hostname)}
+
+# Set up what used to be /tools
+TOOLS_DIR=/tools_${MACHINE}
+
+# Set up /installer
+INSTALLER_DIR=/pomona
+
+# A place to build the iso
+CDROM_DIR=/cdrom
+
+# A place to keep the images
+IMAGES_DIR=/images
+
+# Files that indicates that we are running or failed
+RUNNING=$BASEDIR/.running
+FAILED=$BASEDIR/.failed

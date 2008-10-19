@@ -24,51 +24,26 @@
 #
 ###############################################################################
 
-CONFIG_ROOT=/etc/$SNAME		# Configuration rootdir
-NICE=10				# Nice level
-TARGET=i686			# Default target
-KVER=`grep --max-count=1 VER lfs/linux | awk '{ print $3 }' | tr -d '\n'; grep --max-count=1 LOCALVERSION lfs/linux | awk '{ print $3 }' | tail -1`
-MACHINE_REAL=`uname -m`
-GIT_TAG=$(git tag | tail -1)
-
-# Security options
-SSP=1
-PIE=1
-PAX=1
-
-# Embedded build
-EMB=0
-
-# Building options
-BUILD_EXTRAS=1
-BUILD_DEBUG=0
-
-# Parallelism flag
-PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
-DISTCC_HOSTS=localhost
-DISTCC_PORT=3632
-
-PWD=`pwd`
-BASENAME=`basename $0`
+PWD=$(pwd)
+BASENAME=$(basename $0)
 
 # Debian specific settings
 if [ ! -e /etc/debian_version ]; then
-	FULLPATH=`which $0`
+	FULLPATH=$(which $0)
 else
 	if [ -x /usr/bin/realpath ]; then
-		FULLPATH=`/usr/bin/realpath $0`
+		FULLPATH=$(/usr/bin/realpath $0)
 	else
 		echo "ERROR: Need to do apt-get install realpath"
 		exit 1
 	fi
 fi
 
-BASEDIR=`echo $FULLPATH | sed "s/\/$BASENAME//g"`
+BASEDIR=$(echo $FULLPATH | sed "s/\/$BASENAME//g")
 export BASEDIR
 
-HOSTNAME=${HOSTNAME-$(hostname -f || hostname)}
-
-. $BASEDIR/tools/make-beautify	# Load this very early
+. $BASEDIR/tools/make-constants	# Load this very early
+. $BASEDIR/tools/make-beautify
 
 ###############################################################################
 #
@@ -145,24 +120,8 @@ fi
 
 mkdir $BASEDIR/log_${MACHINE}/ 2>/dev/null
 
-# Set up what used to be /tools
-TOOLS_DIR=/tools_${MACHINE}
-
-# Set up /installer
-INSTALLER_DIR=/pomona
-
-# A place to build the iso
-CDROM_DIR=/cdrom
-
-# A place to keep the images
-IMAGES_DIR=/images
-
 # include machine in TOOLCHAINNAME
 TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-t${TARGET}-m${MACHINE}
-
-# Files that indicates that we are running or failed
-RUNNING=$BASEDIR/.running
-FAILED=$BASEDIR/.failed
 
 ################################################################################
 #                                                                              #
@@ -188,8 +147,8 @@ evaluate() {
 
 stdumount() {
 	sleep 0.3 # Wait one second for finish of processes
-	for fs in `mount | grep $BASEDIR/build_${MACHINE} | awk '{print $3}'`; do
-		umount $fs #2>/dev/null;
+	for fs in $(mount | grep $BASEDIR/build_${MACHINE} | awk '{print $3}'); do
+		umount $fs 2>/dev/null;
 	done
 } # End of stdumount()
 
@@ -241,7 +200,7 @@ entershell() {
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
-		LOGFILE=`echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g"` \
+		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
 		bash
 
 	if [ $? -ne 0 ]; then
@@ -266,40 +225,39 @@ lfsmakecommoncheck()
 		exiterror "No such file or directory: $BASEDIR/lfs/$1"
 	fi
 
-	local PKG_VER=`get_pkg_ver $BASEDIR/lfs/$1`
+	local PKG_VER=$(get_pkg_ver $BASEDIR/lfs/$1)
 	beautify make_pkg "$PKG_VER $*"
 
 	# Script slipped?
 	local i
-	for i in $SKIP_PACKAGE_LIST
-	do
+	for i in $SKIP_PACKAGE_LIST; do
 		if [ "$i" == "$1" ]; then
 			beautify result SKIP
-			return 1;
+			return 1
 		fi
 	done
 
 	# On debug build, we don't strip
 	if [ "$1" == "strip" -a "$BUILD_DEBUG" == "1" ]; then
 		beautify result SKIP
-		return 1;
+		return 1
 	fi
 
 	# Don't create addons?
-	local EXTRA=`grep ^EXTRA $BASEDIR/lfs/$1 | awk '{print $3}'`
+	local EXTRA=$(grep ^EXTRA $BASEDIR/lfs/$1 | awk '{print $3}')
 	if [ "$EXTRA" == "yes" -a "$BUILD_EXTRAS" == "0" ]; then
 			beautify result SKIP
 			return 1
 	fi
 
 	# Don't create debugging tools?
-	local DEBUG=`grep ^DEBUG $BASEDIR/lfs/$1 | awk '{print $3}'`
+	local DEBUG=$(grep ^DEBUG $BASEDIR/lfs/$1 | awk '{print $3}')
 	if [ "$DEBUG" == "yes" -a "$BUILD_DEBUG" == "1" ]; then
 			beautify result SKIP
 			return 1
 	fi
 
-	echo -e "`date -u '+%b %e %T'`: Building $* " >> $LOGFILE
+	echo -e "$(date -u '+%b %e %T'): Building $* " >> $LOGFILE
 
 	cd $BASEDIR/lfs && make -s -f $* MACHINE=$MACHINE LFS_BASEDIR=$BASEDIR MESSAGE="$1\t " download  >> $LOGFILE 2>&1
 	if [ $? -ne 0 ]; then
@@ -318,11 +276,11 @@ toolchain_make() {
 	lfsmakecommoncheck $*
 	[ $? == 1 ] && return 0
 
-	local PKG_VER=`get_pkg_ver $BASEDIR/lfs/$1`
+	local PKG_VER=$(get_pkg_ver $BASEDIR/lfs/$1)
 
 	local EXTRA_MAKE=$EXTRA_MAKE
 
-	local PKG_TIME_START=`date +%s`
+	local PKG_TIME_START=$(date +%s)
 	cd $BASEDIR/lfs && $EXTRA_MAKE make -f $* \
 		CONFIG_ROOT=$CONFIG_ROOT \
 		LINKER=$LINKER \
@@ -344,11 +302,11 @@ toolchain_make() {
 		install >> $LOGFILE 2>&1
 
 	local COMPILE_SUCCESS=$?
-	local PKG_TIME_END=`date +%s`
+	local PKG_TIME_END=$(date +%s)
 
 	if [ $COMPILE_SUCCESS -ne 0 ]; then
 		beautify result FAIL $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
-		exiterror "Building $*";
+		exiterror "Building $*"
 	else
 		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
 	fi
@@ -363,7 +321,7 @@ ipfire_make() {
 	lfsmakecommoncheck $*
 	[ $? == 1 ] && return 0
 
-	local PKG_VER=`get_pkg_ver $BASEDIR/lfs/$1`
+	local PKG_VER=$(get_pkg_ver $BASEDIR/lfs/$1)
 
 	local EXTRA_MAKE=$EXTRA_MAKE
 	# When cross-compiling, make sure the kernel is compiled for the target
@@ -374,7 +332,7 @@ ipfire_make() {
 		unset EXTRA_MAKE
 	fi
 
-	local PKG_TIME_START=`date +%s`
+	local PKG_TIME_START=$(date +%s)
 	chroot $LFS $TOOLS_DIR/bin/env -i \
 		HOME=/root \
 		TERM=$TERM \
@@ -411,16 +369,16 @@ ipfire_make() {
 		PIE=$PIE \
 		PAX=$PAX \
 		EMB=$EMB \
-		LOGFILE=`echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g"` \
+		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
 		bash -x -c "cd /usr/src/lfs && \
 		$EXTRA_MAKE make -f $* LFS_BASEDIR=/usr/src install" >>$LOGFILE 2>&1
 
 	local COMPILE_SUCCESS=$?
-	local PKG_TIME_END=`date +%s`
+	local PKG_TIME_END=$(date +%s)
 
 	if [ $COMPILE_SUCCESS -ne 0 ]; then
 		beautify result FAIL $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
-		exiterror "Building $*";
+		exiterror "Building $*"
 	else
 		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
 	fi
@@ -464,7 +422,7 @@ prepareenv() {
 	#############################################################################
 	echo -ne "Resetting our nice level to $NICE"
 	renice $NICE $$ > /dev/null
-	if [ `nice` != "$NICE" ]; then
+	if [ $(nice) != "$NICE" ]; then
 		beautify message FAIL
 		exiterror "Failed to set correct nice level"
 	else
@@ -483,7 +441,7 @@ prepareenv() {
 	##############################################################################
 	# Checking if running as root user                                           #
 	##############################################################################
-	if [ `id -u` != 0 ]; then
+	if [ $(id -u) != 0 ]; then
 		echo -ne "Checking if we're running as root user"
 		beautify message FAIL
 		exiterror "Not building as root"
@@ -493,10 +451,10 @@ prepareenv() {
 	##############################################################################
 	# Checking for necessary temporary space                                     #
 	##############################################################################
-	BASE_DEV=`df -P -k $BASEDIR | tail -n 1 | awk '{ print $1 }'`
-	BASE_ASPACE=`df -P -k $BASEDIR | tail -n 1 | awk '{ print $4 }'`
+	BASE_DEV=$(df -P -k $BASEDIR | tail -n 1 | awk '{ print $1 }')
+	BASE_ASPACE=$(df -P -k $BASEDIR | tail -n 1 | awk '{ print $4 }')
 	if (( 2048000 > $BASE_ASPACE )); then
-		BASE_USPACE=`du -skx $BASEDIR | awk '{print $1}'`
+		BASE_USPACE=$(du -skx $BASEDIR | awk '{print $1}')
 		if (( 2048000 - $BASE_USPACE > $BASE_ASPACE )); then
 			echo -ne "Checking for necessary space on disk $BASE_DEV"
 			beautify message FAIL
@@ -639,10 +597,10 @@ build() {
 		exiterror "Use make.sh source get first!"
 	fi
 	cd $BASEDIR/cache/toolchains
-	PACKAGE=`ls -v -r $TOOLCHAINNAME.tar.bz2 2>/dev/null | head -n 1`
+	PACKAGE=$(ls -v -r $TOOLCHAINNAME.tar.bz2 2>/dev/null | head -n 1)
 	#only restore on a clean disk
 
-	local BLD_TIME_START=`date +%s`
+	local BLD_TIME_START=$(date +%s)
 	touch $RUNNING; rm -f $FAILED $BUILD_SPY_FILENAME 2>/dev/null
 
 	echo -ne "Building for ${BOLD}${TARGET} (${MACHINE}) on ${MACHINE_REAL}${NORMAL}\n"
@@ -695,7 +653,7 @@ fi
 	echo "... and all this hard work for this:"
 	ls -sh $BASEDIR/${SNAME}-${VERSION}.${MACHINE}.iso
 
-	local BLD_TIME_END=`date +%s`
+	local BLD_TIME_END=$(date +%s)
 	build_spy duration $[ $BLD_TIME_END - $BLD_TIME_START ]
 	build_spy state idle
 	rm -f $RUNNING
@@ -703,13 +661,14 @@ fi
 
 gettoolchain() {
 	check_user
+	DIR_TOOLCHAIN="$BASEDIR/cache/toolchains"
 	[ -d "${DIR_TOOLCHAIN}" ] || mkdir -p ${DIR_TOOLCHAIN}
 	if [ ! -f $BASEDIR/cache/toolchains/$TOOLCHAINNAME.tar.bz2 ]; then
 		URL_TOOLCHAIN=$(grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }')
 		DIR_TOOLCHAIN="$BASEDIR/cache/toolchains"
 
 		echo "Loading toolchain for $MACHINE"
-		scp -2C ${IPFIRE_USER}@${URL_TOOLCHAIN}/$TOOLCHAINNAME.tar.bz2 \
+		scp -2 ${IPFIRE_USER}@${URL_TOOLCHAIN}/$TOOLCHAINNAME.tar.bz2 \
 			${DIR_TOOLCHAIN}
 	else
 		echo -n "Toolchain \"$TOOLCHAINNAME\" is already existing"
@@ -724,7 +683,7 @@ puttoolchain() {
 		DIR_TOOLCHAIN="$BASEDIR/cache/toolchains"
 
 		echo "Pushing toolchain for $MACHINE"
-		scp -2C ${DIR_TOOLCHAIN}/$TOOLCHAINNAME.tar.bz2 \
+		scp -2 ${DIR_TOOLCHAIN}/$TOOLCHAINNAME.tar.bz2 \
 			${IPFIRE_USER}@${URL_TOOLCHAIN}
 	else
 		echo -n "Toolchain \"$TOOLCHAINNAME\" is not existing. "
@@ -764,7 +723,7 @@ putsource() {
 		grep -q "$file" <<<$REMOTE_FILES && continue
 		NEW_FILES="$NEW_FILES $file"
 	done
-	[ -n "$NEW_FILES" ] && scp -2C $NEW_FILES ${IPFIRE_USER}@${URL_SOURCE}
+	[ -n "$NEW_FILES" ] && scp -2 $NEW_FILES ${IPFIRE_USER}@${URL_SOURCE}
 	cd $BASEDIR
 }
 
@@ -787,7 +746,7 @@ puttarget() {
 	cp -l ${BASEDIR}/${SNAME}-${VERSION}.${MACHINE}.iso ${DIR}
 
 	cd $BASEDIR && \
-		scp -2C -r ${HOSTNAME} ${IPFIRE_USER}@${URL_TARGET} || :
+		scp -2 -r ${HOSTNAME} ${IPFIRE_USER}@${URL_TARGET} || :
 
 	rm -rf ${BASEDIR}/${HOSTNAME} 2>/dev/null
 }
