@@ -41,6 +41,7 @@ FULLVER    = $(VER)$(LOCALVERSION)
 # Patches
 FRANDOM_PATCH  = linux-2.6.25-frandom-1.patch
 GRSEC_PATCH    = grsecurity-2.1.12-$(VER)-200808171148.patch
+OCF_PATCH      = ocf-linux-26-20080917.patch
 REISER4_PATCH  = reiser4-for-$(VER).patch
 SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
 
@@ -49,6 +50,7 @@ SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
 ###############################################################################
 
 objects = $(DL_FILE) \
+	$(OCF_PATCH) \
 	$(REISER4_PATCH) \
 	$(SQUASHFS_PATCH)
 
@@ -82,6 +84,11 @@ ifeq "$(SSP)" "1"
 	#
 	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(FRANDOM_PATCH)
 endif
+
+	### OCF
+	#
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(OCF_PATCH)
+	cd $(DIR_APP) && echo "source \"crypto/ocf/Kconfig\"" >> crypto/Kconfig
 
 	### Reiser4
 	#
