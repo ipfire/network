@@ -123,7 +123,7 @@ ifeq "$(PASS)" "pxe"
 		-i $(CDROM_DIR)/$(PREFIX)/boot.msg
 
 	cd $(CDROM_DIR) && \
-		tar cfz $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).pxe.tar.gz *
+		tar cfz $(IMAGES_DIR)/$(IMAGENAME).pxe.tar.gz *
 endif
 
 ifeq "$(PASS)" "cdrom"
@@ -144,7 +144,7 @@ ifeq "$(PASS)" "cdrom"
 
 	cd $(CDROM_DIR) && mkisofs -J -r -V "$(NAME)_$(VERSION)" \
 		-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
-		-boot-info-table . > $(IMAGES_DIR)/$(SNAME)-$(VERSION).$(MACHINE).iso
+		-boot-info-table . > $(IMAGES_DIR)/$(IMAGENAME).iso
 endif
 	
 	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info

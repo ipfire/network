@@ -137,7 +137,15 @@ if [ "$BUILD_DEBUG" == "1" ]; then
 	CXXFLAGS="$CXXFLAGS -g"
 fi
 
-# include machine in TOOLCHAINNAME
+# Define IMAGENAME
+IMAGENAME=${SNAME}-${VERSION}.${TARGET}
+
+if [ "$BUILD_DEBUG" == "1" ]; then
+	# On debug build, append -debug
+	IMAGENAME=${IMAGENAME}-debug
+fi
+
+# Define TOOLCHAINNAME
 TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-t${TARGET}-m${MACHINE}
 
 # Set up what used to be /tools

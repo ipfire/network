@@ -293,6 +293,7 @@ ipfire_make() {
 		PIE=$PIE \
 		PAX=$PAX \
 		EMB=$EMB \
+		IMAGENAME=$IMAGENAME \
 		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
 		bash -x -c "cd /usr/src/lfs && \
 		$EXTRA_MAKE make -f $* LFS_BASEDIR=/usr/src install" >>$LOGFILE 2>&1
@@ -657,7 +658,7 @@ puttarget() {
 	DIR="${BASEDIR}/${HOSTNAME}/$(date '+%Y%m%d-%0k')/"
 
 	# If there is no iso, we do nothing.
-	[ -e "${BASEDIR}/${SNAME}-${VERSION}.${MACHINE}.iso" ] || return 0
+	ls ${BASEDIR}/${IMAGENAME}.* &>/dev/null || return 0
 
 	rm -rf ${BASEDIR}/${HOSTNAME} 2>/dev/null
 	mkdir -p ${DIR}
@@ -667,7 +668,7 @@ puttarget() {
 		python ${BASEDIR}/tools/alog2html < ${BATCHLOG} > ${DIR}/build_log.html
 	git_export; cp -l ${BASEDIR}/${SNAME}-${VERSION}.source.tar.gz ${DIR}
 	git_diff >/dev/null && cp -l ${DIFF_NAME} ${DIR}
-	cp -l ${BASEDIR}/${SNAME}-${VERSION}.${MACHINE}.iso ${DIR}
+	cp -l ${BASEDIR}/${IMAGENAME}.* ${DIR}
 
 	cd $BASEDIR && \
 		scp -2 -r ${HOSTNAME} ${IPFIRE_USER}@${URL_TARGET} || :
