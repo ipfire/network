@@ -617,7 +617,7 @@ cemit << EOF
 ###############################################################################
 
 quiet() {
-	return [ "$quiet" != "1" ]
+	return [ "\$quiet" != "1" ]
 }
 
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin
@@ -632,8 +632,8 @@ quiet=0
 
 # Parse kernel commandline options
 #
-for o in `cat /proc/cmdline` ; do
-    case $o in
+for o in \$(cat /proc/cmdline); do
+    case \$o in
     quiet)
         quiet=1
         ;;
@@ -641,7 +641,7 @@ for o in `cat /proc/cmdline` ; do
 done
 
 if quiet; then
-    echo "kernel commandline: `cat /proc/cmdline`"
+    echo "kernel commandline: \$(cat /proc/cmdline)"
 fi
 
 # Silencing kernel
