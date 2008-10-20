@@ -179,5 +179,6 @@ define PYTHON_COMPILE
 endef
 
 define INSTALL_INITSCRIPT
-	install -v -m 754 $(DIR_SOURCE)/initscripts/extras/$(PKG_NAME) /etc/init.d/
+	echo "Installing initscript \"$(INITSCRIPT)\" -> /etc/init.d"; \
+	install -m 754 $(DIR_SOURCE)/initscripts/extras/$(INITSCRIPT) /etc/init.d/
 endef
