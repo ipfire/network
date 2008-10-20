@@ -33,6 +33,8 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+INITSCRIPT = $(PKG_NAME)
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -60,5 +62,8 @@ $(TARGET) :
 	cd $(DIR_APP) && make LIBDIR=/usr/lib INCDIR=/usr/include install
 	touch /var/state/dhcp/dhcpd.leases
 	ln -sf $(CONFIG_ROOT)/dhcp/dhcpd.conf /etc/dhcpd.conf
+
+	@$(INSTALL_INITSCRIPT)
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
