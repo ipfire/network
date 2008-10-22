@@ -55,7 +55,10 @@ $(TARGET) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
-	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
+	cd $(DIR_APP) && \
+		ac_cv_func_working_mktime=yes \
+		./configure \
+		--prefix=$(TOOLS_DIR)
 	cd $(DIR_APP) && echo "#define HAVE_LANGINFO_CODESET 1"	>> config.h
 	cd $(DIR_APP) && echo "#define HAVE_LC_MESSAGES 1"			>> config.h
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
@@ -63,7 +66,11 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && ./configure --prefix=/usr --libexecdir=/usr/lib
+	cd $(DIR_APP) && \
+		ac_cv_func_working_mktime=yes \
+		./configure \
+			--prefix=/usr \
+			--libexecdir=/usr/lib
 	cd $(DIR_APP) && echo "#define HAVE_LANGINFO_CODESET 1"	>> config.h
 	cd $(DIR_APP) && echo "#define HAVE_LC_MESSAGES 1"			>> config.h
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
