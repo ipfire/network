@@ -3,13 +3,11 @@ etc/init.d/boottemp
 etc/init.d/checkfs
 etc/init.d/cleanfs
 etc/init.d/console
-etc/init.d/dhcp
 etc/init.d/fcron
 etc/init.d/haldaemon
 etc/init.d/halt
 etc/init.d/ipfire-functions
 etc/init.d/localnet
-etc/init.d/mISDN
 etc/init.d/messagebus
 etc/init.d/modules
 etc/init.d/mountfs
@@ -22,7 +20,6 @@ etc/init.d/rc
 etc/init.d/reboot
 etc/init.d/sendsignals
 etc/init.d/setclock
-etc/init.d/sshd
 etc/init.d/swap
 etc/init.d/sysctl
 etc/init.d/sysklogd
@@ -33,6 +30,7 @@ etc/lsb
 etc/lsb/lsb-config
 etc/lsb/state
 etc/rc0.d
+etc/rc0.d/K89random
 etc/rc0.d/K90openldap
 etc/rc0.d/K91ntpd
 etc/rc0.d/K92network
@@ -80,6 +78,7 @@ etc/rc5.d/S03network
 etc/rc5.d/S04ntpd
 etc/rc5.d/S05openldap
 etc/rc6.d
+etc/rc6.d/K89random
 etc/rc6.d/K90openldap
 etc/rc6.d/K91ntpd
 etc/rc6.d/K92network
@@ -103,7 +102,8 @@ etc/rcS.d/S07mountfs
 etc/rcS.d/S08cleanfs
 etc/rcS.d/S09console
 etc/rcS.d/S10localnet
-etc/rcS.d/S11udev_retry
+etc/rcS.d/S11random
+etc/rcS.d/S12udev_retry
 etc/sysconfig/clock
 etc/sysconfig/createfiles
 etc/sysconfig/modules
