@@ -69,6 +69,8 @@ DIR_SOURCE  = $(DIR_SRC)/src
 
 VPATH = $(DIR_DL):$(DIR_PATCHES)
 
+EXTRACTOR   = bash $(DIR_SOURCE)/scripts/extractor
+
 HOST_GCC=ccache /usr/bin/gcc
 KGCC=$(HOST_GCC)
 
