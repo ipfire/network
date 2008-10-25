@@ -38,16 +38,6 @@ URL_TOOLCHAIN = source.ipfire.org:/pub/source/toolchains
 URL_SOURCE = source.ipfire.org:/pub/source/source-3.x
 URL_TARGET = source.ipfire.org:/srv/anonftp/pub/nightly-builds
 
-# Default compiler optimizations.
-#
-FLAGS_OPT   = -O2
-FLAGS_CPU   = -mcpu=$(MACHINE)
-FLAGS_ARCH  = -march=$(MACHINE)
-
-# Don't change this; it will be overridden by other makefiles where necessary.
-#
-ROOT =
-
 # For most packages tarballs are unpacked here and then deleted after
 # installation.
 #
@@ -69,14 +59,20 @@ DIR_SOURCE  = $(DIR_SRC)/src
 
 VPATH = $(DIR_DL):$(DIR_PATCHES)
 
-EXTRACTOR   = bash $(DIR_SOURCE)/scripts/extractor
-
-HOST_GCC=ccache /usr/bin/gcc
-KGCC=$(HOST_GCC)
-
 ###############################################################################
 # Common Macro Definitions
 ###############################################################################
+
+DO_LOAD     = DIR_TMP=$(DIR_TMP) DIR_DL=$(DIR_DL) DIR_PATCHES=$(DIR_PATCHES) \
+	python $(DIR_TOOLS)/downloader $(URL_IPFIRE)/$@
+LOAD        = $(DO_LOAD) # To be compatible to the current build system.
+
+EXTRACTOR   = bash $(DIR_SOURCE)/scripts/extractor
+
+INSTALL_INITSCRIPT = echo "Installing initscript \"$(INITSCRIPT)\" -> /etc/init.d"; \
+	install -m 754 $(DIR_SOURCE)/initscripts/extras/$(INITSCRIPT) /etc/init.d/
+
+PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 
 # For each package we create a list of files that it installed under 
 # log/<TARGET> name. Modified files are not identified
@@ -92,13 +88,18 @@ endef
 #
 ifneq "$(STAGE)" "toolchain"
 define PREBUILD
-	echo "===================================== Installing $(THISAPP) ..."
-	echo "Install started; saving file list to $(DIR_SRC)/lsalr ..."
+	echo "### STARTING INSTALL #################################################"
+	echo "# Application: $(THISAPP)"
+	echo "# Description: $(SHORT_DESC)"
+	echo "######################################################################"
 	if [ ! -f $(DIR_SRC)/lsalr ]; then $(FIND_FILES) > $(DIR_SRC)/lsalr; fi
 endef
 else
 define PREBUILD
-	echo "===================================== Installing $(THISAPP) ..."
+	echo "### STARTING INSTALL #################################################"
+	echo "# Application: $(THISAPP)"
+	echo "# Description: $(SHORT_DESC)"
+	echo "######################################################################"
 endef
 endif
 
@@ -106,7 +107,9 @@ endif
 #
 ifneq "$(STAGE)" "toolchain"
 define POSTBUILD
-	@echo "Install done; saving file list to $(TARGET) ..."
+	echo "### INSTALL DONE #####################################################"
+	echo "# Application: $(THISAPP)"
+	echo "# Saving file list to $(TARGET)..."
 	@$(FIND_FILES) > $(DIR_SRC)/lsalrnew
 	@diff $(DIR_SRC)/lsalr $(DIR_SRC)/lsalrnew | grep '^> ' | sed 's+^> \./++' | sort > $(TARGET)_diff
 	@mv -f $(DIR_SRC)/lsalrnew $(DIR_SRC)/lsalr
@@ -152,35 +155,23 @@ define POSTBUILD
 	fi
 	@rm -f $(TARGET)_diff
 
-	if [ "$(OTHER_SRC)" = "yes" ] && \
-	! grep -qEi "^$(PKG_NAME),$(VER),$(STAGE_ORDER),$(STAGE)" $(DIR_SRC)/LIST_OF_SOFTWARE-$(MACHINE).txt; then \
-		echo "$(PKG_NAME),$(VER),$(STAGE_ORDER),$(STAGE)" >> $(DIR_SRC)/LIST_OF_SOFTWARE-$(MACHINE).txt; \
+	if [ "x$(objects)" != "x" ] && \
+	! grep -qEi "^$(PKG_NAME);$(VER);" $(DIR_INFO)/_build.00-software.log; then \
+		echo "$(PKG_NAME);$(VER);" >> $(DIR_INFO)/_build.00-software.log; \
 	fi
 
-	@echo "===================================== Install done for $(THISAPP)."
+	echo "######################################################################"
 endef
 else
 define POSTBUILD
-	if [ "$(OTHER_SRC)" = "yes" ] && \
-	! grep -qEi "^$(PKG_NAME),$(VER),$(STAGE_ORDER),$(STAGE)" $(DIR_SRC)/LIST_OF_SOFTWARE-$(MACHINE).txt; then \
-		echo "$(PKG_NAME),$(VER),$(STAGE_ORDER),$(STAGE)" >> $(DIR_SRC)/LIST_OF_SOFTWARE-$(MACHINE).txt; \
+	echo "### INSTALL DONE #####################################################"
+	echo "# Application: $(THISAPP)"
+	if [ "x$(objects)" != "x" ] && \
+	! grep -qEi "^$(PKG_NAME);$(VER);" $(DIR_INFO)/_build.00-software.log; then \
+		echo "$(PKG_NAME);$(VER);" >> $(DIR_INFO)/_build.00-software.log; \
 	fi
 
-	@echo "===================================== Install done for $(THISAPP)."
+	echo "######################################################################"
 	touch $(TARGET)
 endef
 endif
-
-define LOAD
-	DIR_TMP=$(DIR_TMP) DIR_DL=$(DIR_DL) DIR_PATCHES=$(DIR_PATCHES) \
-		python $(DIR_TOOLS)/downloader $(URL_IPFIRE)/$@
-endef
-
-define PYTHON_COMPILE
-	find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
-endef
-
-define INSTALL_INITSCRIPT
-	echo "Installing initscript \"$(INITSCRIPT)\" -> /etc/init.d"; \
-	install -m 754 $(DIR_SOURCE)/initscripts/extras/$(INITSCRIPT) /etc/init.d/
-endef
