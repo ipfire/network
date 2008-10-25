@@ -85,5 +85,5 @@ batch_mail() {
 	done
 
 	## Send the email
-	tools/alog2html < $BATCHLOG | tools/sendEmail
+	tools/alog2html < $BATCHLOG 2>&1 | tools/sendEmail
 }
