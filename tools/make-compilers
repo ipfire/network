@@ -57,7 +57,7 @@ distccd_start() {
 		return
 	fi
 
-	TOOLS_DIR=$TOOLS_DIR DISTCC_PORT=$DISTCC_PORT \
+	TOOLS_DIR=$TOOLS_DIR DISTCC_PORT=$DISTCC_PORT DISTCC_JOBS=$DISTCC_JOBS \
 		LOGFILE=$BASEDIR/log_${MACHINE}/_build.00-distccd.log \
 		$BASEDIR/tools/make-compilers &
 	if [ "$?" -eq "0" ]; then
@@ -89,7 +89,7 @@ if [ "$(basename $0)" == "make-compilers" ]; then
 	# Run distccd
 	DISTCCD_PATH=$TOOLS_DIR/bin:$(echo $TOOLS_DIR/libexec/gcc/*-pc-linux-gnu/*/) \
 		$TOOLS_DIR/usr/bin/distccd --daemon --allow 0.0.0.0/0 \
-		--user nobody --nice 10 --jobs 8 --port $DISTCC_PORT \
+		--user nobody --nice 10 --jobs $DISTCC_JOBS --port $DISTCC_PORT \
 		--log-file $LOGFILE --stats --job-lifetime 600 \
 		--stats-port $(( $DISTCC_PORT + 1 )) &>/dev/null
 

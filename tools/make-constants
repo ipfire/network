@@ -60,6 +60,7 @@ PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
 # Default distcc options
 DISTCC_HOSTS=localhost
 DISTCC_PORT=3632
+DISTCC_JOBS=4
 
 # Default hostname
 HOSTNAME=${HOSTNAME-$(hostname -f || hostname)}
