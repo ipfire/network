@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = aufs
 VER        = 20081012
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,26 +34,44 @@ DIR_APP    = $(DIR_SRC)/$(PKG_NAME)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Filesystems
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://aufs.sourceforge.net/
+LICENSE    = GPLv2+
+SHORT_DESC = Aufs is a replacement of unionfs.
+
+define LONG_DESC
+	Aufs (AnotherUnionFS) is an alternative version of unionfs, \
+	a filesystem service which implements a union mount for Linux file systems.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
 objects = $(DL_FILE)
 
-install : $(TARGET)
+download: $(objects)
 
-download : $(objects)
+install: $(TARGET)
 
-$(objects) :
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(TARGET): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -e "s/\$$(shell uname -r)/$(KVER)/g" -i local.mk
 	cd $(DIR_APP) && EXTRA_CFLAGS=-DTMPFS_MAGIC=0x01021994 \
 		make -f local.mk $(PARALLELISMFLAGS)
