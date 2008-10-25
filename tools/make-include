@@ -80,6 +80,7 @@ exiterror() {
 	stdumount
 	dialogerror $*
 	build_spy state error
+	build_spy log $(tail -n 20 $LOGFILE | build_spy_escape)
 	touch $FAILED
 	rm -f $RUNNING 2>/dev/null
 	exit 1

@@ -22,7 +22,7 @@
 BUILD_SPY_FILENAME=$BASEDIR/.build_spy
 
 build_spy() {
-	local KEY VAL 
+	local KEY
 	KEY=$1; shift 1
 	echo -n "&${KEY}=$*" >> $BUILD_SPY_FILENAME
 }
@@ -31,6 +31,11 @@ build_spy() {
 build_spy_send_profile() {
 	build_spy hostname $HOSTNAME
 	build_spy distcc   ${DISTCC_PORT-3632}
+	build_spy jobs     ${DISTCC_JOBS}
+}
+
+build_spy_escape() {
+	base64 || echo "Base64 error."
 }
 
 if [ "$(basename $0)" == "make-buildspy" ]; then
