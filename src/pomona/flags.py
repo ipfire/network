@@ -48,7 +48,6 @@ class Flags:
         self.__dict__['flags'] = {}
         self.__dict__['flags']['expert'] = 0
         self.__dict__['flags']['debug'] = 0
-        self.__dict__['flags']['setupFilesystems'] = 1 # ???
         self.__dict__['flags']['cmdline'] = self.createCmdlineDict()
         self.__dict__['flags']['network'] = False
 

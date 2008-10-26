@@ -420,7 +420,7 @@ class extFileSystem(FileSystemType):
                          _("Checking filesystem on %s...") %(devicePath),
                          100, pulse = True)
 
-        rc = iutil.execWithPulseProgress("e2fsck", ["-f", "-p", "-C", "0", devicePath],
+        rc = inutil.execWithPulseProgress("e2fsck", ["-f", "-p", "-C", "0", devicePath],
                                          stdout="/tmp/resize.out",
                                          stderr="/tmp/resize.out",
                                          progress = w)
@@ -433,7 +433,7 @@ class extFileSystem(FileSystemType):
                          100, pulse = True)
 
         log.info("resizing %s" %(devicePath,))
-        rc = iutil.execWithPulseProgress("resize2fs",
+        rc = inutil.execWithPulseProgress("resize2fs",
                                          ["-p", devicePath, "%sM" %(size,)],
                                          stdout="/tmp/resize.out",
                                          stderr="/tmp/resize.out",
@@ -448,7 +448,7 @@ class extFileSystem(FileSystemType):
         devicePath = "/dev/%s" % (device,)
 
         # FIXME: it'd be nice if we didn't have to parse this out ourselves
-        buf = iutil.execWithCapture("dumpe2fs",
+        buf = inutil.execWithCapture("dumpe2fs",
                                     ["-h", devicePath],
                                     stderr = "/dev/tty5")
         blocks = free = bs = 0
@@ -489,7 +489,7 @@ class extFileSystem(FileSystemType):
         label = self.createLabel(entry.mountpoint, self.maxLabelChars,
                                  kslabel = entry.label)
 
-        rc = iutil.execWithRedirect("e2label",
+        rc = inutil.execWithRedirect("e2label",
                                     [devicePath, label],
                                     stdout = "/dev/tty5",
                                     stderr = "/dev/tty5", searchPath = 1)
@@ -529,7 +529,7 @@ class extFileSystem(FileSystemType):
         if not isys.ext2HasJournal(devicePath):
             return
 
-        rc = iutil.execWithRedirect("tune2fs",
+        rc = inutil.execWithRedirect("tune2fs",
                                     ["-c0", "-i0",
                                      "-ouser_xattr,acl", devicePath],
                                     stdout = "/dev/tty5",
@@ -557,7 +557,7 @@ class ext2FileSystem(extFileSystem):
             log.info("Skipping migration of %s, has a journal already.\n" % devicePath)
             return
 
-        rc = iutil.execWithRedirect("tune2fs",
+        rc = inutil.execWithRedirect("tune2fs",
                                     ["-j", devicePath ],
                                     stdout = "/dev/tty5",
                                     stderr = "/dev/tty5", searchPath = 1)
@@ -610,7 +610,7 @@ class ext3FileSystem(extFileSystem):
                                  "than ext4")
 
         # This is only needed as long as ext4 is actually "ext4dev"
-        rc = iutil.execWithRedirect("tune2fs",
+        rc = inutil.execWithRedirect("tune2fs",
                                     ["-E", "test_fs", devicePath ],
                                     stdout = "/dev/tty5",
                                     stderr = "/dev/tty5", searchPath = 1)

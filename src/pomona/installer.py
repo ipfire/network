@@ -141,6 +141,9 @@ if __name__ == "__main__":
 
     setupLoggingFromOpts(opts)
 
+    if opts.expert:
+        flags.expert = 1
+
     if opts.test:
         flags.test = 1
 
