@@ -139,6 +139,8 @@ labelFactory = LabelFactory()
 
 class FileSystemType:
     kernelFilesystems = {}
+    lostAndFoundContext = None
+
     def __init__(self):
         self.deviceArguments = {}
         self.formattable = 0
@@ -153,6 +155,33 @@ class FileSystemType:
         self.migratetofs = None
         self.extraFormatArgs = []
         self.maxLabelChars = 16
+        self.resizable = False
+        self.supportsFsProfiles = False
+        self.fsProfileSpecifier = None
+        self.fsprofile = None
+        self.bootable = False
+
+    def createLabel(self, mountpoint, maxLabelChars, kslabel = None):
+        # If a label was specified in the kickstart file, return that as the
+        # label.
+        if kslabel:
+            return kslabel
+
+        if len(mountpoint) > maxLabelChars:
+            return mountpoint[0:maxLabelChars]
+        else:
+            return mountpoint
+
+    def isBootable(self):
+        return self.bootable
+
+    def isResizable(self):
+        return self.resizable
+    def resize(self, entry, size, progress, chroot='/'):
+        pass
+    def getMinimumSize(self, device):
+        log.warning("Unable to determinine minimal size for %s", device)
+        return 1
 
     def isKernelFS(self):
         """Returns True if this is an in-kernel pseudo-filesystem."""
@@ -190,98 +219,6 @@ class FileSystemType:
     def registerDeviceArgumentFunction(self, klass, function):
         self.deviceArguments[klass] = function
 
-    def badblocksDevice(self, entry, windowCreator, chroot='/'):
-        if windowCreator:
-            w = windowCreator(_("Checking for Bad Blocks"),
-                              _("Checking for bad blocks on /dev/%s...")
-                              % (entry.device.getDevice(),), 100)
-        else:
-            w = None
-
-        devicePath = entry.device.setupDevice(chroot)
-        args = [ "badblocks", "-vv", devicePath ]
-
-        # entirely too much cutting and pasting from ext2FormatFileSystem
-        fd = os.open("/dev/tty5", os.O_RDWR | os.O_CREAT | os.O_APPEND)
-        p = os.pipe()
-        childpid = os.fork()
-        if not childpid:
-            os.close(p[0])
-            os.dup2(p[1], 1)
-            os.dup2(p[1], 2)
-            os.close(p[1])
-            os.close(fd)
-            os.execvp(args[0], args)
-            log.critical("failed to exec %s", args)
-            os._exit(1)
-
-        os.close(p[1])
-
-        s = 'a'
-        while s and s != ':':
-            try:
-                s = os.read(p[0], 1)
-            except OSError, args:
-                (num, str) = args
-                if (num != 4):
-                    raise IOError, args
-            os.write(fd, s)
-
-        num = ''
-        numbad = 0
-        while s:
-            try:
-                s = os.read(p[0], 1)
-                os.write(fd, s)
-
-                if s not in ['\b', '\n']:
-                    try:
-                        num = num + s
-                    except:
-                        pass
-                else:
-                    if s == '\b':
-                        if num:
-                            l = string.split(num, '/')
-                            val = (long(l[0]) * 100) / long(l[1])
-                            w and w.set(val)
-                    else:
-                        try:
-                            blocknum = long(num)
-                            numbad = numbad + 1
-                        except:
-                            pass
-
-                if numbad > 0:
-                    raise BadBlocksError
-
-                num = ''
-            except OSError, args:
-                (num, str) = args
-                if (num != 4):
-                    raise IOError, args
-
-        try:
-            (pid, status) = os.waitpid(childpid, 0)
-        except OSError, (num, msg):
-            log.critical("exception from waitpid in badblocks: %s %s" % (num, msg))
-            status = None
-        os.close(fd)
-
-        w and w.pop()
-
-        if numbad > 0:
-            raise BadBlocksError
-
-        # have no clue how this would happen, but hope we're okay
-        if status is None:
-            return
-
-        if os.WIFEXITED(status) and (os.WEXITSTATUS(status) == 0):
-            return
-
-        raise SystemError
-
     def formatDevice(self, entry, progress, chroot='/'):
         if self.isFormattable():
             raise RuntimeError, "formatDevice method not defined"
@@ -302,6 +239,22 @@ class FileSystemType:
     def isLinuxNativeFS(self):
         return self.linuxnativefs
 
+    def setFsProfile(self, fsprofile=None):
+        if not self.supportsFsProfiles:
+            raise RuntimeError, "%s does not support profiles" % (self,)
+        self.fsprofile = fsprofile
+
+    def getFsProfileArgs(self):
+        if not self.supportsFsProfiles:
+            raise RuntimeError, "%s does not support profiles" % (self,)
+        args = None
+        if self.fsprofile:
+            args = []
+            if self.fsProfileSpecifier:
+                args.extend(self.fsProfileSpecifier)
+            args.extend(self.fsprofile)
+        return args
+
     def readProcFilesystems(self):
         f = open("/proc/filesystems", 'r')
         if not f:
@@ -319,7 +272,7 @@ class FileSystemType:
         if not FileSystemType.kernelFilesystems:
             self.readProcFilesystems()
 
-        return FileSystemType.kernelFilesystems.has_key(self.getName()) or self.getName() == "auto"
+        return FileSystemType.kernelFilesystems.has_key(self.getMountName()) or self.getName() == "auto"
 
     def isSupported(self):
         if self.supported == -1:
