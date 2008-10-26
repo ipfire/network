@@ -143,6 +143,9 @@ ifeq "$(STAGE)" "ipfire"
 		cp -f $(DIR_CONF)/kernel/kernel.config $(DIR_APP)/.config; \
 	fi
 
+	# Fixed CFLAGS when using distcc
+	cd $(DIR_APP) && sed -e "s/-D__KERNEL__/& -fno-PIE/" -i Makefile
+
 	cd $(DIR_APP) && yes "" | make oldconfig
 	
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
