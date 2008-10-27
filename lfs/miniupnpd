@@ -1,0 +1,82 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include Config
+
+PKG_NAME   = miniupnpd
+VER        = 1.2
+PKG_VER    = 0
+
+THISAPP    = $(PKG_NAME)-$(VER)
+DL_FILE    = $(THISAPP).tar.gz
+DIR_APP    = $(DIR_SRC)/$(THISAPP)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = Networking/Firewall
+EXTRA      = yes
+DEBUG      = no
+DEPS       =
+
+URL        = http://miniupnp.free.fr/
+LICENSE    = Proprietary
+SHORT_DESC = Miniupnpd is a simple upnp daemon.
+
+define LONG_DESC
+	The MiniUPnP project offers software which supports the UPnP Internet \
+	Gateway Device (IGD) specifications.
+endef
+
+###############################################################################
+# Top-level Rules
+###############################################################################
+
+objects = $(DL_FILE)
+
+download: $(objects)
+
+install: $(TARGET)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(TARGET): $(objects)
+	@$(PREBUILD)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && cp -vf $(DIR_CONFIG)/$(PKG_NAME)/config.h config.h
+	cd $(DIR_APP) && sed -e "s/^CFLAGS=.*/CFLAGS=$(CFLAGS)/g" -i Makefile.linux
+	cd $(DIR_APP) && make -f Makefile.linux $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && cp -vf $(PKG_NAME) /usr/sbin/
+	cd $(DIR_APP) && $(INSTALL_CONFIG) \
+		< $(DIR_CONFIG)/$(PKG_NAME)/$(PKG_NAME).conf > /etc/$(PKG_NAME).conf
+	@rm -rf $(DIR_APP)
+	@$(POSTBUILD)
