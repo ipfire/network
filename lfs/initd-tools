@@ -39,7 +39,8 @@ CFLAGS    += -std=gnu99 -fgnu89-inline
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-better-errors.patch
 
 install : $(TARGET)
 
@@ -56,6 +57,8 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-better-errors.patch
+	cd $(DIR_APP) && sed -e "s/while/errno=0; &/" -i lib/initd-list.c
 	cd $(DIR_APP) && ./configure \
 			--prefix=/usr
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
