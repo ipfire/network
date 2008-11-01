@@ -1,0 +1,67 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include Config
+
+PKG_NAME   = test-toolchain
+VER        = LFS
+
+THISAPP    = $(PKG_NAME)-$(VER)
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
+
+###############################################################################
+# Top-level Rules
+###############################################################################
+
+objects = 
+
+install : $(TARGET)
+
+download : 
+
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(TARGET) : 
+	@$(PREBUILD)
+	
+ifeq "$(PASS)" "1"
+	cd $(DIR_TMP) && \
+		echo 'main(){}' | $(IFS_TARGET)-gcc -B $(TOOLS_DIR)/lib/ -x c - -lrt
+	cd $(DIR_TMP) && readelf -l a.out | grep ": $(TOOLS_DIR)"
+endif
+
+ifeq "$(PASS)" "2"
+	# Sanity check - ensure host not being searched for libs
+	cd $(DIR_TMP) && \
+		echo 'main(){}' | cc -x c -lbogus -v -Wl,--verbose - &> foo || :
+	cd $(DIR_TMP) && if grep "^attempt to open /usr" foo; then \
+		echo Oops; exit 1; \
+	fi
+endif
+
+	@$(POSTBUILD)
