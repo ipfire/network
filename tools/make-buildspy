@@ -35,7 +35,7 @@ build_spy_send_profile() {
 }
 
 build_spy_escape() {
-	base64 || echo "Base64 error."
+	base64 || perl -MMIME::Base64 -0777 -ne 'print encode_base64($_)'
 }
 
 if [ "$(basename $0)" == "make-buildspy" ]; then
