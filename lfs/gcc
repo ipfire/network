@@ -50,7 +50,8 @@ endif
 objects = $(DL_FILE) \
 	$(THISAPP)-fstack_protector-1.patch \
 	$(THISAPP)-fortify_source-2.patch \
-	$(THISAPP)-fpie-1.patch
+	$(THISAPP)-fpie-1.patch \
+	$(THISAPP)-branch-startfiles-1.patch
 
 install : $(TARGET)
 
@@ -111,6 +112,7 @@ endif
 ifeq "$(PIE)" "1"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fpie-1.patch
 endif
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-branch-startfiles-1.patch
 	cd $(DIR_APP) && sed 's@\./fixinc\.sh@-c true@' -i gcc/Makefile.in
 	cd $(DIR_APP) && sed 's/^XCFLAGS =$$/& -fomit-frame-pointer/' -i gcc/Makefile.in
 	cd $(DIR_APP) && \
@@ -119,6 +121,7 @@ endif
 			sed -e 's@/lib\(64\)\?\(32\)\?/ld@$(TOOLS_DIR)&@g' \
 				-e 's@/usr@$(TOOLS_DIR)@g' $$file.orig > $$file; \
 			echo -e "\n#undef STANDARD_INCLUDE_DIR\n#define STANDARD_INCLUDE_DIR 0" >> $$file; \
+			echo -e "\n#define STANDARD_STARTFILE_PREFIX_1 \"\"\n#define STANDARD_STARTFILE_PREFIX_2 \"\"" >> $$file; \
 			touch $$file.orig; \
 		done
 
