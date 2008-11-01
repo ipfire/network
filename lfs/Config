@@ -69,6 +69,12 @@ LOAD        = $(DO_LOAD) # To be compatible to the current build system.
 
 EXTRACTOR   = bash $(DIR_SOURCE)/scripts/extractor
 
+INSTALL_CONFIG = sed \
+	-e "s/@NAME@/$(NAME)/g" \
+	-e "s/@SNAME@/$(SNAME)/g" \
+	-e "s/@VERSION@/$(VERSION)/g" \
+	-e "s/@DATE@/$(shell date '+%Y%m%d')/g"
+
 INSTALL_INITSCRIPT = echo "Installing initscript \"$(INITSCRIPT)\" -> /etc/init.d"; \
 	install -m 754 $(DIR_SOURCE)/initscripts/extras/$(INITSCRIPT) /etc/init.d/
 

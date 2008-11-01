@@ -334,7 +334,9 @@ misc_build() {
 	build_spy stage ${STAGE}
 
 	ipfire_make stage4
-	
+
+	#ipfire_make miniupnpd
+
 	### Console tools
 	#
 	ipfire_make mc
