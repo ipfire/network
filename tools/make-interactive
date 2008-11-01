@@ -89,22 +89,21 @@ distcc|distccd)
 	;;
 
 clean)
-	echo -ne "Cleaning ${BOLD}$MACHINE${NORMAL} buildtree"
-
 	for i in $(mount | grep $BASEDIR | cut -d " " -f 1); do
 		umount $i
 	done
 
 	stdumount
 
-	rm -rf $BASEDIR/build_${MACHINE}
-	rm -rf $BASEDIR/log_${MACHINE}
-	rm -rf $BASEDIR/packages
-	rm -f  $FAILED $RUNNING 2>/dev/null
-	
-	if [ -h $TOOLS_DIR ]; then
-		rm -f $TOOLS_DIR
-	fi
+	for i in $POSSIBLE_TARGETS; do
+		echo -ne "Cleaning ${BOLD}$i${NORMAL} buildtree"
+		rm -rf $BASEDIR/build_$i
+		rm -rf $BASEDIR/log_$i
+		rm -rf $BASEDIR/packages_$i
+		beautify message DONE
+	done
+	echo -ne "Removing ${BOLD}general files${NORMAL}"
+	rm -f $FAILED $RUNNING 2>/dev/null
 	beautify message DONE
 	;;
 
