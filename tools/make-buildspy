@@ -47,7 +47,7 @@ if [ "$(basename $0)" == "make-buildspy" ]; then
 		[ -n "$DATA" ] && \
 			wget -q -O /dev/null --user-agent="${NAME}BuildSpy/${VERSION}" \
 				--post-data="action=set&uuid=${UUID}${DATA}" \
-				http://build.ipfire.org/rpc.py
+				http://build.ipfire.org/rpc.py &
 
 		[ -e $BASEDIR/.running ] || break
 		sleep 10
