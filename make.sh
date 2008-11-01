@@ -109,6 +109,7 @@ base_build() {
 	ipfire_make man-pages
 	ipfire_make glibc
 	ipfire_make adjust-toolchain
+	ipfire_make test-toolchain
 	ipfire_make binutils
 	ipfire_make gcc
 	ipfire_make berkeley

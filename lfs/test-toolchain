@@ -48,7 +48,8 @@ download :
 
 $(TARGET) : 
 	@$(PREBUILD)
-	
+
+ifeq "$(STAGE)" "toolchain"
 ifeq "$(PASS)" "1"
 	cd $(DIR_TMP) && \
 		echo 'main(){}' | $(IFS_TARGET)-gcc -B $(TOOLS_DIR)/lib/ -x c - -lrt
@@ -62,6 +63,25 @@ ifeq "$(PASS)" "2"
 	cd $(DIR_TMP) && if grep "^attempt to open /usr" foo; then \
 		echo Oops; exit 1; \
 	fi
+endif
+endif
+
+ifeq "$(STAGE)" "base"
+	# Sanity checks.
+	cd $(DIR_TMP) && \
+		echo 'main(){}' | cc -x c -specs=$$(dirname $$(gcc --print-libgcc-file-name))/myspecs \
+			-B/usr/lib/ -B/usr/bin/ -Wl,--verbose - -lrt &> foo
+	# 1. dynamic linker
+	cd $(DIR_TMP) && readelf -l a.out | grep ": /lib"
+
+	# 2. start files
+	cd $(DIR_TMP) && grep " /usr/lib/Scrt1.o succ" foo
+
+	# 3. libc
+	cd $(DIR_TMP) && grep " /lib.*libc.so.6 succ" foo
+
+	# 4. deps found from DT_NEEDED
+	cd $(DIR_TMP) && grep "^found.*at /lib.*/libpth" foo
 endif
 
 	@$(POSTBUILD)
