@@ -103,8 +103,6 @@ base_build() {
 
 	ipfire_make stage2
 	ipfire_make scripts
-	ipfire_make initd-tools
-	ipfire_make initscripts
 	ipfire_make gmp
 	ipfire_make mpfr
 	ipfire_make linux
@@ -145,6 +143,8 @@ base_build() {
 	ipfire_make grep
 	ipfire_make groff
 	ipfire_make gzip
+	ipfire_make initd-tools
+	ipfire_make initscripts
 	ipfire_make iputils
 	ipfire_make iproute2
 	ipfire_make kbd
