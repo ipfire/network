@@ -33,6 +33,8 @@ DIR_APP    = $(DIR_SRC)/$(PKG_NAME)-0.1.3
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+CFLAGS    += -std=gnu99 -fgnu89-inline
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -57,6 +59,7 @@ $(TARGET) :
 	cd $(DIR_APP) && ./configure \
 			--prefix=/usr
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make check
 	cd $(DIR_APP) && make install
 
 	@rm -rf $(DIR_APP)
