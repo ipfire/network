@@ -62,8 +62,7 @@ objects = $(DL_FILE) \
 	$(THISAPP)-arc4_prng-1.patch \
 	$(THISAPP)-strlcpy_strlcat-1.patch \
 	$(THISAPP)-asprintf_reset2null-1.patch \
-	$(THISAPP)-issetugid-1.patch \
-	$(THISAPP)-i586_chk-2.patch
+	$(THISAPP)-issetugid-1.patch
 
 install : $(TARGET)
 
@@ -82,9 +81,6 @@ $(TARGET) :
 	@mkdir $(DIR_SRC)/glibc-build
 
 ifeq "$(STAGE)" "toolchain"
-ifeq "$(MACHINE)" "i586"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-i586_chk-2.patch
-endif
 ifeq "$(PAX)" "1"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pt_pax-1.patch
 endif
