@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = module-init-tools
-VER        = 3.4
+VER        = 3.5
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -37,7 +37,8 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-manpages-1.patch $(THISAPP)-nostatic-1.patch
+objects = $(DL_FILE) \
+	$(THISAPP)-nostatic-1.patch
 
 install : $(TARGET)
 
@@ -53,9 +54,12 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-manpages-1.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-nostatic-1.patch
-	cd $(DIR_APP) && ./configure --prefix=/ --enable-zlib
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-nostatic-1.patch
+	cd $(DIR_APP) && autoreconf --force
+	cd $(DIR_APP) && ./configure \
+			--prefix=/ \
+			--mandir=/usr/share/man \
+			--enable-zlib
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make INSTALL=install install
 	@rm -rf $(DIR_APP)
