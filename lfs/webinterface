@@ -1,0 +1,72 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include Config
+
+PKG_NAME   = webinterface
+VER        = ipfire
+PKG_VER    = 0
+
+THISAPP    = $(PKG_NAME)-$(VER)
+DIR_APP    = $(DIR_SOURCE)/web
+
+TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = System/Webinterface
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        =
+LICENSE    = Own
+SHORT_DESC = The webinterface of $(NAME).
+
+define LONG_DESC
+	The webinterface lets the user easily do configuration of the whole \
+	system with just a few clicks. Some say it is one of the key features \
+	of $(NAME).
+endef
+
+###############################################################################
+# Top-level Rules
+###############################################################################
+
+download:
+
+install: $(TARGET)
+
+package:
+	@$(DO_PACKAGE)
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(TARGET): $(objects)
+	@$(PREBUILD)
+	-mkdir -p /srv/www/$(SNAME)
+	cd $(DIR_APP) && cp -av * /srv/www/$(SNAME)/
+	chown nobody.nobody -R /srv/www/$(SNAME)
+	@$(POSTBUILD)
