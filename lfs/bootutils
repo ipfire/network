@@ -55,11 +55,14 @@ endef
 
 objects = $(DL_FILE)
 
+download: $(objects)
+
 install: $(TARGET)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
