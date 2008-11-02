@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,44 +26,61 @@ include Config
 
 PKG_NAME   = binutils
 VER        = 2.18
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 ifeq "$(STAGE)" "toolchain"
-ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
 	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
-else
-	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-cross
-endif
 else
 	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 endif
+
+MAINTAINER =
+GROUP      = Development/Tools
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.gnu.org/software/binutils/
+LICENSE    = GPLv2+
+SHORT_DESC = The GNU Binutils are a collection of binary tools.
+
+define LONG_DESC
+	The GNU Binary Utilities, or binutils, is a collection of programming \
+	tools for the manipulation of object code in various object file formats.
+endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-configure-1.patch \
+objects = $(DL_FILE) \
+	$(THISAPP)-configure-1.patch \
 	$(THISAPP)-ld_makefile.patch \
 	$(THISAPP)-pt_pax-1.patch \
 	$(THISAPP)-lazy-1.patch
 
-install : $(TARGET)
+download: $(objects)
 
-download : $(objects)
+install: $(TARGET)
 
-$(objects) :
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(TARGET): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) $(DIR_SRC)/binutils-build && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_SRC)/binutils-build
 	-mkdir -v $(DIR_SRC)/binutils-build
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-configure-1.patch
 
