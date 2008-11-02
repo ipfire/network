@@ -88,7 +88,6 @@ ifeq "$(PASS)" "1"
 		../$(THISAPP)/configure \
 			--target=$(IFS_TARGET) \
 			--prefix=$(TOOLS_DIR) \
-			--with-lib-path=$(TOOLS_DIR)/lib \
 			--disable-nls \
 			--disable-werror
 	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
