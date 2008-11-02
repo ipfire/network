@@ -54,13 +54,19 @@ $(TARGET) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
-	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/usr/lib/$(PKG_NAME) \
-		--with-ldap --with-openssl=/usr/include
+	cd $(DIR_APP) && ./configure \
+			--prefix=/usr \
+			--libdir=/usr/lib/$(PKG_NAME) \
+			--with-ldap \
+			--with-openssl=/usr/include
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	
 	cp -vf $(DIR_CONF)/$(PKG_NAME)/$(PKG_NAME).conf \
 		/etc/$(PKG_NAME).conf
+	-mkdir -p /var/log/$(PKG_NAME)
+	touch /var/log/$(PKG_NAME)/{access,error}.log
+	chown nobody.nobody -R /var/log/$(PKG_NAME)
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
