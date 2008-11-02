@@ -58,7 +58,6 @@ endif
 
 objects = $(DL_FILE) \
 	$(THISAPP)-pt_pax-1.patch \
-	$(THISAPP)-ssp_hp-timing-1.patch \
 	$(THISAPP)-arc4_prng-1.patch \
 	$(THISAPP)-strlcpy_strlcat-1.patch \
 	$(THISAPP)-asprintf_reset2null-1.patch \
@@ -108,13 +107,6 @@ endif
 
 ifeq "$(STAGE)" "base"
 	if [ ! -e /bin/pwd ]; then ln -sfn $(TOOLS_DIR)/bin/pwd /bin/pwd; fi
-
-ifeq "$(SSP)" "1"
-ifeq "$(MACHINE)" "i686"
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ssp_hp-timing-1.patch
-endif
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-wur-1.patch
-endif
 	cd $(DIR_APP) && sed -i '/vi_VN.TCVN/d' localedata/SUPPORTED
 	cd $(DIR_APP) && sed -i 's|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(LINKER) -o|' \
 		scripts/test-installation.pl
