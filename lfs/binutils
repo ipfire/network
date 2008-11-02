@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = binutils
-VER        = 2.18
+VER        = 2.19
 PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
@@ -58,7 +58,6 @@ endef
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-configure-1.patch \
 	$(THISAPP)-ld_makefile.patch \
 	$(THISAPP)-pt_pax-1.patch \
 	$(THISAPP)-lazy-1.patch
@@ -82,7 +81,6 @@ $(TARGET): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	@rm -rf $(DIR_SRC)/binutils-build
 	-mkdir -v $(DIR_SRC)/binutils-build
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-configure-1.patch
 
 ifeq "$(STAGE)" "toolchain"
 ifeq "$(PASS)" "1"
