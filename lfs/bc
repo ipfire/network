@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = bc
 VER        = 1.06
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,26 +34,45 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Tools
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.gnu.org/software/bc/
+LICENSE    = GPLv2+
+SHORT_DESC = bc is an arbitrary precision numeric processing language.
+
+define LONG_DESC
+	bc is a language that supports arbitrary precision numbers with \
+	interactive execution of statements. There are some similarities in the \
+	syntax to the C programming language.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
 objects = $(DL_FILE)
 
-install : $(TARGET)
+download: $(objects)
 
-download : $(objects)
+install: $(TARGET)
 
-$(objects) :
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(TARGET) :
+$(TARGET): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
@@ -60,7 +80,7 @@ ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && make install
 endif
 
-ifeq "$(STAGE)" "ipfire"
+ifeq "$(STAGE)" "$(SNAME)"
 	cd $(DIR_APP) && sed -i '/PROTO.*readline/d' bc/scan.l
 	cd $(DIR_APP) && sed -i '/flex -I8/s/8//' configure
 	cd $(DIR_APP) && sed -i '/stdlib/a #include <string.h>' lib/number.c
