@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = bzip2
 VER        = 1.0.5
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,27 +34,46 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Compression
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.bzip.org/
+LICENSE    = GPLv2+
+SHORT_DESC = Bzip2 is a data compressor.
+
+define LONG_DESC
+	bzip2 is a freely available, patent free (see below), high-quality data \
+	compressor that is an alternative to the GNU zip compressor.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-install_docs-1.patch
+objects = $(DL_FILE) \
+	$(THISAPP)-install_docs-1.patch
 
-install : $(TARGET)
+download: $(objects)
 
-download : $(objects)
+install: $(TARGET)
 
-$(objects) :
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(TARGET): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make PREFIX=$(TOOLS_DIR) install
@@ -65,7 +85,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make clean
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make PREFIX=/usr install
-	
+
 	cd $(DIR_APP) && cp -v bzip2-shared /bin/bzip2
 	cd $(DIR_APP) && cp -av libbz2.so* /lib
 	ln -sfv ../../lib/libbz2.so.1.0 /usr/lib/libbz2.so
