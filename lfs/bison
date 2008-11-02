@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = bison
 VER        = 2.3
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,26 +34,44 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Development/Tools
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.gnu.org/software/bison/
+LICENSE    = GPLv2+
+SHORT_DESC = GNU Bison is a parser generator.
+
+define LONG_DESC
+	Bison is a general-purpose parser generator that converts an annotated \
+	context-free grammar into an LALR(1) or GLR parser for that grammar.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects =$(DL_FILE)
+objects = $(DL_FILE)
 
-install : $(TARGET)
+download: $(objects)
 
-download : $(objects)
+install: $(TARGET)
 
-$(objects) :
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(TARGET): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
