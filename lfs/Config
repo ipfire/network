@@ -59,6 +59,10 @@ DIR_SOURCE  = $(DIR_SRC)/src
 
 VPATH = $(DIR_DL):$(DIR_PATCHES)
 
+CONFIGURE_ARCH = \
+	--build=$(IFS_TARGET) \
+	--host=$(IFS_TARGET)
+
 ###############################################################################
 # Common Macro Definitions
 ###############################################################################
