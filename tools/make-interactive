@@ -184,6 +184,9 @@ check)
 		sanity)
 			check_sanity $3
 			;;
+		target*)
+			check_supported_targets
+			;;
 		*)
 			usage
 			;;
