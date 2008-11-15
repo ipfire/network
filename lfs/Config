@@ -98,6 +98,7 @@ define PREBUILD
 	echo "# Application: $(THISAPP)"
 	echo "# Description: $(SHORT_DESC)"
 	echo "######################################################################"
+	echo "# Saving file list..."
 	if [ ! -f $(DIR_SRC)/lsalr ]; then $(FIND_FILES) > $(DIR_SRC)/lsalr; fi
 endef
 else
@@ -160,26 +161,24 @@ define POSTBUILD
 		touch $(TARGET); \
 	fi
 	@rm -f $(TARGET)_diff
+	echo "######################################################################"
 
 	touch $(DIR_INFO)/_build.00-software.log
 	if [ "x$(objects)" != "x" ] && \
 	! grep -qEi "^$(PKG_NAME);$(VER);" $(DIR_INFO)/_build.00-software.log; then \
 		echo "$(PKG_NAME);$(VER);" >> $(DIR_INFO)/_build.00-software.log; \
 	fi
-
-	echo "######################################################################"
 endef
 else
 define POSTBUILD
 	echo "### INSTALL DONE #####################################################"
 	echo "# Application: $(THISAPP)"
+	echo "######################################################################"
 	touch $(DIR_INFO)/_build.00-software.log
 	if [ "x$(objects)" != "x" ] && \
 	! grep -qEi "^$(PKG_NAME);$(VER);" $(DIR_INFO)/_build.00-software.log; then \
 		echo "$(PKG_NAME);$(VER);" >> $(DIR_INFO)/_build.00-software.log; \
 	fi
-
-	echo "######################################################################"
 	touch $(TARGET)
 endef
 endif
