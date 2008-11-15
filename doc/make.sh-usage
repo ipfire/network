@@ -31,4 +31,11 @@ Maintainer / advanced commands
       |          to fix some errors automatically.
       |`-       cpu <flag> : Check cpu for flag.
       |`- roofiles [--fix] : Check rootfiles for error.
-      `--   sanity [--fix] : Check full code for errors.
+      |`-   sanity [--fix] : Check full code for errors.
+      `--          targets : Returns the target, that the host can build.
+
+	 pull      : A macro to pull the latest changes from git and load the
+	             source tarballs and patches. Additionally it checks the code
+	             for error.
+	 push      : Similar to "pull", but uploads the source tarballs and pushes
+	             all changes to git.
