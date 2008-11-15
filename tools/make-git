@@ -57,25 +57,25 @@ git_pull() {
 				echo    "Your \"master\" branch is not clean. This may cause a merge commit."
 				echo -n "Do you want this? [y/N]"
 				read
-				[ -z $REPLY ] && exit 0
+				[ -z $REPLY ] && return 0
 				for i in y Y j J; do
 					if [ "$i" == "$REPLY" ]; then
 						git pull
-						exit $?
+						return $?
 					fi
 				done
-				exit 0
+				return 0
 			else
 				git pull
 			fi
 		else
 			echo -n "You are not on branch \"master\". Do you want to rebase from \"master\"? [y/N]"
 			read
-			[ -z $REPLY ] && exit 0
+			[ -z $REPLY ] && return 0
 			for i in y Y j J; do
 				if [ "$i" == "$REPLY" ]; then
 					git rebase -v refs/heads/master
-					exit $?
+					return $?
 				fi
 			done
 			exiterror "\"$REPLY\" is not a valid answer."
@@ -100,11 +100,11 @@ git_commit() {
 	
 	echo -e "${BOLD}Do you want to push, too? [y/N]${NORMAL}"
 	read
-	[ -z $REPLY ] && exit 0
+	[ -z $REPLY ] && return 0
 	for i in y Y j J; do
 		if [ "$i" == "$REPLY" ]; then
 			git_push
-			exit $?
+			return $?
 		fi
 	done
 	exiterror "\"$REPLY\" is not a valid answer."
@@ -151,7 +151,7 @@ ssh_cert() {
 	SSH_KEYGEN=`which ssh-keygen`
 	if test $? -ne 0; then
 		# Error message is printed by 'which'
-		exit 1
+		return 1
 	fi
 
 	SSH_DIR=~/.ssh
@@ -167,7 +167,7 @@ ssh_cert() {
 		if [ $? -ne 0 ]; then
 			echo "Command \"$SSH_KEYGEN -t rsa1 -f $SSH_DIR/identity" \
 				 "-P ''\" failed" 1>&2
-			exit 1
+			return 1
 		fi
 	else
 		echo "ssh1 RSA key is present"
@@ -180,7 +180,7 @@ ssh_cert() {
 		if test $? -ne 0; then
 			echo "Command \"$SSH_KEYGEN -t dsa -f $SSH_DIR/id_dsa" \
 				 "-P ''\" failed" 1>&2
-			exit 1
+			return 1
 		fi
 	else
 		echo "ssh2 DSA key is present"

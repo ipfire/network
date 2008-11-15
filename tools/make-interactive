@@ -127,7 +127,7 @@ toolchain)
 		put|push|upload)
 			puttoolchain
 			;;
-		"")
+		""|-*)
 			prepareenv
 			# Check if host can build the toolchain
 			check_toolchain
@@ -160,7 +160,7 @@ toolchain)
 
 toolchains)
 	for i in $(check_supported_targets); do
-		TARGET=$i ./make.sh toolchain --put
+		TARGET=$i $0 toolchain --put
 	done
 	;;
 
