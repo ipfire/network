@@ -227,6 +227,18 @@ g[iu]t)
 	esac
 	;;
 
+push)
+	putsource
+	git_push
+	;;
+
+pull)
+	LOGFILE=$BASEDIR/log_${MACHINE}/_build.00-preparation.log
+	git_pull
+	check_sanity
+	getsource
+	;;
+
 *)
 	usage
 	;;
