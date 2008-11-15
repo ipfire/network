@@ -95,7 +95,7 @@ clean)
 
 	stdumount
 
-	for i in $POSSIBLE_TARGETS; do
+	for i in ${TARGET-${POSSIBLE_TARGETS}}; do
 		echo -ne "Cleaning ${BOLD}$i${NORMAL} buildtree"
 		rm -rf $BASEDIR/build_$i
 		rm -rf $BASEDIR/log_$i
