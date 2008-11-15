@@ -57,8 +57,11 @@ $(TARGET) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
+	# --without-included-regex makes Grep use libc for regex. This gets rid of
+	# some compiler warnings, and I can't imagine why it's unsafe.
 	cd $(DIR_APP) && \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR) \
 			--disable-perl-regexp \
 			--without-included-regex

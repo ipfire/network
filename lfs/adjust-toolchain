@@ -52,7 +52,6 @@ $(TARGET) :
 ifeq "$(STAGE)" "toolchain"
 	$(IFS_TARGET)-gcc -dumpspecs | sed \
 		-e 's@$(LINKER)@$(TOOLS_DIR)&@g' \
-		-e "/^\*cpp:$$/{n;s,$$, -isystem $(TOOLS_DIR)/include,}" \
 		> $$(dirname $$($(IFS_TARGET)-gcc -print-libgcc-file-name))/specs
 endif
 

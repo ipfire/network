@@ -53,27 +53,12 @@ $(objects) :
 $(TARGET) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-
-ifeq "$(STAGE)" "toolchain"
-	cd $(DIR_APP) && ./configure \
-		--prefix=$(TOOLS_DIR) \
-		--enable-thread-safe \
-		--disable-shared \
-		--enable-static \
-		--with-gmp=$(TOOLS_DIR)
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--enable-thread-safe \
+			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-endif
-
-ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && ./configure \
-		--prefix=/usr \
-		--enable-thread-safe \
-		--disable-shared \
-		--enable-static
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install
-endif
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

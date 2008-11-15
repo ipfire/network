@@ -61,7 +61,11 @@ objects = $(DL_FILE) \
 	$(THISAPP)-arc4_prng-1.patch \
 	$(THISAPP)-strlcpy_strlcat-1.patch \
 	$(THISAPP)-asprintf_reset2null-1.patch \
-	$(THISAPP)-issetugid-1.patch
+	$(THISAPP)-issetugid-1.patch \
+	$(THISAPP)-localedef_trampoline-1.patch \
+	$(THISAPP)-sanitize_env.patch \
+	$(THISAPP)-mktemp_urandom.patch \
+	$(THISAPP)-res_randomid.patch
 
 install : $(TARGET)
 
@@ -80,26 +84,147 @@ $(TARGET) :
 	@mkdir $(DIR_SRC)/glibc-build
 
 ifeq "$(STAGE)" "toolchain"
-ifeq "$(PAX)" "1"
+	# Glibc uses a hard coded path for /etc/ld.so.preload. To keep Glibc from
+	# preloading libraries from the host machine perform the following command:
+	cd $(DIR_APP) && sed -e "s@/etc/ld.so.preload@$(TOOLS_DIR)@" -i elf/rtld.c
+
+	# The next patch modifies the localedef program so it does not use GCC
+	# Trampoline code (http://gcc.gnu.org/onlinedocs/gccint/Trampolines.html),
+	# which relies on an executable stack to run. Without this patch the localedef
+	# program will be killed if it is run on a kernel with PaX memory protection.
+	# See http://pax.grsecurity.net/docs/pageexec.txt and
+	# http://pax.grsecurity.net/docs/segmexec.txt for more information:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-localedef_trampoline-1.patch
+
+	# Support for PT_PaX markings:
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pt_pax-1.patch
-endif
-	cd $(DIR_SRC)/glibc-build && CFLAGS="-O2 -march=$(MACHINE) -pipe" \
+
+	# This patch adds the issetugid() function, which is a front-end to the
+	# __libc_enable_secure() dynamic linker private function. This function
+	# reports whether the program is running with matching real and effective
+	# ID's, or not, to determine whether the program is running with set-uid or
+	# set-gid privileges. Many packages will search for issetugid() and use it if
+	# found, such as Ncurses. This is safer than allowing each program to
+	# determine privileges itself because it is tested at a lower level which is
+	# not manipulatable by the user. Apply this patch with the following command:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-issetugid-1.patch
+
+	# This patch resticts the environment, particularly with setuid programs:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-sanitize_env.patch
+
+	# This patch adds the strlcpy and strlcat functions and manual pages to Glibc.
+	# A paper written about these functions is available here:
+	# http://www.courtesan.com/todd/papers/strlcpy.html. The Glibc project has
+	# refused to add these functions, and that mail tread starts here:
+	# http://sources.redhat.com/ml/libc-alpha/2000-08/msg00052.html. Linus Torvalds
+	# has added a similar function to the Linux kernel, and that mail thread is
+	# here: http://lwn.net/Articles/33814/. The strlcpy() and strlcat() functions
+	# are replacements for strncpy() and strncat(). The controversy of these
+	# functions is that strlcpy() and strlcat() copy the source data to the
+	# destination buffer until the destination is full, and discards the rest of
+	# the data if there is any. This means that these functions will never
+	# overflow. The basis for the Glibc team's refusal to add these functions is
+	# that they silently hide programing errors, and they have a higher performance
+	# hit than strncpy() and strncat(). These functions should not be needed in a
+	# perfect world, but were invented to deal with the real world. Many packages
+	# will use these functions if they are found, such as Perl and many BLFS
+	# packages. These functions do reduce buffer overflows, and so they are
+	# recommended. After installing this patch no other effort is needed to use it.
+	# Packages will use autotools to detect whether they are available or not:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-strlcpy_strlcat-1.patch
+
+	# The patch modifies __gen_tempname(), used by the mk*temp()/tmpnam() family
+	# of functions, to use /dev/urandom instead of hp-timing, gettimeofday(), or
+	# getpid():
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-mktemp_urandom.patch
+
+	# The res_randomid() function is a pseudo-random number generator, using
+	# getpid() for entropy. See: http://www.openbsd.org/advisories/res_random.txt
+	# for the vulnerability. This patch uses /dev/urandom instead:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-res_randomid.patch
+
+	# We don't install pt_chown(1) on the final system, so why install it to
+	# $(TOOLS_DIR):
+	cd $(DIR_APP) && sed -e "/^install.*pt_chown/d" -i login/Makefile
+
+	# ldconfig is statically linked, so don't build it PIC:
+	cd $(DIR_APP) && sed "s/CFLAGS-ldconfig.c =/& -fno-PIC -fno-PIE/" \
+		-i elf/Makefile
+
+	# Build nscd with -fstack-protector-all, instead of -fstack-protector:
+	cd $(DIR_APP) && sed -e "s/fstack-protector/&-all/" -i nscd/Makefile
+
+	# We don't need to set -march=i?86 in confparams because GCC was built with
+	# --with-arch=i?86.
+
+	# --sbindir=$(TOOLS_DIR)/bin does not work... anyone want to fix this?
+	# We don't need Glibc's sbin programs, but still.
+
+	# --enable-stackguard-randomization could be added here, but this is primarily
+	# for attacks by local users, and we shouldn't have those in the rebooted
+	# system. Adding this will empty the /dev/random entropy pool (via
+	# /dev/urandom), unless the system is running a Random Number Gathering Daemon
+	# (rngd). This version of Glibc uses high precision timing with SSP, so the
+	# canary value changes at run-time. This is not as good as /dev/urandom, but
+	# it's better than nothing and has very good performance.
+
+	cd $(DIR_SRC)/glibc-build && \
+		CFLAGS="-O2 -pipe" \
 		../$(THISAPP)/configure \
 			--prefix=$(TOOLS_DIR) \
-			--host=$(IFS_TARGET) \
-			--build=$$($(DIR_APP)/scripts/config.guess) \
+			--libexecdir=$(TOOLS_DIR)/lib/$(PKG_NAME) \
+			--with-headers=$(TOOLS_DIR)/include \
+			--with-binutils=$(TOOLS_DIR)/bin \
 			--disable-profile \
 			--enable-add-ons \
 			--enable-kernel=2.6.0 \
-			--with-headers=$(TOOLS_DIR)/include \
-			--with-binutils=$(TOOLS_DIR)/bin \
 			--without-selinux \
 			--without-gd \
-			--enable-bind-now \
-			libc_cv_initfini_array=yes \
-			libc_cv_forced_unwind=yes \
-			libc_cv_c_cleanup=yes
+			--enable-bind-now
+
+	# Our GCC is already passing -fPIC, and that's all we want for the libraries.
+	# LDFLAGS.so is appended to so we don't build shared libraries with
+	# DT_TEXTREL (and to tell us if something goes wrong). For now we only build
+	# the libraries, not the programs:
+	echo "build-programs=no" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo "LDFLAGS.so += -Wl,--warn-shared-textrel,--fatal-warnings" \
+		>> $(DIR_SRC)/glibc-build/configparms
 	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
+
+	# Then build the programs with hardening, so everything possible in
+	# $(TOOLS_DIR) is hardened:
+	@rm -f $(DIR_SRC)/glibc-build/configparms
+	echo "CC = gcc -fPIE -fstack-protector-all -D_FORTIFY_SOURCE=2" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo "CXX = g++ -fPIE -fstack-protector-all -D_FORTIFY_SOURCE=2" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo "CFLAGS-sln.c += -fno-PIC -fno-PIE" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo "+link = \$$(CC) -nostdlib -nostartfiles -fPIE -pie -o \$$@ \\" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo " \$$(sysdep-LDFLAGS) \$$(config-LDFLAGS) \$$(LDFLAGS) \$$(LDFLAGS-\$$(@F)) \\" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo " -Wl,-z,combreloc -Wl,-z,relro -Wl,-z,now \$$(hashstyle-LDFLAGS) \\" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo " -Wl,--warn-shared-textrel,--fatal-warnings \\" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo " \$$(addprefix \$$(csu-objpfx),S\$$(start-installed-name)) \\" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo " \$$(+preinit) `\$$(CC) --print-file-name=crtbeginS.o` \\" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo " \$$(filter-out \$$(addprefix \$$(csu-objpfx),start.o \\" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo " \$$(start-installed-name))\\" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo " \$$(+preinit) \$$(link-extra-libs) \\" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo " \$$(common-objpfx)libc% \$$(+postinit),\$$^) \\" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	echo " \$$(link-extra-libs) \$$(link-libc) `\$$(CC) --print-file-name=crtendS.o` \$$(+postinit)" \
+		>> $(DIR_SRC)/glibc-build/configparms
+	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
+
 	-mkdir -v $(TOOLS_DIR)/etc
 	touch $(TOOLS_DIR)/etc/ld.so.conf
 	cd $(DIR_SRC)/glibc-build && make install

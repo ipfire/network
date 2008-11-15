@@ -60,7 +60,8 @@ endef
 objects = $(DL_FILE) \
 	$(THISAPP)-ld_makefile.patch \
 	$(THISAPP)-pt_pax-1.patch \
-	$(THISAPP)-lazy-1.patch
+	$(THISAPP)-lazy-1.patch \
+	$(THISAPP)-asprintf_fix.patch
 
 download: $(objects)
 
@@ -82,10 +83,18 @@ $(TARGET): $(objects)
 	@rm -rf $(DIR_SRC)/binutils-build
 	-mkdir -v $(DIR_SRC)/binutils-build
 
+	# Add PT_PaX header marking support. These markings are using by the PaX
+	# kernel, and Pax-utils, to identify which programs need things like executable
+	# stack, etc. Without this patch the PaX kernel must use legacy mode, and this
+	# patch is greatly preferable:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pt_pax-1.patch
+
 ifeq "$(STAGE)" "toolchain"
 ifeq "$(PASS)" "1"
 	cd $(DIR_SRC)/binutils-build && \
+		CC="gcc -B/usr/bin/" \
 		../$(THISAPP)/configure \
+			$(CONFIGURE_ARCH) \
 			--target=$(IFS_TARGET) \
 			--prefix=$(TOOLS_DIR) \
 			--disable-nls \
@@ -93,24 +102,23 @@ ifeq "$(PASS)" "1"
 	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make install
 
-	cd $(TOOLS_DIR)/$(IFS_TARGET)/bin; \
-		if [ "$(IFS_TARGET)" == "$$($(DIR_APP)/config.guess)" ]; then \
-			for t in $$(ls -1); do \
-				ln -sfv $${t} $(TOOLS_DIR)/bin/$(IFS_TARGET)-$${t}; \
-			done; \
-		fi
+	for t in $$(ls $(TOOLS_DIR)/$(IFS_TARGET)/bin); do \
+		ln -sfv ../$(IFS_TARGET)/bin/$${t} $(TOOLS_DIR)/bin/$(IFS_TARGET)-$${t}; \
+	done
 endif
 
 ifeq "$(PASS)" "2"
+	# Binutils libiberty has the same identical bug GCC has:
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-asprintf_fix.patch
+
 	cd $(DIR_SRC)/binutils-build && \
-		CC="$(IFS_TARGET)-gcc -B$(TOOLS_DIR)/lib/" \
-		AR=$(IFS_TARGET)-ar \
-		RANLIB=$(IFS_TARGET)-ranlib \
 		../$(THISAPP)/configure \
+			$(CONFIGURE_ARCH) \
 			--target=$(IFS_TARGET) \
 			--prefix=$(TOOLS_DIR) \
 			--with-lib-path=$(TOOLS_DIR)/lib \
-			--disable-nls
+			--disable-nls \
+			--disable-werror
 	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make install
 
@@ -121,9 +129,7 @@ endif
 endif
 
 ifeq "$(STAGE)" "base"
-ifeq "$(PAX)" "1"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pt_pax-1.patch
-endif
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-asprintf_fix.patch
 	cd $(DIR_SRC)/binutils-build && \
 		CC="gcc -specs=$$(dirname $$(gcc --print-libgcc-file-name))/myspecs -B/usr/lib/ -B/usr/bin/" \
 		../$(THISAPP)/configure \

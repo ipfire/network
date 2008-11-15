@@ -37,7 +37,10 @@ TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-openbsd-owl-tmp.patch \
+	$(THISAPP)-cve-2006-4337_len.patch \
+	$(THISAPP)-cve-2006-4338.patch
 
 install : $(TARGET)
 
@@ -61,13 +64,23 @@ ifeq "$(STAGE)" "toolchain"
 			sed 's/futimens/gl_&/' $$file.orig > $$file; \
 		done
 
-ifeq "$(PIE)" "1"
-	## Don't use assembler code because this is not position independent.
-	cd $(DIR_APP) && DEFS=NO_ASM ./configure --prefix=$(TOOLS_DIR)
-else
-	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
+	# This patch modifies 'znew' so we don't use temporary files:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-openbsd-owl-tmp.patch
+
+	# Fix CVE 2006-4337
+	# (http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2006-4337) and
+	# CVE 2006-4338 (http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2006-4338),
+	# against malformed gzip files:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-cve-2006-4337_len.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-cve-2006-4338.patch
+
+	# NO_ASM is for textrels.
+	cd $(DIR_APP) && \
+		DEFS=NO_ASM \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endif
 	cd $(DIR_APP) && make install
 endif
 

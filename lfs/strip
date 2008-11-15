@@ -49,7 +49,8 @@ ifeq "$(STAGE)" "toolchain"
 	-strip --strip-all $(TOOLS_DIR)/{,usr/}{,s}bin/*
 	-rm -rf $(TOOLS_DIR)/{,share/}{info,man} \
 		$(TOOLS_DIR)/usr/{share,man,info} \
-		$(TOOLS_DIR)/share/locale/*
+		$(TOOLS_DIR)/share/locale/* \
+		$(TOOLS_DIR)/var
 	chown -R root:root $(LFS)$(TOOLS_DIR)
 endif
 

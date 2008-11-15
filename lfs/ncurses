@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = ncurses
-VER        = 5.6
+VER        = 5.7
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -55,15 +55,27 @@ $(TARGET) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
-	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR) --with-shared \
-		--without-debug --without-ada --enable-overwrite
-		
+	# We need wide character support for the Linux kernel menuconfig.
+	# --enable-symlinks installs the 'tic' program as a symbolic link (why not).
+	# --disable-root-environ restricts some environment variables, like TERMINFO,
+	# when running as root, so it can not be customized (why not).
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR) \
+			--with-shared \
+			--without-debug \
+			--without-ada \
+			--enable-overwrite \
+			--enable-widec \
+			--without-cxx-binding \
+			--enable-symlinks \
+			--disable-root-environ
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-coverity_fixes-1.patch
 	cd $(DIR_APP) && \
 		./configure \
 			--prefix=/usr \

@@ -60,7 +60,7 @@ $(TARGET) :
 			--localstatedir=/var \
 			--disable-static \
 			--enable-libxml2
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

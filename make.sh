@@ -48,19 +48,18 @@ toolchain_build() {
 	build_spy stage ${STAGE}
 
 	toolchain_make stage1
+	#toolchain_make scripts
 	# make distcc first so that CCACHE_PREFIX works immediately
 	[ -z "$DISTCC_HOSTS" ] || toolchain_make distcc
 	toolchain_make ccache
-	toolchain_make gmp
-	toolchain_make mpfr
-	toolchain_make linux
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
+	toolchain_make linux
 	toolchain_make glibc
 	toolchain_make adjust-toolchain
 	toolchain_make test-toolchain	PASS=1
-	toolchain_make binutils		PASS=2
 	toolchain_make gcc		PASS=2
+	toolchain_make binutils		PASS=2
 	toolchain_make test-toolchain	PASS=2
 	toolchain_make ncurses
 	toolchain_make bash
@@ -103,8 +102,6 @@ base_build() {
 
 	ipfire_make stage2
 	ipfire_make scripts
-	ipfire_make gmp
-	ipfire_make mpfr
 	ipfire_make linux
 	ipfire_make man-pages
 	ipfire_make glibc
@@ -139,6 +136,7 @@ base_build() {
 	ipfire_make file
 	ipfire_make findutils
 	ipfire_make flex
+	ipfire_make gmp
 	ipfire_make grub
 	ipfire_make gawk
 	ipfire_make grep
@@ -152,6 +150,7 @@ base_build() {
 	ipfire_make less
 	ipfire_make man-db
 	ipfire_make module-init-tools
+	ipfire_make mpfr
 	ipfire_make patch
 	ipfire_make psmisc
 	ipfire_make shadow

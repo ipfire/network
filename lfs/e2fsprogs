@@ -56,8 +56,26 @@ $(TARGET) :
 	-mkdir $(DIR_APP)/build
 
 ifeq "$(STAGE)" "toolchain"
-	cd $(DIR_APP)/build && ../configure --prefix=$(TOOLS_DIR) \
-		--enable-elf-shlibs
+	# Fix DT_TEXTREL in e2fsprogs libraries. --disable-shared and
+	# --with-pic are not options in E2fsprogs:
+	cd $(DIR_APP) && \
+		find lib/ -name Makefile.in -exec sed -i "s/\$$(ALL_CFLAGS)/& -fPIC/" {} \;
+
+	# At run time libblkid looks for the BLKID_DEBUG environment variable to
+	# enable debbugging, with getenv(3). Some suid-root programs use libblkid,
+	# such as mount(1). e2fsprogs includes a safe_getenv() function, which calls
+	# __secure_getenv() from libc. __secure_getenv will restrict some environment
+	# variables if the user is suid or sgid. So, this command replaces getenv()
+	# with safe_getenv():
+	cd $(DIR_APP) && sed \
+		-e "s/getenv(\"BLKID_DEBUG\")/safe_getenv(\"BLKID_DEBUG\")/" \
+		-i lib/blkid/cache.c
+
+	cd $(DIR_APP)/build && \
+		../configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR) \
+			--enable-elf-shlibs
 	cd $(DIR_APP)/build && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP)/build && make install-libs
 endif

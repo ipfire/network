@@ -26,7 +26,7 @@
 
 # Default target
 TARGET=i686
-POSSIBLE_TARGETS="i586 i686 via-c3 via-c7 geodelx"
+POSSIBLE_TARGETS="i486 i586 i686 via-c3 via-c7 geodelx"
 
 # Configuration rootdir
 CONFIG_ROOT=/etc/$SNAME
@@ -108,21 +108,21 @@ elif [ 'via-c7' = $TARGET ]; then
 	MACHINE=i686
 	MACHINE_REAL=${MACHINE_REAL}
 	LINKER=/lib/ld-linux.so.2
-	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	IFS_TARGET="${MACHINE}-via-linux-gnu"
 	CFLAGS="-march=${MACHINE} -mmmx -msse -msse2 -msse3 -O2 -pipe"
 	CXXFLAGS="${CFLAGS}"
 elif [ 'via-c3' = $TARGET ]; then
 	MACHINE=i586
 	MACHINE_REAL=${MACHINE_REAL}
 	LINKER=/lib/ld-linux.so.2
-	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	IFS_TARGET="${MACHINE}-via-linux-gnu"
 	CFLAGS="-march=c3 -m3dnow -O2 -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
 elif [ 'geodelx' = $TARGET ]; then
 	MACHINE=i586
 	MACHINE_REAL=${MACHINE_REAL}
 	LINKER=/lib/ld-linux.so.2
-	IFS_TARGET="${MACHINE}-pc-linux-gnu"
+	IFS_TARGET="${MACHINE}-geode-linux-gnu"
 	CFLAGS="-march=geode -Os -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
 else

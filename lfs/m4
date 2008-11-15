@@ -55,7 +55,13 @@ $(TARGET) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
-	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR)
+	# We need -D_GNU_SOURCE because this version of M4 has a bug in gnulib (or
+	# possibly autoconf) that doesn't recognise that we have asprintf() in libc.
+	cd $(DIR_APP) && \
+		CPPFLAGS="-D_GNU_SOURCE" \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif

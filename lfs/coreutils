@@ -57,11 +57,14 @@ $(TARGET) :
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-old_build_kernel-1.patch
 
 ifeq "$(STAGE)" "toolchain"	
-	cd $(DIR_APP) && ./configure --prefix=$(TOOLS_DIR) \
-				--enable-install-program=hostname
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR) \
+			--enable-install-program=hostname
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	
+
 	cd $(DIR_APP) && cp -v src/su $(TOOLS_DIR)/bin/su-tools
 endif
 
