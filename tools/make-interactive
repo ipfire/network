@@ -163,6 +163,7 @@ toolchain)
 
 toolchains)
 	for i in $(check_supported_targets); do
+		TARGET=$i $0 clean
 		TARGET=$i $0 toolchain --put
 	done
 	;;
