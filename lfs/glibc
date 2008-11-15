@@ -36,7 +36,7 @@ CXXFLAGS   =
 
 
 ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
-	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+	OBJECT = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 	CONFIGURE_ARGS = --prefix=/usr \
 		--disable-profile \
 		--enable-add-ons \
@@ -49,7 +49,7 @@ ifeq "$(SSP)" "1"
 		--with-prng-device=/dev/erandom
 endif
 else
-	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-cross
+	OBJECT = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-cross
 endif
 
 ###############################################################################

@@ -37,9 +37,9 @@ GMP        = $(shell grep ^VER $(DIR_LFS)/gmp  | awk '{ print $$3 }')
 MPFR       = $(shell grep ^VER $(DIR_LFS)/mpfr | awk '{ print $$3 }')
 
 ifeq "$(STAGE)" "base"
-	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+	OBJECT = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 else
-	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
+	OBJECT = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
 endif
 
 ifeq "$(MACHINE)" "i586"

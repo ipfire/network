@@ -86,7 +86,7 @@ INSTALL_INITSCRIPT = echo "Installing initscript \"$(INITSCRIPT)\" -> /etc/init.
 PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 
 # For each package we create a list of files that it installed under 
-# log/<TARGET> name. Modified files are not identified
+# log/<OBJECT> name. Modified files are not identified
 #
 define FIND_FILES
 	cd $(LFS)/ && $(TOOLS_DIR)/bin/find -mount \
