@@ -33,8 +33,8 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 CFLAGS     = -pipe
 CXXFLAGS   =
 
-GMP        = $(shell grep ^VER $(DIR_SRC)/lfs/gmp  | awk '{ print $$3 }')
-MPFR       = $(shell grep ^VER $(DIR_SRC)/lfs/mpfr | awk '{ print $$3 }')
+GMP        = $(shell grep ^VER $(DIR_LFS)/gmp  | awk '{ print $$3 }')
+MPFR       = $(shell grep ^VER $(DIR_LFS)/mpfr | awk '{ print $$3 }')
 
 ifeq "$(STAGE)" "base"
 	TARGET = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
