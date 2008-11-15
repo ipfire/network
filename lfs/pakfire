@@ -28,13 +28,13 @@ VER = 0.99
 
 THISAPP    = pakfire
 DIR_APP    = /opt/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check : 
 
@@ -46,7 +46,7 @@ md5 :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP)
 	-mkdir -p /opt/pakfire/{db/{meta,lists,rootfiles,installed,core},etc,lib,tmp} \

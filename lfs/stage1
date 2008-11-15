@@ -29,13 +29,13 @@ VER        = LFS
 
 THISAPP    = $(PKG_NAME)-$(VER)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-install : $(TARGET)
+install : $(OBJECT)
 
 download :
 
@@ -43,7 +43,7 @@ download :
 # Installation Details
 ###############################################################################
 
-$(TARGET) :
+$(OBJECT) :
 	@$(PREBUILD)
 	-mkdir -p $(TOOLS_DIR)/usr/bin
 	@$(POSTBUILD)

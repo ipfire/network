@@ -30,7 +30,7 @@ THISAPP    = squidGuard-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -42,7 +42,7 @@ $(DL_FILE) = $(DL_FROM)/$(DL_FILE)
 
 $(DL_FILE)_MD5 = c6e2e9112fdbda0602656f94c1ce31fd
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
@@ -67,7 +67,7 @@ $(subst %,%_MD5,$(objects)) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 < $(DIR_SRC)/src/patches/squidGuard-$(VER)-ipfire.patch

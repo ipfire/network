@@ -30,7 +30,7 @@ THISAPP    = tripwire-$(VER)
 DL_FILE    = $(THISAPP)-src.tar.bz2
 DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 PROG       = tripwire
 PAK_VER    = 1
 CFLAGS     =
@@ -48,7 +48,7 @@ $(DL_FILE) = $(DL_FROM)/$(DL_FILE)
 
 $(DL_FILE)_MD5 = 8a1147c278b528ed593023912c4b649a
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
@@ -76,7 +76,7 @@ $(subst %,%_MD5,$(objects)) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP)* && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP)-src && ln -fs contrib install

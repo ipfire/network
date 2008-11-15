@@ -31,7 +31,7 @@ PKG_VER    = 0
 THISAPP    = $(PKG_NAME)-$(VER)
 DIR_APP    = $(DIR_SOURCE)/web
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
 GROUP      = System/Webinterface
@@ -55,7 +55,7 @@ endef
 
 download:
 
-install: $(TARGET)
+install: $(OBJECT)
 
 package:
 	@$(DO_PACKAGE)
@@ -64,7 +64,7 @@ package:
 # Installation Details
 ###############################################################################
 
-$(TARGET): $(objects)
+$(OBJECT): $(objects)
 	@$(PREBUILD)
 	-mkdir -p /srv/www/$(SNAME)
 	cd $(DIR_APP) && cp -av * /srv/www/$(SNAME)/

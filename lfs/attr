@@ -32,7 +32,7 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
 GROUP      = System/Libaries
@@ -57,7 +57,7 @@ objects = $(DL_FILE)
 
 download: $(objects)
 
-install: $(TARGET)
+install: $(OBJECT)
 
 package:
 	@$(DO_PACKAGE)
@@ -69,7 +69,7 @@ $(objects):
 # Installation Details
 ###############################################################################
 
-$(TARGET): $(objects)
+$(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \

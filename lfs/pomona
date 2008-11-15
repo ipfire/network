@@ -30,13 +30,13 @@ VER        = ipfire
 THISAPP    = $(PKG_NAME)
 DIR_APP    = $(DIR_SOURCE)/$(THISAPP)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-install : $(TARGET)
+install : $(OBJECT)
 
 download :
 
@@ -44,7 +44,7 @@ download :
 # Installation Details
 ###############################################################################
 
-$(TARGET) :
+$(OBJECT) :
 	@$(PREBUILD)
 	cd $(DIR_APP) && make clean
 	#cd $(DIR_APP) && make -C po update-po

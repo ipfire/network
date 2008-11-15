@@ -30,7 +30,7 @@ THISAPP    = mpc-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 PROG       = mpc
 PAK_VER    = 1
 
@@ -46,7 +46,7 @@ $(DL_FILE) = $(DL_FROM)/$(DL_FILE)
 
 $(DL_FILE)_MD5 = a93a390315aacfec061c8df89fb5e35f
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
@@ -74,7 +74,7 @@ $(subst %,%_MD5,$(objects)) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && ./configure --prefix=/usr

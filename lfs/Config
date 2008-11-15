@@ -121,31 +121,31 @@ ifneq "$(STAGE)" "toolchain"
 define POSTBUILD
 	echo "### INSTALL DONE #####################################################"
 	echo "# Application: $(THISAPP)"
-	echo "# Saving file list to $(TARGET)..."
+	echo "# Saving file list to $(OBJECT)..."
 	@$(FIND_FILES) > $(DIR_SRC)/lsalrnew
-	@diff $(DIR_SRC)/lsalr $(DIR_SRC)/lsalrnew | grep '^> ' | sed 's+^> \./++' | sort > $(TARGET)_diff
+	@diff $(DIR_SRC)/lsalr $(DIR_SRC)/lsalrnew | grep '^> ' | sed 's+^> \./++' | sort > $(OBJECT)_diff
 	@mv -f $(DIR_SRC)/lsalrnew $(DIR_SRC)/lsalr
 	# compare roofile (same name as lfs script) with the list of installed files
 	# special cases
-	# - if the corresponding rootfile is not found, touch $(TARGET)_missing_rootfile
+	# - if the corresponding rootfile is not found, touch $(OBJECT)_missing_rootfile
 	# - on a partial rebuild without a new file inside TARGET_diff, just touch TARGET
-	# $(TARGET)_diff : result of the diff
+	# $(OBJECT)_diff : result of the diff
 	# ROOTFILE : reference of include/exclude files
-	# $(TARGET)_rootfile : ROOTFILE with KVER replacement
-	# $(TARGET) : log result with {commented|include|added} files
-	if [ -s "$(TARGET)_diff" ]; then \
+	# $(OBJECT)_rootfile : ROOTFILE with KVER replacement
+	# $(OBJECT) : log result with {commented|include|added} files
+	if [ -s "$(OBJECT)_diff" ]; then \
 		LFS_SCRIPT="$(STAGE_ORDER).$(firstword $(MAKEFILE_LIST))"; \
 		if [ "x$(PASS)" != "x" ]; then LFS_SCRIPT="$$LFS_SCRIPT.$(PASS)"; fi; \
 		ROOTFILE=$$(find $(DIR_SOURCE)/rootfiles/core $(DIR_SOURCE)/rootfiles/extras -maxdepth 1 -type f -name $$LFS_SCRIPT | head -1); \
 		if [ "$$ROOTFILE" = "" ]; then \
-			touch $(TARGET)_missing_rootfile; \
-			ROOTFILE=$(TARGET)_missing_rootfile ; \
+			touch $(OBJECT)_missing_rootfile; \
+			ROOTFILE=$(OBJECT)_missing_rootfile ; \
 			echo "error $$LFS_SCRIPT not found in $(DIR_SOURCE)/rootfiles"; \
 		fi; \
 		sed	-e "s@KVER@$(KVER)@g" \
 			-e "s@^/@@g" -e "s@^#/@#@g" \
-			$$ROOTFILE > $(TARGET)_rootfile; \
-		echo 'open (F,"$(TARGET)_rootfile"); \
+			$$ROOTFILE > $(OBJECT)_rootfile; \
+		echo 'open (F,"$(OBJECT)_rootfile"); \
 		    while (<F>) { $$allfile{$$_} = "x" };close (F); \
 		    while (<>) { \
 			if ( defined ($$allfile{"#$$_"}) ) {print "#$$_"} \
@@ -153,19 +153,19 @@ define POSTBUILD
 			else {print "+$$_"} \
 		    }; \
 		' > /tmp/perl.pl; \
-		perl /tmp/perl.pl < $(TARGET)_diff \
-		| sed -e "s@$(KVER)@KVER@g" > $(TARGET); \
-		rm -f $(TARGET)_rootfile; \
+		perl /tmp/perl.pl < $(OBJECT)_diff \
+		| sed -e "s@$(KVER)@KVER@g" > $(OBJECT); \
+		rm -f $(OBJECT)_rootfile; \
 		if [ "$$ROOTFILE" != "" ]; then \
-			if ! cmp -s $(TARGET) $$ROOTFILE; then \
-				touch $(TARGET)_changed; \
-				if ! grep -q "^+" $(TARGET); then cp -f $(TARGET) $$ROOTFILE; fi; \
+			if ! cmp -s $(OBJECT) $$ROOTFILE; then \
+				touch $(OBJECT)_changed; \
+				if ! grep -q "^+" $(OBJECT); then cp -f $(TARGET) $$ROOTFILE; fi; \
 			fi; \
 		fi; \
 	else \
-		touch $(TARGET); \
+		touch $(OBJECT); \
 	fi
-	@rm -f $(TARGET)_diff
+	@rm -f $(OBJECT)_diff
 	echo "######################################################################"
 
 	touch $(DIR_INFO)/_build.00-software.log
@@ -184,6 +184,6 @@ define POSTBUILD
 	! grep -qEi "^$(PKG_NAME);$(VER);" $(DIR_INFO)/_build.00-software.log; then \
 		echo "$(PKG_NAME);$(VER);" >> $(DIR_INFO)/_build.00-software.log; \
 	fi
-	touch $(TARGET)
+	touch $(OBJECT)
 endef
 endif

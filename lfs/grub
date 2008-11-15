@@ -31,7 +31,7 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 CFLAGS     =
 CXXFLAGS   =
@@ -48,7 +48,7 @@ objects = $(DL_FILE) grub-0.94-i2o.patch grub-0.95-moreraid.patch \
 	$(THISAPP)-256byte_inode-1.patch grub-0.94-installcopyonly.patch \
 	$(THISAPP)-install.in.patch
 
-install : $(TARGET)
+install : $(OBJECT)
 
 download : $(objects)
 
@@ -59,7 +59,7 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disk_geometry-1.patch

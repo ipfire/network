@@ -31,7 +31,7 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -42,7 +42,7 @@ objects = $(DL_FILE) \
 	$(THISAPP)-cve-2006-4337_len.patch \
 	$(THISAPP)-cve-2006-4338.patch
 
-install : $(TARGET)
+install : $(OBJECT)
 
 download : $(objects)
 
@@ -53,7 +53,7 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 

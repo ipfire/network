@@ -30,7 +30,7 @@ THISAPP    = asterisk-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 PROG       = asterisk
 PAK_VER    = 1
 
@@ -58,7 +58,7 @@ asterisk-extra-sounds-en-alaw-current.tar.gz_MD5 = 89bca77c9bb91abd9e87447b3a9d3
 asterisk-1.4-de-prompts.tar.gz_MD5 = 626a2b95071a5505851e43874dfbfd5c
 asterisk-addons-1.4.2.tar.gz_MD5 = c080b02e6ddc81dab6a64691af890805
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
@@ -86,7 +86,7 @@ $(subst %,%_MD5,$(objects)) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/asterisk-* && \
 		cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)

@@ -30,7 +30,7 @@ THISAPP    = alsa-lib-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 PROG       = alsa
 PAK_VER    = 1
 
@@ -48,7 +48,7 @@ alsa-utils-$(VER).tar.bz2 = $(DL_FROM)/alsa-utils-$(VER).tar.bz2
 $(DL_FILE)_MD5 = d55a9d7d2a79d738a1b7a511cffda4b6
 alsa-utils-$(VER).tar.bz2_MD5 = dfe4bb5d3217f3ec662b172ce8397cf0
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
@@ -76,7 +76,7 @@ $(subst %,%_MD5,$(objects)) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_SRC)/alsa* && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && ./configure --enable-static

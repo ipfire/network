@@ -27,13 +27,13 @@ include Config
 VER = ipfire
 
 THISAPP    = core-updates
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check :
 
@@ -47,7 +47,7 @@ md5 :
 
 CORE = $(patsubst $(DIR_SOURCE)/rootfiles/%,%,$(wildcard $(DIR_SOURCE)/rootfiles/core/*))
 
-$(TARGET) : $(CORE)
+$(OBJECT) : $(CORE)
 
 core/%:
 	rm -rf /install/packages/package

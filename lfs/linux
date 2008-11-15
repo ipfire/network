@@ -33,7 +33,7 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 CFLAGS     =
 CXXFLAGS   =
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 LOCALVERSION = -ipfire1
 FULLVER    = $(VER)$(LOCALVERSION)
@@ -62,7 +62,7 @@ ifeq "$(SSP)" "1"
 	#objects += $(FRANDOM_PATCH)
 endif
 
-install : $(TARGET)
+install : $(OBJECT)
 
 download : $(objects)
 
@@ -73,7 +73,7 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 

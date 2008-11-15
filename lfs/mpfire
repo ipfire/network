@@ -28,7 +28,7 @@ VER        = ipfire
 
 THISAPP    = mpfire-$(VER)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 PROG       = mpfire
 PAK_VER    = 1
 
@@ -40,7 +40,7 @@ DEPS       = "mpd mpc alsa libshout libogg libmad libid3tag libvorbis"
 
 objects =
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check : 
 
@@ -55,7 +55,7 @@ dist:
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	-mkdir -p /var/ipfire/mpfire/{bin,db}
 	touch /var/ipfire/mpfire/{settings,playlist.m3u}

@@ -31,7 +31,7 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 INITSCRIPT = sshd
 
@@ -41,7 +41,7 @@ INITSCRIPT = sshd
 
 objects = $(DL_FILE)
 
-install: $(TARGET)
+install: $(OBJECT)
 
 download : $(objects)
 
@@ -52,7 +52,7 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	install -v -m700 -d /var/lib/sshd

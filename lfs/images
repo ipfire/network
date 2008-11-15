@@ -36,7 +36,7 @@ else
 	PREFIX = isolinux
 endif
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ROOTFILES  = $(DIR_SOURCE)/rootfiles/core
 ifeq "$(BUILD_DEBUG)" "1"
@@ -47,7 +47,7 @@ endif
 # Top-level Rules
 ###############################################################################
 
-install : $(TARGET)
+install : $(OBJECT)
 
 download :
 
@@ -55,7 +55,7 @@ download :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
 
 ifeq "$(PASS)" "$(THISAPP)"

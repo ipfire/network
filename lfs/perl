@@ -31,7 +31,7 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 XMLPARSER  = XML-Parser-2.34
 
@@ -44,7 +44,7 @@ objects = $(DL_FILE) \
 	$(THISAPP)-security_fix-1.patch \
 	$(XMLPARSER).tar.gz
 
-install : $(TARGET)
+install : $(OBJECT)
 
 download : $(objects)
 
@@ -55,7 +55,7 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_SRC)/perl* && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	-mkdir -v $(DIR_SRC)/perl-build

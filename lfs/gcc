@@ -58,7 +58,7 @@ objects = $(DL_FILE) \
 	$(THISAPP)-branch-startfiles-1.patch \
 	$(THISAPP)-asprintf_fix.patch
 
-install : $(TARGET)
+install : $(OBJECT)
 
 download : $(objects)
 
@@ -69,7 +69,7 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/gcc-build && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	-mkdir -v $(DIR_SRC)/gcc-build

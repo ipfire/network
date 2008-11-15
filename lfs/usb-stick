@@ -27,13 +27,13 @@ include Config
 VER = ipfire
 
 THISAPP    = usb-stick
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check :
 
@@ -68,7 +68,7 @@ define COPY_TO_IMG
 	syslinux $$IMAGE
 endef
 
-$(TARGET) : 
+$(OBJECT) : 
 
 	# usb-fdd superfloppy (partitionless)
 	# compute size +32 blocks for bootsector/fat/etc...

@@ -30,7 +30,7 @@ THISAPP    = espgs-$(VER)
 DL_FILE    = $(THISAPP)-source.tar.bz2
 DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/espgs-$(VER)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 PROG       = ghostscript
 PAK_VER    = 1
 
@@ -52,7 +52,7 @@ $(DL_FILE)_MD5 = 2a21136953c3559e6088522753b06b1f
 ghostscript-fonts-std-8.11.tar.gz_MD5 = 6865682b095f8c4500c54b285ff05ef6
 gnu-gs-fonts-other-6.0.tar.gz_MD5 = 33457d3f37de7ef03d2eea05a9e6aa4f
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
@@ -80,7 +80,7 @@ $(subst %,%_MD5,$(objects)) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 #	cd $(DIR_APP) && sed -i "s/bbox.dev$/x11.dev/" Makefile.in

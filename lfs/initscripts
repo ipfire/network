@@ -30,7 +30,7 @@ VER        = ipfire
 THISAPP    = $(PKG_NAME)
 DIR_APP    = $(DIR_SOURCE)/$(THISAPP)
 
-TARGET     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 SCRIPTS = \
 	checkfs \
@@ -61,7 +61,7 @@ SCRIPTS = \
 # Top-level Rules
 ###############################################################################
 
-install : $(TARGET)
+install : $(OBJECT)
 
 download :
 
@@ -69,7 +69,7 @@ download :
 # Installation Details
 ###############################################################################
 
-$(TARGET) :
+$(OBJECT) :
 	@$(PREBUILD)
 	install -d -m 755 /etc/rc0.d
 	install -d -m 755 /etc/rc1.d

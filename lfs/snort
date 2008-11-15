@@ -30,7 +30,7 @@ THISAPP    = snort-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -45,7 +45,7 @@ Community-Rules-20070503.tar.gz = $(DL_FROM)/Community-Rules-20070503.tar.gz
 $(DL_FILE)_MD5 = 70e7f297c9fcf1f46d6fa3e1bb4aae49
 Community-Rules-20070503.tar.gz_MD5 = f236b8a4ac12e99d3e7bd81bf3b5a482
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check : $(patsubst %,$(DIR_CHK)/%,$(objects))
 
@@ -70,7 +70,7 @@ $(subst %,%_MD5,$(objects)) :
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/snort* && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && ./configure --prefix=/usr --disable-nls \

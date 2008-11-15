@@ -28,7 +28,7 @@ VER        = ipfire
 
 THISAPP    = guardian-$(VER)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-TARGET     = $(DIR_INFO)/$(THISAPP)
+OBJECT     = $(DIR_INFO)/$(THISAPP)
 PROG       = guardian
 PAK_VER    = 1
 
@@ -40,7 +40,7 @@ DEPS       = ""
 
 objects =
 
-install : $(TARGET)
+install : $(OBJECT)
 
 check : 
 
@@ -55,7 +55,7 @@ dist:
 # Installation Details
 ###############################################################################
 
-$(TARGET) : 
+$(OBJECT) : 
 	@$(PREBUILD)
 	-mkdir -p /var/ipfire/guardian /var/log/guardian
 	touch /var/log/guardian/guardian.log
