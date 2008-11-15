@@ -29,6 +29,7 @@ build_spy() {
 
 
 build_spy_send_profile() {
+	build_spy target   $TARGET
 	build_spy hostname $HOSTNAME
 	build_spy distcc   ${DISTCC_PORT-3632}
 	build_spy jobs     ${DISTCC_JOBS}

@@ -25,7 +25,7 @@
 ###############################################################################
 
 # Default target
-TARGET=i686
+TARGET=${TARGET-i686}
 POSSIBLE_TARGETS="i486 i586 i686 via-c3 via-c7 geodelx"
 
 # Configuration rootdir
@@ -64,7 +64,7 @@ DISTCC_PORT=3632
 DISTCC_JOBS=4
 
 # Default hostname
-HOSTNAME=${HOSTNAME-$(hostname -f || hostname)}
+HOSTNAME=$(hostname -f || hostname)
 
 ###############################################################################
 #

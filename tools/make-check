@@ -191,3 +191,27 @@ check_cpu() {
 	grep -q $FLAG <<< $CPU_FLAGS
 	return $?
 }
+
+check_supported_target() {
+	local FLAGS
+	if [ "$1" = "via-c7" ]; then
+		FLAGS="sse sse2 pni"
+	elif [ "$1" = "via-c3" ]; then
+		FLAGS="3dnow"
+	fi
+	for j in $FLAGS; do
+		if ! check_cpu $j; then
+			echo "Your system doesn't support needed cpu feature \"$j\" to build target $1." >&2
+			return 1
+		fi
+	done
+	return 0
+}
+
+check_supported_targets() {
+	for i in ${1-$POSSIBLE_TARGETS}; do
+		check_supported_target $i 2>/dev/null
+		[ "$?" -eq "0" ] && echo -n "$i "
+	done
+	echo # new line
+}
