@@ -45,7 +45,7 @@ export BASEDIR
 . $BASEDIR/tools/make-constants	# Load this very early
 . $BASEDIR/tools/make-beautify
 
-mkdir $BASEDIR/log_${MACHINE}/ 2>/dev/null
+mkdir $BASEDIR/log_${TARGET}/ 2>/dev/null
 
 ################################################################################
 #                                                                              #
@@ -71,7 +71,7 @@ evaluate() {
 
 stdumount() {
 	sleep 0.3 # Wait one second for finish of processes
-	for fs in $(mount | grep $BASEDIR/build_${MACHINE} | awk '{print $3}'); do
+	for fs in $(mount | grep $BASEDIR/build_${TARGET} | awk '{print $3}'); do
 		umount $fs 2>/dev/null;
 	done
 } # End of stdumount()
@@ -316,14 +316,14 @@ ipfire_make() {
 # This prepares the build environment                                          #
 ################################################################################
 prepareenv() {
-	LOGFILE=$BASEDIR/log_${MACHINE}/_build.00-preparation.log
+	LOGFILE=$BASEDIR/log_${TARGET}/_build.00-preparation.log
 	export LOGFILE
-	mkdir -p $BASEDIR/log_${MACHINE}/01_toolchain 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/02_base 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/03_${SNAME} 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/04_misc 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/05_installer 2>/dev/null
-	mkdir -p $BASEDIR/log_${MACHINE}/06_packages 2>/dev/null
+	mkdir -p $BASEDIR/log_${TARGET}/01_toolchain 2>/dev/null
+	mkdir -p $BASEDIR/log_${TARGET}/02_base 2>/dev/null
+	mkdir -p $BASEDIR/log_${TARGET}/03_${SNAME} 2>/dev/null
+	mkdir -p $BASEDIR/log_${TARGET}/04_misc 2>/dev/null
+	mkdir -p $BASEDIR/log_${TARGET}/05_installer 2>/dev/null
+	mkdir -p $BASEDIR/log_${TARGET}/06_packages 2>/dev/null
   
 	#############################################################################
 	# Are we running the right shell?                                           #
@@ -444,14 +444,14 @@ prepareenv() {
 	umask 022
 
 	# Set LFS Directory
-	LFS=$BASEDIR/build_${MACHINE}/${SNAME}
+	LFS=$BASEDIR/build_${TARGET}/${SNAME}
 	
 	# Check /tools symlink
 	if [ -h $TOOLS_DIR ]; then
 		rm -f $TOOLS_DIR
 	fi
 	if [ ! -a $TOOLS_DIR ]; then
-		ln -s $BASEDIR/build_${MACHINE}/$TOOLS_DIR /
+		ln -s $BASEDIR/build_${TARGET}/$TOOLS_DIR /
 	fi
 	if [ ! -h $TOOLS_DIR ]; then
 		exiterror "Could not create $TOOLS_DIR symbolic link."
@@ -464,13 +464,13 @@ prepareenv() {
 	unset CC CXX CPP LD_LIBRARY_PATH LD_PRELOAD
 
 	# Make some extra directories
-	mkdir -p $BASEDIR/build_${MACHINE}/{$TOOLS_DIR,cdrom,$INSTALLER_DIR,$IMAGES_DIR} 2>/dev/null
+	mkdir -p $BASEDIR/build_${TARGET}/{$TOOLS_DIR,cdrom,$INSTALLER_DIR,$IMAGES_DIR} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
 	mkdir -p $BASEDIR/cache/{toolchains,patches,tarballs} 2>/dev/null
 	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/{dev,etc,proc,sys} 2>/dev/null
 	mkdir -p $LFS/dev/pts 2>/dev/null
-	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${MACHINE},src,ccache,distcc} 2>/dev/null
+	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${TARGET},src,ccache,distcc} 2>/dev/null
 	mkdir -p $LFS/{$INSTALLER_DIR,cdrom,images} 2>/dev/null
 
 	mknod -m 600 $BASEDIR/build/dev/console c 5 1 2>/dev/null
@@ -486,12 +486,12 @@ prepareenv() {
 	mount --bind $BASEDIR/config				$LFS/usr/src/config
 	mount --bind $BASEDIR/doc				$LFS/usr/src/doc
 	mount --bind $BASEDIR/lfs				$LFS/usr/src/lfs
-	mount --bind $BASEDIR/log_${MACHINE}			$LFS/usr/src/log_${MACHINE}
+	mount --bind $BASEDIR/log_${TARGET}			$LFS/usr/src/log_${TARGET}
 	mount --bind $BASEDIR/src				$LFS/usr/src/src
-	mount --bind $BASEDIR/build_${MACHINE}/$TOOLS_DIR	$LFS/$TOOLS_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/$CDROM_DIR	$LFS/$CDROM_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/$INSTALLER_DIR	$LFS/$INSTALLER_DIR
-	mount --bind $BASEDIR/build_${MACHINE}/$IMAGES_DIR	$LFS/$IMAGES_DIR
+	mount --bind $BASEDIR/build_${TARGET}/$TOOLS_DIR	$LFS/$TOOLS_DIR
+	mount --bind $BASEDIR/build_${TARGET}/$CDROM_DIR	$LFS/$CDROM_DIR
+	mount --bind $BASEDIR/build_${TARGET}/$INSTALLER_DIR	$LFS/$INSTALLER_DIR
+	mount --bind $BASEDIR/build_${TARGET}/$IMAGES_DIR	$LFS/$IMAGES_DIR
 
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache
@@ -526,7 +526,7 @@ build() {
 	build_spy state compiling
 	BASEDIR=$BASEDIR UUID=$UUID NAME=$NAME VERSION=$VERSION $BASEDIR/tools/make-buildspy &
 
-	if [ -f $BASEDIR/log_${MACHINE}/02_base/stage2-LFS ]; then
+	if [ -f $BASEDIR/log_${TARGET}/02_base/stage2-LFS ]; then
 		prepareenv
 		echo "Using installed toolchain" >> $LOGFILE
 		beautify message DONE "Stage toolchain already built or extracted"
@@ -584,7 +584,7 @@ gettoolchain() {
 		URL_TOOLCHAIN=$(grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }')
 		DIR_TOOLCHAIN="$BASEDIR/cache/toolchains"
 
-		echo "Loading toolchain for $MACHINE"
+		echo "Loading toolchain for $TARGET"
 		scp -2 ${IPFIRE_USER}@${URL_TOOLCHAIN}/$TOOLCHAINNAME.tar.bz2 \
 			${DIR_TOOLCHAIN}
 	else
@@ -599,7 +599,7 @@ puttoolchain() {
 		URL_TOOLCHAIN=$(grep URL_TOOLCHAIN lfs/Config | awk '{ print $3 }')
 		DIR_TOOLCHAIN="$BASEDIR/cache/toolchains"
 
-		echo "Pushing toolchain for $MACHINE"
+		echo "Pushing toolchain for $TARGET"
 		scp -2 ${DIR_TOOLCHAIN}/$TOOLCHAINNAME.tar.bz2 \
 			${IPFIRE_USER}@${URL_TOOLCHAIN}
 	else
@@ -613,7 +613,7 @@ getsource() {
 	if [ ! -d $BASEDIR/cache ]; then
 		mkdir -p $BASEDIR/cache/{tarballs,patches}
 	fi
-	mkdir -p $BASEDIR/log_${MACHINE}
+	mkdir -p $BASEDIR/log_${TARGET}
 	echo -e "${BOLD}Preload all source files${NORMAL}"
 	cd $BASEDIR/lfs
 	for i in *; do

@@ -108,7 +108,7 @@ clean)
 	;;
 
 source|src)
-	LOGFILE=$BASEDIR/log_${MACHINE}/_build.00-preparation.log
+	LOGFILE=$BASEDIR/log_${TARGET}/_build.00-preparation.log
 	case "$2" in
 		get|pull|download)
 			getsource
@@ -141,9 +141,9 @@ toolchain)
 			stdumount
 			echo -ne "\ntarball creation "
 			[ -d $BASEDIR/cache/toolchains ] || mkdir $BASEDIR/cache/toolchains
-			cd $BASEDIR && tar cj --exclude='log_${MACHINE}/_build.*.log' \
+			cd $BASEDIR && tar cj --exclude='log_${TARGET}/_build.*.log' \
 				--file=cache/toolchains/$TOOLCHAINNAME.tar.bz2 \
-				build_${MACHINE} log_${MACHINE} >> $LOGFILE
+				build_${TARGET} log_${TARGET} >> $LOGFILE
 			beautify message DONE
 			echo `ls -sh cache/toolchains/$TOOLCHAINNAME.tar.bz2`
 
@@ -242,7 +242,7 @@ push)
 	;;
 
 pull)
-	LOGFILE=$BASEDIR/log_${MACHINE}/_build.00-preparation.log
+	LOGFILE=$BASEDIR/log_${TARGET}/_build.00-preparation.log
 	git_pull
 	check_sanity
 	getsource

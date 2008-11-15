@@ -42,7 +42,7 @@ toolchain_build() {
 	STAGE_ORDER=01
 	STAGE=toolchain
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-toolchain.log"
+	LOGFILE="$BASEDIR/log_${TARGET}/_build.${STAGE_ORDER}-toolchain.log"
 	export LOGFILE
 
 	build_spy stage ${STAGE}
@@ -95,7 +95,7 @@ base_build() {
 	STAGE_ORDER=02
 	STAGE=base
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-base.log"
+	LOGFILE="$BASEDIR/log_${TARGET}/_build.${STAGE_ORDER}-base.log"
 	export LOGFILE
 
 	build_spy stage ${STAGE}
@@ -171,7 +171,7 @@ ipfire_build() {
 	STAGE_ORDER=03
 	STAGE=ipfire
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-ipfire.log"
+	LOGFILE="$BASEDIR/log_${TARGET}/_build.${STAGE_ORDER}-ipfire.log"
 	export LOGFILE
 
 	build_spy stage ${STAGE}
@@ -329,7 +329,7 @@ misc_build() {
 	STAGE_ORDER=04
 	STAGE=misc
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-misc.log"
+	LOGFILE="$BASEDIR/log_${TARGET}/_build.${STAGE_ORDER}-misc.log"
 	export LOGFILE
 
 	build_spy stage ${STAGE}
@@ -434,7 +434,7 @@ installer_build() {
 	STAGE_ORDER=05
 	STAGE=installer
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-installer.log"
+	LOGFILE="$BASEDIR/log_${TARGET}/_build.${STAGE_ORDER}-installer.log"
 	export LOGFILE
 
 	build_spy stage ${STAGE}
@@ -452,7 +452,7 @@ packages_build() {
 	STAGE_ORDER=06
 	STAGE=packages
 
-	LOGFILE="$BASEDIR/log_${MACHINE}/_build.${STAGE_ORDER}-packages.log"
+	LOGFILE="$BASEDIR/log_${TARGET}/_build.${STAGE_ORDER}-packages.log"
 	export LOGFILE
 
 	build_spy stage ${STAGE}

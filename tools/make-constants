@@ -96,41 +96,32 @@ else
 	exit 1
 fi
 
+LINKER=/lib/ld-linux.so.2
 if [ 'i686' = $TARGET -o 'i586' = $TARGET \
 	-o 'i486' = $TARGET ]; then
 	MACHINE=${TARGET}
-	MACHINE_REAL=${MACHINE_REAL}
-	LINKER=/lib/ld-linux.so.2
 	IFS_TARGET="${MACHINE}-pc-linux-gnu"
-	CFLAGS="-march=${MACHINE} -O2 -pipe -fomit-frame-pointer"
+	CFLAGS="-O2 -march=${MACHINE} -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
 elif [ 'atom330' = $TARGET ]; then
 	MACHINE=i686
-	MACHINE_REAL=${MACHINE_REAL}
-	LINKER=/lib/ld-linux.so.2
 	IFS_TARGET="${MACHINE}-atom-linux-gnu"
-	CFLAGS="-march=${MACHINE} -mmmx -msse -msse2 -msse3 -mssse3 -O2 -pipe"
+	CFLAGS="-O2 -march=${MACHINE} -mmmx -msse -msse2 -msse3 -mssse3 -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
 elif [ 'via-c7' = $TARGET ]; then
 	MACHINE=i686
-	MACHINE_REAL=${MACHINE_REAL}
-	LINKER=/lib/ld-linux.so.2
 	IFS_TARGET="${MACHINE}-via-linux-gnu"
-	CFLAGS="-march=${MACHINE} -mmmx -msse -msse2 -msse3 -O2 -pipe"
+	CFLAGS="-O2 -march=${MACHINE} -mmmx -msse -msse2 -msse3 -pipe"
 	CXXFLAGS="${CFLAGS}"
 elif [ 'via-c3' = $TARGET ]; then
 	MACHINE=i586
-	MACHINE_REAL=${MACHINE_REAL}
-	LINKER=/lib/ld-linux.so.2
 	IFS_TARGET="${MACHINE}-via-linux-gnu"
-	CFLAGS="-march=c3 -m3dnow -O2 -pipe -fomit-frame-pointer"
+	CFLAGS="-O2 -march=c3 -m3dnow -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
 elif [ 'geodelx' = $TARGET ]; then
 	MACHINE=i586
-	MACHINE_REAL=${MACHINE_REAL}
-	LINKER=/lib/ld-linux.so.2
 	IFS_TARGET="${MACHINE}-geode-linux-gnu"
-	CFLAGS="-march=geode -Os -pipe -fomit-frame-pointer"
+	CFLAGS="-Os -march=geode -pipe -fomit-frame-pointer"
 	CXXFLAGS="${CFLAGS}"
 else
 	beautify message FAIL
@@ -158,7 +149,7 @@ fi
 TOOLCHAINNAME=$SNAME-$TOOLCHAINVERSION-toolchain-t${TARGET}-m${MACHINE}
 
 # Set up what used to be /tools
-TOOLS_DIR=/tools_${MACHINE}
+TOOLS_DIR=/tools_${TARGET}
 
 # Set up /installer
 INSTALLER_DIR=/pomona
