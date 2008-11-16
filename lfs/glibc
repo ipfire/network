@@ -65,7 +65,8 @@ objects = $(DL_FILE) \
 	$(THISAPP)-localedef_trampoline-1.patch \
 	$(THISAPP)-sanitize_env.patch \
 	$(THISAPP)-mktemp_urandom.patch \
-	$(THISAPP)-res_randomid.patch
+	$(THISAPP)-res_randomid.patch \
+	$(THISAPP)-undefine-__i686.patch
 
 install : $(OBJECT)
 
@@ -156,6 +157,9 @@ ifeq "$(STAGE)" "toolchain"
 
 	# We don't need to set -march=i?86 in confparams because GCC was built with
 	# --with-arch=i?86.
+ifeq "$(MACHINE)" "i686"
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-undefine-__i686.patch
+endif
 
 	# --sbindir=$(TOOLS_DIR)/bin does not work... anyone want to fix this?
 	# We don't need Glibc's sbin programs, but still.
