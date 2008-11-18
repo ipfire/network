@@ -63,7 +63,6 @@ $(OBJECT) :
 				-i.orig crypto/rand/randfile.c
 
 	cd $(DIR_APP) && sed 's/__OpenBSD__/__linux__/' -i.orig crypto/uid.c
-	cd $(DIR_APP) && sed 's/__OpenBSD__/__linux__/' -i.orig crypto/rand/rand_unix.c
 
 	cd $(DIR_APP) && find crypto/ -name Makefile -exec \
 		sed 's/^ASFLAGS=/&-Wa,--noexecstack /' -i.orig {} \;
