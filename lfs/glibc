@@ -31,26 +31,10 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-CFLAGS     = -O2
+CFLAGS     = -O2 -pipe
 CXXFLAGS   =
 
-
-ifeq "$(firstword $(MAKEFILE_LIST))" "$(PKG_NAME)"
-	OBJECT = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-	CONFIGURE_ARGS = --prefix=/usr \
-		--disable-profile \
-		--enable-add-ons \
-		--enable-kernel=2.6.0 \
-		--libexecdir=/usr/lib/glibc \
-		--disable-werror \
-		--enable-bind-now
-ifeq "$(SSP)" "1"
-	CONFIGURE_ARGS += --enable-stackguard-randomization \
-		--with-prng-device=/dev/erandom
-endif
-else
-	OBJECT = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-cross
-endif
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ###############################################################################
 # Top-level Rules
@@ -58,7 +42,6 @@ endif
 
 objects = $(DL_FILE) \
 	$(THISAPP)-pt_pax-1.patch \
-	$(THISAPP)-arc4_prng-1.patch \
 	$(THISAPP)-strlcpy_strlcat-1.patch \
 	$(THISAPP)-asprintf_reset2null-1.patch \
 	$(THISAPP)-issetugid-1.patch \
@@ -84,10 +67,14 @@ $(OBJECT) :
 	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	@mkdir $(DIR_SRC)/glibc-build
 
-ifeq "$(STAGE)" "toolchain"
-	# Glibc uses a hard coded path for /etc/ld.so.preload. To keep Glibc from
-	# preloading libraries from the host machine perform the following command:
-	cd $(DIR_APP) && sed -e "s@/etc/ld.so.preload@$(TOOLS_DIR)@" -i elf/rtld.c
+	# In the vi_VN.TCVN locale, bash enters an infinite loop at startup. It is
+	# unknown whether this is a bash bug or a Glibc problem. Disable
+	# installation of this locale in order to avoid the problem.
+	cd $(DIR_APP) && sed -i '/vi_VN.TCVN/d' localedata/SUPPORTED
+
+	# The ldd shell script contains Bash-specific syntax. Change its default
+	# program interpreter to /bin/bash in case another /bin/sh is installed.
+	cd $(DIR_APP) && sed -i 's|@BASH@|/bin/bash|' elf/ldd.bash.in
 
 	# The next patch modifies the localedef program so it does not use GCC
 	# Trampoline code (http://gcc.gnu.org/onlinedocs/gccint/Trampolines.html),
@@ -99,6 +86,12 @@ ifeq "$(STAGE)" "toolchain"
 
 	# Support for PT_PaX markings:
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pt_pax-1.patch
+
+	# The asprintf(3) and vasprintf(3) functions are GNU extentions, not defined
+	# by C or Posix standards. In Glibc these functions leave (char **strp) undefined
+	# after an error. This patch resets (char **strp) to NULL after an error, for
+	# sanity.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-asprintf_reset2null-1.patch
 
 	# This patch adds the issetugid() function, which is a front-end to the
 	# __libc_enable_secure() dynamic linker private function. This function
@@ -172,8 +165,14 @@ endif
 	# canary value changes at run-time. This is not as good as /dev/urandom, but
 	# it's better than nothing and has very good performance.
 
+ifeq "$(STAGE)" "toolchain"
+	# Glibc uses a hard coded path for /etc/ld.so.preload. To keep Glibc from
+	# preloading libraries from the host machine perform the following command:
+	cd $(DIR_APP) && sed -e "s@/etc/ld.so.preload@$(TOOLS_DIR)@" -i elf/rtld.c
+	-mkdir -v $(TOOLS_DIR)/etc
+	touch $(TOOLS_DIR)/etc/ld.so.conf
+
 	cd $(DIR_SRC)/glibc-build && \
-		CFLAGS="-O2 -pipe" \
 		../$(THISAPP)/configure \
 			--prefix=$(TOOLS_DIR) \
 			--libexecdir=$(TOOLS_DIR)/lib/$(PKG_NAME) \
@@ -185,6 +184,26 @@ endif
 			--without-selinux \
 			--without-gd \
 			--enable-bind-now
+endif
+
+ifeq "$(STAGE)" "base"
+	if [ ! -e /bin/pwd ]; then ln -sfn $(TOOLS_DIR)/bin/pwd /bin/pwd; fi
+	cd $(DIR_APP) && sed 's/-nostdlib/& -fno-stack-protector/g' -i.orig configure
+	cd $(DIR_APP) && sed -i 's|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(LINKER) -o|' \
+		scripts/test-installation.pl
+	touch /etc/ld.so.conf
+
+	cd $(DIR_SRC)/glibc-build && \
+		../$(THISAPP)/configure \
+			--prefix=/usr \
+			--libexecdir=/usr/lib/glibc \
+			--disable-profile \
+			--enable-add-ons \
+			--enable-kernel=2.6.0 \
+			--without-selinux \
+			--disable-werror \
+			--enable-bind-now
+endif
 
 	# Our GCC is already passing -fPIC, and that's all we want for the libraries.
 	# LDFLAGS.so is appended to so we don't build shared libraries with
@@ -228,81 +247,9 @@ endif
 	echo " \$$(link-extra-libs) \$$(link-libc) `\$$(CC) --print-file-name=crtendS.o` \$$(+postinit)" \
 		>> $(DIR_SRC)/glibc-build/configparms
 	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
-
-	-mkdir -v $(TOOLS_DIR)/etc
-	touch $(TOOLS_DIR)/etc/ld.so.conf
 	cd $(DIR_SRC)/glibc-build && make install
-endif
 
 ifeq "$(STAGE)" "base"
-	if [ ! -e /bin/pwd ]; then ln -sfn $(TOOLS_DIR)/bin/pwd /bin/pwd; fi
-	cd $(DIR_APP) && sed -i '/vi_VN.TCVN/d' localedata/SUPPORTED
-	cd $(DIR_APP) && sed -i 's|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(LINKER) -o|' \
-		scripts/test-installation.pl
-	cd $(DIR_APP) && sed -i 's|@BASH@|/bin/bash|' elf/ldd.bash.in
-ifeq "$(PAX)" "1"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pt_pax-1.patch
-endif
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-arc4_prng-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-strlcpy_strlcat-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-asprintf_reset2null-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-issetugid-1.patch
-	cd $(DIR_APP) && sed 's/#define UNSECURE_ENVVARS.*/&\
-		"MUDFLAP_OPTIONS\\0" \\/' -i.orig sysdeps/generic/unsecvars.h
-ifeq "$(SSP)" "1"
-	cd $(DIR_APP) && sed 's/-nostdlib/& -fno-stack-protector/g' -i.orig configure
-	cd $(DIR_APP) && sed 's/fstack-protector/&-all/' -i.orig nscd/Makefile
-endif
-ifeq "$(PIE)" "1"
-	cd $(DIR_APP) && sed 's/CFLAGS-ldconfig.c =/& -fno-PIC -fno-PIE/' \
-		-i.orig elf/Makefile
-endif
-	cd $(DIR_SRC)/glibc-build && \
-		CFLAGS="-O2 -march=$(MACHINE) -pipe" \
-		../$(THISAPP)/configure $(CONFIGURE_ARGS)
-ifeq "$(SSP)" "1"
-	## First compile the libraries
-	echo "build-programs=no" >> $(DIR_SRC)/glibc-build/configparms
-	echo "CC = gcc -fPIC -fno-stack-protector -U_FORTIFY_SOURCE -nonow -nopie" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo "CXX = g++ -fPIC -fno-stack-protector -U_FORTIFY_SOURCE -nonow -nopie" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
-
-	## Second compile the rest
-	@rm -f $(DIR_SRC)/glibc-build/configparms
-	echo "CC = gcc -fPIE -fstack-protector-all -D_FORTIFY_SOURCE=2" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo "CXX = g++ -fPIE -fstack-protector-all -D_FORTIFY_SOURCE=2" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo "CFLAGS-sln.c += -fno-PIC -fno-PIE" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo "+link = \$$(CC) -nostdlib -nostartfiles -fPIE -pie -o \$$@ \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(sysdep-LDFLAGS) \$$(config-LDFLAGS) \$$(LDFLAGS) \$$(LDFLAGS-\$$(@F)) \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " -Wl,-z,combreloc -Wl,-z,relro -Wl,-z,now \$$(hashstyle-LDFLAGS) \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(addprefix \$$(csu-objpfx),S\$$(start-installed-name)) \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(+preinit) `\$$(CC) --print-file-name=crtbeginS.o` \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(filter-out \$$(addprefix \$$(csu-objpfx),start.o \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(start-installed-name))\\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(+preinit) \$$(link-extra-libs) \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(common-objpfx)libc% \$$(+postinit),\$$^) \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(link-extra-libs) \$$(link-libc) `\$$(CC) --print-file-name=crtendS.o` \$$(+postinit)" \
-		>> $(DIR_SRC)/glibc-build/configparms
-endif
-
-	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
-	touch /etc/ld.so.conf
-	cd $(DIR_SRC)/glibc-build && make install
-
 	install -vd /usr/lib/static/
 	mv -v /usr/lib/{libbsd-compat,libg,libieee,libmcheck}.a /usr/lib/static/
 	mv -v /usr/lib/{libBrokenLocale,libanl,libcrypt}.a /usr/lib/static/
@@ -314,7 +261,7 @@ endif
 
 	# Timezone
 	cp -v --remove-destination /usr/share/zoneinfo/GMT /etc/localtime
-	
+
 	# Set up ld.so.conf
 	echo -e "# Begin /etc/ld.so.conf\n"	>> /etc/ld.so.conf
 	echo -e "/usr/local/lib\n"		>> /etc/ld.so.conf
