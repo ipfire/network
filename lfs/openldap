@@ -68,7 +68,8 @@ $(OBJECT) :
 			--enable-rlookups \
 			--enable-backends \
 			--enable-overlays \
-			--disable-sql \
+			--enable-sql=no \
+			--enable-ndb=no \
 			--disable-static
 
 	cd $(DIR_APP) && make depend
