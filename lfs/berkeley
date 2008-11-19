@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = db
-VER        = 4.6.21
+VER        = 4.7.25
 PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
@@ -54,7 +54,7 @@ endef
 ###############################################################################
 
 objects = $(DL_FILE) \
-	 $(THISAPP)-fixes-1.patch
+	 $(THISAPP)-upstream_fixes-1.patch
 
 download: $(objects)
 
@@ -73,7 +73,7 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-upstream_fixes-1.patch
 	cd $(DIR_APP)/build_unix && \
 		../dist/configure \
 			--prefix=/usr \
