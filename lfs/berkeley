@@ -75,6 +75,7 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-upstream_fixes-1.patch
 	cd $(DIR_APP)/build_unix && \
+		CC=gcc \
 		../dist/configure \
 			--prefix=/usr \
 			--enable-compat185 \
