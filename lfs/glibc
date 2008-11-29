@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = glibc
-VER        = 2.8-20080929
+VER        = 2.9
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -41,6 +41,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 ###############################################################################
 
 objects = $(DL_FILE) \
+	$(PKG_NAME)-libidn-$(VER).tar.bz2 \
 	$(THISAPP)-pt_pax-1.patch \
 	$(THISAPP)-strlcpy_strlcat-1.patch \
 	$(THISAPP)-asprintf_reset2null-1.patch \
@@ -66,6 +67,10 @@ $(OBJECT) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	@mkdir $(DIR_SRC)/glibc-build
+
+	# Extracting libidn
+	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/$(PKG_NAME)-libidn-$(VER).tar.bz2
+	cd $(DIR_APP) && mv -v $(PKG_NAME)-libidn-$(VER) libidn
 
 	# In the vi_VN.TCVN locale, bash enters an infinite loop at startup. It is
 	# unknown whether this is a bash bug or a Glibc problem. Disable
