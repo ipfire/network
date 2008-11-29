@@ -35,8 +35,11 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 CONFIGURE_ARGS = --disable-mmx --disable-sse2
 
-ifeq "$(IFS_ARCH)" "via-c7"
+ifeq "$(TARGET)" "via-c7"
 	CONFIGURE_ARGS = --enable-mmx #--enable-sse2
+endif
+ifeq "$(TARGET)" "atom330"
+	CONFIGURE_ARGS = --enable-mmx --enable-sse2
 endif
 
 ###############################################################################
