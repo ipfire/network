@@ -80,7 +80,8 @@ exiterror() {
 	stdumount
 	dialogerror $*
 	build_spy state error
-	build_spy log $(tail -n 20 $LOGFILE | build_spy_escape)
+	[ -n "$LOGFILE" ] && \
+		build_spy log $(tail -n16 $LOGFILE | $BASEDIR/tools/base64)
 	touch $FAILED
 	rm -f $RUNNING 2>/dev/null
 	exit 1
@@ -509,7 +510,6 @@ prepareenv() {
 }
 
 build() {
-	clear
 	#a prebuilt toolchain package is only used if found in cache
 	if [ ! -d $BASEDIR/cache ]; then
 		exiterror "Use make.sh source get first!"

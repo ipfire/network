@@ -27,16 +27,14 @@ build_spy() {
 	echo -n "&${KEY}=$*" >> $BUILD_SPY_FILENAME
 }
 
-
 build_spy_send_profile() {
-	build_spy target   $TARGET
-	build_spy hostname $HOSTNAME
+	build_spy target   ${TARGET}
+	build_spy hostname ${HOSTNAME}
 	build_spy distcc   ${DISTCC_PORT-3632}
 	build_spy jobs     ${DISTCC_JOBS}
-}
-
-build_spy_escape() {
-	base64 2>/dev/null || perl -MMIME::Base64 -0777 -ne 'print encode_base64($_)' 2>/dev/null
+	build_spy cpu      $(grep ^model\ name /proc/cpuinfo | head -n1 | \
+		awk -F: '{ print $2 }' | $BASEDIR/tools/base64)
+	build_spy machine  $(uname -m)
 }
 
 if [ "$(basename $0)" == "make-buildspy" ]; then
