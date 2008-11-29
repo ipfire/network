@@ -159,7 +159,7 @@ define POSTBUILD
 		if [ "$$ROOTFILE" != "" ]; then \
 			if ! cmp -s $(OBJECT) $$ROOTFILE; then \
 				touch $(OBJECT)_changed; \
-				if ! grep -q "^+" $(OBJECT); then cp -f $(TARGET) $$ROOTFILE; fi; \
+				if ! grep -q "^+" $(OBJECT); then cp -f $(OBJECT) $$ROOTFILE; fi; \
 			fi; \
 		fi; \
 	else \
