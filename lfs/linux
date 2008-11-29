@@ -123,19 +123,20 @@ endif
 ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && make mrproper
 
-	if [ "$(IFS_ARCH)" == "i586" ]; then \
-		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-			-e "s/^# CONFIG_MPENTIUMIII is not set/CONFIG_MPENTIUMII=y/" \
-			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
-	elif [ "$(IFS_ARCH)" == "i486" ]; then \
+	# Select right optimization for the linux kernel.
+	if [ "$(TARGET)" == "i486" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 			-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
 			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
-	elif [ "$(IFS_ARCH)" == "via-c7" ]; then \
+	elif [ "$(TARGET)" == "i586" ]; then \
+		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+			-e "s/^# CONFIG_MPENTIUMIII is not set/CONFIG_MPENTIUMII=y/" \
+			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
+	elif [ "$(TARGET)" == "via-c7" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 			-e "s/^# CONFIG_MVIAC7 is not set/CONFIG_MVIAC7=y/" \
 			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
-	elif [ "$(IFS_ARCH)" == "via-c3" ]; then \
+	elif [ "$(TARGET)" == "via-c3" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 			-e "s/^# CONFIG_MVIAC3_2 is not set/CONFIG_MVIAC3_2=y/" \
 			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
