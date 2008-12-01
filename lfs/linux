@@ -39,7 +39,6 @@ LOCALVERSION = -ipfire1
 FULLVER    = $(VER)$(LOCALVERSION)
 
 # Patches
-FRANDOM_PATCH  = linux-2.6.25-frandom-1.patch
 GRSEC_PATCH    = grsecurity-2.1.12-$(VER)-200808171148.patch
 OCF_PATCH      = ocf-linux-26-20080917.patch
 REISER4_PATCH  = reiser4-for-$(VER).patch
@@ -58,10 +57,6 @@ ifeq "$(PAX)" "1"
 	#objects += $(GRSEC_PATCH)
 endif
 
-ifeq "$(SSP)" "1"
-	#objects += $(FRANDOM_PATCH)
-endif
-
 install : $(OBJECT)
 
 download : $(objects)
@@ -78,12 +73,6 @@ $(OBJECT) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
 	cd $(DIR_APP) && echo "$(LOCALVERSION)" > localversion-ipfire
-
-ifeq "$(SSP)" "1"
-	### frandom
-	#
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(FRANDOM_PATCH)
-endif
 
 	### OCF
 	#
