@@ -79,6 +79,7 @@ check_toolchain() {
 }
 
 check_build() {
+	check_common "Python"				"python -V"
 	check_common "GNU make"		"3.79.1"	"make --version | head -n1"
 	check_common "GNU wget"				"wget --version | head -n1"
 	check_common "Git"				"git --version"
