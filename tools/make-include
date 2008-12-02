@@ -492,7 +492,9 @@ build() {
 
 	build_spy_send_profile
 	build_spy state compiling
-	BASEDIR=$BASEDIR UUID=$UUID NAME=$NAME VERSION=$VERSION $BASEDIR/tools/make-buildspy &
+	BASEDIR=$BASEDIR UUID=$UUID NAME=$NAME VERSION=$VERSION \
+		LOGFILE="$BASEDIR/log_${TARGET}/_build.00-buildspy.log" \
+		$BASEDIR/tools/make-buildspy &
 
 	if [ -f $BASEDIR/log_${TARGET}/02_base/stage2-LFS ]; then
 		prepareenv
