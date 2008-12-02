@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = glib
-VER        = 2.19.0
+VER        = 2.18.3
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -53,11 +53,7 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--with-pcre=system \
-			--disable-static
+	cd $(DIR_APP) && ./configure --prefix=/usr
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/glib2-locale.sh /etc/profile.d/

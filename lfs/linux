@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = linux
-VER        = 2.6.27
+VER        = 2.6.27.7
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -39,8 +39,7 @@ LOCALVERSION = -ipfire1
 FULLVER    = $(VER)$(LOCALVERSION)
 
 # Patches
-FRANDOM_PATCH  = linux-2.6.25-frandom-1.patch
-GRSEC_PATCH    = grsecurity-2.1.12-$(VER)-200808171148.patch
+GRSEC_PATCH    = grsecurity-2.1.12-$(VER)-200811291903.patch
 OCF_PATCH      = ocf-linux-26-20080917.patch
 REISER4_PATCH  = reiser4-for-$(VER).patch
 SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
@@ -52,15 +51,8 @@ SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
 objects = $(DL_FILE) \
 	$(OCF_PATCH) \
 	$(REISER4_PATCH) \
-	$(SQUASHFS_PATCH)
-
-ifeq "$(PAX)" "1"
-	#objects += $(GRSEC_PATCH)
-endif
-
-ifeq "$(SSP)" "1"
-	#objects += $(FRANDOM_PATCH)
-endif
+	$(SQUASHFS_PATCH) \
+	$(GRSEC_PATCH)
 
 install : $(OBJECT)
 
@@ -79,12 +71,6 @@ $(OBJECT) :
 
 	cd $(DIR_APP) && echo "$(LOCALVERSION)" > localversion-ipfire
 
-ifeq "$(SSP)" "1"
-	### frandom
-	#
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(FRANDOM_PATCH)
-endif
-
 	### OCF
 	#
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(OCF_PATCH)
@@ -98,12 +84,10 @@ endif
 	#
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(SQUASHFS_PATCH)
 
-ifeq "$(PAX)" "1"
 	### GrSecurity
 	#
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(GRSEC_PATCH)
-	#rm -f $(DIR_APP)/localversion-grsec
-endif
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(GRSEC_PATCH)
+	rm -f $(DIR_APP)/localversion-grsec
 
 ifeq "$(STAGE)" "toolchain"
 	install -dv $(TOOLS_DIR)/include

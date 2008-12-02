@@ -223,9 +223,6 @@ toolchain_make() {
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
-		SSP=$SSP \
-		PIE=$PIE \
-		PAX=$PAX \
 		install >> $LOGFILE 2>&1
 
 	local COMPILE_SUCCESS=$?
@@ -292,9 +289,6 @@ ipfire_make() {
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
-		SSP=$SSP \
-		PIE=$PIE \
-		PAX=$PAX \
 		EMB=$EMB \
 		IMAGENAME=$IMAGENAME \
 		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
@@ -389,33 +383,6 @@ prepareenv() {
 			exiterror "Not enough temporary space available, need at least 2GB on $BASE_DEV"
 		fi
 	fi
-
-	##############################################################################
-	# Setting security features                                                  #
-	##############################################################################
-
-	echo -ne "Stack smashing protector (SSP)"
-	if [ $SSP -eq 1 ]; then
-		beautify message ON
-	else
-		beautify message OFF
-	fi
-
-	echo -ne "Position independent executeables (PIE)"
-	if [ $PIE -eq 1 ]; then
-		beautify message ON
-	else
-		beautify message OFF
-	fi
-
-	echo -ne "GRSecurity (PAX)"
-	if [ $PAX -eq 1 ]; then
-		beautify message ON
-	else
-		beautify message OFF
-	fi
-
-	export SSP PIE PAX
 
 	##############################################################################
 	# Embedded build                                                             #
@@ -525,7 +492,9 @@ build() {
 
 	build_spy_send_profile
 	build_spy state compiling
-	BASEDIR=$BASEDIR UUID=$UUID NAME=$NAME VERSION=$VERSION $BASEDIR/tools/make-buildspy &
+	BASEDIR=$BASEDIR UUID=$UUID NAME=$NAME VERSION=$VERSION \
+		LOGFILE="$BASEDIR/log_${TARGET}/_build.00-buildspy.log" \
+		$BASEDIR/tools/make-buildspy &
 
 	if [ -f $BASEDIR/log_${TARGET}/02_base/stage2-LFS ]; then
 		prepareenv
@@ -622,9 +591,7 @@ getsource() {
 			make -s -f $i \
 			LFS_BASEDIR=$BASEDIR \
 			MESSAGE="$i\t" \
-			SSP=$SSP \
-			PIE=$PIE \
-			PAX=$PAX download 2>> $LOGFILE
+			download 2>> $LOGFILE
 			[ $? -ne 0 ] && beautify message FAIL
 		fi
 	done
