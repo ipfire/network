@@ -39,15 +39,17 @@ build_spy_send_profile() {
 
 if [ "$(basename $0)" == "make-buildspy" ]; then
 	while true; do
-		sleep 10
-		DATA=$(cat $BUILD_SPY_FILENAME 2>/dev/null || true)
+		DATA+=$(cat $BUILD_SPY_FILENAME 2>/dev/null || true)
 		> $BUILD_SPY_FILENAME
 
-		[ -n "$DATA" ] && \
+		if [ -n "$DATA" ] && \
 			wget -q -O - --user-agent="${NAME}BuildSpy/${VERSION}" \
 				--post-data="action=set&uuid=${UUID}${DATA}" \
-				http://build.ipfire.org/rpc.py >> $LOGFILE 2>&1 &
+				http://build.ipfire.org/rpc.py >> $LOGFILE 2>&1; then
+			DATA=""
+		fi
 
+		sleep 10
 		# If $BUILD_SPY_FILENAME file has content we need a new loop.
 		# If not, check if we are still running.
 		if [ -s $BUILD_SPY_FILENAME ]; then
