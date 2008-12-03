@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = DirectFB
-VER        = 1.2.4
+VER        = 1.0.1
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -58,8 +58,7 @@ $(OBJECT) :
 			--prefix=/usr \
 			--disable-x11 \
 			--enable-sdl \
-			--enable-video4linux2 \
-			--enable-multi
+			--enable-video4linux2
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
