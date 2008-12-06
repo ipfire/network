@@ -53,9 +53,14 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib
+	cd $(DIR_APP) && ./configure --prefix=/usr
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+	cd $(DIR_APP) && ./mkinstalldirs /lib
+	cd /usr/lib   && for name in glib gobject gmodule gthread gio; do \
+		mv -v lib$${name}-2.0.so.* ../../lib; \
+		ln -svf ../../lib/lib$${name}-2.0.so.*.* lib$${name}-2.0.so; \
+	done
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/glib2-locale.sh /etc/profile.d/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
