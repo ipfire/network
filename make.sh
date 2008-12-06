@@ -125,6 +125,7 @@ base_build() {
 	ipfire_make gettext
 	ipfire_make make
 	ipfire_make libidn
+	ipfire_make pkg-config
 	ipfire_make attr
 	ipfire_make libcap2
 	ipfire_make paxctl
@@ -188,7 +189,6 @@ ipfire_build() {
 
 	### Building some general stuff
 	#   STAGE 1
-	ipfire_make pkg-config
 	ipfire_make pcre
 	ipfire_make expat
 	ipfire_make dbus
