@@ -140,6 +140,7 @@ base_build() {
 	ipfire_make gmp
 	ipfire_make grub
 	ipfire_make gawk
+	ipfire_make glib
 	ipfire_make grep
 	ipfire_make groff
 	ipfire_make gzip
@@ -190,7 +191,6 @@ ipfire_build() {
 	ipfire_make pkg-config
 	ipfire_make pcre
 	ipfire_make expat
-	ipfire_make glib
 	ipfire_make dbus
 	ipfire_make dbus-glib
 	ipfire_make openssl
