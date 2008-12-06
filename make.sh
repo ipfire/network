@@ -201,8 +201,6 @@ ipfire_build() {
 	ipfire_make python-IPy
 	ipfire_make libxml2
 	ipfire_make libxslt
-	ipfire_make eventlog
-	ipfire_make syslog-ng
 	ipfire_make popt
 	ipfire_make libusb
 	ipfire_make bc
