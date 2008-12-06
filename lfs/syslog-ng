@@ -24,8 +24,8 @@
 
 include Config
 
-PKG_NAME   = DirectFB
-VER        = 1.0.1
+PKG_NAME   = syslog-ng
+VER        = 2.0.10
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -39,7 +39,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-install: $(OBJECT)
+install : $(OBJECT)
 
 download : $(objects)
 
@@ -50,17 +50,14 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-
-	cd $(DIR_APP) && ./configure \
-			--prefix=/usr \
-			--disable-x11 \
-			--enable-sdl \
-			--enable-video4linux2
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig ./configure --enable-dynamic-linking && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	cp -vf $(DIR_CONF)/$(PKG_NAME)/$(PKG_NAME).conf \
+		/etc/$(PKG_NAME).conf
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
