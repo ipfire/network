@@ -133,6 +133,7 @@ base_build() {
 	ipfire_make bash
 	ipfire_make bzip2
 	ipfire_make diffutils
+	ipfire_make eventlog
 	ipfire_make file
 	ipfire_make findutils
 	ipfire_make flex
@@ -154,7 +155,7 @@ base_build() {
 	ipfire_make patch
 	ipfire_make psmisc
 	ipfire_make shadow
-	ipfire_make sysklogd
+	ipfire_make syslog-ng
 	ipfire_make sysvinit
 	ipfire_make tar
 	ipfire_make texinfo

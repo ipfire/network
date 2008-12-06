@@ -24,8 +24,9 @@
 
 include Config
 
-PKG_NAME   = sysklogd
-VER        = 1.5
+PKG_NAME   = eventlog
+VER        = 0.2.7
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,38 +34,54 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Tools
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.balabit.com/
+LICENSE    = GPLv2+
+SHORT_DESC = Eventlog is an API for syslog-ng.
+
+define LONG_DESC
+	A new API to format and send structured log messages. It supports multiple \
+	message representations (plain, XML attributes and XML tags) and multiple \
+	output methods (local syslogd).
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-disable__syslog_chk-1.patch \
-	$(THISAPP)-priv_sep-1.patch
+objects = $(DL_FILE)
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+install: $(OBJECT)
 
-$(objects) :
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disable__syslog_chk-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-priv_sep-1.patch
-
-	install -d -m0000 /var/lib/syslogd
-	install -d -m0000 /var/lib/klogd
-
-	cd $(DIR_APP) && sed 's/644/600/' -i.orig syslogd.c
-
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	mv -v /usr/lib/libevent.so.0* /lib
+	ln -svf ../../lib/libevent.so.0.* /usr/lib/libevent.so
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
