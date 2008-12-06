@@ -77,12 +77,14 @@ $(OBJECT): $(objects)
 
 	cd $(DIR_APP) && \
 		./configure \
-			--prefix=/ \
+			--prefix=/usr \
+			--sbindir=/sbin \
 			--sysconfdir=/etc/syslog-ng \
 			--enable-dynamic-linking
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
+	-mkdir -pv /etc/$(PKG_NAME)
 	cp -vf $(DIR_CONF)/$(PKG_NAME)/$(PKG_NAME).conf \
 		/etc/$(PKG_NAME)/$(PKG_NAME).conf
 
