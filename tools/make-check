@@ -201,6 +201,8 @@ check_supported_target() {
 		FLAGS="3dnow"
 	elif [ "$1" = "atom330" ]; then
 		FLAGS="mmx sse sse2 pni ssse3"
+	elif [ "$1" = "core2duo" ]; then
+		FLAGS="sse2"
 	fi
 	for j in $FLAGS; do
 		if ! check_cpu $j; then
