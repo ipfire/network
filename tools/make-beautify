@@ -212,3 +212,16 @@ dialogerror() {
 	[ -z "$LOGFILE" ] || \
 	echo "       Check $LOGFILE for errors if applicable"
 } # End of dialogerror()
+
+software_list() {
+	local DATA
+	DATA="$BASEDIR/log_${TARGET}/_build.00-software.log"
+
+	echo "====== List of softwares used to build $NAME Version: $VERSION ======"
+	echo
+
+	sort < $DATA | uniq | tr ";" " " | \
+		while read NAME VERSION; do
+			echo "  * $NAME-$VERSION"
+		done
+}

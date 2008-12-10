@@ -119,6 +119,9 @@ source|src)
 		put|push|upload)
 			putsource
 			;;
+		list)
+			software_list | tee -a $BASEDIR/doc/packages-list.txt
+			;;
 	esac
 	;;
 
