@@ -83,7 +83,7 @@ ifeq "$(STAGE)" "toolchain"
 			-Dusrinc="$(TOOLS_DIR)/include" \
 			-Dmksymlinks \
 			-d -e
-	cd $(DIR_SRC)/perl-build && make $(PARALLELISMFLAGS)
+	cd $(DIR_SRC)/perl-build && make #$(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/perl-build && make LNS="cp" install
 endif
 
@@ -104,7 +104,7 @@ ifeq "$(STAGE)" "base"
 		-Dman1dir=/usr/share/man/man1 -Dman3dir=/usr/share/man/man3 \
 		-Dpager="/usr/bin/less -isR"
 		
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	
 	rm -f /etc/hosts
