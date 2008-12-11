@@ -615,7 +615,7 @@ putsource() {
 puttarget() {
 	check_user
 	URL_TARGET=$(grep URL_TARGET lfs/Config | awk '{ print $3 }')
-	DIR="${BASEDIR}/${HOSTNAME}/$(date '+%Y%m%d-%0k')/"
+	DIR="${BASEDIR}/${HOSTNAME}/$(date '+%Y%m%d-%0k')-${TARGET}/"
 
 	# If there is no iso, we do nothing.
 	ls ${BASEDIR}/${IMAGENAME}.* &>/dev/null || return 0
