@@ -463,6 +463,11 @@ packages_build() {
 	# Generate ChangeLog
 	git_log
 
+	# Generate packages list
+	echo -n "Generating packages list"
+	software_list > $BASEDIR/doc/packages-list.txt
+	beautify message DONE
+
 	if [ ${EMB} -eq 0 ]; then
 		ipfire_make initramfs
 		ipfire_make images
