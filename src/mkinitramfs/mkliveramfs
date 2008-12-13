@@ -561,7 +561,7 @@ if [ -n "$OVERLAY" ]; then
     fi
     [ -d /mnt/overlayfs ] || mkdir -p /mnt/overlayfs
     mount -t squashfs -o loop,ro $OVERLAY /mnt/overlayfs
-	aufsmountoptions="$aufsmountoptions:/mnt/overlayfs=ro"
+	aufsmountoptions="$aufsmountoptions:/mnt/overlayfs=rr"
 fi
 
 SQUASHED=$(ls /mnt/source/*.img 2>/dev/null || true)
@@ -571,7 +571,7 @@ if [ -n "$SQUASHED" ] ; then
     fi
     [ -d /mnt/squashfs ] || mkdir -p /mnt/squashfs
     mount -t squashfs -o loop,ro $SQUASHED /mnt/squashfs
-	aufsmountoptions="$aufsmountoptions:/mnt/squashfs=ro"
+	aufsmountoptions="$aufsmountoptions:/mnt/squashfs=rr"
 fi
 
 mount -t aufs -o $aufsmountoptions none /sysroot
