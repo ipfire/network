@@ -37,11 +37,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	sqlzma-files-1.tar.bz2 \
-	lzma457.tar.bz2 \
-	sqlzma-$(VER)-1.patch \
-	lzma-457-squashfs-1.patch
+objects = $(DL_FILE)
 
 install : $(OBJECT)
 
@@ -57,23 +53,7 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	-mkdir $(DIR_APP)/{sq,}lzma
-	cd $(DIR_APP)/sqlzma && $(EXTRACTOR) $(DIR_DL)/sqlzma-files-1.tar.bz2
-	cd $(DIR_APP)/lzma && $(EXTRACTOR) $(DIR_DL)/lzma457.tar.bz2
-	cd $(DIR_APP)/lzma && patch -Np1 -i $(DIR_PATCHES)/lzma-457-squashfs-1.patch
-
-	cd $(DIR_APP)/lzma && make Sqlzma=$(DIR_APP)/sqlzma \
-		-C C/Compress/Lzma -f sqlzma.mk
-	cd $(DIR_APP)/lzma && make Sqlzma=$(DIR_APP)/sqlzma \
-		-C CPP/7zip/Compress/LZMA_Alone -f sqlzma.mk
-
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/sqlzma-$(VER)-1.patch
-
-	cd $(DIR_APP)/squashfs-tools && make $(PARALLELISMFLAGS) \
-		Sqlzma=$(DIR_APP)/sqlzma \
-		LzmaAlone=$(DIR_APP)/lzma/CPP/7zip/Compress/LZMA_Alone \
-		LzmaC=$(DIR_APP)/lzma/C/Compress/Lzma
-
+	cd $(DIR_APP)/squashfs-tools && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP)/squashfs-tools && install -m 755 mksquashfs /usr/sbin
 	cd $(DIR_APP)/squashfs-tools && install -m 755 unsquashfs /usr/sbin
 	@rm -rf $(DIR_APP)
