@@ -120,7 +120,7 @@ ifeq "$(STAGE)" "ipfire"
 			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
 	elif [ "$(TARGET)" == "i586" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-			-e "s/^# CONFIG_MPENTIUMIII is not set/CONFIG_MPENTIUMII=y/" \
+			-e "s/^# CONFIG_M586TSC is not set/CONFIG_M586TSC=y/" \
 			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
 	elif [ "$(TARGET)" == "via-c7" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
