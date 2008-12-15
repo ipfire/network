@@ -47,7 +47,7 @@ $(OBJECT) :
 	@$(PREBUILD)
 
 	# Create all directories
-	for i in auth ca certs crls; do \
+	for i in auth ca certs crls network/devices; do \
 				mkdir -p $(CONFIG_ROOT)/$$i; \
 	done
 
@@ -58,7 +58,9 @@ $(OBJECT) :
 	
 	# Oneliner configfiles
 	echo  "01"			> $(CONFIG_ROOT)/certs/serial
-		
+
+	ln -sfv $(CONFIG_ROOT)/network/devices/ /etc/sysconfig/network-devices
+
 	# Configroot permissions
 	chown -R nobody:nobody $(CONFIG_ROOT)
 	chown      root:root   $(CONFIG_ROOT)
