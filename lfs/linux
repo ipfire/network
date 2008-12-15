@@ -43,6 +43,7 @@ GRSEC_PATCH    = grsecurity-2.1.12-$(VER)-200811291903.patch
 OCF_PATCH      = ocf-linux-26-20080917.patch
 REISER4_PATCH  = reiser4-for-$(VER).patch
 SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
+H12Y_PATCH     = linux-h12y-mmio-quirks.patch
 
 ###############################################################################
 # Top-level Rules
@@ -52,7 +53,8 @@ objects = $(DL_FILE) \
 	$(OCF_PATCH) \
 	$(REISER4_PATCH) \
 	$(SQUASHFS_PATCH) \
-	$(GRSEC_PATCH)
+	$(GRSEC_PATCH) \
+	$(H12Y_PATCH)
 
 install : $(OBJECT)
 
@@ -89,6 +91,10 @@ $(OBJECT) :
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(GRSEC_PATCH)
 	rm -f $(DIR_APP)/localversion-grsec
 
+	### H12Y mmio patch for H12Y Laptops
+	#
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(H12Y_PATCH)
+
 ifeq "$(STAGE)" "toolchain"
 	install -dv $(TOOLS_DIR)/include
 	cd $(DIR_APP) && make mrproper
@@ -114,7 +120,7 @@ ifeq "$(STAGE)" "ipfire"
 			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
 	elif [ "$(TARGET)" == "i586" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-			-e "s/^# CONFIG_MPENTIUMIII is not set/CONFIG_MPENTIUMII=y/" \
+			-e "s/^# CONFIG_M586TSC is not set/CONFIG_M586TSC=y/" \
 			< $(DIR_CONF)/kernel/kernel.config > $(DIR_APP)/.config; \
 	elif [ "$(TARGET)" == "via-c7" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
