@@ -65,6 +65,12 @@ $(OBJECT) :
 	cd $(DIR_APP) && sed -e "s/-Werror//g" -i src/Makefile
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	# Install our own theme
+	-mkdir -pv /usr/share/splashy/themes/$(SNAME)
+	cp -vf $(DIR_SOURCE)/bootsplash/* /usr/share/splashy/themes/$(SNAME)/
+	splashy_config --set-theme $(SNAME)
+
 	rm -rf /etc/{console-tools,default/splashy,lsb-base-logging.sh} /usr/share/initramfs-tools
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -1,0 +1,49 @@
+#!/bin/sh
+# Begin /etc/init.d/bootsplash
+
+### BEGIN INIT INFO
+# Provides:            bootsplash
+# Required-Start:      mountkernfs
+# Should-Start:
+# Required-Stop:
+# Should-Stop:
+# Default-Start:       S
+# Default-Stop:        0 6
+# Short-Description:   This script controls the bootsplash.
+# Description:         This is a control script for our bootsplash.
+# X-LFS-Default-Start:
+# X-LFS-Default-Stop:
+# X-LFS-Provided-By:
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+MESSAGE="Bootsplash"
+BIN_FILE="/sbin/splashy"
+
+chk_stat
+
+case "${1}" in
+    start)
+        $BIN_FILE boot
+        evaluate_retval start
+        ;;
+
+    stop)
+	# Avoid displaying text at shutdown
+	clear >/dev/tty1
+	clear >/dev/tty8
+	splashy_chvt 8
+
+        $BIN_FILE shutdown
+        pidof $BIN_FILE >> /var/run/sendsigs.omit
+        evaluate_retval stop
+        ;;
+
+    *)
+        echo "Usage: ${0} {start|stop}"
+        exit 1
+        ;;
+esac
+
+# End /etc/init.d/bootsplash
