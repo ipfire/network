@@ -1,0 +1,87 @@
+#!/bin/sh
+########################################################################
+# Begin $NETWORK_DEVICES/brup
+#
+# Description : Bridge Up
+#
+# Authors     : Michael Tremer - michael.tremer@ipfire.org
+#
+# Version     : 00.00
+#
+# Notes       : This script creates a bridge with a given name.
+#               Then all required interfaces are added to the brige and
+#               the IFCONFIG variable is passed to the scripts found
+#               in the services directory, to indicate what file the
+#               service should source to get environmental variables.
+#
+########################################################################
+
+. /lib/lsb/init-functions
+
+message="Bringing up ${1} interface..."
+
+# Collect a list of configuration files for our interface
+if [ -n "${2}" ]; then
+	for file in ${@#$1} # All parameters except $1
+	do
+		FILES="${FILES} ${NETWORK_DEVICES}/${1}/${file}"
+	done
+elif [ -d "${NETWORK_DEVICES}/${1}" ]; then
+	FILES=`echo ${NETWORK_DEVICES}/${1}/*`
+else 
+	FILES="${NETWORK_DEVICES}/${1}"
+fi
+
+# Sort files
+for file in ${FILES}; do
+	# skip backup files
+	if [ "${file}" != "${file%""~""}" ]; then
+		continue
+	fi
+
+	# place interfaces at first position
+	if [[ "${file}" =~ "^nic" ]]; then
+		FILES2="${file} ${FILES2}"
+		continue
+	fi
+
+	# append the rest
+	FILES2="${FILES2} ${file}"
+done
+FILES=${FILES2}
+
+# Check if bridge already exists
+bridge_status=`brctl show 2>/dev/null`
+if ! echo ${bridge_status} | grep -q "^${1}"; then
+	# Create and bring up the bridge
+	brctl addbr ${1} || failed=1
+	ip link set ${1} up || failed=1
+	(exit ${failed})
+	evaluate_retval standard
+else
+	log_warning_msg
+	message="Bridge does already exist."
+	log_warning_msg
+fi
+
+for file in ${FILES}; do
+	if [ ! -f "${file}" ]; then
+		log_warning_msg
+		message="${file} is not a network configuration file or directory."
+		log_warning_msg
+	fi
+
+	(
+		. ${file}
+
+		if [ -n "${SERVICE}" -a -x "${NETWORK_DEVICES}/services/${SERVICE}" ]; then
+			IFCONFIG=${file} ${NETWORK_DEVICES}/services/${SERVICE} ${1} up
+		else
+			echo -e "${FAILURE}Unable to process ${file}.  Either"
+			echo -e "${FAILURE}the SERVICE variable was not set,"
+			echo -e "${FAILURE}or the specified service cannot be executed."
+			message=""
+			log_failure_msg
+		fi
+	)
+done

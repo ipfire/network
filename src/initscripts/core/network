@@ -22,23 +22,18 @@
 case "${1}" in
 	start)
 		# Start all network interfaces
-		for file in ${NETWORK_DEVICES}/ifconfig.*
+		for file in ${NETWORK_DEVICES}/*
 		do
-			interface=${file##*/ifconfig.}
+			interface=$(basename ${file})
 
-			# skip if $file is * (because nothing was found)
-			if [ "${interface}" = "*" ]
-			then
-				continue
-			fi
-			IN_BOOT=1 ${NETWORK_DEVICES}/ifup ${interface}
+			IN_BOOT=1 ${NETWORK_DEVICES}/brup ${interface}
 		done
 		;;
 
 	stop)
 		# Reverse list
 		FILES=""
-		for file in ${NETWORK_DEVICES}/ifconfig.*
+		for file in ${NETWORK_DEVICES}/*
 		do
 			FILES="${file} ${FILES}"
 		done
@@ -46,15 +41,9 @@ case "${1}" in
 		# Stop all network interfaces
 		for file in ${FILES}
 		do
-			interface=${file##*/ifconfig.}
+			interface=$(basename ${file})
 
-			# skip if $file is * (because nothing was found)
-			if [ "${interface}" = "*" ]
-			then
-				continue
-			fi
-
-			IN_BOOT=1 ${NETWORK_DEVICES}/ifdown ${interface}
+			IN_BOOT=1 ${NETWORK_DEVICES}/brdown ${interface}
 		done
 		;;
 
