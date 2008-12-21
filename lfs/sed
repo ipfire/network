@@ -58,11 +58,17 @@ ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
-			--prefix=$(TOOLS_DIR)
+			--prefix=$(TOOLS_DIR) \
+			--without-included-regex
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && ./configure --prefix=/usr --bindir=/bin --enable-html
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--bindir=/bin \
+			--enable-html \
+			--without-included-regex
 endif
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
