@@ -50,6 +50,8 @@ objects = $(DL_FILE) \
 	$(THISAPP)-sanitize_env.patch \
 	$(THISAPP)-mktemp_urandom.patch \
 	$(THISAPP)-res_randomid.patch \
+	$(THISAPP)-resolv_response_length.patch \
+	$(THISAPP)-resolv_QFIXEDSZ_underfills.patch \
 	$(THISAPP)-undefine-__i686.patch
 
 install : $(OBJECT)
@@ -145,6 +147,9 @@ $(OBJECT) :
 	# This patch adds more checking to the size of DNS responses, so we avoid 
 	# reading passed the end of an undersized message:
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-resolv_QFIXEDSZ_underfills.patch
+
+	# This patch does a check on the buffer size of res_* functions:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-resolv_response_length.patch
 
 	# We don't install pt_chown(1) on the final system, so why install it to
 	# $(TOOLS_DIR):
