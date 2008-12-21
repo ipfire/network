@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,33 +26,57 @@ include Config
 
 PKG_NAME   = distcc
 VER        = 3.0
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
+
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = Development/Tools
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://distcc.samba.org/
+LICENSE    = GPLv2+
+SHORT_DESC = Distributed C/C++ compilation.
+
+define LONG_DESC
+	distcc is a program to distribute compilation of C or C++ code across \
+	several machines on a network. distcc should always generate the same \
+	results as a local compile, is simple to install and use, and is often \
+	two or more times faster than a local compile.
+endef
+
 PREFIX     = $(TOOLS_DIR)/usr
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-Wp.patch
+objects = $(DL_FILE) \
+	$(THISAPP)-Wp.patch
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+install: $(OBJECT)
 
-$(objects) :
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-Wp.patch
 	cd $(DIR_APP) && \
 		CFLAGS="-O2 -static" \
@@ -64,8 +88,6 @@ $(OBJECT) :
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
 		distcc distccd distccmon-text lsdistcc
 	cd $(DIR_APP) && make install-programs
-	#ln -sf distcc $(PREFIX)/bin/gcc
-	#ln -sf distcc $(PREFIX)/bin/g++
-	#ln -sf distcc $(PREFIX)/bin/cc
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
