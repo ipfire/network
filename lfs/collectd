@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = collectd
 VER        = 4.5.0
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,26 +34,47 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Statistics
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.collectd.org/
+LICENSE    = GPLv2+
+SHORT_DESC = Statistics collection daemon for filling RRD files.
+
+define LONG_DESC
+	collectd is a small daemon written in C for performance. It reads various \
+	system statistics and updates RRD files, creating them if necessary. \
+	Since the daemon doesn't need to startup every time it wants to update the \
+	files it's very fast and easy on the system. Also, the statistics are very \
+	fine grained since the files are updated every 10 seconds.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
 objects = $(DL_FILE)
 
+download: $(objects)
+
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -e "s/-Werror//g" -i src/Makefile.in
 	cd $(DIR_APP) && KERNEL_DIR=/usr/include \
 		./configure \
