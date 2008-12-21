@@ -142,6 +142,10 @@ $(OBJECT) :
 	# for the vulnerability. This patch uses /dev/urandom instead:
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-res_randomid.patch
 
+	# This patch adds more checking to the size of DNS responses, so we avoid 
+	# reading passed the end of an undersized message:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-resolv_QFIXEDSZ_underfills.patch
+
 	# We don't install pt_chown(1) on the final system, so why install it to
 	# $(TOOLS_DIR):
 	cd $(DIR_APP) && sed -e "/^install.*pt_chown/d" -i login/Makefile
