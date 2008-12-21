@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = bison
-VER        = 2.3
+VER        = 2.4
 PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
@@ -85,10 +85,10 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	cd $(DIR_APP)/lib/ && \
-		gcc -shared -Wl,-soname,liby.so.2.3 -o liby.so.2.3 -fPIC main.o yyerror.o
+		gcc -shared -Wl,-soname,liby.so.2.4 -o liby.so.2.4 -fPIC main.o yyerror.o
 	rm -fv /usr/lib/liby.a
-	cd $(DIR_APP)/lib/ && install -v liby.so.2.3 /usr/lib/liby.so.2.3
-	ln -vsf liby.so.2.3 /usr/lib/liby.so
+	cd $(DIR_APP)/lib/ && install -v liby.so.2.4 /usr/lib/liby.so.2.4
+	ln -vsf liby.so.2.4 /usr/lib/liby.so
 endif
 
 	@rm -rf $(DIR_APP)
