@@ -62,10 +62,11 @@ ifeq "$(STAGE)" "toolchain"
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR) \
-			--disable-shared
-	cd $(DIR_APP)/gettext-tools && make -C gnulib-lib
-	cd $(DIR_APP)/gettext-tools && make -C src msgfmt
-	cd $(DIR_APP)/gettext-tools && cp -v src/msgfmt $(TOOLS_DIR)/bin
+			--disable-libasprintf \
+			--without-csharp \
+			--without-included-regex
+	cd $(DIR_APP)/gettext-tools && make #$(PARALLELISMFLAGS)
+	cd $(DIR_APP)/gettext-tools && make install
 endif
 
 ifeq "$(STAGE)" "base"
