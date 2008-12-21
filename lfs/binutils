@@ -125,7 +125,7 @@ ifeq "$(PASS)" "2"
 
 	cd $(DIR_SRC)/binutils-build && make -C ld clean
 	cd $(DIR_SRC)/binutils-build && make -C ld LIB_PATH=/lib:/usr/lib
-	cd $(DIR_SRC)/binutils-build && cp -v ld/ld-new $(TOOLS_DIR)/bin
+	cd $(DIR_SRC)/binutils-build && cp -v ld/.libs/ld-new $(TOOLS_DIR)/bin
 endif
 endif
 
