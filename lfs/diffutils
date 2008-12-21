@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = diffutils
 VER        = 2.8.1
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,26 +34,48 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Development/Tools
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.gnu.org/software/diffutils/diffutils.html
+LICENSE    = GPLv2+
+SHORT_DESC = A GNU collection of diff utilities.
+
+define LONG_DESC
+	Diffutils includes four utilities: diff, cmp, diff3 and sdiff. Diff \
+	compares two files and shows the differences, line by line.  The cmp \
+	command shows the offset and line numbers where two files differ, or \
+	cmp can show the characters that differ between the two files.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-i18n-1.patch $(THISAPP)-hardened_tmp-1.patch
+objects = $(DL_FILE) \
+	$(THISAPP)-i18n-1.patch \
+	$(THISAPP)-hardened_tmp-1.patch
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+install: $(OBJECT)
 
-$(objects) :
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-hardened_tmp-1.patch
 
