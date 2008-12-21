@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = cracklib
 VER        = 2.8.12
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,29 +34,53 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Security/Password
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://sourceforge.net/projects/cracklib/
+LICENSE    = GPLv2
+SHORT_DESC = A password-checking library.
+
+define LONG_DESC
+	CrackLib tests passwords to determine whether they match certain \
+	security-oriented characteristics, with the purpose of stopping users \
+	from choosing passwords that are easy to guess. CrackLib performs \
+	several tests on passwords: it tries to generate words from a username \
+	and gecos entry and checks those words against the password; it checks \
+	for simplistic patterns in passwords; and it checks for the password \
+	in a dictionary.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) cracklib-words-20080507.gz
+objects = $(DL_FILE) \
+	cracklib-words-20080507.gz
+
+download: $(objects)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP)
-	@cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
-		./configure --prefix=/usr \
+		./configure \
+			--prefix=/usr \
 			--disable-static \
 			--with-default-dict=/lib/cracklib/pw_dict
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
@@ -63,11 +88,13 @@ $(OBJECT) :
 	mv -v /usr/lib/libcrack.so.2* /lib
 	ln -v -sf ../../lib/libcrack.so.2.8.0 /usr/lib/libcrack.so
 
-	install -v -m644 -D $(DIR_DL)/cracklib-words-20080507.gz /usr/share/dict/cracklib-words.gz
+	install -v -m644 -D $(DIR_DL)/cracklib-words-20080507.gz \
+		/usr/share/dict/cracklib-words.gz
 	gunzip -v /usr/share/dict/cracklib-words.gz
 	ln -v -s cracklib-words /usr/share/dict/words
 	install -v -m755 -d /lib/cracklib
-	echo -ne "$(NAME)\n$(SNAME)\n" >>/usr/share/dict/cracklib-extra-words
-	create-cracklib-dict /usr/share/dict/cracklib-words /usr/share/dict/cracklib-extra-words
+	echo -ne "$(NAME)\n$(SNAME)\n" >> /usr/share/dict/cracklib-extra-words
+	create-cracklib-dict /usr/share/dict/cracklib-words \
+		/usr/share/dict/cracklib-extra-words
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

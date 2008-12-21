@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = dnsmasq
 VER        = 2.40
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,26 +34,50 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Networking/Daemons
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.thekelleys.org.uk/dnsmasq/
+LICENSE    = GPLv2 GPLv3
+SHORT_DESC = A lightweight DHCP/caching DNS server.
+
+define LONG_DESC
+	Dnsmasq is lightweight, easy to configure DNS forwarder and DHCP server. \
+	It is designed to provide DNS and, optionally, DHCP, to a small network. \
+	It can serve the names of local machines which are not in the global \
+	DNS. The DHCP server integrates with the DNS server and allows machines \
+	with DHCP-allocated addresses to appear in the DNS with names configured \
+	either in each host or in a central configuration file. Dnsmasq supports \
+	static and dynamic DHCP leases and BOOTP for network booting of diskless \
+	machines.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
 objects = $(DL_FILE)
 
+download: $(objects)
+
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP)/src && sed -i \
 		-e 's|^\/\* #define HAVE_ISC_READER .*$$|#define HAVE_ISC_READER\n#define NO_IPV6|' \
 		-e 's/^#define CHUSER .*$$/#define CHUSER "dnsmasq"/' \

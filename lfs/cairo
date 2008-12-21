@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = cairo
 VER        = 1.8.4
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,17 +34,35 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://cairographics.org
+LICENSE    = LGPLv2 MPLv1.1
+SHORT_DESC = A 2D graphics library.
+
+define LONG_DESC
+	Cairo is a 2D graphics library designed to provide high-quality display \
+	and print output.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
 objects = $(DL_FILE)
 
+download: $(objects)
+
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
@@ -52,7 +71,7 @@ $(objects) :
 
 $(OBJECT) : 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
 		./configure \
 			--prefix=/usr \
