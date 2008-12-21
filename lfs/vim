@@ -38,7 +38,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-fixes-3.patch \
+	$(THISAPP)-fixes-4.patch \
 	$(THISAPP)-mandir-1.patch
 
 install : $(OBJECT)
@@ -55,7 +55,7 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-fixes-3.patch
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-fixes-4.patch
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-mandir-1.patch
 	cd $(DIR_APP) && echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
 	cd $(DIR_APP) && ./configure --prefix=/usr --enable-multibyte
