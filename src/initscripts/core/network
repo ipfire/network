@@ -24,9 +24,9 @@ case "${1}" in
 		# Start all network interfaces
 		for file in ${NETWORK_DEVICES}/*
 		do
-			interface=$(basename ${file})
+			interface=${file##*/}
 
-			IN_BOOT=1 ${NETWORK_DEVICES}/brup ${interface}
+			IN_BOOT=1 ${NETWORK_SCRIPTS}/brup ${interface}
 		done
 		;;
 
@@ -41,9 +41,9 @@ case "${1}" in
 		# Stop all network interfaces
 		for file in ${FILES}
 		do
-			interface=$(basename ${file})
+			interface=${file##*/}
 
-			IN_BOOT=1 ${NETWORK_DEVICES}/brdown ${interface}
+			IN_BOOT=1 ${NETWORK_SCRIPTS}/brdown ${interface}
 		done
 		;;
 

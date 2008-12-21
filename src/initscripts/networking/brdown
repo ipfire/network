@@ -61,8 +61,8 @@ for file in ${FILES}; do
 	(
 		. ${file}
 
-		if [ -n "${SERVICE}" -a -x "${NETWORK_DEVICES}/services/${SERVICE}" ]; then
-			IFCONFIG=${file} ${NETWORK_DEVICES}/services/${SERVICE} ${1} down
+		if [ -n "${SERVICE}" -a -x "${NETWORK_SCRIPTS}/services/${SERVICE}" ]; then
+			IFCONFIG=${file} ${NETWORK_SCRIPTS}/services/${SERVICE} ${1} down
 		else
 			echo -e "${FAILURE}Unable to process ${file}.  Either"
 			echo -e "${FAILURE}the SERVICE variable was not set,"
