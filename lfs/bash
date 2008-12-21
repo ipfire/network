@@ -56,7 +56,7 @@ endef
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-fixes-8.patch \
+	$(THISAPP)-fixes-9.patch \
 	$(PKG_NAME)-doc-$(VER).tar.gz \
 	$(THISAPP)-arc4random-1.patch \
 	$(THISAPP)-rng.patch
@@ -79,7 +79,7 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-fixes-8.patch
+	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-fixes-9.patch
 
 ifeq "$(STAGE)" "toolchain"
 	# This patch modifies Bash to use /dev/urandom (settable with

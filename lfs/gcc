@@ -88,6 +88,10 @@ ifeq "$(PASS)" "1"
 	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
 		-i gcc/config/i386/linux.h
 
+	# libssp has no use with new versions of Glibc. Glibc completely replaces all 
+	# functions in libssp, linking to libssp will cause conflicts with libc, so 
+	# libssp is a waste of space... so --disable-libssp. 
+
 	cd $(DIR_SRC)/gcc-build && \
 		CC="gcc -B/usr/bin/" \
 		../$(THISAPP)/configure \
@@ -101,12 +105,11 @@ ifeq "$(PASS)" "1"
 			--enable-languages=c \
 			--enable-shared \
 			--disable-nls \
+			--disable-libssp \
 			--disable-werror \
 			$(CONFIGURE_ARGS)
 
-	# 'gcc_cv_libc_provides_ssp=yes' is added because without it GCC may want to
-	# use libssp if the host system's libc is unsupported:
-	cd $(DIR_SRC)/gcc-build && make gcc_cv_libc_provides_ssp=yes $(PARALLELISMFLAGS)
+	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/gcc-build && make install
 
 	ln -fvs gcc $(TOOLS_DIR)/bin/cc
@@ -160,6 +163,7 @@ ifeq "$(PASS)" "2"
 			--disable-libstdcxx-pch \
 			--disable-bootstrap \
 			--disable-werror \
+			--disable-libssp \
 			--disable-nls \
 			$(CONFIGURE_ARGS)
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
@@ -193,7 +197,8 @@ ifeq "$(STAGE)" "base"
 			--enable-clocale=gnu \
 			--enable-languages=c,c++ \
 			--disable-bootstrap \
-			--disable-werror
+			--disable-werror \
+			--disable-libssp
 
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/gcc-build && make install

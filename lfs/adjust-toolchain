@@ -56,11 +56,8 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	mv -v $(TOOLS_DIR)/bin/{ld,ld-old}
-	mv -v $(TOOLS_DIR)/$$(gcc -dumpmachine)/bin/{ld,ld-old}
-	mv -v $(TOOLS_DIR)/bin/{ld-new,ld}
-	ln -sfv $(TOOLS_DIR)/bin/ld $(TOOLS_DIR)/$$(gcc -dumpmachine)/bin/ld
-	
+	cp -fv $(TOOLS_DIR)/bin/{ld-new,ld}
+
 	gcc -dumpspecs | sed \
 		-e "/^\*link:$$/{n;s,$$, -L/usr/lib,}" \
 		-e 's@$(TOOLS_DIR)$(LINKER)@$(LINKER)@g' \
