@@ -15,7 +15,7 @@
 . /lib/lsb/init-functions
 . ${IFCONFIG}
 
-interface=$(basename ${IFCONFIG})
+interface=${IFCONFIG##*/}
 
 case "${2}" in
 	up)
