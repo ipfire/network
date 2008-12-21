@@ -21,14 +21,14 @@ case "${2}" in
 	up)
 		MESSAGE="Adding slave interface ${interface} to the ${1} interface..."
 		ip link set ${interface} up || failed=1
-		brctl addif ${i} ${interface} || failed=1
+		brctl addif ${1} ${interface} || failed=1
 		(exit ${failed})
 		evaluate_retval
 	;;
 
 	down)
 		MESSAGE="Removing slave interface ${interface} from the ${1} interface..."
-		brctl delif ${i} ${interface} || failed=1
+		brctl delif ${1} ${interface} || failed=1
 		ip link set ${interface} down || failed=1
 		(exit ${failed})
 		evaluate_retval
