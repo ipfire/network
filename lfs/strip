@@ -55,6 +55,14 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "packages"
+	## If the pyc and pyo files are the same, we can hardlink them
+	for pyc in $$(find /usr/lib/python* -type f -name "*.pyc"); do \
+		pyo=$$(echo "$$pyc" | sed "s/.pyc$$/.pyo/"); \
+		if cmp -s "$$pyc" "$$pyo"; then \
+			ln -f "$$pyc" "$$pyo"; \
+		fi; \
+	done
+
 	-$(TOOLS_DIR)/bin/find $(LFS)/{,usr/}{bin,lib,sbin} -type f -exec \
 		$(TOOLS_DIR)/bin/strip --strip-debug '{}' ';' &>/dev/null
 	-$(TOOLS_DIR)/bin/find $(LFS)/{,usr/}{bin,sbin} -type f -exec \
