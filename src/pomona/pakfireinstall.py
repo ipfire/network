@@ -123,7 +123,7 @@ class PomonaPakfire:
         filesize = int(os.path.getsize(filename))
         log.info("Source file %s has size of %dKB" % (filename, filesize / 1024,))
 
-        command = "unsquashfs -n -i -f -d %s %s >/dev/tty5 2>&1" % (HARDDISK_PATH, filename,)
+        command = "unsquashfs -n -i -f -d %s %s 2>/dev/tty5" % (HARDDISK_PATH, filename,)
 
         extractor = subprocess.Popen(command, shell=True,
                                  stdout=subprocess.PIPE,
