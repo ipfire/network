@@ -52,7 +52,7 @@ FILES=${FILES2}
 
 # Check if bridge already exists
 bridge_status=`brctl show 2>/dev/null`
-if ! echo ${bridge_status} | grep -q "^${1}"; then
+if ! echo "${bridge_status}" | grep -q "^${1}"; then
 	# Create and bring up the bridge
 	brctl addbr ${1} || failed=1
 	ip link set ${1} up || failed=1

@@ -76,7 +76,7 @@ done
 if [ -z "${2}" ]; then
 	# Check if bridge already exists
 	bridge_status=`brctl show 2>/dev/null`
-	if echo ${bridge_status} | grep -q "^${1}"; then
+	if echo "${bridge_status}" | grep -q "^${1}"; then
 		# Create and bring up the bridge
 		ip link set ${1} down || failed=1
 		brctl delbr ${1} || failed=1
