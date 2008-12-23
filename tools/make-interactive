@@ -250,6 +250,19 @@ pull)
 	getsource
 	;;
 
+vm|qemu)
+	case "$2" in
+		boot|start|run)
+			shift 2
+			qemu_start $*
+			;;
+
+		clean)
+			rm -rf $BASEDIR/vm
+			;;
+	esac
+	;;
+
 *)
 	usage
 	;;
