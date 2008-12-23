@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = pciutils
-VER        = 2.2.3
+VER        = 3.0.3
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -37,7 +37,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-sata.patch $(THISAPP)-devicetype.patch
+objects = $(DL_FILE)
 
 install: $(OBJECT)
 
@@ -53,9 +53,6 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && sed -i 's/null ;/null 2>\&1 ;/' update-pciids.sh
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-sata.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-devicetype.patch
 	cd $(DIR_APP) && make OPT=$(CLFLAGS) PREFIX=/usr $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make PREFIX=/usr install
 	install -v -m 755 -d /usr/include/pci
