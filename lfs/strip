@@ -30,6 +30,10 @@ VER        = LFS
 THISAPP    = $(PKG_NAME)-$(VER)
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+WHAT       = -mount -type f -not -path '.$(TOOLS_DIR)*' \
+	-not -path './tmp*' -not -path './usr/src*' -not -path './dev*' \
+	-not -path './proc*' -not -path './sys*'
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -56,7 +60,7 @@ ifeq "$(STAGE)" "toolchain"
 	for f in $$(find $(TOOLS_DIR)/ -type f -a -exec file {} \; | \
 		grep ' shared object,' | \
 		sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped/\1/p'); do \
-		strip --strip-unneeded "$$f"
+		strip --strip-unneeded "$$f"; \
 	done
 
 	-rm -rf $(TOOLS_DIR)/{,share/}{info,man} \
@@ -76,16 +80,19 @@ ifeq "$(STAGE)" "packages"
 	done
 
 	## Strip debugging symbols
-	for f in $$(find $(LFS)/ -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
+	cd $(LFS) && \
+	for f in $$($(TOOLS_DIR)/bin/find $(WHAT) -type f \
+			\( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
 		grep -v ' shared object,' | \
 		sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped/\1/p'); do \
 		strip --strip-debug "$$f" || :; \
 	done
 
 	## Strip unneeded symbols
-	for f in $$(find $(LFS)/ -type f -a -exec file {} \; | \
+	cd $(LFS) && \
+	for f in $$($(TOOLS_DIR)/bin/find $(WHAT) -a -exec file {} \; | \
 		grep ' shared object,' | \
 		sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped/\1/p'); do \
-		strip --strip-unneeded "$$f"
+		strip --strip-unneeded "$$f"; \
 	done
 endif
