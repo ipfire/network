@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = miniupnpd
-VER        = 1.2
+VER        = 20081009
 PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
@@ -53,7 +53,8 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-iptables-source-1.patch
 
 download: $(objects)
 
@@ -72,9 +73,15 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-iptables-source-1.patch
 	cd $(DIR_APP) && cp -vf $(DIR_CONFIG)/$(PKG_NAME)/config.h config.h
-	cd $(DIR_APP) && sed -e "s/^CFLAGS=.*/CFLAGS=$(CFLAGS)/g" -i Makefile.linux
+	cd $(DIR_APP) && sed \
+		-e "s@^CFLAGS = .*@CFLAGS = $(CFLAGS) -I$(DIR_SRC)/linux-$(KVER)/include -D_GNU_SOURCE@g" \
+		-i Makefile.linux
+
 	cd $(DIR_APP) && make -f Makefile.linux $(PARALLELISMFLAGS)
+
 	cd $(DIR_APP) && cp -vf $(PKG_NAME) /usr/sbin/
 	cd $(DIR_APP) && $(INSTALL_CONFIG) \
 		< $(DIR_CONFIG)/$(PKG_NAME)/$(PKG_NAME).conf > /etc/$(PKG_NAME).conf
