@@ -51,7 +51,8 @@ objects = $(DL_FILE) \
 	$(THISAPP)-mktemp_urandom.patch \
 	$(THISAPP)-res_randomid.patch \
 	$(THISAPP)-resolv_response_length.patch \
-	$(THISAPP)-undefine-__i686.patch
+	$(THISAPP)-undefine-__i686.patch \
+	$(THISAPP)-d_tlsdec.patch
 
 install : $(OBJECT)
 
@@ -163,6 +164,9 @@ ifeq "$(MACHINE)" "i686"
 	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-undefine-__i686.patch
 endif
 
+	# Replace a direct call of a i686 function (Not able to compile at i586)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-d_tlsdec.patch
+
 	# --sbindir=$(TOOLS_DIR)/bin does not work... anyone want to fix this?
 	# We don't need Glibc's sbin programs, but still.
 
@@ -184,6 +188,7 @@ ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_SRC)/glibc-build && \
 		../$(THISAPP)/configure \
 			--prefix=$(TOOLS_DIR) \
+			--target=$(IFS_TARGET) \
 			--libexecdir=$(TOOLS_DIR)/lib/$(PKG_NAME) \
 			--with-headers=$(TOOLS_DIR)/include \
 			--with-binutils=$(TOOLS_DIR)/bin \
@@ -205,6 +210,7 @@ ifeq "$(STAGE)" "base"
 
 	cd $(DIR_SRC)/glibc-build && \
 		../$(THISAPP)/configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--libexecdir=/usr/lib/glibc \
 			--disable-profile \
