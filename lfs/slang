@@ -53,7 +53,11 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure --prefix=/usr --sysconfdir=/etc
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--sysconfdir=/etc
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install_doc_dir=/usr/share/doc/slang-$(VER) \
 		SLSH_DOC_DIR=/usr/share/doc/slang-$(VER)/slsh install-all
