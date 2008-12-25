@@ -85,7 +85,7 @@ ifeq "$(STAGE)" "packages"
 			\( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
 		grep -v ' shared object,' | \
 		sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped/\1/p'); do \
-		strip --strip-debug "$$f" || :; \
+		$(TOOLS_DIR)/bin/strip --strip-debug "$$f" || :; \
 	done
 
 	## Strip unneeded symbols
@@ -93,6 +93,6 @@ ifeq "$(STAGE)" "packages"
 	for f in $$($(TOOLS_DIR)/bin/find $(WHAT) -a -exec file {} \; | \
 		grep ' shared object,' | \
 		sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped/\1/p'); do \
-		strip --strip-unneeded "$$f"; \
+		$(TOOLS_DIR)/bin/strip --strip-unneeded "$$f"; \
 	done
 endif
