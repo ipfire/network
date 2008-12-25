@@ -78,6 +78,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && autoconf
 	cd $(DIR_APP) && \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--sbindir=/sbin \
 			--disable-static
