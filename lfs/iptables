@@ -57,6 +57,7 @@ $(OBJECT) :
 	#cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-imq-1.patch
 	
 	cd $(DIR_APP) && ./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--bindir=/bin \
 			--sbindir=/sbin \
