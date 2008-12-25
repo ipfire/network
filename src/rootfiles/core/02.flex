@@ -2,15 +2,11 @@
 #usr/bin/lex
 #usr/include/FlexLexer.h
 #usr/lib/libfl.a
+#usr/lib/libfl_pic.a
 #usr/lib/libl.a
 #usr/share/info/flex.info
 #usr/share/info/flex.info-1
 #usr/share/info/flex.info-2
-#usr/share/info/flex.info-3
-#usr/share/info/flex.info-4
-#usr/share/info/flex.info-5
-#usr/share/info/flex.info-6
-#usr/share/info/flex.info-7
 #usr/share/locale/ca/LC_MESSAGES/flex.mo
 #usr/share/locale/da/LC_MESSAGES/flex.mo
 #usr/share/locale/de/LC_MESSAGES/flex.mo
