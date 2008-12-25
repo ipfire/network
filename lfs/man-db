@@ -56,6 +56,7 @@ $(OBJECT) :
 	cd $(DIR_APP) && sed -i -e '\%\t/usr/man%d' -e '\%\t/usr/local/man%d' src/man_db.conf.in
 	cd $(DIR_APP) && CC="gcc -std=gnu99 -fgnu89-inline" \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--libexecdir=/usr/lib \
 			--sysconfdir=/etc \
