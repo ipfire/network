@@ -57,6 +57,7 @@ $(OBJECT) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--libexecdir=/usr/sbin \
 			--sysconfdir=/etc \
