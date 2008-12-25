@@ -54,6 +54,7 @@ $(OBJECT) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && ./configure \
+			$(CONFIGURE_ARCH) \
             --prefix=/usr \
             --sbindir=/sbin
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
