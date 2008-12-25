@@ -81,6 +81,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && \
 		CFLAGS="-O2 -static" \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=$(PREFIX) \
 			--with-included-popt \
 			--without-avahi
