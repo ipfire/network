@@ -56,6 +56,7 @@ $(OBJECT) :
 	-mkdir $(DIR_SRC)/sqlite-build
 	cd $(DIR_SRC)/sqlite-build && \
 		$(DIR_APP)/configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--disable-tcl \
 			--disable-static

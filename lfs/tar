@@ -68,6 +68,7 @@ endif
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && CC="gcc -std=gnu99 -fgnu89-inline" \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--bindir=/bin \
 			--libexecdir=/usr/sbin

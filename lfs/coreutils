@@ -96,6 +96,7 @@ ifeq "$(STAGE)" "base"
 	
 	cd $(DIR_APP) && \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-install-program=hostname \
 			--enable-no-install-program=kill,uptime

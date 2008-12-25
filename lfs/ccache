@@ -81,6 +81,7 @@ $(OBJECT) :
 	cd $(DIR_APP) && \
 		CFLAGS="-O2 -static" \
 			./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=$(PREFIX)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install

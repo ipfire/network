@@ -55,6 +55,7 @@ $(OBJECT) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && ABI=32 \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-cxx \
 			--enable-mpbsd

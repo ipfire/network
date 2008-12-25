@@ -65,7 +65,10 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && ./configure --prefix=/usr
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif

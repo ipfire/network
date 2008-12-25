@@ -79,6 +79,7 @@ $(OBJECT): $(objects)
 	# Doesn't compile with ipv6 at the moment
 	cd $(DIR_APP) && \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--sysconfdir=/etc \
 			--disable-dhcpv6 \

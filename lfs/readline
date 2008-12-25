@@ -56,7 +56,12 @@ $(OBJECT) :
 	cd $(DIR_APP) && sed -i '/MV.*old/d' Makefile.in
 	cd $(DIR_APP) && sed -i '/{OLDSUFF}/c:' support/shlib-install
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-6.patch
-	cd $(DIR_APP) && ./configure --prefix=/usr --libdir=/lib  --disable-static
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--libdir=/lib \
+			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) SHLIB_LIBS=-lncurses
 	cd $(DIR_APP) && make install
 

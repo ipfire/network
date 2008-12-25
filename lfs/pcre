@@ -54,7 +54,9 @@ $(OBJECT) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
-		./configure --prefix=/usr \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
 			--docdir=/usr/share/doc/pcre-$(VER) \
 			--enable-utf8 \
 			--enable-pcregrep-libz \

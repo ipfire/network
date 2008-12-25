@@ -76,7 +76,9 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && LDFLAGS="-z muldefs" \
-		./configure CPIO_MT_PROG=mt \
+		CPIO_MT_PROG=mt \
+		./configure \
+			$(CONFIGURE_ARCH)\
 			--prefix=/usr \
 			--bindir=/bin \
 			--libexecdir=/tmp \

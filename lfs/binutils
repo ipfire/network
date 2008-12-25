@@ -134,6 +134,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_SRC)/binutils-build && \
 		CC="gcc -specs=$$(dirname $$(gcc --print-libgcc-file-name))/myspecs -B/usr/lib/ -B/usr/bin/" \
 		../$(THISAPP)/configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-shared \
 			--disable-werror \

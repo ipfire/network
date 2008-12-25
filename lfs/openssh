@@ -58,13 +58,16 @@ $(OBJECT) :
 	install -v -m700 -d /var/lib/sshd
 	chown -v root:sys /var/lib/sshd
 	cd $(DIR_APP) && sed -i 's@ -ldes@@' configure
-	cd $(DIR_APP) && ./configure --prefix=/usr \
-				--sysconfdir=/etc/ssh \
-				--datadir=/usr/share/sshd \
-				--libexecdir=/usr/lib/openssh \
-				--with-md5-passwords \
-				--with-privsep-path=/var/lib/sshd \
-				--with-pam
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--sysconfdir=/etc/ssh \
+			--datadir=/usr/share/sshd \
+			--libexecdir=/usr/lib/openssh \
+			--with-md5-passwords \
+			--with-privsep-path=/var/lib/sshd \
+			--with-pam
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	sed 's@d/login@d/sshd@g' /etc/pam.d/login > /etc/pam.d/sshd

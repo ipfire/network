@@ -90,6 +90,7 @@ endif
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--libexecdir=/usr/lib/findutils \
 			--localstatedir=/var/lib/locate
