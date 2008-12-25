@@ -55,7 +55,11 @@ $(OBJECT) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)	
 
 ifeq "$(PASS)" "1"
-	cd $(DIR_APP) && ./configure --libdir=/lib --sbindir=/lib/security \
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--libdir=/lib \
+			--sbindir=/lib/security \
             --enable-securedir=/lib/security \
             --docdir=/usr/share/doc/Linux-PAM-$(VER) \
             --enable-read-both-confs
