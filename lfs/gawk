@@ -71,6 +71,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && \
 		ac_cv_func_working_mktime=yes \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--libexecdir=/usr/lib
 	cd $(DIR_APP) && echo "#define HAVE_LANGINFO_CODESET 1"	>> config.h
