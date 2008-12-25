@@ -88,7 +88,11 @@ ifeq "$(STAGE)" "$(SNAME)"
 	cd $(DIR_APP) && sed -i '/flex -I8/s/8//' configure
 	cd $(DIR_APP) && sed -i '/stdlib/a #include <string.h>' lib/number.c
 	cd $(DIR_APP) && sed -i 's/program.*save/static &/' bc/load.c
-	cd $(DIR_APP) && ./configure --prefix=/usr --with-readline
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--with-readline
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif
