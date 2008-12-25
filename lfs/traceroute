@@ -78,7 +78,8 @@ $(OBJECT) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -i 's|@prefix@|/usr|' Makefile.in
-	cd $(DIR_APP) && ./configure
+	cd $(DIR_APP) && ./configure \
+			$(CONFIGURE_ARCH)
 	cd $(DIR_APP) && make $(MAKETUNING)
 	cd $(DIR_APP) && make install
 	cd $(DIR_APP) && make install-man
