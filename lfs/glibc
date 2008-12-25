@@ -187,8 +187,8 @@ ifeq "$(STAGE)" "toolchain"
 
 	cd $(DIR_SRC)/glibc-build && \
 		../$(THISAPP)/configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR) \
-			--target=$(IFS_TARGET) \
 			--libexecdir=$(TOOLS_DIR)/lib/$(PKG_NAME) \
 			--with-headers=$(TOOLS_DIR)/include \
 			--with-binutils=$(TOOLS_DIR)/bin \
