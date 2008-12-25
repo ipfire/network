@@ -65,6 +65,7 @@ endif
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--bindir=/bin \
 			--enable-html \
