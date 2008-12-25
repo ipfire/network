@@ -78,6 +78,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && sed -e "s/-Werror//g" -i src/Makefile.in
 	cd $(DIR_APP) && KERNEL_DIR=/usr/include \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--sysconfdir=/etc \
 			--localstatedir=/var \
