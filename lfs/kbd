@@ -57,7 +57,11 @@ $(OBJECT) :
 	cd $(DIR_APP) && sed -e '1i KEYCODES_PROGS = @KEYCODES_PROGS@' \
 		-e '1i RESIZECONS_PROGS = @RESIZECONS_PROGS@' -i src/Makefile.in
 	cd $(DIR_APP) && sed -i "s/ifdef OPTIONAL_PROGS/ifeq (\$$(OPTIONAL_PROGS),yes)/" man/Makefile.in
-	cd $(DIR_APP) && ./configure --prefix=/usr --datadir=/lib/kbd
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--datadir=/lib/kbd
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	mv -v /usr/bin/{kbd_mode,loadkeys,openvt,setfont} /bin
