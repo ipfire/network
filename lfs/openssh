@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = openssh
-VER        = 5.0p1
+VER        = 5.1p1
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -57,7 +57,6 @@ $(OBJECT) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	install -v -m700 -d /var/lib/sshd
 	chown -v root:sys /var/lib/sshd
-	cd $(DIR_APP) && sed -i 's@ -ldes@@' configure
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
