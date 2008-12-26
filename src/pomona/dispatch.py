@@ -57,7 +57,7 @@ installSteps = [
                 ("bootloadersetup", bootloaderSetupChoices, ),
                 ("bootloader", ),
                 ("bootloaderadvanced", ),
-                #("network", ),
+                ("network", ),
                 ("timezone", ),
                 ("accounts", ),
                 #("reposetup", doRepoSetup, ),

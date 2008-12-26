@@ -17,7 +17,7 @@ import os
 import string
 import language
 import keyboard
-#import network
+import network
 import timezone
 import fsset
 import bootloader
@@ -40,7 +40,7 @@ class InstallData:
         #       - The keyboard
 
         self.instClass = None
-#       self.network = network.Network()
+        self.network = network.Network()
         self.timezone = timezone.Timezone()
         self.timezone.setTimezoneInfo(self.instLanguage.getDefaultTimeZone())
         self.users = None
@@ -62,7 +62,7 @@ class InstallData:
         self.instLanguage.write(pomona.rootPath)
         self.keyboard.write(pomona.rootPath)
         #self.timezone.write(pomona.rootPath)
-        #self.network.write(pomona.rootPath)
+        self.network.write(pomona.rootPath)
 
         self.users = users.Users()
 
