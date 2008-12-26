@@ -33,11 +33,26 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+ifneq "$(MACHINE)" "i686"
+	SSL_ARCH = no-asm 386 # 386 implies no-sse2
+endif
+
+# These arches do support sse2.
+ifneq "$(TARGET)" "via-c7"
+ifneq "$(TARGET)" "atom330"
+ifneq "$(TARGET)" "core2duo"
+	SSL_ARCH += no-sse2
+endif
+endif
+endif
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-fix_manpages-1.patch
+objects = $(DL_FILE) \
+	$(THISAPP)-fix_manpages-1.patch \
+	$(THISAPP)-enginesdir.patch
 
 install: $(OBJECT)
 
@@ -54,10 +69,9 @@ $(OBJECT) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix_manpages-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-enginesdir.patch
 
-	cd $(DIR_APP) && sed -i -e 's/-march=i486/-march=$(MACHINE)/' Configure
-
-	cd $(DIR_APP) && sed -i -e 's/-O3/-O2/' Configure
+	cd $(DIR_APP) && sed -i -e 's/-O3 -fomit-frame-pointer/$(CFLAGS)/' Configure
 
 	cd $(DIR_APP) && sed -e 's/__OpenBSD__/__linux__/' -e 's/arandom/urandom/' \
 				-i.orig crypto/rand/randfile.c
@@ -67,17 +81,43 @@ $(OBJECT) :
 	cd $(DIR_APP) && find crypto/ -name Makefile -exec \
 		sed 's/^ASFLAGS=/&-Wa,--noexecstack /' -i.orig {} \;
 
-	cd $(DIR_APP) && ./config \
-		--prefix=/usr \
-		--openssldir=/etc/ssl \
-		shared zlib-dynamic \
-		-DSSL_FORBID_ENULL
-	cd $(DIR_APP) && make MANDIR=/usr/share/man #$(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make MANDIR=/usr/share/man install
-	cd $(DIR_APP) && cp -v -r certs /etc/ssl
+	cd $(DIR_APP) && \
+		./Configure \
+			--prefix=/usr \
+			--openssldir=/etc/pki/tls \
+			--enginesdir=/usr/lib/openssl/engines \
+			linux-elf $(SSL_ARCH) \
+			shared \
+			zlib-dynamic \
+			enable-camellia \
+			enable-seed \
+			enable-tlsext \
+			enable-rfc3779 \
+			no-idea \
+			no-mdc2 \
+			no-rc5 \
+			no-ec \
+			no-ecdh \
+			no-ecdsa \
+			-DSSL_FORBID_ENULL
+
+	# Build.
+	cd $(DIR_APP) && make all build-shared #$(PARALLELISMFLAGS)
+
+	# Generate hashes for the included certs.
+	cd $(DIR_APP) && make rehash build-shared
+
+	cd $(DIR_APP) && make install build-shared
+	cd $(DIR_APP) && cp -v -r certs /etc/pki/tls
 
 	mv -v /usr/lib/{libcrypto,libssl}.a /usr/lib/static
-	install -m 0644 $(DIR_SRC)/config/ssl/openssl.cnf /etc/ssl
+	install -d /usr/lib/openssl
+	mv -v /usr/lib/engines /usr/lib/openssl
 
-	@rm -rf $(DIR_APP)
+	-mkdir -m700 /etc/pki/CA
+	-mkdir -m700 /etc/pki/CA/private
+
+	install -m 0644 $(DIR_SRC)/config/ssl/openssl.cnf /etc/pki/tls
+
+	@rm -rf $(DIR_APP) /etc/pki/tls/man
 	@$(POSTBUILD)
