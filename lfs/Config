@@ -137,9 +137,9 @@ define POSTBUILD
 	# $(OBJECT)_rootfile : ROOTFILE with KVER replacement
 	# $(OBJECT) : log result with {commented|include|added} files
 	if [ -s "$(OBJECT)_diff" ]; then \
-		LFS_SCRIPT="$(STAGE_ORDER).$(firstword $(MAKEFILE_LIST))"; \
-		if [ "x$(PASS)" != "x" ]; then LFS_SCRIPT="$$LFS_SCRIPT.$(PASS)"; fi; \
-		ROOTFILE=$$(find $(DIR_SOURCE)/rootfiles/core $(DIR_SOURCE)/rootfiles/extras -maxdepth 1 -type f -name $$LFS_SCRIPT | head -1); \
+		LFS_SCRIPT="$(firstword $(MAKEFILE_LIST))"; \
+		if [ "x$(PASS)" != "x" ]; then LFS_SCRIPT="$$LFS_SCRIPT.p$(PASS)"; fi; \
+		ROOTFILE=$$(find $(DIR_SOURCE)/rootfiles/{core,extras,debug}/{$(TARGET),} -maxdepth 1 -type f -name $$LFS_SCRIPT | head -1); \
 		if [ "$$ROOTFILE" = "" ]; then \
 			touch $(OBJECT)_missing_rootfile; \
 			ROOTFILE=$(OBJECT)_missing_rootfile ; \
