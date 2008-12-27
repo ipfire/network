@@ -137,6 +137,7 @@ ifeq "$(STAGE)" "base"
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-shared \
+			--disable-nls \
 			--disable-werror \
 			--disable-static
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr $(PARALLELISMFLAGS)
