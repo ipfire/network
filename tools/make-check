@@ -96,7 +96,10 @@ check_rootfiles() {
 			echo -n " and fix"
 
 			# Remove leading pluses and replace them by '#'
-			sed -e "s/^+/#/g" -i $BASEDIR/src/rootfiles/*/*
+			for i in $BASEDIR/src/rootfiles/{core,extras,debug}/*{,/*}; do
+				[ ! -f $i ] && continue
+				sed -e "s/^+/#/g" -i $i
+			done
 			;;
 		"")
 			: # If no option was given we do nothing.
@@ -109,21 +112,21 @@ check_rootfiles() {
 	echo "..." # End the line
 
 	echo -n "  Searching for leading slashes..."
-	if grep -n ^/ $BASEDIR/src/rootfiles/*/*; then
+	if grep -n ^/ $BASEDIR/src/rootfiles/*/*{,/*}; then
 		exiterror "Please check your rootfiles! There are leading slashes."
 	else
 		beautify message DONE
 	fi
 
 	echo -n "  Searching for leading pluses..."
-	if grep -n ^+ $BASEDIR/src/rootfiles/*/*; then
+	if grep -n ^+ $BASEDIR/src/rootfiles/*/*{,/*}; then
 		exiterror "Please check your rootfiles for leading pluses."
 	else
 		beautify message DONE
 	fi
 
 	echo -n "  Searching for emtpy lines..."
-	if grep -n ^$ $BASEDIR/src/rootfiles/*/*; then
+	if grep -n ^$ $BASEDIR/src/rootfiles/*/*{,/*}; then
 		exiterror "Please check your rootfiles for empty lines."
 	else
 		beautify message DONE
