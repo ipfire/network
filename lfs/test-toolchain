@@ -29,7 +29,11 @@ VER        = LFS
 
 THISAPP    = $(PKG_NAME)-$(VER)
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
+ifeq "$(STAGE)" "toolchain"
+	OBJECT = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)-pass$(PASS)
+else
+	OBJECT = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+endif
 
 ###############################################################################
 # Top-level Rules
