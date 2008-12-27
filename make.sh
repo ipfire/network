@@ -54,7 +54,7 @@ toolchain_build() {
 	toolchain_make ccache
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
-	toolchain_make linux
+	toolchain_make linux-headers
 	toolchain_make glibc
 	toolchain_make adjust-toolchain
 	toolchain_make test-toolchain	PASS=1
@@ -102,7 +102,7 @@ base_build() {
 
 	ipfire_make stage2
 	ipfire_make scripts
-	ipfire_make linux
+	ipfire_make linux-headers
 	ipfire_make man-pages
 	ipfire_make glibc
 	ipfire_make adjust-toolchain
@@ -184,7 +184,7 @@ ipfire_build() {
 	ipfire_make stage3
 	ipfire_make lzma
 
-	ipfire_make linux	
+	ipfire_make linux
 	ipfire_make aufs
 
 	### Building some general stuff
