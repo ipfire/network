@@ -62,8 +62,8 @@ ifeq "$(PASS)" "$(THISAPP)"
 	@rm -f $(IMAGES_DIR)/$(SNAME)-$(VERSION).img
 	mkdir -pv $(CDROM_DIR)/tmp
 
-	find $(ROOTFILES) -maxdepth 1 -type f | xargs cat | \
-		grep -v ^# | sed -e "s/KVER/$(KVER)/g" | sort | uniq > $(CDROM_DIR)/archive.files
+	TARGET=$(TARGET) KVER=$(KVER) \
+		$(DIR_SOURCE)/scripts/archive.files $(ROOTFILES) > $(CDROM_DIR)/archive.files
 
 	cd / && cpio -pd $(CDROM_DIR)/tmp < $(CDROM_DIR)/archive.files \
 		2>$(CDROM_DIR)/archive.errors
