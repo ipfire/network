@@ -31,7 +31,7 @@ import logging
 log = logging.getLogger("pomona")
 
 def doPostAction(pomona):
-    pomona.id.instClass.postAction(pomona)
+    pomona.backend.postAction(pomona)
 
 def copyPomonaLogs(pomona):
     log.info("Copying pomona logs")

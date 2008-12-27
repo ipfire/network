@@ -39,7 +39,6 @@ class InstallData:
         #       - The install language
         #       - The keyboard
 
-        self.instClass = None
         self.network = network.Network()
         self.timezone = timezone.Timezone()
         self.timezone.setTimezoneInfo(self.instLanguage.getDefaultTimeZone())
@@ -61,7 +60,7 @@ class InstallData:
     def write(self, pomona):
         self.instLanguage.write(pomona.rootPath)
         self.keyboard.write(pomona.rootPath)
-        #self.timezone.write(pomona.rootPath)
+        self.timezone.write(pomona.rootPath)
         self.network.write(pomona.rootPath)
 
         self.users = users.Users()

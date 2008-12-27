@@ -34,9 +34,9 @@ class Keyboard(ConfigFile):
         self.beenset = 0
         self.info = {}
 
-        # default to us
-        self.info["KEYTABLE"] = "us"
-        self.info["KEYBOARDTYPE"] = "pc"
+        # default to us and unicode enabled
+        self.info["KEYMAP"] = "us"
+        self.info["UNICODE"] = "yes"
 
         self._mods = keyboard_models.KeyboardModels()
 
@@ -46,10 +46,10 @@ class Keyboard(ConfigFile):
     modelDict = property(_get_models)
 
     def set(self, keytable):
-        self.info["KEYTABLE"] = keytable
+        self.info["KEYMAP"] = keytable
 
     def get(self):
-        return self.info["KEYTABLE"]
+        return self.info["KEYMAP"]
 
     def getKeymapName(self):
         kbd = self.modelDict[self.get()]
@@ -59,7 +59,7 @@ class Keyboard(ConfigFile):
         return name
 
     def __getitem__(self, item):
-        table = self.info["KEYTABLE"]
+        table = self.info["KEYMAP"]
         if not self.modelDict.has_key(table):
             raise KeyError, "No such keyboard type %s" % (table,)
 
@@ -81,12 +81,12 @@ class Keyboard(ConfigFile):
         else:
             raise KeyError, item
 
-    #def read(self, instPath = "/"):
-    #       ConfigFile.read(self, instPath + "/etc/sysconfig/keyboard")
-    #       self.beenset = 1
+    def read(self, instPath = "/"):
+        ConfigFile.read(self, instPath + "/etc/sysconfig/console")
+        self.beenset = 1
 
     def write(self, instPath = "/"):
-        ConfigFile.write(self, instPath + "/etc/sysconfig/keyboard")
+        ConfigFile.write(self, instPath + "/etc/sysconfig/console")
 
     def activate(self):
         console_kbd = self.get()

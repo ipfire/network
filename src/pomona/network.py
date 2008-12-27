@@ -8,9 +8,7 @@ import socket
 import struct
 import os
 import time
-import minihal
-import pyfire
-import dbus
+import pyfire.hal
 from flags import flags
 
 from constants import *
@@ -50,7 +48,7 @@ def sanityCheckHostname(hostname):
 
 # Try to determine what the hostname should be for this system
 def getDefaultHostname(pomona):
-	return pomona.id.network.hostname
+    return pomona.id.network.hostname
 
 # sanity check an IP string.
 def sanityCheckIPString(ip_string):
@@ -91,14 +89,14 @@ class Network:
         self.isConfigured = 0
         self.hostname = sname + ".localdomain"
 
-		# now initialize devices
+        # now initialize devices
         self.available()
 
     def getDevice(self, device):
         return self.netdevices[device]
 
     def available(self):
-        for device in minihal.get_devices_by_type("net"):
+        for device in pyfire.hal.get_devices_by_type("net"):
             if device.has_key('net.arp_proto_hw_id'):
                 if device['net.arp_proto_hw_id'] == 1:
                     dev = device['device']
@@ -109,7 +107,7 @@ class Network:
         return self.netdevices
 
     def setHostname(self, hn):
-		self.hostname = hn
+        self.hostname = hn
 
     def setDNS(self, ns):
         dns = ns.split(',')
