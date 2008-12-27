@@ -231,7 +231,7 @@ ipfire_build() {
 	#   STAGE 2
 	ipfire_make cracklib
 	ipfire_make pam					PASS=1
-	ipfire_make shadow
+	ipfire_make shadow-pam
 	ipfire_make pam					PASS=2
 	ipfire_make slang
 	ipfire_make newt
