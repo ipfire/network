@@ -39,7 +39,6 @@ class InstallData:
         #       - The install language
         #       - The keyboard
 
-        self.instClass = None
         self.network = network.Network()
         self.timezone = timezone.Timezone()
         self.timezone.setTimezoneInfo(self.instLanguage.getDefaultTimeZone())

@@ -116,11 +116,6 @@ def doPostInstall(pomona):
 def doInstall(pomona):
     pomona.backend.doInstall(pomona)
 
-# does this need to be per-backend?  we'll just leave here until it does :)
-def doBasePackageSelect(pomona):
-    pomona.id.instClass.setPackageSelection(pomona)
-    pomona.id.instClass.setGroupSelection(pomona)
-
 def writeConfiguration(pomona):
     log.info("Writing main configuration")
     pomona.id.write(pomona)

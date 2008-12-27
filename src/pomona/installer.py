@@ -19,30 +19,30 @@
 #                                                                             #
 ###############################################################################
 
-import sys, os, re
-import users
+import os
+import sys
+import re
+import signal
+import warnings
 from optparse import OptionParser
-import inutil, isys, dispatch
+
+import isys
+import users
+import inutil
+import dispatch
 from flags import flags
 from constants import *
-import signal
+
+from tui import InstallInterface
+from pakfireinstall import PakfireBackend
+from instdata import InstallData
+from autopart import getAutopartitionBoot, autoCreatePartitionRequests
 
 # Make sure messages sent through python's warnings module get logged.
 def PomonaShowWarning(message, category, filename, lineno, file=sys.stderr):
     log.warning("%s" % warnings.formatwarning(message, category, filename, lineno))
 
-def setupEnvironment():
-    if not os.environ.has_key("LANG"):
-        os.environ["LANG"] = "en_US.UTF-8"
-    os.environ['HOME'] = '/tmp'
-    os.environ['LC_NUMERIC'] = 'C'
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    signal.signal(signal.SIGSEGV, isys.handleSegv)
-
-def getInstClass():
-    from installclass import DefaultInstall
-    return DefaultInstall(flags.expert)
+warnings.showwarning = PomonaShowWarning
 
 def parseOptions():
 
@@ -77,12 +77,6 @@ def setupLoggingFromOpts(opts):
         else:
             logger.addSysLogHandler(log, opts.syslog)
 
-def expandFTPMethod(opts):
-    filename = opts.method[1:]
-    opts.method = open(filename, "r").readline()
-    opts.method = opts.method[:len(opts.method) - 1]
-    os.unlink(filename)
-
 def checkMemory():
     if inutil.memInstalled() < isys.MIN_RAM:
         from snack import SnackScreen, ButtonChoiceWindow
@@ -102,20 +96,45 @@ class Pomona:
         self.intf = None
         self.id = None
         self.rootPath = HARDDISK_PATH
-        self.backend = None
-
-    def setDispatch(self):
         self.dispatch = dispatch.Dispatcher(self)
 
-    def setBackend(self):
-        from pakfireinstall import PakfireBackend
         self.backend = PakfireBackend(self.rootPath)
+
+    def setDefaultPartitioning(self, partitions, clear = CLEARPART_TYPE_ALL, doClear = 1):
+        autorequests = [ ("/", None, 1024, None, 1, 1, 1) ]
+
+        bootreq = getAutopartitionBoot()
+        if bootreq:
+            autorequests.extend(bootreq)
+
+        (minswap, maxswap) = inutil.swapSuggestion()
+        autorequests.append((None, "swap", minswap, maxswap, 1, 1, 1))
+
+        if doClear:
+            partitions.autoClearPartType = clear
+            partitions.autoClearPartDrives = []
+
+        partitions.autoPartitionRequests = autoCreatePartitionRequests(autorequests)
+
+    def setZeroMbr(self, zeroMbr):
+        self.id.partitions.zeroMbr = zeroMbr
+
+    def setKeyboard(self, kb):
+        self.id.keyboard.set(kb)
+
+    def setTimezoneInfo(self, timezone, asUtc = 0, asArc = 0):
+        self.id.timezone.setTimezoneInfo(timezone, asUtc, asArc)
+
+    def setLanguageDefault(self, default):
+        self.id.instLanguage.setDefault(default)
+
+    def setLanguage(self, nick):
+        self.id.instLanguage.setRuntimeLanguage(nick)
 
 if __name__ == "__main__":
     pomona = Pomona()
 
-    ### Set up logging
-    #
+    # Set up logging
     import logging
     from pomona_log import logger, logLevelMap
 
@@ -126,17 +145,20 @@ if __name__ == "__main__":
 
     log.info("pomona called with cmdline = %s" %(sys.argv,))
 
-    ### Set up environment
-    #
-    setupEnvironment()
+    # Set up environment
+    if not os.environ.has_key("LANG"):
+        os.environ["LANG"] = "en_US.UTF-8"
+    os.environ['HOME'] = '/tmp'
+    os.environ['LC_NUMERIC'] = 'C'
 
-    ### Set up i18n
-    #
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal.signal(signal.SIGSEGV, isys.handleSegv)
+
+    # Set up i18n
     from pyfire.translate import _, textdomain
     textdomain("pomona")
 
-    ### Reading command line options
-    #
+    # Reading command line options
     (opts, args) = parseOptions()
 
     setupLoggingFromOpts(opts)
@@ -154,36 +176,112 @@ if __name__ == "__main__":
 
     log.info (_("Starting text installation..."))
 
-    instClass = getInstClass()
-
     checkMemory()
 
-    from tui import InstallInterface
     pomona.intf = InstallInterface()
 
-    import warnings, signal
-    warnings.showwarning = PomonaShowWarning
+    pomona.id = InstallData(pomona)
+    pomona.id.reset(pomona)
+    pomona.setDefaultPartitioning(pomona.id.partitions, CLEARPART_TYPE_ALL)
 
-    # reset python's default SIGINT handler
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    if flags.expert:
+        pomona.dispatch.setStepList(
+            "language",
+            "keyboard",
+            "welcome",
+            "betanag",
+            "installtype",
+            "partitionobjinit",
+            "parttype",
+            "autopartitionexecute",
+            "partition",
+            "partitiondone",
+            "bootloadersetup",
+            "bootloader",
+            "networkdevicecheck",
+            "network",
+            "timezone",
+            "accounts",
+            "reposetup",
+            "basepkgsel",
+            "tasksel",
+            "postselection",
+            "confirminstall",
+            "install",
+            "enablefilesystems",
+            "migratefilesystems",
+            "setuptime",
+            "preinstallconfig",
+            "installpackages",
+            "postinstallconfig",
+            "writeconfig",
+            "firstboot",
+            "instbootloader",
+            "dopostaction",
+            "postscripts",
+            "writexconfig",
+            "writeksconfig",
+            "writeregkey",
+            "methodcomplete",
+            "copylogs",
+            "setfilecon",
+            "complete"
+        )
+    else:
+        pomona.dispatch.setStepList(
+            "language",
+            "keyboard",
+            "welcome",
+            "betanag",
+            "installtype",
+            "partitionobjinit",
+            "parttype",
+            "autopartitionexecute",
+            "partition",
+            "partitiondone",
+            "bootloadersetup",
+            "bootloader",
+            "networkdevicecheck",
+            "network",
+            "timezone",
+            "accounts",
+            "reposetup",
+            "basepkgsel",
+            "tasksel",
+            "postselection",
+            "confirminstall",
+            "install",
+            "enablefilesystems",
+            "migratefilesystems",
+            "setuptime",
+            "preinstallconfig",
+            "installpackages",
+            "postinstallconfig",
+            "writeconfig",
+            "firstboot",
+            "instbootloader",
+            "dopostaction",
+            "postscripts",
+            "writexconfig",
+            "writeksconfig",
+            "writeregkey",
+            "methodcomplete",
+            "copylogs",
+            "setfilecon",
+            "complete"
+        )
 
-    pomona.setBackend()
-
-    pomona.id = instClass.installDataClass(pomona)
-    instClass.setInstallData(pomona)
     users.createLuserConf(pomona.rootPath)
 
-    pomona.setDispatch()
+    if opts.lang:
+        pomona.dispatch.skipStep("language", permanent = 1)
+        pomona.setLanguage(opts.lang)
+        pomona.setLanguageDefault(opts.lang)
+        pomona.id.timezone.setTimezoneInfo(pomona.id.instLanguage.getDefaultTimeZone())
 
-    #if opts.lang:
-    #       anaconda.dispatch.skipStep("language", permanent = 1)
-    #       instClass.setLanguage(anaconda.id, opts.lang)
-    #       instClass.setLanguageDefault(anaconda.id, opts.lang)
-    #       anaconda.id.timezone.setTimezoneInfo(anaconda.id.instLanguage.getDefaultTimeZone())
-
-    #if opts.keymap:
-    #       anaconda.dispatch.skipStep("keyboard", permanent = 1)
-    #       instClass.setKeyboard(anaconda.id, opts.keymap)
+    if opts.keymap:
+        pomona.dispatch.skipStep("keyboard", permanent = 1)
+        pomona.setKeyboard(opts.keymap)
 
     from exception import handleException
     sys.excepthook = lambda type, value, tb, pomona=pomona: handleException(pomona, (type, value, tb))

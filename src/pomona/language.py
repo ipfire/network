@@ -170,13 +170,9 @@ class Language:
         self.info['LANG'] = dispLang
 
         if self.localeInfo[dispLang][2] == "none":
-            self.info['SYSFONT'] = None
+            self.info['FONT'] = None
         else:
-            self.info['SYSFONT'] = self.localeInfo[dispLang][2]
-
-        # XXX hack - because of exceptional cases on the var - zh_CN.GB2312
-        if nick == "zh_CN.GB18030":
-            self.info['LANGUAGE'] = "zh_CN.GB18030:zh_CN.GB2312:zh_CN"
+            self.info['FONT'] = self.localeInfo[dispLang][2]
 
     def setRuntimeDefaults(self, nick):
         canonNick = self.fixLang(self.canonLangNick(nick))

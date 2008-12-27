@@ -27,7 +27,7 @@ from packages import copyPomonaLogs
 
 from flags import flags
 
-#from backend import doPostSelection, doRepoSetup, doBasePackageSelect
+#from backend import doPostSelection, doRepoSetup
 from backend import doPreInstall, doPostInstall, doInstall
 from backend import writeConfiguration
 
@@ -61,7 +61,6 @@ installSteps = [
                 ("timezone", ),
                 ("accounts", ),
                 #("reposetup", doRepoSetup, ),
-                #("basepkgsel", doBasePackageSelect, ),
                 #("tasksel", ),
                 #("group-selection", ),
                 #("postselection", doPostSelection, ),

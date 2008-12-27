@@ -895,7 +895,6 @@ def doClearPartAction(pomona, partitions, diskset):
             continue
 
 def doAutoPartition(pomona):
-    instClass = pomona.id.instClass
     diskset = pomona.id.diskset
     partitions = pomona.id.partitions
 

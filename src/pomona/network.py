@@ -50,7 +50,7 @@ def sanityCheckHostname(hostname):
 
 # Try to determine what the hostname should be for this system
 def getDefaultHostname(pomona):
-	return pomona.id.network.hostname
+    return pomona.id.network.hostname
 
 # sanity check an IP string.
 def sanityCheckIPString(ip_string):
@@ -91,7 +91,7 @@ class Network:
         self.isConfigured = 0
         self.hostname = sname + ".localdomain"
 
-		# now initialize devices
+        # now initialize devices
         self.available()
 
     def getDevice(self, device):
@@ -109,7 +109,7 @@ class Network:
         return self.netdevices
 
     def setHostname(self, hn):
-		self.hostname = hn
+        self.hostname = hn
 
     def setDNS(self, ns):
         dns = ns.split(',')
