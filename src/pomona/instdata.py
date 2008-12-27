@@ -60,7 +60,7 @@ class InstallData:
     def write(self, pomona):
         self.instLanguage.write(pomona.rootPath)
         self.keyboard.write(pomona.rootPath)
-        #self.timezone.write(pomona.rootPath)
+        self.timezone.write(pomona.rootPath)
         self.network.write(pomona.rootPath)
 
         self.users = users.Users()

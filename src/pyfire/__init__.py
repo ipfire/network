@@ -18,6 +18,8 @@
 #                                                                             #
 ###############################################################################
 
+__all__ = [ "config", "executil", "hal", "net", "translate", "web", ]
+
 # A dummy
 def pyfire():
     from pyfire.translate import _, textdomain

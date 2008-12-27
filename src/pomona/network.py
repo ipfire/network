@@ -8,9 +8,7 @@ import socket
 import struct
 import os
 import time
-import minihal
-import pyfire
-import dbus
+import pyfire.hal
 from flags import flags
 
 from constants import *
@@ -98,7 +96,7 @@ class Network:
         return self.netdevices[device]
 
     def available(self):
-        for device in minihal.get_devices_by_type("net"):
+        for device in pyfire.hal.get_devices_by_type("net"):
             if device.has_key('net.arp_proto_hw_id'):
                 if device['net.arp_proto_hw_id'] == 1:
                     dev = device['device']
