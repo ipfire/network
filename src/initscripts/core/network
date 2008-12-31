@@ -22,9 +22,12 @@
 case "${1}" in
 	start)
 		# Start all network interfaces
-		for file in ${NETWORK_DEVICES}/*
-		do
+		for file in $(find ${NETWORK_DEVICES} -maxdepth 1); do
 			interface=${file##*/}
+
+			if [ -d "${file}" ] || [ -n "${interface}" ]; then
+				continue
+			fi
 
 			IN_BOOT=1 ${NETWORK_SCRIPTS}/brup ${interface}
 		done
@@ -33,8 +36,12 @@ case "${1}" in
 	stop)
 		# Reverse list
 		FILES=""
-		for file in ${NETWORK_DEVICES}/*
-		do
+		for file in $(find ${NETWORK_DEVICES} -maxdepth 1); do
+			interface=${file##*/}
+
+			if [ -d "${file}" ] || [ -n "${interface}" ]; then
+				continue
+			fi
 			FILES="${file} ${FILES}"
 		done
 
