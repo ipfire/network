@@ -37,17 +37,13 @@ class HostnameWindow:
     def __call__(self, screen, pomona):
         toplevel = GridFormHelp(screen, _("Hostname"), "hostname", 1, 3)
 
-        # XXX: currently string frozen for F10, but change this text
-        # to 'Please name this computer.  The hostname identifies the
-        # computer on a network.' after F10 is released.  This will
-        # have the text interface match the iw interface.
         text = TextboxReflowed(55,
                                _("Please name this computer.  The hostname "
                                  "identifies the computer on a network."))
         toplevel.add(text, 0, 0, (0, 0, 0, 1))
 
         hostEntry = Entry(55)
-        hostEntry.set(network.getDefaultHostname(pomona))
+        hostEntry.set(pomona.id.network.settings.get("HOSTNAME"))
         toplevel.add(hostEntry, 0, 1, padding = (0, 0, 0, 1))
 
         bb = ButtonBar(screen, (TEXT_OK_BUTTON, TEXT_BACK_BUTTON))

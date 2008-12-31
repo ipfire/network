@@ -120,16 +120,13 @@ class Pomona:
         self.id.partitions.zeroMbr = zeroMbr
 
     def setKeyboard(self, kb):
-        self.id.keyboard.set(kb)
+        self.id.console.setKeymap(kb)
 
     def setTimezoneInfo(self, timezone, asUtc = 0, asArc = 0):
         self.id.timezone.setTimezoneInfo(timezone, asUtc, asArc)
 
-    def setLanguageDefault(self, default):
-        self.id.instLanguage.setDefault(default)
-
-    def setLanguage(self, nick):
-        self.id.instLanguage.setRuntimeLanguage(nick)
+    def setLanguage(self, lang):
+        self.id.console.setLanguage(lang)
 
 if __name__ == "__main__":
     pomona = Pomona()
@@ -276,8 +273,7 @@ if __name__ == "__main__":
     if opts.lang:
         pomona.dispatch.skipStep("language", permanent = 1)
         pomona.setLanguage(opts.lang)
-        pomona.setLanguageDefault(opts.lang)
-        pomona.id.timezone.setTimezoneInfo(pomona.id.instLanguage.getDefaultTimeZone())
+        pomona.id.timezone.setTimezoneInfo(pomona.id.console.getDefaultTimeZone())
 
     if opts.keymap:
         pomona.dispatch.skipStep("keyboard", permanent = 1)

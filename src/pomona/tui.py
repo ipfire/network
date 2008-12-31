@@ -139,21 +139,12 @@ class InstallInterface:
         self.screen = None
 
     def run(self, pomona):
-        instLang = pomona.id.instLanguage
-
-        if instLang.getFontFile(instLang.getCurrent()) == "none":
-            ButtonChoiceWindow(self.screen, "Language Unavailable",
-                       "%s display is unavailable in text mode.  "
-                       "The installation will continue in "
-                       "English." % (instLang.getCurrent(),),
-                       buttons=[TEXT_OK_BUTTON])
+        self.console = pomona.id.console
 
         self.screen.helpCallback(self.helpWindow)
 
         if not self.isRealConsole():
             self.screen.suspendCallback(spawnShell, self.screen)
-
-        self.instLanguage = pomona.id.instLanguage
 
         # draw the frame after setting up the fallback
         self.drawFrame()
@@ -276,7 +267,7 @@ class InstallInterface:
             for path in ("./text-", "/usr/share/pomona/"):
                 if found:
                     break
-                for lang in self.instLanguage.getCurrentLangSearchList():
+                for lang in self.console.getCurrentLangSearchList():
                     for tag in tags:
                         fn = "%shelp/%s/s1-help-screens-%s%s.txt" % (path, lang, key, tag)
                         try:
