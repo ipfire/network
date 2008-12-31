@@ -24,8 +24,8 @@
 
 include Config
 
-PKG_NAME   = usbutils
-VER        = 0.73
+PKG_NAME   = libusb
+VER        = 0.1.12
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -53,14 +53,13 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && sed -i 's|DEST=|&/usr/share/|' update-usbids.sh
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
-			--prefix=/usr
+			--prefix=/usr \
+			--disable-build-docs \
+			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	cd $(DIR_APP) && install -v -m755 update-usbids.sh /usr/sbin/update-usbids
-	gzip -d /usr/share/usb.ids.gz
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
