@@ -36,30 +36,36 @@ class ConfigFile:
         keys.sort ()
         for key in keys:
             # FIXME - use proper escaping
-            if type (self.info[key]) == type(""):
+            if type(self.info[key]) == type(""):
                 s = s + key + "=\"" + self.info[key] + "\"\n"
         return s
 
-    def __init__ (self):
+    def __init__ (self, filename):
         self.info = {}
+        self.filename = filename
+        self.read()
 
-    def write(self, file):
-        f = open(file, "w")
+    def write(self, filename=None):
+        if not filename:
+            filename = self.filename
+        f = open(filename, "w")
         f.write(self.__str__())
         f.close()
 
-    def read(self, file):
-        if not os.access(file, os.R_OK):
+    def read(self, filename=None):
+        if not filename:
+            filename = self.filename
+        if not os.access(filename, os.R_OK):
             return
 
-        f = open(file, "r")
+        f = open(filename, "r")
         lines = f.readlines()
         f.close()
 
         for line in lines:
             fields = line[:-1].split('=', 2)
             if len(fields) < 2:
-                # how am I supposed to know what to do here?
+            # how am I supposed to know what to do here?
                 continue
             key = uppercase_ASCII_string(fields[0])
             value = fields[1]
