@@ -18,16 +18,15 @@
 #                                                                             #
 ###############################################################################
 
-NAME = pyFire
-SNAME = pyfire
+NAME = pyfire
 
-PYTHONLIBDIR  = $(DESTDIR)/usr/lib/python2.6/site-packages/$(SNAME)
+PYTHONLIBDIR  = $(DESTDIR)/usr/lib/python2.6/site-packages/$(NAME)
 
 all:
 
 install: all
 	-mkdir -p $(PYTHONLIBDIR)
-	cp -f *.py $(PYTHONLIBDIR)
+	cp -avf *.py $(PYTHONLIBDIR)
 
 clean:
 	rm -f *.o *.so *.pyc *.pyo

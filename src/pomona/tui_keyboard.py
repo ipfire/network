@@ -26,13 +26,10 @@ class KeyboardWindow:
         if flags.virtpconsole:
             return INSTALL_NOOP
 
-        keyboards = pomona.id.keyboard.modelDict.keys()
+        keyboards = pomona.id.console.modelDict.keys()
         keyboards.sort()
 
-        if pomona.id.keyboard.beenset:
-            default = pomona.id.keyboard.get()
-        else:
-            default = pomona.id.instLanguage.getDefaultKeyboard()
+        default = pomona.id.console.getDefaultKeymap()
 
         (button, choice) = \
                 ListboxChoiceWindow(screen, _("Keyboard Selection"),
@@ -43,9 +40,7 @@ class KeyboardWindow:
         if button == TEXT_BACK_CHECK:
             return INSTALL_BACK
 
-        pomona.id.keyboard.set(keyboards[choice])
-        pomona.id.keyboard.beenset = 1
-
-        pomona.id.keyboard.activate()
+        pomona.id.console.setKeymap(keyboards[choice])
+        pomona.id.console.activate()
 
         return INSTALL_OK

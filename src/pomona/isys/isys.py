@@ -35,7 +35,7 @@ import warnings
 import resource
 import re
 import struct
-import minihal
+import pyfire.hal
 
 import logging
 log = logging.getLogger("pomona")
@@ -220,7 +220,7 @@ def driveDict(klassArg):
     global cachedDrives
     if cachedDrives is None:
         new = {}
-        for dev in minihal.get_devices_by_type("storage"):
+        for dev in pyfire.hal.get_devices_by_type("storage"):
             if dev['device'] is None: # none devices make no sense
                 continue
 

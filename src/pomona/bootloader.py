@@ -336,7 +336,7 @@ class x86BootloaderInfo(bootloaderInfo):
         #
         return [device]
 
-    def writeGrub(self, instRoot, fsset, bl, langs, kernelList, chainList,
+    def writeGrub(self, instRoot, fsset, bl, kernelList, chainList,
                                                             defaultDev):
 
         images = bl.images.getImages()
@@ -578,8 +578,8 @@ class x86BootloaderInfo(bootloaderInfo):
         else:
             return "(%s)" %(self.grubbyDiskName(name))
 
-    def write(self, instRoot, fsset, bl, langs, kernelList, chainList, defaultDev, intf):
-        out = self.writeGrub(instRoot, fsset, bl, langs, kernelList, chainList, defaultDev)
+    def write(self, instRoot, fsset, bl, kernelList, chainList, defaultDev, intf):
+        out = self.writeGrub(instRoot, fsset, bl, kernelList, chainList, defaultDev)
 
     def getArgList(self):
         args = bootloaderInfo.getArgList(self)
@@ -741,8 +741,7 @@ def writeBootloader(pomona):
     dosync()
     try:
         pomona.id.bootloader.write(pomona.rootPath, pomona.id.fsset, pomona.id.bootloader,
-                                   pomona.id.instLanguage, kernelList, otherList, defaultDev,
-                                   pomona.intf)
+                                   kernelList, otherList, defaultDev, pomona.intf)
         w.pop()
     except BootyNoKernelWarning:
         w.pop()

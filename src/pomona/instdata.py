@@ -15,8 +15,7 @@
 
 import os
 import string
-import language
-import keyboard
+import console
 import network
 import timezone
 import fsset
@@ -34,14 +33,11 @@ log = logging.getLogger("pomona")
 
 class InstallData:
     def reset(self, pomona):
-        # Reset everything except:
-        #
-        #       - The install language
-        #       - The keyboard
+        # Reset everything except the console settings (language, keyboard)
 
         self.network = network.Network()
         self.timezone = timezone.Timezone()
-        self.timezone.setTimezoneInfo(self.instLanguage.getDefaultTimeZone())
+        self.timezone.setTimezoneInfo(self.console.getDefaultTimeZone())
         self.users = None
         self.rootPassword = { "password": "" }
         self.fsset.reset()
@@ -53,15 +49,10 @@ class InstallData:
     def setInstallProgressClass(self, c):
         self.instProgress = c
 
-    # expects a Keyboard object
-    def setKeyboard(self, keyboard):
-        self.keyboard = keyboard
-
     def write(self, pomona):
-        self.instLanguage.write(pomona.rootPath)
-        self.keyboard.write(pomona.rootPath)
+        self.console.write()
         self.timezone.write(pomona.rootPath)
-        self.network.write(pomona.rootPath)
+        #self.network.write()
 
         self.users = users.Users()
 
@@ -69,7 +60,6 @@ class InstallData:
         self.users.setRootPassword(self.rootPassword["password"], algo="sha512")
 
     def __init__(self, pomona):
-        self.instLanguage = language.Language()
-        self.keyboard = keyboard.Keyboard()
+        self.console = console.Console(pomona.rootPath + "/etc/sysconfig/console")
         self.fsset = fsset.FileSystemSet()
         self.reset(pomona)
