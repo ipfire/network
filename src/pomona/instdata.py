@@ -35,7 +35,7 @@ class InstallData:
     def reset(self, pomona):
         # Reset everything except the console settings (language, keyboard)
 
-        self.network = network.Network()
+        self.network = network.Network(pomona.rootPath + "/etc/sysconfig/network")
         self.timezone = timezone.Timezone()
         self.timezone.setTimezoneInfo(self.console.getDefaultTimeZone())
         self.users = None
@@ -52,7 +52,7 @@ class InstallData:
     def write(self, pomona):
         self.console.write()
         self.timezone.write(pomona.rootPath)
-        #self.network.write()
+        self.network.write()
 
         self.users = users.Users()
 
