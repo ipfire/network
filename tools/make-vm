@@ -69,7 +69,7 @@ qemu_start() {
 	$QEMU_COMMAND
 	if [ $? -eq 0 ]; then
 		echo -n "The virtual machine quit gracefully."
-		beatify message DONE
+		beautify message DONE
 	else
 		echo -n "The virtual machine quit with an error!"
 		beautify message FAIL

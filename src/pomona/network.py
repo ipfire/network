@@ -2,13 +2,25 @@
 
 import string
 
-from pyfire.net import Network
+import pyfire.net
 from pyfire.translate import _
 
 def networkDeviceCheck(pomona):
     devs = pomona.id.network.available()
     if not devs:
         pomona.dispatch.skipStep("network")
+
+class Network(pyfire.net.Network):
+    def __init__(self, filename):
+        pyfire.net.Network.__init__(self)
+
+        self.settings = pyfire.net.NetworkSettings(filename)
+
+class IPError(Exception):
+    pass
+
+class IPMissing(Exception):
+    pass
 
 # sanity check an IP string.
 def sanityCheckIPString(ip_string):
