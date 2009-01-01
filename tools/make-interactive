@@ -238,6 +238,21 @@ g[iu]t)
 	esac
 	;;
 
+package*|pkg)
+	case "$2" in
+		list|show|ls)
+			pkg_list_packages
+			;;
+		group*)
+			echo "====== All available groups of packages in ${NAME}-${VERSION} ======"
+			echo
+			for group in $(pkg_list_groups); do
+				echo "  * ${group}"
+			done
+			;;
+	esac
+	;;
+
 push)
 	putsource
 	git_push
