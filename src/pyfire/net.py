@@ -31,18 +31,12 @@ NETWORK_DEVICES="/etc/sysconfig/network-devices/"
 NETWORK_SETTINGS="/etc/sysconfig/network"
 NETWORK_SCRIPTS="/etc/init.d/networking/"
 
-class IPError(Exception):
-    pass
-
-class IPMissing(Exception):
-    pass
-
 class Network:
     def __init__(self):
         self.bridges = {}
         self.nics = {}
 
-        self.settings = NetworkSettings()
+        self.settings = NetworkSettings(NETWORK_SETTINGS)
 
     def getNics(self):
         for device in pyfire.hal.get_devices_by_type("net"):
@@ -82,8 +76,8 @@ class Network:
 
 
 class NetworkSettings(ConfigFile):
-    def __init__(self, path):
-        ConfigFile.__init__(self, path + NETWORK_SETTINGS)
+    def __init__(self, filename):
+        ConfigFile.__init__(self, filename)
 
     def getHostname(self):
         return self.get("HOSTNAME")
