@@ -25,10 +25,10 @@
 include Config
 
 PKG_NAME   = hal
-VER        = 0.5.11
+VER        = 0.5.12rc1
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).tar.gz
+DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
@@ -52,7 +52,7 @@ $(objects) :
 
 $(OBJECT) : 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
@@ -63,5 +63,6 @@ $(OBJECT) :
 			--disable-policy-kit
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+	-mv -v /etc/udev/rules.d/90-hal.rules /lib/udev/rules.d/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
