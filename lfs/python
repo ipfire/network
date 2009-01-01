@@ -59,7 +59,7 @@ $(OBJECT) :
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-shared
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
 	$(PYTHON_COMPILE)
