@@ -67,7 +67,7 @@ $(OBJECT) :
 			--with-md5-passwords \
 			--with-privsep-path=/var/lib/sshd \
 			--with-pam
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	sed 's@d/login@d/sshd@g' /etc/pam.d/login > /etc/pam.d/sshd
 	chmod 644 /etc/pam.d/sshd
