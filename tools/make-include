@@ -173,14 +173,14 @@ lfsmakecommoncheck()
 
 	# Don't create addons?
 	local EXTRA=$(grep ^EXTRA $BASEDIR/lfs/$1 | awk '{print $3}')
-	if [ "$EXTRA" == "yes" -a "$BUILD_EXTRAS" == "0" ]; then
+	if [ "$EXTRA" == "yes" ] && [ "$BUILD_EXTRAS" == "0" ]; then
 			beautify result SKIP
 			return 1
 	fi
 
 	# Don't create debugging tools?
 	local DEBUG=$(grep ^DEBUG $BASEDIR/lfs/$1 | awk '{print $3}')
-	if [ "$DEBUG" == "yes" -a "$BUILD_DEBUG" == "1" ]; then
+	if [ "$DEBUG" == "yes" ] && [ "$BUILD_DEBUG" == "0" ]; then
 			beautify result SKIP
 			return 1
 	fi
