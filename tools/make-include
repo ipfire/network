@@ -193,6 +193,7 @@ lfsmakecommoncheck()
 	fi
 
 	build_spy package $1
+	distcc_reload
 
 	return 0	# pass all!
 } # End of lfsmakecommoncheck()

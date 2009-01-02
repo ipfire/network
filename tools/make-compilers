@@ -82,6 +82,10 @@ distccd_restart() {
 	distccd_start
 }
 
+distcc_reload() {
+	: # This will be used later...
+}
+
 if [ "$(basename $0)" == "make-compilers" ]; then
 	# Exit, when distccd is already running
 	pidof distccd &>/dev/null && exit
