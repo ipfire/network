@@ -1,5 +1,6 @@
+#!/usr/bin/python
 
-from pyfire.translate import _, N_
+from console import _, N_
 
 version = "VERSION"
 name = "NAME v%s" % version
@@ -28,9 +29,6 @@ SOURCE_NOT_SET = -1
 SOURCE_CDROM = 0
 SOURCE_URL = 1
 SOURCE_HD = 2
-
-URL_HOST = "http://www.tremer.info/"
-URL_PATH = "/ipfire-devel/"
 
 CB_UNDEF = -1
 CB_START = 0

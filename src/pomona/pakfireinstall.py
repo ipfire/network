@@ -218,7 +218,7 @@ class PakfireBackend(PomonaBackend):
         for kernelTag in [ "", "-smp", "-xen", ]:
             filename = "%s%s" % (kernelName, kernelTag)
             if os.access(pomona.rootPath + "/boot/" + filename, os.R_OK):
-                if not kernelTag is "":
+                if not kernelTag == "":
                     kernelDesc = tag2desc[kernelTag]
                 else:
                     kernelDesc = _("Normal Boot")

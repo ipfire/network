@@ -90,51 +90,37 @@ def execWithRedirect(command, argv, stdin = 0, stdout = 1, stderr = 2,
 
     return status
 
-def execWithCapture(command, argv, searchPath = 0, root = '/', stdin = 0,
-                catchfd = 1, closefd = -1):
+## Run an external program and capture standard out.
+# @param command The command to run.
+# @param argv A list of arguments.
+# @param stdin The file descriptor to read stdin from.
+# @param stderr The file descriptor to redirect stderr to.
+# @param root The directory to chroot to before running command.
+# @return The output of command from stdout.
+def execWithCapture(command, argv, stdin = 0, stderr = 2, root='/'):
+    def chroot():
+        os.chroot(root)
 
-    if not os.access (root + command, os.X_OK):
-        raise RuntimeError, command + " can not be run"
-
-    (read, write) = os.pipe()
-
-    childpid = os.fork()
-    if (not childpid):
-        if (root and root != '/'): os.chroot(root)
-        os.dup2(write, catchfd)
-        os.close(write)
-        os.close(read)
-
-        if closefd != -1:
-            os.close(closefd)
-
-        if stdin:
-            os.dup2(stdin, 0)
-            os.close(stdin)
-
-        if (searchPath):
-            os.execvp(command, argv)
+    argv = list(argv)
+    if type(stdin) == type("string"):
+        if os.access(stdin, os.R_OK):
+            stdin = open(stdin)
         else:
-            os.execv(command, argv)
-
-        sys.exit(1)
-
-    os.close(write)
-
-    rc = ""
-    s = "1"
-    while (s):
-        select.select([read], [], [])
-        s = os.read(read, 1000)
-        rc = rc + s
-
-    os.close(read)
+            stdin = 0
+    if type(stderr) == type("string"):
+        stderr = open(stderr, "w")
 
     try:
-        os.waitpid(childpid, 0)
+        pipe = subprocess.Popen([command] + argv, stdin=stdin,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                preexec_fn=chroot, cwd=root)
     except OSError, (errno, msg):
-        print __name__, "waitpid:", msg
+        log.error ("Error running " + command + ": " + msg)
+        raise RuntimeError, "Error running " + command + ": " + msg
 
+    rc = pipe.stdout.read()
+    pipe.wait()
     return rc
 
 def execWithCaptureStatus(command, argv, searchPath = 0, root = '/', stdin = 0,

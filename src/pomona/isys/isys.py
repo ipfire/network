@@ -347,8 +347,6 @@ def inet_calcNetBroad(ip, nm):
     return (nw, bc)
 
 def doProbeBiosDisks():
-    if not iutil.isX86():
-        return None
     return _isys.biosDiskProbe()
 
 def doGetBiosDisk(mbrSig):
@@ -522,114 +520,6 @@ def isPsudoTTY(fd):
 ## Flush filesystem buffers.
 def sync():
     return _isys.sync ()
-
-## Determine if a file is an ISO image or not.
-# @param file The full path to a file to check.
-# @return True if ISO image, False otherwise.
-def isIsoImage(file):
-    return _isys.isisoimage(file)
-
-def fbinfo():
-    return _isys.fbinfo()
-
-## Determine whether a network device has a link present or not.
-# @param dev The network device to check.
-# @return True if there is a link, False if not or if dev is in an unknown
-#         state.
-def getLinkStatus(dev):
-    if dev == '' or dev is None:
-        return False
-
-    # getLinkStatus returns 1 for link, 0 for no link, -1 for unknown state
-    if _isys.getLinkStatus(dev) == 1:
-        return True
-    else:
-        return False
-
-## Get the MAC address for a network device.
-# @param dev The network device to check.
-# @return The MAC address for dev as a string, or None on error.
-def getMacAddress(dev):
-    return _isys.getMacAddress(dev)
-
-## Determine if a network device is a wireless device.
-# @param dev The network device to check.
-# @return True if dev is a wireless network device, False otherwise.
-def isWireless(dev):
-    return _isys.isWireless(dev)
-
-## Get the IP address for a network device.
-# @param dev The network device to check.
-# @see netlink_interfaces_ip2str
-# @return The IPv4 address for dev, or None on error.
-def getIPAddress(dev):
-    return _isys.getIPAddress(dev)
-
-## Get the correct context for a file from loaded policy.
-# @param fn The filename to query.
-def matchPathContext(fn):
-    return _isys.matchPathContext(fn)
-
-## Set the SELinux file context of a file
-# @param fn The filename to fix.
-# @param con The context to use.
-# @param instroot An optional root filesystem to look under for fn.
-def setFileContext(fn, con, instroot = '/'):
-    if con is not None and os.access("%s/%s" % (instroot, fn), os.F_OK):
-        return (_isys.setFileContext(fn, con, instroot) != 0)
-    return False
-
-## Restore the SELinux file context of a file to its default.
-# @param fn The filename to fix.
-# @param instroot An optional root filesystem to look under for fn.
-def resetFileContext(fn, instroot = '/'):
-    con = matchPathContext(fn)
-    if con:
-        return setFileContext(fn, con, instroot)
-    return False
-
-def prefix2netmask(prefix):
-    return _isys.prefix2netmask(prefix)
-
-def netmask2prefix (netmask):
-    prefix = 0
-
-    while prefix < 33:
-        if (prefix2netmask(prefix) == netmask):
-            return prefix
-
-        prefix += 1
-
-    return prefix
-
-isPAE = None
-def isPaeAvailable():
-    global isPAE
-    if isPAE is not None:
-        return isPAE
-
-    isPAE = False
-    if not iutil.isX86():
-        return isPAE
-
-    try:
-        f = open("/proc/iomem", "r")
-        lines = f.readlines()
-        for line in lines:
-            if line[0].isspace():
-                continue
-            start = line.split(' ')[0].split('-')[0]
-            start = long(start, 16)
-
-            if start > 0x100000000L:
-                isPAE = True
-                break
-
-        f.close()
-    except:
-        pass
-
-    return isPAE
 
 handleSegv = _isys.handleSegv
 printObject = _isys.printObject

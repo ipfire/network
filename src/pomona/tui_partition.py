@@ -603,13 +603,10 @@ class PartitionWindow:
                 poplevel.add(primary, 0, row, (0,1,0,0))
                 row = row + 1
 
-            # XXX We are not allowing badblocks checking
-            badblocksCB = None
-            # uncomment code to reactivate
-            #badblocksCB = Checkbox(_("Check for bad blocks"))
-            #poplevel.add(badblocksCB, 0, row)
-            #if origrequest.badblocks:
-            #     badblocksCB.setValue("*")
+            badblocksCB = Checkbox(_("Check for bad blocks"))
+            poplevel.add(badblocksCB, 0, row)
+            if origrequest.badblocks:
+                 badblocksCB.setValue("*")
 
             fsoptLbl = None
 

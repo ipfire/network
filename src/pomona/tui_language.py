@@ -14,7 +14,7 @@
 from snack import *
 from constants import *
 
-from pyfire.translate import _
+from console import _
 
 import logging
 log = logging.getLogger("pomona")

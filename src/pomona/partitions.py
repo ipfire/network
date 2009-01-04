@@ -360,8 +360,6 @@ class Partitions:
                 rc = request.doMountPointLinuxFSChecks()
                 if rc:
                     errors.append(rc)
-                if isinstance(request, partRequests.RaidRequestSpec):
-                    rc = request.sanityCheckRaid(self)
                 if rc:
                     errors.append(rc)
                 if not hasattr(request,'drive'):
@@ -439,9 +437,7 @@ class Partitions:
     def getClearPart(self):
         """Get the kickstart directive related to the clearpart being used."""
         clearpartargs = []
-        if self.autoClearPartType == CLEARPART_TYPE_LINUX:
-            clearpartargs.append('--linux')
-        elif self.autoClearPartType == CLEARPART_TYPE_ALL:
+        if self.autoClearPartType == CLEARPART_TYPE_ALL:
             clearpartargs.append('--all')
         else:
             return None

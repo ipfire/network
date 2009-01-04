@@ -1,8 +1,9 @@
 
-from snack import *
-from pyfire.translate import _
-from constants import *
 import os
+from snack import *
+
+from constants import *
+from console import _
 
 class WelcomeWindow:
     def __call__(self, screen, infire):

@@ -26,6 +26,7 @@ import inutil, isys
 import pyfire
 from flags import flags
 from partErrors import *
+from constants import *
 
 from pyfire.translate import _
 
@@ -322,7 +323,7 @@ def sniffFilesystemType(device):
 
     # ext2 check
     if struct.unpack("<H", buf[1080:1082]) == (0xef53,):
-        if isys.ext2HasJournal(dev, makeDevNode = 0):
+        if isys.ext2HasJournal(dev):
             return "ext3"
         else:
             return "ext2"

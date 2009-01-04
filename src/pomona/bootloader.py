@@ -82,12 +82,8 @@ def syncDataToDisk(dev, mntpt, instRoot = "/"):
                                          stderr = "/dev/tty5",
                                          root = instRoot)
 
-class BootyNoKernelWarning:
-    def __init__ (self, value=""):
-        self.value = value
-
-    def __str__ (self):
-        return self.value
+class BootyNoKernelWarning(Exception):
+    pass
 
 class KernelArguments:
 
@@ -582,7 +578,7 @@ class x86BootloaderInfo(bootloaderInfo):
         out = self.writeGrub(instRoot, fsset, bl, kernelList, chainList, defaultDev)
 
     def getArgList(self):
-        args = bootloaderInfo.getArgList(self)
+        args = []
 
         if self.forceLBA32:
             args.append("--lba32")
@@ -728,7 +724,7 @@ def writeBootloader(pomona):
         if not defkern:
             defkern = "%s%s" % (kernelName, kernelTag)
 
-        if kernelTag is "-smp" and isys.smpAvailable():
+        if kernelTag == "-smp" and isys.smpAvailable():
             defkern = "%s%s" % (kernelName, kernelTag)
 
         kernelList.append((kernelName, kernelVersion, kernelTag, kernelDesc))
@@ -755,12 +751,3 @@ def writeBootloader(pomona):
 # return instance of the appropriate bootloader for our arch
 def getBootloader():
     return x86BootloaderInfo()
-
-def hasWindows(bl):
-    foundWindows = False
-    for (k,v) in bl.images.getImages().iteritems():
-        if v[0].lower() == 'other' and v[2] in x86BootloaderInfo.dosFilesystems:
-            foundWindows = True
-            break
-
-    return foundWindows

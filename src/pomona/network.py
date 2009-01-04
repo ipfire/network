@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import socket
 import string
 
 import pyfire.net

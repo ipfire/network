@@ -1,13 +1,18 @@
+#!/usr/bin/python
 
 import os
 import string
 import locale
+import gettext
 
 import pyfire.executil as executil
 from pyfire.config import ConfigFile
 import keyboard_models
 
-from pyfire.translate import _
+def N_(str):
+    return str
+
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 # Converts a single language into a "language search path". For example,
 # de_DE.utf8@euro would become "de_DE.utf8@eueo de_DE.utf8 de_DE de"

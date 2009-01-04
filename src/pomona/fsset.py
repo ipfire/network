@@ -28,9 +28,10 @@ import time
 import partitioning
 import partedUtils
 import types
+import math
 from flags import flags
 
-from pyfire.translate import _, N_
+from console import _, N_
 
 import logging
 log = logging.getLogger("pomona")
@@ -42,6 +43,9 @@ class SuspendError(Exception):
     pass
 
 class OldSwapError(Exception):
+    pass
+
+class ResizeError(Exception):
     pass
 
 ### XXX we have to check this and find useful mpoints
@@ -212,9 +216,6 @@ class FileSystemType:
 
     def getMountName(self, quoted = 0):
         return self.getName(quoted)
-
-    def getNeededPackages(self):
-        return self.packages
 
     def registerDeviceArgumentFunction(self, klass, function):
         self.deviceArguments[klass] = function
@@ -1441,7 +1442,7 @@ class FileSystemSet:
                 continue
             path = "%s/%s" % (chroot, entry.mountpoint)
             try:
-                space.append((entry.mountpoint, isys.fsSpaceAvailable(path)))
+                space.append((entry.mountpoint, isys.pathSpaceAvailable(path)))
             except SystemError:
                 log.error("failed to get space available in filesystemSpace() for %s" %(entry.mountpoint,))
 
@@ -1499,7 +1500,7 @@ class FileSystemSetEntry:
                   fsystem=None, options=None,
                   origfsystem=None, migrate=0,
                   order=-1, fsck=-1, format=0,
-                  badblocks = 0, bytesPerInode=4096):
+                  badblocks = 0, bytesPerInode=4096, fsprofile=None):
         if not fsystem:
             fsystem = fileSystemTypeGet("ext2")
         self.device = device
@@ -1534,6 +1535,7 @@ class FileSystemSetEntry:
         self.format = format
         self.badblocks = badblocks
         self.bytesPerInode = bytesPerInode
+        self.fsprofile = fsprofile
 
     def mount(self, chroot='/', devPrefix='/dev', readOnly = 0):
         device = self.device.setupDevice(chroot, devPrefix=devPrefix)
@@ -1654,7 +1656,7 @@ class Device:
 
     def getLabel(self):
         try:
-            return isys.readFSLabel(self.setupDevice(), makeDevNode = 0)
+            return isys.readFSLabel(self.setupDevice())
         except:
             return ""
 

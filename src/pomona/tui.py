@@ -4,6 +4,7 @@ import sys, os
 import isys
 import parted
 import signal
+import time
 import inutil
 import imputil
 from pyfire.translate import _, cat, N_
@@ -256,6 +257,7 @@ class InstallInterface:
         return True
 
     def helpWindow(self, screen, key):
+        log.info("Pressed help key: %s" % key)
         if key == "helponhelp":
             if self.showingHelpOnHelp:
                 return None
@@ -268,14 +270,13 @@ class InstallInterface:
                 if found:
                     break
                 for lang in self.console.getCurrentLangSearchList():
-                    for tag in tags:
-                        fn = "%shelp/%s/s1-help-screens-%s%s.txt" % (path, lang, key, tag)
-                        try:
-                            f = open(fn)
-                        except IOError, msg:
-                            continue
-                        found = 1
-                        break
+                    fn = "%shelp/%s/s1-help-screens-%s.txt" % (path, lang, key,)
+                    try:
+                        f = open(fn)
+                    except IOError, msg:
+                        continue
+                    found = 1
+                    break
 
             if not f:
                 ButtonChoiceWindow(screen, _("Help not available"),
@@ -325,7 +326,7 @@ class InstallInterface:
             from string import joinfields
             list = traceback.format_exception(type, value, tb)
             text = joinfields(list, "")
-            win = self.exceptionWindow(text)
+            win = self.exceptionWindow(text, "XXX HAVE A LOOK AT THIS tui.py ~328")
             win.run()
             rc = win.getrc()
             if rc == 0:
