@@ -24,8 +24,8 @@ import os.path
 import socket
 import string
 
-import pyfire.hal
-from pyfire.config import ConfigFile
+import hal
+from config import ConfigFile
 
 NETWORK_DEVICES="/etc/sysconfig/network-devices/"
 NETWORK_SETTINGS="/etc/sysconfig/network"
@@ -39,13 +39,12 @@ class Network:
         self.settings = NetworkSettings(NETWORK_SETTINGS)
 
     def getNics(self):
-        for device in pyfire.hal.get_devices_by_type("net"):
+        for device in hal.get_devices_by_type("net"):
             if device.has_key('net.arp_proto_hw_id'):
-                if device['net.arp_proto_hw_id'] == 1:
+                if device['net.arp_proto_hw_id'] == 1 and \
+                    not device['info.category'] == 'net.bridge':
                     nic = device['device']
-                    self.nics[nic] = BridgeSlave(dev)
-                    self.nics[nic].set(('hwaddr',device['net.address']))
-                    self.nics[nic].set(('desc',device['description']))
+                    self.nics[nic] = NetworkDevice(nic, device)
         return self.nics
 
     def getNic(self, nic):
@@ -89,11 +88,11 @@ class NetworkSettings(ConfigFile):
 class BridgeDevice:
     def __init__(self, dev):
         self.filename = "%s/%s/" % (NETWORK_DEVICES, dev,)
-        self.name = dev
+        self.device = dev
         self.services = []
 
         for file in os.listdir(self.filename):
-            service = Service(file, bridge=self.name)
+            service = Service(file, bridge=self.device)
             self.addService(service)
 
     def addService(self, service):
@@ -109,6 +108,14 @@ class BridgeDevice:
     def delService(self, service):
         pass # how to do this?
 
+    def addNic(self, nic):
+        # requires a NetworkDevice instance
+        filename = os.path.join(self.filename, nic.getDevice())
+        service = Service(filename, bridge=self.name, service="bridge-slave")
+        service.set(("DESCRIPTION", nic.getDescription()),
+                    ("MAC", nic.getMac()))
+        self.addService(service)
+
     def write(self):
         if not os.path.isdir(fn):
             os.makedirs(fn)
@@ -118,12 +125,41 @@ class BridgeDevice:
             service.write()
 
 
+class NetworkDevice:
+    def __init__(self, dev, dbus):
+        self.device = dev
+        self.dbus = dbus
+
+    def __str__(self):
+        return "%s (%s) - %s" % (self.device, self.getDescription(), self.getMac())
+
+    def getDevice(self):
+        return self.device
+
+    def getMac(self):
+        return self.dbus["net.address"]
+
+    def getDescription(self):
+        return self.dbus["description"]
+
+
+class ServiceError(Exception):
+    pass
+
+
 class Service(ConfigFile):
     def __init__(self, filename, bridge=None, service=None):
+        self.service = None
+        if service:
+            self.setService(service)
         ConfigFile.__init__(self, filename)
-        self.service = service
         self.bridge = bridge
         self.name = os.path.basename(self.filename)
+
+    def setService(self, service):
+        if not service in listAllServices():
+            raise ServiceError, "The given service is not available: %s" % service
+        self.service = service
 
 
 def listAllServices():
@@ -132,18 +168,8 @@ def listAllServices():
         ret.append(service)
     return ret
 
-### Returns the hostname
-def gethostname():
-    return socket.gethostname()
-
-def has_device(device):
-    for nic in os.listdir("/sys/class/net/"):
-        if device == nic:
-            return True
-    return False
-
-def has_blue():
-    return has_device("blue0")
-
-def has_orange():
-    return has_device("orange0")
+if __name__ == "__main__":
+    network = Network()
+    print "All available nics on this system:"
+    for nic, obj in network.getNics().items():
+        print obj
