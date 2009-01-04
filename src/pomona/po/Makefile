@@ -1,7 +1,7 @@
 
 include ../Makefile.inc
 
-POTFILES = ../src/*.py
+POTFILES = ../*.py
 NONPOTFILES = ../lang-table
 
 POS = $(wildcard *.po)
