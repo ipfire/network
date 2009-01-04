@@ -47,6 +47,9 @@ install: all
 	-mkdir -p $(DESTDIR)/sbin
 	install -m 755 $(PSNAME) $(DESTDIR)/sbin/$(PSNAME)
 
+test:
+	./runpychecker.sh
+
 clean:
 	rm -vf *.o *.so *.pyc *.pyo lang-names{,.tmp}
 	for d in $(SUBDIRS); do make -C $$d clean; done
