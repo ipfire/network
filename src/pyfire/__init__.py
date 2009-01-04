@@ -20,9 +20,45 @@
 
 __all__ = [ "config", "executil", "hal", "net", "translate", "web", ]
 
-# A dummy
-def pyfire():
-    from pyfire.translate import _, textdomain
+import os
 
-    textdomain("pyfire")
-    print _("This is a dummy")
+import hal
+
+class System:
+    def __init__(self):
+        self.dbus = hal.get_device("/org/freedesktop/Hal/devices/computer")
+
+    def getKernelVersion(self):
+        ret = None
+        try:
+            ret = self.dbus["system.kernel.version"]
+        except KeyError:
+            pass
+        return ret
+
+    def getFormfactor(self):
+        return self.dbus["system.formfactor"]
+
+    def getVendor(self):
+        ret = None
+        try:
+            ret = self.dbus["system.vendor"]
+        except KeyError:
+            pass
+        return ret
+
+    def getProduct(self):
+        ret = None
+        try:
+            ret = self.dbus["system.product"]
+        except KeyError:
+            pass
+        return ret
+
+
+if __name__ == "__main__":
+    system = System()
+    print "Kernel Version    : %s" % system.getKernelVersion()
+    print "System Formfactor : %s" % system.getFormfactor()
+    print "System Vendor     : %s" % system.getVendor()
+    print "System Product    : %s" % system.getProduct()
