@@ -425,6 +425,7 @@ misc_build() {
 	#
 	ipfire_make gdb
 	ipfire_make strace
+	ipfire_make pychecker
 }
 
 ################################################################################
