@@ -56,6 +56,7 @@ toolchain_build() {
 	toolchain_make gcc		PASS=1
 	toolchain_make linux-headers
 	toolchain_make glibc
+	toolchain_make zlib
 	toolchain_make adjust-toolchain
 	toolchain_make test-toolchain	PASS=1
 	toolchain_make gcc		PASS=2
