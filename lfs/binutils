@@ -101,10 +101,6 @@ ifeq "$(PASS)" "1"
 			--disable-werror
 	cd $(DIR_SRC)/binutils-build && make tooldir=$(TOOLS_DIR) $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make tooldir=$(TOOLS_DIR) install
-
-	for t in $$(ls $(TOOLS_DIR)/$(IFS_TARGET)/bin); do \
-		ln -sfv ../$(IFS_TARGET)/bin/$${t} $(TOOLS_DIR)/bin/$(IFS_TARGET)-$${t}; \
-	done
 endif
 
 ifeq "$(PASS)" "2"
