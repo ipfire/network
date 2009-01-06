@@ -108,6 +108,7 @@ base_build() {
 	ipfire_make glibc
 	ipfire_make adjust-toolchain
 	ipfire_make test-toolchain
+	ipfire_make zlib
 	ipfire_make binutils
 	ipfire_make gcc
 	ipfire_make berkeley
@@ -120,7 +121,6 @@ base_build() {
 	ipfire_make ncurses
 	ipfire_make procps
 	ipfire_make libtool
-	ipfire_make zlib
 	ipfire_make perl
 	ipfire_make readline
 	ipfire_make gettext
