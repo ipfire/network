@@ -47,6 +47,10 @@ toolchain_build() {
 
 	build_spy stage ${STAGE}
 
+	# We can't skip packages in toolchain stage
+	SAVE_SKIP_PACKAGE_LIST=$SKIP_PACKAGE_LIST
+	SKIP_PACKAGE_LIST=
+
 	toolchain_make stage1
 	#toolchain_make scripts
 	# make distcc first so that CCACHE_PREFIX works immediately
@@ -84,7 +88,7 @@ toolchain_build() {
 	toolchain_make bc
 	toolchain_make util-linux-ng
 	toolchain_make strip
-	export PATH=$ORG_PATH
+	export PATH=$ORG_PATH SKIP_PACKAGE_LIST=$SAVE_SKIP_PACKAGE_LIST
 }
 
 ################################################################################
