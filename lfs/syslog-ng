@@ -59,6 +59,9 @@ objects = $(DL_FILE)
 
 download: $(objects)
 
+info:
+	$(DO_PKG_INFO)
+
 install: $(OBJECT)
 
 package:
@@ -77,23 +80,24 @@ $(OBJECT): $(objects)
 
 	cd $(DIR_APP) && \
 		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--sbindir=/sbin \
+			--libexecdir=/usr/lib \
 			--sysconfdir=/etc/syslog-ng \
 			--enable-dynamic-linking \
-			--disable-ipv6 \
 			--disable-sql \
-			--without-sql \
 			--disable-pcre \
-			--without-ssl
+			--disable-ssl
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
 	-mkdir -pv /etc/$(PKG_NAME)
 	cp -vf $(DIR_CONF)/$(PKG_NAME)/$(PKG_NAME).conf \
 		/etc/$(PKG_NAME)/$(PKG_NAME).conf
-	cp -vf $(DIR_CONF)/$(PKG_NAME)/blocker.pl \
-		/usr/local/sbin/blocker.pl
+	## Should be in $(DIR_SOURCE)/$(PKG_NAME) at some time
+	install -v -m 755 $(DIR_CONF)/$(PKG_NAME)/ids-block \
+		/usr/sbin/ids-block
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
