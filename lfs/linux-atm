@@ -39,6 +39,9 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 objects = $(DL_FILE) $(THISAPP)-gcc-4.patch $(THISAPP)-nmu.diff
 
+info:
+	$(DO_PKG_INFO)
+
 install: $(OBJECT)
 
 download : $(objects)
