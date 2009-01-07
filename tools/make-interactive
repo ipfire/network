@@ -46,6 +46,9 @@ shell)
 batch)
 	# build the distro in background
 	case "$2" in
+		cron)
+			cron_run
+			;;
 		start)
 			batch_start $3
 			;;

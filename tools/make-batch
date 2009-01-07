@@ -25,22 +25,6 @@ BATCHLOG=$BASEDIR/log_${TARGET}/_build.00-batch.log
 # Starts the batch process in the background                                  #
 ###############################################################################
 batch_start() {
-	if [ -e "$RUNNING" ]; then
-		echo -n "Build is already running..."
-		beautify message FAIL
-		exit 1
-	fi
-
-	git_diff
-	git checkout -f # Remove all local changes !!!
-	git_pull --batch
-
-	if [ -e "$FAILED" ]; then
-		echo -n "Last build failed..."
-		beautify message FAIL
-		exit 1
-	fi
-
 	[ "$1" = "--clean" ] && TARGET=$TARGET $0 clean
 
 	screen -dmS ipfire $0 batch _run

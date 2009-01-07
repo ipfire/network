@@ -60,6 +60,7 @@ mkdir $BASEDIR/log_${TARGET}/ 2>/dev/null
 . $BASEDIR/tools/make-git
 . $BASEDIR/tools/make-packages
 . $BASEDIR/tools/make-vm
+. $BASEDIR/tools/make-cron
 
 evaluate() {
 	RETVAL=$?
@@ -166,7 +167,8 @@ lfsmakecommoncheck()
 	done
 
 	# On debug build, we don't strip
-	if [ "$1" == "strip" -a "$BUILD_DEBUG" == "1" ]; then
+	if [ "$STAGE" != "toolchain" -a \
+			"$1" == "strip" -a "$BUILD_DEBUG" == "1" ]; then
 		beautify result SKIP
 		return 1
 	fi
