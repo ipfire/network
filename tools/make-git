@@ -50,7 +50,7 @@ git_pull() {
 		shift
 		git pull $* | grep -q "Already up-to-date." || rm -f $FAILED
 		[ -e $FAILED ] || distccd_restart
-		git_gc
+		[ "$(expr $RANDOM % 25)" -eq "0" ] && git_gc
 	else
 		if [ "$CURRENT_BRANCH" == "master" ]; then
 			if ! (git status | grep -q "working directory clean"); then
