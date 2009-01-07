@@ -43,6 +43,9 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 objects = $(DL_FILE) $(THISAPP)-bash32-1.patch \
 	$(THISAPP)-debian_fixes-1.patch
 
+info:
+	$(DO_PKG_INFO)
+
 install: $(OBJECT)
 
 download : $(objects)
