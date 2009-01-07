@@ -38,15 +38,15 @@ cron_run() {
 		exit 0
 	fi
 
-	if [ -e "$FAILED" ]; then
-		dialogerror "Build failed..." 2>&1
-		exit 0
-	fi
-
 	# Pull latest changes
 	git_diff
 	git checkout -f # Remove all local changes !!!
 	git_pull --batch
+
+	if [ -e "$FAILED" ]; then
+		dialogerror "Build failed..." 2>&1
+		exit 0
+	fi
 
 	local COUNT=0
 	for i in $ALLOWED_TARGETS; do
