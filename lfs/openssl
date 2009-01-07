@@ -54,6 +54,9 @@ objects = $(DL_FILE) \
 	$(THISAPP)-fix_manpages-1.patch \
 	$(THISAPP)-enginesdir.patch
 
+info:
+	$(DO_PKG_INFO)
+
 install: $(OBJECT)
 
 download : $(objects)
