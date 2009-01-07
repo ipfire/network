@@ -41,6 +41,9 @@ CFLAGS    += -D_GNU_SOURCE
 
 objects = $(DL_FILE)
 
+info:
+	$(DO_PKG_INFO)
+
 install: $(OBJECT)
 
 download : $(objects)
