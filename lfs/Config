@@ -86,6 +86,21 @@ INSTALL_INITSCRIPT = echo "Installing initscript \"$(INITSCRIPT)\" -> /etc/init.
 
 PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 
+define DO_PKG_INFO
+	@## ALPHABETICAL ORDER ##
+	@echo "DEBUG=\"$(DEBUG)\""
+	@echo "DESC=\"$$(echo $(LONG_DESC))\""
+	@echo "EXTRA=\"$(EXTRA)\""
+	@echo "GROUP=\"$(GROUP)\""
+	@echo "LICENSE=\"$(LICENSE)\""
+	@echo "MAINTAINER=\"$(MAINTAINER)\""
+	@echo "NAME=\"$(PKG_NAME)\""
+	@echo "VERSION=\"$(VER)\""
+	@echo "RELEASE=\"$(PKG_VER)\""
+	@echo "SHORT=\"$$(echo $(SHORT_DESC))\""
+	@echo "URL=\"$(URL)\""
+endef
+
 # For each package we create a list of files that it installed under 
 # log/<OBJECT> name. Modified files are not identified
 #
