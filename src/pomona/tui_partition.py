@@ -606,7 +606,7 @@ class PartitionWindow:
             badblocksCB = Checkbox(_("Check for bad blocks"))
             poplevel.add(badblocksCB, 0, row)
             if origrequest.badblocks:
-                 badblocksCB.setValue("*")
+                badblocksCB.setValue("*")
 
             fsoptLbl = None
 
