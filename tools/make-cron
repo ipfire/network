@@ -22,7 +22,7 @@
 ALLOWED_TARGETS=${ALLOWED_TARGETS-$(check_supported_targets)}
 
 cron_run() {
-	if [ "$PATH" = "/sbin:/bin" ];
+	if [ "$PATH" = "/sbin:/bin" ]; then
 		export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 	fi
 
