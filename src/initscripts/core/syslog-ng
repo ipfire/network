@@ -20,10 +20,11 @@
 
 MESSAGE="System Log Daemon"
 BIN_FILE="/sbin/syslog-ng"
+PIDFILE="/var/run/syslog-ng.pid"
 
 case "${1}" in
     start)
-        loadproc
+        loadproc -p "${PIDFILE}"
         evaluate_retval start
         ;;
 
