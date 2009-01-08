@@ -162,7 +162,6 @@ base_build() {
 	ipfire_make patch
 	ipfire_make psmisc
 	ipfire_make shadow
-	ipfire_make openssl
 	ipfire_make syslog-ng
 	ipfire_make sysvinit
 	ipfire_make tar
@@ -199,7 +198,7 @@ ipfire_build() {
 	ipfire_make expat
 	ipfire_make dbus
 	ipfire_make dbus-glib
-#	ipfire_make openssl
+	ipfire_make openssl
 	ipfire_make perl			### We are building the modules here.
 	ipfire_make python
 	ipfire_make python-dbus
