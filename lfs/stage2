@@ -45,7 +45,7 @@ download :
 
 $(OBJECT) :
 	@$(PREBUILD)
-	
+
 	# Create directories
 	-mkdir -pv /{bin,boot,etc/{opt,sysconfig},home,lib,mnt,opt}
 	-mkdir -pv /{media/{floppy,cdrom},sbin,srv,var}
@@ -60,28 +60,15 @@ $(OBJECT) :
 	done
 	-mkdir -v /var/{lock,log,mail,run,spool}
 	-mkdir -pv /var/{opt,cache,lib/{misc,locate},local}
-	
-	# Check for some important links and create them if they don't exist
-	#if [ ! -e /bin/bash ]; then ln -sfn $(TOOLS_DIR)/bin/bash /bin/bash && ln -sf bash /bin/sh; fi
-	#if [ ! -e /bin/cat  ]; then ln -sfn $(TOOLS_DIR)/bin/cat  /bin/cat;  fi
-	#if [ ! -e /bin/echo ]; then ln -sfn $(TOOLS_DIR)/bin/echo /bin/echo; fi
-	#if [ ! -e /bin/grep ]; then ln -sfn $(TOOLS_DIR)/bin/grep /bin/grep; fi
-	#if [ ! -e /bin/pwd  ]; then ln -sfn $(TOOLS_DIR)/bin/pwd  /bin/pwd;  fi
-	#if [ ! -e /bin/stty ]; then ln -sfn $(TOOLS_DIR)/bin/stty /bin/stty; fi
-	
-	#if [ ! -e /usr/bin/perl ]; then ln -sfn $(TOOLS_DIR)/bin/perl /usr/bin/perl; fi
-	
-	#[ ! -e /lib/libgcc_s.so.1 ] && ln -sfn $(TOOLS_DIR)/lib/libgcc_s.so{,.1} /usr/lib/
-	#[ ! -e /lib/libstdc++.so.6 ] && ln -sfn $(TOOLS_DIR)/lib/libstdc++.so{,.6} /usr/lib/
-	
+
 	# Creating an empty mtab
 	touch /etc/mtab
-	
+
 	# This trick is necessary in order to create two devices in the target /dev
 	# rather than in the host /dev
 	mkdir -p /dev1
 	mount --move /dev /dev1
-	
+
 	# Make /dev/null and /dev/console
 	cd /dev && rm -f null console
 	cd /dev && mknod -m 0666 null c 1 3
@@ -90,7 +77,7 @@ $(OBJECT) :
 	# Now move the target /dev to point back to the host /dev
 	mount --move /dev1 /dev
 	rm -fr /dev1
-	
+
 	# Config files
 	for i in $(DIR_SRC)/config/etc/*; do \
 		[ -f $$i ] && cp $$i /etc; \
@@ -102,23 +89,25 @@ ifeq "$(EMB)" "1"
 	# Enable serial on console 7
 	sed -e "s/^#7/7/" -i /etc/inittab
 endif
-	
+
 	echo "$(NAME) v$(VERSION) for $(MACHINE) - $(SLOGAN) (\l)" > /etc/issue
 	echo "===============================" >> /etc/issue
 	echo "\n running on \s \r \m"          >> /etc/issue
-	
+
+	echo "$(NAME) Release $(VERSION) ($(SLOGAN))" > /etc/$(SNAME)-release
+
 	touch /var/run/utmp /var/log/{btmp,lastlog,wtmp}
 	#chgrp -v utmp /var/run/utmp /var/log/lastlog
 	chmod -v 664 /var/run/utmp /var/log/lastlog
-	
+
 	# Bash startup files
 	install --directory --mode=0755 --owner=root --group=root /etc/profile.d
 	for i in $(DIR_SRC)/config/profile.d/*; do \
 	    [ -f $$i ] && cp $$i /etc/profile.d; \
 	done
-	
+
 	# Nobody user
 	-mkdir -p /home/nobody
 	chown -R nobody:nobody /home/nobody
-	
+
 	@$(POSTBUILD)
