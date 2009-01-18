@@ -13,11 +13,13 @@
 
 from snack import *
 from constants import *
-from pyfire.translate import _
 from flags import flags
 import string
 import inutil
 import bootloader
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 class BootloaderChoiceWindow:
     def __call__(self, screen, pomona):

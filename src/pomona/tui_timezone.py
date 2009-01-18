@@ -18,7 +18,9 @@ import os
 from time import *
 from snack import *
 from constants import *
-from pyfire.translate import _
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 class TimezoneWindow:
     def getTimezoneList(self):

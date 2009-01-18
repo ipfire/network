@@ -24,7 +24,9 @@ import partRequests
 from constants import *
 from partErrors import *
 
-from pyfire.translate import _, N_
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
+N_ = lambda x: x
 
 log = logging.getLogger("pomona")
 
