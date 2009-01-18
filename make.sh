@@ -204,7 +204,6 @@ ipfire_build() {
 	ipfire_make python
 	ipfire_make python-dbus
 	ipfire_make python-urlgrabber
-	ipfire_make python-iconv
 	ipfire_make python-IPy
 	ipfire_make libxml2
 	ipfire_make libxslt
