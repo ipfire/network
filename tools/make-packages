@@ -24,7 +24,16 @@ pkg_list_groups() {
 }
 
 pkg_list_packages() {
-	software_list
+	echo "====== List of softwares used to build $NAME Version: $VERSION ======"
+	local package
+	for i in $BASEDIR/lfs/*; do
+		package=$(basename $i)
+		(	unset NAME VERSION
+			eval $(pkg_info ${package})
+			[ "$NAME" = "" ] && exit
+			echo "  * [[.:package:$package|${NAME}-${VERSION}]] - ${SHORT}"
+		)
+	done
 }
 
 pkg_info() {
@@ -45,4 +54,33 @@ pkg_info() {
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
 		info
+}
+
+pkg_info_wiki() {
+	(
+		unset NAME VERSION
+		eval $(pkg_info ${1})
+
+		[ "$NAME" = "" ] && exit
+
+		# Output everything in wiki format
+		echo "^  $NAME  ^^"
+		echo "| Version:  | $VERSION  |"
+		echo "| Release:  | $RELEASE  |"
+		echo "| Group:  | $GROUP  |"
+		echo "| License:  | $LICENSE  |"
+		echo "| Maintainer:  | $MAINTAINER  |"
+		echo "| $DESC ||"
+		echo "| Website:  | $URL  |"
+		if [ "$DEBUG" = "yes" ]; then
+			echo "<color red>This is a debug-package.</color>"
+		fi
+		if [ "$EXTRA" = "yes" ]; then
+			echo "<color green>This is an extra package.</color>"
+		fi
+		echo
+		for file in $(find $BASEDIR/src/rootfiles -name "$1" | xargs cat); do
+			echo "  $file"
+		done
+	)
 }

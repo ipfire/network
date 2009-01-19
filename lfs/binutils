@@ -87,6 +87,10 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_SRC)/binutils-build
 	-mkdir -v $(DIR_SRC)/binutils-build
 
+	# We add some fixes from upstream that should fix many bugs with this
+	# binutils release.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-branch_update.patch
+
 	# Add PT_PaX header marking support. These markings are using by the PaX
 	# kernel, and Pax-utils, to identify which programs need things like executable
 	# stack, etc. Without this patch the PaX kernel must use legacy mode, and this
