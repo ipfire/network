@@ -91,12 +91,14 @@ check_rootfiles() {
 
 	echo -n " Running rootfile checks"
 
+	ROOTFILES=$(find $BASEDIR/src/rootfiles/{core,extras,debug}/ -type f)
+
 	case "$ACTION" in
 		--fix)
 			echo -n " and fix"
 
 			# Remove leading pluses and replace them by '#'
-			for i in $BASEDIR/src/rootfiles/{core,extras,debug}/*{,/*}; do
+			for i in $ROOTFILES; do
 				[ ! -f $i ] && continue
 				sed -e "s/^+/#/g" -i $i
 			done
@@ -109,29 +111,31 @@ check_rootfiles() {
 			;;
 	esac
 
-	echo "..." # End the line
+	echo -n "..." # End the line
 
-	echo -n "  Searching for leading slashes..."
-	if grep -n ^/ $BASEDIR/src/rootfiles/*/*{,/*}; then
-		exiterror "Please check your rootfiles! There are leading slashes."
-	else
-		beautify message DONE
-	fi
+	for i in $ROOTFILES; do
+		# Leading slashes
+		grep -q ^/ $i
+		if [ "$?" -eq "0" ]; then
+			dialogerror "Please check your rootfile of \"$(basename $i)\" for leading slashes."
+			exit 1
+		fi
 
-	echo -n "  Searching for leading pluses..."
-	if grep -n ^+ $BASEDIR/src/rootfiles/*/*{,/*}; then
-		exiterror "Please check your rootfiles for leading pluses."
-	else
-		beautify message DONE
-	fi
+		# Leading plusses
+		grep -q ^+ $i
+		if [ "$?" -eq "0" ]; then
+			dialogerror "Please check your rootfile of \"$(basename $i)\" for leading plusses."
+			exit 1
+		fi
 
-	echo -n "  Searching for emtpy lines..."
-	if grep -n ^$ $BASEDIR/src/rootfiles/*/*{,/*}; then
-		exiterror "Please check your rootfiles for empty lines."
-	else
-		beautify message DONE
-	fi
-
+		# Empty lines
+		grep -q ^$ $i
+		if [ "$?" -eq "0" ]; then
+			dialogerror "Please check your rootiles of \"$(basename $i)\" for empty lines."
+			exit 1
+		fi
+	done
+	beautify message DONE
 }
 
 check_code() {
