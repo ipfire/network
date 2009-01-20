@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = coreutils
-VER        = 6.12
+VER        = 7.0
 PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
@@ -55,8 +55,7 @@ endef
 
 objects = $(DL_FILE) \
 	$(THISAPP)-uname_PIC-1.patch \
-	$(THISAPP)-i18n-1.patch \
-	$(THISAPP)-old_build_kernel-1.patch
+	$(THISAPP)-i18n-1.patch
 
 download: $(objects)
 
@@ -78,8 +77,6 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-old_build_kernel-1.patch
 
 ifeq "$(STAGE)" "toolchain"	
 	cd $(DIR_APP) && \
