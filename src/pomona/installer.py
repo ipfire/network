@@ -38,6 +38,9 @@ from pakfireinstall import PakfireBackend
 from instdata import InstallData
 from autopart import getAutopartitionBoot, autoCreatePartitionRequests
 
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
+
 # Make sure messages sent through python's warnings module get logged.
 def PomonaShowWarning(message, category, filename, lineno, file=sys.stderr):
     log.warning("%s" % warnings.formatwarning(message, category, filename, lineno))
