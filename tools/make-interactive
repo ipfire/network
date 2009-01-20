@@ -294,6 +294,13 @@ package*|pkg)
 				echo "  * ${group}"
 			done
 			;;
+		wikiinfo)
+			shift 2
+			pkg_info_wiki $@
+			;;
+		*)
+			usage
+			;;
 	esac
 	;;
 

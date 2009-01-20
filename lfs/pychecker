@@ -78,5 +78,6 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && python setup.py build
 	cd $(DIR_APP) && python setup.py install
+	$(PYTHON_COMPILE)
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

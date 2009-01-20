@@ -58,6 +58,7 @@ endef
 ###############################################################################
 
 objects = $(DL_FILE) \
+	$(THISAPP)-branch_update.patch \
 	$(THISAPP)-ld_makefile.patch \
 	$(THISAPP)-pt_pax-1.patch \
 	$(THISAPP)-lazy-1.patch \
@@ -85,6 +86,10 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	@rm -rf $(DIR_SRC)/binutils-build
 	-mkdir -v $(DIR_SRC)/binutils-build
+
+	# We add some fixes from upstream that should fix many bugs with this
+	# binutils release.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-branch_update.patch
 
 	# Add PT_PaX header marking support. These markings are using by the PaX
 	# kernel, and Pax-utils, to identify which programs need things like executable
