@@ -151,10 +151,6 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     signal.signal(signal.SIGSEGV, isys.handleSegv)
 
-    # Set up i18n
-    from pyfire.translate import _, textdomain
-    textdomain("pomona")
-
     # Reading command line options
     (opts, args) = parseOptions()
 

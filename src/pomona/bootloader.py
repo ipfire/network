@@ -36,7 +36,6 @@ log = logging.getLogger("pomona")
 
 from fsset import *
 
-from pyfire.translate import _, N_
 import pyfire.executil
 
 dosFilesystems = ('FAT', 'fat16', 'fat32', 'ntfs', 'hpfs')
