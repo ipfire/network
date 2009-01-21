@@ -102,17 +102,6 @@ git_commit() {
 	git commit $*
 	
 	[ "$?" -eq "0" ] || exiterror "git commit $* failed."
-	
-	echo -e "${BOLD}Do you want to push, too? [y/N]${NORMAL}"
-	read
-	[ -z $REPLY ] && return 0
-	for i in y Y j J; do
-		if [ "$i" == "$REPLY" ]; then
-			git_push
-			return $?
-		fi
-	done
-	exiterror "\"$REPLY\" is not a valid answer."
 }
 
 git_diff() {
