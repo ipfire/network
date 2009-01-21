@@ -78,8 +78,10 @@ rootfiles_check() {
 }
 
 rootfiles_commit() {
-	rootfiles_check
-	git_commit -m "Rootfile update." $ROOTFILES_DIR
+	TEMPFILE=$(mktemp)
+	echo "Rootfile update" > $TEMPFILE
+	git_commit -F $TEMPFILE src/rootfiles
+	rm -f $TEMPFILE
 }
 
 rootfiles_copy() {
