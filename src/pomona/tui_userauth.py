@@ -13,7 +13,9 @@
 
 from snack import *
 from constants import *
-from pyfire.translate import _
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 def has_bad_chars(pw):
     allowed = string.digits + string.ascii_letters + string.punctuation + " "

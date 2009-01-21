@@ -4,7 +4,9 @@ import socket
 import string
 
 import pyfire.net
-from pyfire.translate import _
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 def networkDeviceCheck(pomona):
     devs = pomona.id.network.available()

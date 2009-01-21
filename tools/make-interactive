@@ -192,9 +192,6 @@ check)
 				exit 1
 			fi
 			;;
-		rootfiles)
-			check_rootfiles $3
-			;;
 		sanity)
 			check_sanity $3
 			;;
@@ -314,6 +311,27 @@ pull)
 	git_pull
 	check_sanity
 	getsource
+	;;
+
+rootfiles|rf)
+	case "$2" in
+		check|ch)
+			rootfiles_check $3
+			;;
+		commit|ci|update|up)
+			rootfiles_commit
+			;;
+		copy|cp)
+			shift 2
+			rootfiles_copy $@
+			;;
+		fix)
+			rootfiles_check --fix
+			;;
+		*)
+			usage
+			;;
+	esac
 	;;
 
 vm|qemu)

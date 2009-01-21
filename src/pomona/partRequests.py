@@ -23,11 +23,13 @@ import string
 import os, sys, math
 
 from constants import *
-from pyfire.translate import _
 
 import fsset
 import partedUtils
 import partIntfHelpers
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 import logging
 log = logging.getLogger("pomona")

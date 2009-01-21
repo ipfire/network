@@ -31,7 +31,9 @@ import types
 import math
 from flags import flags
 
-from console import _, N_
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
+N_ = lambda x: x
 
 import logging
 log = logging.getLogger("pomona")

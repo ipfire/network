@@ -2,11 +2,11 @@
 
 import os
 import sys
-sys.path.append("..")
 
-import gettext
+sys.path.append("..")
 import console
 
+import gettext
 _ = lambda x: gettext.ldgettext("pomona", x)
 
 console = console.Console("/etc/sysconfig/console")

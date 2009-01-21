@@ -23,7 +23,9 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-from pyfire.translate import _, N_
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
+N_ = lambda x: x
 
 def gkn(str):
     idx = str.find("|")

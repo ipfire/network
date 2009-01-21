@@ -13,8 +13,10 @@
 
 from snack import *
 from constants import *
-from pyfire.translate import _
 from constants import *
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 class FinishedWindow:
     def __call__ (self, screen, pomona):

@@ -24,7 +24,9 @@ import urlgrabber.grabber
 from urlgrabber.grabber import URLGrabber, URLGrabError
 from backend import PomonaBackend
 from constants import *
-from pyfire.translate import _
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 import logging
 log = logging.getLogger("pomona")
