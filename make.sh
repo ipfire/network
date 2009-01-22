@@ -234,6 +234,7 @@ ipfire_build() {
 	
 	### Building some general stuff
 	#   STAGE 2
+	ipfire_make pth
 	ipfire_make cracklib
 	ipfire_make pam					PASS=1
 	ipfire_make shadow-pam
