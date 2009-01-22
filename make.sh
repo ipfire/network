@@ -251,6 +251,7 @@ ipfire_build() {
 	ipfire_make nss_ldap
 	ipfire_make sqlite
 	ipfire_make curl
+	ipfire_make pinentry
 	ipfire_make gnupg
 	ipfire_make sudo
 	ipfire_make libjpeg
