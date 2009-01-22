@@ -14,7 +14,8 @@
 from snack import *
 from constants import *
 
-from console import _
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 import logging
 log = logging.getLogger("pomona")

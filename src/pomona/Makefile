@@ -26,7 +26,7 @@ all: lang-names subdirs
 
 lang-names: lang-table
 	PYTHONPATH="./src/:." LANG=en_US.UTF-8 \
-		python scripts/getlangnames.py > lang-names.tmp
+		./scripts/getlangnames.py > lang-names.tmp
 	mv lang-names.tmp lang-names
 
 install: all

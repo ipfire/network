@@ -23,7 +23,8 @@ from constants import *
 from flags import flags
 from partErrors import *
 
-from pyfire.translate import _
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 def partitionObjectsInitialize(pomona):
     # read in drive info

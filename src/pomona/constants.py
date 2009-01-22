@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
-from console import _, N_
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
+N_ = lambda x: x
 
 version = "VERSION"
 name = "NAME v%s" % version

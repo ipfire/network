@@ -21,7 +21,9 @@ import logging
 from constants import *
 
 import packages
-from pyfire.translate import _
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 from flags import flags
 log = logging.getLogger("pomona")

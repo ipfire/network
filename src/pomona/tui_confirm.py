@@ -14,7 +14,9 @@ import sys
 
 from snack import *
 from constants import *
-from pyfire.translate import _
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 class BeginInstallWindow:
     def __call__ (self, screen, pomona):
