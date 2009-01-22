@@ -3,7 +3,9 @@ import os
 from snack import *
 
 from constants import *
-from console import _
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 class WelcomeWindow:
     def __call__(self, screen, infire):

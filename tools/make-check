@@ -86,58 +86,6 @@ check_build() {
 	check_common "GNU which"			"which --version | head -n1"
 }
 
-check_rootfiles() {
-	ACTION=$1
-
-	echo -n " Running rootfile checks"
-
-	ROOTFILES=$(find $BASEDIR/src/rootfiles/{core,extras,debug}/ -type f)
-
-	case "$ACTION" in
-		--fix)
-			echo -n " and fix"
-
-			# Remove leading pluses and replace them by '#'
-			for i in $ROOTFILES; do
-				[ ! -f $i ] && continue
-				sed -e "s/^+/#/g" -i $i
-			done
-			;;
-		"")
-			: # If no option was given we do nothing.
-			;;
-		*)
-			exiterror "This is not a valid option: $ACTION"
-			;;
-	esac
-
-	echo -n "..." # End the line
-
-	for i in $ROOTFILES; do
-		# Leading slashes
-		grep -q ^/ $i
-		if [ "$?" -eq "0" ]; then
-			dialogerror "Please check your rootfile of \"$(basename $i)\" for leading slashes."
-			exit 1
-		fi
-
-		# Leading plusses
-		grep -q ^+ $i
-		if [ "$?" -eq "0" ]; then
-			dialogerror "Please check your rootfile of \"$(basename $i)\" for leading plusses."
-			exit 1
-		fi
-
-		# Empty lines
-		grep -q ^$ $i
-		if [ "$?" -eq "0" ]; then
-			dialogerror "Please check your rootiles of \"$(basename $i)\" for empty lines."
-			exit 1
-		fi
-	done
-	beautify message DONE
-}
-
 check_code() {
     ACTION=$1
     ARGS="--recurse"
@@ -171,7 +119,7 @@ check_sanity() {
 
 	echo "Checking sanity of working directory..."
 
-	check_rootfiles $*
+	rootfiles_check $*
 	check_code $*
 
 }

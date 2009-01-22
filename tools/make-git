@@ -39,6 +39,11 @@ fi
 
 CURRENT_BRANCH=$(git branch | grep ^* | cut -c 3-)
 
+# Apply git hooks
+if [ -d "$BASEDIR/.git" ]; then
+	ln -sf $BASEDIR/tools/make-git $BASEDIR/.git/hooks/pre-commit
+fi
+
 ###############################################################################
 #
 # A small helper to make the git functions comfortable
@@ -211,3 +216,33 @@ ssh_cert() {
 		done
 	done
 }
+
+git_hook_pre_commit() {
+	local USERNAME USERMAIL
+	USERNAME=$(git config --list | grep ^user.name)
+	USERNAME=${USERNAME#user.name=}
+
+	USERMAIL=$(git config --list | grep ^user.email)
+	USERMAIL=${USERMAIL#user.email=}
+
+	if [[ ! "$USERMAIL" =~ "@ipfire\.org$" ]]; then
+		echo "User email is not from ipfire.org. Can't commit."
+		return 1
+	fi
+
+	COUNTER=0
+	for i in $USERNAME; do
+		COUNTER=$[ $COUNTER + 1 ]
+	done
+
+	if [ ! "$COUNTER" -ge 2 ]; then
+		echo "Setup user name as your real name. Can't commit."
+		return 1
+	fi
+}
+
+# Run hooks
+if [ "$(basename $0)" = "pre-commit" ]; then
+	git_hook_pre_commit
+	exit $?
+fi

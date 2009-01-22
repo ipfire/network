@@ -24,7 +24,9 @@ import partedUtils
 import parted
 import fsset
 import partRequests
-from pyfire.translate import _
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 def sanityCheckMountPoint(mntpt, fstype, preexisting, format):
     """Sanity check that the mountpoint is valid.

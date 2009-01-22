@@ -3,8 +3,10 @@ import bdb
 import os, sys, signal, types
 from cPickle import Pickler
 from string import joinfields
-from pyfire.translate import _
 import traceback
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 import logging
 log = logging.getLogger("pomona")

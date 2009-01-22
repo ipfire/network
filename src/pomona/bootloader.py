@@ -28,14 +28,14 @@ from copy import copy
 from flags import flags
 from constants import *
 
-from pyfire.translate import _
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 import logging
 log = logging.getLogger("pomona")
 
 from fsset import *
 
-from pyfire.translate import _, N_
 import pyfire.executil
 
 dosFilesystems = ('FAT', 'fat16', 'fat32', 'ntfs', 'hpfs')

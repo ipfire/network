@@ -7,8 +7,11 @@ import signal
 import time
 import inutil
 import imputil
-from pyfire.translate import _, cat, N_
 from constants import *
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
+N_ = lambda x: x
 
 import logging
 log = logging.getLogger("pomona")
