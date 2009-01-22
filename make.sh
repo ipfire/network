@@ -237,6 +237,7 @@ ipfire_build() {
 	ipfire_make pth
 	ipfire_make libassuan
 	ipfire_make libgpg-error
+	ipfire_make libgcrypt
 	ipfire_make cracklib
 	ipfire_make pam					PASS=1
 	ipfire_make shadow-pam
