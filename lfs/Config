@@ -89,6 +89,7 @@ PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 define DO_PKG_INFO
 	@## ALPHABETICAL ORDER ##
 	@echo "DEBUG=\"$(DEBUG)\""
+	@echo "DEPS=\"$(DEPS)\""
 	@echo "DESC=\"$$(echo $(LONG_DESC))\""
 	@echo "EXTRA=\"$(EXTRA)\""
 	@echo "GROUP=\"$(GROUP)\""
