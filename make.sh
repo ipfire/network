@@ -234,6 +234,11 @@ ipfire_build() {
 	
 	### Building some general stuff
 	#   STAGE 2
+	ipfire_make pth
+	ipfire_make libassuan
+	ipfire_make libgpg-error
+	ipfire_make libgcrypt
+	ipfire_make libksba
 	ipfire_make cracklib
 	ipfire_make pam					PASS=1
 	ipfire_make shadow-pam
@@ -246,6 +251,7 @@ ipfire_build() {
 	ipfire_make nss_ldap
 	ipfire_make sqlite
 	ipfire_make curl
+	ipfire_make pinentry
 	ipfire_make gnupg
 	ipfire_make sudo
 	ipfire_make libjpeg
