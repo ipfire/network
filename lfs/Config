@@ -89,7 +89,8 @@ PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 define DO_PKG_INFO
 	@## ALPHABETICAL ORDER ##
 	@echo "DEBUG=\"$(DEBUG)\""
-	@echo "DESC=\"$$(echo $(LONG_DESC))\""
+	@echo "DEPS=\"$(DEPS)\""
+	@echo "DESC=\"$(value LONG_DESC)\""
 	@echo "EXTRA=\"$(EXTRA)\""
 	@echo "GROUP=\"$(GROUP)\""
 	@echo "LICENSE=\"$(LICENSE)\""
@@ -97,7 +98,7 @@ define DO_PKG_INFO
 	@echo "NAME=\"$(PKG_NAME)\""
 	@echo "VERSION=\"$(VER)\""
 	@echo "RELEASE=\"$(PKG_VER)\""
-	@echo "SHORT=\"$$(echo $(SHORT_DESC))\""
+	@echo "SHORT=\"$(value SHORT_DESC)\""
 	@echo "URL=\"$(URL)\""
 endef
 

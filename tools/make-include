@@ -188,6 +188,29 @@ lfsmakecommoncheck()
 			return 1
 	fi
 
+	# Searching for dependencies
+	local found message
+	for dep in $(pkg_deps $1); do
+		found=0
+		for package in $PACKAGES_DONE; do
+			if [ "$dep" = "$package" ]; then
+				found=1
+				break
+			fi
+		done
+		[ "$found" = "0" ] && message="$message $dep"
+	done
+	if [ "$message" != "" ]; then
+		message="Deps are missing: $message"
+		if [ "$EXTRA" = "yes" ]; then
+			echo -ne "${WARN}${message}${NORMAL}"
+			beautify message SKIP
+			return 1
+		else
+			exiterror "$message"
+		fi
+	fi
+
 	echo -e "$(date -u '+%b %e %T'): Building $* " >> $LOGFILE
 
 	cd $BASEDIR/lfs && make -s -f $* MACHINE=$MACHINE LFS_BASEDIR=$BASEDIR MESSAGE="$1\t " download  >> $LOGFILE 2>&1
@@ -309,6 +332,7 @@ ipfire_make() {
 		exiterror "Building $*"
 	else
 		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		PACKAGES_DONE="$PACKAGES_DONE $1"
 	fi
 
 	return 0
