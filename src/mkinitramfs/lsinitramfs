@@ -19,64 +19,14 @@
 #                                                                             #
 ###############################################################################
 
-if [ -e "new-functions" ]; then
-	. new-functions
-else
-	. /usr/lib/mkinitramfs/functions
-fi
-
-# Add usb support
-MODULES="$MODULES ehci-hcd ohci-hcd uhci-hcd"
-
-# Get rootfs and options
-rootdev=$(awk '/^[ \t]*[^#]/ { if ($2 == "/") { print $1; }}' /etc/fstab)
-rootfs=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/") { print $3; }}' /etc/fstab)
-rootopts=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/") { print $4; }}' /etc/fstab)
-[ -z "$rootopts" ] && rootopts="defaults"
-
-MODULES="$MODULES $rootfs" # Add rootfs module
-
-if [[ "$rootdev" =~ "^(UUID=|LABEL=)" ]]; then
-	rootdev=$(resolve_device_name "$rootdev")
-fi
-
-rootopts=$(echo $rootopts | sed -e 's/^r[ow],//' -e 's/,_netdev//' \
-	-e 's/_netdev//' -e 's/,r[ow],$//' -e 's/,r[ow],/,/' \
-	-e 's/^r[ow]$/defaults/' -e 's/$/,ro/')
-physdev=$(findblockdevinsys "$rootdev")
-physdev=${physdev##*/dev/}
-if [ -n "$physdev" ]; then
-	vecho "[INFO] Found root device $physdev for $rootdev"
-else
-	physdev="$rootdev"
-fi
-
-if [ -n "$physdev" -a "$physdev" != "$rootdev" ]; then
-	findstoragedriver ${physdev##/dev/}
-fi
-
-findstoragedriver ${rootdev##/dev/}
-
-cat >> sbin/real-init <<'EOF'
-vecho "Starting udevd..."
-udevd --daemon
-
-vecho "Creating devices..."
-udevadm trigger
-
-vecho "Waiting for system to settle..."
-udevadm settle --timeout=30 || :
-
-vecho "Mounting root filesystem..."
-mount $rootdev /sysroot $rootfs $rootopts
-
-kill $(pidof udevd)
-
-vecho "Switching to new root and running init..."
-exec switchroot $(get_verbose) /sysroot
-
-echo exec switchroot failed...
-bash
-EOF
-
-finalize
+[[ $# -eq 1 ]] || { echo "Usage: $(basename $0) <initrd file>" ; exit 1 ; }
+[[ -f $1 ]]    || { echo "$1 does not exist" ; exit 1 ; }
+ 
+echo "$1:"
+echo "========================================================================"
+zcat $1 | cpio --extract --verbose --quiet --list
+echo "========================================================================"
+zcat $1 | cpio --extract --verbose --quiet --to-stdout init
+echo "========================================================================"
+zcat $1 | cpio --extract --verbose --quiet --to-stdout sbin/real-init
+echo "========================================================================"

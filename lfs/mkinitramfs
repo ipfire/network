@@ -47,7 +47,9 @@ download :
 
 $(OBJECT) :
 	@$(PREBUILD)
+	install -m 755 $(DIR_APP)/lsinitramfs /sbin/lsinitramfs
 	install -m 755 $(DIR_APP)/mkinitramfs /sbin/mkinitramfs
 	install -m 755 $(DIR_APP)/mkliveramfs /sbin/mkliveramfs
-	install -m 644 $(DIR_APP)/functions /usr/libexec/initramfs-functions
+	-mkdir -pv /usr/lib/mkinitramfs
+	install -m 644 $(DIR_APP)/functions /usr/lib/mkinitramfs/functions
 	@$(POSTBUILD)

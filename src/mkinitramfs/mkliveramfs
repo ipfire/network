@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2008, 2009  Michael Tremer & Christian Schmidt                #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,382 +19,106 @@
 #                                                                             #
 ###############################################################################
 
-export TMPDIR=/tmp
-export PATH=/sbin:/usr/sbin:$PATH
-
-usage() {
-    echo "$0 [--help] <out-initrd-image> <kernel-version>"
-    echo
-    echo "example: $0 /boot/myinitramfs.img \`uname -r\`"
-}
-
-. /usr/libexec/initramfs-functions
-
-opt_allow_overwrite=0
-INITRAMFS_TARGET=""
-kernel=""
-while [ $# -gt 0 ] ; do
-    case $1 in
-        --help)
-            usage
-            exit 0
-            ;;
-        -f)
-            opt_allow_overwrite=1
-            ;;
-        --allow-missing)
-	        # Ignore option $1 for /sbin/mkinitrd compatibility
-	        ;;
-        -v|--verbose)
-	        set_verbose true
-            ;;
-        *)
-            if [ -z "$INITRAMFS_TARGET" ] ; then
-                INITRAMFS_TARGET=$1
-            elif [ -z "$kernel" ] ; then
-                kernel=$1
-            else
-                echo "Unknown option or parameter \"$1\""
-                echo
-                usage
-                exit 1
-            fi
-            ;;
-    esac
-
-    shift
-done
-
-if [ -z "$INITRAMFS_TARGET" -o -z "$kernel" ] ; then
-    usage
-    exit 1
+if [ -e "new-functions" ]; then
+	. new-functions
+else
+	. /usr/lib/mkinitramfs/functions
 fi
 
-if [  "$opt_allow_overwrite" == "0" ] ; then
-    if [ -e $INITRAMFS_TARGET ] ; then
-	echo "Image $INITRAMFS_TARGET already exists. Use -f to overwrite"
-	exit 1
-    fi
-fi
+# Modules needed by the live system
+MODULES="$MODULES aufs squashfs loop"
 
-vecho "Building an initramfs at $INITRAMFS_TARGET for kernel $kernel"
-
-TEMPDIR=`mktemp -d` || exit 1
-pushd $TEMPDIR > /dev/null
-mkdir initramfs_dir
-MNTIMAGE=$TEMPDIR/initramfs_dir
-cd initramfs_dir
-
-# Make directory structure
-mkdir -p bin sbin dev device sys proc lib lib/udev sysroot \
-	etc etc/udev etc/udev/rules.d lib/udev/rules.d
-
-inst /sbin/losetup "$MNTIMAGE"
-inst /bin/dd "$MNTIMAGE"
-inst /usr/bin/cut "$MNTIMAGE" bin/cut
-
-# we explicitly load these, so should be sure they're present
-MODULES="loop squashfs aufs vfat cdrom"
-
-for module in $(ls /lib/modules/$kernel/kernel/drivers/{ata,message/fusion,pcmcia,scsi{,/*}}/*); do
+# Add all storage modules
+for module in /lib/modules/$KERNEL/kernel/drivers/{ata,message/fusion,pcmcia,scsi{,/*}}/*; do
 	MODULES="$MODULES $(basename ${module/.ko})"
 done
+## XXX need to add support for usb cdroms
 
-vecho "Kernel modules requested: $MODULES"
-vecho
+# Creating folders
+mkdir -p mnt/{source,tmpfs,overlayfs,squashfs}
 
-mkdir -p lib/modules/$kernel/
-MODULES=$(expandModules $MODULES)
-vecho "Expanded modules requested: $MODULES"
-resdeps MODULES
-vecho "resolved module set: $resolved"
-for MODULE in $resolved ; do
-   vecho "going to install $MODULE"
-   installmodule $MODULE
-done
-
-# Build module deps file so we can use modprobe
-/sbin/depmod -a -b "$MNTIMAGE" $(get_verbose) $kernel
-
-# Copy /etc/fstab over
-inst /etc/fstab "$MNTIMAGE"
-
-# Copy modprobe.conf and friends over
-if [ -e /etc/modprobe.conf ] ; then
-    inst /etc/modprobe.conf "$MNTIMAGE"
-fi
-for f in $(find /etc/modprobe.d -type f) ; do inst $f "$MNTIMAGE" ; done
-
-# Copy binaries over
-inst /bin/echo "$MNTIMAGE"
-inst /bin/sleep "$MNTIMAGE"
-inst /bin/bash "$MNTIMAGE"
-inst /bin/mount "$MNTIMAGE"
-inst /bin/umount "$MNTIMAGE"
-inst /bin/ls "$MNTIMAGE"
-inst /bin/mknod "$MNTIMAGE"
-inst /bin/mkdir "$MNTIMAGE"
-inst /bin/mountpoint "$MNTIMAGE"
-inst /bin/chmod "$MNTIMAGE"
-inst /bin/ln "$MNTIMAGE"
-inst /bin/cat "$MNTIMAGE"
-inst /bin/kill "$MNTIMAGE"
-inst /bin/pidof "$MNTIMAGE"
-inst /bin/rm "$MNTIMAGE"
-
-inst /sbin/udevd "$MNTIMAGE"
-inst /sbin/insmod "$MNTIMAGE"
-inst /sbin/modprobe "$MNTIMAGE"
-inst /sbin/switchroot "$MNTIMAGE"
-
-inst /sbin/killall5 "$MNTIMAGE"
-inst /sbin/udevadm "$MNTIMAGE"
-
-inst /lib/udev/vol_id "$MNTIMAGE"
-
-# symlink niceties
-ln -s bash bin/sh
-
-# Not really required but nice
-[ -x /usr/bin/tree ] && inst /usr/bin/tree "$MNTIMAGE" bin/tree
-[ -x /usr/bin/less ] && inst /usr/bin/less "$MNTIMAGE" bin/less
-inst /usr/bin/env "$MNTIMAGE" bin/env
-inst /bin/grep "$MNTIMAGE"
-inst /bin/dmesg "$MNTIMAGE"
-inst /bin/sed "$MNTIMAGE"
-inst /bin/lsmod "$MNTIMAGE"
-
-# terminfo bits make things work better if you fall into interactive mode
-for f in $(find /usr/lib/terminfo -type f) ; do inst $f "$MNTIMAGE" ; done
-
-cat > init <<'EOF'
-#!/bin/sh
-mount -t proc proc /proc
-mount -t sysfs /sys /sys
-
-mount -t tmpfs -o mode=0755 udev /dev
-mknod /dev/console c 5 1
-mknod /dev/null c 1 3
-mknod /dev/kmsg c 1 11
-mknod /dev/ptmx c 5 2
-mknod /dev/fb c 29 0
-mkdir /dev/pts
-mount -t devpts -o gid=5,mode=620 /dev/pts /dev/pts
-mkdir -m 1777 /dev/shm
-ln -s /proc/self/fd /dev/fd
-ln -s fd/0 /dev/stdin
-ln -s fd/1 /dev/stdout
-ln -s fd/2 /dev/stderr
-mknod /dev/systty c 4 0
-mknod /dev/tty0 c 4 0
-mknod /dev/tty1 c 4 1
-mknod /dev/tty2 c 4 2
-
-exec sbin/real-init
-EOF
-chmod 755 init
-
-# Write out init
-cat > sbin/real-init <<'EOF'
-#!/bin/bash
-
-emergency_shell()
-{
-    echo "Bug in initramfs /init detected. Dropping to a shell. Good luck!"
-    echo
-    bash
-}
-trap "emergency_shell" 0 2
-
-# exit immediately if a command fails
-set -e
-
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin
-export TERM=linux
-
-
-echo "" > /proc/sys/kernel/hotplug
-
-# Declare all variables here.. mostly for housekeeping
-#
-init="/sbin/init"
-root_ro=0
-root_rw=0
-root=""
-rootflags=""
-rootfstype=""
-quiet=0
-shell=0
-eshell=0
-check_iso=0
-
-# Parse kernel commandline options
-#
-for o in `cat /proc/cmdline` ; do
-    case $o in
-    init=*)
-        init=${o#init=}
-        ;;
-    ro)
-        root_ro=1
-        ;;
-    rw)
-        root_rw=1
-        ;;
-    quiet)
-        quiet=1
-        ;;
-    shell)
-        shell=1
-        ;;
-    eshell)
-        eshell=1
-        ;;
-    check)
-        check_iso=1
-        ;;
-    blacklist=*)
-        blacklist=${o#blacklist=}
-        echo "blacklist $blacklist" >> /etc/modprobe.conf
-        ;;
-    *)
-        m=$(echo $o |cut -s -d . -f 1)
-        opt=$(echo $o |cut -s -d . -f 2-)
-        if [ -z "$m" -o -z "$opt" ]; then
-          continue
-        fi
-        p=$(echo $opt |cut -s -d = -f 1)
-        v=$(echo $opt |cut -s -d = -f 2-)
-        if [ -z "$p" -o -z "$v" ]; then
-          continue
-        fi
-        echo "options $m $p=$v" >> /etc/modprobe.conf
-        ;;
-    esac
-done
-
-if [ "$quiet" != "1" ] ; then
-    echo "kernel commandline: `cat /proc/cmdline`"
-fi
-
-# First, read rootfs target from embedded /etc/fstab file
-#
-if [ -f /etc/fstab ] ; then
-    root=$(cat /etc/fstab | while read d m f o r; do if [ "$m" == "/" ] ; then echo $d; fi; done)
-    rootflags=$(cat /etc/fstab | while read d m f o r; do if [ "$m" == "/" ] ; then echo $o; fi; done)
-    rootfstype=$(cat /etc/fstab | while read d m f o r; do if [ "$m" == "/" ] ; then echo $f; fi; done)
-    if [ "$quiet" != "1" ] ; then
-        echo "fstab suggests root=$root"
-        echo "fstab suggests rootflags=$rootflags"
-        echo "fstab suggests rootfstype=$rootfstype"
-        if [ "$root" == "/dev/root" ] ; then
-            root=""
-            rootflags=""
-            rootfstype=""
-        fi
-    fi
-fi
-
+cat >> sbin/real-init <<'EOF'
 # Users can override rootfs target on the kernel commandline
-#
-for o in `cat /proc/cmdline` ; do
-    case $o in
-    root=*)
-        root=${o#root=}
-        ;;
-    rootflags=*)
-        rootflags=${o#rootflags=}
-        ;;
-    rootfstype=*)
-        rootfstype=${o#rootfstype=}
-        ;;
-    esac
+for o in $(cat /proc/cmdline); do
+	case $o in
+	root=*)
+		root=${o#root=}
+		;;
+	rootflags=*)
+		rootflags=${o#rootflags=}
+		;;
+	rootfstype=*)
+		rootfstype=${o#rootfstype=}
+		;;
+	esac
 done
 
-# Print out what we are going to do
-#
-if [ "$quiet" != "1" ] ; then
-    echo "init=$init"
-    echo "root=$root"
-    echo "rootflags=$rootflags"
-    echo "rootfstype=$rootfstype"
-    echo "root_ro=$root_ro"
-    echo "root_rw=$root_rw"
-fi
-
-waitforsymlink=0
 # generate udev rules to generate /dev/root symlink
 if [ -z $root ] ; then
-    root=/dev/something
+	root=/dev/something
 else
-    case $root in
-        /dev/disk/by-label/*)
-            LABEL=${root#/dev/disk/by-label/}
-            echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
-            if [ "$quiet" != "1" ] ; then
-                echo "Added udev rule 00-label.rules:"
-                cat /etc/udev/rules.d/00-label.rules
-            fi
-            waitforsymlink=1
-            thingtomount=/dev/root
-            ;;
-        CDLABEL=*)
-            CDLABEL=${root#CDLABEL=}
-            echo "KERNEL==\"hd[a-z]\", BUS==\"ide\", SYSFS{removable}==\"1\", ATTRS{media}==\"cdrom\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-cdlabel.rules
-            echo "KERNEL==\"sr[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
-            echo "KERNEL==\"scd[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
-            echo "KERNEL==\"pcd[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
-            if [ "$quiet" != "1" ] ; then
-                echo "Added udev rule 00-cdlabel.rules:"
-                cat /etc/udev/rules.d/00-cdlabel.rules
-            fi
-            waitforsymlink=1
-            thingtomount=/dev/root
-            ;;
-        LABEL=*)
-            LABEL=${root#LABEL=}
-            echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
-            if [ "$quiet" != "1" ] ; then
-                echo "Added udev rule 00-label.rules:"
-                cat /etc/udev/rules.d/00-label.rules
-            fi
-            waitforsymlink=1
-            thingtomount=/dev/root
-            ;;
-        /dev/disk/by-id/*)
-            UUID=${root#/dev/disk/by-id/}
-            echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -u %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
-            if [ "$quiet" != "1" ] ; then
-                echo "Added udev rule 01-uuid.rules:"
-                cat /etc/udev/rules.d/01-uuid.rules
-            fi
-            waitforsymlink=1
-            thingtomount=/dev/root
-            ;;
-        UUID=*)
-            UUID=${root#UUID=}
-            echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -u %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
-            if [ "$quiet" != "1" ] ; then
-                echo "Added udev rule 01-uuid.rules:"
-                cat /etc/udev/rules.d/01-uuid.rules
-            fi
-            waitforsymlink=1
-            thingtomount=/dev/root
-            ;;
-        /dev/*)
-            ln -s $root /dev/root
-            thingtomount=$root
-            ;;
-        *)
-            thingtomount=$root
-            ;;
-    esac
+	case $root in
+		/dev/disk/by-label/*)
+			LABEL=${root#/dev/disk/by-label/}
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
+			if is_verbose; then
+				echo "Added udev rule 00-label.rules:"
+				cat /etc/udev/rules.d/00-label.rules
+			fi
+			thingtomount=/dev/root
+			;;
+		CDLABEL=*)
+			CDLABEL=${root#CDLABEL=}
+			echo "KERNEL==\"hd[a-z]\", BUS==\"ide\", SYSFS{removable}==\"1\", ATTRS{media}==\"cdrom\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-cdlabel.rules
+			echo "KERNEL==\"sr[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
+			echo "KERNEL==\"scd[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
+			echo "KERNEL==\"pcd[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
+			if is_verbose; then
+				echo "Added udev rule 00-cdlabel.rules:"
+				cat /etc/udev/rules.d/00-cdlabel.rules
+			fi
+			thingtomount=/dev/root
+			;;
+		LABEL=*)
+			LABEL=${root#LABEL=}
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
+			if is_verbose; then
+				echo "Added udev rule 00-label.rules:"
+				cat /etc/udev/rules.d/00-label.rules
+			fi
+			thingtomount=/dev/root
+			;;
+		/dev/disk/by-id/*)
+			UUID=${root#/dev/disk/by-id/}
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -u %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
+			if is_verbose; then
+				echo "Added udev rule 01-uuid.rules:"
+				cat /etc/udev/rules.d/01-uuid.rules
+			fi
+			thingtomount=/dev/root
+			;;
+		UUID=*)
+			UUID=${root#UUID=}
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -u %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
+			if is_verbose; then
+				echo "Added udev rule 01-uuid.rules:"
+				cat /etc/udev/rules.d/01-uuid.rules
+			fi
+			thingtomount=/dev/root
+			;;
+		/dev/*)
+			ln -s $root /dev/root
+			thingtomount=$root
+			;;
+		*)
+			thingtomount=$root
+			;;
+	esac
 fi
 
 echo "udev_log=\"error\"" >> /etc/udev/udev.conf
 
 # rules for loading modules
-#
 echo -n "ACTION==\"add\", SUBSYSTEM==\"?*\", ENV{MODALIAS}==\"?*\", RUN+=\"/sbin/modprobe $" >> /etc/udev/rules.d/10-modprobe.rules
 echo "env{MODALIAS}\"" >> /etc/udev/rules.d/10-modprobe.rules
 echo "ACTION==\"add\", SUBSYSTEM==\"scsi_device\" RUN+=\"/sbin/modprobe sg\"" >> /etc/udev/rules.d/10-modprobe.rules
@@ -403,174 +127,101 @@ echo "ACTION==\"add\", SUBSYSTEM==\"scsi_device\", SYSFS{type}==\"[45]\", RUN+=\
 echo "SUBSYSTEM==\"mmc\", RUN+=\"/sbin/modprobe mmc_block\"" >> /etc/udev/rules.d/10-modprobe.rules
 
 # FIXME: hack since sr_mod seems to fail to get loaded sometimes (#239657)
-/sbin/modprobe sr_mod
+modprobe sr_mod
 
-/sbin/modprobe loop max_loop=16
+modprobe loop max_loop=16
 
-if [ "$quiet" != "1" ] ; then
-    echo "starting udevd"
-fi
-/sbin/udevd --daemon
+vecho "Starting udevd..."
+udevd --daemon
 
-if [ "$quiet" != "1" ] ; then
-    echo "creating devices"
-fi
-/sbin/udevadm trigger
+vecho "Creating devices..."
+udevadm trigger
 
-if [ "$quiet" != "1" ] ; then
-    echo "waiting for system to settle"
-fi
-/sbin/udevadm settle --timeout=30 || :
+vecho "Waiting for system to settle..."
+udevadm settle --timeout=30 || :
 
-if [ "$shell" == "1" ] ; then
-    echo "Shell requested on kernel commandline. Exit to continue booting."
-    echo
-    bash
+if [ "$SHELL" == "1" ] ; then
+	echo "Shell requested on kernel commandline. Exit to continue booting."
+	echo
+	bash
 fi
 
-# don't wait for "mtd0" as no device file will appear
-# and don't worry about this if $thingtomount is a regular file
-if [ "$root" != "mtd0" -a ! -f "$thingtomount" ] ; then
+# Wait 60 seconds for /dev/root to appear.
+COUNTDOWN=60
+while [ "x$COUNTDOWN" != "x0" ] ; do
+	is_verbose && echo -n "."
 
-    # If we don't have the /dev/root link.. ask the user to create..
-    if [ "$waitforsymlink" != "1" ] ; then
-        if [ ! -L /dev/root ] ; then
-            echo
-            echo "--------------------------------------"
-            echo "WARNING: Cannot find root file system!"
-            echo "--------------------------------------"
-            echo
-            echo "Create symlink /dev/root and then exit this shell to continue"
-            echo "the boot sequence."
-            echo
-            bash
-        fi
-    fi
+	if [ -e /dev/root ]; then
+		COUNTDOWN=0
+		continue
+	fi
+	# this is kind of lame, but we could have had a situation
+	# where we were unable to read the volume id.  so trigger
+	# another run through the block devs
+	if [ "x$COUNTDOWN" = "x30" ]; then
+		udevadm trigger --subsystem-match=block
+	fi
 
-    # udevsettle might return before slow devices such as USB are in shape
-    # Wait up to 60 seconds for them to appear...
-    #
-    if [ ! -b /dev/root ] ; then
-        if [ "$quiet" != "1" ] ; then
-            echo "no root yet, udev rule will write symlink..."
-            echo
-            echo "waiting up to 60 seconds before dropping to emergency shell."
-        fi
-        COUNTDOWN=60
-        while [ "x$COUNTDOWN" != "x0" ] ; do
-            if [ "$quiet" != "1" ] ; then
-                echo -n "."
-            fi
-            COUNTDOWN=$(($COUNTDOWN - 1))
-            /bin/sleep 1
-            if [ -e /dev/root ] ; then
-	        COUNTDOWN=0
-                continue
-            fi
-            # this is kind of lame, but we could have had a situation
-            # where we were unable to read the volume id.  so trigger
-            # another run through the block devs
-            if [ "x$COUNTDOWN" = "x30" ]; then
-                /sbin/udevadm trigger --subsystem-match=block
-            fi
-        done
-    fi
+	COUNTDOWN=$(($COUNTDOWN - 1))
+	sleep 1
+done
+vecho # Blank line
 
-    if [ ! -b /dev/root ] ; then
-        echo
-        echo "--------------------------------------"
-        echo "WARNING: Cannot find root file system!"
-        echo "--------------------------------------"
-        echo
-        echo "Create symlink /dev/root and then exit this shell to continue"
-        echo "the boot sequence."
-        echo
-        bash
-    fi
-
-    if [ "$quiet" != "1" ] ; then
-        echo "mounting /dev/root"
-        ls -l /dev/root
-    fi
-
-    if [ -z $rootfstype ] ; then
-        rootfstype=auto
-    fi
-
+if [ ! -b /dev/root ] ; then
+	echo
+	echo "--------------------------------------"
+	echo "WARNING: Cannot find root file system!"
+	echo "--------------------------------------"
+	echo
+	echo "Create symlink /dev/root and then exit this shell to continue"
+	echo "the boot sequence."
+	echo
+	bash
 fi
 
-if [ "x$check_iso" == "x1" -a -x /bin/checkisomd5 -a "x$rootfstype" == "xiso9660" ]; then
-   echo "Verifying ISO image..."
-   /bin/checkisomd5 --verbose /dev/root
-   if [ $? -ne 0 ]; then
-       echo "Are you SURE you want to continue?"
-       echo "Press Enter to continue or ctrl-alt-del to reboot."
-       read
-   fi
+if is_verbose; then
+	vecho "Mounting /dev/root..."
+	ls -l /dev/root
 fi
 
-if [ "x$root_ro" == "x1" ] ; then
-   if [ -z $rootflags ] ; then
-       rootflags="ro"
-   else
-       rootflags="$rootflags,ro"
-   fi
-fi
-
-if [ "x$root_rw" == "x1" ] ; then
-   if [ -z $rootflags ] ; then
-       rootflags="rw"
-   else
-       rootflags="$rootflags,rw"
-   fi
-fi
-
-if [ -z $rootflags ] ; then
-    mountoptions=""
+if [ "x$READONLY" == "x1" ] ; then
+	rootflags="$rootflags,ro"
 else
-    mountoptions=" -o$rootflags"
+	rootflags="$rootflags,rw"
 fi
 
-[ -d /mnt/source ] || mkdir -p /mnt/source
+if [ -n $rootflags ]; then
+	mountoptions=" -o$rootflags"
+fi
+
 mount -n -t $rootfstype $mountoptions $thingtomount /mnt/source
 RES=$?
 
-if [ "$RES" != "0" ] ; then
-    echo "---------------------------------"
-    echo "WARNING: Cannot mount rootfs!"
-    echo "---------------------------------"
-    echo
-    echo "Dropping to a shell. "
-    echo "Mount /mnt/source and exit shell to continue. Good luck!"
-    echo
-    bash
+if [ "$RES" != "0" ]; then
+	echo "---------------------------------"
+	echo "WARNING: Cannot mount rootfs!"
+	echo "---------------------------------"
+	echo
+	echo "Dropping to a shell. "
+	echo "Mount /mnt/source and exit shell to continue. Good luck!"
+	echo
+	bash
 fi
 
-# Now get ready to leave the initramfs
-#
-
-# mount ramdisk
-[ -d /mnt/tmpfs ] || mkdir -p /mnt/tmpfs
 mount -n -t tmpfs none /mnt/tmpfs
 aufsmountoptions="br:/mnt/tmpfs=rw"
 
 OVERLAY=$(ls /mnt/source/*.overlay 2>/dev/null || true)
 if [ -n "$OVERLAY" ]; then
-    if [ "$quiet" != "1" ] ; then
-        echo "setting up overlay squashfs"
-    fi
-    [ -d /mnt/overlayfs ] || mkdir -p /mnt/overlayfs
-    mount -t squashfs -o loop,ro $OVERLAY /mnt/overlayfs
+	vecho "Setting up overlay for squashfs..."
+	mount -t squashfs -o loop,ro $OVERLAY /mnt/overlayfs
 	aufsmountoptions="$aufsmountoptions:/mnt/overlayfs=rr"
 fi
 
 SQUASHED=$(ls /mnt/source/*.img 2>/dev/null || true)
 if [ -n "$SQUASHED" ] ; then
-    if [ "$quiet" != "1" ] ; then
-        echo "setting up embedded squashfs"
-    fi
-    [ -d /mnt/squashfs ] || mkdir -p /mnt/squashfs
-    mount -t squashfs -o loop,ro $SQUASHED /mnt/squashfs
+	vecho "Setting up embedded squashfs..."
+	mount -t squashfs -o loop,ro $SQUASHED /mnt/squashfs
 	aufsmountoptions="$aufsmountoptions:/mnt/squashfs=rr"
 fi
 
@@ -582,51 +233,36 @@ for i in $(cd /mnt; ls); do
 	mount --move /mnt/$i /sysroot/mnt/$i
 done
 
-if [ "$eshell" == "1" ] ; then
-    echo "Shell requested on kernel commandline."
-    echo "Rootfs is mounted ro on /sysroot. Exit to continue booting."
-    echo
-    bash
+if [ "$ESHELL" == "1" ]; then
+	echo "Shell requested on kernel commandline."
+	echo "Rootfs is mounted ro on /sysroot. Exit to continue booting."
+	echo
+	bash
 fi
 
-if [ -x /sysroot$init ] ; then
-    # Leave initramfs and transition to rootfs
-    kill `pidof udevd`
-    if [ "$quiet" != "1" ] ; then
-        echo "transfering control to $init"
-        switchrootoptions="-v"
-    fi
+if [ -x /sysroot$init ]; then
+	# Leave initramfs and transition to rootfs
+	kill $(pidof udevd)
+	vecho "Transfering control to $init"
 
-    exec switchroot $switchrootoptions /sysroot
-    echo "---------------------------------"
-    echo "WARNING: Error switching to real rootfs!"
-    echo "---------------------------------"
-    echo
-    echo "Dropping to a shell. Good luck!"
-    echo
-    bash
+	exec switchroot $(get_verbose) /sysroot
+	echo "---------------------------------"
+	echo "WARNING: Error switching to real rootfs!"
+	echo "---------------------------------"
+	echo
+	echo "Dropping to a shell. Good luck!"
+	echo
+	bash
 else
-    echo "---------------------------------------------------------"
-    echo "WARNING: Requested $init binary does not exist on rootfs."
-    echo "---------------------------------------------------------"
-    echo
-    echo "Dropping to a shell. Good luck!"
-    echo
-    bash
+	echo "---------------------------------------------------------"
+	echo "WARNING: Requested $init binary does not exist on rootfs."
+	echo "---------------------------------------------------------"
+	echo
+	echo "Dropping to a shell. Good luck!"
+	echo
+	bash
 fi
 
 EOF
 
-chmod 755 sbin/real-init
-
-find . | cpio --quiet -o -H newc | gzip -9 > ../initramfs
-popd > /dev/null
-rm -f $INITRAMFS_TARGET
-cp $TEMPDIR/initramfs $INITRAMFS_TARGET
-rm -rf $TEMPDIR
-
-vecho "Done; initramfs is $(du -h $INITRAMFS_TARGET | awk '{print $1}')."
-vecho
-exit 0
-
-# vim:ts=8:sw=4:sts=4:et
+finalize

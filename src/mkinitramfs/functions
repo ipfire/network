@@ -1,358 +1,100 @@
 #!/bin/bash
-#
-# functions used by mkinitrd and other tools.
-#
-# Copyright 2005-2008 Red Hat, Inc.  All rights reserved.
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Authors:
-#       Peter Jones <pjones@redhat.com>
-#       Jeremy Katz <katzj@redhat.com>
-#       Jakub Jelinek <jakub@redhat.com>
-#
-#
+HEADER="\
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+"
 
-IF_verbose=""
+## GLOBAL VARIABLES ARE UPPERCASE
+##  LOCAL VARIABLES ARE LOWERCASE
+
+VERBOSE=
+FORCE=
+TARGET=
+KERNEL=$(uname -r)
+MODULES=
+
+TMPDIR=$(mktemp -d)
+
+# Check if we are root
+if [ $UID != 0 ]; then
+	error "$0 must be run as root."
+	exit 1
+fi
+
+# Usage
+function usage() {
+    echo "$0	[--help] [-f] [-v] <out-initrd-image> <kernel-version>"
+    echo "			[--with=<module>]"
+    echo
+    echo "example: $0 /boot/myinitramfs.img \`uname -r\`"
+}
+
+# Setting verbose mode
 function set_verbose() {
-    case $1 in
-        1|true|yes|on)
-            IF_verbose="-v"
-            ;;
-        0|false|no|off)
-            IF_verbose=""
-            ;;
-    esac
+	case "$1" in
+		yes|y|on|1)
+			VERBOSE=-v
+			;;
+		no|n|off|0)
+			VERBOSE=
+			;;
+	esac
 }
 
+# Returns if verbose is on or not
 function is_verbose() {
-    [ -n "$IF_verbose" ] && return 0
-    return 1
+	[ -n "$VERBOSE" ] && return 0
+	return 1
 }
 
+# Like is_verbose but prints
+# the content of $VERBOSE
 function get_verbose() {
-    echo "$IF_verbose"
-    is_verbose
+	echo "$VERBOSE"
+	is_verbose
 }
 
+# Prints text if verbose is on
 function vecho() {
-    local NONL=""
-    if [ "$1" == "-n" ]; then
-        NONL="-n"
-        shift
-    fi
-    is_verbose && echo $NONL "$@"
+	is_verbose && echo "$@"
 }
 
+# Prints error if verbose is on
 function error() {
-    local NONL=""
-    if [ "$1" == "-n" ]; then
-        NONL="-n"
-        shift
-    fi
-    echo $NONL "$@" > /dev/stderr
+	vecho "$@" >&2
 }
 
-IF_RTLD=""
-IF_dynamic=""
-function get_dso_deps() {
-    local bin="$1" ; shift
-
-    declare -a FILES
-    declare -a NAMES
-
-    local LDSO="/lib/ld-linux.so.2"
-    [ -z "$LDSO" -o "$LDSO" == "$bin" ] && local LDSO="$IF_RTLD"
-    [ -z "$LDSO" -o "$LDSO" == "$bin" ] && return 1
-    [ -z "$IF_RTLD" ] && IF_RTLD="$LDSO"
-
-    # I hate shell.
-    declare -i n=0
-    while read NAME I0 FILE ADDR I1 ; do
-        [ "$FILE" == "not" ] && FILE="$FILE $ADDR"
-        [ "$NAME" == "not" ] && NAME="$NAME $I0"
-        NAMES[$n]="$NAME"
-        FILES[$n]="$FILE"
-        let n++
-    done << EOF
-        $(LD_TRACE_PRELINKING=1 LD_WARN= LD_TRACE_LOADED_OBJECTS=1 \
-            $LDSO $bin 2>/dev/null)
-EOF
-
-    [ ${#FILES[*]} -eq 0 ] && return 1
-
-    # we don't want the name of the binary in the list
-    if [ "${FILES[0]}" == "$bin" ]; then
-        FILES[0]=""
-        NAMES[0]=""
-        [ ${#FILES[*]} -eq 1 ] && return 1
-    fi
-
-    declare -i n=0
-    while [ $n -lt ${#FILES[*]} ]; do
-        local FILE="${FILES[$n]}"
-        local NAME="${NAMES[$n]}"
-        if [ "$FILE" == "not found" -o "$NAME" == "not found" ]; then
-            cat 1>&2 <<EOF
-There are missing files on your system.  The dynamic object $bin
-requires ${NAMES[$n]} n order to properly function.  mkinitrd cannot continue.
-EOF
-            return 1
-        fi
-        case "$FILE" in
-            /lib*)
-                TLIBDIR=`echo "$FILE" | sed 's,\(/lib[^/]*\)/.*$,\1,'`
-                BASE=`basename "$FILE"`
-                # Prefer nosegneg libs over direct segment accesses on i686.
-                if [ -f "$TLIBDIR/i686/nosegneg/$BASE" ]; then
-                    FILE="$TLIBDIR/i686/nosegneg/$BASE"
-                # Otherwise, prefer base libraries rather than their optimized
-                # variants.
-                elif [ -f "$TLIBDIR/$BASE" ]; then
-                    FILE="$TLIBDIR/$BASE"
-                fi
-                FILES[$n]="$FILE"
-                ;;
-        esac
-        IF_dynamic="yes"
-        let n++
-    done
-
-    echo "${FILES[@]}"
+function compress() {
+	cd - >/dev/null
+	IMAGE=$(mktemp)
+	vecho "[TASK] Compressing image $TARGET..."
+	(cd $TMPDIR && find . | cpio -H newc --quiet -o >| $IMAGE) || exit 1
+	gzip -c9 $IMAGE > $TARGET
 }
 
-IF_indent_chars=""
-function inst() {
-    if [ "$#" != "2" -a "$#" != "3" ];then
-        echo "usage: inst <file> <root> [<destination file>]"
-        return 1
-    fi
-    local file="$1" ; shift
-    local root="${1%%/}/" ; shift
-    local dest="${1##/}"
-    [ -z "$dest" ] && local dest="${file##/}"
-
-    local old_indent_chars=${IF_indent_chars}
-    IF_indent_chars="${IF_indent_chars}  "
-    local indent=${IF_indent_chars:2}
-
-    mkdir -p "$root/$(dirname $dest)"
-
-    local RET=0
-    local target=""
-    [ -L "$file" ] && target=$(readlink "$file")
-    if [ -n "$target" -a "$dest" != "$target" ]; then
-        if [ -e "$root$dest" ]; then
-            #vecho "${indent}$root/$dest already exists"
-            RET=0
-        else
-
-            vecho "${indent}$file -> $root$dest"
-            ln -sf "$target" "$root$dest"
-            #inst "$target" "$root"
-            local BASE=`basename "$target"`
-            local LIBDIR=`echo "$file" | sed -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
-            if [ "$LIBDIR" = "$BASE" ]; then
-                local LIBDIR=`echo "/$dest" | sed -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
-            fi
-
-            local TLIBDIR=`echo "$target" | sed -e 's,\(^/lib[^/]*\)/.*$,\1/,' \
-                                                -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
-            if [ "$TLIBDIR" = "$BASE" ]; then
-                local TLIBDIR=`echo "/$dest" | sed \
-                                                -e 's,\(^/lib[^/]*\)/.*$,\1/,' \
-                                                -e 's,\(\(.*\)/\)[^/]\+$,\1,'`
-            fi
-
-            inst "$LIBDIR/$BASE" "$root" "$TLIBDIR/$BASE"
-            RET=$?
-            IF_indent_chars=${old_indent_chars}
-            return $RET
-        fi
-    fi
-
-    local SHEBANG=$(dd if="$file" bs=2 count=1 2>/dev/null)
-    if [ "$SHEBANG" == '#!' ]; then
-        # We're intentionally not playing the "what did this moron run
-        # in his shell script" game.  There's nothing but pain in that.
-        local interp=$(head -1 "$file" | sed 's/^#! *//')
-        inst "$interp" "$root"
-        RET=$?
-        IF_indent_chars=${old_indent_chars}
-        return $RET
-    fi
-
-    if [ -e "$root$dest" ]; then
-        #vecho "${indent}$root$dest already exists"
-        RET=0
-    else
-        if [ -n "$target" -a -L "$target" ]; then
-            inst "$target" "$root"
-            RET=$?
-        else
-            vecho "${indent}$file -> $root$dest"
-            cp -aL "$file" "$root$dest"
-
-            local DEPS=$(get_dso_deps "$file")
-            if [ -n "$DEPS" ]; then
-                IF_dynamic="yes"
-            fi
-            for x in $DEPS ; do
-                local TLIBDIR=`echo "$x" | sed 's,\(/lib[^/]*\)/.*$,\1,'`
-                local BASE=`basename "$x"`
-                inst "$x" "$root" "$TLIBDIR/$BASE"
-            done
-            RET=$?
-        fi
-    fi
-    IF_indent_chars=${old_indent_chars}
-    return $RET
+function findone() {
+	find "$@" | awk '{ print $1; exit; }'
 }
 
-findone() {
-    find "$@" | awk '{ print $1; exit; }'
-}
-
-findall() {
-    find "$@"
-}
-
-# module dep finding and installation functions
-moduledep() {
-    MPARGS=""
-    if [ "$1" == "--ignore-install" ]; then
-        MPARGS="$MPARGS --ignore-install"
-        shift
-    fi
-    vecho -n "Looking for deps of module $1"
-    deps=""
-    deps=$(modprobe $MPARGS --set-version $kernel --show-depends $1 2>/dev/null| awk '/^insmod / { print gensub(".*/","","g",$2) }' | while read foo ; do [ "${foo%%.ko}" != "$1" ] && echo -n "${foo%%.ko} " ; done)
-    [ -n "$deps" ] && vecho ": $deps" || vecho
-}
-
-locatemodule() {
-    MPARGS=""
-    if [ "$1" == "--ignore-install" ]; then
-        MPARGS="$MPARGS --ignore-install"
-        shift
-    fi
-    fmPath=$(modprobe $MPARGS --set-version $kernel --show-depends $1 2>/dev/null | awk '/^insmod / { print $2; }' | tail -1)
-    if [ -n "$fmPath" -a -f "$fmPath" ]; then
-        return 0
-    fi
-    for modExt in o.gz o ko ; do
-        for modDir in /lib/modules/$kernel/updates /lib/modules/$kernel ; do
-            if [ -d $modDir ]; then
-                fmPath=$(findone $modDir -name $1.$modExt)
-                if [ -n "$fmPath" -a -f "$fmPath" ]; then
-                    return 0
-                fi
-            fi
-        done
-    done
-    return 1
-}
-
-expandModules() {
-    items=$*
-
-    for m in $items ; do
-	char=$(echo $m | cut -c1)
-	if [ $char = '=' ]; then
-	    NAME=$(echo $m | cut -c2-)
-	    if [ "$NAME" = "ata" ]; then
-		MODS="$MODS $(cat /lib/modules/$kernel/modules.block |egrep '(ata|ahci)' |sed -e 's/.ko//')"
-	    else
-		MODS="$MODS $(cat /lib/modules/$kernel/modules.$NAME |sed -e 's/.ko//')"
-	    fi
-	else
-	    MODS="$MODS $m"
-	fi
-    done
-    echo $MODS
-}
-
-installmodule()
-{
-    MPARGS=""
-    if [ "$1" == "--ignore-install" ]; then
-        MPARGS="$MPARGS --ignore-install"
-        shift
-    fi
-    MODULE=$1
-    fmPath=""
-    locatemodule $MPARGS $MODULE
-    MODULE=$fmPath
-    if [ -z "$MODULE" ]; then
-        return
-    fi
-    if [ -x /usr/bin/strip ]; then
-        /usr/bin/strip -g $(get_verbose) $MODULE -o $MNTIMAGE/lib/modules/$kernel/$(basename $MODULE)
-    else
-        inst "$MODULE" "$MNTIMAGE" "/lib/modules/$kernel/$(basename $MODULE)"
-    fi
-    for fw in $(/sbin/modinfo -F firmware $MODULE 2>/dev/null); do
-        if [ -f /lib/firmware/$fw ]; then
-            inst "/lib/firmware/$fw" "$MNTIMAGE" "/firmware/$fw"
-        fi
-    done
-}
-
-# This loops to make sure it resolves dependencies of dependencies of...
-resdeps () {
-    modlist="$1"
-
-    before=1
-    after=2
-
-    items=$(eval echo \${$modlist})
-    vecho "resolving for $modlist"
-    vecho "and that has items of $items"
-    while [ $before != $after ]; do
-        before=$(echo $items | wc -c)
-        list=""
-
-        for i in $items ; do
-            deps=""
-            moduledep $i
-            list="$list $deps"
-
-            # need to handle prescsimods here -- they need
-            # to go _after_ scsi_mod
-            if [ "$i" = "scsi_mod" ]; then
-                NEW_PRESCSIMODS=""
-                for modName in $PRESCSIMODS ; do
-                    list="$list $modName"
-                    if [[ "$items " =~ " $modName " ]]; then
-                        NEW_PRESCSIMODS="$NEW_PRESCSIMODS $modName"
-                    else 
-                        items="$items $modName"
-                    fi
-                done
-                PRESCSIMODS="$NEW_PRESCSIMODS"
-
-                locatemodule scsi_wait_scan
-                if [ -n "$fmPath" -a -f "$fmPath" ]; then
-                    scsi_wait_scan="yes"
-                fi
-            fi
-        done
-        items=$(for n in $items $list; do echo $n; done | sort -u)
-        after=`echo $items | wc -c`
-    done
-
-    resolved="$items"
+function findall() {
+	find "$@"
 }
 
 qpushd() {
@@ -363,5 +105,565 @@ qpopd() {
 	popd >/dev/null 2>&1
 }
 
+function read_link() {
+	READLINK=$(readlink $1)
+	if grep -q "^/" <<< $READLINK; then
+		echo $READLINK
+	else
+		echo "$(dirname $1)/$READLINK"
+	fi
+}
 
-# vim:ts=8:sw=4:sts=4:et
+function get_dso_deps() {
+	local bin="$1"
+	shift
+
+	declare -a FILES
+	declare -a NAMES
+
+	local LDSO="/lib/ld-linux.so.2"
+
+	declare -i n=0
+	while read NAME I0 FILE ADDR I1 ; do
+		[ "$FILE" == "not" ] && FILE="$FILE $ADDR"
+		[ "$NAME" == "not" ] && NAME="$NAME $I0"
+		NAMES[$n]="$NAME"
+		FILES[$n]="$FILE"
+		let n++
+	done << EOF
+		$(LD_TRACE_PRELINKING=1 LD_WARN= LD_TRACE_LOADED_OBJECTS=1 \
+			$LDSO $bin 2>/dev/null)
+EOF
+
+	[ ${#FILES[*]} -eq 0 ] && return 1
+
+	# we don't want the name of the binary in the list
+	if [ "${FILES[0]}" == "$bin" ]; then
+		FILES[0]=""
+		NAMES[0]=""
+		[ ${#FILES[*]} -eq 1 ] && return 1
+	fi
+
+	declare -i n=0
+	while [ $n -lt ${#FILES[*]} ]; do
+		local FILE="${FILES[$n]}"
+		local NAME="${NAMES[$n]}"
+		if [ "$FILE" == "not found" -o "$NAME" == "not found" ]; then
+			cat 1>&2 <<EOF
+There are missing files on your system.  The dynamic object $bin
+requires ${NAMES[$n]} n order to properly function. mkinitramfs cannot continue.
+EOF
+			return 1
+		fi
+		case "$FILE" in
+			/lib*)
+				TLIBDIR=`echo "$FILE" | sed 's,\(/lib[^/]*\)/.*$,\1,'`
+				BASE=`basename "$FILE"`
+				if [ -f "$TLIBDIR/$BASE" ]; then
+					FILE="$TLIBDIR/$BASE"
+				fi
+				FILES[$n]="$FILE"
+				;;
+		esac
+		let n++
+	done
+	echo "${FILES[@]}"
+}
+
+function install() {
+	local file dest
+	for file in $@; do
+		local msg="[FILE]"
+
+		## Check if this is an absolute path
+		if [ "$(basename $file)" = "$file" ]; then
+			file=$(which $file)
+		fi
+		
+		# Destination file
+		dest="$TMPDIR$file"
+		[ -e "$dest" ] && return 0
+
+		mkdir -p "$(dirname $dest)" 2>/dev/null
+
+		local old_indent=$INDENT
+		INDENT=" $INDENT"
+		
+		[ "${file%%.ko}" != "${file}" ] && msg="[KMOD]"
+		[ -L "$file" ] && msg="[SYML]"
+		#vecho "$msg$INDENT$file -> $dest"
+		vecho "$msg$INDENT$file"
+
+		# Check if $file is a symlink
+		if [ -L "$file" ]; then
+			install $(read_link $file)
+		fi
+
+		if [ "${file%%.ko}" != "${file}" ]; then
+			for i in $(moduledep $file); do
+				[ "$(locatemodule $i)" = "$file" ] && continue
+				installmodule $i
+			done
+		fi
+
+		cp -ld $file $dest
+
+		# Check if file is a script file
+		if [ "$(dd if=$file bs=2 count=1 2>/dev/null)" = "#!" ]; then
+			install $(head -n 1 $file | cut -c3-)
+		# Check if file is a kernel module
+		elif [ "${file%%.ko}" != "${file}" ]; then
+			local firmware
+			for firmware in $(modinfo -F firmware $file 2>/dev/null); do
+				firmware="/lib/firmware/$firmware"
+				[ -e "$firmware" ] && install $firmware
+			done
+		else
+			for dep in $(get_dso_deps "$file"); do
+				install $dep
+			done
+		fi
+
+		INDENT=$old_indent
+	done
+}
+
+# find module dependencies
+function moduledep() {
+	local deps mpargs
+	if [ "$1" == "--ignore-install" ]; then
+		mpargs="$mpargs --ignore-install"
+		shift
+	fi
+	local module=$(basename ${1%%.ko})
+	modprobe $mpargs --set-version $KERNEL --show-depends $module 2>/dev/null | \
+		awk '/^insmod / { print gensub(".*/","","g",$2) }' | \
+			while read foo; do \
+				[ "${foo%%.ko}" != "$1" ] && \
+				echo -n "${foo%%.ko} "; \
+			done
+}
+
+# XXX May be, we can drop this...
+# This loops to make sure it resolves dependencies of dependencies of...
+function resolvemoduledeps () {
+	local dep
+	local deps
+	local module
+	local newmodules
+	local modules=$@
+
+	before=0; after=1
+	while [ $before != $after ]; do
+		newmodules=
+		before=$(wc -c <<< $modules)
+		for module in $modules; do
+			deps=$(moduledep $module)
+			is_verbose && echo "Module $module depends on: $deps"
+			newmodules="$newmodules $module $deps"
+		done
+		modules=$(for i in $newmodules; do echo $i; done | sort -u)
+		after=$(wc -c <<< $modules)
+	done
+	echo $modules
+}
+
+function locatemodule() {
+	local mpargs=""
+	if [ "$1" == "--ignore-install" ]; then
+		mpargs="$mpargs --ignore-install"
+		shift
+	fi
+	local path=$(modprobe $mpargs --set-version $KERNEL --show-depends $1 2>/dev/null | \
+		awk '/^insmod / { print $2; }' | tail -n 1)
+	[ -n "$path" -a -f "$path" ] && echo $path
+}
+
+function installmodule() {
+	local module
+	for module in $@; do
+		module=$(locatemodule $module)
+		[ -z "$module" ] && continue
+
+		install $module
+	done
+}
+
+resolve_device_name() {
+	if [[ "$1" =~ ^/dev ]]; then
+		echo $1
+	else
+		findfs $1
+	fi
+}
+
+function finalize() {
+	qpopd
+
+	# Adding modules
+	installmodule $MODULES
+	
+	# Build module deps file so we can use modprobe
+	vecho "[TASK] Running depmod..."
+	depmod -a -b "$TMPDIR" $KERNEL
+
+	# ldconfig
+	install /etc/ld.so.conf
+	[ -d "/etc/ld.so.conf.d" ] && \
+		for i in $(find /etc/ld.so.conf.d -type f); do
+			install $i
+		done
+	vecho "[TASK] Running ldconfig..."
+	ldconfig -r $TMPDIR
+
+	# Compressing
+	compress
+	rm -rf $TMPDIR 2>/dev/null
+}
+
+# resolve a device node to its major:minor numbers in decimal or hex
+function get_numeric_dev() {
+	( fmt="%d:%d"
+		if [ "$1" == "hex" ]; then
+			fmt="%x:%x"
+		fi
+		ls -lH "$2" | awk '{ sub(/,/, "", $5); printf("'"$fmt"'", $5, $6); }'
+	) 2>/dev/null
+}
+
+function resolve_device_name() {
+	if [[ "$1" =~ ^/dev ]]; then
+		echo $1
+	else
+		findfs $1
+	fi
+}
+
+function finddevnoinsys() {
+	majmin="$1"
+	if [ -n "$majmin" ]; then
+		dev=$(for x in /sys/block/* ; do find $x/ -name dev ; done | while read device ; do \
+			echo "$majmin" | cmp -s $device && echo $device ; done)
+		if [ -n "$dev" ]; then
+			dev=${dev%%/dev}
+			dev=${dev%%/}
+			echo "$dev"
+			return 0
+		fi
+	fi
+	return 1
+}
+
+findblockdevinsys() {
+	devname=$(resolve_device_name "$1")
+	if [[ "$devname" =~ ^/sys/block/ ]]; then
+		echo "$devname"
+	fi
+	majmin=$(get_numeric_dev dec $devname)
+	finddevnoinsys "$majmin"
+}
+
+findstoragedriverinsys () {
+	while [ ! -L device ]; do
+		for slave in $(ls -d slaves/* 2>/dev/null) ; do
+			slavename=${slave##*/}
+			case " $slavestried " in
+				*" $slavename "*)
+					continue
+					;;
+				*)
+					slavestried="$slavestried $slavename"
+					qpushd $slave
+					findstoragedriverinsys
+					qpopd
+					;;
+			esac
+		done
+		[ "$PWD" = "/sys" ] && return
+		cd ..
+	done
+	cd $(read_link ./device)
+	if echo $PWD | grep -q /virtio-pci/ ; then
+		installmodule virtio_pci
+	fi
+	while [ "$PWD" != "/sys/devices" ]; do
+		deps=
+		if [ -f modalias ]; then
+			installmodule $(cat modalias)
+		fi
+
+		[ -z "$deps" -a -L driver/module ] && \
+			deps=$(basename $(read_link driver/module))
+		installmodule $deps
+		cd ..
+	done
+}
+
+function findstoragedriver() {
+	for device in $@; do
+		case " $handleddevices " in
+			*" $device "*)
+				continue ;;
+			*) handleddevices="$handleddevices $device" ;;
+		esac
+		vecho "[INFO] Looking for driver for device $device"
+		if [[ "$device" =~ ^/sys ]]; then
+			device=${device##*/}
+		fi
+		sysfs=""
+		device=$(echo "$device" | sed 's,/,!,g')
+		if [ -d /sys/block/$device/ ]; then
+			sysfs="/sys/block/$device"
+		else
+			sysfs=$(for x in /sys/block/*; do findone $x/ -type d -name $device; done)
+		fi
+		[ -z "$sysfs" ] && return
+		qpushd $sysfs
+		findstoragedriverinsys
+		qpopd
+	done
+}
+
+# Main
+while [ $# -gt 0 ] ; do
+	case $1 in
+		--help)
+			usage
+			exit 0
+			;;
+		-f|--force)
+			FORCE=yes
+			;;
+		-v|--verbose)
+			set_verbose on
+			;;
+		--with=*)
+			MODULES="$MODULES ${1#--with=*}"
+			;;
+		*)
+			if [ -z "$target" ] ; then
+				target=$1
+			elif [ -z "$kernel" ] ; then
+				kernel=$1
+			else
+				echo "Unknown option or parameter \"$1\""
+				usage
+				exit 1
+			fi
+			;;
+	esac
+
+	shift
+done
+
+TARGET=${target-$TARGET}
+KERNEL=${kernel-$KERNEL}
+
+if [ -z "$TARGET" ]; then
+	usage
+	exit 1
+fi
+
+[[ "$TARGET" =~ "^/" ]] && TARGET="$PWD/$TARGET"
+
+if [ -z "$FORCE" ] && [ -e "$TARGET" ]; then
+	echo "Image $TARGET already exists. Use -f to overwrite"
+	exit 1
+fi
+
+# Changing to our dir, where we do our actions in
+qpushd $TMPDIR || exit 1
+
+# Make directory structure
+mkdir -p bin sbin dev sys proc sysroot \
+	etc/udev/rules.d lib/udev/rules.d
+
+# Install some essential binaries
+install bash chmod cat cut dd dmesg env grep kbd_mode kill killall5 ln ls lsmod mkdir \
+	mknod modprobe mount mountpoint openvt pidof rm sed setfont sh sleep switchroot \
+	udevadm udevd umount /lib/udev/console_init /lib/udev/vol_id
+
+# Install /etc/fstab
+install /etc/fstab
+
+# Copy modprobe.conf and friends over
+[ -e /etc/modprobe.conf ] && install /etc/modprobe.conf
+for f in $(find /etc/modprobe.d -type f); do
+	install $f
+done
+
+# terminfo bits make things work better if you fall into interactive mode
+[ -d "/usr/lib/terminfo" ] && \
+	for f in $(find /usr/lib/terminfo -type f); do
+		install $f
+	done
+
+# Add localization
+install /etc/sysconfig/console /etc/inittab
+. /etc/sysconfig/console
+[ -z "$FONT" ] && FONT="LatArCyrHeb-16"
+for i in /lib/kbd/consolefonts/$FONT.*; do
+	mkdir -p $TMPDIR/$(dirname $i) 2>/dev/null || true
+	cp -f $i $TMPDIR/$i
+	case "$i" in
+		*.gz)
+			gzip -fd $TMPDIR/$i
+			;;
+		*.bz2)
+			bzip2 -fd $TMPDIR/$i
+			;;
+	esac
+done
+
+cat > init <<'EOF'
+#!/bin/sh
+
+# Mounting directories
+mount -t proc proc /proc
+mount -t sysfs /sys /sys
+mount -t tmpfs -o mode=0755 udev /dev
+
+# Silencing kernel
+echo > /proc/sys/kernel/printk "1 4 1 7"
+
+# Adding important dev nodes
+mknod /dev/console c 5 1
+mknod /dev/null c 1 3
+mknod /dev/kmsg c 1 11
+mknod /dev/ptmx c 5 2
+mknod /dev/fb c 29 0
+mknod /dev/systty c 4 0
+
+# XXX really we need to openvt too, in case someting changes the
+# color palette and then changes vts on fbcon before gettys start.
+# (yay, fbcon bugs!)
+for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 ; do
+	mknod /dev/tty$i c 4 $i
+done
+
+for i in 0 1 2 3 ; do
+	mknod /dev/ttyS$i c 4 $(($i + 64))
+done
+
+mkdir -m 1777 /dev/shm
+ln -s /proc/self/fd /dev/fd
+ln -s fd/0 /dev/stdin
+ln -s fd/1 /dev/stdout
+ln -s fd/2 /dev/stderr
+
+mkdir /dev/pts
+mount -t devpts -o gid=5,mode=620 /dev/pts /dev/pts
+
+exec sbin/real-init
+EOF
+chmod 755 init
+
+# Write out real-init
+touch sbin/real-init; chmod 755 sbin/real-init
+cat > sbin/real-init <<'EOF'
+#!/bin/bash
+$HEADER
+
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+export TERM=linux
+
+INIT="/sbin/init"
+VERBOSE=-v
+
+READONLY=0
+SHELL=0
+ESHELL=0
+
+function emergency_shell()
+{
+    echo "Bug in initramfs /init detected. Dropping to a shell. Good luck!"
+    echo
+    bash
+}
+trap "emergency_shell" 0 2
+
+# exit immediately if a command fails
+set -e
+
+# Setting verbose mode
+function set_verbose() {
+	case "$1" in
+		yes|y|on|1)
+			VERBOSE=-v
+			;;
+		no|n|off|0)
+			VERBOSE=
+			;;
+	esac
+}
+
+# Returns if verbose is on or not
+function is_verbose() {
+	[ -n "$VERBOSE" ] && return 0
+	return 1
+}
+
+# Like is_verbose but prints
+# the content of $VERBOSE
+function get_verbose() {
+	echo "$VERBOSE"
+	is_verbose
+}
+
+# Prints text if verbose is on
+function vecho() {
+	if is_verbose; then echo "$@"; fi
+}
+
+# Prints error if verbose is on
+function error() {
+	vecho "$@" >&2
+}
+
+/lib/udev/console_init tty0
+
+# Disable hotplugging
+echo "" > /proc/sys/kernel/hotplug
+
+# Parse kernel commandline options
+for o in $(cat /proc/cmdline) ; do
+	case $o in
+	init=*)
+		INIT=${o#init=}
+		;;
+	ro)
+		READONLY=1
+		;;
+	rw)
+		READONLY=0
+		;;
+	quiet)
+		set_verbose no
+		;;
+	shell)
+		SHELL=1
+		;;
+	eshell)
+		ESHELL=1
+		;;
+	blacklist=*)
+		echo "blacklist ${o#blacklist=}" >> /etc/modprobe.conf
+		;;
+	*)
+		m=$(echo $o |cut -s -d . -f 1)
+		opt=$(echo $o |cut -s -d . -f 2-)
+		if [ -z "$m" -o -z "$opt" ]; then
+			continue
+		fi
+		p=$(echo $opt |cut -s -d = -f 1)
+		v=$(echo $opt |cut -s -d = -f 2-)
+		if [ -z "$p" -o -z "$v" ]; then
+			continue
+		fi
+		echo "options $m $p=$v" >> /etc/modprobe.conf
+		;;
+	esac
+done
+
+vecho "kernel commandline: $(cat /proc/cmdline)"
+EOF
