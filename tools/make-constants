@@ -54,7 +54,6 @@ BUILD_DEBUG=0
 PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
 
 # Default distcc options
-DISTCC_HOSTS=localhost
 DISTCC_PORT=3632
 DISTCC_JOBS=4
 

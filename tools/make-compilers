@@ -82,8 +82,32 @@ distccd_restart() {
 	distccd_start
 }
 
+distcc_get_hosts() {
+	if [ -n "$DISTCC_HOSTS" ]; then
+		logger --distcc "[INFO] Using local hosts: $DISTCC_HOSTS"
+		echo "$DISTCC_HOSTS" >> $BASEDIR/distcc/hosts
+		return 0
+	fi
+	logger --distcc "[INFO] Getting hosts..."
+	for i in $($BASEDIR/tools/buildspy uuid=$UUID action=get distcc=raw); do
+		logger --distcc "[INFO]  Got host: $i"
+		echo "$i" >> $BASEDIR/distcc/hosts_new
+	done
+	[ -s "$BASEDIR/distcc/hosts_new" ] && mv -f $BASEDIR/distcc/hosts{_new,}
+}
+
 distcc_reload() {
-	: # This will be used later...
+	local NOW=$(date "+%s")
+	[ -z "$DISTCC_RELOAD_TIMESTAMP" ] && DISTCC_RELOAD_TIMESTAMP=$NOW
+
+	# Exit if last reload is less than 5 minutes ago
+	if [ $(( $DISTCC_RELOAD_TIMESTAMP + 300 )) -ge $NOW ]; then
+		return 0
+	fi
+
+	logger --distcc "[INFO] Reloading distcc..."
+	distcc_get_hosts
+	DISTCC_RELOAD_TIMESTAMP=$NOW
 }
 
 if [ "$(basename $0)" == "make-compilers" ]; then

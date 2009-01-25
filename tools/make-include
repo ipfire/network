@@ -93,6 +93,17 @@ exiterror() {
 	exit 1
 } # End of exiterror()
 
+logger() {
+	local logfile=$LOGFILE
+	case "$1" in
+		--distcc)
+			logfile=$BASEDIR/log_$TARGET/_build.00-distcc.log
+			shift
+			;;
+	esac
+	echo "$(date -u '+%b %e %T') $*" >> $logfile
+}
+
 ################################################################################
 # This is the function that sets the environment of a chroot and enters it     #
 ################################################################################
@@ -497,12 +508,10 @@ prepareenv() {
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache
 	export CCACHE_HASHDIR=1
-	if [ ! -z "$DISTCC_HOSTS" ]; then
-		export CCACHE_PREFIX="distcc"
-		export DISTCC_DIR=$BASEDIR/distcc
-	fi
-	
-	[ -z "$DISTCC_HOSTS" ] || echo "$DISTCC_HOSTS" > $DISTCC_DIR/hosts
+	export CCACHE_PREFIX="distcc"
+	export DISTCC_DIR=$BASEDIR/distcc
+
+	distcc_get_hosts
 
 	# Remove pre-install list of installed files in case user erase some files before rebuild
 	rm -f $LFS/usr/src/lsalr 2>/dev/null

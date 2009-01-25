@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2008, 2009 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,43 +19,14 @@
 #                                                                             #
 ###############################################################################
 
-BUILD_SPY_FILENAME=$BASEDIR/.build_spy
+import os
+import sys
 
-build_spy() {
-	local KEY
-	KEY=$1; shift 1
-	echo -n "${KEY}=$* " >> $BUILD_SPY_FILENAME
-}
+from urlgrabber.grabber import URLGrabber
 
-build_spy_send_profile() {
-	build_spy target   ${TARGET}
-	build_spy hostname ${HOSTNAME}
-	build_spy distcc   ${DISTCC_PORT-3632}
-	build_spy jobs     ${DISTCC_JOBS}
-	build_spy cpu      $(grep ^model\ name /proc/cpuinfo | head -n1 | \
-		awk -F: '{ print $2 }' | $BASEDIR/tools/base64)
-	build_spy machine  $(uname -m)
-	build_spy toolchain "${NAME}-${TOOLCHAINVERSION}"
-}
+URL="http://build.ipfire.org/rpc.py"
 
-if [ "$(basename $0)" == "make-buildspy" ]; then
-	while true; do
-		DATA+=$(cat $BUILD_SPY_FILENAME 2>/dev/null || true)
-		> $BUILD_SPY_FILENAME
+data="&".join(sys.argv)
 
-		if [ -n "$DATA" ] && \
-			$BASEDIR/tools/buildspy \
-				action=set uuid=$UUID $DATA >> $LOGFILE 2>&1; then
-			DATA=""
-		fi
-
-		sleep 10
-		# If $BUILD_SPY_FILENAME file has content we need a new loop.
-		# If not, check if we are still running.
-		if [ -s $BUILD_SPY_FILENAME ]; then
-			continue
-		fi
-		[ -e $BASEDIR/.running ] || break
-	done
-	rm -f $BUILD_SPY_FILENAME
-fi
+g = URLGrabber(data=data)
+print g.urlread(URL)
