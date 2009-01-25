@@ -52,9 +52,8 @@ toolchain_build() {
 	SKIP_PACKAGE_LIST=
 
 	toolchain_make stage1
-	#toolchain_make scripts
 	# make distcc first so that CCACHE_PREFIX works immediately
-	[ -z "$DISTCC_HOSTS" ] || toolchain_make distcc
+	toolchain_make distcc
 	toolchain_make ccache
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
