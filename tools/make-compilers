@@ -85,7 +85,7 @@ distccd_restart() {
 distcc_get_hosts() {
 	if [ -n "$DISTCC_HOSTS" ]; then
 		logger --distcc "[INFO] Using local hosts: $DISTCC_HOSTS"
-		echo "$DISTCC_HOSTS" >> $BASEDIR/distcc/hosts
+		echo "$DISTCC_HOSTS" > $BASEDIR/distcc/hosts
 		return 0
 	fi
 	logger --distcc "[INFO] Getting hosts..."
