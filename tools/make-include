@@ -84,8 +84,10 @@ exiterror() {
 	stdumount
 	dialogerror $*
 	build_spy state error
-	[ -n "$LOGFILE" ] && \
+	if [ -n "$LOGFILE" ]; then
+		echo "$(date -u '+%b %e %T') ERROR: $*" >> $LOGFILE
 		build_spy log $(tail -n16 $LOGFILE | $BASEDIR/tools/base64)
+	fi
 	touch $FAILED
 	rm -f $RUNNING 2>/dev/null
 	exit 1
