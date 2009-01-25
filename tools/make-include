@@ -275,6 +275,7 @@ toolchain_make() {
 		exiterror "Building $*"
 	else
 		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		PACKAGES_DONE="$PACKAGES_DONE $1"
 	fi
 
 	return 0
