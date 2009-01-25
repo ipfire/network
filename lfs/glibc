@@ -278,7 +278,13 @@ ifeq "$(STAGE)" "base"
 	mv -v /usr/lib/{librpcsvc,librt,libutil}.a /usr/lib/static/
 
 	# Locales
-	cd $(DIR_SRC)/glibc-build && make localedata/install-locales
+	-mkdir -pv /usr/lib/locale
+	# This would install all locales that are supported, but we do only
+	# install a minimal set of them
+	#cd $(DIR_SRC)/glibc-build && make localedata/install-locales
+	cd $(DIR_SRC)/glibc-build && localedef -i de_DE -f UTF-8 de_DE.UTF-8
+	cd $(DIR_SRC)/glibc-build && localedef -i en_US -f UTF-8 en_US.UTF-8
+	cd $(DIR_SRC)/glibc-build && localedef -i da_DK -f UTF-8 da_DK.UTF-8
 
 	# Timezone
 	cp -v --remove-destination /usr/share/zoneinfo/GMT /etc/localtime
