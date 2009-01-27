@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,35 +24,14 @@
 
 include Config
 
-PKG_NAME   = fcron
-VER        = 3.0.4
-PKG_VER    = 0
+PKG_NAME   = XML-Parser
+VER        = 2.34
 
 THISAPP    = $(PKG_NAME)-$(VER)
-DL_FILE    = $(THISAPP).src.tar.gz
+DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-
-MAINTAINER =
-GROUP      = System/Daemons
-EXTRA      = no
-DEBUG      = no
-DEPS       = pam vim
-
-URL        = http://fcron.free.fr/
-LICENSE    = GPLv2+
-SHORT_DESC = A task scheduler.
-
-define LONG_DESC
-	Fcron is a scheduler. It aims at replacing Vixie Cron, so it implements most \
-	of its functionalities. \
-	But contrary to Vixie Cron, fcron does not need your system to be up 7 days \
-	a week, 24 hours a day: it also works well with systems which are \
-	not running neither all the time nor regularly (contrary to anacrontab). \
-	In other words, fcron does both the job of Vixie Cron and anacron, but does \
-	even more and better :)) ...
-endef
 
 ###############################################################################
 # Top-level Rules
@@ -60,42 +39,22 @@ endef
 
 objects = $(DL_FILE)
 
-download: $(objects)
+install : $(OBJECT)
 
-info:
-	$(DO_PKG_INFO)
+download : $(objects)
 
-install: $(OBJECT)
-
-package:
-	@$(DO_PACKAGE)
-
-$(objects):
+$(objects) :
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT): $(objects)
+$(OBJECT) : 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr \
-			--sysconfdir=/etc \
-			--localstatedir=/var \
-			--without-sendmail \
-			--with-boot-install=no
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && perl Makefile.PL
+	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-
-	mkdir -p /etc/fcron.minutely /etc/fcron.cyclic /etc/fcron.hourly \
-		/etc/fcron.daily /etc/fcron.weekly /etc/fcron.monthly
-
-	fcrontab $(DIR_CONFIG)/$(PKG_NAME)/crontab
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

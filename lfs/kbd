@@ -37,7 +37,9 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-backspace-1.patch
+objects = $(DL_FILE) $(THISAPP)-backspace-1.patch \
+	kbd-latarcyrheb-16-fixed.tar.bz2 \
+	kbd-latsun-fonts.tar.bz2
 
 install : $(OBJECT)
 
@@ -54,6 +56,11 @@ $(OBJECT) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-backspace-1.patch
+
+	# Adding our own fonts
+	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/kbd-latsun-fonts.tar.bz2
+	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/kbd-latarcyrheb-16-fixed.tar.bz2
+
 	cd $(DIR_APP) && sed -e '1i KEYCODES_PROGS = @KEYCODES_PROGS@' \
 		-e '1i RESIZECONS_PROGS = @RESIZECONS_PROGS@' -i src/Makefile.in
 	cd $(DIR_APP) && sed -i "s/ifdef OPTIONAL_PROGS/ifeq (\$$(OPTIONAL_PROGS),yes)/" man/Makefile.in

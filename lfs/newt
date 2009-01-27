@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = newt
-VER        = 0.52.7
+VER        = 0.52.10
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -37,7 +37,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-snack.patch $(THISAPP)-whiptail.patch
+objects = $(DL_FILE)
 
 info:
 	$(DO_PKG_INFO)
@@ -56,8 +56,6 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-snack.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-whiptail.patch
 
 	cd $(DIR_APP) && \
 		./configure \

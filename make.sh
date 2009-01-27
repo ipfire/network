@@ -198,7 +198,7 @@ ipfire_build() {
 	ipfire_make dbus
 	ipfire_make dbus-glib
 	ipfire_make openssl
-	ipfire_make perl			### We are building the modules here.
+	ipfire_make perl-xml-parser
 	ipfire_make python
 	ipfire_make python-dbus
 	ipfire_make python-urlgrabber
@@ -291,6 +291,7 @@ ipfire_build() {
 	ipfire_make hdparm
 	ipfire_make smartmontools
 	ipfire_make lm-sensors
+	ipfire_make parted
 	ipfire_make hal
 	ipfire_make hal-info
 
@@ -312,7 +313,6 @@ ipfire_build() {
 	#ipfire_make logwatch	
 	ipfire_make cpio
 	ipfire_make cdrtools
-	ipfire_make parted
 	ipfire_make python-parted
 	ipfire_make memtest86+
 	#ipfire_make pakfire
