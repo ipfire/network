@@ -499,8 +499,10 @@ done
 	done
 
 # Add localization
-install /etc/sysconfig/console /etc/inittab
-. /etc/sysconfig/console
+if [ -e "/etc/sysconfig/console" ]; then
+	install /etc/sysconfig/console
+	. /etc/sysconfig/console
+fi
 [ -z "$FONT" ] && FONT="latarcyrheb-sun16"
 for i in /lib/kbd/consolefonts/$FONT.*; do
 	mkdir -p $TMPDIR/$(dirname $i) 2>/dev/null || true
