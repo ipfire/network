@@ -163,6 +163,9 @@ entershell() {
 ################################################################################
 lfsmakecommoncheck()
 {
+	logger "Building $*"
+	build_spy package $1
+
 	# Script present?
 	if [ ! -f $BASEDIR/lfs/$1 ]; then
 		exiterror "No such file or directory: $BASEDIR/lfs/$1"
@@ -224,15 +227,12 @@ lfsmakecommoncheck()
 		fi
 	fi
 
-	echo -e "$(date -u '+%b %e %T'): Building $* " >> $LOGFILE
-
 	cd $BASEDIR/lfs && make -s -f $* MACHINE=$MACHINE LFS_BASEDIR=$BASEDIR MESSAGE="$1\t " download  >> $LOGFILE 2>&1
 	if [ $? -ne 0 ]; then
 		exiterror "Download error in $1"
 	fi
 
-	build_spy package $1
-	distcc_reload
+	distcc_reload &
 
 	return 0	# pass all!
 } # End of lfsmakecommoncheck()

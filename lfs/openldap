@@ -31,6 +31,8 @@ THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tgz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
+DEPS       = berkeley cyrus-sasl openssl pth
+
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 CFLAGS    += -D_GNU_SOURCE
