@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = syslinux
-VER        = 3.62
+VER        = 3.73
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -37,7 +37,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-nossp.patch
+objects = $(DL_FILE) $(THISAPP)-nopie.patch $(THISAPP)-nostrip.patch
 
 info:
 	$(DO_PKG_INFO)
@@ -56,7 +56,8 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-nossp.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-nopie.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-nostrip.patch
 	cd $(DIR_APP) && make clean
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) install
 	@rm -rf $(DIR_APP)
