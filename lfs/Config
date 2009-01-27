@@ -185,23 +185,12 @@ define POSTBUILD
 	fi
 	@rm -f $(OBJECT)_diff
 	echo "######################################################################"
-
-	touch $(DIR_INFO)/_build.00-software.log
-	if [ "x$(objects)" != "x" ] && \
-	! grep -qEi "^$(PKG_NAME);$(VER);" $(DIR_INFO)/_build.00-software.log; then \
-		echo "$(PKG_NAME);$(VER);" >> $(DIR_INFO)/_build.00-software.log; \
-	fi
 endef
 else
 define POSTBUILD
 	echo "### INSTALL DONE #####################################################"
 	echo "# Application: $(THISAPP)"
 	echo "######################################################################"
-	touch $(DIR_INFO)/_build.00-software.log
-	if [ "x$(objects)" != "x" ] && \
-	! grep -qEi "^$(PKG_NAME);$(VER);" $(DIR_INFO)/_build.00-software.log; then \
-		echo "$(PKG_NAME);$(VER);" >> $(DIR_INFO)/_build.00-software.log; \
-	fi
 	touch $(OBJECT)
 endef
 endif
