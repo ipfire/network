@@ -24,8 +24,8 @@
 
 include Config
 
-PKG_NAME   = perl
-VER        = 5.10.0
+PKG_NAME   = XML-Parser
+VER        = 2.34
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -37,9 +37,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	$(THISAPP)-page-1.patch \
-	$(THISAPP)-security_fix-1.patch
+objects = $(DL_FILE)
 
 install : $(OBJECT)
 
@@ -54,58 +52,9 @@ $(objects) :
 
 $(OBJECT) : 
 	@$(PREBUILD)
-	@rm -rf $(DIR_SRC)/perl* && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	-mkdir -v $(DIR_SRC)/perl-build
-
-ifeq "$(STAGE)" "toolchain"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-page-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-security_fix-1.patch
-	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
-
-	# -Dlibc, locincpth, loclibpth, glibpth, and usrinc, are equivilent to the LFS
-	# Perl libc patch.
-
-	# ./Configure is used instead of ./configure.gnu because it supports builds
-	# from an object directory. -Dmksymlinks is also used, to support read-only
-	# sources. -d -e are added to accept all defaults, otherwise ./Configure will
-	# be interactive.
-	cd $(DIR_SRC)/perl-build && \
-		$(DIR_APP)/Configure \
-			-Dcc=$(IFS_TARGET)-gcc \
-			-Dprefix=$(TOOLS_DIR) \
-			-Dlibc=$(TOOLS_DIR)/lib/libc-2.8.so \
-			-Ulocincpth \
-			-Uloclibpth \
-			-Dglibpth="$(TOOLS_DIR)/lib" \
-			-Dusrinc="$(TOOLS_DIR)/include" \
-			-Dmksymlinks \
-			-d -e
-	cd $(DIR_SRC)/perl-build && make #$(PARALLELISMFLAGS)
-	cd $(DIR_SRC)/perl-build && make LNS="cp" install
-endif
-
-ifeq "$(STAGE)" "base"
-	echo "127.0.0.1 localhost $(hostname)" > /etc/hosts
-
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-page-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-security_fix-1.patch
-
-	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
-
-	cd $(DIR_APP) && sed -i -e "s|BUILD_ZLIB\s*= True|BUILD_ZLIB = False|" \
-							-e "s|INCLUDE\s*= ./zlib-src|INCLUDE = /usr/include|" \
-							-e "s|LIB\s*= ./zlib-src|LIB = /usr/lib|" \
-							ext/Compress/Raw/Zlib/config.in
-
-	cd $(DIR_APP) && ./configure.gnu --prefix=/usr \
-		-Dman1dir=/usr/share/man/man1 -Dman3dir=/usr/share/man/man3 \
-		-Dpager="/usr/bin/less -isR"
-		
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && perl Makefile.PL
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	
-	rm -f /etc/hosts
-endif
-
-	@rm -rf $(DIR_SRC)/perl*
+	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
