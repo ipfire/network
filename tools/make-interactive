@@ -243,6 +243,11 @@ package*|pkg)
 		list|show|ls)
 			pkg_list_packages
 			;;
+		file*)
+			for i in $BASEDIR/lfs/*; do
+				pkg_files $i
+			done
+			;;
 		info)
 			shift 2
 			format_desc() {

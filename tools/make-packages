@@ -95,3 +95,13 @@ pkg_deps() {
 		echo $DEPS
 	)
 }
+
+pkg_files() {
+	(
+		unset NAME VERSION
+		eval $(pkg_info ${1})
+		for i in $FILES; do
+			echo $i
+		done
+	)
+}
