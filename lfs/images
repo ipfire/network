@@ -101,14 +101,14 @@ ifneq "$(PASS)" "$(THISAPP)"
 	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/$(PREFIX)/initrd0
 	cp -vf /boot/ipfirekernel-$(KVER) $(CDROM_DIR)/$(PREFIX)/$(SNAME)0
 
-	cp -vf /usr/lib/syslinux/vesamenu.c32 \
+	cp -vf /usr/share/syslinux/vesamenu.c32 \
 		$(DIR_CONF)/bootloader/splash.{jpg,lss} \
 		$(DIR_CONF)/bootloader/*.msg \
 			$(CDROM_DIR)/$(PREFIX)/
 endif
 
 ifeq "$(PASS)" "pxe"
-	cp -vf /usr/lib/syslinux/pxelinux.0 $(CDROM_DIR)/
+	cp -vf /usr/share/syslinux/pxelinux.0 $(CDROM_DIR)/
 	sed	-e "s/SNAME/$(SNAME)/g" \
 		-e "s/NAME/$(NAME)/g" \
 		-e "s/VERSION/$(VERSION)/g" \
@@ -127,7 +127,7 @@ ifeq "$(PASS)" "pxe"
 endif
 
 ifeq "$(PASS)" "cdrom"
-	cp -vf /usr/lib/syslinux/isolinux.bin $(CDROM_DIR)/$(PREFIX)/
+	cp -vf /usr/share/syslinux/isolinux.bin $(CDROM_DIR)/$(PREFIX)/
 	sed	-e "s/SNAME/$(SNAME)/g" \
 		-e "s/NAME/$(NAME)/g" \
 		-e "s/VERSION/$(VERSION)/g" \
