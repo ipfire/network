@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,12 +26,36 @@ include Config
 
 PKG_NAME   = gettext
 VER        = 0.17
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = System/Base
+EXTRA      = no
+DEBUG      = no
+DEPS       = bison
+
+URL        = http://www.gnu.org/software/gettext/
+LICENSE    = GPLv3 LGPL2+
+SHORT_DESC = GNU libraries and utilities for producing multi-lingual messages.
+
+define LONG_DESC
+	The GNU gettext package provides a set of tools and documentation for \
+	producing multi-lingual messages in programs. Tools include a set of \
+	conventions about how programs should be written to support message \
+	catalogs, a directory and file naming organization for the message \
+	catalogs, a runtime library which supports the retrieval of translated \
+	messages, and stand-alone programs for handling the translatable and \
+	the already translated strings. Gettext provides an easy to use \
+	library and tools for creating, using, and modifying natural language \
+	catalogs and is a powerful and simple method for internationalizing \
+	programs.
+endef
 
 ###############################################################################
 # Top-level Rules
@@ -40,20 +64,26 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 objects = $(DL_FILE) \
 	$(THISAPP)-open-args.patch
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+info:
+	$(DO_PKG_INFO)
 
-$(objects) :
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-open-args.patch
 
