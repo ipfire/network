@@ -145,7 +145,7 @@ base_build() {
 	ipfire_make gmp
 	ipfire_make grub
 	ipfire_make gawk
-	ipfire_make glib
+	ipfire_make glib2
 	ipfire_make grep
 	ipfire_make groff
 	ipfire_make gzip
