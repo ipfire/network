@@ -33,6 +33,8 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+CFLAGS     = -Werror -Wno-unused -finline-limit=2000
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
