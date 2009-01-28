@@ -42,7 +42,11 @@ MAINTAINER =
 GROUP      = Development/Tools
 EXTRA      = no
 DEBUG      = no
-DEPS       = zlib
+
+# Host system provides zlib.
+ifneq "$(STAGE)" "toolchain"
+	DEPS = zlib
+endif
 
 URL        = http://www.gnu.org/software/binutils/
 LICENSE    = GPLv2+
