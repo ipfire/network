@@ -316,9 +316,10 @@ ipfire_build() {
 	ipfire_make python-parted
 	ipfire_make memtest86+
 	#ipfire_make pakfire
-	
+	ipfire_make quagga
+
 	ipfire_make pyfire
-  
+
 	### -------------------------------------------------------------------------
 	### Tools that maybe not needed
 	#

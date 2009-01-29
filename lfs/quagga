@@ -1,0 +1,91 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include Config
+
+PKG_NAME   = quagga
+VER        = 0.99.11
+PKG_VER    = 0
+
+THISAPP    = $(PKG_NAME)-$(VER)
+DL_FILE    = $(THISAPP).tar.gz
+DIR_APP    = $(DIR_SRC)/$(THISAPP)
+
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = Networking/Routing
+EXTRA      = no
+DEBUG      = no
+DEPS       = pam
+
+URL        = http://www.quagga.net/
+LICENSE    = GPLv2+
+SHORT_DESC = Quagga is a rounting daemon.
+
+define LONG_DESC
+	Quagga is a free software that manages TCP/IP based routing \
+	protocol. It takes multi-server and multi-thread approach to resolve \
+	the current complexity of the Internet. \
+	Quagga supports BGP4, BGP4+, OSPFv2, OSPFv3, RIPv1, RIPv2, and RIPng.
+endef
+
+###############################################################################
+# Top-level Rules
+###############################################################################
+
+objects = $(DL_FILE)
+
+download: $(objects)
+
+info:
+	$(DO_PKG_INFO)
+
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(OBJECT): $(objects)
+	@$(PREBUILD)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--sysconfdir=/etc \
+			--disable-static \
+			--enable-netlink \
+			--with-libpam
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install
+	@rm -rf $(DIR_APP)
+	@$(POSTBUILD)
