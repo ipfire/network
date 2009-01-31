@@ -433,6 +433,7 @@ misc_build() {
 
 	### Debugging
 	#
+	ipfire_make pax-utils
 	ipfire_make gdb
 	ipfire_make strace
 	ipfire_make pychecker
