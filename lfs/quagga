@@ -77,7 +77,10 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	# ac_cv_have_decl_TCP_MD5SIG=no was set to work around a bug
 	cd $(DIR_APP) && \
+		ac_cv_have_decl_TCP_MD5SIG=no \
+		ac_cv_func_working_mktime=yes \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
