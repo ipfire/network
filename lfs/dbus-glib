@@ -79,7 +79,8 @@ $(OBJECT): $(objects)
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--sysconfdir=/etc
+			--sysconfdir=/etc \
+			--libexecdir=/usr/lib
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
