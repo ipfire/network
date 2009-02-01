@@ -32,6 +32,15 @@ ccache_stats() {
 
 distcc_mon() {
 
+	# run gnome thing if we can...
+	if [ -n "$DISPLAY" ]; then
+		monitor=$(which distccmon-gnome 2>/dev/null)
+		if [ -n "$monitor" ]; then
+			DISTCC_DIR=$BASEDIR/distcc $monitor &
+			return 0
+		fi
+	fi
+
 	INTERVAL=1 # in seconds
 
 	if [ -e $BASEDIR/distcc ]; then
