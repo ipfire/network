@@ -483,9 +483,6 @@ install bash chmod cat cut dd dmesg env grep kbd_mode kill killall5 ln ls lsmod 
 	mknod modprobe mount mountpoint openvt pidof rm sed setfont sh sleep switchroot \
 	udevadm udevd umount /lib/udev/console_init /lib/udev/vol_id
 
-# Install /etc/fstab
-install /etc/fstab
-
 # Copy modprobe.conf and friends over
 [ -e /etc/modprobe.conf ] && install /etc/modprobe.conf
 for f in $(find /etc/modprobe.d -type f); do
