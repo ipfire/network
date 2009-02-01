@@ -33,7 +33,7 @@ cron_run() {
 		exit 1
 	fi
 
-	if [ -e "$RUNNING" ]; then
+	if [ -f "$RUNNING" ]; then
 		dialogerror "Build is already running at the moment..." 2>&1
 		exit 0
 	fi
@@ -43,7 +43,7 @@ cron_run() {
 	git checkout -f # Remove all local changes !!!
 	git_pull --batch
 
-	if [ -e "$FAILED" ]; then
+	if [ -f "$FAILED" ]; then
 		dialogerror "Build failed..." 2>&1
 		exit 0
 	fi
