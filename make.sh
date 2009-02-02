@@ -359,7 +359,7 @@ misc_build() {
 	#ipfire_make traceroute
 	#ipfire_make nmap
 	#ipfire_make rsync
-	#ipfire_make tcpdump
+	ipfire_make tcpdump
 	ipfire_make htop
 	ipfire_make nano
 	ipfire_make squid
