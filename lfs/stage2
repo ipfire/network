@@ -79,10 +79,10 @@ $(OBJECT) :
 	rm -fr /dev1
 
 	# Config files
-	for i in $(DIR_SRC)/config/etc/*; do \
+	for i in $$(find $(DIR_SRC)/config/etc/ -type f); do \
 		cp -vf $$i /etc; \
 	done
-	for i in $(DIR_CONFIG)/root/*; do \
+	for i in $$(find $(DIR_CONFIG)/root/ -type f); do \
 		cp -vf $$i /root; \
 	done
 	-mkdir -pv /etc/modprobe.d
