@@ -38,6 +38,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 ###############################################################################
 
 objects = $(DL_FILE) \
+	ifenslave-20090202.tar.gz \
 	$(THISAPP)-addrcache.patch \
 	$(THISAPP)-arping-infiniband.patch \
 	$(THISAPP)-arping_timeout.patch \
@@ -49,7 +50,8 @@ objects = $(DL_FILE) \
 	$(THISAPP)-ping_cleanup.patch \
 	$(THISAPP)-rh.patch \
 	$(THISAPP)-traffic_class.patch \
-	$(THISAPP)-warnings.patch
+	$(THISAPP)-warnings.patch \
+	iputils-ifenslave-20090202.patch
 
 install : $(OBJECT)
 
@@ -66,6 +68,8 @@ $(OBJECT) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 
+	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/ifenslave-20090202.tar.gz
+
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-addrcache.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-arping-infiniband.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-arping_timeout.patch
@@ -78,11 +82,14 @@ $(OBJECT) :
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-traffic_class.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-warnings.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-output.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/iputils-ifenslave-20090202.patch
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && gcc -Wall $(CLFAGS) ifenslave.c -o ifenslave
 
 	cd $(DIR_APP) && install -cp clockdiff	/usr/sbin/
 	cd $(DIR_APP) && install -cp arping		/sbin/
+	cd $(DIR_APP) && install -cp ifenslave		/sbin/
 	cd $(DIR_APP) && install -cp ping		/bin/
 	cd $(DIR_APP) && install -cp rdisc		/sbin/
 	cd $(DIR_APP) && install -cp ping6		/bin/
@@ -93,6 +100,6 @@ $(OBJECT) :
 	ln -svf ../../bin/tracepath		/usr/sbin/
 	ln -svf ../../bin/tracepath6	/usr/sbin/
 
-	#setcap cap_net_admin=ep /bin/ping
+	setcap cap_net_admin=ep /bin/ping
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

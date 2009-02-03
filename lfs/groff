@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = groff
 VER        = 1.18.1.4
+PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,11 +34,31 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/Text
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://groff.ffii.org/
+LICENSE    = GPLv2 and GFDL
+SHORT_DESC = A document formatting system.
+
+define LONG_DESC
+	Groff is a document formatting system. Groff takes standard text and \
+	formatting commands as input and produces formatted output. The \
+	created documents can be shown on a display or printed on a printer. \
+	Groff's formatting commands allow you to specify font type and size, \
+	bold type, italic type, the number and size of columns on a page, and \
+	more.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-debian_fixes-1.patch
+objects = $(DL_FILE) \
+	$(THISAPP)-debian_fixes-1.patch
 
 install : $(OBJECT)
 
@@ -53,7 +74,7 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-debian_fixes-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-debian_fixes-1.patch
 	cd $(DIR_APP) && sed -i -e 's/2010/002D/' -e 's/2212/002D/' \
 				-e 's/2018/0060/' -e 's/2019/0027/' font/devutf8/R.proto
 	cd $(DIR_APP) && PAGE=A4 \
@@ -61,7 +82,7 @@ $(OBJECT) :
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-multibyte
-	cd $(DIR_APP) && make
+	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	ln -sv eqn /usr/bin/geqn
 	ln -sv tbl /usr/bin/gtbl

@@ -92,7 +92,7 @@ $(OBJECT) :
 	chmod 644 /etc/init.d/ipfire-functions
 
 	# Install networking scripts
-	for i in $(DIR_APP)/networking/{br,if}{down,up}; do \
+	for i in $(DIR_APP)/networking/{br{down,up},net-hotplug}; do \
 		install -v -m 754 $$i /etc/init.d/networking; \
 	done
 

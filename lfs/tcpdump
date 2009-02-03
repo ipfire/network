@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,8 +24,8 @@
 
 include Config
 
-PKG_NAME   = bridge-utils
-VER        = 1.2
+PKG_NAME   = tcpdump
+VER        = 4.0.0
 PKG_VER    = 0
 
 THISAPP    = $(PKG_NAME)-$(VER)
@@ -35,28 +35,30 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
-GROUP      = Networking/Tools
-EXTRA      = no
+GROUP      = Networking/Sniffer
+EXTRA      = yes
 DEBUG      = no
-DEPS       =
+DEPS       = libpcap openssl
 
-URL        = http://bridge.sourceforge.net/
-LICENSE    = GPLv2+
-SHORT_DESC = Utilities for configuring the linux ethernet bridge.
+URL        = http://www.tcpdump.org/
+LICENSE    = BSD with advertising
+SHORT_DESC = A network traffic monitoring tool.
 
 define LONG_DESC
-	This package contains utilities for configuring the linux ethernet \
-	bridge. The linux ethernet bridge can be used for connecting multiple \
-	ethernet devices together. The connecting is fully transparent: hosts \
-	connected to one ethernet device see hosts connected to the other \
-	ethernet devices directly.
+	Tcpdump is a command-line tool for monitoring network traffic. \
+	Tcpdump can capture and display the packet headers on a particular \
+	network interface or on all interfaces.  Tcpdump can display all of \
+	the packet headers, or just the ones that match particular criteria.
 endef
+
+CFLAGS    += -fno-strict-aliasing
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-ipv6-build.patch
 
 download: $(objects)
 
@@ -78,13 +80,11 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && autoconf
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-ipv6-build.patch
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
-			--prefix=/usr \
-			--sbindir=/sbin \
-			--disable-static
+			--prefix=/usr
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)

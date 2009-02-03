@@ -1,13 +1,4 @@
 # Begin /etc/bashrc
-# Written for Beyond Linux From Scratch
-# by James Robertson <jameswrobertson@earthlink.net>
-# updated by Bruce Dubbs <bdubbs@linuxfromscratch.org>
-
-# Make sure that the terminal is set up properly for each shell
-
-if [ -f /etc/profile.d/tinker-term.sh ]; then
-  source /etc/profile.d/tinker-term.sh
-fi
 
 # System wide aliases and functions.
 
@@ -20,19 +11,6 @@ fi
 # /etc/profile.
 
 alias ls='ls --color=auto'
-alias ll='ls -la'
-alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
-
-# Make the shell a little bit more interactive 
-# to prevent the deletion of some files
-alias mv='mv -i'
-alias rm='rm -i'
-alias cp='cp -i'
-
-# Midnight Commander isn't compatible to UTF8.
-# So we use it in ACSII-Mode.
-
-alias mc='mc -a'
 
 # Provides prompt for non-login shells, specifically shells started
 # in the X environment. [Review the LFS archive thread titled

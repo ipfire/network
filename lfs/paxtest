@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,17 +24,30 @@
 
 include Config
 
-VER        = 1.4.1
+PKG_NAME   = paxtest
+VER        = 0.9.7-pre4
+PKG_VER    = 0
 
-THISAPP    = libpri-$(VER)
+THISAPP    = $(PKG_NAME)-$(VER)
 DL_FILE    = $(THISAPP).tar.gz
-DL_FROM    = $(URL_IPFIRE)
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
-OBJECT     = $(DIR_INFO)/$(THISAPP)
-PROG       = libpri
-PAK_VER    = 1
 
-DEPS       = ""
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = Security/Tools
+EXTRA      = no
+DEBUG      = yes
+DEPS       =
+
+URL        = http://pax.grsecurity.org/
+LICENSE    = GPLv2+
+SHORT_DESC = Utilities for testing PaX configuration.
+
+define LONG_DESC
+	This package contains several files for checking the PaX configuration \
+	and checks if it all works correctly.
+endef
 
 ###############################################################################
 # Top-level Rules
@@ -42,42 +55,27 @@ DEPS       = ""
 
 objects = $(DL_FILE)
 
-$(DL_FILE) = $(DL_FROM)/$(DL_FILE)
+download: $(objects)
 
-$(DL_FILE)_MD5 = 9e5da1f2267711d9aaaf91ffa925b219
+info:
+	$(DO_PKG_INFO)
 
-install : $(OBJECT)
+install: $(OBJECT)
 
-check : $(patsubst %,$(DIR_CHK)/%,$(objects))
+package:
+	@$(DO_PACKAGE)
 
-download : $(objects)
-
-md5 : $(subst %,%_MD5,$(objects))
-
-dist: 
-	$(PAK)
-
-###############################################################################
-# Downloading, checking, md5sum
-###############################################################################
-
-$(patsubst %,$(DIR_CHK)/%,$(objects)) :
-	@$(CHECK)
-
-$(objects) :
+$(objects):
 	@$(LOAD)
-
-$(subst %,%_MD5,$(objects)) :
-	@$(MD5)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && make $(MAKETUNING) clean all KVERS=$(KVER)
-	cd $(DIR_APP) && make install KVERS=$(KVER)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && make -f Makefile.generic RUNDIR=/usr/lib/paxtest
+	cd $(DIR_APP) && make -f Makefile.generic install DESTDIR=/ RUNDIR=/usr/lib/paxtest BINDIR=/usr/bin
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

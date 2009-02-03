@@ -193,12 +193,14 @@ ipfire_build() {
 
 	### Building some general stuff
 	#   STAGE 1
+	ipfire_make libdaemon
 	ipfire_make pcre
 	ipfire_make expat
 	ipfire_make dbus
 	ipfire_make dbus-glib
 	ipfire_make openssl
 	ipfire_make perl-xml-parser
+	ipfire_make intltool
 	ipfire_make python
 	ipfire_make python-dbus
 	ipfire_make python-urlgrabber
@@ -230,6 +232,7 @@ ipfire_build() {
 	ipfire_make vlan
 	ipfire_make bind
 	ipfire_make whois
+	ipfire_make avahi
 	
 	### Building some general stuff
 	#   STAGE 2
@@ -356,7 +359,7 @@ misc_build() {
 	#ipfire_make traceroute
 	#ipfire_make nmap
 	#ipfire_make rsync
-	#ipfire_make tcpdump
+	ipfire_make tcpdump
 	ipfire_make htop
 	ipfire_make nano
 	ipfire_make squid
@@ -433,6 +436,8 @@ misc_build() {
 
 	### Debugging
 	#
+	ipfire_make pax-utils
+	ipfire_make paxtest
 	ipfire_make gdb
 	ipfire_make strace
 	ipfire_make pychecker

@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2008, 2009 Michael Tremer & Christian Schmidt                 #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,40 +19,40 @@
 #                                                                             #
 ###############################################################################
 
-ALLOWED_TARGETS=${ALLOWED_TARGETS-$(check_supported_targets)}
+if [ "$INTERFACE" = "" ]; then
+	exit 1
+fi
 
-cron_run() {
-	if [ "$PATH" = "/sbin:/bin" ]; then
-		export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-	fi
+case $ACTION in
+	add|register)
+		case $INTERFACE in
+			# interfaces that are brought up as a part of configuration
+			ppp*|ippp*|isdn*|plip*|lo*|irda*|dummy*|ipsec*|tun*|tap*)
+				exit 0
+				;;
+			# interfaces that are registered then brought up
+			*)
+				export IN_HOTPLUG=1
+				## Put ifup code here
+				;;
+		esac
+		;;
 
-	local RAND=$(( $RANDOM % $(wc -w <<< $ALLOWED_TARGETS) ))
+	remove|unregister)
+		case $INTERFACE in
+			# interfaces that are brought down as part of deconfiguration
+			ppp*|ippp*|isdn*|plip*|lo*|irda*|dummy*|ipsec*|tun*|tap*)
+				exit 0
+				;;
+			*)
+				export IN_HOTPLUG=1
+				## Put ifdown code here
+				;;
+		esac
+		;;
 
-	if [ "$(dirname $0)" != "." ]; then
-		dialogerror "You must change into the basedirectory before you run \"./$(basename $0) $@\""
+	*)
 		exit 1
-	fi
+		;;
 
-	if [ -f "$RUNNING" ]; then
-		dialogerror "Build is already running at the moment..." 2>&1
-		exit 0
-	fi
-
-	# Pull latest changes
-	git_diff
-	git checkout -f # Remove all local changes !!!
-	git_pull --batch
-
-	if [ -f "$FAILED" ]; then
-		dialogerror "Build failed..." 2>&1
-		exit 0
-	fi
-
-	local COUNT=0
-	for i in $ALLOWED_TARGETS; do
-		COUNT=$(( $COUNT + 1 ))
-		[ "$COUNT" != "$(( $RAND + 1 ))" ] && continue
-		TARGET=$i $0 batch start --clean
-		break
-	done
-}
+esac

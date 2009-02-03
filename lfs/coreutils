@@ -110,6 +110,9 @@ ifeq "$(STAGE)" "base"
 	mv -v /usr/bin/{rmdir,stty,sync,true,uname} /bin
 	mv -v /usr/bin/chroot /usr/sbin
 	mv -v /usr/bin/{head,sleep,nice} /bin
+
+	# Dump /etc/dircolors.
+	dircolors -p > /etc/dircolors
 endif
 	
 	@rm -rf $(DIR_APP)
