@@ -25,10 +25,10 @@
 include Config
 
 PKG_NAME   = linux
-VER        = 2.6.27.10
-PKG_VER    = 0
+PKG_VER    = 2.6.27.10
+PKG_REL    = 0
 
-THISAPP    = $(PKG_NAME)-$(VER)
+THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
@@ -55,12 +55,12 @@ CFLAGS     =
 CXXFLAGS   =
 
 LOCALVERSION = -ipfire1
-FULLVER    = $(VER)$(LOCALVERSION)
+FULLPKG_VER= $(PKG_VER)$(LOCALVERSION)
 
 # Patches
-GRSEC_PATCH    = grsecurity-2.1.12-$(VER)-200812271347.patch
+GRSEC_PATCH    = grsecurity-2.1.12-$(PKG_VER)-200812271347.patch
 OCF_PATCH      = ocf-linux-26-20080917.patch
-REISER4_PATCH  = reiser4-for-$(VER).patch
+REISER4_PATCH  = reiser4-for-$(PKG_VER).patch
 SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
 H12Y_PATCH     = linux-h12y-mmio-quirks.patch
 

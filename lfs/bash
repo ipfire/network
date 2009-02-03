@@ -25,10 +25,10 @@
 include Config
 
 PKG_NAME   = bash
-VER        = 3.2
-PKG_VER    = 0
+PKG_VER    = 3.2
+PKG_REL    = 0
 
-THISAPP    = $(PKG_NAME)-$(VER)
+THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
@@ -57,7 +57,7 @@ endef
 
 objects = $(DL_FILE) \
 	$(THISAPP)-fixes-9.patch \
-	$(PKG_NAME)-doc-$(VER).tar.gz \
+	$(PKG_NAME)-doc-$(PKG_VER).tar.gz \
 	$(THISAPP)-arc4random-1.patch \
 	$(THISAPP)-rng.patch
 
@@ -114,7 +114,7 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && tar -xvf $(DIR_DL)/$(PKG_NAME)-doc-$(VER).tar.gz
+	cd $(DIR_APP) && tar -xvf $(DIR_DL)/$(PKG_NAME)-doc-$(PKG_VER).tar.gz
 	cd $(DIR_APP) && sed -i "s|htmldir = @htmldir@|htmldir = /usr/share/doc/$(THISAPP)|" \
 		Makefile.in
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-arc4random-1.patch

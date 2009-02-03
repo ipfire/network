@@ -25,9 +25,9 @@
 include Config
 
 PKG_NAME   = Linux-PAM
-VER        = 1.0.1
+PKG_VER    = 1.0.1
 
-THISAPP    = $(PKG_NAME)-$(VER)
+THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
@@ -66,7 +66,7 @@ ifeq "$(PASS)" "1"
 			--libdir=/lib \
 			--sbindir=/lib/security \
             --enable-securedir=/lib/security \
-            --docdir=/usr/share/doc/Linux-PAM-$(VER) \
+            --docdir=/usr/share/doc/Linux-PAM-$(PKG_VER) \
             --enable-read-both-confs
   
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
