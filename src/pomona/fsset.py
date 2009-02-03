@@ -50,18 +50,19 @@ class OldSwapError(Exception):
 class ResizeError(Exception):
     pass
 
-### XXX we have to check this and find useful mpoints
 defaultMountPoints = ['/', '/boot', '/home', '/tmp', '/usr', '/var', '/opt']
 
 fileSystemTypes = {}
 
 def fileSystemTypeGetDefault():
-    if fileSystemTypeGet('ext3').isSupported():
+    if fileSystemTypeGet('ext4').isSupported():
+	return fileSystemTypeGet('ext4')
+    elif fileSystemTypeGet('ext3').isSupported():
         return fileSystemTypeGet('ext3')
     elif fileSystemTypeGet('ext2').isSupported():
         return fileSystemTypeGet('ext2')
     else:
-        raise ValueError, "You have neither ext3 or ext2 support in your kernel!"
+        raise ValueError, "You have neither ext4, ext3 or ext2 support in your kernel!"
 
 def fileSystemTypeGet(key):
     return fileSystemTypes[key]
@@ -625,9 +626,9 @@ fileSystemTypeRegister(ext3FileSystem())
 class ext4FileSystem(extFileSystem):
     def __init__(self):
         extFileSystem.__init__(self)
-        self.name = "ext4dev"
+        self.name = "ext4"
         self.partedFileSystemType = parted.file_system_type_get("ext3")
-        self.extraFormatArgs = [ "-t", "ext4dev" ]
+        self.extraFormatArgs = [ "-t", "ext4" ]
         self.bootable = False
 
     def formatDevice(self, entry, progress, chroot='/'):
