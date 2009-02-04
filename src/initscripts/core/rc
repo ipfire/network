@@ -25,6 +25,10 @@ if [ "${prevlevel}" = "" ]; then
     prevlevel="N"
 fi
 
+if [ "${runlevel}" = "S" ]; then
+	touch /dev/.in_sysinit
+fi
+
 # Mount a tmpfs to store boot accounting information
 if [ "${runlevel}" = "S" -a "${TEMPFS_MOUNT}" != "" ]; then
     mount -n -t tmpfs tmpfs "${TEMPFS_MOUNT}" -o mode=600
@@ -177,6 +181,8 @@ do
         print_error_msg
     fi
 done
+
+rm -f /dev/.in_sysinit
 
 # Strip apply time to the logs, strip out any color codes and dump 
 # the log to /var/log/boot.log
