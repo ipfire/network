@@ -47,7 +47,7 @@ $(OBJECT) :
 	@$(PREBUILD)
 
 	# Create directories
-	-mkdir -pv /{bin,boot,etc/{opt,sysconfig},home,lib,mnt,opt}
+	-mkdir -pv /{bin,boot,etc/{grsec,opt,sysconfig},home,lib,mnt,opt}
 	-mkdir -pv /{media/{floppy,cdrom},sbin,srv,var}
 	-install -dv -m 0750 /root
 	-install -dv -m 1777 /tmp /var/tmp
@@ -84,6 +84,9 @@ $(OBJECT) :
 	done
 	for i in $$(find $(DIR_CONFIG)/root/ -type f); do \
 		cp -vf $$i /root; \
+	done
+	for i in $$(find $(DIR_SRC)/config/grsecurity/ -type f); do \
+		cp -vf $$i /etc/grsec; \
 	done
 	-mkdir -pv /etc/modprobe.d
 	cp -av $(DIR_CONF)/modprobe.d/* /etc/modprobe.d/
