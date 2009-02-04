@@ -35,7 +35,7 @@ CONFIG_ROOT=/etc/$SNAME
 NICE=10
 
 # Read in kernel version
-KVER=$(grep --max-count=1 VER lfs/linux | awk '{ print $3 }' | tr -d '\n'; grep --max-count=1 LOCALVERSION lfs/linux | awk '{ print $3 }' | tail -1)
+KVER=$(grep --max-count=1 PKG_VER lfs/linux | awk '{ print $3 }' | tr -d '\n'; grep --max-count=1 LOCALVERSION lfs/linux | awk '{ print $3 }' | tail -1)
 
 # Read in machine type
 MACHINE_REAL=$(uname -m)

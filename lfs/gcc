@@ -25,10 +25,10 @@
 include Config
 
 PKG_NAME   = gcc
-VER        = 4.3.3
-PKG_VER    = 0
+PKG_VER    = 4.3.3
+PKG_REL    = 0
 
-THISAPP    = $(PKG_NAME)-$(VER)
+THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
@@ -56,8 +56,8 @@ endef
 CFLAGS     = -pipe
 CXXFLAGS   =
 
-GMP        = $(shell grep ^VER $(DIR_LFS)/gmp  | awk '{ print $$3 }')
-MPFR       = $(shell grep ^VER $(DIR_LFS)/mpfr | awk '{ print $$3 }')
+GMP        = $(shell grep ^PKG_VER $(DIR_LFS)/gmp  | awk '{ print $$3 }')
+MPFR       = $(shell grep ^PKG_VER $(DIR_LFS)/mpfr | awk '{ print $$3 }')
 
 ifeq "$(MACHINE)" "i586"
 	CONFIGURE_ARGS = --disable-decimal-float

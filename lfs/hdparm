@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -25,13 +25,30 @@
 include Config
 
 PKG_NAME   = hdparm
-VER        = 9.6
+PKG_VER    = 9.6
+PKG_REL    = 0
 
-THISAPP    = $(PKG_NAME)-$(VER)
+THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = Applications/Hardware
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://sourceforge.net/projects/hdparm/
+LICENSE    = BSD
+SHORT_DESC = A utility for displaying and/or setting hard disk parameters.
+
+define LONG_DESC
+	Hdparm is a useful system utility for setting (E)IDE hard drive \
+	parameters. For example, hdparm can be used to tweak hard drive \
+	performance and to spin down hard drives for power conservation.
+endef
 
 ###############################################################################
 # Top-level Rules
@@ -39,23 +56,27 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 objects = $(DL_FILE)
 
+download: $(objects)
+
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && sed -i -e "s/-O2/$(CFLAGS)/g" Makefile
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make binprefix=/usr/ install
 	@rm -rf $(DIR_APP)

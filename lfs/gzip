@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -25,13 +25,29 @@
 include Config
 
 PKG_NAME   = gzip
-VER        = 1.3.12
+PKG_VER    = 1.3.12
+PKG_REL    = 0
 
-THISAPP    = $(PKG_NAME)-$(VER)
+THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = Networking/Tools
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.gzip.org/
+LICENSE    = GPLv2
+SHORT_DESC = The GNU data compression program.
+
+define LONG_DESC
+	The gzip package contains the popular GNU gzip data compression
+	program. Gzipped files have a .gz extension.
+endef
 
 ###############################################################################
 # Top-level Rules
@@ -42,20 +58,26 @@ objects = $(DL_FILE) \
 	$(THISAPP)-cve-2006-4337_len.patch \
 	$(THISAPP)-cve-2006-4338.patch
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+info:
+	$(DO_PKG_INFO)
 
-$(objects) :
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"	
 	cd $(DIR_APP) && \
