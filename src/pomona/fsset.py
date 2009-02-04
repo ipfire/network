@@ -56,7 +56,7 @@ fileSystemTypes = {}
 
 def fileSystemTypeGetDefault():
     if fileSystemTypeGet('ext4').isSupported():
-	return fileSystemTypeGet('ext4')
+        return fileSystemTypeGet('ext4')
     elif fileSystemTypeGet('ext3').isSupported():
         return fileSystemTypeGet('ext3')
     elif fileSystemTypeGet('ext2').isSupported():
