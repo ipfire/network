@@ -93,9 +93,10 @@ $(OBJECT) :
 
 	# Install networking scripts
 	for i in $(DIR_APP)/networking/*; do \
+		[ -d "$$i" ] && continue; \
 		install -v -m 754 $$i /etc/init.d/networking; \
 	done
-	chmod 644 /etc/init.d/networking/function
+	chmod 644 /etc/init.d/networking/functions
 
 	for i in $(DIR_APP)/networking/services/*; do \
 		install -v -m 754 $$i /etc/init.d/networking/services; \
