@@ -29,6 +29,13 @@ MAC=$(get_mac_by_device ${INTERFACE})
 
 case $ACTION in
 	add|register)
+		# Don't do anything if the network is stopped
+		if [ -f /dev/.in_sysinit ] ; then
+			exit 0
+		fi
+		if [ ! -f /var/lock/subsys/network ]; then
+			exit 0
+		fi
 		case $INTERFACE in
 			# interfaces that are brought up as a part of configuration
 			ppp*|ippp*|isdn*|plip*|lo*|irda*|dummy*|ipsec*|tun*|tap*)
