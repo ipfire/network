@@ -1,0 +1,40 @@
+#!/bin/sh
+########################################################################
+# Begin $NETWORK_DEVICES/ifup
+#
+# Description : Interface Up
+#
+# Authors     : Michael Tremer - michael.tremer@ipfire.org
+#
+# Version     : 00.00
+#
+# Notes       : This script brings up the configuration of each interface.
+#               It handles some dependencies.
+#
+########################################################################
+
+. /lib/lsb/init-functions
+
+file=${1}
+
+if [ ! -f "${file}" ]; then
+	message="Unable to process ${file}. File does not exist."
+	log_failure_msg
+	exit 1
+fi
+
+. ${file}
+
+# XXX We must check if a bridge is there and up.
+
+if [ -n "${SERVICE}" -a -x "${NETWORK_SCRIPTS}/services/${SERVICE}" ]; then
+	IFCONFIG=${file} ${NETWORK_SCRIPTS}/services/${SERVICE} ${1} up
+else
+	echo -e "${FAILURE}Unable to process ${file}.  Either"
+	echo -e "${FAILURE}the SERVICE variable was not set,"
+	echo -e "${FAILURE}or the specified service cannot be executed."
+	message=""
+	log_failure_msg
+fi
+
+# End $NETWORK_DEVICES/ifup

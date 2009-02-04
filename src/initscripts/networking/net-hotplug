@@ -19,9 +19,13 @@
 #                                                                             #
 ###############################################################################
 
+. /etc/init.d/networking/functions
+
 if [ "$INTERFACE" = "" ]; then
 	exit 1
 fi
+
+MAC=$(get_mac_by_device ${INTERFACE})
 
 case $ACTION in
 	add|register)
@@ -33,7 +37,13 @@ case $ACTION in
 			# interfaces that are registered then brought up
 			*)
 				export IN_HOTPLUG=1
-				## Put ifup code here
+				for file in ${NETWORK_DEVICES}/*/*; do
+					if [ "$(basename ${file})" = "${MAC}" ]; then
+						/etc/init.d/networking/ifup ${file}
+						exit $?
+					fi
+				done
+				exit 1
 				;;
 		esac
 		;;
@@ -46,7 +56,13 @@ case $ACTION in
 				;;
 			*)
 				export IN_HOTPLUG=1
-				## Put ifdown code here
+				for file in ${NETWORK_DEVICES}/*/*; do
+					if [ "$(basename ${file})" = "${MAC}" ]; then
+						/etc/init.d/networking/ifdown ${file}
+						exit $?
+					fi
+				done
+				exit 1
 				;;
 		esac
 		;;
