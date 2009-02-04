@@ -185,7 +185,7 @@ beautify() {
 } # End of beautify()
 
 get_pkg_ver() {
-	PKG_VER=`grep ^VER $1 | awk '{print $3}'`
+	PKG_VER=`grep ^PKG_VER $1 | awk '{print $3}'`
 
 	if [ -z $PKG_VER ]; then
 		PKG_VER=`grep "Exp " $1 | awk '{print $4}'`
