@@ -19,11 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-if [ -e "new-functions" ]; then
-	. new-functions
-else
-	. /usr/lib/mkinitramfs/functions
-fi
+. /usr/lib/mkinitramfs/functions
 
 # Modules needed by the live system
 MODULES="$MODULES aufs squashfs loop"

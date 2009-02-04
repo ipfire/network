@@ -19,11 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-if [ -e "new-functions" ]; then
-	. new-functions
-else
-	. /usr/lib/mkinitramfs/functions
-fi
+. /usr/lib/mkinitramfs/functions
 
 # Add usb support
 MODULES="$MODULES ehci-hcd ohci-hcd uhci-hcd"
@@ -58,6 +54,22 @@ fi
 findstoragedriver ${rootdev##/dev/}
 
 cat >> sbin/real-init <<'EOF'
+
+# Users can override rootfs target on the kernel commandline
+for o in $(cat /proc/cmdline); do
+	case $o in
+	root=*)
+		rootdev=${o#root=}
+		;;
+	rootflags=*)
+		rootflags=${o#rootflags=}
+		;;
+	rootfstype=*)
+		rootfstype=${o#rootfstype=}
+		;;
+	esac
+done
+
 vecho "Starting udevd..."
 udevd --daemon
 
@@ -67,7 +79,7 @@ udevadm trigger
 vecho "Waiting for system to settle..."
 udevadm settle --timeout=30 || :
 
-vecho "Mounting root filesystem..."
+vecho "Mounting root filesystem $rootdev..."
 mount $rootdev /sysroot $rootfs $rootopts
 
 kill $(pidof udevd)

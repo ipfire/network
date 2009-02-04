@@ -281,12 +281,23 @@ function locatemodule() {
 
 function installmodule() {
 	local module
+	local load
 	for module in $@; do
+		[ "$module" = "--load" ] && load=1
 		module=$(locatemodule $module)
 		[ -z "$module" ] && continue
 
 		install $module
 	done
+	if [ "$load" = "1" ]; then
+		for module in $@; do
+			[ "$module" = "--load" ] && continue
+			cat >> $TMPDIR/sbin/real-init <<EOF
+vecho "Loading module $i..."
+modprobe $i
+EOF
+		done
+	fi
 }
 
 resolve_device_name() {
@@ -384,17 +395,17 @@ findstoragedriverinsys () {
 	done
 	cd $(read_link ./device)
 	if echo $PWD | grep -q /virtio-pci/ ; then
-		installmodule virtio_pci
+		installmodule --load virtio_pci
 	fi
 	while [ "$PWD" != "/sys/devices" ]; do
 		deps=
 		if [ -f modalias ]; then
-			installmodule $(cat modalias)
+			installmodule --load $(cat modalias)
 		fi
 
 		[ -z "$deps" -a -L driver/module ] && \
 			deps=$(basename $(read_link driver/module))
-		installmodule $deps
+		installmodule --load $deps
 		cd ..
 	done
 }
@@ -480,7 +491,7 @@ mkdir -p bin sbin dev sys proc sysroot \
 
 # Install some essential binaries
 install bash chmod cat cut dd dmesg env grep kbd_mode kill killall5 ln ls lsmod mkdir \
-	mknod modprobe mount mountpoint openvt pidof rm sed setfont sh sleep switchroot \
+	mknod modprobe mount mountpoint openvt pidof ps rm sed setfont sh sleep switchroot \
 	udevadm udevd umount /lib/udev/console_init /lib/udev/vol_id
 
 # Copy modprobe.conf and friends over
@@ -488,6 +499,9 @@ install bash chmod cat cut dd dmesg env grep kbd_mode kill killall5 ln ls lsmod 
 for f in $(find /etc/modprobe.d -type f); do
 	install $f
 done
+
+# Install an empty fstab
+touch $TMPDIR/etc/fstab
 
 # terminfo bits make things work better if you fall into interactive mode
 [ -d "/usr/lib/terminfo" ] && \
