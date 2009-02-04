@@ -25,10 +25,10 @@
 include Config
 
 PKG_NAME   = lighttpd
-PKG_VER    = 1.4.19
+PKG_VER    = 1.4.20
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
+DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
@@ -55,7 +55,7 @@ $(objects) :
 
 $(OBJECT) : 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 	cd $(DIR_APP) && ./configure \
 			$(CONFIGURE_ARCH) \
