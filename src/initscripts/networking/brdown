@@ -40,7 +40,7 @@ for file in ${FILES}; do
 	fi
 
 	# place interfaces at last position
-	if [[ "${file}" =~ "^nic" ]]; then
+	if [[ "${file}" =~ "^[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]$" ]]; then
 		FILES2="${FILES2} ${file}"
 		continue
 	fi
@@ -51,26 +51,14 @@ done
 FILES=${FILES2}
 
 # Process each configuration file
+export BRIDGE_DOWN=1
 for file in ${FILES}; do
 	if [ ! -f "${file}" ]; then
 		log_warning_msg
 		message="${file} is not a network configuration file or directory."
 		log_warning_msg
 	fi
-
-	(
-		. ${file}
-
-		if [ -n "${SERVICE}" -a -x "${NETWORK_SCRIPTS}/services/${SERVICE}" ]; then
-			IFCONFIG=${file} ${NETWORK_SCRIPTS}/services/${SERVICE} ${1} down
-		else
-			echo -e "${FAILURE}Unable to process ${file}.  Either"
-			echo -e "${FAILURE}the SERVICE variable was not set,"
-			echo -e "${FAILURE}or the specified service cannot be executed."
-			message=""
-			log_failure_msg
-		fi
-	)
+	/etc/init.d/networking/ifdown ${file}
 done
 
 if [ -z "${2}" ]; then
