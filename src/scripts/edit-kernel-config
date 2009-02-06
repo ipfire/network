@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cd /usr/src/linux*
+
+cp -f /usr/src/config/kernel/kernel.config .config
+
+make menuconfig
+
+if [ "$?" -eq "0" ]; then
+	cp -f .config /usr/src/config/kernel/kernel.config
+fi

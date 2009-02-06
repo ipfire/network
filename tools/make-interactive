@@ -37,10 +37,11 @@ build)
 	;;
 
 shell)
+	shift
 	# enter a shell inside LFS chroot
 	# may be used to change kernel settings
 	prepareenv
-	entershell
+	entershell $@
 	;;
 
 batch)
@@ -69,6 +70,19 @@ ccache)
 	case "$2" in
 		stats)
 			ccache_stats
+			;;
+	esac
+	;;
+
+config)
+	# config options
+	case "$2" in
+		kernel)
+			prepareenv
+			entershell /usr/local/bin/edit-kernel-config
+			;;
+		*)
+			usage
 			;;
 	esac
 	;;

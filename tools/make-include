@@ -113,6 +113,8 @@ entershell() {
 	if [ ! -e $LFS/usr/src/lfs/ ]; then
 		exiterror "No such file or directory: $LFS/usr/src/lfs/"
 	fi
+
+	COMMAND=${@-bash} # Run command, given as parameters.
 	
 	echo -ne "Entering ${BOLD}$MACHINE${NORMAL} LFS chroot, type exit to return to host environment\n"
 	
@@ -144,7 +146,7 @@ entershell() {
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
 		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
-		bash
+		$COMMAND
 
 	if [ $? -ne 0 ]; then
 		exiterror "chroot error"
