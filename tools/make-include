@@ -512,8 +512,6 @@ prepareenv() {
 	export CCACHE_PREFIX="distcc"
 	export DISTCC_DIR=$BASEDIR/distcc
 
-	distcc_get_hosts
-
 	# Remove pre-install list of installed files in case user erase some files before rebuild
 	rm -f $LFS/usr/src/lsalr 2>/dev/null
 }
@@ -534,6 +532,8 @@ build() {
 
 	build_spy_send_profile
 	build_spy state compiling
+	distcc_get_hosts
+
 	BASEDIR=$BASEDIR UUID=$UUID NAME=$NAME VERSION=$VERSION \
 		LOGFILE="$BASEDIR/log_${TARGET}/_build.00-buildspy.log" \
 		$BASEDIR/tools/make-buildspy &
