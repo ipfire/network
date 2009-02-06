@@ -58,7 +58,7 @@ $(OBJECT) :
 	-for dir in /usr /usr/local; do \
 		ln -sfv share/{man,doc,info} $$dir; \
 	done
-	-mkdir -v /var/{lock,log,mail,run,spool}
+	-mkdir -pv /var/{lock/subsys,log,mail,run,spool}
 	-mkdir -pv /var/{opt,cache,lib/{misc,locate},local}
 
 	# Creating an empty mtab
