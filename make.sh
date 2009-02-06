@@ -320,19 +320,10 @@ ipfire_build() {
 	ipfire_make memtest86+
 	#ipfire_make pakfire
 	ipfire_make quagga
+	#ipfire_make mISDN
+	#ipfire_make wireless
 
 	ipfire_make pyfire
-
-	### -------------------------------------------------------------------------
-	### Tools that maybe not needed
-	#
-	#ipfire_make gd
-	#ipfire_make libcap
-	#ipfire_make mtools
-	#ipfire_make mISDN
-	
-	#ipfire_make wireless
-	#ipfire_make libsafe
 }
 
 ################################################################################
@@ -373,8 +364,6 @@ misc_build() {
 	ipfire_make mkinitramfs
 	ipfire_make splashy
 
-	#ipfire_make squidguard		## CAN THIS BE BANISHED BY ANYTHING BETTER?
-	#ipfire_make calamaris		## CAN THIS BE BANISHED BY ANYTHING BETTER?
 	#ipfire_make vsftpd
 
 	## NTFS
@@ -392,9 +381,6 @@ misc_build() {
 	#
 	#ipfire_make snort
 	#ipfire_make oinkmaster
-	#ipfire_make centerim
-	#ipfire_make tripwire
-	#ipfire_make java
 	#ipfire_make cups
 	#ipfire_make ghostscript
 	#ipfire_make foomatic
@@ -407,32 +393,8 @@ misc_build() {
 	#ipfire_make alsa
 	#ipfire_make mpfire
 	#ipfire_make guardian
-	#ipfire_make libid3tag
-	#ipfire_make libmad
-	#ipfire_make libogg
-	#ipfire_make libvorbis
-	#ipfire_make lame
-	#ipfire_make sox
-	#ipfire_make libshout
-	#ipfire_make icecast
-	#ipfire_make icegenerator
-	#ipfire_make mpd
-	#ipfire_make mpc
-	#ipfire_make xvid
-	#ipfire_make libmpeg2
-	#ipfire_make videolan
-	#ipfire_make libpri
-	#ipfire_make asterisk
-	#ipfire_make libsigc++
-	#ipfire_make applejuice
-	#ipfire_make libtorrent
-	#ipfire_make rtorrent
 	#ipfire_make ipfireseeder
 	#ipfire_make nfs
-
-	# ---------------------------------------------------------------------------
-	#ipfire_make as86
-	#ipfire_make mbr
 
 	### Debugging
 	#
