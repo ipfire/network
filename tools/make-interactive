@@ -65,6 +65,21 @@ batch)
 	esac
 	;;
 
+buildspy|bs)
+	# control buildspy
+	case "$2" in
+		start)
+			build_spy start
+			;;
+		stop)
+			build_spy exit
+			;;
+		*)
+			usage
+			;;
+	esac
+	;;
+
 ccache)
 	# ccache options
 	case "$2" in

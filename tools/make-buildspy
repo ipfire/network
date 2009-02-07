@@ -20,6 +20,7 @@
 ###############################################################################
 
 BUILD_SPY_FILENAME=$BASEDIR/.build_spy
+BUILD_SPY_PID=$BUILD_SPY_FILENAME.pid
 
 build_spy() {
 	local COMMAND
@@ -48,10 +49,11 @@ build_spy_send_profile() {
 }
 
 if [ "$(basename $0)" == "make-buildspy" ]; then
-	if ps aux | grep -q [m]ake-buildspy; then
-		# Build spy is already running. Exiting silently.
+	if [ -f "$BUILD_SPY_PID" ]; then
 		exit 0
 	fi
+	echo $$ > $BUILD_SPY_PID
+
 	while true; do
 		DATA+=$(cat $BUILD_SPY_FILENAME 2>/dev/null || true)
 		> $BUILD_SPY_FILENAME
@@ -77,5 +79,5 @@ if [ "$(basename $0)" == "make-buildspy" ]; then
 
 		sleep 10
 	done
-	rm -f $BUILD_SPY_FILENAME
+	rm -f $BUILD_SPY_FILENAME $BUILD_SPY_PID
 fi
