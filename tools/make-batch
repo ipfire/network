@@ -45,7 +45,7 @@ batch_attach() {
 ###############################################################################                   
 # This is the main batch function that runs one thing after an other          #
 ###############################################################################
-batch_run() {	
+batch_run() {
 	gettoolchain
 	$0 build | $BASEDIR/tools/tee $BATCHLOG
 	sleep 5

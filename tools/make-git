@@ -101,7 +101,7 @@ git_commit() {
 
 	git commit $*
 	
-	[ "$?" -eq "0" ] || exiterror "git commit $* failed."
+	[ "$?" -eq "0" ] || dialogerror "git commit $* failed."
 }
 
 git_diff() {
@@ -124,11 +124,12 @@ git_diff() {
 git_log() {
 	echo -n "Generating changelog from repository"
 
-	[ -z $GIT_TAG ]  || LAST_TAG=$GIT_TAG
-	[ -z $LAST_TAG ] || EXT="$LAST_TAG..HEAD"
-
-	git log -n 500 --no-merges --pretty=medium --shortstat $EXT > $BASEDIR/doc/ChangeLog
+	git log -n 500 --no-merges --pretty=medium --shortstat $(git_range) > $BASEDIR/doc/ChangeLog
 	evaluate
+}
+
+git_shortlog() {
+	git shortlog --no-merges $(git_range)
 }
 
 git_gc() {
@@ -137,6 +138,13 @@ git_gc() {
 
 git_export() {
 	git archive HEAD | gzip -9 > ${SNAME}-${VERSION}.source.tar.gz
+}
+
+git_range() {
+	local EXT
+	[ -z $GIT_TAG ]  || LAST_TAG=$GIT_TAG
+	[ -z $LAST_TAG ] || EXT="$LAST_TAG..HEAD"
+	echo $EXT
 }
 
 ssh_cert() {

@@ -22,9 +22,18 @@
 BUILD_SPY_FILENAME=$BASEDIR/.build_spy
 
 build_spy() {
-	local KEY
-	KEY=$1; shift 1
-	echo -n "${KEY}=$* " >> $BUILD_SPY_FILENAME
+	local COMMAND
+	COMMAND=$1
+	shift 1
+	if [ "$COMMAND" = "start" ]; then
+		BASEDIR=$BASEDIR UUID=$UUID NAME=$NAME VERSION=$VERSION \
+		LOGFILE="$BASEDIR/log_${TARGET}/_build.00-buildspy.log" \
+		$BASEDIR/tools/make-buildspy &
+	elif [ "$COMMAND" = "exit" ]; then
+		echo -n "BUILDSPY_EXIT " >> $BUILD_SPY_FILENAME
+	else
+		echo -n "${COMMAND}=$* " >> $BUILD_SPY_FILENAME
+	fi
 }
 
 build_spy_send_profile() {
@@ -39,23 +48,34 @@ build_spy_send_profile() {
 }
 
 if [ "$(basename $0)" == "make-buildspy" ]; then
+	if ps aux | grep -q [m]ake-buildspy; then
+		# Build spy is already running. Exiting silently.
+		exit 0
+	fi
 	while true; do
 		DATA+=$(cat $BUILD_SPY_FILENAME 2>/dev/null || true)
 		> $BUILD_SPY_FILENAME
+
+		for command in $DATA; do
+			if [ "$command" = "BUILDSPY_EXIT" ]; then
+				BUILDSPY_EXIT=1
+				break
+			fi
+		done
 
 		if [ -n "$DATA" ] && \
 			$BASEDIR/tools/buildspy \
 				action=set uuid=$UUID $DATA >> $LOGFILE 2>&1; then
 			DATA=""
+		else
+			continue
+		fi
+
+		if [ "$BUILDSPY_EXIT" = "1" ]; then
+			break
 		fi
 
 		sleep 10
-		# If $BUILD_SPY_FILENAME file has content we need a new loop.
-		# If not, check if we are still running.
-		if [ -s $BUILD_SPY_FILENAME ]; then
-			continue
-		fi
-		[ -e $BASEDIR/.running ] || break
 	done
 	rm -f $BUILD_SPY_FILENAME
 fi
