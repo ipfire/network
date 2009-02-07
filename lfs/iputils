@@ -100,6 +100,6 @@ $(OBJECT) :
 	ln -svf ../../bin/tracepath		/usr/sbin/
 	ln -svf ../../bin/tracepath6	/usr/sbin/
 
-	setcap cap_net_admin=ep /bin/ping
+	-setcap cap_net_admin=ep /bin/ping
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
