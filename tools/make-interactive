@@ -243,6 +243,9 @@ g[iu]t)
 		gc)
 			git_gc
 			;;
+		shortlog|slog)
+			git_shortlog
+			;;
 		put-key)
 			ssh_cert $*
 			;;
@@ -316,6 +319,9 @@ package*|pkg)
 		wikiinfo)
 			shift 2
 			pkg_info_wiki $@
+			;;
+		wikilist)
+			pkg_list_packages_wiki
 			;;
 		*)
 			usage

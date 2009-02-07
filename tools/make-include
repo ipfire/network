@@ -88,6 +88,7 @@ exiterror() {
 		echo "$(date -u '+%b %e %T') ERROR: $*" >> $LOGFILE
 		build_spy log $(tail -n16 $LOGFILE | $BASEDIR/tools/base64)
 	fi
+	build_spy exit
 	touch $FAILED
 	rm -f $RUNNING 2>/dev/null
 	exit 1
@@ -534,11 +535,8 @@ build() {
 
 	build_spy_send_profile
 	build_spy state compiling
+	build_spy start
 	distcc_get_hosts
-
-	BASEDIR=$BASEDIR UUID=$UUID NAME=$NAME VERSION=$VERSION \
-		LOGFILE="$BASEDIR/log_${TARGET}/_build.00-buildspy.log" \
-		$BASEDIR/tools/make-buildspy &
 
 	if [ -f $BASEDIR/log_${TARGET}/02_base/stage2-LFS ]; then
 		prepareenv
@@ -587,6 +585,7 @@ fi
 	local BLD_TIME_END=$(date +%s)
 	build_spy duration $[ $BLD_TIME_END - $BLD_TIME_START ]
 	build_spy state idle
+	build_spy exit
 	rm -f $RUNNING
 }
 
@@ -670,7 +669,8 @@ puttarget() {
 	[ -e "${BASEDIR}/packages" ] && cp -al ${BASEDIR}/packages ${DIR}
 	[ -e "${BATCHLOG}" ] && \
 		python ${BASEDIR}/tools/alog2html < ${BATCHLOG} > ${DIR}/build_log.html
-	software_list > ${DIR}/packages-list.txt
+	pkg_list_packages > ${DIR}/packages-list.txt
+	git_log >/dev/null; cp -l ${BASEDIR}/doc/ChangeLog ${DIR}
 	git_export; cp -l ${BASEDIR}/${SNAME}-${VERSION}.source.tar.gz ${DIR}
 	git_diff >/dev/null && cp -l ${DIFF_NAME} ${DIR}
 	cp -l ${BASEDIR}/${IMAGENAME}.* ${DIR}

@@ -40,8 +40,9 @@ KVER=$(grep --max-count=1 PKG_VER lfs/linux | awk '{ print $3 }' | tr -d '\n'; g
 # Read in machine type
 MACHINE_REAL=$(uname -m)
 
-# Read in our tag
-GIT_TAG=$(git tag 2>/dev/null | tail -1)
+# Read in information from git
+GIT_REV=$(git rev-list HEAD | head -n 1)
+GIT_TAG=$(git tag 2>/dev/null | tail -n 1)
 
 # Embedded build
 EMB=0

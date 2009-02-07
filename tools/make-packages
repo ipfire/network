@@ -27,6 +27,20 @@ pkg_list_groups() {
 }
 
 pkg_list_packages() {
+	echo "#### List of softwares used to build $NAME Version: $VERSION ####"
+	local package
+	for i in $BASEDIR/lfs/*; do
+		package=$(basename $i)
+		(	unset NAME VERSION
+			eval $(pkg_info ${package})
+			[ "$NAME" = "" ] && exit
+			printf "  * %-30s" ${NAME}-${VERSION}
+			echo "${SHORT}"
+		)
+	done
+}
+
+pkg_list_packages_wiki() {
 	echo "====== List of softwares used to build $NAME Version: $VERSION ======"
 	local package
 	for i in $BASEDIR/lfs/*; do
