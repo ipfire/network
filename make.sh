@@ -444,7 +444,7 @@ packages_build() {
 
 	# Generate packages list
 	echo -n "Generating packages list"
-	software_list > $BASEDIR/doc/packages-list.txt
+	pkg_list_packages > $BASEDIR/doc/packages-list.txt
 	beautify message DONE
 
 	if [ ${EMB} -eq 0 ]; then
