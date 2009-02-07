@@ -69,8 +69,6 @@ if [ "$(basename $0)" == "make-buildspy" ]; then
 			$BASEDIR/tools/buildspy \
 				action=set uuid=$UUID $DATA >> $LOGFILE 2>&1; then
 			DATA=""
-		else
-			continue
 		fi
 
 		if [ "$BUILDSPY_EXIT" = "1" ]; then
