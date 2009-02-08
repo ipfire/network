@@ -324,6 +324,7 @@ ipfire_build() {
 	#ipfire_make wireless
 
 	ipfire_make pyfire
+	ipfire_make firewall
 }
 
 ################################################################################

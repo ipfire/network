@@ -1,0 +1,59 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function firewall_init() {
+	iptables_init
+	firewall_tcp_state_flags
+	firewall_connection_tracking
+}
+
+function firewall_tcp_state_flags() {
+	vecho "Adding ${BOLD}TCP State Flags${NORMAL} chain..."
+	chain_create BADTCP_LOG
+	iptables -A BADTCP_LOG -p tcp -j LOG --log-prefix \"Illegal TCP state: \" \
+		--log-ip-options --log-tcp-options
+	iptables -A BADTCP_LOG -j DROP
+
+	chain_create BADTCP
+	iptables -A BADTCP -p tcp --tcp-flags ALL NONE -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags SYN,FIN SYN,FIN -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags SYN,RST SYN,RST -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags FIN,RST FIN,RST -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags ACK,FIN FIN     -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags ACK,PSH PSH     -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags ACK,URG URG     -j BADTCP_LOG
+
+	iptables -A INPUT   -p tcp -j BADTCP
+	iptables -A OUTPUT  -p tcp -j BADTCP
+	iptables -A FORWARD -p tcp -j BADTCP
+}
+
+function firewall_connection_tracking() {
+	vecho "Adding ${BOLD}Connection Tracking${NORMAL} chain..."
+	chain_create CONNTRACK
+	iptables -A CONNTRACK -m state --state ESTABLISHED,RELATED -j ACCEPT
+	iptables -A CONNTRACK -m state --state INVALID -j $(iptables_LOG "INVALID packet: ")
+	iptables -A CONNTRACK -m state --state INVALID -j DROP
+
+	iptables -A INPUT   -p tcp -j CONNTRACK
+	iptables -A OUTPUT  -p tcp -j CONNTRACK
+	iptables -A FORWARD -p tcp -j CONNTRACK
+}

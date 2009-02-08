@@ -1,0 +1,77 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+VERBOSE=
+TMPDIR=$(mktemp -d)
+
+BOLD="\\033[1;39m"
+NORMAL="\\033[0;39m"
+ERROR="\\033[1;31m"
+
+function verbose() {
+	if [ -n "$1" ]; then
+		VERBOSE=$1
+		return
+	else
+		if [ "$VERBOSE" = "1" ]; then
+			return 0
+		else
+			return 1
+		fi
+	fi
+}
+
+function vecho() {
+	verbose && echo -e "$@"
+}
+
+function error() {
+	echo -e "${ERROR}ERROR${NORMAL}: $@" >&2
+	_exit 1
+}
+
+function ifs() {
+	if [ -n "$1" ]; then
+		IFS_SAVE=$IFS
+		echo $1
+	else
+		echo $IFS_SAVE
+	fi
+}
+
+function uppercase() {
+	tr [a-z] [A-Z] <<< "$@"
+}
+
+include functions.commands
+include functions.config
+include functions.firewall
+include functions.ip
+include functions.iptables
+include functions.macros
+include functions.zones
+
+function _start() {
+	firewall_init
+	zones_init
+	zones_add green0
+	iptables_commit
+}

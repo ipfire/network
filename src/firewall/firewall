@@ -1,0 +1,104 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# This is the script, that is runned by the user to contol the firewall       #
+# We only do some actions here and call the functions from the libs.          #
+#                                                                             #
+# Actions (as known at the moment):                                           #
+#    - start/stop/restart/reload                                              #
+#    - show                                                                   #
+#       - running?                                                            #
+#       - serveral config                                                     #
+#    - calc (cidr|subnets|...)                                                #
+#    - ...                                                                    #
+#                                                                             #
+###############################################################################
+
+LIBDIR=/usr/lib/firewall
+
+function include() {
+	local file=$1
+	local path
+	for path in $LIBDIR .; do
+		if [ -f "$path/$file" ]; then
+			. $path/$file
+			return # found
+		fi
+	done
+	echo "Couldn't include $file. File was not found!" >&2
+	_exit 1
+}
+
+function usage() {
+	echo "Usage: $0 [global options] command [command options]"
+	echo
+	_exit ${1-1}
+}
+
+include functions
+
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+		--verbose|-v)
+			verbose 1
+			vecho "${BOLD}Verbose mode is enabled.${NORMAL}"
+			;;
+		calc)
+			shift
+			case "$1" in
+				mask2cidr)
+					mask_to_cidr $2
+					_exit $?
+					;;
+				*)
+					usage
+					;;
+			esac
+			;;
+		config)
+			config_load $2
+			_exit $?
+			;;
+		help|-h|--help)
+			usage 0
+			;;
+		notify)
+			;;
+		reload)
+			;;
+		restart)
+			;;
+		start)
+			_start
+			_exit $?
+			;;
+		stop)
+			;;
+		*)
+			usage
+			;;
+	esac
+	shift
+done
+
+error "No command was given."
+usage

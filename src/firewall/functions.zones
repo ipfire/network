@@ -1,0 +1,48 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+include zones.local
+
+function zones_init() {
+
+	zones_local_init
+
+}
+
+function zones_add() {
+	local device
+	local name
+
+	device=$1
+	zones_exists $device || error "Zone $device does not exist."
+
+	name=$(uppercase "ZONE_$device")
+	chain_create $name
+	iptables -A FORWARD -i $device -j $name
+	iptables -A FORWARD -o $device -j $name
+	
+	chain_create ${name}_CUSTOM
+	iptables -A $name -j ${name}_CUSTOM
+}
+
+function zones_exists() {
+	cmd_quiet ip link show $1
+}
