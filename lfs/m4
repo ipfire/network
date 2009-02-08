@@ -59,6 +59,7 @@ ifeq "$(STAGE)" "toolchain"
 	# possibly autoconf) that doesn't recognise that we have asprintf() in libc.
 	cd $(DIR_APP) && \
 		CPPFLAGS="-D_GNU_SOURCE" \
+		gl_cv_func_printf_directive_n=no \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR)
@@ -68,6 +69,8 @@ endif
 
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && \
+		CPPFLAGS="-D_GNU_SOURCE" \
+		gl_cv_func_printf_directive_n=no \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr
