@@ -1,0 +1,231 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# General IP address manipulation functions
+#     ip_encode - Encodes an IP to an integer
+#                 Parameters: ip address (e.g. 192.168.0.1)
+#                 Returns   : integer
+#     ip_decode - Decodes an integer to an IP
+#                 Parameters: integer
+#                 Returns   : ip address
+#     ip_valid - Checks if given IP is valid
+#                 Parameters: IP
+#                 Returns   : boolean
+#
+# General subnet functions
+#     ip_range - Enumerates members of an IP range
+#                 Parameters: ip range (e.g. 192.168.0.1-192.168.0.128)
+#                 Returns   : several subnets/IPs
+#     ip_range_explicit - Enumerates ALL IP addresses of an IP range
+#                 Parameters: ip range
+#                 Returns   : several IPs
+#     subnet_network - Calculates the network address of a CIDR
+#                 Parameters: CIDR network (e.g. 192.168.0.0/24)
+#                 Returns   : Network address
+#     subnet_broadcast - Calculates the broadcast address of a CIDR
+#                 Parameters: CIDR network
+#                 Returns   : Broadcast address
+#     ip_in_subnet - Checks if an IP is in given subnet
+#                 Parameters: IP address, subnet
+#                 Returns   : Boolean
+#     mask_to_cidr - Converts a subnet mask to cidr type
+#                 Parameters: subnet (e.g. 255.255.255.0)
+#                 Returns   : CIDR (e.g. 24)
+#
+
+function ip_encode() {
+	IFS=$(ifs .)
+
+	local int=0
+	for field in $1; do
+		int=$(( $(( $int << 8 )) | $field ))
+	done
+
+	echo $int
+	IFS=$(ifs)
+}
+
+function ip_decode() {
+	addr=$1
+
+	local x
+	local y
+
+	y=$(($addr & 255))
+	for x in 1 2 3; do
+		addr=$(($addr >> 8))
+		y=$(($addr & 255)).$y
+	done
+
+	echo $y
+}
+
+function ip_range() {
+	local first
+	local last
+	local l
+	local x
+	local y
+	local z
+	local vlsm
+
+	case "$1" in
+		!*)
+			echo $1
+			return
+			;;
+		[0-9]*.*.*.*-*.*.*.*)
+			;;
+		*)
+			echo $1
+			return
+			;;
+	esac
+
+	first=$(ip_encode ${1%-*})
+	last=$(ip_encode ${1#*-})
+
+	if [ $first -gt $last ]; then
+		error "Invalid IP address range: $1"
+	fi
+
+	l=$(( $last + 1 ))
+
+	while [ $l -gt $first ]; do
+		vlsm=
+		x=31
+		y=2
+		z=1
+
+		while [ $(( $first % $y )) -eq 0 ] && [ $l -gt $(( $first + $y )) ]; do
+			vlsm=/$x
+			x=$(( $x - 1 ))
+			z=$y
+			y=$(( $y * 2 ))
+		done
+	
+		echo $(ip_decode $first)$vlsm
+		first=$(($first + $z))
+	done
+}
+
+function ip_range_explicit() {
+	local first
+	local last
+
+	case $1 in
+		[0-9]*.*.*.*-*.*.*.*)
+			;;
+		*)
+			echo $1
+			return
+			;;
+	esac
+
+	first=$(ip_encode ${1%-*})
+	last=$(ip_encode ${1#*-})
+
+	if [ $first -gt $last ]; then
+		error "Invalid IP address range: $1"
+	fi
+
+	while ! [ $first -gt $last ]; do
+		echo $(ip_decode $first)
+		first=$(($first + 1))
+	done
+}
+
+function _netmask() {
+	local vlsm
+	vlsm=${1#*/}
+	[ $vlsm -eq 0 ] && echo 0 || echo $(( -1 << $(( 32 - $vlsm )) ))
+}
+
+function subnet_network() {
+	local encodedaddr
+	encodedaddr=$(ip_encode ${1%/*})
+	local netmask
+	netmask=$(_netmask $1)
+
+	echo $(ip_decode $(($encodedaddr & $netmask)))
+}
+
+function _broadcast() {
+	local x
+	x=$(( 32 - ${1#*/} ))
+	[ $x -eq 32 ] && echo -1 || echo $(( $(( 1 << $x )) - 1 ))
+}
+
+function subnet_broadcast() {
+	local encodedaddr
+	encodedaddr=$(ip_encode ${1%/*})
+	local netmask
+	netmask=$(_netmask $1)
+	local broadcast
+	broadcast=$(_broadcast $1)
+
+	echo $(ip_decode $(( $(($encodedaddr & $netmask)) | $broadcast )))
+}
+
+function ip_in_subnet() {
+	local netmask
+	netmask=$(_netmask $2)
+	[ $(( $(ip_encode $1) & $netmask)) = $(( $(ip_encode ${2%/*}) & $netmask )) ]
+}
+
+function mask_to_cidr() {
+	local mask
+	mask=$(ip_encode $1)
+	local cidr
+	cidr=0
+	local x
+	x=$(( 128 << 24 )) # 0x80000000
+
+	while [ $(( $x & $mask )) -ne 0 ]; do
+		[ $mask -eq $x ] && mask=0 || mask=$(( $mask << 1 ))
+		cidr=$(($cidr + 1))
+	done
+
+	if [ $(( $mask & 2147483647 )) -ne 0 ]; then # 2147483647 = 0x7fffffff
+		echo "Invalid net mask: $1" >&2
+	else
+		echo $cidr
+	fi
+}
+
+function ip_valid() {
+	local x
+	IFS=$(ifs .)
+	for x in $1; do
+		case $x in
+			[0-9]|[0-9][0-9]|[1-2][0-9][0-9])
+				[ $x -lt 256 ] || { IFS=$(ifs); return 1; }
+				;;
+			*)
+				IFS=$(ifs)
+				return 1
+				;;
+		esac
+	done
+	IFS=$(ifs)
+	return 0
+}

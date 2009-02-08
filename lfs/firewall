@@ -24,26 +24,27 @@
 
 include Config
 
-PKG_NAME   = stage5
+PKG_NAME   = firewall
 PKG_VER    =
-PKG_REL    = -1
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)
+DIR_APP    = $(DIR_SOURCE)/$(PKG_NAME)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-MAINTAINER =
-GROUP      =
+MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+GROUP      = Networking/Firewall
 EXTRA      = no
 DEBUG      = no
 DEPS       =
 
-URL        =
-LICENSE    =
-SHORT_DESC = This script initializes stage 5.
+URL        = http://www.ipfire.org/
+LICENSE    = GPL3+
+SHORT_DESC = The IPFire Firewall Engine.
 
 define LONG_DESC
-	This script initializes stage 5.
+	This script installs IPFire's firewall.
 endef
 
 ###############################################################################
@@ -71,6 +72,9 @@ $(objects):
 
 $(OBJECT): $(objects)
 	@$(PREBUILD)
-	-mkdir -pv $(INSTALLER_DIR)/{etc,sbin,usr/lib}
-	cp -avf $(DIR_SOURCE)/install/* $(INSTALLER_DIR)
+	-mkdir -pv /usr/lib/firewall
+	for i in $(DIR_APP)/{functions,zones}*; do \
+		install -m 644 -v $$i /usr/lib/firewall; \
+	done
+	install -m 755 -v $(DIR_APP)/firewall /usr/bin
 	@$(POSTBUILD)

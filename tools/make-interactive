@@ -94,7 +94,7 @@ config)
 	case "$2" in
 		kernel)
 			prepareenv
-			entershell /usr/local/bin/edit-kernel-config
+			entershell bash /usr/src/src/scripts/edit-kernel-config
 			;;
 		*)
 			usage

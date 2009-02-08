@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,63 +19,47 @@
 #                                                                             #
 ###############################################################################
 
-BUILD_SPY_FILENAME=$BASEDIR/.build_spy
-BUILD_SPY_PID=$BUILD_SPY_FILENAME.pid
+function macro() {
+	local file
+	file=$1
 
-build_spy() {
-	local COMMAND
-	COMMAND=$1
-	shift 1
-	if [ "$COMMAND" = "start" ]; then
-		BASEDIR=$BASEDIR UUID=$UUID NAME=$NAME VERSION=$VERSION \
-		LOGFILE="$BASEDIR/log_${TARGET}/_build.00-buildspy.log" \
-		$BASEDIR/tools/make-buildspy &
-	elif [ "$COMMAND" = "exit" ]; then
-		echo -n "BUILDSPY_EXIT " >> $BUILD_SPY_FILENAME
+	vecho "Parsing macro: $file"
+
+	if _config_is_sqlite $file; then
+		macro_sqlite $file
 	else
-		echo -n "${COMMAND}=$* " >> $BUILD_SPY_FILENAME
+		macro_text $file
 	fi
 }
 
-build_spy_send_profile() {
-	build_spy target   ${TARGET}
-	build_spy hostname ${HOSTNAME}
-	build_spy distcc   ${DISTCC_PORT-3632}
-	build_spy jobs     ${DISTCC_JOBS}
-	build_spy cpu      $(grep ^model\ name /proc/cpuinfo | head -n1 | \
-		awk -F: '{ print $2 }' | $BASEDIR/tools/base64)
-	build_spy machine  $(uname -m)
-	build_spy toolchain "${NAME}-${TOOLCHAINVERSION}"
+function macro_text() {
+	macro_parse < $1
 }
 
-if [ "$(basename $0)" == "make-buildspy" ]; then
-	if [ -f "$BUILD_SPY_PID" ]; then
-		exit 0
-	fi
-	echo $$ > $BUILD_SPY_PID
+function macro_sqlite() {
+	sqlite3 -noheader -column $1 | macro_parse
+}
 
-	while true; do
-		DATA+=$(cat $BUILD_SPY_FILENAME 2>/dev/null || true)
-		> $BUILD_SPY_FILENAME
+# Just a scatch of concept... Need a lot to do here
+function macro_parse() {
+	local STRING
+	grep -v "^#" | while read TARGET SOURCE DESTINATION PROTOCOL SOURCE_PORT DESTINATION_PORT RATE; do
+		STRING=""
+		# Protocol
+		STRING="$STRING $(iptables_protocol $PROTOCOL)"
+		# Ports
+		STRING="$STRING $(iptables_source_port $SOURCE_PORT)"
+		STRING="$STRING $(iptables_destination_port $DESTINATION_PORT)"
 
-		for command in $DATA; do
-			if [ "$command" = "BUILDSPY_EXIT" ]; then
-				BUILDSPY_EXIT=1
-				break
-			fi
-		done
+		if [ "$TARGET" = "ACCEPT" ]; then
+			STRING="$STRING -j ACCEPT"
 
-		if [ -n "$DATA" ] && \
-			$BASEDIR/tools/buildspy \
-				action=set uuid=$UUID $DATA >> $LOGFILE 2>&1; then
-			DATA=""
+		elif [ "$TARGET" = "DROP" ]; then
+			STRING="$STRING -j DROP"
+
+		# elif ...
+
 		fi
-
-		if [ "$BUILDSPY_EXIT" = "1" ]; then
-			break
-		fi
-
-		sleep 10
+		[ -n "$STRING" ] && echo $STRING
 	done
-	rm -f $BUILD_SPY_FILENAME $BUILD_SPY_PID
-fi
+}

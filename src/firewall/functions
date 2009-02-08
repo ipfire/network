@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,63 +19,59 @@
 #                                                                             #
 ###############################################################################
 
-BUILD_SPY_FILENAME=$BASEDIR/.build_spy
-BUILD_SPY_PID=$BUILD_SPY_FILENAME.pid
+VERBOSE=
+TMPDIR=$(mktemp -d)
 
-build_spy() {
-	local COMMAND
-	COMMAND=$1
-	shift 1
-	if [ "$COMMAND" = "start" ]; then
-		BASEDIR=$BASEDIR UUID=$UUID NAME=$NAME VERSION=$VERSION \
-		LOGFILE="$BASEDIR/log_${TARGET}/_build.00-buildspy.log" \
-		$BASEDIR/tools/make-buildspy &
-	elif [ "$COMMAND" = "exit" ]; then
-		echo -n "BUILDSPY_EXIT " >> $BUILD_SPY_FILENAME
+BOLD="\\033[1;39m"
+NORMAL="\\033[0;39m"
+ERROR="\\033[1;31m"
+
+function verbose() {
+	if [ -n "$1" ]; then
+		VERBOSE=$1
+		return
 	else
-		echo -n "${COMMAND}=$* " >> $BUILD_SPY_FILENAME
+		if [ "$VERBOSE" = "1" ]; then
+			return 0
+		else
+			return 1
+		fi
 	fi
 }
 
-build_spy_send_profile() {
-	build_spy target   ${TARGET}
-	build_spy hostname ${HOSTNAME}
-	build_spy distcc   ${DISTCC_PORT-3632}
-	build_spy jobs     ${DISTCC_JOBS}
-	build_spy cpu      $(grep ^model\ name /proc/cpuinfo | head -n1 | \
-		awk -F: '{ print $2 }' | $BASEDIR/tools/base64)
-	build_spy machine  $(uname -m)
-	build_spy toolchain "${NAME}-${TOOLCHAINVERSION}"
+function vecho() {
+	verbose && echo -e "$@"
 }
 
-if [ "$(basename $0)" == "make-buildspy" ]; then
-	if [ -f "$BUILD_SPY_PID" ]; then
-		exit 0
+function error() {
+	echo -e "${ERROR}ERROR${NORMAL}: $@" >&2
+	_exit 1
+}
+
+function ifs() {
+	if [ -n "$1" ]; then
+		IFS_SAVE=$IFS
+		echo $1
+	else
+		echo $IFS_SAVE
 	fi
-	echo $$ > $BUILD_SPY_PID
+}
 
-	while true; do
-		DATA+=$(cat $BUILD_SPY_FILENAME 2>/dev/null || true)
-		> $BUILD_SPY_FILENAME
+function uppercase() {
+	tr [a-z] [A-Z] <<< "$@"
+}
 
-		for command in $DATA; do
-			if [ "$command" = "BUILDSPY_EXIT" ]; then
-				BUILDSPY_EXIT=1
-				break
-			fi
-		done
+include functions.commands
+include functions.config
+include functions.firewall
+include functions.ip
+include functions.iptables
+include functions.macros
+include functions.zones
 
-		if [ -n "$DATA" ] && \
-			$BASEDIR/tools/buildspy \
-				action=set uuid=$UUID $DATA >> $LOGFILE 2>&1; then
-			DATA=""
-		fi
-
-		if [ "$BUILDSPY_EXIT" = "1" ]; then
-			break
-		fi
-
-		sleep 10
-	done
-	rm -f $BUILD_SPY_FILENAME $BUILD_SPY_PID
-fi
+function _start() {
+	firewall_init
+	zones_init
+	zones_add green0
+	iptables_commit
+}

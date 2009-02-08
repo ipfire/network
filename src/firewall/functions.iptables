@@ -1,0 +1,120 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+IPTABLES_FILE=$TMPDIR/iptables
+
+function iptables() {
+	echo "$@" >> $IPTABLES_FILE
+}
+
+function iptables_flush() {
+	: # TODO
+}
+
+function iptables_init() {
+	iptables_flush
+
+	iptables "* filter"
+	chain_create INPUT DROP
+	chain_create OUTPUT DROP
+	chain_create FORWARD DROP
+}
+
+function iptables_commit() {
+	vecho "Committing firewall configuration."
+	iptables "COMMIT"
+	verbose && cat $IPTABLES_FILE
+	#iptables-restore < $IPTABLES_FILE
+}
+
+function chain_create() {
+	iptables ":$1 ${2--} [0:0]"
+}
+
+function iptables_LOG() {
+	local prefix
+	prefix=$1
+
+	if [ "$LOG_FACILITY" = "ulogd2" ]; then
+		echo -n "NFLOG"
+		[ -n "$prefix" ] && echo -n " --nflog-prefix \"$prefix\""
+		echo -n " --nflog-threshold 30"
+	else
+		echo -n "LOG"
+		[ -n "$prefix" ] && echo -n " --log-prefix \"$prefix\""
+	fi
+	echo
+}
+
+function iptables_protocol() {
+	local PROTO
+	PROTO=$1
+	for proto in tcp udp esp ah; do
+		if [ "$PROTO" = "$proto" ]; then
+			echo "-p $PROTO"
+			break
+		fi
+	done
+}
+
+IPTABLES_PORT=0
+IPTABLES_MULTIPORT=1
+IPTABLES_PORTRANGE=2
+
+function _iptables_port_range() {
+	grep -q ":" <<< $@
+}
+
+function _iptables_port_multiport() {
+	grep -q "," <<< $@
+}
+
+function _iptables_port() {
+	if _iptables_port_range "$@"; then
+		echo $IPTABLES_PORTRANGE
+	elif _iptables_port_multiport "$@"; then
+		echo $IPTABLES_MULTIPORT
+	else
+		echo $IPTABLES_PORT
+	fi
+}
+
+function iptables_source_port() {
+	[ -z "$@" ] && return
+	local type
+	type=$(_iptables_port $@)
+	if [ "$type" = "$IPTABLES_MULTIPORT" ]; then
+		echo "-m multiport --source-ports $@"
+	else
+		echo "--sport $@"
+	fi
+}
+
+function iptables_destination_port() {
+	[ -z "$@" ] && return
+	local type
+	type=$(_iptables_port $@)
+	if [ "$type" = "$IPTABLES_MULTIPORT" ]; then
+		echo "-m multiport --destination-ports $@"
+	else
+		echo "--dport $@"
+	fi
+}
