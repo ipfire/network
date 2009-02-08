@@ -87,7 +87,8 @@ $(OBJECT): $(objects)
 			--sysconfdir=/etc/quagga \
 			--disable-static \
 			--enable-netlink \
-			--with-libpam
+			--with-libpam \
+			--enable-ipv6
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
