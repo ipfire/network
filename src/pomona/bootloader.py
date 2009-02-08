@@ -427,6 +427,7 @@ class x86BootloaderInfo(bootloaderInfo):
             realroot = " root=%s" %(realroot,)
 
             f.write('\tkernel %s ro%s' % (kernelFile, realroot))
+            self.args.append("quiet")
             if self.args.get():
                 f.write(' %s' % self.args.get())
             f.write('\n')
