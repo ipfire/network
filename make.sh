@@ -286,7 +286,8 @@ ipfire_build() {
 	ipfire_make xfsprogs
 	ipfire_make sysfsutils
 	ipfire_make squashfs
-		
+	ipfire_make dosfstools
+
 	### Building hardware utils
 	#
 	ipfire_make pciutils
