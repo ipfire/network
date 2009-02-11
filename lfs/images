@@ -73,6 +73,9 @@ ifeq "$(PASS)" "$(THISAPP)"
 		exit 1; \
 	fi
 
+	# Do some tests im the environment is sane
+	ldconfig -r $(CDROM_DIR)/tmp
+
 	cd $(CDROM_DIR)/tmp && mksquashfs * $(IMAGES_DIR)/$(SNAME)-$(VERSION).img -b 1M
 endif
 
