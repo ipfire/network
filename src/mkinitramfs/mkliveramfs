@@ -22,13 +22,12 @@
 . /usr/lib/mkinitramfs/functions
 
 # Modules needed by the live system
-MODULES="$MODULES aufs squashfs loop"
+MODULES="$MODULES aufs squashfs loop vfat ehci-hcd ohci-hcd uhci-hcd usb-storage"
 
 # Add all storage modules
 for module in /lib/modules/$KERNEL/kernel/drivers/{ata,message/fusion,pcmcia,scsi{,/*}}/*; do
 	MODULES="$MODULES $(basename ${module/.ko})"
 done
-## XXX need to add support for usb cdroms
 
 # Creating folders
 mkdir -p mnt/{source,tmpfs,overlayfs,squashfs}

@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,38 +24,40 @@
 
 include Config
 
-PKG_NAME   = quagga
-PKG_VER    = 0.99.11
+PKG_NAME   = mdadm
+PKG_VER    = 3.0-devel2
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
+DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
-GROUP      = Networking/Routing
-EXTRA      = yes
+GROUP      = System/Base
+EXTRA      = no
 DEBUG      = no
-DEPS       = pam
+DEPS       =
 
-URL        = http://www.quagga.net/
+URL        = http://www.kernel.org/pub/linux/utils/raid/mdadm/
 LICENSE    = GPLv2+
-SHORT_DESC = Quagga is a rounting daemon.
+SHORT_DESC = The mdadm program controls Linux md devices (software RAID arrays).
 
 define LONG_DESC
-	Quagga is a free software that manages TCP/IP based routing \
-	protocol. It takes multi-server and multi-thread approach to resolve \
-	the current complexity of the Internet. \
-	Quagga supports BGP4, BGP4+, OSPFv2, OSPFv3, RIPv1, RIPv2, and RIPng.
+	The mdadm program is used to create, manage, and monitor Linux MD (software \
+	RAID) devices.  As such, it provides similar functionality to the raidtools \
+	package.  However, mdadm is a single program, and it can perform \
+	almost all functions without a configuration file, though a configuration \
+	file can be used to help with some common tasks.
 endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-warn.patch
 
 download: $(objects)
 
@@ -77,19 +79,10 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	# ac_cv_have_decl_TCP_MD5SIG=no was set to work around a bug
-	cd $(DIR_APP) && \
-		ac_cv_have_decl_TCP_MD5SIG=no \
-		ac_cv_func_working_mktime=yes \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr \
-			--sysconfdir=/etc/quagga \
-			--disable-static \
-			--enable-netlink \
-			--with-libpam \
-			--enable-ipv6
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-warn.patch
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CXFLAGS="$(CFLAGS)" \
+							SYSCONFDIR="/etc" MDASSEMBLE_AUTO=1
+	cd $(DIR_APP) && make install BINDIR=/sbin
+	-mkdir -p -m 700 /var/run/mdadm
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

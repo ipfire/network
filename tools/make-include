@@ -538,7 +538,7 @@ build() {
 	build_spy start
 	distcc_get_hosts
 
-	if [ -f $BASEDIR/log_${TARGET}/02_base/stage2-LFS ]; then
+	if [ -f $BASEDIR/log_${TARGET}/02_base/stage2 ]; then
 		prepareenv
 		echo "Using installed toolchain" >> $LOGFILE
 		beautify message DONE "Stage toolchain already built or extracted"
