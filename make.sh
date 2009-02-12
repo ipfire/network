@@ -287,6 +287,8 @@ ipfire_build() {
 	ipfire_make sysfsutils
 	ipfire_make squashfs
 	ipfire_make dosfstools
+	ipfire_make lvm2
+	ipfire_make mdadm
 
 	### Building hardware utils
 	#
