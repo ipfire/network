@@ -76,9 +76,6 @@ udevd --daemon
 vecho "Creating devices..."
 udevadm trigger
 
-vecho "Waiting for system to settle..."
-udevadm settle --timeout=30 || :
-
 vecho "Mounting root filesystem $rootdev..."
 mount $rootdev /sysroot $rootfs $rootopts
 

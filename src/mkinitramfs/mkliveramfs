@@ -24,10 +24,18 @@
 # Modules needed by the live system
 MODULES="$MODULES aufs squashfs loop vfat ehci-hcd ohci-hcd uhci-hcd usb-storage"
 
+# NFS
+MODULES="$MODULES nfs"
+for module in /lib/modules/$KERNEL/kernel/drivers/net/{,*/}*; do
+	MODULES="$MODULES $(basename ${module/.ko})"
+done
+
 # Add all storage modules
 for module in /lib/modules/$KERNEL/kernel/drivers/{ata,message/fusion,pcmcia,scsi{,/*}}/*; do
 	MODULES="$MODULES $(basename ${module/.ko})"
 done
+
+install dhclient
 
 # Creating folders
 mkdir -p mnt/{source,tmpfs,overlayfs,squashfs}
@@ -132,9 +140,6 @@ udevd --daemon
 vecho "Creating devices..."
 udevadm trigger
 
-vecho "Waiting for system to settle..."
-udevadm settle --timeout=30 || :
-
 if [ "$SHELL" == "1" ] ; then
 	echo "Shell requested on kernel commandline. Exit to continue booting."
 	echo
@@ -142,7 +147,7 @@ if [ "$SHELL" == "1" ] ; then
 fi
 
 # Wait 60 seconds for /dev/root to appear.
-COUNTDOWN=60
+COUNTDOWN=90
 while [ "x$COUNTDOWN" != "x0" ] ; do
 	is_verbose && echo -n "."
 
