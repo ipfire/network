@@ -88,6 +88,7 @@ toolchain_build() {
 	toolchain_make util-linux-ng
 	toolchain_make strip
 	export PATH=$ORG_PATH SKIP_PACKAGE_LIST=$SAVE_SKIP_PACKAGE_LIST
+	unset SAVE_SKIP_PACKAGE_LIST
 }
 
 ################################################################################
@@ -129,6 +130,8 @@ base_build() {
 	ipfire_make gettext
 	ipfire_make make
 	ipfire_make libidn
+	ipfire_make bzip2
+	ipfire_make pcre
 	ipfire_make pkg-config
 	ipfire_make attr
 	ipfire_make libcap2
@@ -136,7 +139,6 @@ base_build() {
 	ipfire_make autoconf
 	ipfire_make automake
 	ipfire_make bash
-	ipfire_make bzip2
 	ipfire_make diffutils
 	ipfire_make eventlog
 	ipfire_make file
@@ -194,7 +196,6 @@ ipfire_build() {
 	### Building some general stuff
 	#   STAGE 1
 	ipfire_make libdaemon
-	ipfire_make pcre
 	ipfire_make expat
 	ipfire_make dbus
 	ipfire_make dbus-glib
@@ -308,7 +309,7 @@ ipfire_build() {
 	ipfire_make which
 	ipfire_make screen
 	ipfire_make rrdtool
-	ipfire_make ntp			### Needs config.
+	ipfire_make ntp
 	ipfire_make openssh
 	ipfire_make ez-ipupdate
 	ipfire_make noip
@@ -321,7 +322,6 @@ ipfire_build() {
 	ipfire_make cdrtools
 	ipfire_make python-parted
 	ipfire_make memtest86+
-	#ipfire_make pakfire
 	ipfire_make quagga
 	#ipfire_make mISDN
 	#ipfire_make wireless
