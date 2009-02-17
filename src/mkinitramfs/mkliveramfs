@@ -35,12 +35,15 @@ for module in /lib/modules/$KERNEL/kernel/drivers/{ata,message/fusion,pcmcia,scs
 	MODULES="$MODULES $(basename ${module/.ko})"
 done
 
-install dhclient
+install arping dhclient dhclient-script ping
 
 # Creating folders
 mkdir -p mnt/{source,tmpfs,overlayfs,squashfs}
 
 cat >> sbin/real-init <<'EOF'
+
+netdevice=eth0
+
 # Users can override rootfs target on the kernel commandline
 for o in $(cat /proc/cmdline); do
 	case $o in
@@ -52,6 +55,18 @@ for o in $(cat /proc/cmdline); do
 		;;
 	rootfstype=*)
 		rootfstype=${o#rootfstype=}
+		;;
+	net=*)
+		net=${o#net=}
+		;;
+	netdevice=*)
+		netdevice=${o#netdevice=}
+		;;
+	gateway=*)
+		gateway=${o#gateway=}
+		;;
+	dns=*)
+		dns="$dns ${o#dns=}"
 		;;
 	esac
 done
@@ -109,6 +124,13 @@ else
 			fi
 			thingtomount=/dev/root
 			;;
+		NFS=*)
+			NFS=${root#NFS=}
+			vecho "Going on to mount $NFS"
+			#mount -t nfs $NFS /mnt/source
+			#rootfstype=loop
+			#thingtomount=$(ls -1 /mnt/source/*.iso | head -n 1)
+			;;
 		/dev/*)
 			ln -s $root /dev/root
 			thingtomount=$root
@@ -140,18 +162,53 @@ udevd --daemon
 vecho "Creating devices..."
 udevadm trigger
 
+if [ -n "$net" ]; then
+	# Wait 30 seconds for network to appear.
+	COUNTDOWN=30
+	while [ "x$COUNTDOWN" != "x0" ] ; do
+		is_verbose && echo -n "."
+	
+		if ip link show $netdevice &>/dev/null; then
+			COUNTDOWN=0
+			continue
+		fi
+
+		COUNTDOWN=$(($COUNTDOWN - 1))
+		sleep 1
+	done
+	vecho # Blank line
+
+	ip link set $netdevice up
+	if [ "$net" = "dhcp" ]; then
+		vecho "Getting an IP address by DHCP..."
+		dhclient $(get_verbose) $netdevice
+	else
+		vecho "Setting IP address $net..."
+		ip addr add $net dev $netdevice
+	fi
+	if [ -n "$gateway" ]; then
+		vecho "Setting default gateway $gateway..."
+		ip route add default via $gateway
+	fi
+	if ! ping -c3 -w10 ping.ipfire.org 2>/dev/null; then
+		echo "This box does not seem to have an internet connection."
+		echo "You may fix this now and continue then:"
+		bash
+	fi
+fi
+
 if [ "$SHELL" == "1" ] ; then
 	echo "Shell requested on kernel commandline. Exit to continue booting."
 	echo
 	bash
 fi
 
-# Wait 60 seconds for /dev/root to appear.
+# Wait 90 seconds for $thingtomount to appear.
 COUNTDOWN=90
 while [ "x$COUNTDOWN" != "x0" ] ; do
 	is_verbose && echo -n "."
 
-	if [ -e /dev/root ]; then
+	if [ -e $thingtomount ]; then
 		COUNTDOWN=0
 		continue
 	fi
@@ -167,21 +224,21 @@ while [ "x$COUNTDOWN" != "x0" ] ; do
 done
 vecho # Blank line
 
-if [ ! -b /dev/root ] ; then
+if [ ! -e $thingtomount ] ; then
 	echo
 	echo "--------------------------------------"
 	echo "WARNING: Cannot find root file system!"
 	echo "--------------------------------------"
 	echo
-	echo "Create symlink /dev/root and then exit this shell to continue"
+	echo "Create symlink $thingtomount and then exit this shell to continue"
 	echo "the boot sequence."
 	echo
 	bash
 fi
 
 if is_verbose; then
-	vecho "Mounting /dev/root..."
-	ls -l /dev/root
+	vecho "Mounting $thingtomount..."
+	ls -l $thingtomount
 fi
 
 if [ "x$READONLY" == "x1" ] ; then
