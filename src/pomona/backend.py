@@ -15,7 +15,7 @@
 #
 
 import shutil
-import inutil
+import iutil
 import os, sys
 import logging
 from constants import *

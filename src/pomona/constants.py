@@ -27,21 +27,11 @@ DISPATCH_NOOP = None
 CLEARPART_TYPE_ALL = 0
 CLEARPART_TYPE_NONE = -1
 
-SOURCE_NOT_SET = -1
-SOURCE_CDROM = 0
-SOURCE_URL = 1
-SOURCE_HD = 2
-
 CB_UNDEF = -1
 CB_START = 0
 CB_STOP  = 1
 CB_WAIT  = 2
 CB_PROGRESS = 3
-
-exceptionText = _("An unhandled exception has occurred.  This "
-                  "is most likely a bug.  Please save a copy of "
-                  "the detailed exception and file a bug report "
-                  "against pomona at %s" %(bugurl,))
 
 INSTALL_OK = 0
 INSTALL_BACK = -1
@@ -59,10 +49,26 @@ REQUEST_PREEXIST = 1
 REQUEST_NEW = 2
 REQUEST_RAID = 4
 REQUEST_PROTECTED = 8
+REQUEST_VG = 16 # volume group
+REQUEST_LV = 32 # logical volume
 
 # XXX this is made up and used by the size spinner; should just be set with
 # a callback
 MAX_PART_SIZE = 1024*1024*1024
+
+lvmErrorOutput = "/tmp/lvmout"
+
+exceptionText = _("An unhandled exception has occurred.  This "
+                  "is most likely a bug.  Please save a copy of "
+                  "the detailed exception and file a bug report")
+if not bugurl:
+    # this string will be combined with "An unhandled exception"...
+    # the leading space is not a typo.
+    exceptionText += _(" with the provider of this software.")
+else:
+    # this string will be combined with "An unhandled exception"...
+    # the leading space is not a typo.
+    exceptionText += _(" against pomona at %s") %(bugurl,)
 
 class Translator:
     """A simple class to facilitate on-the-fly translation for newt buttons"""
@@ -105,6 +111,3 @@ TEXT_EDIT_CHECK = "edit"
 TEXT_EDIT_BUTTON = Translator(TEXT_EDIT_STR, TEXT_EDIT_CHECK)
 
 TEXT_F12_CHECK = "F12"
-
-TRUE = 1
-FALSE = 0

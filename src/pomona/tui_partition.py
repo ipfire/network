@@ -661,7 +661,7 @@ class PartitionWindow:
                 filesystem = fstype.current()
 
                 if primary.selected():
-                    primonly = TRUE
+                    primonly = 1
                 else:
                     primonly = None
 
@@ -671,7 +671,7 @@ class PartitionWindow:
                     request.mountpoint = self.mount.value()
                 else:
                     request.mountpoint = None
-                request.format = TRUE
+                request.format = 1
                 request.primary = primonly
 
                 if badblocksCB is not None:
@@ -690,7 +690,7 @@ class PartitionWindow:
                     if growtype == "fixed":
                         grow = None
                     else:
-                        grow = TRUE
+                        grow = 1
                     if growtype == "limit":
                         if invalidInteger(limitentry.value()):
                             self.intf.messageWindow(_("Invalid Entry for Maximum Size"),
@@ -1017,9 +1017,6 @@ class PartitionTypeWindow:
 
                 pomona.id.partitions.autoClearPartType = partmethod_ans
                 pomona.id.partitions.autoClearPartDrives = sel
-
-                if queryAutoPartitionOK(pomona):
-                    break
 
         # ask to review autopartition layout - but only if it's not custom partitioning
         pomona.dispatch.skipStep("partition", skip = 0)

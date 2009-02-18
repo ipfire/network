@@ -1,5 +1,5 @@
 #
-# bootloader.py: anaconda bootloader shims
+# bootloader.py: pomona bootloader shims
 #
 # Erik Troan <ewt@redhat.com>
 # Jeremy Katz <katzj@redhat.com>
@@ -18,7 +18,7 @@ import isys
 import partedUtils
 import os
 import sys
-import inutil
+import iutil
 import string
 import crypt
 import random
@@ -154,7 +154,7 @@ class BootImages:
     def getDefault(self):
         return self.default
 
-    # XXX this has internal anaconda-ish knowledge.  ick
+    # XXX this has internal pomona-ish knowledge.  ick
     def setup(self, diskSet, fsset):
         devices = {}
         devs = self.availableBootDevices(diskSet, fsset)
@@ -181,7 +181,7 @@ class BootImages:
             if not label:
                 self.images[self.default] = ("linux", getProductName(), type)
 
-    # XXX more internal anaconda knowledge
+    # XXX more internal pomona knowledge
     def availableBootDevices(self, diskSet, fsset):
         devs = []
         foundDos = 0

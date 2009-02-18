@@ -1,5 +1,5 @@
 #
-# flags.py: global anaconda flags
+# flags.py: global pomona flags
 #
 # Copyright 2001 Red Hat, Inc.
 #

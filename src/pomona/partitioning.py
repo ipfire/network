@@ -18,7 +18,7 @@
 
 import isys
 import sys
-import inutil
+import iutil
 from constants import *
 from flags import flags
 from partErrors import *
@@ -59,7 +59,7 @@ def partitioningComplete(pomona):
             raise RuntimeError, ("Managed to not get an entry back from "
                                  "request.toEntry")
 
-    if inutil.memAvailable() > isys.EARLY_SWAP_RAM:
+    if iutil.memAvailable() > isys.EARLY_SWAP_RAM:
         return
 
     rc = pomona.intf.messageWindow(_("Low Memory"),

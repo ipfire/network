@@ -5,7 +5,7 @@ import isys
 import parted
 import signal
 import time
-import inutil
+import iutil
 import imputil
 from constants import *
 
@@ -407,7 +407,7 @@ def spawnShell(screen):
     screen.suspend()
     print "\n\nType <exit> to return to the install program.\n"
     if os.path.exists("/bin/sh"):
-        inutil.execConsole()
+        iutil.execConsole()
     else:
         print "Unable to find /bin/sh to execute!  Not starting shell"
     time.sleep(5)

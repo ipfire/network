@@ -11,7 +11,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-import inutil
+import iutil
 from snack import *
 from constants import *
 from flags import flags

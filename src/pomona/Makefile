@@ -36,7 +36,7 @@ install: all
 		make DESTDIR=`cd $(DESTDIR); pwd` -C $$d install; \
 		[ $$? = 0 ] || exit 1; \
 	done
-	cp -f *.py lang-{table,names} $(PYTHONLIBDIR)
+	cp -vf *.py lang-{table,names} $(PYTHONLIBDIR)
 	chmod 755 $(PYTHONLIBDIR)/installer.py
 	sed -e "s/VERSION/$(VERSION)/g" \
 		-e "s/SNAME/$(SNAME)/g" \

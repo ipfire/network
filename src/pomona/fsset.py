@@ -1,21 +1,30 @@
 #
 # fsset.py: filesystem management
 #
-# Matt Wilson <msw@redhat.com>
+# Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007  Red Hat, Inc.
+# All rights reserved.
 #
-# Copyright 2001-2006 Red Hat, Inc.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-# This software may be freely redistributed under the terms of the GNU
-# library public license.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Library Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Author(s): Matt Wilson <msw@redhat.com>
+#            Jeremy Katz <katzj@redhat.com>
 #
 
+import math
 import string
 import isys
-import inutil
+import iutil
 import os
 import resource
 import posix
@@ -24,22 +33,20 @@ import errno
 import parted
 import sys
 import struct
-import time
-import partitioning
+import partitions
 import partedUtils
+import raid
+import lvm
+import time
 import types
-import math
 from flags import flags
+from constants import *
 
 import gettext
 _ = lambda x: gettext.ldgettext("pomona", x)
-N_ = lambda x: x
 
 import logging
 log = logging.getLogger("pomona")
-
-class BadBlocksError(Exception):
-    pass
 
 class SuspendError(Exception):
     pass
@@ -50,7 +57,7 @@ class OldSwapError(Exception):
 class ResizeError(Exception):
     pass
 
-defaultMountPoints = ['/', '/boot', '/home', '/tmp', '/usr', '/var', '/opt']
+defaultMountPoints = ['/', '/boot', '/home', '/tmp', '/usr', '/var', '/usr/local', '/opt']
 
 fileSystemTypes = {}
 
@@ -63,6 +70,7 @@ def fileSystemTypeGetDefault():
         return fileSystemTypeGet('ext2')
     else:
         raise ValueError, "You have neither ext4, ext3 or ext2 support in your kernel!"
+
 
 def fileSystemTypeGet(key):
     return fileSystemTypes[key]
@@ -77,7 +85,7 @@ def getUsableLinuxFs():
     rc = []
     for fsType in fileSystemTypes.keys():
         if fileSystemTypes[fsType].isMountable() and \
-                        fileSystemTypes[fsType].isLinuxNativeFS():
+               fileSystemTypes[fsType].isLinuxNativeFS():
             rc.append(fsType)
 
     # make sure the default is first in the list, kind of ugly
@@ -89,60 +97,18 @@ def getUsableLinuxFs():
     return rc
 
 def devify(device):
-    if device in ["proc", "devpts", "sysfs", "tmpfs"]:
+    if device in ["proc", "devpts", "sysfs", "tmpfs"] or device.find(":") != -1:
         return device
     elif device == "sys":
         return "sysfs"
     elif device == "shm":
         return "tmpfs"
+    elif device == "spufs":
+        return "spufs"
     elif device != "none" and device[0] != '/':
         return "/dev/" + device
     else:
         return device
-
-class LabelFactory:
-    def __init__(self):
-        self.labels = None
-
-    def createLabel(self, mountpoint, maxLabelChars):
-        if self.labels == None:
-            self.labels = {}
-            diskset = partedUtils.DiskSet()
-            diskset.openDevices()
-            labels = diskset.getLabels()
-            del diskset
-            self.reserveLabels(labels)
-
-        if len(mountpoint) > maxLabelChars:
-            mountpoint = mountpoint[0:maxLabelChars]
-        count = 0
-        while self.labels.has_key(mountpoint):
-            count = count + 1
-            s = "%s" % count
-            if (len(mountpoint) + len(s)) <= maxLabelChars:
-                mountpoint = mountpoint + s
-            else:
-                strip = len(mountpoint) + len(s) - maxLabelChars
-                mountpoint = mountpoint[0:len(mountpoint) - strip] + s
-        self.labels[mountpoint] = 1
-
-        return mountpoint
-
-    def reserveLabels(self, labels):
-        if self.labels == None:
-            self.labels = {}
-        for device, label in labels.items():
-            self.labels[label] = 1
-
-    def isLabelReserved(self, label):
-        if self.labels == None:
-            return False
-        elif self.labels.has_key(label):
-            return True
-        else:
-            return False
-
-labelFactory = LabelFactory()
 
 class FileSystemType:
     kernelFilesystems = {}
@@ -162,6 +128,8 @@ class FileSystemType:
         self.migratetofs = None
         self.extraFormatArgs = []
         self.maxLabelChars = 16
+        self.packages = []
+        self.needProgram = []
         self.resizable = False
         self.supportsFsProfiles = False
         self.fsProfileSpecifier = None
@@ -198,7 +166,7 @@ class FileSystemType:
               instroot=""):
         if not self.isMountable():
             return
-        inutil.mkdirChain("%s/%s" %(instroot, mountpoint))
+        iutil.mkdirChain("%s/%s" %(instroot, mountpoint))
         log.debug("mounting %s on %s/%s as %s" %(device, instroot,
                                                  mountpoint, self.getMountName()))
         isys.mount(device, "%s/%s" %(instroot, mountpoint),
@@ -219,6 +187,9 @@ class FileSystemType:
 
     def getMountName(self, quoted = 0):
         return self.getName(quoted)
+
+    def getNeededPackages(self):
+        return self.packages
 
     def registerDeviceArgumentFunction(self, klass, function):
         self.deviceArguments[klass] = function
@@ -279,6 +250,12 @@ class FileSystemType:
         return FileSystemType.kernelFilesystems.has_key(self.getMountName()) or self.getName() == "auto"
 
     def isSupported(self):
+        # check to ensure we have the binaries they need
+        for p in self.needProgram:
+            if len(filter(lambda d: os.path.exists("%s/%s" %(d, p)),
+                          os.environ["PATH"].split(":"))) == 0:
+                return False
+
         if self.supported == -1:
             return self.isMountable()
         return self.supported
@@ -330,33 +307,46 @@ class reiserfsFileSystem(FileSystemType):
         self.formattable = 1
         self.checked = 1
         self.linuxnativefs = 1
-        self.supported = -1
+        self.bootable = True
+        # this is totally, 100% unsupported.  Boot with "linux reiserfs"
+        # at the boot: prompt will let you make new reiserfs filesystems
+        # in the installer.  Bugs filed when you use this will be closed
+        # WONTFIX.
+        if flags.cmdline.has_key("reiserfs"):
+            self.supported = -1
+        else:
+            self.supported = 0
+
         self.name = "reiserfs"
+        self.packages = [ "reiserfs-utils" ]
+        self.needProgram = [ "mkreiserfs", "reiserfstune" ]
 
         self.maxSizeMB = 8 * 1024 * 1024
 
     def formatDevice(self, entry, progress, chroot='/'):
         devicePath = entry.device.setupDevice(chroot)
+
         p = os.pipe()
         os.write(p[1], "y\n")
         os.close(p[1])
 
-        rc = inutil.execWithRedirect("mkreiserfs",
-                                     [devicePath],
-                                     stdin = p[0],
-                                     stdout = "/dev/tty5",
-                                     stderr = "/dev/tty5", searchPath = 1)
+        rc = iutil.execWithRedirect("mkreiserfs",
+                                    [devicePath],
+                                    stdin = p[0],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
 
         if rc:
             raise SystemError
 
     def labelDevice(self, entry, chroot):
         devicePath = entry.device.setupDevice(chroot)
-        label = labelFactory.createLabel(entry.mountpoint, self.maxLabelChars)
-        rc = inutil.execWithRedirect("reiserfstune",
-                                     ["--label", label, devicePath],
-                                     stdout = "/dev/tty5",
-                                     stderr = "/dev/tty5", searchPath = 1)
+        label = self.createLabel(entry.mountpoint, self.maxLabelChars,
+                                 kslabel = entry.label)
+        rc = iutil.execWithRedirect("reiserfstune",
+                                    ["--label", label, devicePath],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
         if rc:
             raise SystemError
         entry.setLabel(label)
@@ -374,32 +364,115 @@ class xfsFileSystem(FileSystemType):
         self.maxSizeMB = 16 * 1024 * 1024
         self.maxLabelChars = 12
         self.supported = -1
+        if not os.path.exists("/sbin/mkfs.xfs") and not os.path.exists("/usr/sbin/mkfs.xfs"):
+            self.supported = 0
+
+        self.packages = [ "xfsprogs" ]
+        self.needProgram = [ "mkfs.xfs", "xfs_admin" ]
 
     def formatDevice(self, entry, progress, chroot='/'):
         devicePath = entry.device.setupDevice(chroot)
 
-        rc = inutil.execWithRedirect("mkfs.xfs",
-                                     ["-f", "-l", "internal",
-                                      "-i", "attr=2", devicePath],
-                                     stdout = "/dev/tty5",
-                                     stderr = "/dev/tty5", searchPath = 1)
+        rc = iutil.execWithRedirect("mkfs.xfs", ["-f", devicePath],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
 
         if rc:
             raise SystemError
 
     def labelDevice(self, entry, chroot):
         devicePath = entry.device.setupDevice(chroot)
-        label = labelFactory.createLabel(entry.mountpoint, self.maxLabelChars)
-        db_cmd = "label " + label
-        rc = inutil.execWithRedirect("xfs_db",
-                                     ["-x", "-c", db_cmd, devicePath],
-                                     stdout = "/dev/tty5",
-                                     stderr = "/dev/tty5", searchPath = 1)
+        label = self.createLabel(entry.mountpoint, self.maxLabelChars,
+                                 kslabel = entry.label)
+        rc = iutil.execWithRedirect("xfs_admin",
+                                    ["-L", label, devicePath],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
         if rc:
             raise SystemError
         entry.setLabel(label)
 
 fileSystemTypeRegister(xfsFileSystem())
+
+class jfsFileSystem(FileSystemType):
+    def __init__(self):
+        FileSystemType.__init__(self)
+        self.partedFileSystemType = parted.file_system_type_get("jfs")
+        self.formattable = 1
+        self.checked = 1
+        self.linuxnativefs = 1
+        self.maxLabelChars = 16
+        self.bootable = True
+        # this is totally, 100% unsupported.  Boot with "linux jfs"
+        # at the boot: prompt will let you make new reiserfs filesystems
+        # in the installer.  Bugs filed when you use this will be closed
+        # WONTFIX.
+        if flags.cmdline.has_key("jfs"):
+            self.supported = -1
+        else:
+            self.supported = 0
+
+        self.name = "jfs"
+        self.packages = [ "jfsutils" ]
+        self.needProgram = [ "mkfs.jfs", "jfs_tune" ]
+
+        self.maxSizeMB = 8 * 1024 * 1024
+
+    def labelDevice(self, entry, chroot):
+        devicePath = entry.device.setupDevice(chroot)
+        label = self.createLabel(entry.mountpoint, self.maxLabelChars,
+                                 kslabel = entry.label)
+        rc = iutil.execWithRedirect("jfs_tune",
+                                   ["-L", label, devicePath],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
+        if rc:
+            raise SystemError
+        entry.setLabel(label)
+
+    def formatDevice(self, entry, progress, chroot='/'):
+        devicePath = entry.device.setupDevice(chroot)
+
+        rc = iutil.execWithRedirect("mkfs.jfs",
+                                    ["-q", devicePath],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
+
+        if rc:
+            raise SystemError
+
+fileSystemTypeRegister(jfsFileSystem())
+
+class gfs2FileSystem(FileSystemType):
+    def __init__(self):
+        FileSystemType.__init__(self)
+        self.partedFileSystemType = None
+        self.formattable = 1
+        self.checked = 1
+        self.linuxnativefs = 1
+        if flags.cmdline.has_key("gfs2"):
+            self.supported = -1
+        else:
+            self.supported = 0
+
+        self.name = "gfs2"
+        self.packages = [ "gfs2-utils" ]
+        self.needProgram = [ "mkfs.gfs2" ]
+
+        self.maxSizeMB = 8 * 1024 * 1024
+
+    def formatDevice(self, entry, progress, chroot='/'):
+        devicePath = entry.device.setupDevice(chroot)
+        rc = iutil.execWithRedirect("mkfs.gfs2",
+                                    ["-j", "1", "-p", "lock_nolock",
+                                     "-O", devicePath],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
+
+        if rc:
+            raise SystemError
+
+fileSystemTypeRegister(gfs2FileSystem())
 
 class extFileSystem(FileSystemType):
     def __init__(self):
@@ -409,6 +482,7 @@ class extFileSystem(FileSystemType):
         self.checked = 1
         self.linuxnativefs = 1
         self.maxSizeMB = 8 * 1024 * 1024
+        self.packages = [ "e2fsprogs" ]
         self.supportsFsProfiles = True
         self.fsProfileSpecifier = "-T"
         self.resizable = True
@@ -424,7 +498,7 @@ class extFileSystem(FileSystemType):
                          _("Checking filesystem on %s...") %(devicePath),
                          100, pulse = True)
 
-        rc = inutil.execWithPulseProgress("e2fsck", ["-f", "-p", "-C", "0", devicePath],
+        rc = iutil.execWithPulseProgress("e2fsck", ["-f", "-p", "-C", "0", devicePath],
                                          stdout="/tmp/resize.out",
                                          stderr="/tmp/resize.out",
                                          progress = w)
@@ -437,7 +511,7 @@ class extFileSystem(FileSystemType):
                          100, pulse = True)
 
         log.info("resizing %s" %(devicePath,))
-        rc = inutil.execWithPulseProgress("resize2fs",
+        rc = iutil.execWithPulseProgress("resize2fs",
                                          ["-p", devicePath, "%sM" %(size,)],
                                          stdout="/tmp/resize.out",
                                          stderr="/tmp/resize.out",
@@ -452,7 +526,7 @@ class extFileSystem(FileSystemType):
         devicePath = "/dev/%s" % (device,)
 
         # FIXME: it'd be nice if we didn't have to parse this out ourselves
-        buf = inutil.execWithCapture("dumpe2fs",
+        buf = iutil.execWithCapture("dumpe2fs",
                                     ["-h", devicePath],
                                     stderr = "/dev/tty5")
         blocks = free = bs = 0
@@ -493,7 +567,7 @@ class extFileSystem(FileSystemType):
         label = self.createLabel(entry.mountpoint, self.maxLabelChars,
                                  kslabel = entry.label)
 
-        rc = inutil.execWithRedirect("e2label",
+        rc = iutil.execWithRedirect("e2label",
                                     [devicePath, label],
                                     stdout = "/dev/tty5",
                                     stderr = "/dev/tty5", searchPath = 1)
@@ -533,7 +607,7 @@ class extFileSystem(FileSystemType):
         if not isys.ext2HasJournal(devicePath):
             return
 
-        rc = inutil.execWithRedirect("tune2fs",
+        rc = iutil.execWithRedirect("tune2fs",
                                     ["-c0", "-i0",
                                      "-ouser_xattr,acl", devicePath],
                                     stdout = "/dev/tty5",
@@ -561,7 +635,7 @@ class ext2FileSystem(extFileSystem):
             log.info("Skipping migration of %s, has a journal already.\n" % devicePath)
             return
 
-        rc = inutil.execWithRedirect("tune2fs",
+        rc = iutil.execWithRedirect("tune2fs",
                                     ["-j", devicePath ],
                                     stdout = "/dev/tty5",
                                     stderr = "/dev/tty5", searchPath = 1)
@@ -597,7 +671,8 @@ class ext3FileSystem(extFileSystem):
         self.name = "ext3"
         self.extraFormatArgs = [ "-t", "ext3" ]
         self.partedFileSystemType = parted.file_system_type_get("ext3")
-        self.migratetofs = ['ext4dev']
+        if flags.cmdline.has_key("ext4"):
+            self.migratetofs = ['ext4dev']
 
     def formatDevice(self, entry, progress, chroot='/'):
         extFileSystem.formatDevice(self, entry, progress, chroot)
@@ -614,7 +689,7 @@ class ext3FileSystem(extFileSystem):
                                  "than ext4")
 
         # This is only needed as long as ext4 is actually "ext4dev"
-        rc = inutil.execWithRedirect("tune2fs",
+        rc = iutil.execWithRedirect("tune2fs",
                                     ["-E", "test_fs", devicePath ],
                                     stdout = "/dev/tty5",
                                     stderr = "/dev/tty5", searchPath = 1)
@@ -626,16 +701,89 @@ fileSystemTypeRegister(ext3FileSystem())
 class ext4FileSystem(extFileSystem):
     def __init__(self):
         extFileSystem.__init__(self)
-        self.name = "ext4"
+        self.name = "ext4dev"
         self.partedFileSystemType = parted.file_system_type_get("ext3")
-        self.extraFormatArgs = [ "-t", "ext4" ]
+        self.extraFormatArgs = [ "-t", "ext4dev" ]
         self.bootable = False
+
+        # this is way way experimental at present...
+        if flags.cmdline.has_key("ext4"):
+            self.supported = -1
+        else:
+            self.supported = 0
+
 
     def formatDevice(self, entry, progress, chroot='/'):
         extFileSystem.formatDevice(self, entry, progress, chroot)
         extFileSystem.setExt3Options(self, entry, progress, chroot)
 
 fileSystemTypeRegister(ext4FileSystem())
+
+class raidMemberDummyFileSystem(FileSystemType):
+    def __init__(self):
+        FileSystemType.__init__(self)
+        self.partedFileSystemType = parted.file_system_type_get("ext2")
+        self.partedPartitionFlags = [ parted.PARTITION_RAID ]
+        self.formattable = 1
+        self.checked = 0
+        self.linuxnativefs = 1
+        self.name = "software RAID"
+        self.maxSizeMB = 8 * 1024 * 1024
+        self.supported = 1
+
+        if len(raid.availRaidLevels) == 0:
+            self.supported = 0
+
+        self.packages = [ "mdadm" ]
+
+    def formatDevice(self, entry, progress, chroot='/'):
+        # mkraid did all we need to format this partition...
+        pass
+
+fileSystemTypeRegister(raidMemberDummyFileSystem())
+
+class lvmPhysicalVolumeDummyFileSystem(FileSystemType):
+    def __init__(self):
+        FileSystemType.__init__(self)
+        self.partedFileSystemType = parted.file_system_type_get("ext2")
+        self.partedPartitionFlags = [ parted.PARTITION_LVM ]
+        self.formattable = 1
+        self.checked = 0
+        self.linuxnativefs = 1
+        self.name = "physical volume (LVM)"
+        self.maxSizeMB = 8 * 1024 * 1024
+        self.supported = 1
+        self.packages = [ "lvm2" ]
+
+    def isMountable(self):
+        return 0
+
+    def formatDevice(self, entry, progress, chroot='/'):
+        # already done by the pvcreate during volume creation
+        pass
+
+fileSystemTypeRegister(lvmPhysicalVolumeDummyFileSystem())
+
+class lvmVolumeGroupDummyFileSystem(FileSystemType):
+    def __init__(self):
+        FileSystemType.__init__(self)
+        self.partedFileSystemType = parted.file_system_type_get("ext2")
+        self.formattable = 1
+        self.checked = 0
+        self.linuxnativefs = 0
+        self.name = "volume group (LVM)"
+        self.supported = 0
+        self.maxSizeMB = 8 * 1024 * 1024
+        self.packages = [ "lvm2" ]
+
+    def isMountable(self):
+        return 0
+
+    def formatDevice(self, entry, progress, chroot='/'):
+        # the vgcreate already did this
+        pass
+
+fileSystemTypeRegister(lvmVolumeGroupDummyFileSystem())
 
 class swapFileSystem(FileSystemType):
     enabledSwaps = {}
@@ -650,7 +798,8 @@ class swapFileSystem(FileSystemType):
         self.supported = 1
         self.maxLabelChars = 15
 
-    def mount(self, device, mountpoint, readOnly=0, bindMount=0, instroot = None):
+    def mount(self, device, mountpoint, readOnly=0, bindMount=0,
+              instroot = None):
         pagesize = resource.getpagesize()
         buf = None
         if pagesize > 2048:
@@ -675,7 +824,7 @@ class swapFileSystem(FileSystemType):
             if sig == 'S1SUSPEND\x00' or sig == 'S2SUSPEND\x00':
                 raise SuspendError
 
-        isys.swapon(device)
+        isys.swapon (device)
 
     def umount(self, device, path):
         # unfortunately, turning off swap is bad.
@@ -683,8 +832,8 @@ class swapFileSystem(FileSystemType):
 
     def formatDevice(self, entry, progress, chroot='/'):
         file = entry.device.setupDevice(chroot)
-        rc = inutil.execWithRedirect("mkswap",
-                                     ["-v1", file],
+        rc = iutil.execWithRedirect ("mkswap",
+                                     ['-v1', file],
                                      stdout = "/dev/tty5",
                                      stderr = "/dev/tty5",
                                      searchPath = 1)
@@ -702,9 +851,9 @@ class swapFileSystem(FileSystemType):
             swapLabel = "SWAP-%s" % (devName[7:],)
         else:
             swapLabel = "SWAP-%s" % (devName)
-        label = labelFactory.createLabel(swapLabel, self.maxLabelChars)
-        rc = inutil.execWithRedirect("mkswap",
-                                     ["-v1", "-L", label, file],
+        label = self.createLabel(swapLabel, self.maxLabelChars)
+        rc = iutil.execWithRedirect ("mkswap",
+                                     ['-v1', "-L", label, file],
                                      stdout = "/dev/tty5",
                                      stderr = "/dev/tty5",
                                      searchPath = 1)
@@ -733,10 +882,46 @@ class FATFileSystem(FileSystemType):
     def __init__(self):
         FileSystemType.__init__(self)
         self.partedFileSystemType = parted.file_system_type_get("fat32")
-        self.formattable = 0
+        self.formattable = 1
         self.checked = 0
         self.maxSizeMB = 1024 * 1024
         self.name = "vfat"
+        self.packages = [ "dosfstools" ]
+        self.defaultOptions = "umask=0077,shortname=winnt"
+
+    def formatDevice(self, entry, progress, chroot='/'):
+        devicePath = entry.device.setupDevice(chroot)
+        devArgs = self.getDeviceArgs(entry.device)
+        args = [ devicePath ]
+        args.extend(devArgs)
+
+        rc = iutil.execWithRedirect("mkdosfs", args,
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
+        if rc:
+            raise SystemError
+
+    def labelDevice(self, entry, chroot):
+        devicePath = entry.device.setupDevice(chroot)
+        label = self.createLabel(entry.mountpoint, self.maxLabelChars,
+                                 kslabel = entry.label)
+
+        rc = iutil.execWithRedirect("dosfslabel",
+                                    [devicePath, label],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5",
+                                    searchPath = 1)
+        if rc:
+            msg = iutil.execWithCapture("dosfslabel", [devicePath],
+                                        stderr="/dev/tty5")
+            raise SystemError, "dosfslabel failed on device %s: %s" % (devicePath, msg)
+
+        newLabel = iutil.execWithCapture("dosfslabel", [devicePath],
+                                         stderr = "/dev/tty5")
+        newLabel = newLabel.strip()
+        if label != newLabel:
+            raise SystemError, "dosfslabel failed on device %s" % (devicePath,)
+        entry.setLabel(label)
 
 fileSystemTypeRegister(FATFileSystem())
 
@@ -747,8 +932,119 @@ class NTFSFileSystem(FileSystemType):
         self.formattable = 0
         self.checked = 0
         self.name = "ntfs"
+        if len(filter(lambda d: os.path.exists("%s/ntfsresize" %(d,)),
+                      os.environ["PATH"].split(":"))) > 0:
+            self.resizable = True
+
+    def resize(self, entry, size, progress, chroot='/'):
+        devicePath = entry.device.setupDevice(chroot)
+        log.info("resizing %s to %sM" %(devicePath, size))
+        w = None
+        if progress:
+            w = progress(_("Resizing"),
+                         _("Resizing filesystem on %s...") %(devicePath),
+                         100, pulse = True)
+
+        p = os.pipe()
+        os.write(p[1], "y\n")
+        os.close(p[1])
+
+        # FIXME: we should call ntfsresize -c to ensure that we can resize
+        # before starting the operation
+
+        rc = iutil.execWithPulseProgress("ntfsresize", ["-v",
+                                                        "-s", "%sM" %(size,),
+                                                        devicePath],
+                                         stdin = p[0],
+                                         stdout = "/tmp/resize.out",
+                                         stderr = "/tmp/resize.out",
+                                         progress = w)
+        if progress:
+            w.pop()
+        if rc:
+            raise ResizeError, ("Resize of %s failed" %(devicePath,), devicePath)
+
+    def getMinimumSize(self, device):
+        """Return the minimum filesystem size in megabytes"""
+        devicePath = "/dev/%s" % (device,)
+
+        buf = iutil.execWithCapture("ntfsresize", ["-m", devicePath],
+                                    stderr = "/dev/tty5")
+        for l in buf.split("\n"):
+            if not l.startswith("Minsize"):
+                continue
+            try:
+                min = l.split(":")[1].strip()
+                return int(min) + 250
+            except Exception, e:
+                log.warning("Unable to parse output for minimum size on %s: %s" %(device, e))
+
+        log.warning("Unable to discover minimum size of filesystem on %s" %(device,))
+        return 1
+
 
 fileSystemTypeRegister(NTFSFileSystem())
+
+class hfsFileSystem(FileSystemType):
+    def __init__(self):
+        FileSystemType.__init__(self)
+        self.partedFileSystemType = parted.file_system_type_get("hfs")
+        self.formattable = 1
+        self.checked = 0
+        self.name = "hfs"
+        self.supported = 0
+        self.needProgram = [ "hformat" ]
+
+    def isMountable(self):
+        return 0
+
+    def formatDevice(self, entry, progress, chroot='/'):
+        devicePath = entry.device.setupDevice(chroot)
+        devArgs = self.getDeviceArgs(entry.device)
+        args = [ devicePath ]
+        args.extend(devArgs)
+
+        rc = iutil.execWithRedirect("hformat", args,
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
+        if rc:
+            raise SystemError
+
+fileSystemTypeRegister(hfsFileSystem())
+
+class HfsPlusFileSystem(FileSystemType):
+    def __init__(self):
+        FileSystemType.__init__(self)
+        self.partedFileSystemType = parted.file_system_type_get("hfs+")
+        self.formattable = 0
+        self.checked = 0
+        self.name = "hfs+"
+
+fileSystemTypeRegister(HfsPlusFileSystem())
+
+class networkFileSystem(FileSystemType):
+    def __init__(self):
+        FileSystemType.__init__(self)
+        self.formattable = 0
+        self.checked = 0
+        self.name = "nfs"
+
+    def isMountable(self):
+        return 0
+
+fileSystemTypeRegister(networkFileSystem())
+
+class nfsv4FileSystem(FileSystemType):
+    def __init__(self):
+        FileSystemType.__init__(self)
+        self.formattable = 0
+        self.checked = 0
+        self.name = "nfs4"
+
+    def isMountable(self):
+        return 0
+
+fileSystemTypeRegister(nfsv4FileSystem())
 
 class ForeignFileSystem(FileSystemType):
     def __init__(self):
@@ -762,7 +1058,7 @@ class ForeignFileSystem(FileSystemType):
 
 fileSystemTypeRegister(ForeignFileSystem())
 
-class PsudoFileSystem(FileSystemType):
+class PseudoFileSystem(FileSystemType):
     def __init__(self, name):
         FileSystemType.__init__(self)
         self.formattable = 0
@@ -773,21 +1069,27 @@ class PsudoFileSystem(FileSystemType):
     def isKernelFS(self):
         return True
 
-class ProcFileSystem(PsudoFileSystem):
+class SpuFileSystem(PseudoFileSystem):
     def __init__(self):
-        PsudoFileSystem.__init__(self, "proc")
+        PseudoFileSystem.__init__(self, "spufs")
+
+fileSystemTypeRegister(SpuFileSystem())
+
+class ProcFileSystem(PseudoFileSystem):
+    def __init__(self):
+        PseudoFileSystem.__init__(self, "proc")
 
 fileSystemTypeRegister(ProcFileSystem())
 
-class SysfsFileSystem(PsudoFileSystem):
+class SysfsFileSystem(PseudoFileSystem):
     def __init__(self):
-        PsudoFileSystem.__init__(self, "sysfs")
+        PseudoFileSystem.__init__(self, "sysfs")
 
 fileSystemTypeRegister(SysfsFileSystem())
 
-class DevptsFileSystem(PsudoFileSystem):
+class DevptsFileSystem(PseudoFileSystem):
     def __init__(self):
-        PsudoFileSystem.__init__(self, "devpts")
+        PseudoFileSystem.__init__(self, "devpts")
         self.defaultOptions = "gid=5,mode=620"
 
     def isMountable(self):
@@ -795,35 +1097,37 @@ class DevptsFileSystem(PsudoFileSystem):
 
 fileSystemTypeRegister(DevptsFileSystem())
 
-class DevshmFileSystem(PsudoFileSystem):
+class DevshmFileSystem(PseudoFileSystem):
     def __init__(self):
-        PsudoFileSystem.__init__(self, "tmpfs")
+        PseudoFileSystem.__init__(self, "tmpfs")
 
     def isMountable(self):
         return 0
 
 fileSystemTypeRegister(DevshmFileSystem())
 
-class AutoFileSystem(PsudoFileSystem):
+class AutoFileSystem(PseudoFileSystem):
     def __init__(self):
-        PsudoFileSystem.__init__(self, "auto")
+        PseudoFileSystem.__init__(self, "auto")
 
-    def mount(self, device, mountpoint, readOnly=0, bindMount=0, instroot = None):
+    def mount(self, device, mountpoint, readOnly=0, bindMount=0,
+              instroot = None):
         errNum = 0
         errMsg = "cannot mount auto filesystem on %s of this type" % device
 
         if not self.isMountable():
             return
-        inutil.mkdirChain("%s/%s" %(instroot, mountpoint))
-        for fs in getFStoTry (device):
+        iutil.mkdirChain("%s/%s" %(instroot, mountpoint))
+
+        fs = isys.readFSType(device)
+        if fs is not None:
             try:
-                isys.mount (device, mountpoint, fstype = fs, readOnly = readOnly,
-                        bindMount = bindMount)
+                isys.mount (device, mountpoint, fstype = fs, readOnly =
+                            readOnly, bindMount = bindMount)
                 return
             except SystemError, (num, msg):
                 errNum = num
                 errMsg = msg
-                continue
 
         raise SystemError (errNum, errMsg)
 
@@ -832,9 +1136,9 @@ class AutoFileSystem(PsudoFileSystem):
 
 fileSystemTypeRegister(AutoFileSystem())
 
-class BindFileSystem(PsudoFileSystem):
+class BindFileSystem(PseudoFileSystem):
     def __init__(self):
-        PsudoFileSystem.__init__(self, "bind")
+        PseudoFileSystem.__init__(self, "bind")
 
     def isMountable(self):
         return 1
@@ -866,16 +1170,16 @@ class FileSystemSet:
     def reset (self):
         self.entries = []
         proc = FileSystemSetEntry(Device(device="proc"), '/proc',
-                                                                                                                fileSystemTypeGet("proc"))
+                                  fileSystemTypeGet("proc"))
         self.add(proc)
         sys = FileSystemSetEntry(Device(device="sys"), '/sys',
-                                                                                                        fileSystemTypeGet("sysfs"))
+                                 fileSystemTypeGet("sysfs"))
         self.add(sys)
         pts = FileSystemSetEntry(Device(device="devpts"), '/dev/pts',
-                                                                                                        fileSystemTypeGet("devpts"), "gid=5,mode=620")
+                                 fileSystemTypeGet("devpts"), "gid=5,mode=620")
         self.add(pts)
         shm = FileSystemSetEntry(Device(device="shm"), '/dev/shm',
-                                                                                                        fileSystemTypeGet("tmpfs"))
+                                 fileSystemTypeGet("tmpfs"))
         self.add(shm)
 
     def verify (self):
@@ -886,36 +1190,42 @@ class FileSystemSet:
     def add (self, newEntry):
         # Should object A be sorted after object B?  Take mountpoints and
         # device names into account so bind mounts are sorted correctly.
-        def comesAfter(a, b):
+        def comesAfter (a, b):
             mntA = a.mountpoint
             mntB = b.mountpoint
             devA = a.device.getDevice()
             devB = b.device.getDevice()
 
-            if not mntB or not devB:
-                return True
-            if not mntA or not devA:
+            if not mntB:
                 return False
+            if mntA and mntA != mntB and mntA.startswith(mntB):
+                return True
+            if devA and devA != mntB and devA.startswith(mntB):
+                return True
+            return False
 
-            if (mntA.startswith(mntB) and mntA != mntB) or (devA.startswith(mntB) and devA != devB):
-                return True
-            else:
-                return False
+        def samePseudo (a, b):
+            return isinstance(a.fsystem, PseudoFileSystem) and isinstance (b.fsystem, PseudoFileSystem) and \
+                   not isinstance (a.fsystem, BindFileSystem) and not isinstance (b.fsystem, BindFileSystem) and \
+                   a.fsystem.getName() == b.fsystem.getName()
+
+        def sameEntry (a, b):
+            return a.device.getDevice() == b.device.getDevice() and a.mountpoint == b.mountpoint
 
         # Remove preexisting duplicate entries - pseudo filesystems are
         # duplicate if they have the same filesystem type as an existing one.
         # Otherwise, they have to have the same device and mount point
         # (required to check for bind mounts).
         for existing in self.entries:
-            if (isinstance (newEntry.fsystem, PsudoFileSystem) and existing.fsystem.getName() == newEntry.fsystem.getName()) or (existing.device.getDevice() == newEntry.device.getDevice() and existing.mountpoint == newEntry.mountpoint):
+            if samePseudo (newEntry, existing) or sameEntry (newEntry, existing):
                 self.remove(existing)
 
-                ### debuggin'
-                #log.info ("fsset at %s\n"
-                #          "adding entry for %s\n"
-                #          "entry object %s, class __dict__ is %s",
-                #          self, entry.mountpoint, entry,
-                #          isys.printObject(entry.__dict__))
+        # XXX debuggin'
+##         log.info ("fsset at %s\n"
+##                   "adding entry for %s\n"
+##                   "entry object %s, class __dict__ is %s",
+##                   self, entry.mountpoint, entry,
+##                   isys.printObject(entry.__dict__))
 
         insertAt = 0
 
@@ -948,12 +1258,17 @@ class FileSystemSet:
         for entry in self.entries:
             if entry.device.getDevice() == dev:
                 return entry
+
+            # getDevice() will return the mapped device if using LUKS
+            if entry.device.device == dev:
+                return entry
+
         return None
 
-    def copy(self):
+    def copy (self):
         new = FileSystemSet()
         for entry in self.entries:
-            new.add(entry)
+            new.add (entry)
         return new
 
     def fstab (self):
@@ -983,7 +1298,7 @@ class FileSystemSet:
                                           entry.order)
         return fstab
 
-    def mtab(self):
+    def mtab (self):
         format = "%s %s %s %s 0 0\n"
         mtab = ""
         for entry in self.entries:
@@ -993,8 +1308,9 @@ class FileSystemSet:
                 # swap doesn't end up in the mtab
                 if entry.fsystem.getName() == "swap":
                     continue
-                if entry.options:
-                    options = "rw," + entry.options
+                options = entry.getOptions()
+                if options:
+                    options = "rw," + options
                 else:
                     options = "rw"
                 mtab = mtab + format % (devify(entry.device.getDevice()),
@@ -1003,24 +1319,71 @@ class FileSystemSet:
                                         options)
         return mtab
 
+    def raidtab(self):
+        # set up raidtab...
+        raidtab = ""
+        for entry in self.entries:
+            if entry.device.getName() == "RAIDDevice":
+                raidtab = raidtab + entry.device.raidTab()
 
-    def write(self, prefix):
-        f = open(prefix + "/etc/fstab", "w")
-        f.write(self.fstab())
-        f.close()
+        return raidtab
+
+    def mdadmConf(self):
+        """Make the mdadm.conf file with mdadm command.
+
+        This creates a conf file with active arrays.  In other words
+        the arrays that we don't want included must be inactive.
+        """
+        activeArrays = iutil.execWithCapture("mdadm", ["--detail", "--scan"])
+        if len(activeArrays) == 0:
+            return
+
+        cf = """
+# mdadm.conf written out by pomona
+DEVICE partitions
+MAILADDR root
+
+%s
+""" % activeArrays
+        return cf
+
+    def crypttab(self):
+        """set up /etc/crypttab"""
+        crypttab = ""
+        for entry in self.entries:
+            if entry.device.crypto:
+                crypttab += entry.device.crypto.crypttab()
+
+        return crypttab
+
+    def write (self, prefix):
+        f = open (prefix + "/etc/fstab", "w")
+        f.write (self.fstab())
+        f.close ()
+
+        cf = self.mdadmConf()
+
+        if cf:
+            f = open (prefix + "/etc/mdadm.conf", "w")
+            f.write (cf)
+            f.close ()
+
+        crypttab = self.crypttab()
+        if crypttab:
+            f = open(prefix + "/etc/crypttab", "w")
+            f.write(crypttab)
+            f.close()
 
         # touch mtab
-        open(prefix + "/etc/mtab", "w+")
-        f.close()
+        open (prefix + "/etc/mtab", "w+")
+        f.close ()
 
-    ## XXX
     def mkDevRoot(self, instPath):
         root = self.getEntryByMountPoint("/")
         dev = "%s/dev/%s" % (instPath, root.device.getDevice())
-        rdev = os.stat(dev).st_rdev
-
-        #if not os.path.exists("%s/dev/root" %(instPath,)):
-        #       os.mknod("%s/dev/root" % (instPath,), stat.S_IFBLK | 0600, rdev)
+        if not os.path.exists("%s/dev/root" %(instPath,)) and os.path.exists(dev):
+            rdev = os.stat(dev).st_rdev
+            os.mknod("%s/dev/root" % (instPath,), stat.S_IFBLK | 0600, rdev)
 
     # return the "boot" device
     def getBootDev(self):
@@ -1029,6 +1392,8 @@ class FileSystemSet:
         for entry in self.entries:
             mntDict[entry.mountpoint] = entry.device
 
+        # FIXME: this ppc stuff feels kind of crufty -- the abstraction
+        # here needs a little bit of work
         if mntDict.has_key("/boot"):
             bootDev = mntDict['/boot']
         elif mntDict.has_key("/"):
@@ -1044,8 +1409,12 @@ class FileSystemSet:
             log.warning("no boot device set")
             return ret
 
+        if bootDev.getName() == "RAIDDevice":
+            ret['boot'] = (bootDev.device, N_("RAID Device"))
+            return ret
+
         ret['boot'] = (bootDev.device, N_("First sector of boot partition"))
-        ret['mbr']  = (bl.drivelist[0], N_("Master Boot Record (MBR)"))
+        ret['mbr'] = (bl.drivelist[0], N_("Master Boot Record (MBR)"))
         return ret
 
     # set active partition on disks
@@ -1059,9 +1428,15 @@ class FileSystemSet:
 
         bootDev = dev.device
 
+        if dev.getName() != "RAIDDevice":
+            part = partedUtils.get_partition_by_name(diskset.disks, bootDev)
+            drive = partedUtils.get_partition_drive(part)
+
         for drive in diskset.disks.keys():
             foundActive = 0
             bootPart = None
+            if partedUtils.hasGptLabel(diskset, drive):
+                continue
             disk = diskset.disks[drive]
             part = disk.next_partition()
             while part:
@@ -1093,13 +1468,61 @@ class FileSystemSet:
             if bootPart:
                 del bootPart
 
-    def formatSwap(self, chroot, forceFormat=False):
+    def resizeFilesystems (self, diskset, chroot = '/', shrink = False, grow = False):
+        todo = []
+        for entry in self.entries:
+            if not entry.fsystem or not entry.fsystem.isResizable():
+                continue
+            if entry.fsystem.isFormattable() and entry.getFormat():
+                continue
+            if entry.resizeTargetSize is None:
+                continue
+            if shrink and not (entry.resizeTargetSize < entry.resizeOrigSize):
+                continue
+            if grow and not (entry.resizeTargetSize > entry.resizeOrigSize):
+                continue
+            todo.append(entry)
+        if len(todo) == 0:
+            return
+
+        # we have to have lvm activated to be able to do resizes of LVs
+        lvmActive = lvm.vgcheckactive()
+        devicesActive = diskset.devicesOpen
+
+        if not devicesActive:
+            # should this not be diskset.openDevices() ?
+            diskset.startMPath()
+            diskset.startDmRaid()
+            diskset.startMdRaid()
+
+        if not lvmActive:
+            lvm.vgscan()
+            lvm.vgactivate()
+
+        for entry in todo:
+            entry.fsystem.resize(entry, entry.resizeTargetSize,
+                                 self.progressWindow, chroot)
+        if not lvmActive:
+            lvm.vgdeactivate()
+
+        if not devicesActive:
+            # should this not be diskset.closeDevices() ?
+            diskset.stopMPath()
+            diskset.stopDmRaid()
+            diskset.stopMdRaid()
+
+    def shrinkFilesystems (self, diskset, chroot):
+        self.resizeFilesystems(diskset, chroot, shrink = True)
+    def growFilesystems (self, diskset, chroot):
+        self.resizeFilesystems(diskset, chroot, grow = True)
+
+    def formatSwap (self, chroot, forceFormat=False):
         formatted = []
         notformatted = []
 
         for entry in self.entries:
             if (not entry.fsystem or not entry.fsystem.getName() == "swap" or
-                    entry.isMounted()):
+                entry.isMounted()):
                 continue
             if not entry.getFormat():
                 if not forceFormat:
@@ -1115,7 +1538,7 @@ class FileSystemSet:
                                          "initialize swap on device %s.  This "
                                          "problem is serious, and the install "
                                          "cannot continue.\n\n"
-                                         "Press <Enter> to reboot your system.")
+                                         "Press <Enter> to exit the installer.")
                                        % (entry.device.getDevice(),))
                 sys.exit(0)
 
@@ -1138,12 +1561,12 @@ class FileSystemSet:
             if label:
                 entry.setLabel(label)
 
-    def turnOnSwap(self, chroot, upgrading=False):
+    def turnOnSwap (self, chroot, upgrading=False):
         def swapErrorDialog (msg, format_button_text, entry):
-            buttons = [_("Skip"), format_button_text, _("Reboot")]
+            buttons = [_("Skip"), format_button_text, _("_Exit installer")]
             ret = self.messageWindow(_("Error"), msg, type="custom",
-                                                                                                                    custom_buttons=buttons,
-                                                                                                                    custom_icon="warning")
+                                     custom_buttons=buttons,
+                                     custom_icon="warning")
             if ret == 0:
                 self.entries.remove(entry)
             elif ret == 1:
@@ -1155,7 +1578,7 @@ class FileSystemSet:
 
         for entry in self.entries:
             if (entry.fsystem and entry.fsystem.getName() == "swap"
-                            and not entry.isMounted()):
+                and not entry.isMounted()):
                 try:
                     entry.mount(chroot)
                     self.mountcount = self.mountcount + 1
@@ -1187,50 +1610,45 @@ class FileSystemSet:
                                     "If you are performing a new install, "
                                     "make sure the installer is set "
                                     "to format all swap partitions.") \
-                                   % (entry.device.getDevice())
+                                  % (entry.device.getDevice())
 
                         # choose your own adventure swap partitions...
                         msg = msg + _("\n\nChoose Skip if you want the "
-                                      "installer to ignore this partition during "
-                                      "the upgrade.  Choose Format to reformat "
-                                      "the partition as swap space.  Choose Reboot "
-                                      "to restart the system.")
+                              "installer to ignore this partition during "
+                              "the upgrade.  Choose Format to reformat "
+                              "the partition as swap space.")
 
                         swapErrorDialog(msg, _("Format"), entry)
                     else:
                         sys.exit(0)
-
                 except SystemError, (num, msg):
                     if self.messageWindow:
-                        if upgrading:
-                            self.messageWindow(_("Error"),
-                                               _("Error enabling swap device "
-                                                 "%s: %s\n\n"
-                                                 "The /etc/fstab on your "
-                                                 "upgrade partition does not "
-                                                 "reference a valid swap "
-                                                 "partition.\n\n"
-                                                 "Press OK to reboot your "
-                                                 "system.")
-                                               % (entry.device.getDevice(), msg))
+                        if upgrading and not entry.getLabel():
+                            err = _("Error enabling swap device %s: %s\n\n"
+                                    "Devices in /etc/fstab should be specified "
+                                    "by label, not by device name.\n\nPress "
+                                    "OK to exit the installer.") % (entry.device.getDevice(), msg)
+                        elif upgrading:
+                            err = _("Error enabling swap device %s: %s\n\n"
+                                    "The /etc/fstab on your upgrade partition "
+                                    "does not reference a valid swap "
+                                    "partition.\n\nPress OK to exit the "
+                                    "installer") % (entry.device.getDevice(), msg)
                         else:
-                            self.messageWindow(_("Error"),
-                                               _("Error enabling swap device "
-                                                 "%s: %s\n\n"
-                                                 "This most likely means this "
-                                                 "swap partition has not been "
-                                                 "initialized.\n\n"
-                                                 "Press OK to reboot your "
-                                                 "system.")
-                                               % (entry.device.getDevice(), msg))
+                            err = _("Error enabling swap device %s: %s\n\n"
+                                    "This most likely means this swap "
+                                    "partition has not been initialized.\n\n"
+                                    "Press OK to exit the installer.") % (entry.device.getDevice(), msg)
+
+                    self.messageWindow(_("Error"), err)
                     sys.exit(0)
 
-    def labelEntry(self, entry, chroot):
+    def labelEntry(self, entry, chroot, ignoreExisting = False):
         label = entry.device.getLabel()
-        if label:
+        if label and not ignoreExisting:
             entry.setLabel(label)
-            if labelFactory.isLabelReserved(label):
-                entry.device.doLabel = 1
+            entry.device.doLabel = 1
+
         if entry.device.doLabel is not None:
             entry.fsystem.labelDevice(entry, chroot)
 
@@ -1239,9 +1657,6 @@ class FileSystemSet:
             log.info("formatting %s as %s" %(entry.mountpoint, entry.fsystem.name))
         entry.fsystem.clobberDevice(entry, chroot)
         entry.fsystem.formatDevice(entry, self.progressWindow, chroot)
-
-    def badblocksEntry(self, entry, chroot):
-        entry.fsystem.badblocksDevice(entry, self.progressWindow, chroot)
 
     def getMigratableEntries(self):
         retval = []
@@ -1258,43 +1673,35 @@ class FileSystemSet:
                 list.append (entry)
         return list
 
-    def checkBadblocks(self, chroot='/'):
+    def createLogicalVolumes (self, chroot='/'):
+        vgs = {}
+        # first set up the volume groups
         for entry in self.entries:
-            if (not entry.fsystem.isFormattable() or not entry.getBadblocks()
-                            or entry.isMounted()):
-                continue
-            try:
-                self.badblocksEntry(entry, chroot)
-            except BadBlocksError:
-                log.error("Bad blocks detected on device %s",entry.device.getDevice())
-                if self.messageWindow:
-                    self.messageWindow(_("Error"),
-                                       _("Bad blocks have been detected on "
-                                         "device /dev/%s. We do "
-                                         "not recommend you use this device."
-                                         "\n\n"
-                                         "Press <Enter> to reboot your system")
-                                       % (entry.device.getDevice(),))
-                sys.exit(0)
+            if entry.fsystem.name == "volume group (LVM)":
+                entry.device.setupDevice(chroot)
+                vgs[entry.device.name] = entry.device
 
-            except SystemError:
-                if self.messageWindow:
-                    self.messageWindow(_("Error"),
-                                       _("An error occurred searching for "
-                                         "bad blocks on %s.  This problem is "
-                                         "serious, and the install cannot "
-                                         "continue.\n\n"
-                                         "Press <Enter> to reboot your system.")
-                                       % (entry.device.getDevice(),))
-                sys.exit(0)
+        # then set up the logical volumes
+        for entry in self.entries:
+            if isinstance(entry.device, LogicalVolumeDevice):
+                vg = None
+                if vgs.has_key(entry.device.vgname):
+                    vg = vgs[entry.device.vgname]
+                entry.device.setupDevice(chroot, vgdevice = vg)
+        self.volumesCreated = 1
 
-    def makeFilesystems(self, chroot='/'):
+
+    def makeFilesystems (self, chroot='/', skiprootfs=False):
         formatted = []
         notformatted = []
         for entry in self.entries:
             if (not entry.fsystem.isFormattable() or not entry.getFormat()
-                            or entry.isMounted()):
+                or entry.isMounted()):
                 notformatted.append(entry)
+                continue
+            # FIXME: this is a bit of a hack, but works
+            if (skiprootfs and entry.mountpoint == '/'):
+                formatted.append(entry)
                 continue
             try:
                 self.formatEntry(entry, chroot)
@@ -1306,8 +1713,8 @@ class FileSystemSet:
                                          "format %s.  This problem is "
                                          "serious, and the install cannot "
                                          "continue.\n\n"
-                                         "Press <Enter> to reboot your system.")
-                                    % (entry.device.getDevice(),))
+                                         "Press <Enter> to exit the installer.")
+                                       % (entry.device.getDevice(),))
                 sys.exit(0)
 
         for entry in formatted:
@@ -1336,7 +1743,7 @@ class FileSystemSet:
     def haveMigratedFilesystems(self):
         return self.migratedfs
 
-    def migrateFilesystems(self, chroot='/'):
+    def migrateFilesystems (self, pomona):
         if self.migratedfs:
             return
 
@@ -1347,7 +1754,8 @@ class FileSystemSet:
             if not entry.origfsystem.isMigratable() or not entry.getMigrate():
                 continue
             try:
-                entry.origfsystem.migrateFileSystem(entry, self.messageWindow, chroot)
+                entry.origfsystem.migrateFileSystem(entry, self.messageWindow,
+                                                    pomona.rootPath)
             except SystemError:
                 if self.messageWindow:
                     self.messageWindow(_("Error"),
@@ -1355,24 +1763,33 @@ class FileSystemSet:
                                          "migrate %s.  This problem is "
                                          "serious, and the install cannot "
                                          "continue.\n\n"
-                                         "Press <Enter> to reboot your system.")
+                                         "Press <Enter> to exit the installer.")
                                        % (entry.device.getDevice(),))
                 sys.exit(0)
 
-            self.migratedfs = 1
+        # we need to unmount and remount so that we're mounted as the
+        # new fstype as we want to use the new filesystem type during
+        # the upgrade for ext3->ext4 migrations
+        if self.isActive():
+            self.umountFilesystems(pomona.rootPath, swapoff = False)
+            self.mountFilesystems(pomona)
 
-    def mountFilesystems(self, pomona, raiseErrors = 0, readOnly = 0):
-        #protected = pomona.method.protectedPartitions()
-        protected = []
+        self.migratedfs = 1
+
+    def mountFilesystems(self, pomona, raiseErrors = 0, readOnly = 0, skiprootfs = 0):
+        protected = pomona.id.partitions.protectedPartitions()
 
         for entry in self.entries:
             # Don't try to mount a protected partition, since it will already
             # have been mounted as the installation source.
-            if not entry.fsystem.isMountable() or (protected and entry.device.getDevice() in protected):
+            if protected and entry.device.getDevice() in protected and os.path.ismount("/mnt/isodir"):
+                continue
+
+            if not entry.fsystem.isMountable() or (skiprootfs and entry.mountpoint == '/'):
                 continue
 
             try:
-                log.info("trying to mount %s on %s" %(entry.device.getDevice(), entry.mountpoint))
+                log.info("trying to mount %s on %s" %(entry.device.setupDevice(), entry.mountpoint,))
                 entry.mount(pomona.rootPath, readOnly = readOnly)
                 self.mountcount = self.mountcount + 1
             except OSError, (num, msg):
@@ -1384,56 +1801,111 @@ class FileSystemSet:
                                              "this path is not a directory. "
                                              "This is a fatal error and the "
                                              "install cannot continue.\n\n"
-                                             "Press <Enter> to reboot your "
-                                             "system.") % (entry.mountpoint,))
+                                             "Press <Enter> to exit the "
+                                             "installer.") % (entry.mountpoint,))
                     else:
                         self.messageWindow(_("Invalid mount point"),
                                            _("An error occurred when trying "
                                              "to create %s: %s.  This is "
                                              "a fatal error and the install "
                                              "cannot continue.\n\n"
-                                             "Press <Enter> to reboot your "
-                                             "system.") % (entry.mountpoint, msg))
-                    sys.exit(0)
+                                             "Press <Enter> to exit the "
+                                             "installer.") % (entry.mountpoint,
+                                                           msg))
+                log.error("OSError: (%d) %s" % (num, msg) )
+                sys.exit(0)
             except SystemError, (num, msg):
                 if raiseErrors:
                     raise SystemError, (num, msg)
-
                 if self.messageWindow:
                     if not entry.fsystem.isLinuxNativeFS():
                         ret = self.messageWindow(_("Unable to mount filesystem"),
                                                  _("An error occurred mounting "
-                                                   "device %s as %s.  You may "
-                                                   "continue installation, but "
-                                                   "there may be problems.")
-                                                 % (entry.device.getDevice(),
-                                                    entry.mountpoint),
-                                                    type="custom", custom_icon="warning",
-                                                    custom_buttons=[_("_Reboot"), _("_Continue")])
+                                                 "device %s as %s.  You may "
+                                                 "continue installation, but "
+                                                 "there may be problems.") %
+                                                 (entry.device.getDevice(),
+                                                  entry.mountpoint),
+                                                 type="custom", custom_icon="warning",
+                                                 custom_buttons=[_("_Exit installer"),
+                                                                _("_Continue")])
 
                         if ret == 0:
                             sys.exit(0)
                         else:
                             continue
                     else:
-                        if pomona.id.getUpgrade() and not entry.getLabel():
+                        if pomona.id.getUpgrade() and not (entry.getLabel() or entry.getUuid()):
                             errStr = _("Error mounting device %s as %s: "
                                        "%s\n\n"
-                                       "Devices in /etc/fstab should be "
-                                       "specified by label, not by device name."
+                                       "Devices in /etc/fstab should be specified "
+                                       "by label or UUID, not by device name."
                                        "\n\n"
-                                       "Press OK to reboot your system.") % (entry.device.getDevice(), entry.mountpoint, msg)
+                                       "Press OK to exit the installer.") % (entry.device.getDevice(), entry.mountpoint, msg)
                         else:
                             errStr = _("Error mounting device %s as %s: "
                                        "%s\n\n"
-                                       "This most likely means this "
-                                       "partition has not been formatted."
-                                       "\n\n"
-                                       "Press OK to reboot your system.") % (entry.device.getDevice(), entry.mountpoint, msg)
+                                       "Press OK to exit the installer.") % (entry.device.getDevice(), entry.mountpoint, msg)
 
                         self.messageWindow(_("Error"), errStr)
 
-                        sys.exit(0)
+                log.error("SystemError: (%d) %s" % (num, msg) )
+                sys.exit(0)
+
+        self.makeLVMNodes(pomona.rootPath)
+
+    def makeLVMNodes(self, instPath, trylvm1 = 0):
+        # XXX hack to make the device node exist for the root fs if
+        # it's a logical volume so that mkinitrd can create the initrd.
+        root = self.getEntryByMountPoint("/")
+        if not root:
+            if self.messageWindow:
+                self.messageWindow(_("Error"),
+                                   _("Error finding / entry.\n\n"
+                                   "This is most likely means that "
+                                   "your fstab is incorrect."
+                                   "\n\n"
+                                   "Press OK to exit the installer."))
+            sys.exit(0)
+
+        rootlvm1 = 0
+        if trylvm1:
+            dev = root.device.getDevice()
+            # lvm1 major is 58
+            if os.access("%s/dev/%s" %(instPath, dev), os.R_OK) and posix.major(os.stat("%s/dev/%s" %(instPath, dev)).st_rdev) == 58:
+                rootlvm1 = 1
+
+        if isinstance(root.device, LogicalVolumeDevice) or rootlvm1:
+            # now make sure all of the device nodes exist.  *sigh*
+            rc = lvm.vgmknodes()
+
+            rootDev = "/dev/%s" % (root.device.getDevice(),)
+            rootdir = instPath + os.path.dirname(rootDev)
+            if not os.path.isdir(rootdir):
+                os.makedirs(rootdir)
+
+            if root.device.crypto is None:
+                dmdev = "/dev/mapper/" + root.device.getDevice().replace("-","--").replace("/", "-")
+            else:
+                dmdev = "/dev/" + root.device.getDevice()
+
+            if os.path.exists(instPath + dmdev):
+                os.unlink(instPath + dmdev)
+            if not os.path.isdir(os.path.dirname(instPath + dmdev)):
+                os.makedirs(os.path.dirname(instPath + dmdev))
+            iutil.copyDeviceNode(dmdev, instPath + dmdev)
+
+            # unlink existing so that we dtrt on upgrades
+            if os.path.exists(instPath + rootDev) and not root.device.crypto:
+                os.unlink(instPath + rootDev)
+            if not os.path.isdir(rootdir):
+                os.makedirs(rootdir)
+
+            if root.device.crypto is None:
+                os.symlink(dmdev, instPath + rootDev)
+
+            if not os.path.isdir("%s/etc/lvm" %(instPath,)):
+                os.makedirs("%s/etc/lvm" %(instPath,))
 
     def filesystemSpace(self, chroot='/'):
         space = []
@@ -1457,6 +1929,7 @@ class FileSystemSet:
                 return -1
             elif s1 < s2:
                 return 1
+
             return 0
 
         space.sort(spaceSort)
@@ -1481,13 +1954,10 @@ class FileSystemSet:
         return ret
 
     def umountFilesystems(self, instPath, ignoreErrors = 0, swapoff = True):
-        # XXX remove special case
-        try:
-            isys.umount(instPath + '/proc/bus/usb', removeDir = 0)
-            log.info("Umount USB OK")
-        except:
-#           log.error("Umount USB Fail")
-            pass
+        # Unmount things bind mounted into the instPath here because they're
+        # not tracked by self.entries.
+        if os.path.ismount("%s/dev" % instPath):
+            isys.umount("%s/dev" % instPath, removeDir=0)
 
         # take a slice so we don't modify self.entries
         reverse = self.entries[:]
@@ -1497,13 +1967,14 @@ class FileSystemSet:
             if entry.mountpoint == "swap" and not swapoff:
                 continue
             entry.umount(instPath)
+            entry.device.cleanupDevice(instPath)
 
 class FileSystemSetEntry:
     def __init__ (self, device, mountpoint,
                   fsystem=None, options=None,
                   origfsystem=None, migrate=0,
                   order=-1, fsck=-1, format=0,
-                  badblocks = 0, bytesPerInode=4096, fsprofile=None):
+                  fsprofile=None):
         if not fsystem:
             fsystem = fileSystemTypeGet("ext2")
         self.device = device
@@ -1511,11 +1982,9 @@ class FileSystemSetEntry:
         self.fsystem = fsystem
         self.origfsystem = origfsystem
         self.migrate = migrate
-        if options:
-            self.options = options
-        else:
-            self.options = fsystem.getDefaultOptions(mountpoint)
-        self.options += device.getDeviceOptions()
+        self.resizeTargetSize = None
+        self.resizeOrigSize = None
+        self.options = options
         self.mountcount = 0
         self.label = None
         if fsck == -1:
@@ -1531,51 +2000,35 @@ class FileSystemSetEntry:
                 self.order = 0
         else:
             self.order = order
-            if format and not fsystem.isFormattable():
-                raise RuntimeError, ("file system type %s is not formattable, "
-                                     "but has been added to fsset with format "
-                                     "flag on" % fsystem.getName())
+        if format and not fsystem.isFormattable():
+            raise RuntimeError, ("file system type %s is not formattable, "
+                                 "but has been added to fsset with format "
+                                 "flag on" % fsystem.getName())
         self.format = format
-        self.badblocks = badblocks
-        self.bytesPerInode = bytesPerInode
         self.fsprofile = fsprofile
 
     def mount(self, chroot='/', devPrefix='/dev', readOnly = 0):
         device = self.device.setupDevice(chroot, devPrefix=devPrefix)
 
-        # FIXME: we really should migrate before turnOnFilesystems.
-        # but it's too late now
-        if (self.migrate == 1) and (self.origfsystem is not None):
-            self.origfsystem.mount(device, "%s" % (self.mountpoint,),
-                                   readOnly = readOnly,
-                                   bindMount = isinstance(self.device,
-                                   BindMountDevice),
-                                   instroot = chroot)
-        else:
-            self.fsystem.mount(device, "%s" % (self.mountpoint,),
-                               readOnly = readOnly,
-                               bindMount = isinstance(self.device,
-                               BindMountDevice),
-                               instroot = chroot)
+        self.fsystem.mount(device, "%s" % (self.mountpoint,),
+                           readOnly = readOnly,
+                           bindMount = isinstance(self.device,
+                                                  BindMountDevice),
+                           instroot = chroot)
 
         self.mountcount = self.mountcount + 1
 
     def umount(self, chroot='/'):
         if self.mountcount > 0:
             try:
-                self.fsystem.umount(self.device, "%s/%s" % (chroot, self.mountpoint))
+                self.fsystem.umount(self.device, "%s/%s" % (chroot,
+                                                            self.mountpoint))
                 self.mountcount = self.mountcount - 1
             except RuntimeError:
                 pass
 
     def setFileSystemType(self, fstype):
         self.fsystem = fstype
-
-    def setBadblocks(self, state):
-        self.badblocks = state
-
-    def getBadblocks(self):
-        return self.badblocks
 
     def getMountPoint(self):
         return self.mountpoint
@@ -1597,10 +2050,20 @@ class FileSystemSetEntry:
     def setMigrate (self, state):
         if self.format and state:
             raise ValueError, "Trying to set migrate bit on when format is set!"
+
         self.migrate = state
 
     def getMigrate (self):
         return self.migrate
+
+    def setResizeTarget (self, targetsize, size):
+        if not self.fsystem.isResizable() and targetsize is not None:
+            raise ValueError, "Can't set a resize target for a non-resizable filesystem"
+        self.resizeTargetSize = targetsize
+        self.resizeOrigSize = size
+
+    def getResizeTarget (self):
+        return self.resizeTargetSize
 
     def isMounted (self):
         return self.mountcount > 0
@@ -1632,24 +2095,36 @@ class FileSystemSetEntry:
 
 
 class Device:
-    def __init__(self, device = "none"):
+    def __init__(self, device = "none", encryption=None):
         self.device = device
         self.label = None
         self.isSetup = 0
         self.doLabel = 1
         self.deviceOptions = ""
+        if encryption:
+            self.crypto = encryption
+            # mount by device since the name is based only on UUID
+            self.doLabel = None
+            if device not in ("none", None):
+                self.crypto.setDevice(device)
+        else:
+            self.crypto = None
 
     def getComment (self):
         return ""
 
     def getDevice (self, asBoot = 0):
+        if self.crypto:
+            return self.crypto.getDevice()
+        else:
+            return self.device
+
+    def setupDevice (self, chroot='/', devPrefix='/dev/'):
         return self.device
 
-    def setupDevice (self, chroot='/', devPrefix='/dev'):
-        return self.device
-
-    def cleanupDevice (self, chroot, devPrefix='/dev'):
-        pass
+    def cleanupDevice (self, chroot, devPrefix='/dev/'):
+        if self.crypto:
+            self.crypto.closeDevice()
 
     def solidify (self):
         pass
@@ -1678,30 +2153,295 @@ class Device:
         return self.deviceOptions
 
 class DevDevice(Device):
-    """ Device with a device node rooted in /dev that we just always use
-        the pre-created device node for."""
+    """Device with a device node rooted in /dev that we just always use
+       the pre-created device node for."""
     def __init__(self, dev):
-        Device.__init__(self)
-        self.device = dev
+        Device.__init__(self, device=dev)
 
     def getDevice(self, asBoot = 0):
         return self.device
 
     def setupDevice(self, chroot='/', devPrefix='/dev'):
-        return "/dev/%s" %(self.getDevice(),)
+        #We use precreated device but we have to make sure that the device exists
+        path = '/dev/%s' % (self.getDevice(),)
+        return path
 
+class RAIDDevice(Device):
+    # XXX usedMajors does not take in account any EXISTING md device
+    #     on the system for installs.  We need to examine all partitions
+    #     to investigate which minors are really available.
+    usedMajors = {}
+
+    # members is a list of Device based instances that will be
+    # a part of this raid device
+    def __init__(self, level, members, minor=-1, spares=0, existing=0,
+                 chunksize = 64, encryption=None):
+        Device.__init__(self, encryption=encryption)
+        self.level = level
+        self.members = members
+        self.spares = spares
+        self.numDisks = len(members) - spares
+        self.isSetup = existing
+        self.doLabel = None
+        if chunksize is not None:
+            self.chunksize = chunksize
+        else:
+            self.chunksize = 256
+
+        if len(members) < spares:
+            raise RuntimeError, ("you requested more spare devices "
+                                 "than online devices!")
+
+        if level == 5:
+            if self.numDisks < 3:
+                raise RuntimeError, "RAID 5 requires at least 3 online members"
+
+        # there are 32 major md devices, 0...31
+        if minor == -1 or minor is None:
+            for I in range(32):
+                if not RAIDDevice.usedMajors.has_key(I):
+                    minor = I
+                    break
+
+            if minor == -1:
+                raise RuntimeError, ("Unable to allocate minor number for "
+                                     "raid device")
+
+        RAIDDevice.usedMajors[minor] = None
+        self.device = "md" + str(minor)
+        self.minor = minor
+
+        if self.crypto:
+            self.crypto.setDevice(self.device)
+
+        # make sure the list of raid members is sorted
+        self.members.sort(cmp=lambda x,y: cmp(x.getDevice(),y.getDevice()))
+
+    def __del__ (self):
+        del RAIDDevice.usedMajors[self.minor]
+
+    def ext2Args (self):
+        if self.level == 5:
+            return [ '-R', 'stride=%d' % ((self.numDisks - 1) * 16) ]
+        elif self.level == 0:
+            return [ '-R', 'stride=%d' % (self.numDisks * 16) ]
+        return []
+
+    def mdadmLine (self, devPrefix="/dev"):
+        levels = { 0: "raid0",
+                   1: "raid1",
+                   4: "raid5",
+                   5: "raid5",
+                   6: "raid6",
+                  10: "raid10" }
+
+        # If we can't find the device for some reason, revert to old behavior.
+        try:
+            (dev, devices, level, numActive) = raid.lookup_raid_device (self.device)
+        except KeyError:
+            devices = []
+
+        # First loop over all the devices that make up the RAID trying to read
+        # the superblock off each.  If we read a superblock, return a line that
+        # can go into the mdadm.conf.  If we fail, fall back to the old method
+        # of using the super-minor.
+        for d in devices:
+            try:
+                (major, minor, uuid, level, nrDisks, totalDisks, mdMinor) = \
+                    isys.raidsb(d)
+                return "ARRAY %s/%s level=%s num-devices=%d uuid=%s\n" \
+                    %(devPrefix, self.device, levels[level], nrDisks, uuid)
+            except ValueError:
+                pass
+
+        return "ARRAY %s/%s super-minor=%s\n" %(devPrefix, self.device,
+                                                self.minor)
+
+    def raidTab (self, devPrefix='/dev'):
+        entry = ""
+        entry = entry + "raiddev                    %s/%s\n" % (devPrefix,
+                                                                self.device,)
+        entry = entry + "raid-level                 %d\n" % (self.level,)
+        entry = entry + "nr-raid-disks              %d\n" % (self.numDisks,)
+        entry = entry + "chunk-size                 %s\n" %(self.chunksize,)
+        entry = entry + "persistent-superblock      1\n"
+        entry = entry + "nr-spare-disks             %d\n" % (self.spares,)
+        i = 0
+        for device in [m.getDevice() for m in self.members[:self.numDisks]]:
+            entry = entry + "    device     %s/%s\n" % (devPrefix,
+                                                        device)
+            entry = entry + "    raid-disk     %d\n" % (i,)
+            i = i + 1
+        i = 0
+        for device in [m.getDevice() for m in self.members[self.numDisks:]]:
+            entry = entry + "    device     %s/%s\n" % (devPrefix,
+                                                        device)
+            entry = entry + "    spare-disk     %d\n" % (i,)
+            i = i + 1
+        return entry
+
+    def setupDevice (self, chroot="/", devPrefix='/dev'):
+        if not self.isSetup:
+            memberDevs = []
+            for pd in self.members:
+                memberDevs.append(pd.setupDevice(chroot, devPrefix=devPrefix))
+                if pd.isNetdev(): self.setAsNetdev()
+
+            args = ["--create", "/dev/%s" %(self.device,),
+                    "--run", "--chunk=%s" %(self.chunksize,),
+                    "--level=%s" %(self.level,),
+                    "--raid-devices=%s" %(self.numDisks,)]
+
+            if self.spares > 0:
+                args.append("--spare-devices=%s" %(self.spares,),)
+
+            args.extend(memberDevs)
+            log.info("going to run: %s" %(["mdadm"] + args,))
+            iutil.execWithRedirect ("mdadm", args,
+                                    stderr="/dev/tty5", stdout="/dev/tty5",
+                                    searchPath = 1)
+            raid.register_raid_device(self.device,
+                                      [m.getDevice() for m in self.members],
+                                      self.level, self.numDisks)
+            self.isSetup = 1
+        else:
+            isys.raidstart(self.device, self.members[0].getDevice())
+
+        if self.crypto:
+            self.crypto.formatDevice()
+            self.crypto.openDevice()
+            node = "%s/%s" % (devPrefix, self.crypto.getDevice())
+        else:
+            node = "%s/%s" % (devPrefix, self.device)
+
+        return node
+
+    def getDevice (self, asBoot = 0):
+        if not asBoot and self.crypto:
+            return self.crypto.getDevice()
+        elif not asBoot:
+            return self.device
+        else:
+            return self.members[0].getDevice(asBoot=asBoot)
+
+    def solidify(self):
+        return
 
 ext2 = fileSystemTypeGet("ext2")
+ext2.registerDeviceArgumentFunction(RAIDDevice, RAIDDevice.ext2Args)
+
+class VolumeGroupDevice(Device):
+    def __init__(self, name, physvols, pesize = 32768, existing = 0):
+        """Creates a VolumeGroupDevice.
+
+        name is the name of the volume group
+        physvols is a list of Device objects which are the physical volumes
+        pesize is the size of physical extents in kilobytes
+        existing is whether this vg previously existed.
+        """
+
+        Device.__init__(self)
+        self.physicalVolumes = physvols
+        self.isSetup = existing
+        self.name = name
+        self.device = name
+        self.isSetup = existing
+
+        self.physicalextentsize = pesize
+
+    def setupDevice (self, chroot="/", devPrefix='/dev/'):
+        nodes = []
+        for volume in self.physicalVolumes:
+            # XXX the lvm tools are broken and will only work for /dev
+            node = volume.setupDevice(chroot, devPrefix="/dev")
+            if volume.isNetdev(): self.setAsNetdev()
+
+            # XXX I should check if the pv is set up somehow so that we
+            # can have preexisting vgs and add new pvs to them.
+            if not self.isSetup:
+                lvm.pvcreate(node)
+                nodes.append(node)
+
+        if not self.isSetup:
+            lvm.vgcreate(self.name, self.physicalextentsize, nodes)
+            self.isSetup = 1
+        else:
+            lvm.vgscan()
+            lvm.vgactivate()
+
+        return "/dev/%s" % (self.name,)
+
+    def solidify(self):
+        return
+
+class LogicalVolumeDevice(Device):
+    # note that size is in megabytes!
+    def __init__(self, vgname, size, lvname, vg, existing = 0, encryption=None):
+        Device.__init__(self, encryption=encryption)
+        self.vgname = vgname
+        self.size = size
+        self.name = lvname
+        self.isSetup = 0
+        self.isSetup = existing
+        self.doLabel = None
+        self.vg = vg
+
+        # these are attributes we might want to expose.  or maybe not.
+        # self.chunksize
+        # self.stripes
+        # self.stripesize
+        # self.extents
+        # self.readaheadsectors
+
+    def setupDevice(self, chroot="/", devPrefix='/dev', vgdevice = None):
+        if self.crypto:
+            self.crypto.setDevice("mapper/%s-%s" % (self.vgname, self.name))
+
+        if not self.isSetup:
+            lvm.lvcreate(self.name, self.vgname, self.size)
+            self.isSetup = 1
+
+            if vgdevice and vgdevice.isNetdev():
+                self.setAsNetdev()
+
+        if self.crypto:
+            self.crypto.formatDevice()
+            self.crypto.openDevice()
+
+        return "/dev/%s" % (self.getDevice(),)
+
+    def getDevice(self, asBoot = 0):
+        if self.crypto and not asBoot:
+            device = self.crypto.getDevice()
+        else:
+            device = "%s/%s" % (self.vgname, self.name)
+
+        return device
+
+    def solidify(self):
+        return
+
 
 class PartitionDevice(Device):
-    def __init__(self, partition):
-        Device.__init__(self)
+    def __init__(self, partition, encryption=None):
         if type(partition) != types.StringType:
             raise ValueError, "partition must be a string"
-        self.device = partition
+        Device.__init__(self, device=partition, encryption=encryption)
+
+        (disk, pnum) = getDiskPart(partition)
+
+    def getDevice(self, asBoot = 0):
+        if self.crypto and not asBoot:
+            return self.crypto.getDevice()
+        else:
+            return self.device
 
     def setupDevice(self, chroot="/", devPrefix='/dev'):
-        path = '%s/%s' % (devPrefix, self.getDevice(),)
+        path = '%s/%s' % (devPrefix, self.device)
+        if self.crypto:
+            self.crypto.formatDevice()
+            self.crypto.openDevice()
+            path = "%s/%s" % (devPrefix, self.crypto.getDevice())
         return path
 
 class PartedPartitionDevice(PartitionDevice):
@@ -1739,7 +2479,7 @@ class SwapFileDevice(Device):
     def setSize (self, size):
         self.size = size
 
-    def setupDevice (self, chroot="/", devPrefix='/tmp'):
+    def setupDevice (self, chroot="/", devPrefix='/dev'):
         file = os.path.normpath(chroot + self.getDevice())
         if not os.access(file, os.R_OK):
             if self.size:
@@ -1749,7 +2489,7 @@ class SwapFileDevice(Device):
                 isys.ddfile(file, self.size, None)
             else:
                 raise SystemError, (0, "swap file creation necessary, but "
-                                       "required size is unknown.")
+                                    "required size is unknown.")
         return file
 
 # This is a device that describes a swap file that is sitting on
@@ -1761,7 +2501,7 @@ class PiggybackSwapFileDevice(SwapFileDevice):
         SwapFileDevice.__init__(self, file)
         self.piggypath = piggypath
 
-    def setupDevice(self, chroot="/", devPrefix='/tmp'):
+    def setupDevice(self, chroot="/", devPrefix='/dev'):
         return SwapFileDevice.setupDevice(self, self.piggypath, devPrefix)
 
 class LoopbackDevice(Device):
@@ -1771,7 +2511,7 @@ class LoopbackDevice(Device):
         self.hostfs = hostFs
         self.device = "loop1"
 
-    def setupDevice(self, chroot="/", devPrefix='/tmp/'):
+    def setupDevice(self, chroot="/", devPrefix='/dev/'):
         if not self.isSetup:
             isys.mount(self.host[5:], "/mnt/loophost", fstype = "vfat")
             self.device = allocateLoopback("/mnt/loophost/redhat.img")
@@ -1781,7 +2521,6 @@ class LoopbackDevice(Device):
             path = '%s/%s' % (devPrefix, self.getDevice())
         else:
             path = '%s/%s' % (devPrefix, self.getDevice())
-            #isys.makeDevInode(self.getDevice(), path)
         path = os.path.normpath(path)
         return path
 
@@ -1789,10 +2528,62 @@ class LoopbackDevice(Device):
         return "# LOOP1: %s %s /redhat.img\n" % (self.host, self.hostfs)
 
 def makeDevice(dev):
-    device = DevDevice(dev)
+    cryptoDev = partitions.lookup_cryptodev(dev)
+    if cryptoDev and cryptoDev.getDevice() == dev:
+        dev = cryptoDev.getDevice(encrypted=True)
+
+    if dev.startswith('md'):
+        try:
+            (mdname, devices, level, numActive) = raid.lookup_raid_device(dev)
+            # convert devices to Device instances and sort out encryption
+            devList = []
+            for dev in devices:
+                cryptoMem = partitions.lookup_cryptodev(dev)
+                if cryptoMem and cryptoMem.getDevice() == dev:
+                    dev = cryptoMem.getDevice(encrypted=True)
+
+                devList.append(PartitionDevice(dev, encryption=cryptoMem))
+
+            device = RAIDDevice(level, devList,
+                                minor=int(mdname[2:]),
+                                spares=len(devices) - numActive,
+                                existing=1, encryption=cryptoDev)
+        except KeyError:
+            device = PartitionDevice(dev, encryption=cryptoDev)
+    else:
+        device = PartitionDevice(dev, encryption=cryptoDev)
     return device
 
+# XXX fix RAID
 def readFstab(pomona):
+    def createMapping(dict):
+        mapping = {}
+        dupes = []
+
+        for device, info in dict.items():
+            if not mapping.has_key(info):
+                mapping[info] = device
+            elif not info in dupes:
+                dupes.append(info)
+
+        return (mapping, dupes)
+
+    def showError(label, intf):
+        if intf:
+            intf.messageWindow(_("Duplicate Labels"),
+                               _("Multiple devices on your system are "
+                                 "labelled %s.  Labels across devices must be "
+                                 "unique for your system to function "
+                                 "properly.\n\n"
+                                 "Please fix this problem and restart the "
+                                 "installation process.") %(label,),
+                               type="custom", custom_icon="error",
+                               custom_buttons=[_("_Exit installer")])
+            sys.exit(0)
+        else:
+            log.warning("Duplicate labels for %s, but no intf so trying "
+                        "to continue" %(label,))
+
     path = pomona.rootPath + '/etc/fstab'
     intf = pomona.intf
     fsset = FileSystemSet()
@@ -1802,39 +2593,11 @@ def readFstab(pomona):
     # temporary, to get the labels
     diskset = partedUtils.DiskSet(pomona)
     diskset.openDevices()
-    labels = diskset.getLabels()
+    labels = diskset.getInfo()
+    uuids = diskset.getInfo(readFn=lambda d: isys.readFSUuid(d))
 
-    labelToDevice = {}
-    for device, label in labels.items():
-        if not labelToDevice.has_key(label):
-            labelToDevice[label] = device
-        elif intf is not None:
-            try:
-                intf.messageWindow(_("Duplicate Labels"),
-                                   _("Multiple devices on your system are "
-                                     "labelled %s.  Labels across devices must be "
-                                     "unique for your system to function "
-                                     "properly.\n\n"
-                                     "Please fix this problem and restart the "
-                                     "installation process.")
-                                   % (label,), type="custom", custom_icon="error",
-                                     custom_buttons=[_("_Reboot")])
-            except TypeError:
-                intf.messageWindow(_("Invalid Label"),
-                                   _("An invalid label was found on device "
-                                     "%s.  Please fix this problem and restart "
-                                     "the installation process.")
-                                   % (device,), type="custom", custom_icon="error",
-                                     custom_buttons=[_("_Reboot")])
-
-                sys.exit(0)
-        else:
-            log.warning("Duplicate labels for %s, but no intf so trying "
-                        "to continue" % (label,))
-
-    # mark these labels found on the system as used so the factory
-    # doesn't give them to another device
-    labelFactory.reserveLabels(labels)
+    (labelToDevice, labelDupes) = createMapping(labels)
+    (uuidToDevice, uuidDupes) = createMapping(uuids)
 
     loopIndex = {}
 
@@ -1843,7 +2606,7 @@ def readFstab(pomona):
     f.close()
 
     for line in lines:
-        fields = string.split(line)
+        fields = string.split (line)
 
         if not fields: continue
 
@@ -1862,7 +2625,6 @@ def readFstab(pomona):
             fields.append(0)
         elif len(fields) > 6:
             continue
-
         if string.find(fields[3], "noauto") != -1: continue
 
         # shenanigans to handle ext3,ext2 format in fstab
@@ -1881,15 +2643,20 @@ def readFstab(pomona):
         # "none" is valid as an fs type for bind mounts (#151458)
         if fsystem is None and (string.find(fields[3], "bind") == -1):
             continue
+
         label = None
         if fields[0] == "none":
             device = Device()
-        elif ((string.find(fields[3], "bind") != -1) and fields[0].startswith("/")):
+        elif ((string.find(fields[3], "bind") != -1) and
+              fields[0].startswith("/")):
             # it's a bind mount, they're Weird (tm)
             device = BindMountDevice(fields[0])
             fsystem = fileSystemTypeGet("bind")
         elif len(fields) >= 6 and fields[0].startswith('LABEL='):
             label = fields[0][6:]
+            if label in labelDupes:
+                showError(label, intf)
+
             if labelToDevice.has_key(label):
                 device = makeDevice(labelToDevice[label])
             else:
@@ -1897,9 +2664,22 @@ def readFstab(pomona):
                              "could not be found on any file system", label)
                 # bad luck, skip this entry.
                 continue
+        elif len(fields) >= 6 and fields[0].startswith('UUID='):
+            uuid = fields[0][5:]
+            if uuid in uuidDupes:
+                showError(uuid, intf)
+
+            if uuidToDevice.has_key(uuid):
+                device = makeDevice(uuidToDevice[uuid])
+            else:
+                log.warning ("fstab file has UUID=%s, but this UUID"
+                             "could not be found on any file system", uuid)
+                # bad luck, skip this entry.
+                continue
         elif fields[2] == "swap" and not fields[0].startswith('/dev/'):
             # swap files
             file = fields[0]
+
             if file.startswith('/initrd/loopfs/'):
                 file = file[14:]
                 device = PiggybackSwapFileDevice("/mnt/loophost", file)
@@ -1913,7 +2693,12 @@ def readFstab(pomona):
                 (dev, fs) = loopIndex[device]
                 device = LoopbackDevice(dev, fs)
         elif fields[0].startswith('/dev/'):
-            device = makeDevice(fields[0][5:])
+            # Older installs may have lines starting with things like /dev/proc
+            # so watch out for that on upgrade.
+            if fsystem is not None and isinstance(fsystem, PseudoFileSystem):
+                device = Device(device = fields[0][5:])
+            else:
+                device = makeDevice(fields[0][5:])
         else:
             device = Device(device = fields[0])
 
@@ -1933,107 +2718,11 @@ def readFstab(pomona):
         if label:
             entry.setLabel(label)
         fsset.add(entry)
-        return fsset
-
-def getDevFD(device):
-    try:
-        fd = os.open(device, os.O_RDONLY)
-    except:
-        file = '/dev/' + device
-        try:
-            fd = os.open(file, os.O_RDONLY)
-        except:
-            return -1
-    return fd
-
-def isValidExt2(device):
-    fd = getDevFD(device)
-    if fd == -1:
-        return 0
-
-    buf = os.read(fd, 2048)
-    os.close(fd)
-
-    if len(buf) != 2048:
-        return 0
-
-    if struct.unpack("<H", buf[1080:1082]) == (0xef53,):
-        return 1
-
-    return 0
-
-def isValidXFS(device):
-    fd = getDevFD(device)
-    if fd == -1:
-        return 0
-
-    buf = os.read(fd, 4)
-    os.close(fd)
-
-    if len(buf) != 4:
-        return 0
-
-    if buf == "XFSB":
-        return 1
-
-    return 0
-
-def isValidReiserFS(device):
-    fd = getDevFD(device)
-    if fd == -1:
-        return 0
-
-    '''
-    ** reiserfs 3.5.x super block begins at offset 8K
-    ** reiserfs 3.6.x super block begins at offset 64K
-    All versions have a magic value of "ReIsEr" at
-    offset 0x34 from start of super block
-    '''
-    reiserMagicVal = "ReIsEr"
-    reiserMagicOffset = 0x34
-    reiserSBStart = [64*1024, 8*1024]
-    bufSize = 0x40  # just large enough to include the magic value
-    for SBOffset in reiserSBStart:
-        try:
-            os.lseek(fd, SBOffset, 0)
-            buf = os.read(fd, bufSize)
-        except:
-            buf = ""
-
-        if len(buf) < bufSize:
-            continue
-
-        if (buf[reiserMagicOffset:reiserMagicOffset+len(reiserMagicVal)] == reiserMagicVal):
-            os.close(fd)
-            return 1
-
-    os.close(fd)
-    return 0
-
-# this will return a list of types of filesystems which device
-# looks like it could be to try mounting as
-def getFStoTry(device):
-    rc = []
-
-    if isValidXFS(device):
-        rc.append("xfs")
-
-    if isValidReiserFS(device):
-        rc.append("reiserfs")
-
-    if isValidExt2(device):
-        if isys.ext2HasJournal(device):
-            rc.append("ext3")
-        rc.append("ext2")
-
-    ### XXX FIXME: need to check for swap
-
-    return rc
+    return fsset
 
 def allocateLoopback(file):
     found = 1
     for i in range(8):
-        dev = "loop%d" % (i,)
         path = "/dev/loop%d" % (i,)
         try:
             isys.losetup(path, file)
@@ -2042,7 +2731,7 @@ def allocateLoopback(file):
             continue
         break
     if found:
-        return dev
+        return path
     return None
 
 def ext2FormatFilesystem(argList, messageFile, windowCreator, mntpoint):
@@ -2061,7 +2750,17 @@ def ext2FormatFilesystem(argList, messageFile, windowCreator, mntpoint):
         os.dup2(fd, 2)
         os.close(p[1])
         os.close(fd)
-        os.execvp(argList[0], argList)
+
+        env = os.environ
+        configs = [ "/tmp/updates/mke2fs.conf",
+                    "/etc/mke2fs.conf",
+                  ]
+        for config in configs:
+            if os.access(config, os.R_OK):
+                env['MKE2FS_CONFIG'] = config
+                break
+
+        os.execvpe(argList[0], argList, env)
         log.critical("failed to exec %s", argList)
         os._exit(1)
 
@@ -2130,7 +2829,7 @@ def getDiskPart(dev):
     cut = len(dev)
     if (dev.startswith('rd/') or dev.startswith('ida/') or
             dev.startswith('cciss/') or dev.startswith('sx8/') or
-            dev.startswith('mapper/')):
+            dev.startswith('mapper/') or dev.startswith('mmcblk')):
         if dev[-2] == 'p':
             cut = -1
         elif dev[-3] == 'p':

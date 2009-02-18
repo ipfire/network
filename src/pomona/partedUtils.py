@@ -1,38 +1,51 @@
 #
 # partedUtils.py: helper functions for use with parted objects
 #
-# Matt Wilson <msw@redhat.com>
-# Jeremy Katz <katzj@redhat.com>
-# Mike Fulbright <msf@redhat.com>
-# Karsten Hopp <karsten@redhat.com>
+# Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007  Red Hat, Inc.
+# All rights reserved.
 #
-# Copyright 2002-2003 Red Hat, Inc.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-# This software may be freely redistributed under the terms of the GNU
-# library public license.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Library Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+# Author(s): Matt Wilson <msw@redhat.com>
+#            Jeremy Katz <katzj@redhat.com>
+#            Mike Fulbright <msf@redhat.com>
+#            Karsten Hopp <karsten@redhat.com>
+#
+
 """Helper functions for use when dealing with parted objects."""
 
 import parted
 import math
 import os, sys, string, struct, resource
 
+import exception
 import fsset
-import inutil, isys
-import pyfire
+import iutil, isys
+import raid
+import dmraid
+import block
+import lvm
+import traceback
 from flags import flags
-from partErrors import *
+from errors import *
 from constants import *
-
-import gettext
-_ = lambda x: gettext.ldgettext("pomona", x)
 
 import logging
 log = logging.getLogger("pomona")
+
+import gettext
+_ = lambda x: gettext.ldgettext("pomona", x)
 
 fsTypes = {}
 
@@ -41,7 +54,9 @@ while fs_type:
     fsTypes[fs_type.name] = fs_type
     fs_type = parted.file_system_type_get_next (fs_type)
 
-def get_flags(part):
+
+
+def get_flags (part):
     """Retrieve a list of strings representing the flags on the partition."""
     string=""
     if not part.is_active ():
@@ -55,16 +70,18 @@ def get_flags(part):
                 first = 0
             else:
                 string = string + ", "
-        flag = parted.partition_flag_next(flag)
+        flag = parted.partition_flag_next (flag)
     return string
 
 def start_sector_to_cyl(device, sector):
     """Return the closest cylinder (round down) to sector on device."""
-    return int(math.floor((float(sector) / (device.heads * device.sectors)) + 1))
+    return int(math.floor((float(sector)
+                           / (device.heads * device.sectors)) + 1))
 
 def end_sector_to_cyl(device, sector):
     """Return the closest cylinder (round up) to sector on device."""
-    return int(math.ceil(float((sector + 1)) / (device.heads * device.sectors)))
+    return int(math.ceil(float((sector + 1))
+                         / (device.heads * device.sectors)))
 
 def start_cyl_to_sector(device, cyl):
     "Return the sector corresponding to cylinder as a starting cylinder."
@@ -80,11 +97,31 @@ def getPartSize(partition):
 
 def getPartSizeMB(partition):
     """Return the size of partition in megabytes."""
-    return (partition.geom.length * partition.geom.dev.sector_size / 1024.0 / 1024.0)
+    return (partition.geom.length * partition.geom.dev.sector_size
+            / 1024.0 / 1024.0)
 
 def getDeviceSizeMB(dev):
     """Return the size of dev in megabytes."""
-    return (float(dev.heads * dev.cylinders * dev.sectors) / (1024 * 1024) * dev.sector_size)
+    return (float(dev.heads * dev.cylinders * dev.sectors) / (1024 * 1024)
+            * dev.sector_size)
+
+def getMaxAvailPartSizeMB(part):
+    """Return the maximum size this partition can grow to by looking
+    at contiguous freespace partitions."""
+
+    disk = part.disk
+    maxlen = part.geom.length
+
+    # let's look at the next partition(s) and if they're freespace,
+    # they can add to our maximum size.
+    np = disk.next_partition(part)
+    while np:
+        if np.type & parted.PARTITION_FREESPACE:
+            maxlen += np.geom.length
+        else:
+            break
+        np = disk.next_partition(np)
+    return math.floor(maxlen * part.geom.dev.sector_size / 1024.0 / 1024.0)
 
 def get_partition_by_name(disks, partname):
     """Return the parted part object associated with partname.
@@ -110,16 +147,18 @@ def get_partition_by_name(disks, partname):
 def get_partition_name(partition):
     """Return the device name for the PedPartition partition."""
     if (partition.geom.dev.type == parted.DEVICE_DAC960
-                    or partition.geom.dev.type == parted.DEVICE_CPQARRAY):
-        return "%sp%d" % (partition.geom.dev.path[5:], partition.num)
+        or partition.geom.dev.type == parted.DEVICE_CPQARRAY):
+        return "%sp%d" % (partition.geom.dev.path[5:],
+                          partition.num)
     if (parted.__dict__.has_key("DEVICE_SX8") and
-                    partition.geom.dev.type == parted.DEVICE_SX8):
-        return "%sp%d" % (partition.geom.dev.path[5:], partition.num)
+        partition.geom.dev.type == parted.DEVICE_SX8):
+        return "%sp%d" % (partition.geom.dev.path[5:],
+                          partition.num)
 
     drive = partition.geom.dev.path[5:]
     if (drive.startswith("cciss") or drive.startswith("ida") or
-                    drive.startswith("rd") or drive.startswith("sx8") or
-                    drive.startswith("mapper")):
+            drive.startswith("rd") or drive.startswith("sx8") or
+            drive.startswith("mapper") or drive.startswith("mmcblk")):
         sep = "p"
     else:
         sep = ""
@@ -139,10 +178,16 @@ def get_partition_file_system_type(part):
         ptype = fsset.fileSystemTypeGet("PPC PReP Boot")
     elif part.fs_type == None:
         return None
+    elif (part.get_flag(parted.PARTITION_BOOT) == 1 and
+          getPartSizeMB(part) <= 1 and part.fs_type.name == "hfs"):
+        ptype = fsset.fileSystemTypeGet("Apple Bootstrap")
     elif part.fs_type.name == "linux-swap":
         ptype = fsset.fileSystemTypeGet("swap")
-    elif (part.fs_type.name == "FAT" or part.fs_type.name == "fat16"
-                            or part.fs_type.name == "fat32"):
+    elif isEfiSystemPartition(part):
+        ptype = fsset.fileSystemTypeGet("efi")
+    elif isEfiSystemPartition(part):
+        ptype = fsset.fileSystemTypeGet("efi")
+    elif part.fs_type.name in ("fat16", "fat32"):
         ptype = fsset.fileSystemTypeGet("vfat")
     else:
         try:
@@ -161,16 +206,19 @@ def set_partition_file_system_type(part, fstype):
         for flag in fstype.getPartedPartitionFlags():
             if not part.is_flag_available(flag):
                 raise PartitioningError, ("requested FileSystemType needs "
-                                                                                                                        "a flag that is not available.")
+                                          "a flag that is not available.")
             part.set_flag(flag, 1)
+        if isEfiSystemPartition(part):
+            part.set_system(parted.file_system_type_get("fat32"))
+        else:
             part.set_system(fstype.getPartedFileSystemType())
     except:
-        print "Failed to set partition type to ",fstype.getName()
+        print("Failed to set partition type to ",fstype.getName())
         pass
 
 def get_partition_drive(partition):
     """Return the device name for disk that PedPartition partition is on."""
-    return "%s" % (partition.geom.dev.path[5:])
+    return "%s" %(partition.geom.dev.path[5:])
 
 def get_max_logical_partitions(disk):
     if not disk.type.check_feature(parted.DISK_TYPE_EXTENDED):
@@ -196,7 +244,7 @@ def filter_partitions(disk, func):
     while part:
         if func(part):
             rc.append(part)
-        part = disk.next_partition(part)
+        part = disk.next_partition (part)
 
     return rc
 
@@ -207,7 +255,8 @@ def get_all_partitions(disk):
 
 def get_logical_partitions(disk):
     """Return a list of logical PedPartition objects on disk."""
-    func = lambda part: (part.is_active() and part.type & parted.PARTITION_LOGICAL)
+    func = lambda part: (part.is_active()
+                         and part.type & parted.PARTITION_LOGICAL)
     return filter_partitions(disk, func)
 
 def get_primary_partitions(disk):
@@ -215,15 +264,64 @@ def get_primary_partitions(disk):
     func = lambda part: part.type == parted.PARTITION_PRIMARY
     return filter_partitions(disk, func)
 
+def get_raid_partitions(disk):
+    """Return a list of RAID-type PedPartition objects on disk."""
+    func = lambda part: (part.is_active()
+                         and part.get_flag(parted.PARTITION_RAID) == 1)
+    return filter_partitions(disk, func)
+
+def get_lvm_partitions(disk):
+    """Return a list of physical volume-type PedPartition objects on disk."""
+    func = lambda part: (part.is_active()
+                         and part.get_flag(parted.PARTITION_LVM) == 1)
+    return filter_partitions(disk, func)
+
+
 def getDefaultDiskType():
     """Get the default partition table type for this architecture."""
     return parted.disk_type_get("msdos")
 
-archLabels = {'i386': ['msdos', 'gpt']}
+def hasGptLabel(diskset, device):
+    disk = diskset.disks[device]
+    return disk.type.name == "gpt"
+
+def isEfiSystemPartition(part):
+    if not part.is_active():
+        return False
+    return (part.disk.type.name == "gpt" and
+            part.get_name() == "EFI System Partition" and
+            part.get_flag(parted.PARTITION_BOOT) == 1 and
+            part.fs_type.name in ("fat16", "fat32") and
+            isys.readFSLabel(get_partition_name(part)) != "pomona")
+
+archLabels = {'i386': ['msdos', 'gpt'],
+              's390': ['dasd', 'msdos'],
+              'alpha': ['bsd', 'msdos'],
+              'sparc': ['sun'],
+              'ia64': ['msdos', 'gpt'],
+              'ppc': ['msdos', 'mac', 'amiga', 'gpt'],
+              'x86_64': ['msdos', 'gpt']}
+
+def labelDisk(deviceFile, forceLabelType=None):
+    dev = parted.PedDevice.get(deviceFile)
+    label = getDefaultDiskType()
+
+    if not forceLabelType is None:
+        label = forceLabelType
+    else:
+        if label.name == 'msdos' and \
+                dev.length > (2L**41) / dev.sector_size and \
+                'gpt' in archLabels[iutil.getArch()]:
+            label = parted.disk_type_get('gpt')
+
+    disk = dev.disk_new_fresh(label)
+    disk.commit()
+    return disk
 
 def checkDiskLabel(disk, intf):
     """Check that the disk label on disk is valid for this machine type."""
-    if disk.type.name == "msdos":
+    arch = iutil.getArch()
+    if not arch in archLabels.keys() and disk.type.name == "msdos":
         return 0
 
     if intf:
@@ -235,9 +333,11 @@ def checkDiskLabel(disk, intf):
                                   "ALL DATA on this drive.\n\n"
                                   "Would you like to re-initialize this "
                                   "drive?")
-                                %(disk.dev.path[5:], disk.type.name, name),
-                                  type="custom", custom_buttons = [ _("_Ignore drive"),
-                                  _("_Re-initialize drive") ], custom_icon="question")
+                                %(disk.dev.path[5:], disk.type.name,
+                                  name), type="custom",
+                                custom_buttons = [ _("_Ignore drive"),
+                                                   _("_Re-initialize drive") ],
+                                custom_icon="question")
 
         if rc == 0:
             return 1
@@ -246,11 +346,31 @@ def checkDiskLabel(disk, intf):
     else:
         return 1
 
+def hasProtectedPartitions(drive, pomona):
+    rc = False
+    if pomona is None:
+        return rc
+
+    try:
+        for protected in pomona.id.partitions.protectedPartitions():
+            if protected.startswith(drive):
+                part = protected[len(drive):]
+                if part[0] == "p":
+                    part = part[1:]
+                if part.isdigit():
+                    rc = True
+                    break
+    except:
+        pass
+
+    return rc
+
 # attempt to associate a parted filesystem type on a partition that
 # didn't probe as one type or another.
 def validateFsType(part):
     # we only care about primary and logical partitions
-    if not part.type in (parted.PARTITION_PRIMARY,  parted.PARTITION_LOGICAL):
+    if not part.type in (parted.PARTITION_PRIMARY,
+                         parted.PARTITION_LOGICAL):
         return
     # if the partition already has a type, no need to search
     if part.fs_type:
@@ -275,7 +395,7 @@ def validateFsType(part):
             # XXX verify that this will not modify system type
             # in the case where a user does not modify partitions
             part.set_system(fstype)
-    return
+            return
 
 def isLinuxNativeByNumtype(numtype):
     """Check if the type is a 'Linux native' filesystem."""
@@ -290,70 +410,64 @@ def isLinuxNativeByNumtype(numtype):
 def sniffFilesystemType(device):
     """Sniff to determine the type of fs on device.
 
-    device - name of device to sniff.  we try to create it if it doesn't exist.
+    device - name of device to sniff.
     """
+    return isys.readFSType(device)
 
-    if os.access(device, os.O_RDONLY):
-        dev = device
-    else:
-        dev = "/tmp/" + device
-
-    pagesize = resource.getpagesize()
-    if pagesize > 2048:
-        num = pagesize
-    else:
-        num = 2048
-
-    try:
-        fd = os.open(dev, os.O_RDONLY)
-        buf = os.read(fd, num)
-    except:
-        return None
-    finally:
+def getReleaseString(mountpoint):
+    if os.access(mountpoint + "/etc/system-release", os.R_OK):
+        f = open(mountpoint + "/etc/system-release", "r")
         try:
-            os.close(fd)
-        except:
-            pass
+            lines = f.readlines()
+        except IOError:
+            try:
+                f.close()
+            except:
+                pass
+            return ""
+        f.close()
+        # return the first line with the newline at the end stripped
+        if len(lines) == 0:
+            return ""
+        relstr = string.strip(lines[0][:-1])
 
-    if len(buf) < pagesize:
-        try:
-            log.error("Tried to read pagesize for %s in sniffFilesystemType and only read %s", dev, len(buf))
-        except:
-            pass
-        return None
+        # get the release name and version
+        # assumes that form is something
+        # like "Red Hat Linux release 6.2 (Zoot)"
+        if relstr.find("release") != -1:
+            try:
+                idx = relstr.find("release")
+                prod = relstr[:idx - 1]
 
-    # ext2 check
-    if struct.unpack("<H", buf[1080:1082]) == (0xef53,):
-        if isys.ext2HasJournal(dev):
-            return "ext3"
-        else:
-            return "ext2"
+                ver = ""
+                for a in relstr[idx + 8:]:
+                    if a in string.digits + ".":
+                        ver = ver + a
+                    else:
+                        break
 
-    # xfs signature
-    if buf.startswith("XFSB"):
-        return "xfs"
-
-    # 2.6 doesn't support version 0, so we don't like SWAP-SPACE
-    if (buf[pagesize - 10:] == "SWAPSPACE2"):
-        return "swap"
-
-    if fsset.isValidReiserFS(dev):
-        return "reiserfs"
-
-    # FIXME:  we don't look for vfat
-    ### XXX Check for reiser4
-
-    return None
+                    relstr = prod + " " + ver
+            except:
+                pass # don't worry, just use the relstr as we have it
+        return relstr
+    return ""
 
 class DiskSet:
     """The disks in the system."""
 
     skippedDisks = []
+    mdList = []
+    exclusiveDisks = []
 
-    def __init__ (self, pomona = None):
+    dmList = None
+    mpList = None
+
+    def __init__ (self, pomona):
         self.disks = {}
+        self.initializedDisks = {}
         self.onlyPrimary = None
         self.pomona = pomona
+        self.devicesOpen = False
 
     def onlyPrimaryParts(self):
         for disk in self.disks.values():
@@ -362,70 +476,296 @@ class DiskSet:
 
         return 1
 
-    def getLabels(self):
-        """Return a list of all of the labels used on partitions."""
-        labels = {}
+    def startMPath(self):
+        """Start all of the dm multipath devices associated with the DiskSet."""
 
-        drives = self.disks.keys()
-        drives.sort()
+        if not DiskSet.mpList is None and DiskSet.mpList.__len__() > 0:
+            return
 
-        for drive in drives:
+        log.debug("starting mpaths")
+        log.debug("self.driveList(): %s" % (self.driveList(),))
+        log.debug("DiskSet.skippedDisks: %s" % (DiskSet.skippedDisks,))
+        driveList = filter(lambda x: x not in DiskSet.skippedDisks,
+                self.driveList())
+        log.debug("DiskSet.skippedDisks: %s" % (DiskSet.skippedDisks,))
+
+        mpList = dmraid.startAllMPath(driveList)
+        DiskSet.mpList = mpList
+        log.debug("done starting mpaths.  Drivelist: %s" % \
+            (self.driveList(),))
+
+    def renameMPath(self, mp, name):
+        dmraid.renameMPath(mp, name)
+
+    def stopMPath(self):
+        """Stop all of the mpath devices associated with the DiskSet."""
+
+        if DiskSet.mpList:
+            dmraid.stopAllMPath(DiskSet.mpList)
+            DiskSet.mpList = None
+
+    def startDmRaid(self):
+        """Start all of the dmraid devices associated with the DiskSet."""
+
+        if not DiskSet.dmList is None:
+            return
+
+        log.debug("starting dmraids")
+        log.debug("self.driveList(): %s" % (self.driveList(),))
+        log.debug("DiskSet.skippedDisks: %s" % (DiskSet.skippedDisks,))
+        driveList = filter(lambda x: x not in DiskSet.skippedDisks,
+                self.driveList())
+        log.debug("DiskSet.skippedDisks: %s" % (DiskSet.skippedDisks,))
+
+        dmList = dmraid.startAllRaid(driveList)
+        DiskSet.dmList = dmList
+        log.debug("done starting dmraids.  Drivelist: %s" % \
+            (self.driveList(),))
+
+    def renameDmRaid(self, rs, name):
+        dmraid.renameRaidSet(rs, name)
+
+    def stopDmRaid(self):
+        """Stop all of the dmraid devices associated with the DiskSet."""
+        if DiskSet.dmList:
+            dmraid.stopAllRaid(DiskSet.dmList)
+            DiskSet.dmList = None
+
+    def startMdRaid(self):
+        """Start all of the md raid devices associated with the DiskSet."""
+
+        testList = []
+        testList.extend(DiskSet.skippedDisks)
+
+        for mp in DiskSet.mpList or []:
+            for m in mp.members:
+                disk = m.split('/')[-1]
+                testList.append(disk)
+
+        for rs in DiskSet.dmList or []:
+            for m in rs.members:
+                if isinstance(m, block.RaidDev):
+                    disk = m.rd.device.path.split('/')[-1]
+                    testList.append(disk)
+
+        driveList = filter(lambda x: x not in testList, self.driveList())
+        DiskSet.mdList.extend(raid.startAllRaid(driveList))
+
+    def stopMdRaid(self):
+        """Stop all of the md raid devices associated with the DiskSet."""
+
+        raid.stopAllRaid(DiskSet.mdList)
+
+        while DiskSet.mdList:
+            DiskSet.mdList.pop()
+
+    def getInfo(self, readFn=lambda d: isys.readFSLabel(d)):
+        """Return a dict keyed on device name, storing some sort of data
+           about each device.  This is typially going to be labels or UUIDs,
+           as required by readFstab.
+        """
+        ret = {}
+
+        encryptedDevices = self.pomona.id.partitions.encryptedDevices
+
+        for drive in self.driveList():
+            # Don't read labels from drives we cleared using clearpart, as
+            # we don't actually remove the existing filesystems so those
+            # labels will still be present (#209291).
+            if drive in DiskSet.skippedDisks:
+                continue
+
+            # ignoredisk takes precedence over clearpart (#186438).
+            if DiskSet.exclusiveDisks != [] and \
+                    drive not in DiskSet.exclusiveDisks:
+                continue
+
             disk = self.disks[drive]
             func = lambda part: (part.is_active() and
-                          not (part.get_flag(parted.PARTITION_RAID)
-                          or part.get_flag(parted.PARTITION_LVM)))
+                                 not (part.get_flag(parted.PARTITION_RAID)
+                                      or part.get_flag(parted.PARTITION_LVM)))
             parts = filter_partitions(disk, func)
             for part in parts:
                 node = get_partition_name(part)
-                label = isys.readFSLabel(node)
-                if label:
-                    labels[node] = label
+                crypto = encryptedDevices.get(node)
+                if crypto and not crypto.openDevice():
+                    node = crypto.getDevice()
 
-        return labels
+                val = readFn(node)
+                if val:
+                    ret[node] = val
+
+                if crypto:
+                    crypto.closeDevice()
+
+        for dev, devices, level, numActive in DiskSet.mdList:
+            crypto = encryptedDevices.get(dev)
+            if crypto and not crypto.openDevice():
+                dev = crypto.getDevice()
+
+            val = readFn(dev)
+            if val:
+                ret[dev] = val
+
+            if crypto:
+                crypto.closeDevice()
+
+        active = lvm.vgcheckactive()
+        if not active:
+            lvm.vgscan()
+            lvm.vgactivate()
+
+        for (vg, lv, size, lvorigin) in lvm.lvlist():
+            if lvorigin:
+                continue
+            node = "%s/%s" % (vg, lv)
+            crypto = encryptedDevices.get(node)
+            if crypto and not crypto.openDevice():
+                node = crypto.getDevice()
+
+            val = readFn("/dev/" + node)
+            if val:
+                ret[node] = val
+
+            if crypto:
+                crypto.closeDevice()
+
+        if not active:
+            lvm.vgdeactivate()
+
+        return ret
 
     def findExistingRootPartitions(self, upgradeany = 0):
         """Return a list of all of the partitions which look like a root fs."""
         rootparts = []
 
+        self.startMPath()
+        self.startDmRaid()
+        self.startMdRaid()
+
+        for dev, crypto in self.pomona.id.partitions.encryptedDevices.items():
+            # FIXME: order these so LVM and RAID always work on the first try
+            if crypto.openDevice():
+                log.error("failed to open encrypted device %s" % (dev,))
+
+        if flags.cmdline.has_key("upgradeany"):
+            upgradeany = 1
+
+        for dev, devices, level, numActive in self.mdList:
+            (errno, msg) = (None, None)
+            found = 0
+            theDev = dev
+            crypto = self.pomona.id.partitions.encryptedDevices.get(dev)
+            if crypto and not crypto.openDevice():
+                theDev = "/dev/%s" % (crypto.getDevice(),)
+            elif crypto:
+                log.error("failed to open encrypted device %s" % dev)
+
+            fs = isys.readFSType(theDev)
+            if fs is not None:
+                try:
+                    isys.mount(theDev, self.pomona.rootPath, fs, readOnly = 1)
+                    found = 1
+                except SystemError:
+                    pass
+
+            if found:
+                isys.umount(self.pomona.rootPath)
+
+        # now, look for candidate lvm roots
+        lvm.vgscan()
+        lvm.vgactivate()
+
+        for dev, crypto in self.pomona.id.partitions.encryptedDevices.items():
+            # FIXME: order these so LVM and RAID always work on the first try
+            if crypto.openDevice():
+                log.error("failed to open encrypted device %s" % (dev,))
+
+        for (vg, lv, size, lvorigin) in lvm.lvlist():
+            if lvorigin:
+                continue
+            dev = "/dev/%s/%s" %(vg, lv)
+            found = 0
+            theDev = dev
+            node = "%s/%s" % (vg, lv)
+            dmnode = "mapper/%s-%s" % (vg, lv)
+            crypto = self.pomona.id.partitions.encryptedDevices.get(dmnode)
+            if crypto and not crypto.openDevice():
+                theDev = "/dev/%s" % (crypto.getDevice(),)
+            elif crypto:
+                log.error("failed to open encrypted device %s" % dev)
+
+            fs = isys.readFSType(theDev)
+            if fs is not None:
+                try:
+                    isys.mount(theDev, self.pomona.rootPath, fs, readOnly = 1)
+                    found = 1
+                except SystemError:
+                    pass
+
+            if found:
+                isys.umount(self.pomona.rootPath)
+
+        lvm.vgdeactivate()
+
+        # don't stop raid until after we've looked for lvm on top of it
+        self.stopMdRaid()
+
         drives = self.disks.keys()
         drives.sort()
 
+        protected = self.pomona.id.partitions.protectedPartitions()
+
         for drive in drives:
             disk = self.disks[drive]
-            part = disk.next_partition()
+            part = disk.next_partition ()
             while part:
-                if (part.is_active() and (part.get_flag(parted.PARTITION_RAID)
-                        or part.get_flag(parted.PARTITION_LVM))):
-                    pass
-                elif (part.fs_type and part.fs_type.name in fsset.getUsableLinuxFs()):
-                    node = get_partition_name(part)
-
-                try:
-                    isys.mount(node, self.pomona.rootPath, part.fs_type.name)
-                except SystemError, (errno, msg):
+                node = get_partition_name(part)
+                crypto = self.pomona.id.partitions.encryptedDevices.get(node)
+                if (part.is_active()
+                    and (part.get_flag(parted.PARTITION_RAID)
+                         or part.get_flag(parted.PARTITION_LVM))):
                     part = disk.next_partition(part)
                     continue
+                elif part.fs_type or crypto:
+                    theDev = node
+                    if part.fs_type:
+                        fstype = part.fs_type.name
 
-                if os.access(self.pomona.rootPath + '/etc/fstab', os.R_OK):
-                    rootparts.append ((node, part.fs_type.name))
+                    if crypto and not crypto.openDevice():
+                        theDev = crypto.getDevice()
+                        fstype = isys.readFSType("/dev/%s" % theDev)
+                    elif crypto:
+                        log.error("failed to open encrypted device %s" % node)
 
-                isys.umount(self.pomona.rootPath)
+                    if not fstype or fstype not in fsset.getUsableLinuxFs():
+                        part = disk.next_partition(part)
+                        continue
+
+                    try:
+                        isys.mount("/dev/%s" % (theDev,),
+                                   self.pomona.rootPath, fstype)
+                        checkRoot = self.pomona.rootPath
+                    except SystemError:
+                        part = disk.next_partition(part)
+                        continue
+
+                    isys.umount(self.pomona.rootPath)
 
                 part = disk.next_partition(part)
-
         return rootparts
 
-    def driveList(self):
+    def driveList (self):
         """Return the list of drives on the system."""
         drives = isys.hardDriveDict().keys()
         drives.sort (isys.compareDrives)
         return drives
 
-    def drivesByName(self):
+    def drivesByName (self):
         """Return a dictionary of the drives on the system."""
         return isys.hardDriveDict()
 
-    def savePartitions(self):
+    def savePartitions (self):
         """Write the partition tables out to the disks."""
         for disk in self.disks.values():
             if disk.dev.path[5:].startswith("sd") and disk.get_last_partition_num() > 15:
@@ -443,163 +783,219 @@ class DiskSet:
                 del disk
                 continue
 
+            # FIXME: this belongs in parted itself, but let's do a hack...
+            if iutil.isX86() and disk.type.name == "gpt":
+                log.debug("syncing gpt to mbr for disk %s" % (disk.dev.path,))
+                iutil.execWithRedirect("gptsync", [disk.dev.path,],
+                                       stdout="/tmp/gptsync.log",
+                                       stderr="/tmp/gptsync.err",
+                                       searchPath = 1)
+            del disk
         self.refreshDevices()
 
-    def refreshDevices(self):
+    def _addDisk(self, drive, disk):
+        log.debug("adding drive %s to disk list" % (drive,))
+        self.initializedDisks[drive] = True
+        self.disks[drive] = disk
+
+    def _removeDisk(self, drive, addSkip=True):
+        msg = "removing drive %s from disk lists" % (drive,)
+        if addSkip:
+            msg += "; adding to skip list"
+        log.debug(msg)
+
+        if self.disks.has_key(drive):
+            del self.disks[drive]
+        if addSkip:
+            if self.initializedDisks.has_key(drive):
+                del self.initializedDisks[drive]
+            DiskSet.skippedDisks.append(drive)
+
+    def refreshDevices (self):
         """Reread the state of the disks as they are on disk."""
         self.closeDevices()
         self.disks = {}
         self.openDevices()
 
-    def closeDevices(self):
+    def closeDevices (self):
         """Close all of the disks which are open."""
+        self.stopDmRaid()
+        self.stopMPath()
         for disk in self.disks.keys():
             #self.disks[disk].close()
             del self.disks[disk]
+        self.devicesOpen = False
 
-    def clearDevices(self):
-        def inClearDevs (drive, clearDevs):
-            return (clearDevs is None) or (len(clearDevs) == 0) or (drive in clearDevs)
+    def _askForLabelPermission(self, intf, drive, clearDevs, initAll, ks):
+        #Do not try to initialize device's part. table in rescue mode
+        if self.pomona.rescue:
+            self._removeDisk(drive)
+            return False
 
-        clearDevs = []
-
-        for drive in self.driveList():
-            # ignoredisk takes precedence over clearpart (#186438).
-            if drive in DiskSet.skippedDisks:
-                continue
-
+        rc = 0
+        if (ks and (drive in clearDevs) and initAll):
+            rc = 1
+        elif intf:
             deviceFile = "/dev/" + drive
+            dev = parted.PedDevice.get(deviceFile)
 
-            if not isys.mediaPresent(drive):
-                DiskSet.skippedDisks.append(drive)
-                continue
+            msg = _("The partition table on device %s (%s %-0.f MB) was unreadable.\n\n"
+                    "To create new partitions it must be initialized, "
+                    "causing the loss of ALL DATA on this drive.\n\n"
+                    "This operation will override any previous "
+                    "installation choices about which drives to "
+                    "ignore.\n\n"
+                    "Would you like to initialize this drive, "
+                    "erasing ALL DATA?") % (drive, dev.model, getDeviceSizeMB (dev),)
 
+            rc = intf.messageWindow(_("Warning"), msg, type="yesno")
+
+        if rc != 0:
+            return True
+
+        self._removeDisk(drive)
+        return False
+
+    def _labelDevice(self, drive):
+        log.info("Reinitializing label for drive %s" % (drive,))
+
+        deviceFile = "/dev/" + drive
+
+        try:
             try:
-                dev = parted.PedDevice.get(deviceFile)
+                # FIXME: need the right fix for z/VM formatted dasd
+                disk = labelDisk(deviceFile)
             except parted.error, msg:
-                DiskSet.skippedDisks.append(drive)
-                continue
+                log.error("parted error: %s" % (msg,))
+                raise
+        except:
+            (type, value, tb) = sys.exc_info()
+            lines = exception.formatException(type, value, tb)
+            for line in lines:
+                log.error(line)
+            self._removeDisk(drive)
+            raise LabelError, drive
 
-    def openDevices(self):
+        self._addDisk(drive, disk)
+        return disk, deviceFile
+
+    def openDevices (self):
         """Open the disks on the system and skip unopenable devices."""
 
         if self.disks:
             return
+        self.startMPath()
+        self.startDmRaid()
 
-        if self.pomona is None:
-            intf = None
-            zeroMbr = None
-        else:
-            intf = self.pomona.intf
-            zeroMbr = self.pomona.id.partitions.zeroMbr
+        intf = self.pomona.intf
+        zeroMbr = self.pomona.id.partitions.zeroMbr
 
         for drive in self.driveList():
             # ignoredisk takes precedence over clearpart (#186438).
             if drive in DiskSet.skippedDisks:
                 continue
-            deviceFile = "/dev/" + drive
+
+            if DiskSet.exclusiveDisks != [] and \
+                    drive not in DiskSet.exclusiveDisks:
+                continue
+
             if not isys.mediaPresent(drive):
                 DiskSet.skippedDisks.append(drive)
                 continue
 
+            disk = None
+            dev = None
+
+            if self.initializedDisks.has_key(drive):
+                if not self.disks.has_key(drive):
+                    try:
+                        dev = parted.PedDevice.get("/dev/%s" % (drive,))
+                        disk = parted.PedDisk.new(dev)
+                        self._addDisk(drive, disk)
+                    except parted.error, msg:
+                        self._removeDisk(drive)
+                continue
+
+            ks = False
             clearDevs = []
             initAll = False
 
+            if self.pomona.isKickstart:
+                ks = True
+                clearDevs = self.pomona.id.ksdata.clearpart.drives
+                initAll = self.pomona.id.ksdata.clearpart.initAll
+
+            if initAll and ((clearDevs is None) or (len(clearDevs) == 0) \
+                       or (drive in clearDevs)) and not flags.test \
+                       and not hasProtectedPartitions(drive, self.pomona):
+                try:
+                    disk, dev = self._labelDevice(drive)
+                except:
+                    continue
+
             try:
-                dev = parted.PedDevice.get(deviceFile)
+                if not dev:
+                    dev = parted.PedDevice.get("/dev/%s" % (drive,))
+                    disk = None
             except parted.error, msg:
-                DiskSet.skippedDisks.append(drive)
+                log.debug("parted error: %s" % (msg,))
+                self._removeDisk(drive, disk)
                 continue
 
             try:
-                disk = parted.PedDisk.new(dev)
-                self.disks[drive] = disk
+                if not disk:
+                    disk = parted.PedDisk.new(dev)
+                    self._addDisk(drive, disk)
             except parted.error, msg:
                 recreate = 0
                 if zeroMbr:
                     log.error("zeroMBR was set and invalid partition table "
                               "found on %s" % (dev.path[5:]))
                     recreate = 1
-                elif intf is None:
-                    DiskSet.skippedDisks.append(drive)
-                    continue
                 else:
-                    format = drive
-
-                    # if pomona is None here, we are called from labelFactory
-                    if self.pomona is not None:
-                        rc = intf.messageWindow(_("Warning"),
-                                                _("The partition table on device %s was unreadable. "
-                                                  "To create new partitions it must be initialized, "
-                                                  "causing the loss of ALL DATA on this drive.\n\n"
-                                                  "This operation will override any previous "
-                                                  "installation choices about which drives to "
-                                                  "ignore.\n\n"
-                                                  "Would you like to initialize this drive, "
-                                                  "erasing ALL DATA?") % (format,), type = "yesno")
-                        if rc == 0:
-                            DiskSet.skippedDisks.append(drive)
-                            continue
-                        elif rc != 0:
-                            recreate = 1
-                    else:
-                        DiskSet.skippedDisks.append(drive)
+                    if not self._askForLabelPermission(intf, drive, clearDevs,
+                            initAll, ks):
                         continue
 
-                if recreate == 1:
-                    try:
-                        disk = dev.disk_new_fresh(getDefaultDiskType())
-                        disk.commit()
-                    except parted.error, msg:
-                        DiskSet.skippedDisks.append(drive)
-                        continue
+                    recreate = 1
 
+                if recreate == 1 and not flags.test:
                     try:
-                        disk = parted.PedDisk.new(dev)
-                        self.disks[drive] = disk
-                    except parted.error, msg:
-                        DiskSet.skippedDisks.append(drive)
+                        disk, dev = self._labelDevice(drive)
+                    except:
                         continue
 
             filter_partitions(disk, validateFsType)
 
             # check for more than 15 partitions (libata limit)
             if drive.startswith('sd') and disk.get_last_partition_num() > 15:
-                rc = intf.messageWindow(_("Warning"),
-                                        _("The drive /dev/%s has more than 15 "
-                                          "partitions on it.  The SCSI "
-                                          "subsystem in the Linux kernel does "
-                                          "not allow for more than 15 partitons "
-                                          "at this time.  You will not be able "
-                                          "to make changes to the partitioning "
-                                          "of this disk or use any partitions "
-                                          "beyond /dev/%s15 in %s")
-                                        % (drive, drive, name), type="custom",
-                                           custom_buttons = [_("_Reboot"), _("_Continue")],
-                                           custom_icon="warning")
+                str = _("The drive /dev/%s has more than 15 partitions on it.  "
+                        "The SCSI subsystem in the Linux kernel does not "
+                        "allow for more than 15 partitons at this time.  You "
+                        "will not be able to make changes to the partitioning "
+                        "of this disk or use any partitions beyond /dev/%s15 "
+                        "in %s") % (drive, drive, name)
+
+                rc = intf.messageWindow(_("Warning"), str,
+                                    type="custom",
+                                    custom_buttons = [_("_Reboot"),
+                                                      _("_Continue")],
+                                    custom_icon="warning")
                 if rc == 0:
                     sys.exit(0)
 
             # check that their partition table is valid for their architecture
             ret = checkDiskLabel(disk, intf)
             if ret == 1:
-                DiskSet.skippedDisks.append(drive)
-                continue
+                self._removeDisk(drive)
             elif ret == -1:
                 try:
-                    disk = dev.disk_new_fresh(getDefaultDiskType())
-                    disk.commit()
-                except parted.error, msg:
-                    DiskSet.skippedDisks.append(drive)
-                    continue
-                try:
-                    disk = parted.PedDisk.new(dev)
-                    self.disks[drive] = disk
-                except parted.error, msg:
-                    DiskSet.skippedDisks.append(drive)
-                    continue
+                    disk, dev = self._labelDevice(drive)
+                except:
+                    pass
+        self.devicesOpen = True
 
-    def partitionTypes(self):
+    def partitionTypes (self):
         """Return list of (partition, partition type) tuples for all parts."""
         rc = []
         drives = self.disks.keys()
@@ -621,16 +1017,16 @@ class DiskSet:
 
         return rc
 
-    def diskState(self):
+    def diskState (self):
         """Print out current disk state.  DEBUG."""
         rc = ""
         for disk in self.disks.values():
             rc = rc + ("%s: %s length %ld, maximum "
-                       "primary partitions: %d\n"
-                       % (disk.dev.path,
-                          disk.dev.model,
-                          disk.dev.length,
-                          disk.max_primary_partition_count))
+                       "primary partitions: %d\n" %
+                       (disk.dev.path,
+                        disk.dev.model,
+                        disk.dev.length,
+                        disk.max_primary_partition_count))
 
             part = disk.next_partition()
             if part:
@@ -648,106 +1044,131 @@ class DiskSet:
                         fs_type_name = part.fs_type.name
                     partFlags = get_flags (part)
                     rc = rc + ("%-9s %-12s %-12s %-10ld %-10ld %-10ld %7s\n"
-                        % (device, part.type_name, fs_type_name,
-                           part.geom.start, part.geom.end, part.geom.length, partFlags))
-                    part = disk.next_partition(part)
+                               % (device, part.type_name, fs_type_name,
+                              part.geom.start, part.geom.end, part.geom.length,
+                              partFlags))
+                part = disk.next_partition(part)
         return rc
 
     def checkNoDisks(self):
         """Check that there are valid disk devices."""
         if len(self.disks.keys()) == 0:
             self.pomona.intf.messageWindow(_("No Drives Found"),
-                                           _("An error has occurred - no valid devices were "
-                                             "found on which to create new file systems. "
-                                             "Please check your hardware for the cause "
-                                             "of this problem."))
+                               _("An error has occurred - no valid devices were "
+                                 "found on which to create new file systems. "
+                                 "Please check your hardware for the cause "
+                                 "of this problem."))
             return True
         return False
+
+
+    def exceptionDisks(self, pomona, probe=True):
+        if probe:
+            isys.flushDriveDict()
+            self.refreshDevices()
+
+        drives = []
+        for d in isys.removableDriveDict().items():
+            func = lambda p: p.is_active() and not p.get_flag(parted.PARTITION_RAID) and not p.get_flag(parted.PARTITION_LVM) and p.fs_type.name in ["ext3", "ext2", "fat16", "fat32"]
+
+            disk = self.disks[d[0]]
+            parts = filter_partitions(disk, func)
+
+            if len(parts) == 0:
+                drives.append(d)
+            else:
+                for part in parts:
+                    name = "%s%s" % (part.disk.dev.path, part.num)
+                    drives.append((os.path.basename(name), d[1]))
+
+        return drives
 
 # XXX is this all of the possibilities?
 dosPartitionTypes = [ 1, 6, 7, 11, 12, 14, 15 ]
 
 # master list of partition types
 allPartitionTypesDict = {
-        0 : "Empty",
-        1: "DOS 12-bit FAT",
-        2: "XENIX root",
-        3: "XENIX usr",
-        4: "DOS 16-bit <32M",
-        5: "Extended",
-        6: "DOS 16-bit >=32M",
-        7: "NTFS/HPFS",
-        8: "AIX",
-        9: "AIX bootable",
-        10: "OS/2 Boot Manager",
-        0xb: "Win95 FAT32",
-        0xc: "Win95 FAT32",
-        0xe: "Win95 FAT16",
-        0xf: "Win95 Ext'd",
-        0x10: "OPUS",
-        0x11: "Hidden FAT12",
-        0x12: "Compaq Setup",
-        0x14: "Hidden FAT16 <32M",
-        0x16: "Hidden FAT16",
-        0x17: "Hidden HPFS/NTFS",
-        0x18: "AST SmartSleep",
-        0x1b: "Hidden Win95 FAT32",
-        0x1c: "Hidden Win95 FAT32 (LBA)",
-        0x1e: "Hidden Win95 FAT16 (LBA)",
-        0x24: "NEC_DOS",
-        0x39: "Plan 9",
-        0x40: "Venix 80286",
-        0x41: "PPC_PReP Boot",
-        0x42: "SFS",
-        0x4d: "QNX4.x",
-        0x4e: "QNX4.x 2nd part",
-        0x4f: "QNX4.x 2nd part",
-        0x51: "Novell?",
-        0x52: "Microport",
-        0x63: "GNU HURD",
-        0x64: "Novell Netware 286",
-        0x65: "Novell Netware 386",
-        0x75: "PC/IX",
-        0x80: "Old MINIX",
-        0x81: "Linux/MINIX",
-        0x82: "Linux swap",
-        0x83: "Linux native",
-        0x84: "OS/2 hidden C:",
-        0x85: "Linux Extended",
-        0x86: "NTFS volume set",
-        0x87: "NTFS volume set",
-        0x8e: "Linux LVM",
-        0x93: "Amoeba",
-        0x94: "Amoeba BBT",
-        0x9f: "BSD/OS",
-        0xa0: "IBM Thinkpad hibernation",
-        0xa5: "BSD/386",
-        0xa6: "OpenBSD",
-        0xb7: "BSDI fs",
-        0xb8: "BSDI swap",
-        0xbf: "Solaris",
-        0xc7: "Syrinx",
-        0xdb: "CP/M",
-        0xde: "Dell Utility",
-        0xe1: "DOS access",
-        0xe3: "DOS R/O",
-        0xeb: "BEOS",
-        0xee: "EFI GPT",
-        0xef: "EFI (FAT-12/16/32)",
-        0xf2: "DOS secondary",
-        0xfd: "Linux RAID",
-        0xff: "BBT"
-}
+    0 : "Empty",
+    1: "DOS 12-bit FAT",
+    2: "XENIX root",
+    3: "XENIX usr",
+    4: "DOS 16-bit <32M",
+    5: "Extended",
+    6: "DOS 16-bit >=32M",
+    7: "NTFS/HPFS",
+    8: "AIX",
+    9: "AIX bootable",
+    10: "OS/2 Boot Manager",
+    0xb: "Win95 FAT32",
+    0xc: "Win95 FAT32",
+    0xe: "Win95 FAT16",
+    0xf: "Win95 Ext'd",
+    0x10: "OPUS",
+    0x11: "Hidden FAT12",
+    0x12: "Compaq Setup",
+    0x14: "Hidden FAT16 <32M",
+    0x16: "Hidden FAT16",
+    0x17: "Hidden HPFS/NTFS",
+    0x18: "AST SmartSleep",
+    0x1b: "Hidden Win95 FAT32",
+    0x1c: "Hidden Win95 FAT32 (LBA)",
+    0x1e: "Hidden Win95 FAT16 (LBA)",
+    0x24: "NEC_DOS",
+    0x39: "Plan 9",
+    0x40: "Venix 80286",
+    0x41: "PPC_PReP Boot",
+    0x42: "SFS",
+    0x4d: "QNX4.x",
+    0x4e: "QNX4.x 2nd part",
+    0x4f: "QNX4.x 2nd part",
+    0x51: "Novell?",
+    0x52: "Microport",
+    0x63: "GNU HURD",
+    0x64: "Novell Netware 286",
+    0x65: "Novell Netware 386",
+    0x75: "PC/IX",
+    0x80: "Old MINIX",
+    0x81: "Linux/MINIX",
+    0x82: "Linux swap",
+    0x83: "Linux native",
+    0x84: "OS/2 hidden C:",
+    0x85: "Linux Extended",
+    0x86: "NTFS volume set",
+    0x87: "NTFS volume set",
+    0x8e: "Linux LVM",
+    0x93: "Amoeba",
+    0x94: "Amoeba BBT",
+    0x9f: "BSD/OS",
+    0xa0: "IBM Thinkpad hibernation",
+    0xa5: "BSD/386",
+    0xa6: "OpenBSD",
+    0xb7: "BSDI fs",
+    0xb8: "BSDI swap",
+    0xbf: "Solaris",
+    0xc7: "Syrinx",
+    0xdb: "CP/M",
+    0xde: "Dell Utility",
+    0xe1: "DOS access",
+    0xe3: "DOS R/O",
+    0xeb: "BEOS",
+    0xee: "EFI GPT",
+    0xef: "EFI (FAT-12/16/32)",
+    0xf2: "DOS secondary",
+    0xfd: "Linux RAID",
+    0xff: "BBT"
+    }
 
 max_logical_partition_count = {
-        "hd": 59,
-        "sd": 11,
-        "ataraid/": 11,
-        "rd/": 3,
-        "cciss/": 11,
-        "i2o/": 11,
-        "iseries/vd": 3,
-        "ida/": 11,
-        "sx8/": 11,
-        "xvd": 11,
+    "hd": 59,
+    "sd": 11,
+    "ataraid/": 11,
+    "rd/": 3,
+    "cciss/": 11,
+    "i2o/": 11,
+    "iseries/vd": 3,
+    "ida/": 11,
+    "sx8/": 11,
+    "xvd": 11,
+    "vd": 11,
+    "mmcblk": 5
 }

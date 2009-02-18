@@ -16,7 +16,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-import inutil
+import iutil
 import isys
 import os
 import sys
@@ -94,7 +94,7 @@ def setupTimezone(pomona):
         args.append("-l")
 
     try:
-        inutil.execWithRedirect("/sbin/hwclock", args, stdin = None,
+        iutil.execWithRedirect("/sbin/hwclock", args, stdin = None,
                                 stdout = "/dev/tty5", stderr = "/dev/tty5")
     except RuntimeError:
         log.error("Failed to set clock")
