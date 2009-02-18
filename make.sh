@@ -325,7 +325,7 @@ ipfire_build() {
 	ipfire_make memtest86+
 	ipfire_make quagga
 	#ipfire_make mISDN
-	#ipfire_make wireless
+	ipfire_make wireless-tools
 
 	ipfire_make pyfire
 	ipfire_make firewall
