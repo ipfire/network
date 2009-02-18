@@ -220,6 +220,7 @@ ipfire_build() {
 	ipfire_make linux-atm
 	ipfire_make ppp
 	ipfire_make rp-pppoe
+	ipfire_make pptp
 	ipfire_make dhcp
 	ipfire_make iptables
 	ipfire_make libnfnetlink
