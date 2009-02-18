@@ -15,7 +15,7 @@ from snack import *
 from constants import *
 from flags import flags
 import string
-import inutil
+import iutil
 import bootloader
 
 import gettext

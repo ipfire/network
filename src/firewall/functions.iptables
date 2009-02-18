@@ -26,6 +26,7 @@ function iptables() {
 }
 
 function iptables_flush() {
+	decho "Flushing iptables"
 	: # TODO
 }
 
@@ -41,7 +42,8 @@ function iptables_init() {
 function iptables_commit() {
 	vecho "Committing firewall configuration."
 	iptables "COMMIT"
-	verbose && cat $IPTABLES_FILE
+	decho "Dumping iptables output"
+	debug && cat $IPTABLES_FILE
 	#iptables-restore < $IPTABLES_FILE
 }
 

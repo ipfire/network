@@ -13,7 +13,7 @@
 
 import sys
 import string
-import inutil
+import iutil
 import os
 from time import *
 from snack import *
@@ -36,7 +36,7 @@ class TimezoneWindow:
         if self.c.selected():
             args.append("--utc")
 
-        inutil.execWithRedirect("hwclock", args, searchPath=1)
+        iutil.execWithRedirect("hwclock", args, searchPath=1)
         self.g.setTimer(500)
         self.updateClock()
 

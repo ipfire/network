@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,30 +19,20 @@
 #                                                                             #
 ###############################################################################
 
-###############################################################################
-#                                                                             #
-# This is a small wrapper that runs our installer.                            #
-#                                                                             #
-###############################################################################
+function zones_green_add() {
+	# $1 = device
 
-for i in md_mod dm_mod ext3 xfs reiserfs reiser4; do
-	echo "Loading module $i"
-	modprobe $i
-done
+	zones_global_add $1
+	zones_policy_green $1
 
-echo "Running the Pomona Text Installer..."
+}
 
-python /usr/lib/pomona/installer.py $@
+function zones_policy_green() {
+	local device
 
-for i in $@; do
-	if [ "$i" == "--debug" ]; then
-		echo
-		echo "We are running in debug mode!"
-		echo
-		echo "So, rebooting is paused and you can do some things on the"
-		echo "other shells. If you are finished, press ENTER."
-		read
-		break
-	fi
-done
-reboot
+	device=$1
+
+	# Accept any traffic from green
+	iptables -A ${device}_POLICY -i $device -j ACCEPT
+
+}

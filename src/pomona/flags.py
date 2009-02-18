@@ -1,5 +1,5 @@
 #
-# flags.py: global anaconda flags
+# flags.py: global pomona flags
 #
 # Copyright 2001 Red Hat, Inc.
 #
@@ -50,6 +50,8 @@ class Flags:
         self.__dict__['flags']['debug'] = 0
         self.__dict__['flags']['cmdline'] = self.createCmdlineDict()
         self.__dict__['flags']['network'] = False
+        self.__dict__['flags']['mpath'] = 1
+        self.__dict__['flags']['dmraid'] = 1
 
         for line in os.popen("tty"):
             line = line.strip()

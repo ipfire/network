@@ -15,7 +15,7 @@
 #
 
 import shutil
-import inutil
+import iutil
 import os, sys
 import logging
 from constants import *
@@ -35,6 +35,9 @@ class PomonaBackend:
 
         self.instPath = instPath
         self.modeText = ""
+
+        # some backends may have a special case for rootfs formatting
+        self.skipFormatRoot = False
 
     def doPreSelection(self, intf, id, instPath):
         pass

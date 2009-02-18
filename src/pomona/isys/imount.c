@@ -26,44 +26,95 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 #include "imount.h"
+#include "sundries.h"
 
 #define _(foo) foo
 
 static int mkdirIfNone(char * directory);
 
-int doPwMount(char *dev, char *where, char *fs, char *options) {
-    int rc, child, status;
-    char *opts = NULL, *device;
+static int readFD(int fd, char **buf) {
+    char *p;
+    size_t size = 4096;
+    int s, filesize = 0;
 
-    if (mkdirChain(where)) {
-        return IMOUNT_ERR_ERRNO;
+    *buf = calloc(4096, sizeof (char));
+    if (*buf == NULL)
+        abort();
+
+    do {
+        p = &(*buf)[filesize];
+        s = read(fd, p, 4096);
+        if (s < 0)
+            break;
+
+        filesize += s;
+        if (s == 0)
+           break;
+
+        size += s;
+        *buf = realloc(*buf, size);
+        if (*buf == NULL)
+            abort();
+    } while (1);
+
+    if (filesize == 0 && s < 0) {
+        free(*buf);
+        *buf = NULL;
+        return -1;
     }
 
+    return filesize;
+}
+
+int doPwMount(char *dev, char *where, char *fs, char *options, char **err) {
+    int rc, child, status, pipefd[2];
+    char *opts = NULL, *device;
+
+    if (mkdirChain(where))
+        return IMOUNT_ERR_ERRNO;
+
     if (strstr(fs, "nfs")) {
-        if (options)
-            rc = asprintf(&opts, "%s,nolock", options);
-        else
+        if (options) {
+            if (asprintf(&opts, "%s,nolock", options) == -1) {
+                fprintf(stderr, "%s: %d: %s\n", __func__, __LINE__,
+                        strerror(errno));
+                fflush(stderr);
+                abort();
+            }
+        } else {
             opts = strdup("nolock");
+        }
         device = strdup(dev);
     } else {
         if ((options && strstr(options, "bind") == NULL) &&
-            strncmp(dev, "LABEL=", 6) && strncmp(dev, "UUID=", 5) && *dev != '/')
-           rc = asprintf(&device, "/dev/%s", dev);
-        else
+            strncmp(dev, "LABEL=", 6) && strncmp(dev, "UUID=", 5) &&
+            *dev != '/') {
+           if (asprintf(&device, "/dev/%s", dev) == -1) {
+               fprintf(stderr, "%s: %d: %s\n", __func__, __LINE__,
+                       strerror(errno));
+               fflush(stderr);
+               abort();
+           }
+        } else {
            device = strdup(dev);
+        }
         if (options)
             opts = strdup(options);
     }
 
+    if (pipe(pipefd))
+        return IMOUNT_ERR_ERRNO;
 
     if (!(child = fork())) {
         int fd;
 
-        /* Close off all these filehandles since we don't want errors
-         * spewed to tty1.
+        close(pipefd[0]);
+
+        /* Close stdin entirely, redirect stdout to tty5, and redirect stderr
+         * to a pipe so we can put error messages into exceptions.  We'll
+         * only use these messages should mount also return an error code.
          */
         fd = open("/dev/tty5", O_RDONLY);
         close(STDIN_FILENO);
@@ -73,25 +124,30 @@ int doPwMount(char *dev, char *where, char *fs, char *options) {
         fd = open("/dev/tty5", O_WRONLY);
         close(STDOUT_FILENO);
         dup2(fd, STDOUT_FILENO);
-        close(STDERR_FILENO);
-        dup2(fd, STDERR_FILENO);
-        close(fd);
+
+        dup2(pipefd[1], STDERR_FILENO);
 
         if (opts) {
-            fprintf(stderr, "Running... /bin/mount -n -t %s -o %s %s %s\n",
+            fprintf(stdout, "Running... /bin/mount -n -t %s -o %s %s %s\n",
                     fs, opts, device, where);
             rc = execl("/bin/mount",
                        "/bin/mount", "-n", "-t", fs, "-o", opts, device, where, NULL);
             exit(1);
         }
         else {
-            fprintf(stderr, "Running... /bin/mount -n -t %s %s %s\n",
+            fprintf(stdout, "Running... /bin/mount -n -t %s %s %s\n",
                     fs, device, where);
             rc = execl("/bin/mount", "/bin/mount", "-n", "-t", fs, device, where, NULL);
             exit(1);
         }
     }
 
+    close(pipefd[1]);
+
+    if (err != NULL)
+        rc = readFD(pipefd[0], err);
+
+    close(pipefd[0]);
     waitpid(child, &status, 0);
 
     free(opts);
@@ -100,6 +156,27 @@ int doPwMount(char *dev, char *where, char *fs, char *options) {
        return IMOUNT_ERR_OTHER;
 
     return 0;
+}
+
+int doMultiMount(char *dev, char *where, char **fstypes, char *options, char **err) {
+    int retval = 0, i;
+
+    for (i = 0; fstypes[i]; i++) {
+        /* If we made a previous call to mount and it returned an error message,
+         * get rid of it now.  We only want to preserve the error from the last
+         * fstype.
+         */
+        if (err && *err && **err) {
+            free(*err);
+            *err = NULL;
+        }
+
+        retval = doPwMount(dev, where, fstypes[i], options, err);
+        if (!retval)
+            return retval;
+    }
+
+    return retval;
 }
 
 int mkdirChain(char * origChain) {

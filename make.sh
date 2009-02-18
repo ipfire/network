@@ -291,6 +291,7 @@ ipfire_build() {
 	ipfire_make dosfstools
 	ipfire_make lvm2
 	ipfire_make mdadm
+	ipfire_make dmraid
 
 	### Building hardware utils
 	#
@@ -322,6 +323,8 @@ ipfire_build() {
 	ipfire_make cpio
 	ipfire_make cdrtools
 	ipfire_make python-parted
+	ipfire_make python-pyblock
+	ipfire_make libbdevid
 	ipfire_make memtest86+
 	ipfire_make quagga
 	#ipfire_make mISDN
