@@ -30,7 +30,7 @@ rootfs=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/") { print $3; }}' /etc/fstab)
 rootopts=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/") { print $4; }}' /etc/fstab)
 [ -z "$rootopts" ] && rootopts="defaults"
 
-MODULES="$MODULES $rootfs" # Add rootfs module
+installmodule --load $rootfs
 
 if [[ "$rootdev" =~ "^(UUID=|LABEL=)" ]]; then
 	rootdev=$(resolve_device_name "$rootdev")
@@ -52,6 +52,13 @@ if [ -n "$physdev" -a "$physdev" != "$rootdev" ]; then
 fi
 
 findstoragedriver ${rootdev##/dev/}
+
+cat >> sbin/real-init <<EOF
+
+#rootdev=$rootdev
+#rootfstype=$rootfs
+#rootopts=$rootopts
+EOF
 
 cat >> sbin/real-init <<'EOF'
 
@@ -76,11 +83,10 @@ udevd --daemon
 vecho "Creating devices..."
 udevadm trigger
 
-vecho "Waiting for system to settle..."
-udevadm settle --timeout=30 || :
-
 vecho "Mounting root filesystem $rootdev..."
-mount $rootdev /sysroot $rootfs $rootopts
+[ -n "$rootopts"   ] && rootopts="-o $rootopts"
+[ -n "$rootfstype" ] && rootopts="-t $rootfstype $rootopts"
+mount $rootdev /sysroot $rootopts
 
 kill $(pidof udevd)
 

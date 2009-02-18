@@ -139,7 +139,7 @@ endif
 
 	# Grub uses anonymous mapping and will be killed by PaX.
 	# The following command changes Grub's PaX flags:
-	paxctl -spm /usr/sbin/grub
+	paxctl -spme /usr/sbin/grub
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

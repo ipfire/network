@@ -38,7 +38,7 @@ MAINTAINER =
 GROUP      = System/Libraries
 EXTRA      = no
 DEBUG      = no
-DEPS       = pkg-config
+DEPS       = pcre pkg-config
 
 URL        = http://www.gtk.org
 LICENSE    = LGPLv2+
@@ -81,7 +81,8 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
-			--prefix=/usr
+			--prefix=/usr \
+			--with-pcre=system
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	cd $(DIR_APP) && ./mkinstalldirs /lib
