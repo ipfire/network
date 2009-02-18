@@ -19,12 +19,28 @@
 #                                                                             #
 ###############################################################################
 
+DEBUG=
 VERBOSE=
 TMPDIR=$(mktemp -d)
 
 BOLD="\\033[1;39m"
 NORMAL="\\033[0;39m"
 ERROR="\\033[1;31m"
+
+function debug() {
+	if [ -n "$1" ]; then
+		DEBUG=$1
+		verbose $1
+		return
+	else
+		if [ "$DEBUG" = "1" ]; then
+			return 0
+		else
+			return 1
+		fi
+	fi
+
+}
 
 function verbose() {
 	if [ -n "$1" ]; then
@@ -37,6 +53,10 @@ function verbose() {
 			return 1
 		fi
 	fi
+}
+
+function decho() {
+	debug && echo -e "${ERROR}$@${NORMAL}"
 }
 
 function vecho() {
@@ -71,7 +91,9 @@ include functions.zones
 
 function _start() {
 	firewall_init
-	zones_init
-	zones_add green0
+	zones_local_add
+
+	# Need to get all zones here
+
 	iptables_commit
 }

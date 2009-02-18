@@ -19,12 +19,24 @@
 #                                                                             #
 ###############################################################################
 
-function zones_local_add() {
+function zones_blue_add() {
+	# $1 = device
 
-	decho "Adding zone \"local\""
+	zones_global_add $1
+	zones_policy_blue $1
 
-	# Accept everything on lo
-	iptables -A INPUT  -i lo -j ACCEPT
-	iptables -A OUTPUT -o lo -j ACCEPT
+}
 
+function zones_policy_blue() {
+	local device
+	local name
+
+	device=$1
+	name=$(uppercase "$device")
+
+	# Accept dhcp traffic
+	macro_add DHCP -A ${name}_POLICY -i ${device} -j ACCEPT
+
+	# Mac filter
+	: # TODO
 }

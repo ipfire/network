@@ -19,12 +19,15 @@
 #                                                                             #
 ###############################################################################
 
-function zones_local_add() {
+function zones_management_init() {
 
-	decho "Adding zone \"local\""
+	chain_create MANAGEMENT
+	# Add rules for management hosts/subnets here
 
-	# Accept everything on lo
-	iptables -A INPUT  -i lo -j ACCEPT
-	iptables -A OUTPUT -o lo -j ACCEPT
+}
+
+function zones_management_insert() {
+
+	iptables "-A $1 -j MANAGEMENT"
 
 }

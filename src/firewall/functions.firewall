@@ -20,6 +20,7 @@
 ###############################################################################
 
 function firewall_init() {
+	decho "Initializing firewall interface."
 	iptables_init
 	firewall_tcp_state_flags
 	firewall_connection_tracking

@@ -21,9 +21,7 @@
 
 function macro() {
 	local file
-	file=$1
-
-	vecho "Parsing macro: $file"
+	file="macros/$1"
 
 	if _config_is_sqlite $file; then
 		macro_sqlite $file
@@ -61,5 +59,17 @@ function macro_parse() {
 
 		fi
 		[ -n "$STRING" ] && echo $STRING
+	done
+}
+
+function macro_add() {
+	local file
+	local line
+
+	file=$1
+	shift
+	
+	macro $file | while read line; do
+		iptables $line $@
 	done
 }
