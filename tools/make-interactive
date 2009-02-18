@@ -331,6 +331,9 @@ package*|pkg)
 		raw)
 			pkg_info $3
 			;;
+		wikigroup*)
+			pkg_list_groups_wiki
+			;;
 		wikiinfo)
 			shift 2
 			pkg_info_wiki $@

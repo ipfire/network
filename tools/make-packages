@@ -26,6 +26,21 @@ pkg_list_groups() {
 	grep ^GROUP $BASEDIR/lfs/* | awk '{ print $3 }' | sort | uniq
 }
 
+pkg_list_groups_wiki() {
+	for group in $(pkg_list_groups); do
+		echo "$group"
+		for package in $BASEDIR/lfs/*; do
+			(	unset NAME VERSION
+				eval $(pkg_info ${package})
+				if [ -n "$NAME" ] && [ "$RELEASE" != "-1" ] && [ "$GROUP" = "$group" ]; then
+					[ -n "$VERSION" ] && NAME="${NAME}-${VERSION}"
+					echo "  * [[.:package:$package|${NAME}]] - ${SHORT}"
+				fi
+			)
+		done
+	done
+}
+
 pkg_list_packages() {
 	echo "#### List of softwares used to build $NAME Version: $VERSION ####"
 	local package
@@ -33,9 +48,10 @@ pkg_list_packages() {
 		package=$(basename $i)
 		(	unset NAME VERSION
 			eval $(pkg_info ${package})
-			[ "$NAME" = "" ] && exit
-			printf "  * %-30s" ${NAME}-${VERSION}
-			echo "${SHORT}"
+			if [ -n "$NAME" ] && [ "$RELEASE" != "-1" ]; then
+				printf "  * %-30s" ${NAME}-${VERSION}
+				echo "${SHORT}"
+			fi
 		)
 	done
 }
@@ -47,8 +63,10 @@ pkg_list_packages_wiki() {
 		package=$(basename $i)
 		(	unset NAME VERSION
 			eval $(pkg_info ${package})
-			[ "$NAME" = "" ] && exit
-			echo "  * [[.:package:$package|${NAME}-${VERSION}]] - ${SHORT}"
+			if [ -n "$NAME" ] && [ "$RELEASE" != "-1" ]; then
+				[ -n "$VERSION" ] && NAME="${NAME}-${VERSION}"
+				echo "  * [[.:package:$package|${NAME}]] - ${SHORT}"
+			fi
 		)
 	done
 }

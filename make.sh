@@ -220,6 +220,7 @@ ipfire_build() {
 	ipfire_make linux-atm
 	ipfire_make ppp
 	ipfire_make rp-pppoe
+	ipfire_make pptp
 	ipfire_make dhcp
 	ipfire_make iptables
 	ipfire_make libnfnetlink
@@ -277,7 +278,7 @@ ipfire_build() {
 	### Building vpn stuff
 	#
 	ipfire_make strongswan
-	#ipfire_make openvpn
+	ipfire_make openvpn
 	
 	### Building filesystem stuff
 	#
@@ -327,7 +328,7 @@ ipfire_build() {
 	ipfire_make memtest86+
 	ipfire_make quagga
 	#ipfire_make mISDN
-	#ipfire_make wireless
+	ipfire_make wireless-tools
 
 	ipfire_make pyfire
 	ipfire_make firewall
