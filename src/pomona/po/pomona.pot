@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-01-29 01:02+0100\n"
+"POT-Creation-Date: 2009-02-17 19:28+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,31 +16,32 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../autopart.py:751
+#: ../autopart.py:872
 #, python-format
 msgid ""
-"Could not allocate cylinder-based partitions as primary partitions.\n"
+"Error resizing partition %s.\n"
 "\n"
 "%s"
 msgstr ""
 
-#: ../autopart.py:756
+#: ../autopart.py:875
 #, python-format
-msgid ""
-"Could not allocate partitions as primary partitions.\n"
-"\n"
-"%s"
+msgid "Start of partition %s was moved when resizing"
 msgstr ""
 
-#: ../autopart.py:761
-#, python-format
-msgid ""
-"Could not allocate cylinder-based partitions.\n"
-"\n"
-"%s"
+#: ../autopart.py:967
+msgid "Could not allocate cylinder-based partitions as primary partitions.\n"
 msgstr ""
 
-#: ../autopart.py:800
+#: ../autopart.py:972
+msgid "Could not allocate partitions as primary partitions.\n"
+msgstr ""
+
+#: ../autopart.py:977
+msgid "Could not allocate cylinder-based partitions.\n"
+msgstr ""
+
+#: ../autopart.py:1042
 #, python-format
 msgid ""
 "Boot partition %s doesn't belong to a BSD disk label. SRM won't be able to "
@@ -48,7 +49,7 @@ msgid ""
 "change this device disk label to BSD."
 msgstr ""
 
-#: ../autopart.py:802
+#: ../autopart.py:1044
 #, python-format
 msgid ""
 "Boot partition %s doesn't belong to a disk with enough free space at its "
@@ -56,56 +57,106 @@ msgid ""
 "of free space at the beginning of the disk that contains /boot"
 msgstr ""
 
-#: ../autopart.py:804
+#: ../autopart.py:1046
 #, python-format
 msgid ""
 "Boot partition %s isn't a VFAT partition.  EFI won't be able to boot from "
 "this partition."
 msgstr ""
 
-#: ../autopart.py:806
+#: ../autopart.py:1048
 msgid ""
 "The boot partition must entirely be in the first 4GB of the disk.  "
 "OpenFirmware won't be able to boot this installation."
 msgstr ""
 
-#: ../autopart.py:813
+#: ../autopart.py:1050
+#, python-format
+msgid ""
+"Boot partition %s is not a Linux filesystem, such as ext3.  The system won't "
+"be able to boot from this partition."
+msgstr ""
+
+#: ../autopart.py:1053
 #, python-format
 msgid ""
 "Boot partition %s may not meet booting constraints for your architecture."
 msgstr ""
 
-#: ../autopart.py:951
+#: ../autopart.py:1078
+#, python-format
+msgid ""
+"Adding this partition would not leave enough disk space for already "
+"allocated logical volumes in %s."
+msgstr ""
+
+#: ../autopart.py:1231
 msgid "Requested Partition Does Not Exist"
 msgstr ""
 
-#: ../autopart.py:952
+#: ../autopart.py:1232
 #, python-format
 msgid ""
 "Unable to locate partition %s to use for %s.\n"
 "\n"
-"Press 'OK' to reboot your system."
+"Press 'OK' to exit the installer."
 msgstr ""
 
-#: ../autopart.py:997 ../autopart.py:1029
+#: ../autopart.py:1257
+msgid "Requested Raid Device Does Not Exist"
+msgstr ""
+
+#: ../autopart.py:1258
+#, python-format
+msgid ""
+"Unable to locate raid device %s to use for %s.\n"
+"\n"
+"Press 'OK' to exit the installer."
+msgstr ""
+
+#: ../autopart.py:1287
+msgid "Requested Volume Group Does Not Exist"
+msgstr ""
+
+#: ../autopart.py:1288
+#, python-format
+msgid ""
+"Unable to locate volume group %s to use for %s.\n"
+"\n"
+"Press 'OK' to exit the installer."
+msgstr ""
+
+#: ../autopart.py:1325
+msgid "Requested Logical Volume Does Not Exist"
+msgstr ""
+
+#: ../autopart.py:1326
+#, python-format
+msgid ""
+"Unable to locate logical volume %s to use for %s.\n"
+"\n"
+"Press 'OK' to exit the installer."
+msgstr ""
+
+#: ../autopart.py:1460 ../autopart.py:1507
 msgid "Automatic Partitioning Errors"
 msgstr ""
 
-#: ../autopart.py:998
+#: ../autopart.py:1461
 #, python-format
 msgid ""
 "The following errors occurred with your partitioning:\n"
 "\n"
 "%s\n"
 "\n"
-"Press 'OK' to reboot your system."
+"Press 'OK' to exit the installer."
 msgstr ""
 
-#: ../autopart.py:1007
+#: ../autopart.py:1471
 msgid "Warnings During Automatic Partitioning"
 msgstr ""
 
-#: ../autopart.py:1008
+#: ../autopart.py:1472
 #, python-format
 msgid ""
 "Following warnings occurred during automatic partitioning:\n"
@@ -113,26 +164,33 @@ msgid ""
 "%s"
 msgstr ""
 
-#: ../autopart.py:1016 ../tui_partition.py:177
+#: ../autopart.py:1486 ../autopart.py:1503
+msgid ""
+"\n"
+"\n"
+"Press 'OK' to exit the installer."
+msgstr ""
+
+#: ../autopart.py:1487 ../tui_partition.py:177
 msgid "Error Partitioning"
 msgstr ""
 
-#: ../autopart.py:1017
+#: ../autopart.py:1488
 #, python-format
 msgid ""
 "Could not allocate requested partitions: \n"
 "\n"
-"%s."
+"%s.%s"
 msgstr ""
 
-#: ../autopart.py:1027
+#: ../autopart.py:1505
 msgid ""
 "\n"
 "\n"
 "Press 'OK' to choose a different partitioning option."
 msgstr ""
 
-#: ../autopart.py:1030
+#: ../autopart.py:1508
 #, python-format
 msgid ""
 "The following errors occurred with your partitioning:\n"
@@ -143,13 +201,15 @@ msgid ""
 "installation. %s"
 msgstr ""
 
-#: ../autopart.py:1105 ../bootloader.py:745 ../partedUtils.py:230
-#: ../partedUtils.py:531 ../partedUtils.py:568 ../tui_bootloader.py:119
-#: ../tui_bootloader.py:439 ../tui_partition.py:182
-msgid "Warning"
+#: ../autopart.py:1519
+msgid "Unrecoverable Error"
 msgstr ""
 
-#: ../autopart.py:1126
+#: ../autopart.py:1520
+msgid "Your system will now be rebooted."
+msgstr ""
+
+#: ../autopart.py:1623
 msgid ""
 "Automatic Partitioning sets partitions based on the selected installation "
 "type. You also can customize the partitions once they have been created.\n"
@@ -159,97 +219,111 @@ msgid ""
 "mount points, partition sizes, and more."
 msgstr ""
 
-#: ../autopart.py:1137
+#: ../autopart.py:1634
 msgid ""
 "Before automatic partitioning can be set up by the installation program, you "
 "must choose how to use the space on your hard drives."
 msgstr ""
 
-#: ../autopart.py:1142
+#: ../autopart.py:1639
 msgid "Remove all partitions on this system"
 msgstr ""
 
-#: ../autopart.py:1144
-#, python-format
-msgid ""
-"You have chosen to remove all partitions (ALL DATA) on the following drives:%"
-"s\n"
-"Are you sure you want to do this?"
+#: ../autopart.py:1640
+msgid "Remove all Linux partitions on this system"
 msgstr ""
 
-#: ../bootloader.py:696
+#: ../autopart.py:1641
+msgid "Keep all partitions and use existing free space"
+msgstr ""
+
+#: ../bootloader.py:697
 msgid "Bootloader"
 msgstr ""
 
-#: ../bootloader.py:696
+#: ../bootloader.py:697
 msgid "Installing bootloader..."
 msgstr ""
 
-#: ../bootloader.py:746
+#: ../bootloader.py:746 ../partedUtils.py:328 ../partedUtils.py:851
+#: ../partedUtils.py:979 ../tui_bootloader.py:119 ../tui_bootloader.py:439
+#: ../tui_partition.py:182
+msgid "Warning"
+msgstr ""
+
+#: ../bootloader.py:747
 msgid ""
 "No kernel packages were installed on your system.  Your boot loader "
 "configuration will not be changed."
 msgstr ""
 
-#: ../constants.py:41
-#, python-format
+#: ../constants.py:61
 msgid ""
 "An unhandled exception has occurred.  This is most likely a bug.  Please "
-"save a copy of the detailed exception and file a bug report against pomona "
-"at %s"
+"save a copy of the detailed exception and file a bug report"
 msgstr ""
 
-#: ../constants.py:83 ../installer.py:93 ../tui_confirm.py:28
+#: ../constants.py:67
+msgid " with the provider of this software."
+msgstr ""
+
+#: ../constants.py:71
+#, python-format
+msgid " against pomona at %s"
+msgstr ""
+
+#: ../constants.py:89 ../installer.py:93 ../tui_confirm.py:28
 #: ../tui_network.py:65 ../tui_network.py:74 ../tui.py:224 ../tui.py:390
 msgid "OK"
 msgstr ""
 
-#: ../constants.py:87 ../partIntfHelpers.py:150 ../partIntfHelpers.py:392
+#: ../constants.py:93 ../partIntfHelpers.py:245 ../partIntfHelpers.py:536
 #: ../tui_bootloader.py:194 ../tui.py:103 ../tui.py:104 ../tui.py:393
 msgid "Cancel"
 msgstr ""
 
-#: ../constants.py:91 ../tui_confirm.py:28 ../tui_confirm.py:30
+#: ../constants.py:97 ../partitions.py:130 ../partitions.py:260
+#: ../tui_confirm.py:28 ../tui_confirm.py:30
 msgid "Back"
 msgstr ""
 
-#: ../constants.py:95 ../tui_bootloader.py:67 ../tui.py:388
+#: ../constants.py:101 ../tui_bootloader.py:67 ../tui.py:388
 msgid "Yes"
 msgstr ""
 
-#: ../constants.py:99 ../tui_bootloader.py:67 ../tui.py:389
+#: ../constants.py:105 ../tui_bootloader.py:67 ../tui.py:389
 msgid "No"
 msgstr ""
 
-#: ../constants.py:103 ../tui_bootloader.py:270 ../tui_partition.py:849
+#: ../constants.py:109 ../tui_bootloader.py:270 ../tui_partition.py:849
 msgid "Edit"
 msgstr ""
 
-#: ../fsset.py:422
+#: ../fsset.py:497
 msgid "Checking"
 msgstr ""
 
-#: ../fsset.py:423
+#: ../fsset.py:498
 #, python-format
 msgid "Checking filesystem on %s..."
 msgstr ""
 
-#: ../fsset.py:434
+#: ../fsset.py:509 ../fsset.py:944
 msgid "Resizing"
 msgstr ""
 
-#: ../fsset.py:435
+#: ../fsset.py:510 ../fsset.py:945
 #, python-format
 msgid "Resizing filesystem on %s..."
 msgstr ""
 
-#: ../fsset.py:578 ../fsset.py:1112 ../fsset.py:1143 ../fsset.py:1205
-#: ../fsset.py:1216 ../fsset.py:1270 ../fsset.py:1281 ../fsset.py:1303
-#: ../fsset.py:1352 ../fsset.py:1433 ../partIntfHelpers.py:289
+#: ../fsset.py:653 ../fsset.py:1536 ../fsset.py:1567 ../fsset.py:1643
+#: ../fsset.py:1711 ../fsset.py:1761 ../fsset.py:1850 ../fsset.py:1863
+#: ../partIntfHelpers.py:413
 msgid "Error"
 msgstr ""
 
-#: ../fsset.py:579
+#: ../fsset.py:654
 #, python-format
 msgid ""
 "An error occurred migrating %s to ext3.  It is possible to continue without "
@@ -258,32 +332,36 @@ msgid ""
 "Would you like to continue without migrating %s?"
 msgstr ""
 
-#: ../fsset.py:1046
+#: ../fsset.py:1413
+msgid "RAID Device"
+msgstr ""
+
+#: ../fsset.py:1416
 msgid "First sector of boot partition"
 msgstr ""
 
-#: ../fsset.py:1047
+#: ../fsset.py:1417
 msgid "Master Boot Record (MBR)"
 msgstr ""
 
-#: ../fsset.py:1113
+#: ../fsset.py:1537
 #, python-format
 msgid ""
 "An error occurred trying to initialize swap on device %s.  This problem is "
 "serious, and the install cannot continue.\n"
 "\n"
-"Press <Enter> to reboot your system."
+"Press <Enter> to exit the installer."
 msgstr ""
 
-#: ../fsset.py:1142
+#: ../fsset.py:1566
 msgid "Skip"
 msgstr ""
 
-#: ../fsset.py:1142 ../tui_complete.py:40
-msgid "Reboot"
+#: ../fsset.py:1566 ../fsset.py:1830 ../fsset.py:2581
+msgid "_Exit installer"
 msgstr ""
 
-#: ../fsset.py:1163
+#: ../fsset.py:1587
 #, python-format
 msgid ""
 "The swap device:\n"
@@ -295,11 +373,11 @@ msgid ""
 "installer will ignore it during the installation."
 msgstr ""
 
-#: ../fsset.py:1170
+#: ../fsset.py:1594
 msgid "Reformat"
 msgstr ""
 
-#: ../fsset.py:1174
+#: ../fsset.py:1598
 #, python-format
 msgid ""
 "The swap device:\n"
@@ -311,7 +389,7 @@ msgid ""
 "down your system rather than hibernating it."
 msgstr ""
 
-#: ../fsset.py:1182
+#: ../fsset.py:1606
 #, python-format
 msgid ""
 "The swap device:\n"
@@ -323,20 +401,29 @@ msgid ""
 "make sure the installer is set to format all swap partitions."
 msgstr ""
 
-#: ../fsset.py:1192
+#: ../fsset.py:1616
 msgid ""
 "\n"
 "\n"
 "Choose Skip if you want the installer to ignore this partition during the "
-"upgrade.  Choose Format to reformat the partition as swap space.  Choose "
-"Reboot to restart the system."
+"upgrade.  Choose Format to reformat the partition as swap space."
 msgstr ""
 
-#: ../fsset.py:1198
+#: ../fsset.py:1621
 msgid "Format"
 msgstr ""
 
-#: ../fsset.py:1206
+#: ../fsset.py:1627
+#, python-format
+msgid ""
+"Error enabling swap device %s: %s\n"
+"\n"
+"Devices in /etc/fstab should be specified by label, not by device name.\n"
+"\n"
+"Press OK to exit the installer."
+msgstr ""
+
+#: ../fsset.py:1632
 #, python-format
 msgid ""
 "Error enabling swap device %s: %s\n"
@@ -344,122 +431,107 @@ msgid ""
 "The /etc/fstab on your upgrade partition does not reference a valid swap "
 "partition.\n"
 "\n"
-"Press OK to reboot your system."
+"Press OK to exit the installer"
 msgstr ""
 
-#: ../fsset.py:1217
+#: ../fsset.py:1638
 #, python-format
 msgid ""
 "Error enabling swap device %s: %s\n"
 "\n"
 "This most likely means this swap partition has not been initialized.\n"
 "\n"
-"Press OK to reboot your system."
+"Press OK to exit the installer."
 msgstr ""
 
-#: ../fsset.py:1271
-#, python-format
-msgid ""
-"Bad blocks have been detected on device /dev/%s. We do not recommend you use "
-"this device.\n"
-"\n"
-"Press <Enter> to reboot your system"
-msgstr ""
-
-#: ../fsset.py:1282
-#, python-format
-msgid ""
-"An error occurred searching for bad blocks on %s.  This problem is serious, "
-"and the install cannot continue.\n"
-"\n"
-"Press <Enter> to reboot your system."
-msgstr ""
-
-#: ../fsset.py:1304
+#: ../fsset.py:1712
 #, python-format
 msgid ""
 "An error occurred trying to format %s.  This problem is serious, and the "
 "install cannot continue.\n"
 "\n"
-"Press <Enter> to reboot your system."
+"Press <Enter> to exit the installer."
 msgstr ""
 
-#: ../fsset.py:1353
+#: ../fsset.py:1762
 #, python-format
 msgid ""
 "An error occurred trying to migrate %s.  This problem is serious, and the "
 "install cannot continue.\n"
 "\n"
-"Press <Enter> to reboot your system."
+"Press <Enter> to exit the installer."
 msgstr ""
 
-#: ../fsset.py:1380 ../fsset.py:1389
+#: ../fsset.py:1798 ../fsset.py:1807
 msgid "Invalid mount point"
 msgstr ""
 
-#: ../fsset.py:1381
+#: ../fsset.py:1799
 #, python-format
 msgid ""
 "An error occurred when trying to create %s.  Some element of this path is "
 "not a directory. This is a fatal error and the install cannot continue.\n"
 "\n"
-"Press <Enter> to reboot your system."
+"Press <Enter> to exit the installer."
 msgstr ""
 
-#: ../fsset.py:1390
+#: ../fsset.py:1808
 #, python-format
 msgid ""
 "An error occurred when trying to create %s: %s.  This is a fatal error and "
 "the install cannot continue.\n"
 "\n"
-"Press <Enter> to reboot your system."
+"Press <Enter> to exit the installer."
 msgstr ""
 
-#: ../fsset.py:1403
+#: ../fsset.py:1822
 msgid "Unable to mount filesystem"
 msgstr ""
 
-#: ../fsset.py:1404
+#: ../fsset.py:1823
 #, python-format
 msgid ""
 "An error occurred mounting device %s as %s.  You may continue installation, "
 "but there may be problems."
 msgstr ""
 
-#: ../fsset.py:1411 ../fsset.py:1820 ../fsset.py:1827 ../packages.py:131
-#: ../partedUtils.py:578 ../tui_confirm.py:37
-msgid "_Reboot"
-msgstr ""
-
-#: ../fsset.py:1411 ../partedUtils.py:578
+#: ../fsset.py:1831 ../partedUtils.py:982
 msgid "_Continue"
 msgstr ""
 
-#: ../fsset.py:1419
+#: ../fsset.py:1839
 #, python-format
 msgid ""
 "Error mounting device %s as %s: %s\n"
 "\n"
-"Devices in /etc/fstab should be specified by label, not by device name.\n"
+"Devices in /etc/fstab should be specified by label or UUID, not by device "
+"name.\n"
 "\n"
-"Press OK to reboot your system."
+"Press OK to exit the installer."
 msgstr ""
 
-#: ../fsset.py:1426
+#: ../fsset.py:1846
 #, python-format
 msgid ""
 "Error mounting device %s as %s: %s\n"
 "\n"
-"This most likely means this partition has not been formatted.\n"
-"\n"
-"Press OK to reboot your system."
+"Press OK to exit the installer."
 msgstr ""
 
-#: ../fsset.py:1812
+#: ../fsset.py:1864
+msgid ""
+"Error finding / entry.\n"
+"\n"
+"This is most likely means that your fstab is incorrect.\n"
+"\n"
+"Press OK to exit the installer."
+msgstr ""
+
+#: ../fsset.py:2573
 msgid "Duplicate Labels"
 msgstr ""
 
-#: ../fsset.py:1813
+#: ../fsset.py:2574
 #, python-format
 msgid ""
 "Multiple devices on your system are labelled %s.  Labels across devices must "
@@ -468,22 +540,11 @@ msgid ""
 "Please fix this problem and restart the installation process."
 msgstr ""
 
-#: ../fsset.py:1822
-msgid "Invalid Label"
-msgstr ""
-
-#: ../fsset.py:1823
-#, python-format
-msgid ""
-"An invalid label was found on device %s.  Please fix this problem and "
-"restart the installation process."
-msgstr ""
-
-#: ../fsset.py:2049
+#: ../fsset.py:2739
 msgid "Formatting"
 msgstr ""
 
-#: ../fsset.py:2050
+#: ../fsset.py:2740
 #, python-format
 msgid "Formatting %s file system..."
 msgstr ""
@@ -835,6 +896,10 @@ msgstr ""
 msgid "_Back"
 msgstr ""
 
+#: ../packages.py:131 ../partedUtils.py:981 ../tui_confirm.py:37
+msgid "_Reboot"
+msgstr ""
+
 #: ../packages.py:132
 msgid "Rebooting System"
 msgstr ""
@@ -899,11 +964,11 @@ msgstr ""
 msgid "Installation Progress"
 msgstr ""
 
-#: ../partedUtils.py:191 ../tui_partition.py:408
+#: ../partedUtils.py:239 ../tui_partition.py:408
 msgid "Foreign"
 msgstr ""
 
-#: ../partedUtils.py:231
+#: ../partedUtils.py:329
 #, python-format
 msgid ""
 "/dev/%s currently has a %s partition layout.  To use this drive for the "
@@ -913,19 +978,21 @@ msgid ""
 "Would you like to re-initialize this drive?"
 msgstr ""
 
-#: ../partedUtils.py:239
+#: ../partedUtils.py:338
 msgid "_Ignore drive"
 msgstr ""
 
-#: ../partedUtils.py:240
+#: ../partedUtils.py:339
 msgid "_Re-initialize drive"
 msgstr ""
 
-#: ../partedUtils.py:532
+#: ../partedUtils.py:842
 #, python-format
 msgid ""
-"The partition table on device %s was unreadable. To create new partitions it "
-"must be initialized, causing the loss of ALL DATA on this drive.\n"
+"The partition table on device %s (%s %-0.f MB) was unreadable.\n"
+"\n"
+"To create new partitions it must be initialized, causing the loss of ALL "
+"DATA on this drive.\n"
 "\n"
 "This operation will override any previous installation choices about which "
 "drives to ignore.\n"
@@ -933,7 +1000,7 @@ msgid ""
 "Would you like to initialize this drive, erasing ALL DATA?"
 msgstr ""
 
-#: ../partedUtils.py:569
+#: ../partedUtils.py:972
 #, python-format
 msgid ""
 "The drive /dev/%s has more than 15 partitions on it.  The SCSI subsystem in "
@@ -942,75 +1009,136 @@ msgid ""
 "any partitions beyond /dev/%s15 in %s"
 msgstr ""
 
-#: ../partedUtils.py:659
+#: ../partedUtils.py:1056
 msgid "No Drives Found"
 msgstr ""
 
-#: ../partedUtils.py:660
+#: ../partedUtils.py:1057
 msgid ""
 "An error has occurred - no valid devices were found on which to create new "
 "file systems. Please check your hardware for the cause of this problem."
 msgstr ""
 
+#: ../partIntfHelpers.py:43
+msgid "Please enter a volume group name."
+msgstr ""
+
+#: ../partIntfHelpers.py:47
+msgid "Volume Group Names must be less than 128 characters"
+msgstr ""
+
 #: ../partIntfHelpers.py:50
+#, python-format
+msgid "Error - the volume group name %s is not valid."
+msgstr ""
+
+#: ../partIntfHelpers.py:55
+msgid ""
+"Error - the volume group name contains illegal characters or spaces.  "
+"Acceptable characters are letters, digits, '.' or '_'."
+msgstr ""
+
+#: ../partIntfHelpers.py:65
+msgid "Please enter a logical volume name."
+msgstr ""
+
+#: ../partIntfHelpers.py:69
+msgid "Logical Volume Names must be less than 128 characters"
+msgstr ""
+
+#: ../partIntfHelpers.py:73
+#, python-format
+msgid "Error - the logical volume name %s is not valid."
+msgstr ""
+
+#: ../partIntfHelpers.py:79
+msgid ""
+"Error - the logical volume name contains illegal characters or spaces.  "
+"Acceptable characters are letters, digits, '.' or '_'."
+msgstr ""
+
+#: ../partIntfHelpers.py:103
 #, python-format
 msgid ""
 "The mount point %s is invalid.  Mount points must start with '/' and cannot "
 "end with '/', and must contain printable characters and no spaces."
 msgstr ""
 
-#: ../partIntfHelpers.py:57
+#: ../partIntfHelpers.py:110
 msgid "Please specify a mount point for this partition."
 msgstr ""
 
-#: ../partIntfHelpers.py:74 ../partIntfHelpers.py:80 ../partIntfHelpers.py:90
-#: ../partIntfHelpers.py:111
+#: ../partIntfHelpers.py:120
+#, python-format
+msgid "This partition is part of the RAID device /dev/md%s."
+msgstr ""
+
+#: ../partIntfHelpers.py:123
+msgid "This partition is part of a RAID device."
+msgstr ""
+
+#: ../partIntfHelpers.py:128
+#, python-format
+msgid "This partition is part of the LVM volume group '%s'."
+msgstr ""
+
+#: ../partIntfHelpers.py:131
+msgid "This partition is part of a LVM volume group."
+msgstr ""
+
+#: ../partIntfHelpers.py:146 ../partIntfHelpers.py:154
+#: ../partIntfHelpers.py:161 ../partIntfHelpers.py:171
+#: ../partIntfHelpers.py:195
 msgid "Unable To Delete"
 msgstr ""
 
-#: ../partIntfHelpers.py:75
+#: ../partIntfHelpers.py:147
 msgid "You must first select a partition to delete."
 msgstr ""
 
-#: ../partIntfHelpers.py:81
+#: ../partIntfHelpers.py:155
 msgid "You cannot delete free space."
 msgstr ""
 
-#: ../partIntfHelpers.py:91
+#: ../partIntfHelpers.py:162
+msgid "You cannot delete a partition of a LDL formatted DASD."
+msgstr ""
+
+#: ../partIntfHelpers.py:172
 #, python-format
 msgid ""
 "You cannot delete this partition, as it is an extended partition which "
 "contains %s"
 msgstr ""
 
-#: ../partIntfHelpers.py:106
+#: ../partIntfHelpers.py:190
 msgid "This partition is holding the data for the hard drive install."
 msgstr ""
 
-#: ../partIntfHelpers.py:112
+#: ../partIntfHelpers.py:196
 msgid ""
 "You cannot delete this partition:\n"
 "\n"
 msgstr ""
 
-#: ../partIntfHelpers.py:146 ../partIntfHelpers.py:391
+#: ../partIntfHelpers.py:241 ../partIntfHelpers.py:535
 msgid "Confirm Delete"
 msgstr ""
 
-#: ../partIntfHelpers.py:147
+#: ../partIntfHelpers.py:242
 #, python-format
 msgid "You are about to delete all partitions on the device '/dev/%s'."
 msgstr ""
 
-#: ../partIntfHelpers.py:150 ../partIntfHelpers.py:392
+#: ../partIntfHelpers.py:245 ../partIntfHelpers.py:536
 msgid "_Delete"
 msgstr ""
 
-#: ../partIntfHelpers.py:206
+#: ../partIntfHelpers.py:302
 msgid "Notice"
 msgstr ""
 
-#: ../partIntfHelpers.py:207
+#: ../partIntfHelpers.py:303
 #, python-format
 msgid ""
 "The following partitions were not deleted because they are in use:\n"
@@ -1018,33 +1146,33 @@ msgid ""
 "%s"
 msgstr ""
 
-#: ../partIntfHelpers.py:222 ../partIntfHelpers.py:238
-#: ../partIntfHelpers.py:249
+#: ../partIntfHelpers.py:319 ../partIntfHelpers.py:332
+#: ../partIntfHelpers.py:358 ../partIntfHelpers.py:369
 msgid "Unable To Edit"
 msgstr ""
 
-#: ../partIntfHelpers.py:223
+#: ../partIntfHelpers.py:320
 msgid "You must select a partition to edit"
 msgstr ""
 
-#: ../partIntfHelpers.py:239
+#: ../partIntfHelpers.py:332 ../partIntfHelpers.py:370
+msgid ""
+"You cannot edit this partition:\n"
+"\n"
+msgstr ""
+
+#: ../partIntfHelpers.py:359
 #, python-format
 msgid ""
 "You cannot edit this partition, as it is an extended partition which "
 "contains %s"
 msgstr ""
 
-#: ../partIntfHelpers.py:250
-msgid ""
-"You cannot edit this partition:\n"
-"\n"
-msgstr ""
-
-#: ../partIntfHelpers.py:272
+#: ../partIntfHelpers.py:391
 msgid "Format as Swap?"
 msgstr ""
 
-#: ../partIntfHelpers.py:273
+#: ../partIntfHelpers.py:392
 #, python-format
 msgid ""
 "/dev/%s has a partition type of 0x82 (Linux swap) but does not appear to be "
@@ -1053,38 +1181,38 @@ msgid ""
 "Would you like to format this partition as a swap partition?"
 msgstr ""
 
-#: ../partIntfHelpers.py:288
+#: ../partIntfHelpers.py:412
 #, python-format
 msgid "You need to select at least one hard drive to install %s."
 msgstr ""
 
-#: ../partIntfHelpers.py:293
+#: ../partIntfHelpers.py:417
 msgid ""
 "You have chosen to use a pre-existing partition for this installation "
 "without formatting it. We recommend that you format this partition to make "
 "sure files from a previous operating system installation do not cause "
 "problems with this installation of Linux. However, if this partition "
-"contains files that you need to keep, such as home directories, then  "
+"contains files that you need to keep, such as home directories, then "
 "continue without formatting this partition."
 msgstr ""
 
-#: ../partIntfHelpers.py:301
+#: ../partIntfHelpers.py:425
 msgid "Format?"
 msgstr ""
 
-#: ../partIntfHelpers.py:302
+#: ../partIntfHelpers.py:425
 msgid "_Modify Partition"
 msgstr ""
 
-#: ../partIntfHelpers.py:302
+#: ../partIntfHelpers.py:425
 msgid "Do _Not Format"
 msgstr ""
 
-#: ../partIntfHelpers.py:311
+#: ../partIntfHelpers.py:433
 msgid "Error with Partitioning"
 msgstr ""
 
-#: ../partIntfHelpers.py:312
+#: ../partIntfHelpers.py:434
 #, python-format
 msgid ""
 "The following critical errors exist with your requested partitioning scheme. "
@@ -1093,11 +1221,11 @@ msgid ""
 "%s"
 msgstr ""
 
-#: ../partIntfHelpers.py:326
+#: ../partIntfHelpers.py:448
 msgid "Partitioning Warning"
 msgstr ""
 
-#: ../partIntfHelpers.py:327
+#: ../partIntfHelpers.py:449
 #, python-format
 msgid ""
 "The following warnings exist with your requested partition scheme.\n"
@@ -1107,45 +1235,62 @@ msgid ""
 "Would you like to continue with your requested partitioning scheme?"
 msgstr ""
 
-#: ../partIntfHelpers.py:340
+#: ../partIntfHelpers.py:463
 msgid ""
 "The following pre-existing partitions have been selected to be formatted, "
 "destroying all data."
 msgstr ""
 
-#: ../partIntfHelpers.py:342
+#: ../partIntfHelpers.py:466
 msgid ""
 "Select 'Yes' to continue and format these partitions, or 'No' to go back and "
 "change these settings."
 msgstr ""
 
-#: ../partIntfHelpers.py:348
+#: ../partIntfHelpers.py:472
 msgid "Format Warning"
 msgstr ""
 
-#: ../partIntfHelpers.py:387
+#: ../partIntfHelpers.py:520
+#, python-format
+msgid ""
+"You are about to delete the volume group \"%s\".\n"
+"\n"
+"ALL logical volumes in this volume group will be lost!"
+msgstr ""
+
+#: ../partIntfHelpers.py:524
+#, python-format
+msgid "You are about to delete the logical volume \"%s\"."
+msgstr ""
+
+#: ../partIntfHelpers.py:527
+msgid "You are about to delete a RAID device."
+msgstr ""
+
+#: ../partIntfHelpers.py:530
 #, python-format
 msgid "You are about to delete the /dev/%s partition."
 msgstr ""
 
-#: ../partIntfHelpers.py:389
+#: ../partIntfHelpers.py:533
 msgid "The partition you selected will be deleted."
 msgstr ""
 
-#: ../partIntfHelpers.py:398
+#: ../partIntfHelpers.py:543
 msgid "Confirm Reset"
 msgstr ""
 
-#: ../partIntfHelpers.py:399
+#: ../partIntfHelpers.py:544
 msgid ""
 "Are you sure you want to reset the partition table to its original state?"
 msgstr ""
 
-#: ../partitioning.py:36
+#: ../partitioning.py:36 ../partitions.py:81
 msgid "Installation cannot continue."
 msgstr ""
 
-#: ../partitioning.py:37
+#: ../partitioning.py:37 ../partitions.py:82
 msgid ""
 "The partitioning options you have chosen have already been activated. You "
 "can no longer return to the disk editing screen. Would you like to continue "
@@ -1163,117 +1308,213 @@ msgid ""
 "disk immediately. Is that OK?"
 msgstr ""
 
-#: ../partitions.py:311
+#: ../partitions.py:122
+msgid "Encrypt device?"
+msgstr ""
+
+#: ../partitions.py:123
+msgid ""
+"You specified block device encryption should be enabled, but you have not "
+"supplied a passphrase. If you do not go back and provide a passphrase, block "
+"device encryption will be disabled."
+msgstr ""
+
+#: ../partitions.py:130 ../partitions.py:260
+msgid "Continue"
+msgstr ""
+
+#: ../partitions.py:151
+msgid "Writing partitioning to disk"
+msgstr ""
+
+#: ../partitions.py:152
+msgid ""
+"The partitioning options you have selected will now be written to disk.  Any "
+"data on deleted or reformatted partitions will be lost."
+msgstr ""
+
+#: ../partitions.py:157
+msgid "Go _back"
+msgstr ""
+
+#: ../partitions.py:158
+msgid "_Write changes to disk"
+msgstr ""
+
+#: ../partitions.py:265
+msgid "Confirm"
+msgstr ""
+
+#: ../partitions.py:266
+#, python-format
+msgid ""
+"Are you sure you want to skip entering a passphrase for device %s?\n"
+"\n"
+"If you skip this step the device's contents will not be available during "
+"installation."
+msgstr ""
+
+#: ../partitions.py:1077
 #, python-format
 msgid ""
 "You have not defined a root partition (/), which is required for "
 "installation of %s to continue."
 msgstr ""
 
-#: ../partitions.py:316
+#: ../partitions.py:1082
 #, python-format
 msgid ""
 "Your root partition is less than 250 megabytes which is usually too small to "
 "install %s."
 msgstr ""
 
-#: ../partitions.py:333
-msgid ""
-"Your boot partition isn't on one of the first four partitions and thus won't "
-"be bootable."
-msgstr ""
-
-#: ../partitions.py:342
+#: ../partitions.py:1108
 #, python-format
 msgid ""
 "Your %s partition is less than %s megabytes which is lower than recommended "
 "for a normal %s install."
 msgstr ""
 
-#: ../partitions.py:374
+#: ../partitions.py:1142
 msgid ""
 "Installing on a USB device.  This may or may not produce a working system."
 msgstr ""
 
-#: ../partitions.py:378
+#: ../partitions.py:1145
 msgid ""
 "Installing on a FireWire device.  This may or may not produce a working "
 "system."
 msgstr ""
 
-#: ../partitions.py:391
+#: ../partitions.py:1155
+msgid "Bootable partitions can only be on RAID1 devices."
+msgstr ""
+
+#: ../partitions.py:1160
+msgid "Bootable partitions cannot be on a logical volume."
+msgstr ""
+
+#: ../partitions.py:1166
+msgid "Bootable partitions cannot be on a RAID device."
+msgstr ""
+
+#: ../partitions.py:1171 ../partitions.py:1177
+#, python-format
+msgid "Bootable partitions cannot be on an %s filesystem."
+msgstr ""
+
+#: ../partitions.py:1181
+msgid "Bootable partitions cannot be on an encrypted block device"
+msgstr ""
+
+#: ../partitions.py:1185
 msgid ""
 "You have not specified a swap partition.  Although not strictly required in "
 "all cases, it will significantly improve performance for most installations."
 msgstr ""
 
-#: ../partitions.py:398
+#: ../partitions.py:1192
 #, python-format
 msgid ""
 "You have specified more than 32 swap devices.  The kernel for %s only "
 "supports 32 swap devices."
 msgstr ""
 
-#: ../partitions.py:409
+#: ../partitions.py:1203
 #, python-format
 msgid ""
 "You have allocated less swap space (%dM) than available RAM (%dM) on your "
 "system.  This could negatively impact performance."
 msgstr ""
 
-#: ../partitions.py:485
+#: ../partitions.py:1508
 msgid "the partition in use by the installer."
 msgstr ""
 
-#: ../partRequests.py:182
-#, python-format
-msgid ""
-"This mount point is invalid. The %s directory must be on the / file system."
+#: ../partitions.py:1511
+msgid "a partition which is a member of a RAID array."
 msgstr ""
 
-#: ../partRequests.py:185
+#: ../partitions.py:1514
+msgid "a partition which is a member of a LVM Volume Group."
+msgstr ""
+
+#: ../partRequests.py:275 ../partRequests.py:278
+#, python-format
+msgid "The mount point %s must be formatted during live CD installs."
+msgstr ""
+
+#: ../partRequests.py:284
+#, python-format
+msgid ""
+"This mount point is invalid.  The %s directory must be on the / file system."
+msgstr ""
+
+#: ../partRequests.py:287
 #, python-format
 msgid ""
 "The mount point %s cannot be used.  It must be a symbolic link for proper "
 "system operation.  Please select a different mount point."
 msgstr ""
 
-#: ../partRequests.py:192
+#: ../partRequests.py:296
 msgid "This mount point must be on a linux file system."
 msgstr ""
 
-#: ../partRequests.py:212
+#: ../partRequests.py:317
 #, python-format
 msgid ""
 "The mount point \"%s\" is already in use, please choose a different mount "
 "point."
 msgstr ""
 
-#: ../partRequests.py:226
+#: ../partRequests.py:331
 #, python-format
 msgid ""
 "The size of the %s partition (%10.2f MB) exceeds the maximum size of %10.2f "
 "MB."
 msgstr ""
 
-#: ../partRequests.py:414
+#: ../partRequests.py:539
 #, python-format
 msgid ""
 "The size of the requested partition (size = %s MB) exceeds the maximum size "
 "of %s MB."
 msgstr ""
 
-#: ../partRequests.py:419
+#: ../partRequests.py:544
 #, python-format
 msgid "The size of the requested partition is negative! (size = %s MB)"
 msgstr ""
 
-#: ../partRequests.py:423
+#: ../partRequests.py:548
 msgid "Partitions can't start below the first cylinder."
 msgstr ""
 
-#: ../partRequests.py:426
+#: ../partRequests.py:551
 msgid "Partitions can't end on a negative cylinder."
+msgstr ""
+
+#: ../partRequests.py:753
+msgid "No members in RAID request, or not RAID level specified."
+msgstr ""
+
+#: ../partRequests.py:758
+#, python-format
+msgid "A RAID device of type %s requires at least %s members."
+msgstr ""
+
+#: ../partRequests.py:767
+#, python-format
+msgid ""
+"This RAID device can have a maximum of %s spares. To have more spares you "
+"will need to add members to the RAID device."
+msgstr ""
+
+#: ../partRequests.py:1033
+msgid ""
+"Logical volume size must be larger than the volume group's physical extent "
+"size."
 msgstr ""
 
 #: ../tui_bootloader.py:27
@@ -1456,6 +1697,10 @@ msgstr ""
 
 #: ../tui_complete.py:39
 msgid "Complete"
+msgstr ""
+
+#: ../tui_complete.py:40
+msgid "Reboot"
 msgstr ""
 
 #: ../tui_confirm.py:23
@@ -1757,11 +2002,11 @@ msgstr ""
 msgid "<Space>,<+>,<-> selection   |   <F2> Add drive   |   <F12> next screen"
 msgstr ""
 
-#: ../tui_partition.py:1029
+#: ../tui_partition.py:1026
 msgid "Review Partition Layout"
 msgstr ""
 
-#: ../tui_partition.py:1030
+#: ../tui_partition.py:1027
 msgid "Review and modify partitioning layout?"
 msgstr ""
 

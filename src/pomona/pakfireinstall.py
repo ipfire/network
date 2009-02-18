@@ -34,7 +34,7 @@ log = logging.getLogger("pomona")
 import urlparse
 urlparse.uses_fragment.append('media')
 
-import inutil
+import iutil
 import isys
 import pyfire
 

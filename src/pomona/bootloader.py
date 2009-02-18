@@ -1,5 +1,5 @@
 #
-# bootloader.py: anaconda bootloader shims
+# bootloader.py: pomona bootloader shims
 #
 # Erik Troan <ewt@redhat.com>
 # Jeremy Katz <katzj@redhat.com>
@@ -18,7 +18,7 @@ import isys
 import partedUtils
 import os
 import sys
-import inutil
+import iutil
 import string
 import crypt
 import random
@@ -64,23 +64,9 @@ def getBootDevString(line):
 # there's no guarantee that data is written to the disk and grub
 # reads both the filesystem and the disk.  suck.
 def syncDataToDisk(dev, mntpt, instRoot = "/"):
-    import isys, fsset
     isys.sync()
     isys.sync()
     isys.sync()
-
-    # and xfs is even more "special" (#117968)
-    if fsset.isValidXFS(dev):
-        pyfire.executil.execWithRedirect("/usr/sbin/xfs_freeze",
-                                         ["/usr/sbin/xfs_freeze", "-f", mntpt],
-                                         stdout = "/dev/tty5",
-                                         stderr = "/dev/tty5",
-                                         root = instRoot)
-        pyfire.executil.execWithRedirect("/usr/sbin/xfs_freeze",
-                                         ["/usr/sbin/xfs_freeze", "-u", mntpt],
-                                         stdout = "/dev/tty5",
-                                         stderr = "/dev/tty5",
-                                         root = instRoot)
 
 class BootyNoKernelWarning(Exception):
     pass
@@ -154,7 +140,7 @@ class BootImages:
     def getDefault(self):
         return self.default
 
-    # XXX this has internal anaconda-ish knowledge.  ick
+    # XXX this has internal pomona-ish knowledge.  ick
     def setup(self, diskSet, fsset):
         devices = {}
         devs = self.availableBootDevices(diskSet, fsset)
@@ -181,7 +167,7 @@ class BootImages:
             if not label:
                 self.images[self.default] = ("linux", getProductName(), type)
 
-    # XXX more internal anaconda knowledge
+    # XXX more internal pomona knowledge
     def availableBootDevices(self, diskSet, fsset):
         devs = []
         foundDos = 0

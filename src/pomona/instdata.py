@@ -42,7 +42,7 @@ class InstallData:
         self.rootPassword = { "password": "" }
         self.fsset.reset()
         self.diskset = partedUtils.DiskSet(pomona)
-        self.partitions = partitions.Partitions()
+        self.partitions = partitions.Partitions(pomona)
         self.bootloader = bootloader.getBootloader()
         self.rootParts = None
 
