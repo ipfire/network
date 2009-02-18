@@ -33,9 +33,10 @@ pkg_list_packages() {
 		package=$(basename $i)
 		(	unset NAME VERSION
 			eval $(pkg_info ${package})
-			[ "$NAME" = "" ] && exit
-			printf "  * %-30s" ${NAME}-${VERSION}
-			echo "${SHORT}"
+			if [ -n "$NAME" ] && [ "$RELEASE" != "-1" ]; then
+				printf "  * %-30s" ${NAME}-${VERSION}
+				echo "${SHORT}"
+			fi
 		)
 	done
 }
@@ -47,8 +48,10 @@ pkg_list_packages_wiki() {
 		package=$(basename $i)
 		(	unset NAME VERSION
 			eval $(pkg_info ${package})
-			[ "$NAME" = "" ] && exit
-			echo "  * [[.:package:$package|${NAME}-${VERSION}]] - ${SHORT}"
+			if [ -n "$NAME" ] && [ "$RELEASE" != "-1" ]; then
+				[ -n "$VERSION" ] && NAME="${NAME}-${VERSION}"
+				echo "  * [[.:package:$package|${NAME}]] - ${SHORT}"
+			fi
 		)
 	done
 }
