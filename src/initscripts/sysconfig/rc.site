@@ -15,7 +15,7 @@ TEMPFS_MOUNT="${RC_BASE}/init.d/boottemp"
 BOOTLOG_ENAB="yes"
 
 # Distro Information
-DISTRO="IPFire" # The distro name
+DISTRO="$(cat /etc/system-release)" # The distro name
 DISTRO_CONTACT="http://bugtracker.ipfire.org" # Bug report address
 DISTRO_MINI="ipfire" # Short name used in filenames for distro config
 
@@ -42,7 +42,7 @@ export PREFIX_SUCCESS PREFIX_WARNING PREFIX_FAILURE
 # Interactive startup
 iprompt="yes" # Wether to display the interactive boot promp
 itime="2" # The ammount of time (in seconds) to display the prompt
-dlen="29" # The total length of the distro welcome string
+dlen="$(( 11 + ${#DISTRO} ))" # The total length of the distro welcome string
 ilen="38" # The total length of the interactive message
 welcome_message="Welcome to ${INFO}${DISTRO}${NORMAL}"
 i_message="Press '${FAILURE}I${NORMAL}' to enter interactive startup"
