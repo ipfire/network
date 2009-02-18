@@ -701,9 +701,9 @@ fileSystemTypeRegister(ext3FileSystem())
 class ext4FileSystem(extFileSystem):
     def __init__(self):
         extFileSystem.__init__(self)
-        self.name = "ext4dev"
+        self.name = "ext4"
         self.partedFileSystemType = parted.file_system_type_get("ext3")
-        self.extraFormatArgs = [ "-t", "ext4dev" ]
+        self.extraFormatArgs = [ "-t", "ext4" ]
         self.bootable = False
 
         # this is way way experimental at present...

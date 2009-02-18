@@ -37,7 +37,6 @@ install: all
 		[ $$? = 0 ] || exit 1; \
 	done
 	cp -vf *.py lang-{table,names} $(PYTHONLIBDIR)
-	chmod 755 $(PYTHONLIBDIR)/installer.py
 	sed -e "s/VERSION/$(VERSION)/g" \
 		-e "s/SNAME/$(SNAME)/g" \
 		-e "s/PNAME/$(PNAME)/g" \

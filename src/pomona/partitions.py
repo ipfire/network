@@ -54,17 +54,12 @@ def partitionObjectsInitialize(pomona):
     # shut down all dm devices
     pomona.id.diskset.closeDevices()
     pomona.id.diskset.stopMdRaid()
-    pomona.id.iscsi.shutdown()
-    pomona.id.zfcp.shutdown()
 
     # clean slate about drives
     isys.flushDriveDict()
 
     if pomona.dir == DISPATCH_BACK:
         return
-
-    # ensure zfcp devs are up
-    pomona.id.zfcp.startup()
 
     # pull in the new iscsi drive
     isys.flushDriveDict()
@@ -216,10 +211,6 @@ class Partitions:
         # partition method to be used.  not to be touched externally
         self.useAutopartitioning = 1
         self.useFdisk = 0
-
-        # autopartitioning info becomes kickstart partition requests
-        # and its useful to be able to differentiate between the two
-        self.isKickstart = 0
 
         if readDisks:
             self.pomona.id.diskset.refreshDevices()

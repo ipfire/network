@@ -304,13 +304,6 @@ def fitSized(diskset, requests, primOnly = 0, newParts = None):
         if requests.isBootable(request):
             drives = getDriveList(request, diskset)
             numDrives = 0 # allocate bootable requests first
-            # FIXME: this is a hack to make sure prep boot is even more first
-            if request.fstype == fsset.fileSystemTypeGet("PPC PReP Boot"):
-                numDrives = -1
-            if request.fstype == fsset.fileSystemTypeGet("Apple Bootstrap"):
-                numDrives = -1
-            if request.fstype == fsset.fileSystemTypeGet("efi"):
-                numDrives = -1
         else:
             drives = getDriveList(request, diskset)
             numDrives = len(drives)
@@ -1169,12 +1162,8 @@ def doClearPartAction(pomona, partitions, diskset):
             continue
 
 def doAutoPartition(pomona):
-    instClass = pomona.id.instClass
     diskset = pomona.id.diskset
     partitions = pomona.id.partitions
-
-    if pomona.isKickstart:
-        partitions.setProtected(pomona.dispatch)
 
     if pomona.dir == DISPATCH_BACK:
         diskset.refreshDevices()
@@ -1189,7 +1178,7 @@ def doAutoPartition(pomona):
         # XXX if we noop, then we fail later steps... let's just make it
         # the workstation default.  should instead just never get here
         # if no autopart info
-        instClass.setDefaultPartitioning(partitions, doClear = 0)
+        pomona.setDefaultPartitioning(partitions, doClear = 0)
 
     # reset drive and request info to original state
     # XXX only do this if we're dirty
@@ -1467,30 +1456,19 @@ def doAutoPartition(pomona):
     try:
         doPartitioning(diskset, partitions, doRefresh = 0)
     except PartitioningWarning, msg:
-        if not pomona.isKickstart:
-            pomona.intf.messageWindow(_("Warnings During Automatic Partitioning"),
+        pomona.intf.messageWindow(_("Warnings During Automatic Partitioning"),
                            _("Following warnings occurred during automatic "
                            "partitioning:\n\n%s") % (msg,),
                                custom_icon='warning')
-        else:
-            lvmLog.warning(str(msg))
     except PartitioningError, msg:
         # restore drives to original state
         diskset.refreshDevices()
         partitions.setFromDisk(diskset)
         partitions.setProtected(pomona.dispatch)
-        if not pomona.isKickstart:
-            extra = ""
-            pomona.dispatch.skipStep("partition", skip = 0)
-        else:
-            extra = _("\n\nPress 'OK' to exit the installer.")
+        pomona.dispatch.skipStep("partition", skip = 0)
         pomona.intf.messageWindow(_("Error Partitioning"),
                _("Could not allocate requested partitions: \n\n"
-                 "%s.%s") % (msg, extra), custom_icon='error')
-
-
-        if pomona.isKickstart:
-            sys.exit(0)
+                 "%s.") % (msg,), custom_icon='error')
 
     # now do a full check of the requests
     (errors, warnings) = partitions.sanityCheckAllRequests(diskset)
@@ -1499,10 +1477,7 @@ def doAutoPartition(pomona):
             lvmLog.warning(warning)
     if errors:
         errortxt = string.join(errors, '\n')
-        if pomona.isKickstart:
-            extra = _("\n\nPress 'OK' to exit the installer.")
-        else:
-            extra = _("\n\nPress 'OK' to choose a different partitioning option.")
+        extra = _("\n\nPress 'OK' to choose a different partitioning option.")
 
         pomona.intf.messageWindow(_("Automatic Partitioning Errors"),
                            _("The following errors occurred with your "
@@ -1512,13 +1487,6 @@ def doAutoPartition(pomona):
                              "installation. %s")
                            % (errortxt, extra),
                            custom_icon='error')
-        #
-        # XXX if in kickstart we reboot
-        #
-        if pomona.isKickstart:
-            pomona.intf.messageWindow(_("Unrecoverable Error"),
-                               _("Your system will now be rebooted."))
-            sys.exit(0)
         return DISPATCH_BACK
 
 def autoCreatePartitionRequests(autoreq):

@@ -36,7 +36,7 @@ import raid
 import dmraid
 import block
 import lvm
-import traceback
+import inspect
 from flags import flags
 from errors import *
 from constants import *
@@ -79,7 +79,7 @@ def start_sector_to_cyl(device, sector):
                            / (device.heads * device.sectors)) + 1))
 
 def end_sector_to_cyl(device, sector):
-    """Return the closest cylinder (round up) to sector on device."""
+    """Return the closest cylinder (round up) to sector on device."""    
     return int(math.ceil(float((sector + 1))
                          / (device.heads * device.sectors)))
 
@@ -88,7 +88,7 @@ def start_cyl_to_sector(device, cyl):
     return long((cyl - 1) * (device.heads * device.sectors))
 
 def end_cyl_to_sector(device, cyl):
-    "Return the sector corresponding to cylinder as a ending cylinder."
+    "Return the sector corresponding to cylinder as a ending cylinder."    
     return long(((cyl) * (device.heads * device.sectors)) - 1)
 
 def getPartSize(partition):
@@ -124,7 +124,7 @@ def getMaxAvailPartSizeMB(part):
     return math.floor(maxlen * part.geom.dev.sector_size / 1024.0 / 1024.0)
 
 def get_partition_by_name(disks, partname):
-    """Return the parted part object associated with partname.
+    """Return the parted part object associated with partname.  
 
     Arguments:
     disks -- Dictionary of diskname->PedDisk objects
@@ -232,7 +232,7 @@ def get_max_logical_partitions(disk):
     return 11
 
 def map_foreign_to_fsname(type):
-    """Return the partition type associated with the numeric type."""
+    """Return the partition type associated with the numeric type.""" 
     if type in allPartitionTypesDict.keys():
         return allPartitionTypesDict[type]
     else:
@@ -321,8 +321,11 @@ def labelDisk(deviceFile, forceLabelType=None):
 def checkDiskLabel(disk, intf):
     """Check that the disk label on disk is valid for this machine type."""
     arch = iutil.getArch()
-    if not arch in archLabels.keys() and disk.type.name == "msdos":
-        return 0
+    if arch in archLabels.keys():
+        pass
+    else:
+        if disk.type.name == "msdos":
+            return 0
 
     if intf:
         rc = intf.messageWindow(_("Warning"),
@@ -375,7 +378,7 @@ def validateFsType(part):
     # if the partition already has a type, no need to search
     if part.fs_type:
         return
-
+    
     # first fsystem to probe wins, so sort the types into a preferred
     # order.
     fsnames = fsTypes.keys()
@@ -396,7 +399,7 @@ def validateFsType(part):
             # in the case where a user does not modify partitions
             part.set_system(fstype)
             return
-
+            
 def isLinuxNativeByNumtype(numtype):
     """Check if the type is a 'Linux native' filesystem."""
     linuxtypes = [0x82, 0x83, 0x8e, 0xfd]
@@ -408,15 +411,15 @@ def isLinuxNativeByNumtype(numtype):
     return 0
 
 def sniffFilesystemType(device):
-    """Sniff to determine the type of fs on device.
+    """Sniff to determine the type of fs on device.  
 
     device - name of device to sniff.
     """
     return isys.readFSType(device)
 
 def getReleaseString(mountpoint):
-    if os.access(mountpoint + "/etc/system-release", os.R_OK):
-        f = open(mountpoint + "/etc/system-release", "r")
+    if os.access(mountpoint + "/etc/redhat-release", os.R_OK):
+        f = open(mountpoint + "/etc/redhat-release", "r")
         try:
             lines = f.readlines()
         except IOError:
@@ -429,7 +432,7 @@ def getReleaseString(mountpoint):
         # return the first line with the newline at the end stripped
         if len(lines) == 0:
             return ""
-        relstr = string.strip(lines[0][:-1])
+	relstr = string.strip(lines[0][:-1])
 
         # get the release name and version
         # assumes that form is something
@@ -496,7 +499,7 @@ class DiskSet:
 
     def renameMPath(self, mp, name):
         dmraid.renameMPath(mp, name)
-
+ 
     def stopMPath(self):
         """Stop all of the mpath devices associated with the DiskSet."""
 
@@ -527,6 +530,7 @@ class DiskSet:
 
     def stopDmRaid(self):
         """Stop all of the dmraid devices associated with the DiskSet."""
+
         if DiskSet.dmList:
             dmraid.stopAllRaid(DiskSet.dmList)
             DiskSet.dmList = None
@@ -597,6 +601,14 @@ class DiskSet:
 
                 if crypto:
                     crypto.closeDevice()
+
+        # not doing this right now, because we should _always_ have a
+        # partition table of some kind on dmraid.
+        #if False:
+        #    for rs in DiskSet.dmList or [] + DiskSet.mpList or []:
+        #        label = isys.readFSLabel(rs.name)
+        #        if label:
+        #            labels[rs.name] = label
 
         for dev, devices, level, numActive in DiskSet.mdList:
             crypto = encryptedDevices.get(dev)
@@ -669,12 +681,11 @@ class DiskSet:
                 except SystemError:
                     pass
 
-            if found:
                 isys.umount(self.pomona.rootPath)
 
         # now, look for candidate lvm roots
-        lvm.vgscan()
-        lvm.vgactivate()
+	lvm.vgscan()
+	lvm.vgactivate()
 
         for dev, crypto in self.pomona.id.partitions.encryptedDevices.items():
             # FIXME: order these so LVM and RAID always work on the first try
@@ -703,10 +714,7 @@ class DiskSet:
                 except SystemError:
                     pass
 
-            if found:
-                isys.umount(self.pomona.rootPath)
-
-        lvm.vgdeactivate()
+	lvm.vgdeactivate()
 
         # don't stop raid until after we've looked for lvm on top of it
         self.stopMdRaid()
@@ -731,6 +739,12 @@ class DiskSet:
                     theDev = node
                     if part.fs_type:
                         fstype = part.fs_type.name
+                    else:
+                        fstype = None
+
+                    # parted doesn't tell ext4 from ext3
+                    if fstype == "ext3": 
+                        fstype = isys.readFSType(theDev)
 
                     if crypto and not crypto.openDevice():
                         theDev = crypto.getDevice()
@@ -750,20 +764,18 @@ class DiskSet:
                         part = disk.next_partition(part)
                         continue
 
-                    isys.umount(self.pomona.rootPath)
-
                 part = disk.next_partition(part)
         return rootparts
 
     def driveList (self):
         """Return the list of drives on the system."""
-        drives = isys.hardDriveDict().keys()
-        drives.sort (isys.compareDrives)
-        return drives
+	drives = isys.hardDriveDict().keys()
+	drives.sort (isys.compareDrives)
+	return drives
 
     def drivesByName (self):
         """Return a dictionary of the drives on the system."""
-        return isys.hardDriveDict()
+	return isys.hardDriveDict()
 
     def savePartitions (self):
         """Write the partition tables out to the disks."""
@@ -783,13 +795,6 @@ class DiskSet:
                 del disk
                 continue
 
-            # FIXME: this belongs in parted itself, but let's do a hack...
-            if iutil.isX86() and disk.type.name == "gpt":
-                log.debug("syncing gpt to mbr for disk %s" % (disk.dev.path,))
-                iutil.execWithRedirect("gptsync", [disk.dev.path,],
-                                       stdout="/tmp/gptsync.log",
-                                       stderr="/tmp/gptsync.err",
-                                       searchPath = 1)
             del disk
         self.refreshDevices()
 
@@ -826,6 +831,26 @@ class DiskSet:
             del self.disks[disk]
         self.devicesOpen = False
 
+    def isDisciplineFBA (self, drive):
+        drive = drive.replace('/dev/', '')
+
+        if drive.startswith("dasd"):
+            discipline = "/sys/block/%s/device/discipline" % (drive,)
+            if os.path.isfile(discipline):
+                try:
+                    fp = open(discipline, "r")
+                    lines = fp.readlines()
+                    fp.close()
+
+                    if len(lines) == 1:
+                        if lines[0].strip() == "FBA":
+                            return True
+                except:
+                    log.error("failed to check discipline of %s" % (drive,))
+                    pass
+
+        return False
+
     def _askForLabelPermission(self, intf, drive, clearDevs, initAll, ks):
         #Do not try to initialize device's part. table in rescue mode
         if self.pomona.rescue:
@@ -833,7 +858,8 @@ class DiskSet:
             return False
 
         rc = 0
-        if (ks and (drive in clearDevs) and initAll):
+        if (ks and (drive in clearDevs) and initAll) or \
+	    self.isDisciplineFBA(drive):
             rc = 1
         elif intf:
             deviceFile = "/dev/" + drive
@@ -863,7 +889,6 @@ class DiskSet:
 
         try:
             try:
-                # FIXME: need the right fix for z/VM formatted dasd
                 disk = labelDisk(deviceFile)
             except parted.error, msg:
                 log.error("parted error: %s" % (msg,))
@@ -920,11 +945,6 @@ class DiskSet:
             clearDevs = []
             initAll = False
 
-            if self.pomona.isKickstart:
-                ks = True
-                clearDevs = self.pomona.id.ksdata.clearpart.drives
-                initAll = self.pomona.id.ksdata.clearpart.initAll
-
             if initAll and ((clearDevs is None) or (len(clearDevs) == 0) \
                        or (drive in clearDevs)) and not flags.test \
                        and not hasProtectedPartitions(drive, self.pomona):
@@ -976,7 +996,7 @@ class DiskSet:
                         "of this disk or use any partitions beyond /dev/%s15 "
                         "in %s") % (drive, drive, name)
 
-                rc = intf.messageWindow(_("Warning"), str,
+                rc = intf.messageWindow(_("Warning"), str, 
                                     type="custom",
                                     custom_buttons = [_("_Reboot"),
                                                       _("_Continue")],
@@ -1014,7 +1034,7 @@ class DiskSet:
                         ptype = None
                     rc.append((device, ptype))
                 part = disk.next_partition (part)
-
+      
         return rc
 
     def diskState (self):
@@ -1060,7 +1080,7 @@ class DiskSet:
                                  "of this problem."))
             return True
         return False
-
+    
 
     def exceptionDisks(self, pomona, probe=True):
         if probe:
@@ -1151,7 +1171,7 @@ allPartitionTypesDict = {
     0xe1: "DOS access",
     0xe3: "DOS R/O",
     0xeb: "BEOS",
-    0xee: "EFI GPT",
+    0xee: "EFI GPT",    
     0xef: "EFI (FAT-12/16/32)",
     0xf2: "DOS secondary",
     0xfd: "Linux RAID",

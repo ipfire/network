@@ -63,6 +63,11 @@ def has_lvm():
 # now check to see if lvm is available
 has_lvm()
 
+if lvmDevicePresent == 1:
+	log.info("LVM is enabled.")
+else:
+	log.info("LVM is disabled.")
+
 def lvmExec(*args):
     try:
         return iutil.execWithRedirect("lvm", args, stdout = lvmErrorOutput,
@@ -86,7 +91,7 @@ def vgscan():
     """Runs vgscan."""
     global lvmDevicePresent
 
-    if flags.test or lvmDevicePresent == 0:
+    if lvmDevicePresent == 0:
         return
 
     rc = lvmExec("vgscan", "-v")
@@ -110,7 +115,7 @@ def vgcheckactive(volgroup = None):
     volgroup - optional parameter to inquire about a specific volume group.
     """
     global lvmDevicePresent
-    if flags.test or lvmDevicePresent == 0:
+    if lvmDevicePresent == 0:
         return False
 
     args = ["lvs", "--noheadings", "--units", "b", "--nosuffix",
@@ -136,7 +141,7 @@ def vgactivate(volgroup = None):
     volgroup - optional single volume group to activate
     """
     global lvmDevicePresent
-    if flags.test or lvmDevicePresent == 0:
+    if lvmDevicePresent == 0:
         return
 
     args = ["vgchange", "-ay", "-v"]
@@ -154,7 +159,7 @@ def vgdeactivate(volgroup = None):
     volgroup - optional single volume group to deactivate
     """
     global lvmDevicePresent
-    if flags.test or lvmDevicePresent == 0:
+    if lvmDevicePresent == 0:
         return
 
     args = ["vgchange", "-an", "-v"]
@@ -173,7 +178,7 @@ def lvcreate(lvname, vgname, size):
     size - size of lv, in megabytes.
     """
     global lvmDevicePresent
-    if flags.test or lvmDevicePresent == 0:
+    if lvmDevicePresent == 0:
         return
     writeForceConf()
     vgscan()
@@ -194,7 +199,7 @@ def lvremove(lvname, vgname):
     vgname - name of volume group lv is in.
     """
     global lvmDevicePresent
-    if flags.test or lvmDevicePresent == 0:
+    if lvmDevicePresent == 0:
         return
 
     args = ["lvremove", "-f", "-v"]
@@ -210,7 +215,7 @@ def lvremove(lvname, vgname):
 
 def lvresize(lvname, vgname, size):
     global lvmDevicePresent
-    if flags.test or lvmDevicePresent == 0:
+    if lvmDevicePresent == 0:
         return
 
     args = ["lvresize", "-An", "-L", "%dM" %(size,), "-v", "--force",
@@ -232,7 +237,7 @@ def vgcreate(vgname, PESize, nodes):
     nodes - LVM Physical Volumes on which to put the new VG.
     """
     global lvmDevicePresent
-    if flags.test or lvmDevicePresent == 0:
+    if lvmDevicePresent == 0:
         return
 
     # rescan now that we've recreated pvs.  ugh.
@@ -256,7 +261,7 @@ def vgremove(vgname):
     vgname - name of volume group.
     """
     global lvmDevicePresent
-    if flags.test or lvmDevicePresent == 0:
+    if lvmDevicePresent == 0:
         return
 
     # find the Physical Volumes which make up this Volume Group, so we
@@ -313,7 +318,7 @@ def pvcreate(node):
     node - path to device node on which to create the new PV."
     """
     global lvmDevicePresent
-    if flags.test or lvmDevicePresent == 0:
+    if lvmDevicePresent == 0:
         return
 
     # rescan now that we've recreated pvs.  ugh.
