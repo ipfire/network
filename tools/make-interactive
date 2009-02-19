@@ -322,7 +322,7 @@ package*|pkg)
 			done
 			;;
 		group*)
-			echo "====== All available groups of packages in ${NAME}-${VERSION} ======"
+			echo "#### All available groups of packages in ${NAME}-${VERSION} ####"
 			echo
 			for group in $(pkg_list_groups); do
 				echo "  * ${group}"
@@ -332,6 +332,8 @@ package*|pkg)
 			pkg_info $3
 			;;
 		wikigroup*)
+			echo "====== All available groups of packages in ${NAME}-${VERSION} ======"
+			echo
 			pkg_list_groups_wiki
 			;;
 		wikiinfo)
