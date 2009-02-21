@@ -1,0 +1,38 @@
+#!/bin/sh
+########################################################################
+# Begin $NETWORK_DEVICES/services/vlan
+#
+# Description : VLAN Script
+#
+# Authors     : Michael Tremer - michael.tremer@ipfire.org
+#
+# Version     : 00.00
+#
+# Notes       : This script adds vlan support.
+#
+########################################################################
+
+. /lib/lsb/init-functions
+. ${IFCONFIG}
+
+case "${2}" in
+	up)
+		modprobe 8021q
+		MESSAGE="Adding VLAN ${ID} to interface ${1}..."
+		vconfig add ${1} ${ID} &>/dev/null
+		evaluate_retval
+	;;
+
+	down)
+		MESSAGE="Removing VLAN ${ID} from interface ${1}..."
+		vconfig rem ${1} ${ID} &>/dev/null
+		evaluate_retval
+	;;
+
+	*)
+		echo "Usage: ${0} [interface] {up|down}"
+		exit 1
+	;;
+esac
+
+# End $NETWORK_DEVICES/services/vlan
