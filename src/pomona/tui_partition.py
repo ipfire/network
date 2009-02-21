@@ -71,30 +71,30 @@ class PartitionWindow:
         # independent bits...
         self.lb.clear()
 
-	# first do LVM
+        # first do LVM
         lvmrequests = self.partitions.getLVMRequests()
         if lvmrequests:
             for vgname in lvmrequests.keys():
-		vgrequest = self.partitions.getRequestByVolumeGroupName(vgname)
-		size = vgrequest.getActualSize(self.partitions, self.diskset)
-		device = "VG %s" % (vgname,)
+                vgrequest = self.partitions.getRequestByVolumeGroupName(vgname)
+                size = vgrequest.getActualSize(self.partitions, self.diskset)
+                device = "VG %s" % (vgname,)
                 self.lb.append(["%s" % (device,),
                                 "", "", "%dM" %(size),
                                 "VolGroup", ""], str(vgrequest.uniqueID),
                                [LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT])
-		
-		for lvrequest in lvmrequests[vgname]:
-		    lvdevice = "LV %s" % (lvrequest.logicalVolumeName,)
-		    if lvrequest.fstype and lvrequest.mountpoint:
-			mntpt = lvrequest.mountpoint
-		    else:
-			mntpt = ""
-		    lvsize = lvrequest.getActualSize(self.partitions, self.diskset)
+
+                for lvrequest in lvmrequests[vgname]:
+                    lvdevice = "LV %s" % (lvrequest.logicalVolumeName,)
+                    if lvrequest.fstype and lvrequest.mountpoint:
+                        mntpt = lvrequest.mountpoint
+                    else:
+                        mntpt = ""
+                    lvsize = lvrequest.getActualSize(self.partitions, self.diskset)
                     ptype = lvrequest.fstype.getName()
-		    self.lb.append(["%s" %(lvdevice),
-				    "", "", "%dM" %(lvsize),
-				    "%s" %(ptype), "%s" %(mntpt)], str(lvrequest.uniqueID),
-				   [LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT])
+                    self.lb.append(["%s" %(lvdevice),
+                                    "", "", "%dM" %(lvsize),
+                                    "%s" %(ptype), "%s" %(mntpt)], str(lvrequest.uniqueID),
+                                   [LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT])
 
 
         # next, add the raid partitions
@@ -112,13 +112,13 @@ class PartitionWindow:
                 else:
                     ptype = _("None")
 
-		try:
+                try:
                     self.raidminors[request.raidminor] = True
-		    device = "/dev/md%d" % (request.raidminor,)
-		except:
+                    device = "/dev/md%d" % (request.raidminor,)
+                except:
                     minor = self._findFirstUnused(self.raidminors)
                     self.raidminors[minor] = True
-		    device = _("RAID Device %s" %(str(minor)))
+                    device = _("RAID Device %s" %(str(minor)))
 
                 size = request.size
                 self.lb.append(["%s" %(device),
@@ -145,7 +145,7 @@ class PartitionWindow:
                 # ignore the tiny < 1 MB partitions (#119479)
                 if getPartSizeMB(part) <= 1.0:
                     if not part.is_active() or not part.get_flag(parted.PARTITION_BOOT):
-                        part = disk.next_partition(part)                    
+                        part = disk.next_partition(part)
                         continue
 
                 device = get_partition_name(part)
@@ -202,7 +202,7 @@ class PartitionWindow:
                                     "%s" %(ptype),
                                     ""], part,
                                    [LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT])
-                                    
+
                 else:
                     dev = devify(get_partition_name(part))
                     # save some space per #90838
@@ -223,24 +223,24 @@ class PartitionWindow:
         # XXX need some way to stay at the same place in the list after
         # repopulating
 
-	# XXXX - Backup some info which doPartitioning munges if it fails
-	origInfoDict = {}
-	for request in self.partitions.requests:
-	    try:
-		origInfoDict[request.uniqueID] = (request.requestSize, request.currentDrive)
-	    except:
-		pass
+        # XXXX - Backup some info which doPartitioning munges if it fails
+        origInfoDict = {}
+        for request in self.partitions.requests:
+            try:
+                origInfoDict[request.uniqueID] = (request.requestSize, request.currentDrive)
+            except:
+                pass
 
         try:
             doPartitioning(self.diskset, self.partitions)
             rc = 0
         except PartitioningError, msg:
-	    try:
-		for request in self.partitions.requests:
-		    if request.uniqueID in origInfoDict.keys():
-			(request.requestSize, request.currentDrive) = origInfoDict[request.uniqueID]
-	    except:
-		log.error("Failed to restore original info")
+            try:
+                for request in self.partitions.requests:
+                    if request.uniqueID in origInfoDict.keys():
+                        (request.requestSize, request.currentDrive) = origInfoDict[request.uniqueID]
+            except:
+                log.error("Failed to restore original info")
 
             self.intf.messageWindow(_("Error Partitioning"),
                    _("Could not allocate requested partitions: %s.") % (msg))
@@ -256,8 +256,8 @@ class PartitionWindow:
                 reqs = self.partitions.getBootableRequest()
                 if reqs:
                     for req in reqs:
-                        req.ignoreBootConstraints = 1                
-                             
+                        req.ignoreBootConstraints = 1
+
         self.populate()
         return rc
 
@@ -340,7 +340,7 @@ class PartitionWindow:
             typeLbl = Label(_("File System type:"))
             subgrid.setField(typeLbl, 0, row)
             row = row + 1
-            
+
         fstype = Listbox(height=2, scroll=1)
         types = fileSystemTypeGetTypes()
         if usetypes:
@@ -448,7 +448,7 @@ class PartitionWindow:
             end.setFlags(FLAG_DISABLED, FLAGS_RESET)
             size.setFlags(FLAG_DISABLED, FLAGS_SET)
         elif cylopts.getSelection() == "size":
-            end.setFlags(FLAG_DISABLED, FLAGS_SET)            
+            end.setFlags(FLAG_DISABLED, FLAGS_SET)
             size.setFlags(FLAG_DISABLED, FLAGS_RESET)
 
 
@@ -486,7 +486,7 @@ class PartitionWindow:
         endrb.setCallback(self.cylOptionsChange, (cylopts, end, size))
         sizerb.setCallback(self.cylOptionsChange, (cylopts, end, size))
         self.cylOptionsChange((cylopts, end, size))
-        
+
         return (cylopts, start, end, size, subgrid)
 
     # make the list of VGs
@@ -510,7 +510,7 @@ class PartitionWindow:
 
         subgrid.setField(vgBox, 0, 1)
         return (vgBox, subgrid)
-        
+
     # make the list of RAID levels
     def makeRaidList(self, request):
         subgrid = Grid(1, 2)
@@ -562,45 +562,45 @@ class PartitionWindow:
         return (entry, subgrid)
 
     def fsOptionsGrid(self, origrequest, newfstype):
-	subgrid = Grid(2, 4)
-	# filesystem type selection
-	srow = 0
-	typeLbl = Label(_("File System Type:"))
-	subgrid.setField(typeLbl, 0, srow, (0,0,0,1), anchorLeft = 1)
-	ptype = origrequest.fstype.getName()
-	if ptype == "foreign":
-	    part = get_partition_by_name(self.diskset.disks, origrequest.device)
+        subgrid = Grid(2, 4)
+        # filesystem type selection
+        srow = 0
+        typeLbl = Label(_("File System Type:"))
+        subgrid.setField(typeLbl, 0, srow, (0,0,0,1), anchorLeft = 1)
+        ptype = origrequest.fstype.getName()
+        if ptype == "foreign":
+            part = get_partition_by_name(self.diskset.disks, origrequest.device)
             if part is not None:
                 ptype = map_foreign_to_fsname(part.native_type)
             else:
                 pytype = _("Foreign")
-	type = Label(ptype)
-	subgrid.setField(type, 1, srow, (0,0,0,1), anchorRight = 1)
-	srow = srow +1
-	if origrequest.type != REQUEST_NEW and origrequest.fslabel:
-	    fsLbl = Label(_("File System Label:"))
-	    subgrid.setField(fsLbl, 0, srow, (0,0,0,1), anchorLeft = 1)
-	    label = Label(origrequest.fslabel)
-	    subgrid.setField(label, 1, srow, (0,0,0,1), anchorRight = 1)
-	    srow = srow + 1
+        type = Label(ptype)
+        subgrid.setField(type, 1, srow, (0,0,0,1), anchorRight = 1)
+        srow = srow +1
+        if origrequest.type != REQUEST_NEW and origrequest.fslabel:
+            fsLbl = Label(_("File System Label:"))
+            subgrid.setField(fsLbl, 0, srow, (0,0,0,1), anchorLeft = 1)
+            label = Label(origrequest.fslabel)
+            subgrid.setField(label, 1, srow, (0,0,0,1), anchorRight = 1)
+            srow = srow + 1
 
-	sizeLbl = Label(_("Size (MB):"))
-	subgrid.setField(sizeLbl, 0, srow, (0,0,0,1), anchorLeft = 1)
-	size = Label("%s" %(int(origrequest.size)))
-	subgrid.setField(size, 1, srow, (0,0,0,1), anchorRight = 1)
-	srow = srow + 1
-	tmpLbl = Label(_("File System Option:"))
-	subgrid.setField(tmpLbl, 0, srow, (0,0,0,1), anchorLeft = 1)
-	if origrequest.format:
-	    fsoptLbl = Label(_("Format as %s") % (newfstype.getName()))
-	elif origrequest.migrate:
-	    fsoptLbl = Label(_("Migrate to %s") %(newfstype.getName()))
-	else:
-	    fsoptLbl = Label(_("Leave unchanged"))
-	subgrid.setField(fsoptLbl, 1, srow, (0,0,0,1), anchorLeft = 1)
+        sizeLbl = Label(_("Size (MB):"))
+        subgrid.setField(sizeLbl, 0, srow, (0,0,0,1), anchorLeft = 1)
+        size = Label("%s" %(int(origrequest.size)))
+        subgrid.setField(size, 1, srow, (0,0,0,1), anchorRight = 1)
+        srow = srow + 1
+        tmpLbl = Label(_("File System Option:"))
+        subgrid.setField(tmpLbl, 0, srow, (0,0,0,1), anchorLeft = 1)
+        if origrequest.format:
+            fsoptLbl = Label(_("Format as %s") % (newfstype.getName()))
+        elif origrequest.migrate:
+            fsoptLbl = Label(_("Migrate to %s") %(newfstype.getName()))
+        else:
+            fsoptLbl = Label(_("Leave unchanged"))
+        subgrid.setField(fsoptLbl, 1, srow, (0,0,0,1), anchorLeft = 1)
 
-	return (subgrid, fsoptLbl, type)
-	
+        return (subgrid, fsoptLbl, type)
+
 
     def fsOptionsDialog(self, origrequest, format, migrate, newfstype):
 
@@ -622,7 +622,7 @@ class PartitionWindow:
         noformatrb = SingleRadioButton(_("Leave unchanged (preserve data)"),
                                        None, not format and not migrate)
         subgrid.setField(noformatrb, 0, srow, (0,0,0,1),anchorLeft = 1)
-        
+
         srow = srow + 1
         if format:
             forflag = 1
@@ -631,7 +631,7 @@ class PartitionWindow:
         formatrb = SingleRadioButton(_("Format as:"), noformatrb, forflag)
         formatrb.setCallback(formatChanged, (formatrb))
         noformatrb.setCallback(formatChanged, (formatrb))
-       
+
         subgrid.setField(formatrb, 0, srow, (0,0,0,1), anchorLeft = 1)
 
         (fortype, forgrid) = self.makeFsList(origrequest, usecallback = 0,
@@ -671,7 +671,7 @@ class PartitionWindow:
         formatChanged((formatrb))
 
         popbb = ButtonBar(self.screen, (TEXT_OK_BUTTON, TEXT_CANCEL_BUTTON))
-        poplevel.add(popbb, 0, row, (0,0,0,0), growx = 1)        
+        poplevel.add(popbb, 0, row, (0,0,0,0), growx = 1)
 
         while 1:
             res = poplevel.run()
@@ -707,7 +707,7 @@ class PartitionWindow:
     # isNew implies that this request has never been successfully used before
     def editPartitionRequest(self, origrequest, isNew = 0):
         self.oldMount = None
-        
+
         poplevel = GridFormHelp(self.screen,_("Add Partition"),"addpart", 1, 6)
 
         # mount point entry
@@ -757,11 +757,11 @@ class PartitionWindow:
 
             fsoptLbl = None
 
-	elif origrequest.type == REQUEST_VG:
-	    self.intf.messageWindow(_("Not Supported"),
-				    _("You can only edit LVM Volume Groups "
-				      "in the graphical installer."))
-	    return
+        elif origrequest.type == REQUEST_VG:
+            self.intf.messageWindow(_("Not Supported"),
+                                    _("You can only edit LVM Volume Groups "
+                                      "in the graphical installer."))
+            return
 
         elif (origrequest.type == REQUEST_LV or origrequest.type == REQUEST_PREEXIST) and origrequest.fstype:
 
@@ -784,7 +784,7 @@ class PartitionWindow:
         poplevel.add(popbb, 0, row, (0,1,0,0), growx = 1)
 
         while 1:
-            
+
             res = poplevel.run()
 
             # if the user hit cancel, do nothing
@@ -841,7 +841,7 @@ class PartitionWindow:
                             self.intf.messageWindow(_("Invalid Entry for Maximum Size"),
                                            invalidInteger(limitentry.value()))
                             continue
-                            
+
                         maxsize = int(limitentry.value())
                     else:
                         maxsize = None
@@ -853,7 +853,7 @@ class PartitionWindow:
                     else:
                         allowdrives = []
                         for i in self.drivelist.getSelection():
-                            allowdrives.append(i) 
+                            allowdrives.append(i)
                     request.drive = allowdrives
                 else:
                     if invalidInteger(start.value()):
@@ -869,7 +869,7 @@ class PartitionWindow:
                             self.intf.messageWindow(_("Invalid Entry for End Cylinder"),
                                            invalidInteger(end.value()))
                             continue
-                        
+
                         request.end = int(end.value())
                         request.size = None
                     elif cyltype == "size":
@@ -881,7 +881,7 @@ class PartitionWindow:
                         request.size = int(size.value())
                     else: # can't ever get here
                         raise RuntimeError, "Selected a way of partitioning by cylinder that's not supported"
-                    
+
                 err = request.sanityCheckRequest(self.partitions)
                 if err:
                     self.intf.messageWindow(_("Error With Request"),
@@ -892,7 +892,7 @@ class PartitionWindow:
 
                 if request.type == REQUEST_PREEXIST or request.type == REQUEST_LV:
                     request.fstype = newfstype
-                    
+
                 if request.fstype.isMountable():
                     request.mountpoint = self.mount.value()
                 else:
@@ -936,11 +936,11 @@ class PartitionWindow:
 
     # isNew implies that this request has never been successfully used before
     def editRaidRequest(self, raidrequest, isNew = 0):
-	preexist = raidrequest and raidrequest.preexist
-	if preexist:
-	    tmpstr = _("Edit RAID Device")
-	else:
-	    tmpstr = _("Make RAID Device")
+        preexist = raidrequest and raidrequest.preexist
+        if preexist:
+            tmpstr = _("Edit RAID Device")
+        else:
+            tmpstr = _("Make RAID Device")
         poplevel = GridFormHelp(self.screen, tmpstr, "makeraid", 1, 6)
 
         # mount point entry
@@ -949,10 +949,10 @@ class PartitionWindow:
         poplevel.add(mountgrid, 0, row)
         row = row + 1
 
-	# initialize holder for temporary mount point value
-	self.oldMount = None
+        # initialize holder for temporary mount point value
+        self.oldMount = None
 
-	if preexist:
+        if preexist:
             # set some defaults
             format = raidrequest.format
             migrate = raidrequest.migrate
@@ -960,55 +960,55 @@ class PartitionWindow:
 
             (subgrid, fsoptLbl, fstypeLbl) = self.fsOptionsGrid(raidrequest, newfstype)
             poplevel.add(subgrid, 0, row, (0,1,0,0))
-	    self.drivelist = None
-	else:
-	    subgrid = Grid(2, 1)
-	    (fstype, fsgrid) = self.makeFsList(raidrequest, ignorefs = ["software RAID", "PPC PReP Boot", "Apple Bootstrap"])
-	    subgrid.setField(fsgrid, 0, 0, anchorLeft = 1, anchorTop=1)
-	    (raidtype, raidgrid) = self.makeRaidList(raidrequest)
-	    subgrid.setField(raidgrid, 1, 0, (2,0,0,0), anchorRight=1, anchorTop=1)
-	    poplevel.add(subgrid, 0, row, (0,1,0,0))
+            self.drivelist = None
+        else:
+            subgrid = Grid(2, 1)
+            (fstype, fsgrid) = self.makeFsList(raidrequest, ignorefs = ["software RAID", "PPC PReP Boot", "Apple Bootstrap"])
+            subgrid.setField(fsgrid, 0, 0, anchorLeft = 1, anchorTop=1)
+            (raidtype, raidgrid) = self.makeRaidList(raidrequest)
+            subgrid.setField(raidgrid, 1, 0, (2,0,0,0), anchorRight=1, anchorTop=1)
+            poplevel.add(subgrid, 0, row, (0,1,0,0))
 
-	    row = row + 1
-	    drivegrid = Grid(2, 1)
+            row = row + 1
+            drivegrid = Grid(2, 1)
 
-	    #Let's see if we have any RAID partitions to make a RAID device with
-	    avail = self.partitions.getAvailRaidPartitions(raidrequest, self.diskset)
+            #Let's see if we have any RAID partitions to make a RAID device with
+            avail = self.partitions.getAvailRaidPartitions(raidrequest, self.diskset)
 
-	    #If we don't, then tell the user that none exist
-	    if len(avail) < 2:
-		ButtonChoiceWindow (self.screen, _("No RAID partitions"),
-				    _("At least two software RAID partitions are needed."),
-				    [ TEXT_OK_BUTTON ])
-		return
+            #If we don't, then tell the user that none exist
+            if len(avail) < 2:
+                ButtonChoiceWindow (self.screen, _("No RAID partitions"),
+                                    _("At least two software RAID partitions are needed."),
+                                    [ TEXT_OK_BUTTON ])
+                return
 
-	    (self.drivelist, drivesubgrid) = self.makeRaidDriveList(raidrequest)
-	    drivegrid.setField(drivesubgrid, 0, 0, (0,0,4,0), anchorLeft = 1, anchorTop = 1)
+            (self.drivelist, drivesubgrid) = self.makeRaidDriveList(raidrequest)
+            drivegrid.setField(drivesubgrid, 0, 0, (0,0,4,0), anchorLeft = 1, anchorTop = 1)
 
-	    miscgrid = Grid(1, 2)
-	    (spares, sparegrid) = self.makeSpareEntry(raidrequest)
-	    miscgrid.setField(sparegrid, 0, 0, anchorRight=1, anchorTop=1)
+            miscgrid = Grid(1, 2)
+            (spares, sparegrid) = self.makeSpareEntry(raidrequest)
+            miscgrid.setField(sparegrid, 0, 0, anchorRight=1, anchorTop=1)
 
-	    if raidrequest.fstype and raidrequest.fstype.isFormattable():
-		format = Checkbox(_("Format partition?"))
-		miscgrid.setField(format, 0, 1)
-	    else:
-		format = None
+            if raidrequest.fstype and raidrequest.fstype.isFormattable():
+                format = Checkbox(_("Format partition?"))
+                miscgrid.setField(format, 0, 1)
+            else:
+                format = None
 
-	    if raidrequest.format == 1 or raidrequest.format == None:
-		format.setValue("*")
+            if raidrequest.format == 1 or raidrequest.format == None:
+                format.setValue("*")
 
-	    drivegrid.setField(miscgrid, 1, 0, anchorTop=1)
-	    poplevel.add(drivegrid, 0, row, (0,1,0,0))        
+            drivegrid.setField(miscgrid, 1, 0, anchorTop=1)
+            poplevel.add(drivegrid, 0, row, (0,1,0,0))
 
         row = row + 1
-	if preexist:
+        if preexist:
             popbb = ButtonBar(self.screen, (TEXT_OK_BUTTON,
                                             (_("File System Options"), "fsopts"),
                                             TEXT_CANCEL_BUTTON))
-	else:
-	    popbb = ButtonBar(self.screen, (TEXT_OK_BUTTON,TEXT_CANCEL_BUTTON))
-        poplevel.add(popbb, 0, row, (0,1,0,0), growx = 1)        
+        else:
+            popbb = ButtonBar(self.screen, (TEXT_OK_BUTTON,TEXT_CANCEL_BUTTON))
+        poplevel.add(popbb, 0, row, (0,1,0,0), growx = 1)
 
         while 1:
             res = poplevel.run()
@@ -1029,52 +1029,52 @@ class PartitionWindow:
                         fsoptLbl.setText(_("Migrate to %s") %(newfstype.getName()))
                     else:
                         fsoptLbl.setText(_("Leave unchanged"))
-                
+
                 continue
 
             request = copy.copy(raidrequest)
 
-	    if not preexist:
-		request.fstype = fstype.current()
-	    else:
-		request.fstype = newfstype
+            if not preexist:
+                request.fstype = fstype.current()
+            else:
+                request.fstype = newfstype
 
             if request.fstype.isMountable():
                 request.mountpoint = self.mount.value()
             else:
                 request.mountpoint = None
 
-	    if not preexist:
-		raidmembers = []
-		for drive in self.drivelist.getSelection():
-		    id = self.partitions.getRequestByDeviceName(drive).uniqueID
-		    raidmembers.append(id)
+            if not preexist:
+                raidmembers = []
+                for drive in self.drivelist.getSelection():
+                    id = self.partitions.getRequestByDeviceName(drive).uniqueID
+                    raidmembers.append(id)
 
-		request.raidmembers = raidmembers
-		if invalidInteger(spares.value()):
-		    self.intf.messageWindow(_("Invalid Entry for RAID Spares"),
-					    invalidInteger(spares.value()))
-		    continue
+                request.raidmembers = raidmembers
+                if invalidInteger(spares.value()):
+                    self.intf.messageWindow(_("Invalid Entry for RAID Spares"),
+                                            invalidInteger(spares.value()))
+                    continue
 
-		request.raidspares = int(spares.value())
-		request.raidlevel = raidtype.current()
+                request.raidspares = int(spares.value())
+                request.raidlevel = raidtype.current()
                 request.raidminor = self._findFirstUnused(self.raidminors)
                 self.raidminors[request.raidminor] = True
 
-		if format:
-		    request.format = format.selected()
-		else:
-		    request.format = 0
+                if format:
+                    request.format = format.selected()
+                else:
+                    request.format = 0
 
-		if request.raidlevel == "RAID0" and request.raidspares > 0:
-		    self.intf.messageWindow(_("Too many spares"),
-					      _("You may not use any spares "
-					      "with a RAID0 array."))
-		    continue
-	    else:
-		request.format = format
-		request.migrate = migrate
-		request.fstype = newfstype
+                if request.raidlevel == "RAID0" and request.raidspares > 0:
+                    self.intf.messageWindow(_("Too many spares"),
+                                              _("You may not use any spares "
+                                              "with a RAID0 array."))
+                    continue
+            else:
+                request.format = format
+                request.migrate = migrate
+                request.fstype = newfstype
 
             err = request.sanityCheckRequest(self.partitions)
             if err:
@@ -1086,7 +1086,7 @@ class PartitionWindow:
                 self.partitions.removeRequest(raidrequest)
 
             self.partitions.addRequest(request)
-            
+
             if self.refresh():
                 # how can this fail?  well, if it does, do the remove new,
                 # add old back in dance
@@ -1103,15 +1103,15 @@ class PartitionWindow:
         # clean up
         self.shutdownUI()
         self.screen.popWindow()
-        
+
     # isNew implies that this request has never been successfully used before
     def editLVRequest(self, lvrequest, isNew = 0):
-	preexist = lvrequest and lvrequest.preexist
-	if preexist:
-	    tmpstr = _("Edit Logical Volume")
-	else:
-	    tmpstr = _("Make Logical Volume")
-        self.drivelist = None            
+        preexist = lvrequest and lvrequest.preexist
+        if preexist:
+            tmpstr = _("Edit Logical Volume")
+        else:
+            tmpstr = _("Make Logical Volume")
+        self.drivelist = None
         poplevel = GridFormHelp(self.screen, tmpstr, "makelv", 1, 8)
 
         # mount point entry
@@ -1128,10 +1128,10 @@ class PartitionWindow:
         poplevel.add(lvsizegrid, 0, row)
         row = row + 1
 
-	# initialize holder for temporary mount point value
-	self.oldMount = None
+        # initialize holder for temporary mount point value
+        self.oldMount = None
 
-	if preexist:
+        if preexist:
             # set some defaults
             format = lvrequest.format
             migrate = lvrequest.migrate
@@ -1139,11 +1139,11 @@ class PartitionWindow:
 
             (subgrid, fsoptLbl, fstypeLbl) = self.fsOptionsGrid(lvrequest, newfstype)
             poplevel.add(subgrid, 0, row, (0,1,0,0))
-	    self.drivelist = None
-	else:
-	    subgrid = Grid(2, 1)
-	    (fstype, fsgrid) = self.makeFsList(lvrequest, ignorefs = ["software RAID", "efi", "PPC PReP Boot", "Apple Bootstrap"])
-	    subgrid.setField(fsgrid, 0, 0, anchorLeft = 1, anchorTop=1)
+            self.drivelist = None
+        else:
+            subgrid = Grid(2, 1)
+            (fstype, fsgrid) = self.makeFsList(lvrequest, ignorefs = ["software RAID", "efi", "PPC PReP Boot", "Apple Bootstrap"])
+            subgrid.setField(fsgrid, 0, 0, anchorLeft = 1, anchorTop=1)
 
             vgs = self.partitions.getLVMVGRequests()
             if len(vgs) < 1:
@@ -1153,32 +1153,32 @@ class PartitionWindow:
                 return
 
             (vgtype, vggrid) = self.makeVGList(lvrequest)
-	    subgrid.setField(vggrid, 1, 0, (2,0,0,0), anchorRight=1, anchorTop=1)
-	    poplevel.add(subgrid, 0, row, (0,1,0,0))
+            subgrid.setField(vggrid, 1, 0, (2,0,0,0), anchorRight=1, anchorTop=1)
+            poplevel.add(subgrid, 0, row, (0,1,0,0))
 
-	    row = row + 1
+            row = row + 1
 
-	    miscgrid = Grid(1, 3)
+            miscgrid = Grid(1, 3)
 
-	    if lvrequest.fstype and lvrequest.fstype.isFormattable():
-		format = Checkbox(_("Format partition?"))
-		miscgrid.setField(format, 0, 1)
-	    else:
-		format = None
+            if lvrequest.fstype and lvrequest.fstype.isFormattable():
+                format = Checkbox(_("Format partition?"))
+                miscgrid.setField(format, 0, 1)
+            else:
+                format = None
 
-	    if lvrequest.format == 1 or lvrequest.format == None:
-		format.setValue("*")
+            if lvrequest.format == 1 or lvrequest.format == None:
+                format.setValue("*")
 
-	    poplevel.add(miscgrid, 0, row, (0,1,0,0))        
+            poplevel.add(miscgrid, 0, row, (0,1,0,0))
 
         row = row + 1
-	if preexist:
+        if preexist:
             popbb = ButtonBar(self.screen, (TEXT_OK_BUTTON,
                                             (_("File System Options"), "fsopts"),
                                             TEXT_CANCEL_BUTTON))
-	else:
-	    popbb = ButtonBar(self.screen, (TEXT_OK_BUTTON,TEXT_CANCEL_BUTTON))
-        poplevel.add(popbb, 0, row, (0,1,0,0), growx = 1)        
+        else:
+            popbb = ButtonBar(self.screen, (TEXT_OK_BUTTON,TEXT_CANCEL_BUTTON))
+        poplevel.add(popbb, 0, row, (0,1,0,0), growx = 1)
 
         while 1:
             res = poplevel.run()
@@ -1204,21 +1204,21 @@ class PartitionWindow:
 
             request = copy.copy(lvrequest)
 
-	    if not preexist:
-		request.fstype = fstype.current()
-	    else:
-		request.fstype = newfstype
+            if not preexist:
+                request.fstype = fstype.current()
+            else:
+                request.fstype = newfstype
 
             if request.fstype.isMountable():
                 request.mountpoint = self.mount.value()
             else:
                 request.mountpoint = None
 
-	    if not preexist:
-		if format:
-		    request.format = format.selected()
-		else:
-		    request.format = 0
+            if not preexist:
+                if format:
+                    request.format = format.selected()
+                else:
+                    request.format = 0
 
                 # set the vg
                 vgreq = vgtype.current()
@@ -1232,7 +1232,7 @@ class PartitionWindow:
                 err = sanityCheckLogicalVolumeName(lvn)
                 if err:
                     self.intf.messageWindow(_("Illegal Logical Volume Name"), err, custom_icon="error")
-                    
+
                     continue
 
                 # make sure we don't have an LV in this volume group by
@@ -1254,7 +1254,7 @@ class PartitionWindow:
                                               "pick another.") % (lvn,),
                                             custom_icon="error")
                     continue
-                    
+
                 request.logicalVolumeName = lvn
 
                 try:
@@ -1265,7 +1265,7 @@ class PartitionWindow:
                                               "not a valid number greater "
                                               "than 0."), custom_icon="error")
                     continue
-                                            
+
                 pesize = vgreq.pesize
                 size = lvm.clampLVSizeRequest(size, pesize, roundup=1)
 
@@ -1279,11 +1279,11 @@ class PartitionWindow:
                                                                        maxlv),
                                             custom_icon="error")
                     continue
-                    
+
                 vgsize = vgreq.getActualSize(self.partitions, self.diskset)
                 avail = vgsize
                 for req in self.partitions.requests:
-                    if ((req.type == REQUEST_LV) and 
+                    if ((req.type == REQUEST_LV) and
                         (req.volumeGroup == vgreq.uniqueID)):
                         avail -= req.size
                 if lvrequest.size:
@@ -1302,10 +1302,10 @@ class PartitionWindow:
                 request.size = size
                 request.grow = 0
                 request.dev = None
-	    else:
-		request.format = format
-		request.migrate = migrate
-		request.fstype = newfstype
+            else:
+                request.format = format
+                request.migrate = migrate
+                request.fstype = newfstype
 
             err = request.sanityCheckRequest(self.partitions)
             if err:
@@ -1394,9 +1394,9 @@ class PartitionWindow:
     def resetCb(self):
         if not confirmResetPartitionState(self.intf):
             return
-        
+
         self.diskset.refreshDevices()
-        self.partitions.setFromDisk(self.diskset)        
+        self.partitions.setFromDisk(self.diskset)
         self.populate()
 
     def shutdownMainUI(self):
@@ -1428,7 +1428,7 @@ class PartitionWindow:
                                       (_("Delete"), "delete", "F4"),
                                       (_("RAID"), "raid", "F11"),
                                       TEXT_OK_BUTTON, TEXT_BACK_BUTTON))
-        
+
         screen.pushHelpLine( _("    F1-Help     F2-New      F3-Edit   F4-Delete    F5-Reset    F12-OK        "))
 
         self.g.add(self.bb, 0, 2, (0, 1, 0, 0))
@@ -1438,7 +1438,7 @@ class PartitionWindow:
         while 1:
             rc = self.g.run()
             res = self.bb.buttonPressed(rc)
-            
+
             if res == "new":
                 self.newCb()
             elif res == "edit" or rc == self.lb.listbox: # XXX better way?
@@ -1455,7 +1455,7 @@ class PartitionWindow:
 
                 self.diskset.refreshDevices()
                 self.partitions.setFromDisk(self.diskset)
-                
+
                 screen.popHelpLine()
                 screen.popWindow()
                 return INSTALL_BACK
@@ -1464,12 +1464,12 @@ class PartitionWindow:
                     self.intf.messageWindow(_("No Root Partition"),
                         _("Installation requires a / partition."))
                     continue
-                
+
                 (errors, warnings) = self.partitions.sanityCheckAllRequests(self.diskset)
                 rc = partitionSanityErrors(self.intf, errors)
                 if rc != 1:
                     continue
-        
+
                 rc = partitionSanityWarnings(self.intf, warnings)
                 if rc != 1:
                     continue
@@ -1484,9 +1484,9 @@ class PartitionWindow:
                 self.shutdownMainUI()
 
                 screen.popHelpLine()
-                screen.popWindow()                
+                screen.popWindow()
                 return INSTALL_OK
-        
+
 class PartitionTypeWindow:
     def typeboxChange(self, (typebox, drivelist)):
         flag = FLAGS_RESET
@@ -1518,7 +1518,7 @@ class PartitionTypeWindow:
             if pomona.dispatch.stepInSkipList("autopartitionexecute"):
                 typebox.setCurrent(-1)
             else:
-                typebox.setCurrent(pomona.id.partitions.autoClearPartType)        
+                typebox.setCurrent(pomona.id.partitions.autoClearPartType)
 
             g.add(typebox, 0, 1, (0, 1, 0, 0))
 
@@ -1535,10 +1535,10 @@ class PartitionTypeWindow:
             g.add(bb, 0, 5, (0,1,0,0))
 
 
-            typebox.setCallback(self.typeboxChange, (typebox, drivelist))        
+            typebox.setCallback(self.typeboxChange, (typebox, drivelist))
             self.drivelist = drivelist
 
-            screen.pushHelpLine (_("<Space>,<+>,<-> selection   |   <F12> next screen"))        
+            screen.pushHelpLine (_("<Space>,<+>,<-> selection   |   <F12> next screen"))
 
             # restore the drive list each time
             disks = pomona.id.diskset.disks.keys()
@@ -1570,11 +1570,11 @@ class PartitionTypeWindow:
                 sel = []
             partmethod_ans = typebox.current()
             res = bb.buttonPressed(rc)
-            
+
             self.clearDrivelist()
             screen.popHelpLine()
             screen.popWindow()
-            
+
             if res == TEXT_BACK_CHECK:
                 return INSTALL_BACK
 
@@ -1599,7 +1599,7 @@ class PartitionTypeWindow:
         pomona.dispatch.skipStep("partition", skip = 0)
         pomona.dispatch.skipStep("bootloader", skip = 1)
 
-	if partmethod_ans != -1:
+        if partmethod_ans != -1:
             reviewLayout = pomona.intf.messageWindow(_("Review Partition Layout"),
                                _("Review and modify partitioning layout?"),
                                type = "yesno")

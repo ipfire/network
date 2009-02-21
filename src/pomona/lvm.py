@@ -64,9 +64,9 @@ def has_lvm():
 has_lvm()
 
 if lvmDevicePresent == 1:
-	log.info("LVM is enabled.")
+    log.info("LVM is enabled.")
 else:
-	log.info("LVM is disabled.")
+    log.info("LVM is disabled.")
 
 def lvmExec(*args):
     try:
