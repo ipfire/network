@@ -1,0 +1,300 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+DEBUG=
+VERBOSE=
+
+BOLD="\\033[1;39m"
+NORMAL="\\033[0;39m"
+ERROR="\\033[1;31m"
+
+. ../src/initscripts/networking/functions
+
+CONFIG_DIR=${CONFIG_DIR-/etc/sysconfig/networking}
+
+CONFIG_ZONES=${CONFIG_DIR}/zones
+CONFIG_PORTS=${CONFIG_DIR}/ports
+
+function usage() {
+	echo "Usage $0 - TODO"
+	_exit $1
+}
+
+function debug() {
+	if [ -n "$1" ]; then
+		DEBUG=$1
+		verbose $1
+		return
+	else
+		if [ "$DEBUG" = "1" ]; then
+			return 0
+		else
+			return 1
+		fi
+	fi
+}
+
+function verbose() {
+	if [ -n "$1" ]; then
+		VERBOSE=$1
+		return
+	else
+		if [ "$VERBOSE" = "1" ]; then
+			return 0
+		else
+			return 1
+		fi
+	fi
+}
+
+function decho() {
+	debug && echo -e "${ERROR}$@${NORMAL}" >&2
+}
+
+function vecho() {
+	verbose && echo -e "$@"  >&2
+}
+
+function error() {
+	echo -e "${ERROR}ERROR${NORMAL}: $@" >&2
+	_exit 1
+}
+
+function _exit() {
+	decho "Exiting with code $1."
+	exit $1
+}
+
+function devicify() {
+	local device
+	local mac
+
+	device=$1
+
+	if is_mac ${device}; then
+		mac=${device}
+		device=$(get_device_by_mac ${device})
+		decho "Figured out that ${mac} is ${device}."
+	fi
+	decho "Function: devicify $@ -> ${device}"
+	echo ${device}
+}
+
+function port_show() {
+	local port
+
+	port=$(devicify $1)
+
+	if ! device_exists ${port}; then
+		error "Port ${BOLD}${port}${NORMAL} does not exist."
+		return 1
+	fi
+
+	ip -s link show $port
+}
+
+function port_add() {
+	local port
+	local zone
+	local vid
+	
+	zone=$1
+	port=$(devicify $2)
+	vid=${3-0}
+
+	decho "Function: port_add $@"
+	decho "  Zone: ${zone} Port: ${port} VLAN-ID: ${vid}"
+
+	# XXX Check if vlan id is valid
+
+	if ! zone_exists ${zone}; then
+		error "Zone ${BOLD}${zone}${NORMAL} does not exist."
+		return 1
+	fi
+
+	if [ -z "$port" ]; then
+		error "Port ${BOLD}${2}${NORMAL} could not be found."
+		return 1
+	fi
+	
+	if ! device_exists ${port}; then
+		error "Port ${BOLD}${port}${NORMAL} does not exist."
+		return 1
+	fi
+
+	local mac
+	mac=$(get_mac_by_device ${port})
+
+	mkdir -p ${CONFIG_PORTS}/${mac} 2>/dev/null
+	touch ${CONFIG_PORTS}/${mac}/${vid}
+	ln -sf ${CONFIG_PORTS}/${mac}/${vid} ${CONFIG_ZONES}/${zone}/port-${mac}-${vid}
+
+	# XXX add code to bring up device immediately
+
+	vecho "Successfully added port ${BOLD}${port}${NORMAL} (${mac} - ${vid}) to ${BOLD}${zone}${NORMAL}."
+}
+
+function port_del() {
+	local port
+	local zone
+	local vid
+	
+	zone=$1
+	port=$(devicify $2)
+	vid=${3-0}
+
+	decho "Function: port_del $@"
+	decho "  Zone: ${zone} Port: ${port} VLAN-ID: ${vid}"
+
+	rm -f ${CONFIG_ZONES}/${zone}/port-${mac}-${vid} \
+			${CONFIG_PORTS}/${mac}/${vid} 2>/dev/null
+	rm -r ${CONFIG_PORTS}/${mac}/ 2>/dev/null # XXX Does this only remove if dir is empty?
+
+	# XXX add code to bring down device immediately
+
+	vecho "Successfully removed port ${BOLD}${port}${NORMAL} (${mac} - ${vid}) from ${BOLD}${zone}${NORMAL}."
+}
+
+function zone_show() {
+	local zone
+	zone=$1
+
+	if [ -z "$zone" ]; then
+		for zone in ${CONFIG_ZONES}/*; do
+			zone_show $(basename $zone)
+		done
+		return
+	fi
+
+	if ! zone_exists ${zone}; then
+		error "Zone ${BOLD}${zone}${NORMAL} does not exist."
+		return 2
+	fi
+
+	echo    "##################################################"
+	echo -e "# ${ERROR}ZONE INFO - ${zone}${NORMAL}"
+	echo    "##################################################"
+
+	# Up or down?
+	if device_exists ${zone}; then
+		echo -e "# Device is ${ERROR}up${NORMAL}."
+	else
+		echo -e "# Device is ${ERROR}down${NORMAL}."
+	fi
+	echo "#"
+
+	# Ports
+	echo -e "# ${ERROR}Ports:${NORMAL}"
+	local port
+	for port in ${CONFIG_ZONES}/${zone}/port-*; do
+		port=$(basename ${port})
+		echo "#  ${port#port-}"
+		debug && echo "#  TODO: Is port up or down?"
+	done
+	echo "#"
+
+}
+
+function zone_add() {
+	local zone
+
+	zone=$1
+	if zone_exists ${zone}; then
+		error "Zone ${BOLD}${zone}${NORMAL} already exists."
+		return 2
+	fi
+
+	mkdir -p ${CONFIG_ZONES}/${zone}
+	vecho "Successfully added zone ${zone}."
+}
+
+function zone_del() {
+	local zone
+
+	zone=$1
+	if ! zone_exists ${zone}; then
+		error "Zone ${BOLD}${zone}${NORMAL} does not exist."
+		return 1
+	fi
+
+	rm -rf ${CONFIG_ZONES}/${zone}
+	vecho "Successfully removed zone ${zone}."
+}
+
+while [ "$#" -gt 0 ]; do
+	arg=$1
+	shift
+	case "$arg" in
+		--debug|-d)
+			debug 1
+			decho "Debug mode is enabled."
+			;;
+		--verbose|-v)
+			verbose 1
+			vecho "${BOLD}Verbose mode is enabled.${NORMAL}"
+			;;
+		help|-h|--help)
+			usage 0
+			;;
+		start|stop|restart|reload)
+			exec /etc/init.d/network $arg
+			;;
+		port|po|p)
+			arg=$1
+			shift
+			case "$arg" in
+				show)
+					port_show $@
+					_exit $?
+					;;
+			esac
+			;;
+		zone|zo|z)
+			arg=$1
+			shift
+			case "$arg" in
+				add)
+					zone_add $@
+					_exit $?
+					;;
+				del)
+					zone_del $@
+					_exit $?
+					;;
+				show)
+					zone_show $@
+					_exit $?
+					;;
+				addport)
+					port_add $@
+					_exit $?
+					;;
+				delport)
+					port_del $@
+					_exit $?
+					;;
+			esac
+			;;
+		*)
+			usage
+			;;
+	esac
+done
