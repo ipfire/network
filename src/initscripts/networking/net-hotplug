@@ -27,6 +27,8 @@ fi
 
 MAC=$(get_mac_by_device ${INTERFACE})
 
+logger -t net "Received uevent for $INTERFACE ($ACTION)."
+
 case $ACTION in
 	add|register)
 		# Don't do anything if the network is stopped

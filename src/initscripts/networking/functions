@@ -19,7 +19,11 @@
 #                                                                             #
 ###############################################################################
 
-. /etc/sysconfig/network
+[ -f "/etc/sysconfig/network" ] && . /etc/sysconfig/network
+
+function is_mac() {
+	egrep "^[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]$" <<<$1
+}
 
 function get_device_by_mac() {
 	local mac=$1
@@ -37,4 +41,16 @@ function get_mac_by_device() {
 		return 0
 	fi
 	return 1
+}
+
+function device_exists() {
+	ip link show ${1} &>/dev/null
+}
+
+function zone_exists() {
+	[ -e "$CONFIG_ZONES/$1" ] #|| device_exists $@
+}
+
+function bridge_devices() {
+	: #TODO
 }

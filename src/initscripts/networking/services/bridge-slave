@@ -17,20 +17,26 @@
 
 interface=${IFCONFIG##*/}
 
+. /etc/init.d/networking/functions
+
 case "${2}" in
 	up)
+		if ! device_exists ${BRIDGE}; then
+			MESSAGE="Bringing up bridge ${BRIDGE}..."
+			brctl addbr ${BRIDGE} || failed=1
+			ip link set ${BRIDGE} up || failed=1
+			(exit ${failed})
+			evaluate_retval
+		fi
+
 		MESSAGE="Adding slave interface ${interface} to the ${1} interface..."
-		ip link set ${interface} up || failed=1
-		brctl addif ${1} ${interface} || failed=1
-		(exit ${failed})
+		brctl addif ${1} ${interface}
 		evaluate_retval
 	;;
 
 	down)
 		MESSAGE="Removing slave interface ${interface} from the ${1} interface..."
-		brctl delif ${1} ${interface} || failed=1
-		ip link set ${interface} down || failed=1
-		(exit ${failed})
+		brctl delif ${1} ${interface}
 		evaluate_retval
 	;;
 
