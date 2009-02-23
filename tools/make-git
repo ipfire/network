@@ -222,7 +222,7 @@ git_hook_pre_commit() {
 	USERMAIL=$(git config --list | grep ^user.email)
 	USERMAIL=${USERMAIL#user.email=}
 
-	if [[ ! "$USERMAIL" =~ "@ipfire\.org$" ]]; then
+	if ! egrep -q "@ipfire.org" <<< $USERMAIL; then
 		echo "User email is not from ipfire.org. Can't commit."
 		return 1
 	fi
