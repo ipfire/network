@@ -1,0 +1,33 @@
+#!/bin/sh
+########################################################################
+# Begin $NETWORK_DEVICES/services/ethernet
+#
+# Description : Ethernet Script
+#
+# Authors     : Michael Tremer - michael.tremer@ipfire.org
+#
+# Version     : 00.00
+#
+# Notes       : This script adds ethernet support.
+#
+########################################################################
+
+. /lib/lsb/init-functions
+. ${CONFIG}
+
+case "${2}" in
+	up)
+		: # Do nothing
+	;;
+
+	down)
+		: # Do nothing
+	;;
+
+	*)
+		echo "Usage: ${0} [interface] {up|down}"
+		exit 1
+	;;
+esac
+
+# End $NETWORK_DEVICES/services/ethernet
