@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = iproute2
 PKG_VER    = 2.6.28
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,26 +34,48 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Networking/Tools
+EXTRA      = no
+DEBUG      = no
+DEPS       = bison flex
+
+URL        = http://www.linuxfoundation.org/en/Net:Iproute2
+LICENSE    = GPLv2+
+SHORT_DESC = Advanced IP routing and network device configuration tools.
+
+define LONG_DESC
+	The iproute package contains networking utilities (ip and rtmon, for \
+	example) which are designed to use the advanced networking \
+	capabilities of the Linux 2.4.x and 2.6.x kernel.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
 objects = $(DL_FILE)
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+info:
+	$(DO_PKG_INFO)
 
-$(objects) :
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -i -e "s@DESTDIR=.*@DESTDIR=@" \
 				-e "s@/share/@/usr/share/@g" Makefile
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
