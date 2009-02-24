@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = readline
-PKG_VER    = 5.2
+PKG_VER    = 6.0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -37,7 +37,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-fixes-6.patch
+objects = $(DL_FILE)
 
 install : $(OBJECT)
 
@@ -53,9 +53,8 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && sed -i '/MV.*old/d' Makefile.in
-	cd $(DIR_APP) && sed -i '/{OLDSUFF}/c:' support/shlib-install
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-6.patch
+	#cd $(DIR_APP) && sed -i '/MV.*old/d' Makefile.in
+	#cd $(DIR_APP) && sed -i '/{OLDSUFF}/c:' support/shlib-install
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
@@ -66,7 +65,7 @@ $(OBJECT) :
 	cd $(DIR_APP) && make install
 
 	rm -fv /lib/lib{readline,history}.so
-	ln -sfv ../../lib/libreadline.so.5 /usr/lib/libreadline.so
-	ln -sfv ../../lib/libhistory.so.5 /usr/lib/libhistory.so
+	ln -sfv ../../lib/libreadline.so.6 /usr/lib/libreadline.so
+	ln -sfv ../../lib/libhistory.so.6 /usr/lib/libhistory.so
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
