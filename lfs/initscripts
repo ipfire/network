@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -25,12 +25,30 @@
 include Config
 
 PKG_NAME   = initscripts
-PKG_VER    = ipfire
+PKG_VER    =
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)
 DIR_APP    = $(DIR_SOURCE)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = System/Boot
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        =
+LICENSE    = GPLv2+
+SHORT_DESC = The /etc/init.d scripts.
+
+define LONG_DESC
+	The initscripts package contains the basic system scripts used to boot \
+	your system, change runlevels, and shut the system down cleanly. \
+	Initscripts also contains the scripts that activate and \
+	deactivate the network interfaces.
+endef
 
 SCRIPTS = \
 	checkfs \
@@ -61,15 +79,26 @@ SCRIPTS = \
 # Top-level Rules
 ###############################################################################
 
-install : $(OBJECT)
+objects =
 
-download :
+download: $(objects)
+
+info:
+	$(DO_PKG_INFO)
+
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) :
+$(OBJECT): $(objects)
 	@$(PREBUILD)
 	install -d -m 755 /etc/rc0.d
 	install -d -m 755 /etc/rc1.d
