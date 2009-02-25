@@ -28,7 +28,7 @@ from optparse import OptionParser
 
 import isys
 import users
-import inutil
+import iutil
 import dispatch
 from flags import flags
 from constants import *
@@ -81,7 +81,7 @@ def setupLoggingFromOpts(opts):
             logger.addSysLogHandler(log, opts.syslog)
 
 def checkMemory():
-    if inutil.memInstalled() < isys.MIN_RAM:
+    if iutil.memInstalled() < isys.MIN_RAM:
         from snack import SnackScreen, ButtonChoiceWindow
 
         screen = SnackScreen()
@@ -110,7 +110,7 @@ class Pomona:
         if bootreq:
             autorequests.extend(bootreq)
 
-        (minswap, maxswap) = inutil.swapSuggestion()
+        (minswap, maxswap) = iutil.swapSuggestion()
         autorequests.append((None, "swap", minswap, maxswap, 1, 1, 1))
 
         if doClear:

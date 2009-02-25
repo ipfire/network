@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = bash
-PKG_VER    = 3.2
+PKG_VER    = 4.0
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -38,7 +38,9 @@ MAINTAINER =
 GROUP      = System/Tools
 EXTRA      = no
 DEBUG      = no
-DEPS       =
+ifneq "$(STAGE)" "toolchain"
+	DEPS = readline
+endif
 
 URL        = http://www.gnu.org/software/bash/
 LICENSE    = GPLv2+
@@ -56,10 +58,8 @@ endef
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-fixes-9.patch \
-	$(PKG_NAME)-doc-$(PKG_VER).tar.gz \
-	$(THISAPP)-arc4random-1.patch \
-	$(THISAPP)-rng.patch
+	#$(THISAPP)-arc4random-1.patch \
+	#$(THISAPP)-rng.patch
 
 download: $(objects)
 
@@ -82,13 +82,11 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-fixes-9.patch
-
 ifeq "$(STAGE)" "toolchain"
 	# This patch modifies Bash to use /dev/urandom (settable with
 	# --with-randomdev=) for $RANDOM, instead of getpid() and gettimeofday().
 	# The test is "( echo $RANDOM; ( echo $RANDOM ); ( echo $RANDOM ) )":
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-rng.patch
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-rng.patch
 
 	# Bash uses the RTLD_LAZY option when loading libraries. We want to use
 	# RTLD_NOW (it is defined from <dlfcn.h>:
@@ -114,10 +112,9 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && tar -xvf $(DIR_DL)/$(PKG_NAME)-doc-$(PKG_VER).tar.gz
 	cd $(DIR_APP) && sed -i "s|htmldir = @htmldir@|htmldir = /usr/share/doc/$(THISAPP)|" \
 		Makefile.in
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-arc4random-1.patch
+	#cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-arc4random-1.patch
 	cd $(DIR_APP) && \
 		ac_cv_func_working_mktime=yes \
 		./configure \

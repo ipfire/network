@@ -57,7 +57,13 @@ function usage() {
 include functions
 
 while [ "$#" -gt 0 ]; do
-	case "$1" in
+	arg=$1
+	shift
+	case "$arg" in
+		--debug|-d)
+			debug 1
+			decho "Debug mode is enabled."
+			;;
 		--verbose|-v)
 			verbose 1
 			vecho "${BOLD}Verbose mode is enabled.${NORMAL}"
@@ -66,7 +72,7 @@ while [ "$#" -gt 0 ]; do
 			shift
 			case "$1" in
 				mask2cidr)
-					mask_to_cidr $2
+					mask_to_cidr $@
 					_exit $?
 					;;
 				*)
@@ -75,7 +81,7 @@ while [ "$#" -gt 0 ]; do
 			esac
 			;;
 		config)
-			config_load $2
+			config_load $@
 			_exit $?
 			;;
 		help|-h|--help)
@@ -89,7 +95,7 @@ while [ "$#" -gt 0 ]; do
 			;;
 		start)
 			_start
-			_exit $?
+			_exit $@
 			;;
 		stop)
 			;;
@@ -97,7 +103,6 @@ while [ "$#" -gt 0 ]; do
 			usage
 			;;
 	esac
-	shift
 done
 
 error "No command was given."

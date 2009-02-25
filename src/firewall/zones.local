@@ -19,7 +19,9 @@
 #                                                                             #
 ###############################################################################
 
-function zones_local_init() {
+function zones_local_add() {
+
+	decho "Adding zone \"local\""
 
 	# Accept everything on lo
 	iptables -A INPUT  -i lo -j ACCEPT

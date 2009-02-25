@@ -16,12 +16,14 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-import inutil
+import iutil
 import isys
 import os
 import sys
 import fsset
 import shutil
+import time
+import lvm
 from flags import flags
 from constants import *
 
@@ -45,23 +47,6 @@ def copyPomonaLogs(pomona):
             except:
                 pass
 
-def turnOnFilesystems(pomona):
-    if pomona.dir == DISPATCH_BACK:
-        log.info("unmounting filesystems")
-        pomona.id.fsset.umountFilesystems(pomona.rootPath)
-        return
-
-    #pomona.id.partitions.doMetaDeletes(pomona.id.diskset)
-    pomona.id.diskset.clearDevices()
-    pomona.id.fsset.setActive(pomona.id.diskset)
-    if not pomona.id.fsset.isActive():
-        pomona.id.diskset.savePartitions()
-    pomona.id.fsset.checkBadblocks(pomona.rootPath)
-    pomona.id.fsset.formatSwap(pomona.rootPath)
-    pomona.id.fsset.turnOnSwap(pomona.rootPath)
-    pomona.id.fsset.makeFilesystems(pomona.rootPath)
-    pomona.id.fsset.mountFilesystems(pomona)
-
 def doMigrateFilesystems(pomona):
     if pomona.dir == DISPATCH_BACK:
         return DISPATCH_NOOP
@@ -69,10 +54,84 @@ def doMigrateFilesystems(pomona):
     if pomona.id.fsset.haveMigratedFilesystems():
         return DISPATCH_NOOP
 
-    pomona.id.fsset.migrateFilesystems(pomona)
+    pomona.id.fsset.migrateFilesystems (pomona)
+
+def turnOnFilesystems(pomona):
+    def handleResizeError(e, dev):
+        if os.path.exists("/tmp/resize.out"):
+            details = open("/tmp/resize.out", "r").read()
+        else:
+            details = "%s" %(e,)
+        pomona.intf.detailedMessageWindow(_("Resizing Failed"),
+                                            _("There was an error encountered "
+                                            "resizing the device %s.") %(dev,),
+                                            details,
+                                            type = "custom",
+                                            custom_buttons = [_("_Exit installer")])
+        sys.exit(1)
+
+    if pomona.dir == DISPATCH_BACK:
+        log.info("unmounting filesystems")
+        pomona.id.fsset.umountFilesystems(pomona.rootPath)
+        return
+
+    if not pomona.id.fsset.isActive():
+        # turn off any swaps that we didn't turn on
+        # needed for live installs
+        iutil.execWithRedirect("swapoff", ["-a"],
+                               stdout = "/dev/tty5", stderr="/dev/tty5",
+                               searchPath = 1)
+    pomona.id.partitions.doMetaDeletes(pomona.id.diskset)
+    pomona.id.fsset.setActive(pomona.id.diskset)
+    try:
+        pomona.id.fsset.shrinkFilesystems(pomona.id.diskset, pomona.rootPath)
+    except fsset.ResizeError, (e, dev):
+        handleResizeError(e, dev)
+
+    if not pomona.id.fsset.isActive():
+        pomona.id.diskset.savePartitions()
+        # this is somewhat lame, but we seem to be racing with
+        # device node creation sometimes.  so wait for device nodes
+        # to settle
+        w = pomona.intf.waitWindow(_("Activating"), _("Activating new partitions.  Please wait..."))
+        time.sleep(1)
+        rc = iutil.execWithRedirect("/sbin/udevadm", [ "settle" ],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5",
+                                    searchPath = 1)
+        w.pop()
+
+        pomona.id.partitions.doEncryptionRetrofits()
+
+        try:
+            pomona.id.partitions.doMetaResizes(pomona.id.diskset)
+        except lvm.LVResizeError, e:
+            handleResizeError("%s" %(e,), "%s/%s" %(e.vgname, e.lvname))
+
+    try:
+        pomona.id.fsset.growFilesystems(pomona.id.diskset, pomona.rootPath)
+    except fsset.ResizeError, (e, dev):
+        handleResizeError(e, dev)
+
+    if not pomona.id.fsset.volumesCreated:
+        try:
+            pomona.id.fsset.createLogicalVolumes(pomona.rootPath)
+        except SystemError, e:
+            log.error("createLogicalVolumes failed with %s", str(e))
+            pomona.intf.messageWindow(_("LVM operation failed"),
+                                str(e)+"\n\n"+_("The installer will now exit..."),
+                                type="custom", custom_icon="error", custom_buttons=[_("_Reboot")])
+            sys.exit(0)
+
+    pomona.id.fsset.formatSwap(pomona.rootPath)
+    pomona.id.fsset.turnOnSwap(pomona.rootPath)
+    pomona.id.fsset.makeFilesystems(pomona.rootPath,
+                                      pomona.backend.skipFormatRoot)
+    pomona.id.fsset.mountFilesystems(pomona,0,0,
+                                       pomona.backend.skipFormatRoot)
 
 def setupTimezone(pomona):
-    # we don't need this going backwards
+    # we don't need this on going backwards
     if pomona.dir == DISPATCH_BACK:
         return
 
@@ -89,13 +148,10 @@ def setupTimezone(pomona):
     args = [ "--hctosys" ]
     if pomona.id.timezone.utc:
         args.append("-u")
-    elif pomona.id.timezone.arc:
-        #args.append("-a")
-        args.append("-l")
 
     try:
-        inutil.execWithRedirect("/sbin/hwclock", args, stdin = None,
-                                stdout = "/dev/tty5", stderr = "/dev/tty5")
+        iutil.execWithRedirect("/usr/sbin/hwclock", args, stdin = None,
+                               stdout = "/dev/tty5", stderr = "/dev/tty5")
     except RuntimeError:
         log.error("Failed to set clock")
 

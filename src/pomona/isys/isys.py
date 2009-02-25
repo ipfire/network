@@ -30,7 +30,7 @@ import socket
 import stat
 import posix
 import sys
-import inutil
+import iutil
 import warnings
 import resource
 import re
@@ -52,6 +52,190 @@ EARLY_SWAP_RAM = _isys.EARLY_SWAP_RAM
 # @return The amount of free space available, in
 def pathSpaceAvailable(path):
     return _isys.devSpaceFree(path)
+
+
+mdadmOutput = "/tmp/mdadmout"
+
+## An error occured when running mdadm.
+class MdadmError(Exception):
+    ## The constructor.
+    # @param args The arguments passed to the mdadm command.
+    # @param name The the name of the RAID device used in the mdadm command.
+    def __init__(self, args, name=None):
+        self.args = args
+        self.name = name
+        self.log = self.getCmdOutput()
+
+    ## Get the output of the last mdadm command run.
+    # @return The formatted output of the mdadm command which caused an error.
+    def getCmdOutput(self):
+        f = open(mdadmOutput, "r")
+        lines = reduce(lambda x,y: x + [string.strip(y),], f.readlines(), [])
+        lines = string.join(reduce(lambda x,y: x + ["   %s" % (y,)], \
+                                    lines, []), "\n")
+        return lines
+
+    def __str__(self):
+        s = ""
+        if not self.name is None:
+            s = " for device %s" % (self.name,)
+        command = "mdadm " + string.join(self.args, " ")
+        return "'%s' failed%s\nLog:\n%s" % (command, s, self.log)
+
+def _mdadm(*args):
+    try:
+        lines = iutil.execWithCapture("mdadm", args, stderr = mdadmOutput)
+        lines = string.split(lines, '\n')
+        lines = reduce(lambda x,y: x + [y.strip(),], lines, [])
+        return lines
+    except:
+        raise MdadmError, args
+
+def _getRaidInfo(drive):
+    log.info("mdadm -E %s" % (drive,))
+    try:
+        lines = _mdadm("-E", drive)
+    except MdadmError:
+        ei = sys.exc_info()
+        ei[1].name = drive
+        raise ei[0], ei[1], ei[2]
+
+    info = {
+            'major': "-1",
+            'minor': "-1",
+            'uuid' : "",
+            'level': -1,
+            'nrDisks': -1,
+            'totalDisks': -1,
+            'mdMinor': -1,
+        }
+
+    for line in lines:
+        vals = string.split(string.strip(line), ' : ')
+        if len(vals) != 2:
+            continue
+        if vals[0] == "Version":
+            vals = string.split(vals[1], ".")
+            info['major'] = vals[0]
+            info['minor'] = vals[1]
+        elif vals[0] == "UUID":
+            info['uuid'] = vals[1]
+        elif vals[0] == "Raid Level":
+            info['level'] = int(vals[1][4:])
+        elif vals[0] == "Raid Devices":
+            info['nrDisks'] = int(vals[1])
+        elif vals[0] == "Total Devices":
+            info['totalDisks'] = int(vals[1])
+        elif vals[0] == "Preferred Minor":
+            info['mdMinor'] = int(vals[1])
+        else:
+            continue
+
+    if info['uuid'] == "":
+        raise ValueError, info
+
+    return info
+
+def _stopRaid(mdDevice):
+    log.info("mdadm --stop %s" % (mdDevice,))
+    try:
+        _mdadm("--stop", mdDevice)
+    except MdadmError:
+        ei = sys.exc_info()
+        ei[1].name = mdDevice
+        raise ei[0], ei[1], ei[2]
+
+def raidstop(mdDevice):
+    log.info("stopping raid device %s" %(mdDevice,))
+    if raidCount.has_key (mdDevice):
+        if raidCount[mdDevice] > 1:
+            raidCount[mdDevice] = raidCount[mdDevice] - 1
+            return
+        del raidCount[mdDevice]
+
+    devInode = "/dev/%s" % mdDevice
+
+    try:
+        _stopRaid(devInode)
+    except:
+        pass
+
+def _startRaid(mdDevice, mdMinor, uuid):
+    log.info("mdadm -A --uuid=%s --super-minor=%s %s" % (uuid, mdMinor, mdDevice))
+    try:
+        _mdadm("-A", "--uuid=%s" % (uuid,), "--super-minor=%s" % (mdMinor,), \
+                mdDevice)
+    except MdadmError:
+        ei = sys.exc_info()
+        ei[1].name = mdDevice
+        raise ei[0], ei[1], ei[2]
+
+def raidstart(mdDevice, aMember):
+    log.info("starting raid device %s" %(mdDevice,))
+    if raidCount.has_key(mdDevice) and raidCount[mdDevice]:
+        raidCount[mdDevice] = raidCount[mdDevice] + 1
+        return
+
+    raidCount[mdDevice] = 1
+
+    mdInode = "/dev/%s" % mdDevice
+    mbrInode = "/dev/%s" % aMember
+
+    if os.path.exists(mdInode):
+        minor = os.minor(os.stat(mdInode).st_rdev)
+    else:
+        minor = int(mdDevice[2:])
+    try:
+        info = _getRaidInfo(mbrInode)
+        if info.has_key('mdMinor'):
+            minor = info['mdMinor']
+        _startRaid(mdInode, minor, info['uuid'])
+    except:
+        pass
+
+## Remove the superblock from a RAID device.
+# @param device The complete path to the RAID device name to wipe.
+def wipeRaidSB(device):
+    try:
+        fd = os.open(device, os.O_WRONLY)
+    except OSError, e:
+        log.warning("error wiping raid device superblock for %s: %s", device, e)
+        return
+
+    try:
+        _isys.wiperaidsb(fd)
+    finally:
+        os.close(fd)
+    return
+
+## Get the raw superblock from a RAID device.
+# @param The basename of a RAID device to check.  This device node does not
+#        need to exist to begin with.
+# @return A RAID superblock in its raw on-disk format.
+def raidsb(mdDevice):
+    return raidsbFromDevice("/dev/%s" % mdDevice)
+
+## Get the superblock from a RAID device.
+# @param The full path to a RAID device name to check.  This device node must
+#        already exist.
+# @return A tuple of the contents of the RAID superblock, or ValueError on
+#         error.
+def raidsbFromDevice(device):
+    try:
+        info = _getRaidInfo(device)
+        return (info['major'], info['minor'], info['uuid'], info['level'],
+                info['nrDisks'], info['totalDisks'], info['mdMinor'])
+    except:
+        raise ValueError
+
+def getRaidChunkFromDevice(device):
+    fd = os.open(device, os.O_RDONLY)
+    rc = 64
+    try:
+        rc = _isys.getraidchunk(fd)
+    finally:
+        os.close(fd)
+    return rc
 
 ## Set up an already existing device node to be used as a loopback device.
 # @param device The full path to a device node to set up as a loopback device.
@@ -515,7 +699,7 @@ def vtActivate(num):
     _isys.vtActivate (num)
 
 def isPsudoTTY(fd):
-    return _isys.isPsudoTTY (fd)
+    return _isys.isPseudoTTY(fd)
 
 ## Flush filesystem buffers.
 def sync():
@@ -523,5 +707,4 @@ def sync():
 
 handleSegv = _isys.handleSegv
 printObject = _isys.printObject
-bind_textdomain_codeset = _isys.bind_textdomain_codeset
 isVioConsole = _isys.isVioConsole
