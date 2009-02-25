@@ -38,7 +38,9 @@ MAINTAINER =
 GROUP      = System/Tools
 EXTRA      = no
 DEBUG      = no
-DEPS       = readline
+ifneq "$(STAGE)" "toolchain"
+	DEPS = readline
+endif
 
 URL        = http://www.gnu.org/software/bash/
 LICENSE    = GPLv2+
