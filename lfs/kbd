@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,12 +26,29 @@ include Config
 
 PKG_NAME   = kbd
 PKG_VER    = 1.15
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = System/Base
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://ftp.altlinux.org/pub/people/legion/kbd
+LICENSE    = GPLv2+
+SHORT_DESC = Tools for configuring the console (keyboard, virtual terminals, etc.).
+
+define LONG_DESC
+	The kbd package contains tools for managing a Linux \
+	system's console's behavior, including the keyboard, the screen \
+	fonts, the virtual terminals and font files.
+endef
 
 ###############################################################################
 # Top-level Rules
@@ -41,20 +58,27 @@ objects = $(DL_FILE) $(THISAPP)-backspace-1.patch \
 	kbd-latarcyrheb-16-fixed.tar.bz2 \
 	kbd-latsun-fonts.tar.bz2
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+info:
+	$(DO_PKG_INFO)
 
-$(objects) :
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
+
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-backspace-1.patch
 
 	# Adding our own fonts
