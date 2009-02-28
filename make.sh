@@ -188,7 +188,7 @@ ipfire_build() {
 	### Building the configuration dirs and files
 	#
 	ipfire_make stage3
-	ipfire_make lzma
+	ipfire_make xz
 
 	ipfire_make linux
 	ipfire_make aufs
