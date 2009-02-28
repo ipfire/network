@@ -103,8 +103,8 @@ distcc_get_hosts() {
 		echo "$i" >> $BASEDIR/distcc/hosts_new
 	done
 	if [ -s "$BASEDIR/distcc/hosts_new" ]; then
-		cat $BASEDIR/distcc/hosts_new | distcc_test_hosts > $BASEDIR/distcc/hosts
-		rm -f $BASEDIR/distcc/hosts_new
+		cat $BASEDIR/distcc/hosts_new | distcc_test_hosts > $BASEDIR/distcc/hosts_new
+		mv $BASEDIR/distcc/hosts{_new,}
 	fi
 }
 
@@ -119,7 +119,8 @@ distcc_test_hosts() {
 		host=$(awk -F: '{ print $1 }' <<<${i})
 		jobs=${i##*/}
 		port=$(awk -F: '{ print $2 }' <<<${i} | awk -F/ '{ print $1 }')
-		ip=$($BASEDIR/tools/resolver $host)
+		ip=$($BASEDIR/tools/resolver $host 2>/dev/null)
+		[ -n "$ip" ] || continue
 
 		if ping -c3 -w5 ${ip} &>/dev/null; then
 			if [ -n "$(which nc 2>/dev/null)" ]; then
