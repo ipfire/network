@@ -71,7 +71,8 @@ objects = $(DL_FILE) \
 	grub-0.93-configfile.patch \
 	$(THISAPP)-256byte_inode-1.patch \
 	grub-0.94-installcopyonly.patch \
-	$(THISAPP)-install.in.patch
+	$(THISAPP)-install.in.patch \
+	$(THISAPP)-ext4-1.patch
 
 download: $(objects)
 
@@ -106,6 +107,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-256byte_inode-1.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-install.in.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/grub-0.94-installcopyonly.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ext4-1.patch
 	
 	cd $(DIR_APP) && autoconf
 	
