@@ -76,5 +76,6 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -e "s/-Werror//g" -i Makefile
 	cd $(DIR_APP) && make install USESELINUX=0
+	$(PYTHON_COMPILE)
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
