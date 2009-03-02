@@ -13,7 +13,7 @@
 ########################################################################
 
 . /lib/lsb/init-functions
-. ${IFCONFIG}
+[ -n "${CONFIG}" ] && . ${CONFIG}
 
 case "${TYPE}" in
 	("" | "network")

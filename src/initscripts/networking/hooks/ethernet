@@ -1,0 +1,50 @@
+#!/bin/sh
+########################################################################
+# Begin $NETWORK_DEVICES/services/ethernet
+#
+# Description : Ethernet Script
+#
+# Authors     : Michael Tremer - michael.tremer@ipfire.org
+#
+# Version     : 00.00
+#
+# Notes       : This script adds ethernet support.
+#
+########################################################################
+
+. /lib/lsb/init-functions
+. /etc/init.d/networking/functions
+[ -n "${CONFIG}" ] && . ${CONFIG}
+
+port=$(macify ${1})
+
+case "${2}" in
+	up)
+		: # Do nothing
+	;;
+
+	down)
+		: # Do nothing
+	;;
+
+	add)
+		cat <<EOF > ${CONFIG_PORTS}/${port}/ethernet
+HOOK=ethernet
+EOF
+		ln -sf ${CONFIG_PORTS}/${port}/ethernet \
+			${CONFIG_ZONES}/${ZONE}/port-${port}-ethernet
+	;;
+
+	remove)
+		rm -f \
+			${CONFIG_ZONES}/${ZONE}/port-${port}-ethernet \
+			${CONFIG_PORTS}/${port}/ethernet
+	;;
+
+	*)
+		echo "Usage: ${0} [interface] {up|down|add|remove}"
+		exit 1
+	;;
+esac
+
+# End $NETWORK_DEVICES/services/ethernet

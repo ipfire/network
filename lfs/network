@@ -24,55 +24,28 @@
 
 include Config
 
-PKG_NAME   = initscripts
+PKG_NAME   = network
 PKG_VER    =
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)
-DIR_APP    = $(DIR_SOURCE)/$(THISAPP)
+DIR_APP    = $(DIR_SOURCE)/$(PKG_NAME)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-MAINTAINER =
-GROUP      = System/Boot
+MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+GROUP      = Networking/Tools
 EXTRA      = no
 DEBUG      = no
-DEPS       =
+DEPS       = initscripts
 
-URL        =
-LICENSE    = GPLv2+
-SHORT_DESC = The /etc/init.d scripts.
+URL        = http://www.ipfire.org/
+LICENSE    = GPL3+
+SHORT_DESC = The IPFire Networking Scripts.
 
 define LONG_DESC
-	The initscripts package contains the basic system scripts used to boot \
-	your system, change runlevels, and shut the system down cleanly. \
-	Initscripts also contains the scripts that activate and \
-	deactivate the network interfaces.
+	This script installs the IPFire Networking Scripts.
 endef
-
-SCRIPTS = \
-	checkfs \
-	cleanfs \
-	firewall \
-	haldaemon \
-	halt \
-	lighttpd \
-	localnet \
-	messagebus \
-	modules \
-	mountfs \
-	mountkernfs \
-	network \
-	openldap \
-	random \
-	reboot \
-	sendsignals \
-	setclock \
-	swap \
-	sysctl \
-	syslog-ng \
-	udev \
-	udev_retry
 
 ###############################################################################
 # Top-level Rules
@@ -99,47 +72,5 @@ $(objects):
 
 $(OBJECT): $(objects)
 	@$(PREBUILD)
-	install -d -m 755 /etc/rc0.d
-	install -d -m 755 /etc/rc1.d
-	install -d -m 755 /etc/rc2.d
-	install -d -m 755 /etc/rc3.d
-	install -d -m 755 /etc/rc4.d
-	install -d -m 755 /etc/rc5.d
-	install -d -m 755 /etc/rc6.d
-	install -d -m 755 /etc/rcS.d
-	install -d -m 755 /etc/init.d
-	install -d -m 755 /etc/init.d/boottemp
-	install -d -m 755 /etc/init.d/networking
-	install -d -m 755 /etc/init.d/networking/hooks
-	install -d -m 755 /etc/sysconfig
-	install -d -m 755 /etc/lsb/state
-	install -d -m 755 /lib/lsb
-
-	for i in $(DIR_APP)/core/*; do \
-		install -v -m 754 $$i /etc/init.d/; \
-	done
-	chmod 644 /etc/init.d/ipfire-functions
-
-	# Install networking scripts
-	for i in $(DIR_APP)/networking/*; do \
-		[ -d "$$i" ] && continue; \
-		install -v -m 754 $$i /etc/init.d/networking; \
-	done
-	chmod 644 /etc/init.d/networking/functions
-
-	for i in $(DIR_APP)/networking/hooks/*; do \
-		install -v -m 754 $$i /etc/init.d/networking/hooks; \
-	done
-
-	install -m 644 $(DIR_APP)/lsb/init-functions /lib/lsb/
-	install -m 644 $(DIR_APP)/lsb/manage-functions /lib/lsb/
-	install -m 644 $(DIR_APP)/etc/lsb-config /etc/lsb/
-
-	cd /etc/init.d && install_initd -v $(SCRIPTS)
-
-	for i in $(DIR_SRC)/src/initscripts/sysconfig/*; do \
-		install -v -m 644 $$i /etc/sysconfig/; \
-	done
-	chmod -v 755 /etc/sysconfig/rc.local
-
+	install -m 755 -v $(DIR_APP)/network /usr/bin
 	@$(POSTBUILD)

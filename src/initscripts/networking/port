@@ -1,0 +1,107 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /lib/lsb/init-functions
+. /etc/init.d/networking/functions
+
+port=$(macify $1)
+action=$2
+
+shift 2
+
+if ! device_exists ${port}; then
+	echo "Port ${port} does not exist."
+	exit 1
+fi
+
+if [ -z "${port}" ] || [ -z "${action}" ]; then
+	echo "Usage: $0 <port> <up|down> [hooks]"
+	echo
+fi
+
+for arg in ${@-$(find ${CONFIG_PORTS}/${port}/)}; do
+	arg=${arg##*/}
+	[ -e "${CONFIG_PORTS}/${port}/${arg}" ] || continue
+	hooks="${hooks} ${CONFIG_PORTS}/${port}/${arg}"
+done
+
+echo "DEBUG: hooks: $hooks"
+
+# Getting zone variable
+#local zone
+#if [ -z "$ZONE" ]; then
+#	for zone in $(all_zones); do
+#		for i in ${zone}/port-*; do
+#			i=$(readlink ${i})
+#			for j in ${ports}; do
+#				if [ "${i}" = "${j}" ]; then
+#					ZONE=${i%/*}
+#					ZONE=${ZONE##*/}
+#				fi
+#			done
+#		done
+#	done
+#fi
+
+case "$action" in
+	up)
+		message="Setting up port ${port}..."
+		ip link set $(devicify ${port}) up
+		evaluate_retval
+
+		for hook in ${hooks}; do
+			[ -d "${hook}" ] && continue
+			(
+				. ${hook}
+				if [ -n "${HOOK}" -a -x "/etc/init.d/networking/hooks/${HOOK}" ]; then
+					CONFIG=${hook} /etc/init.d/networking/hooks/${HOOK} ${port} up
+				else
+					echo -e "${FAILURE}Unable to process ${hook}. Either"
+					echo -e "${FAILURE}the HOOK variable was not set,"
+					echo -e "${FAILURE}or the specified hook cannot be executed."
+					message=""
+					log_failure_msg
+				fi
+			)
+		done
+		;;
+	down)
+		for hook in ${hooks}; do
+			[ -d "${hook}" ] && continue
+			(
+				. ${hook}
+				if [ -n "${HOOK}" -a -x "/etc/init.d/networking/hooks/${HOOK}" ]; then
+					CONFIG=${hook} /etc/init.d/networking/hooks/${HOOK} ${port} down
+				else
+					echo -e "${FAILURE}Unable to process ${hook}. Either"
+					echo -e "${FAILURE}the HOOK variable was not set,"
+					echo -e "${FAILURE}or the specified hook cannot be executed."
+					message=""
+					log_failure_msg
+				fi
+			)
+		done
+
+		message="Pushing down port ${port}..."
+		ip link set $(devicify ${port}) down
+		evaluate_retval
+		;;
+esac

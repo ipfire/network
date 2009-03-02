@@ -1,30 +1,31 @@
 #!/bin/sh
 ########################################################################
-# Begin $NETWORK_DEVICES/services/stp
+# Begin $NETWORK_DEVICES/services/bonding
 #
-# Description : Spanning Tree Protocol Script
+# Description : Interface Bonding Script
 #
 # Authors     : Michael Tremer - michael.tremer@ipfire.org
 #
 # Version     : 00.00
 #
-# Notes       : This script adds stp support to a bridge.
+# Notes       : This script collects two or more interfaces in one
+#               bonding intreface.
 #
 ########################################################################
 
 . /lib/lsb/init-functions
-. ${IFCONFIG}
+. ${CONFIG}
 
 case "${2}" in
 	up)
-		MESSAGE="Enabling Spanning Tree Protocol on interface ${1}..."
-		brctl stp ${1} on
+		MESSAGE="Bringing up bonding interface ${1}..."
+		ifenslave ${1} ${SLAVE_INTERFACES}
 		evaluate_retval
 	;;
 
 	down)
-		MESSAGE="Disabling Spanning Tree Protocol on interface ${1}..."
-		brctl stp ${1} off
+		MESSAGE="Bringing down bonding interface ${1}..."
+		modprobe -r bonding 2>/dev/null
 		evaluate_retval
 	;;
 
@@ -34,4 +35,4 @@ case "${2}" in
 	;;
 esac
 
-# End $NETWORK_DEVICES/services/stp
+# End $NETWORK_DEVICES/services/bonding
