@@ -105,6 +105,10 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/mpfr-$(MPFR).tar.bz2
 	cd $(DIR_APP) && ln -svf mpfr-* mpfr
 
+	# Branding gcc
+	cd $(DIR_APP) && sed -e "s:PKGVERSION:\"(GCC for $(NAME)-${VERSION}) \":" \
+		-i gcc/version.c
+
 ifeq "$(STAGE)" "toolchain"
 ifeq "$(PASS)" "1"
 	## Enable -fPIC by default

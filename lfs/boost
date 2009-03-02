@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,44 +24,77 @@
 
 include Config
 
-PKG_NAME   = libpng
-PKG_VER    = 1.2.35
+PKG_NAME   = boost
+PKG_VER    = 1_38_0
+PKG_REL    = 0
 
-THISAPP    = $(PKG_NAME)-$(PKG_VER)
+THISAPP    = $(PKG_NAME)_$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libaries
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.boost.org/
+LICENSE    = Boost
+SHORT_DESC = The Boost C++ Libraries.
+
+define LONG_DESC
+	Boost provides free peer-reviewed portable C++ source libraries. The \
+	emphasis is on libraries which work well with the C++ Standard \
+	Library, in the hopes of establishing "existing practice" for \
+	extensions and providing reference implementations so that the Boost \
+	libraries are suitable for eventual standardization. (Some of the \
+	libraries have already been proposed for inclusion in the C++ \
+	Standards Committee's upcoming C++ Standard Library Technical Report.)
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-sonamevers.patch
+
+download: $(objects)
 
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	# Let bjam use our own cflags
+	cd $(DIR_APP) && sed -e "s/-O3/$(CFLAGS)/g" -i tools/build/v2/tools/gcc.jam
+	cd $(DIR_APP) && sed -e "s/!!!SONAME!!!/4/" $(DIR_PATCHES)/$(THISAPP)-sonamevers.patch | patch -Np1
+
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr \
-			--disable-static
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+			--prefix=/usr
+
+	# Support parallel build and pass several flags
+	cd $(DIR_APP) && sed -e \
+		"s/^BJAM_CONFIG=/& $(PARALLELISMFLAGS) -d2 --layout=system variant=release threading=multi/" \
+		-i Makefile
+
+	cd $(DIR_APP) && make
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

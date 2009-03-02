@@ -24,9 +24,9 @@
 
 NAME="IPFire"			# Software name
 SNAME="ipfire"			# Short name
-VERSION="3.0-alpha1"		# Version number
+VERSION="3.0-prealpha2"		# Version number
 TOOLCHAINVERSION="${VERSION}-1"	# Toolchain
-SLOGAN="Lechery"		# Software slogan
+SLOGAN="Gluttony"		# Software slogan
 
 # Include funtions
 . tools/make-include
@@ -188,7 +188,7 @@ ipfire_build() {
 	### Building the configuration dirs and files
 	#
 	ipfire_make stage3
-	ipfire_make lzma
+	ipfire_make xz
 
 	ipfire_make linux
 	ipfire_make aufs
@@ -213,6 +213,8 @@ ipfire_build() {
 	ipfire_make libusb-compat	# Can be removed if usbutils supports libusb-1.0
 	ipfire_make bc
 	ipfire_make mingetty
+	ipfire_make boost
+	ipfire_make lua
 	
 	### Building some network stuff
 	#
@@ -228,7 +230,6 @@ ipfire_build() {
 	ipfire_make libnetfilter_conntrack
 	ipfire_make libnetfilter_log
 	ipfire_make python-netfilter_conntrack
-	ipfire_make dnsmasq
 	ipfire_make l7-protocols
 	ipfire_make bridge-utils
 	ipfire_make vlan
@@ -274,6 +275,8 @@ ipfire_build() {
 	ipfire_make beep
 	ipfire_make libuser
 	ipfire_make directfb
+	ipfire_make pdns
+	ipfire_make pdns-recursor
 	
 	### Building vpn stuff
 	#

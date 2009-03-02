@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,8 +24,9 @@
 
 include Config
 
-PKG_NAME   = libpng
-PKG_VER    = 1.2.35
+PKG_NAME   = pdns-recursor
+PKG_VER    = 3.1.7
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,35 +34,51 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Networking/DNS
+EXTRA      = no
+DEBUG      = no
+DEPS       = lua boost
+
+URL        = http://powerdns.com/
+LICENSE    = GPLv2
+SHORT_DESC = A modern, advanced and high performance recursing nameserver.
+
+define LONG_DESC
+	PowerDNS Recursor is a non authoritative/recursing DNS server. Use this \
+	package if you need a dns cache for your network.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-boost.patch
+
+download: $(objects)
 
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr \
-			--disable-static
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-boost.patch
+	cd $(DIR_APP) && LUA=1 LUA_CPPFLAGS_CONFIG= LUA_LIBS_CONFIG=-llua \
+		make OPTFLAGS= PROFILEFLAGS=-fprofile-use #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
