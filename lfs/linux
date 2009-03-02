@@ -163,6 +163,9 @@ ifeq "$(STAGE)" "ipfire"
 	cd $(DIR_APP) && sed -e "s/-D__KERNEL__/& -fno-PIE/" -i Makefile
 
 	cd $(DIR_APP) && yes "" | make oldconfig
+
+	cd $(DIR_APP) && cp -vf $(DIR_CONFIG)/kernel/$(SNAME)_logo.ppm \
+		drivers/video/logo/logo_linux_clut224.ppm
 	
 	cd $(DIR_APP) && CC="gcc -U_FORTIFY_SOURCE" make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make modules_install
