@@ -26,12 +26,7 @@ BOLD="\\033[1;39m"
 NORMAL="\\033[0;39m"
 ERROR="\\033[1;31m"
 
-. ../src/initscripts/networking/functions
-
-CONFIG_DIR=${CONFIG_DIR-/etc/sysconfig/networking}
-
-CONFIG_ZONES=${CONFIG_DIR}/zones
-CONFIG_PORTS=${CONFIG_DIR}/ports
+. /etc/init.d/networking/functions
 
 function usage() {
 	echo "Usage $0 - TODO"
@@ -83,21 +78,6 @@ function _exit() {
 	exit $1
 }
 
-function devicify() {
-	local device
-	local mac
-
-	device=$1
-
-	if is_mac ${device}; then
-		mac=${device}
-		device=$(get_device_by_mac ${device})
-		decho "Figured out that ${mac} is ${device}."
-	fi
-	decho "Function: devicify $@ -> ${device}"
-	echo ${device}
-}
-
 function port_show() {
 	local port
 
@@ -114,16 +94,16 @@ function port_show() {
 function port_add() {
 	local port
 	local zone
-	local vid
+	local hook
 	
 	zone=$1
-	port=$(devicify $2)
-	vid=${3-0}
+	port=$(macify $2)
+	hook=${3-ethernet}
 
-	decho "Function: port_add $@"
-	decho "  Zone: ${zone} Port: ${port} VLAN-ID: ${vid}"
+	shift 3
 
-	# XXX Check if vlan id is valid
+	decho "Function: port_add"
+	decho "  Zone: ${zone} Port: ${port} Hook: ${hook} $@"
 
 	if ! zone_exists ${zone}; then
 		error "Zone ${BOLD}${zone}${NORMAL} does not exist."
@@ -131,46 +111,60 @@ function port_add() {
 	fi
 
 	if [ -z "$port" ]; then
-		error "Port ${BOLD}${2}${NORMAL} could not be found."
+		error "Port ${BOLD}${port}${NORMAL} could not be found."
 		return 1
 	fi
-	
+
 	if ! device_exists ${port}; then
 		error "Port ${BOLD}${port}${NORMAL} does not exist."
 		return 1
 	fi
 
-	local mac
-	mac=$(get_mac_by_device ${port})
-
-	mkdir -p ${CONFIG_PORTS}/${mac} 2>/dev/null
-	touch ${CONFIG_PORTS}/${mac}/${vid}
-	ln -sf ${CONFIG_PORTS}/${mac}/${vid} ${CONFIG_ZONES}/${zone}/port-${mac}-${vid}
-
-	# XXX add code to bring up device immediately
-
-	vecho "Successfully added port ${BOLD}${port}${NORMAL} (${mac} - ${vid}) to ${BOLD}${zone}${NORMAL}."
+	mkdir -p ${CONFIG_PORTS}/${port} 2>/dev/null
+	if [ -x "/etc/init.d/networking/hooks/${hook}" ]; then
+		ZONE=${zone} /etc/init.d/networking/hooks/${hook} ${port} add $@
+		RET=$?
+		if [ "$RET" -eq "0" ]; then
+			vecho "Successfully added port ${BOLD}${port}${NORMAL} (${hook} $@) to ${BOLD}${zone}${NORMAL}."
+			/etc/init.d/networking/port ${port} up
+		else
+			error "Hook ${BOLD}${hook}${NORMAL} exited with $RET."
+			return $RET
+		fi
+	else
+		error "Hook ${BOLD}${hook}${NORMAL} does not exist or is not executeable."
+		return 1
+	fi
 }
 
 function port_del() {
 	local port
 	local zone
-	local vid
-	
+	local hook
+
 	zone=$1
 	port=$(devicify $2)
-	vid=${3-0}
+	hook=${3-ethernet}
 
-	decho "Function: port_del $@"
-	decho "  Zone: ${zone} Port: ${port} VLAN-ID: ${vid}"
+	shift 3
 
-	rm -f ${CONFIG_ZONES}/${zone}/port-${mac}-${vid} \
-			${CONFIG_PORTS}/${mac}/${vid} 2>/dev/null
-	rm -r ${CONFIG_PORTS}/${mac}/ 2>/dev/null # XXX Does this only remove if dir is empty?
+	decho "Function: port_del"
+	decho "  Zone: ${zone} Port: ${port} Hook: ${hook}"
 
-	# XXX add code to bring down device immediately
-
-	vecho "Successfully removed port ${BOLD}${port}${NORMAL} (${mac} - ${vid}) from ${BOLD}${zone}${NORMAL}."
+	if [ -x "/etc/init.d/networking/hooks/${hook}" ]; then
+		/etc/init.d/networking/port ${port} down ## XXX How do we identify only that one hook?
+		ZONE=${zone} /etc/init.d/networking/hooks/${hook} ${port} remove $@
+		RET=$?
+		if [ "$RET" -eq "0" ]; then
+			vecho "Successfully removed port ${BOLD}${port}${NORMAL} (${hook} $@) from ${BOLD}${zone}${NORMAL}."
+		else
+			error "Hook ${BOLD}${hook}${NORMAL} exited with $RET."
+			return $RET
+		fi
+	else
+		error "Hook ${BOLD}${hook}${NORMAL} does not exist or is not executeable."
+		return 1
+	fi
 }
 
 function zone_show() {
@@ -205,7 +199,7 @@ function zone_show() {
 	echo -e "# ${ERROR}Ports:${NORMAL}"
 	local port
 	for port in ${CONFIG_ZONES}/${zone}/port-*; do
-		port=$(basename ${port})
+		port=${port##*/}
 		echo "#  ${port#port-}"
 		debug && echo "#  TODO: Is port up or down?"
 	done

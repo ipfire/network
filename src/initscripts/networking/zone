@@ -1,0 +1,83 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /lib/lsb/init-functions
+. /etc/init.d/networking/functions
+
+zone=$1
+action=$2
+
+case "$action" in
+	up)
+		message="Bringing up zone ${zone}..."
+		
+		# Check if bridge already exists
+		zone_status=`brctl show 2>/dev/null`
+		if ! echo "${zone_status}" | grep -q "^${zone}"; then
+			#/etc/init.d/networking/hooks pre-up ${CONFIG_ZONES}/${zone}
+
+			# Create and bring up the zone
+			brctl addbr ${zone} || failed=1
+			ip link set ${zone} up || failed=1
+			(exit ${failed})
+			evaluate_retval standard
+
+			[ "${IN_BOOT}" = "1" ] && \
+				for port in ${CONFIG_ZONES}/${zone}/port-*; do
+					#port=$(readlink ${port})
+					ZONE=${zone} /etc/init.d/networking/port ${port} up
+				done
+
+			###/etc/init.d/networking/hooks post-up ${CONFIG_ZONES}/${zone}
+		else
+			log_warning_msg
+			message="Zone ${zone} does already exist."
+			log_warning_msg
+		fi
+		;;
+
+	down)
+		message="Bringing down zone ${zone}..."
+		# Check if bridge already exists
+		zone_status=`brctl show 2>/dev/null`
+		if echo "${zone_status}" | grep -q "^${zone}"; then
+			#/etc/init.d/networking/hooks pre-down ${CONFIG_ZONES}/${zone}
+			# remove devices
+
+			for port in ${CONFIG_ZONES}/${zone}/port-*; do
+				brctl delif ${zone} ${port##*/}
+				/etc/init.d/networking/port ${port} down
+			done
+
+			# Bring down the zone and delete it
+			ip link set ${zone} down || failed=1
+			brctl delbr ${zone} || failed=1
+			(exit ${failed})
+			evaluate_retval standard
+
+			#/etc/init.d/networking/hooks post-down ${CONFIG_ZONES}/${zone}
+		else
+			log_warning_msg
+			message="Zone ${zone} does not exist."
+			log_warning_msg
+		fi
+		;;
+esac

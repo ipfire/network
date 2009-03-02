@@ -13,24 +13,44 @@
 ########################################################################
 
 . /lib/lsb/init-functions
-. ${CONFIG}
+. /etc/init.d/networking/functions
+[ -n "${CONFIG}" ] && . ${CONFIG}
+
+port=$(macify ${1})
+device=$(devicify ${port})
 
 case "${2}" in
 	up)
 		modprobe 8021q
-		MESSAGE="Adding VLAN ${ID} to interface ${1}..."
-		vconfig add ${1} ${ID} &>/dev/null
+		MESSAGE="Adding VLAN ${ID} to port ${port}..."
+		vconfig add ${device} ${ID} &>/dev/null
 		evaluate_retval
 	;;
 
 	down)
-		MESSAGE="Removing VLAN ${ID} from interface ${1}..."
-		vconfig rem ${1} ${ID} &>/dev/null
+		MESSAGE="Removing VLAN ${ID} from port ${port}..."
+		vconfig rem ${device} ${ID} &>/dev/null
 		evaluate_retval
 	;;
 
+	add)
+		ID=$3
+		cat <<EOF > ${CONFIG_PORTS}/${port}/vlan-${ID}
+HOOK=vlan
+ID=${ID}
+EOF
+		ln -sf ${CONFIG_PORTS}/${port}/vlan-${ID} \
+			${CONFIG_ZONES}/${ZONE}/port-${port}-vlan-${ID}
+	;;
+
+	remove)
+		rm -f \
+			${CONFIG_PORTS}/${port}/vlan-${ID} \
+			${CONFIG_ZONES}/${ZONE}/port-${port}-vlan-${ID}
+	;;
+
 	*)
-		echo "Usage: ${0} [interface] {up|down}"
+		echo "Usage: ${0} [interface] {up|down|add|remove}"
 		exit 1
 	;;
 esac

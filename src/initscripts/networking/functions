@@ -19,23 +19,56 @@
 #                                                                             #
 ###############################################################################
 
-[ -f "/etc/sysconfig/network" ] && . /etc/sysconfig/network
+CONFIG_DIR=/etc/sysconfig/networking
+
+CONFIG_ZONES=${CONFIG_DIR}/zones
+CONFIG_PORTS=${CONFIG_DIR}/ports
 
 function is_mac() {
-	egrep "^[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]$" <<<$1
+	egrep -q "^[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]$" <<<$1
 }
 
 function get_device_by_mac() {
-	local mac=$1
+	local mac
+	local i
+
+	mac=$1
+
 	for i in /sys/class/net/*; do
 		if [ "$(cat $i/address)" = "$mac" ]; then
-			echo $(basename $i)
+			grep -q "^${i##*/}" /proc/net/vlan/config 2>/dev/null && continue
+			echo ${i##*/}
+			break
 		fi
 	done
 }
 
+function get_device_by_mac_and_vid() {
+	local mac
+	local vid
+
+	mac=$1
+	vid=$2
+
+	local i
+	local VID
+	local DEVICE
+	for i in $(cat /proc/net/vlan/config 2>/dev/null); do
+		awk -F'|' '{ print $2 $3 }' | read DEVICE VID PARENT
+		if [ -n "${VID}" ] || [ -n "${DEVICE}" ]; then
+			continue
+		fi
+		if [ "${vid}" = "${VID}" ] && [ "$(macify ${PARENT})" = "${mac}" ]; then
+			echo "${DEVICE}"
+			return 0
+		fi
+	done
+	return 1
+}
+
 function get_mac_by_device() {
-	local device=$1
+	local device
+	device=$1
 	if [ -d "/sys/class/net/$device" ]; then
 		cat /sys/class/net/$device/address
 		return 0
@@ -43,8 +76,51 @@ function get_mac_by_device() {
 	return 1
 }
 
+function devicify() {
+	local device
+	local mac
+
+	device=$1
+
+	if is_mac ${device}; then
+		mac=${device}
+		device=$(get_device_by_mac ${device})
+	fi
+	echo ${device}
+}
+
+function macify() {
+	local input
+	local mac
+	
+	input=$1
+	
+	if is_mac ${input}; then
+		mac=${input}
+	else
+		mac=$(get_mac_by_device ${input})
+	fi
+	echo ${mac}
+}
+
 function device_exists() {
-	ip link show ${1} &>/dev/null
+	ip link show $(devicify ${1}) &>/dev/null
+}
+
+function rename_device() {
+	local source
+	local destination
+	
+	source=$1
+	destination=$2
+
+	# Check if devices exist
+	if ! device_exists ${source} || device_exists ${destination}; then
+		return 4
+	fi
+
+	ip link set ${source} name ${destination}
+	return $?
 }
 
 function zone_exists() {
@@ -52,5 +128,19 @@ function zone_exists() {
 }
 
 function bridge_devices() {
-	: #TODO
+	local bridge
+	bridge=$1
+	[ -z "${bridge}" ] && return 2
+	brctl show | grep "^${bridge}" | awk '{ print $NF }' | grep -v "^interfaces$"
+}
+
+function zone_add_port() {
+	brctl addif ${1} ${2}
+}
+
+function all_zones() {
+	local zone
+	for zone in ${CONFIG_ZONES}/*; do
+		[ -d "${zone}" ] && echo ${zone}
+	done
 }

@@ -17,41 +17,23 @@
 ### END INIT INFO
 
 . /lib/lsb/init-functions
-. /etc/sysconfig/network
+. /etc/init.d/networking/functions
 
 case "${1}" in
 	start)
 		# Start all network interfaces
-		for file in $(find ${NETWORK_DEVICES} -maxdepth 1); do
-			interface=${file##*/}
-
-			if [ -d "${file}" ] || [ -n "${interface}" ]; then
-				continue
-			fi
-
-			IN_BOOT=1 ${NETWORK_SCRIPTS}/brup ${interface}
+		for zone in $(find ${CONFIG_ZONES}/ -maxdepth 1); do
+			[ -d "${zone}" ] || continue
+			IN_BOOT=1 /etc/init.d/networking/zone ${zone##*/} up
 		done
 		touch /var/lock/subsys/network
 		;;
 
 	stop)
-		# Reverse list
-		FILES=""
-		for file in $(find ${NETWORK_DEVICES} -maxdepth 1); do
-			interface=${file##*/}
-
-			if [ -d "${file}" ] || [ -n "${interface}" ]; then
-				continue
-			fi
-			FILES="${file} ${FILES}"
-		done
-
 		# Stop all network interfaces
-		for file in ${FILES}
-		do
-			interface=${file##*/}
-
-			IN_BOOT=1 ${NETWORK_SCRIPTS}/brdown ${interface}
+		for zone in $(find ${CONFIG_ZONES}/ -maxdepth 1); do
+			[ -d "${zone}" ] || continue
+			IN_BOOT=1 /etc/init.d/networking/zone ${zone##*/} down
 		done
 		rm -f /var/lock/subsys/network
 		;;

@@ -13,7 +13,10 @@
 ########################################################################
 
 . /lib/lsb/init-functions
-. ${CONFIG}
+. /etc/init.d/networking/functions
+[ -n "${CONFIG}" ] && . ${CONFIG}
+
+port=$(macify ${1})
 
 case "${2}" in
 	up)
@@ -24,8 +27,22 @@ case "${2}" in
 		: # Do nothing
 	;;
 
+	add)
+		cat <<EOF > ${CONFIG_PORTS}/${port}/ethernet
+HOOK=ethernet
+EOF
+		ln -sf ${CONFIG_PORTS}/${port}/ethernet \
+			${CONFIG_ZONES}/${ZONE}/port-${port}-ethernet
+	;;
+
+	remove)
+		rm -f \
+			${CONFIG_ZONES}/${ZONE}/port-${port}-ethernet \
+			${CONFIG_PORTS}/${port}/ethernet
+	;;
+
 	*)
-		echo "Usage: ${0} [interface] {up|down}"
+		echo "Usage: ${0} [interface] {up|down|add|remove}"
 		exit 1
 	;;
 esac
