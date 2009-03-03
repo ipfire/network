@@ -100,10 +100,9 @@ distcc_get_hosts() {
 	logger --distcc "[INFO] Getting hosts..."
 	for i in $($BASEDIR/tools/buildspy uuid=$UUID action=get distcc=raw); do
 		logger --distcc "[INFO]  Got host: $i"
-		echo "$i" >> $BASEDIR/distcc/hosts_new
+		echo "$i" | distcc_test_hosts >> $BASEDIR/distcc/hosts_new
 	done
 	if [ -s "$BASEDIR/distcc/hosts_new" ]; then
-		cat $BASEDIR/distcc/hosts_new | distcc_test_hosts > $BASEDIR/distcc/hosts_new
 		mv $BASEDIR/distcc/hosts{_new,}
 	fi
 }

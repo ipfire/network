@@ -96,4 +96,9 @@ function _start() {
 	# Need to get all zones here
 
 	iptables_commit
+	touch /var/lock/subsys/firewall
+}
+
+function _stop() {
+	rm -f /var/lock/subsys/firewall
 }

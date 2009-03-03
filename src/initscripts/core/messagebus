@@ -34,9 +34,7 @@ case "${1}" in
     stop)
         killproc -p ${PIDFILE} "${BIN_FILE}"
         evaluate_retval stop
-        if [ -e "${SOCKET}" ]; then
-            rm "${SOCKET}" 2> /dev/null
-        fi
+        rm -f "${SOCKET}" "${PIDFILE}"
         ;;
 
     restart|force-reload)

@@ -24,9 +24,9 @@
 
 NAME="IPFire"			# Software name
 SNAME="ipfire"			# Short name
-VERSION="3.0-alpha1"		# Version number
+VERSION="3.0-prealpha2"		# Version number
 TOOLCHAINVERSION="${VERSION}-1"	# Toolchain
-SLOGAN="Lechery"		# Software slogan
+SLOGAN="Gluttony"		# Software slogan
 
 # Include funtions
 . tools/make-include
@@ -334,6 +334,7 @@ ipfire_build() {
 	ipfire_make wireless-tools
 
 	ipfire_make pyfire
+	ipfire_make network
 	ipfire_make firewall
 }
 

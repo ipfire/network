@@ -14,7 +14,7 @@
 ########################################################################
 
 . /lib/lsb/init-functions
-. ${IFCONFIG}
+[ -n "${CONFIG}" ] && . ${CONFIG}
 
 if [ -z "${IP}" ]; then
 	log_failure_msg "IP variable missing from ${IFCONFIG}, cannot continue."
