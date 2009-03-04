@@ -28,23 +28,29 @@ action=$2
 case "$action" in
 	up)
 		message="Bringing up zone ${zone}..."
-		
+
 		# Check if bridge already exists
 		zone_status=`brctl show 2>/dev/null`
 		if ! echo "${zone_status}" | grep -q "^${zone}"; then
-			#/etc/init.d/networking/hooks pre-up ${CONFIG_ZONES}/${zone}
-
 			# Create and bring up the zone
 			brctl addbr ${zone} || failed=1
 			ip link set ${zone} up || failed=1
 			(exit ${failed})
 			evaluate_retval standard
 
+			# When we boot, we should bring up every port
 			[ "${IN_BOOT}" = "1" ] && \
 				for port in ${CONFIG_ZONES}/${zone}/port-*; do
-					#port=$(readlink ${port})
 					ZONE=${zone} /etc/init.d/networking/port ${port} up
 				done
+
+			# Attach ports
+			for config in ${CONFIG_ZONES}/${zone}/port-*; do
+				port=${config##*/}; port=${port#port-}; port=${port%%-*}
+				echo "DEBUG: port $port"
+				ZONE=${zone} CONFIG=${config} \
+					/etc/init.d/networking/port ${port} attach
+			done
 
 			###/etc/init.d/networking/hooks post-up ${CONFIG_ZONES}/${zone}
 		else
@@ -60,11 +66,12 @@ case "$action" in
 		zone_status=`brctl show 2>/dev/null`
 		if echo "${zone_status}" | grep -q "^${zone}"; then
 			#/etc/init.d/networking/hooks pre-down ${CONFIG_ZONES}/${zone}
-			# remove devices
 
-			for port in ${CONFIG_ZONES}/${zone}/port-*; do
-				brctl delif ${zone} ${port##*/}
-				/etc/init.d/networking/port ${port} down
+			# Detach ports
+			for config in ${CONFIG_ZONES}/${zone}/port-*; do
+				port=${file#port-}; port=${port%%-*}
+				ZONE=${zone} CONFIG=${config} \
+					/etc/init.d/networking/port ${port} detach
 			done
 
 			# Bring down the zone and delete it
@@ -72,8 +79,6 @@ case "$action" in
 			brctl delbr ${zone} || failed=1
 			(exit ${failed})
 			evaluate_retval standard
-
-			#/etc/init.d/networking/hooks post-down ${CONFIG_ZONES}/${zone}
 		else
 			log_warning_msg
 			message="Zone ${zone} does not exist."

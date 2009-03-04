@@ -29,8 +29,91 @@ ERROR="\\033[1;31m"
 . /etc/init.d/networking/functions
 
 function usage() {
-	echo "Usage $0 - TODO"
-	_exit $1
+	echo -e "${BOLD}Usage $0${NORMAL}\n"
+	case "$1" in
+		main|"")
+			echo    "This script will help you configuring your network."
+			echo    "You should know that there are two different things:"
+			echo
+			echo    "    zone: A group of ports."
+			echo    "    port: Connection to somewhere."
+			echo
+			echo    "    $0 [global flags] <port|zone> ... or"
+			echo    "    $0 [global flags] <cmd line options...>"
+			echo
+			echo -e "${BOLD}Global flags:${NORMAL}"
+			echo    "    --verbose -v  - Turn on verbose mode."
+			echo    "    --debug   -d  - Turn on debug mode."
+			echo
+			echo -e "${BOLD}Command line options:${NORMAL}"
+			echo    "    help          - Prints this help message."
+			echo    "    start         - Starts the whole network."
+			echo    "    stop          - Stops the whole network."
+			echo    "    restart       - Restarts the whole network."
+			echo    "    reload        - Reloads the whole network."
+			echo
+			echo    "    zone - Run \"$0 zone help\" for more information."
+			echo    "    port - Run \"$0 port help\" for more information."
+			echo
+			;;
+		port)
+			echo -e "${BOLD}Port Configuration:${NORMAL}"
+			echo
+			echo    "    $0 [global options] port <command> ..."
+			echo
+			echo -e "${BOLD}Commands:${NORMAL}"
+			echo -e "    ${BOLD}show:${NORMAL}"
+			echo    "        Displays information about a given port."
+			echo
+			echo    "        Requires a \"port\"."
+			echo    "        Example: $0 port show 00:11:22:33:44:55"
+			echo    "                 $0 port show black0"
+			echo
+			;;
+		zone)
+			echo -e "${BOLD}Zone Configuration:${NORMAL}"
+			echo
+			echo    "    $0 [global options] zone <command> ..."
+			echo
+			echo -e "${BOLD}Commands:${NORMAL}"
+			echo -e "    ${BOLD}show:${NORMAL}"
+			echo    "        Displays information about a given zone."
+			echo
+			echo    "        Requires a \"zone\"."
+			echo    "        Example: $0 zone show green0"
+			echo
+			echo -e "    ${BOLD}add:${NORMAL}"
+			echo    "        Adds a new zone."
+			echo
+			echo    "        Requires a \"zone\"."
+			echo    "        Example: $0 zone add green0"
+			echo
+			echo -e "    ${BOLD}del:${NORMAL}"
+			echo    "        Deletes a zone."
+			echo
+			echo    "        Requires a \"zone\"."
+			echo    "        Example: $0 zone del green0"
+			echo
+			echo -e "    ${BOLD}addport:${NORMAL}"
+			echo    "        Adds a port to a zone."
+			echo
+			echo    "        Requires a \"zone\" and \"port\"."
+			echo    "        Example: $0 zone addport green0"
+			echo
+			echo    "        You may also pass a hook and its parameters:"
+			echo    "            $0 zone addport green0 black0 vlan 10"
+			echo
+			echo -e "    ${BOLD}delport:${NORMAL}"
+			echo    "        Deletes a port from a zone."
+			echo
+			echo    "        Requires a \"zone\" and \"port\"."
+			echo    "        Example: $0 zone delport green0"
+			echo
+			echo    "        You may also pass a hook and its parameters:"
+			echo    "            $0 zone delport green0 black0 vlan 10"
+			echo
+	esac
+	_exit ${2-1}
 }
 
 function debug() {
@@ -246,7 +329,7 @@ while [ "$#" -gt 0 ]; do
 			vecho "${BOLD}Verbose mode is enabled.${NORMAL}"
 			;;
 		help|-h|--help)
-			usage 0
+			usage main 0
 			;;
 		start|stop|restart|reload)
 			exec /etc/init.d/network $arg
@@ -258,6 +341,9 @@ while [ "$#" -gt 0 ]; do
 				show)
 					port_show $@
 					_exit $?
+					;;
+				help)
+					usage port 0
 					;;
 			esac
 			;;
@@ -285,10 +371,12 @@ while [ "$#" -gt 0 ]; do
 					port_del $@
 					_exit $?
 					;;
+				help)
+					usage zone 0
+					;;
 			esac
-			;;
-		*)
-			usage
 			;;
 	esac
 done
+
+usage main

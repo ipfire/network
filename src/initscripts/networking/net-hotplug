@@ -25,9 +25,7 @@ if [ "$INTERFACE" = "" ]; then
 	exit 1
 fi
 
-MAC=$(get_mac_by_device ${INTERFACE})
-
-logger -t net "Received uevent for $INTERFACE ($ACTION)."
+MAC=$(get_mac ${INTERFACE})
 
 case $ACTION in
 	add|register)
@@ -46,12 +44,8 @@ case $ACTION in
 			# interfaces that are registered then brought up
 			*)
 				export IN_HOTPLUG=1
-				for file in ${NETWORK_DEVICES}/*/*; do
-					if [ "$(basename ${file})" = "${MAC}" ]; then
-						/etc/init.d/networking/ifup ${file}
-						exit $?
-					fi
-				done
+				/etc/init.d/networking/port ${MAC} up
+				# XXX Walk through zones here?
 				;;
 		esac
 		;;
@@ -64,12 +58,7 @@ case $ACTION in
 				;;
 			*)
 				export IN_HOTPLUG=1
-				for file in ${NETWORK_DEVICES}/*/*; do
-					if [ "$(basename ${file})" = "${MAC}" ]; then
-						/etc/init.d/networking/ifdown ${file}
-						exit $?
-					fi
-				done
+				: # Nothing to do here at the moment
 				;;
 		esac
 		;;

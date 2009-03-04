@@ -53,17 +53,22 @@ function get_device_by_mac_and_vid() {
 	local i
 	local VID
 	local DEVICE
-	for i in $(cat /proc/net/vlan/config 2>/dev/null); do
-		awk -F'|' '{ print $2 $3 }' | read DEVICE VID PARENT
-		if [ -n "${VID}" ] || [ -n "${DEVICE}" ]; then
-			continue
-		fi
-		if [ "${vid}" = "${VID}" ] && [ "$(macify ${PARENT})" = "${mac}" ]; then
-			echo "${DEVICE}"
-			return 0
-		fi
-	done
+	grep '|' < /proc/net/vlan/config 2>/dev/null | sed "s/|//g" | \
+		while read DEVICE VID PARENT; do
+			if [ "${vid}" = "${VID}" ] && [ "$(macify ${PARENT})" = "${mac}" ]; then
+				echo "${DEVICE}"
+				return 0
+			fi
+		done
 	return 1
+}
+
+function get_device() {
+	if [ ${#@} -gt 1 ]; then
+		get_device_by_mac_and_vid $@
+	else
+		get_device_by_mac $@
+	fi
 }
 
 function get_mac_by_device() {
@@ -74,6 +79,10 @@ function get_mac_by_device() {
 		return 0
 	fi
 	return 1
+}
+
+function get_mac() {
+	get_mac_by_device $@
 }
 
 function devicify() {
@@ -135,7 +144,23 @@ function bridge_devices() {
 }
 
 function zone_add_port() {
-	brctl addif ${1} ${2}
+	local zone
+	local port
+
+	zone=${1}
+	port=${2}
+
+	brctl addif ${zone} ${port}
+}
+
+function zone_del_port() {
+	local zone
+	local port
+
+	zone=${1}
+	port=${2}
+
+	brctl delif ${zone} ${port}
 }
 
 function all_zones() {

@@ -41,8 +41,16 @@ EOF
 			${CONFIG_PORTS}/${port}/ethernet
 	;;
 
+	attach)
+		zone_add_port ${ZONE} $(get_device ${port})
+	;;
+
+	detach)
+		zone_del_port ${ZONE} $(get_device ${port})
+	;;
+
 	*)
-		echo "Usage: ${0} [interface] {up|down|add|remove}"
+		echo "Usage: ${0} [interface] {up|down|add|remove|attach|detach}"
 		exit 1
 	;;
 esac
