@@ -39,7 +39,7 @@ endif
 
 # These arches do support sse2.
 ifneq "$(TARGET)" "via-c7"
-ifneq "$(TARGET)" "atom330"
+ifneq "$(TARGET)" "atom"
 ifneq "$(TARGET)" "core2duo"
 	SSL_ARCH += no-sse2
 endif

@@ -1,0 +1,79 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+PKG_NAME=$1
+PKG_VER=$2
+PKG_REL=$3
+ROOTFILE=$4
+
+if [ -z "$TARGET" ]; then
+	echo "TARGET is not set. Cannot continue." >&2
+	exit 1
+fi
+
+if [ ! -e "$ROOTFILE" ]; then
+	echo "Rootfile does not exist." >&2
+	exit 1
+fi
+
+PKG_LIST="normal"
+# Checking for a devel package
+grep -q "^D" $ROOTFILE && PKG_LIST="$PKG_LIST devel"
+
+for PKG_EXTRA in $PKG_LIST; do
+	# Prepare target name.
+	PKG_TARGET=${PKG_NAME}-${PKG_VER}-${SNAME}-${PKG_REL}
+	if [ "$PKG_EXTRA" != "normal" ]; then
+		PKG_TARGET="$PKG_TARGET-$PKG_EXTRA"
+	fi
+	PKG_TARGET="$PKG_TARGET.$SNAME"
+
+	echo "Running for $PKG_TARGET..."
+
+	ARCHIEVE=$(mktemp)
+
+	# Remove unused files from filelist
+	FILELIST=$(grep -v "^#" $ROOTFILE)
+
+	if [ "$PKG_EXTRA" = "devel" ]; then
+		FILELIST=$(echo "$FILELIST" | grep "^D" | sed -e "s/^D//g")
+	else
+		FILELIST=$(echo "$FILELIST" | grep -v "^D")
+	fi
+
+	FILELIST=$(echo "$FILELIST" | sed \
+		-e "s/KVER/$KVER/g" \
+		-e "s/IFS_TARGET/$IFS_TARGET/g")
+
+	if [ -z "$FILELIST" ]; then
+		rm -f $ARCHIEVE
+		continue
+	fi
+
+	# Changing to root
+	cd /
+
+	echo "$FILELIST" | cpio -o | lzma -czv - > $ARCHIEVE
+
+	cat $ARCHIEVE > /tmp/$PKG_TARGET
+
+	rm -f $ARCHIEVE
+done

@@ -459,6 +459,12 @@ packages_build() {
 	pkg_list_packages > $BASEDIR/doc/packages-list.txt
 	beautify message DONE
 
+	# Build packages
+	#local package
+	#for package in $BASEDIR/lfs/*; do
+	#	package_make $(basename $package)
+	#done
+
 	if [ ${EMB} -eq 0 ]; then
 		ipfire_make initramfs
 		ipfire_make images
@@ -480,22 +486,10 @@ packages_build() {
 		fi
 	fi
 
-	# Build packages
-	for i in $(ls -1 $BASEDIR/src/rootfiles/extras); do
-		package=$(cut -d. -f2 <<< $i)
-		if [ -e $BASEDIR/lfs/$package ]; then
-			echo -n $package
-			beautify message SKIP
-		else
-			echo -n $package
-			beautify message SKIP
-		fi
-	done
-
 	# Cleanup
 	stdumount
 	rm -rf $LFS/tmp/*
-	
+
 	cd $PWD
 }
 
