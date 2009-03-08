@@ -42,11 +42,12 @@ EOF
 	;;
 
 	attach)
-		zone_add_port ${ZONE} $(get_device ${port})
+		rename_device $(get_device ${port}) ${ZONE}s+
+		zone_add_port ${ZONE} $(get_device_by_mac ${port})
 	;;
 
 	detach)
-		zone_del_port ${ZONE} $(get_device ${port})
+		zone_del_port ${ZONE} $(get_device_by_mac ${port})
 	;;
 
 	*)

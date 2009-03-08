@@ -21,18 +21,18 @@ device=$(devicify ${port})
 
 case "${2}" in
 	up)
-		if ! get_device ${port} ${ID}; then
+		if ! get_device_by_mac_and_vid ${port} ${ID} >/dev/null; then
 			modprobe 8021q
 			MESSAGE="Adding VLAN ${ID} to port ${port}..."
-			vconfig add ${device} ${ID} &>/dev/null
+			vconfig add ${device} ${ID} >/dev/null
 			evaluate_retval
 		fi
 	;;
 
 	down)
-		if get_device ${port} ${ID}; then
+		if get_device_by_mac_and_vid ${port} ${ID} >/dev/null; then
 			MESSAGE="Removing VLAN ${ID} from port ${port}..."
-			vconfig rem ${device} ${ID} &>/dev/null
+			vconfig rem ${device} ${ID} >/dev/null
 			evaluate_retval
 		fi
 	;;
@@ -56,11 +56,12 @@ EOF
 	;;
 
 	attach)
+		rename_device $(get_device_by_mac_and_vid ${port} ${ID}) ${ZONE}v${ID}
 		zone_add_port ${ZONE} $(get_device ${port} ${ID})
 	;;
 	
 	detach)
-		zone_del_port ${ZONE} $(get_device ${port} ${ID})
+		zone_del_port ${ZONE} $(get_device_by_mac_and_vid ${port} ${ID})
 	;;
 
 	*)

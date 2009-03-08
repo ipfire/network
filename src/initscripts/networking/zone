@@ -25,6 +25,17 @@
 zone=$1
 action=$2
 
+if [ -z "${zone}" ] || [ -z "${action}" ]; then
+	echo "Usage: $0 <zone> <up|down>"
+	echo
+	exit 1
+fi
+
+if ! zone_exists ${zone}; then
+	echo "Zone ${zone} does not exist."
+	exit 1
+fi
+
 case "$action" in
 	up)
 		message="Bringing up zone ${zone}..."
@@ -38,18 +49,16 @@ case "$action" in
 			(exit ${failed})
 			evaluate_retval standard
 
-			# When we boot, we should bring up every port
-			[ "${IN_BOOT}" = "1" ] && \
-				for port in ${CONFIG_ZONES}/${zone}/port-*; do
-					ZONE=${zone} /etc/init.d/networking/port ${port} up
-				done
+			# We should bring up every port
+			for config in ${CONFIG_ZONES}/${zone}/port-*; do
+				port=${config##*/}; port=${port#port-}; port=${port%%-*}
+				ZONE=${zone} /etc/init.d/networking/port ${port} up
+			done
 
 			# Attach ports
 			for config in ${CONFIG_ZONES}/${zone}/port-*; do
 				port=${config##*/}; port=${port#port-}; port=${port%%-*}
-				echo "DEBUG: port $port"
-				ZONE=${zone} CONFIG=${config} \
-					/etc/init.d/networking/port ${port} attach
+				ZONE=${zone} /etc/init.d/networking/port ${port} attach ${config}
 			done
 
 			###/etc/init.d/networking/hooks post-up ${CONFIG_ZONES}/${zone}
