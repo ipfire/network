@@ -22,18 +22,18 @@
 case "${1}" in
 	start)
 		# Start all network interfaces
-		for zone in $(find ${CONFIG_ZONES}/ -maxdepth 1); do
+		for zone in $(find ${CONFIG_ZONES}/* -maxdepth 1); do
 			[ -d "${zone}" ] || continue
-			IN_BOOT=1 /etc/init.d/networking/zone ${zone##*/} up
+			/etc/init.d/networking/zone ${zone##*/} up
 		done
 		touch /var/lock/subsys/network
 		;;
 
 	stop)
 		# Stop all network interfaces
-		for zone in $(find ${CONFIG_ZONES}/ -maxdepth 1); do
+		for zone in $(find ${CONFIG_ZONES}/* -maxdepth 1); do
 			[ -d "${zone}" ] || continue
-			IN_BOOT=1 /etc/init.d/networking/zone ${zone##*/} down
+			/etc/init.d/networking/zone ${zone##*/} down
 		done
 		rm -f /var/lock/subsys/network
 		;;
