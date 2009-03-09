@@ -366,7 +366,11 @@ misc_build() {
 	ipfire_make tcpdump
 	ipfire_make htop
 	ipfire_make nano
+
+	### Servers
+	#
 	ipfire_make squid
+	ipfire_make samba
 
 	### Assembler
 	#
@@ -398,7 +402,6 @@ misc_build() {
 	#ipfire_make ghostscript
 	#ipfire_make foomatic
 	#ipfire_make hplip
-	#ipfire_make samba
 	#ipfire_make postfix
 	#ipfire_make fetchmail
 	#ipfire_make cyrus-imapd
