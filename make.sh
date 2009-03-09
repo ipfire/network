@@ -254,6 +254,7 @@ ipfire_build() {
 	ipfire_make openldap
 	ipfire_make pam_ldap
 	ipfire_make nss_ldap
+	ipfire_make ldapvi
 	ipfire_make sqlite
 	ipfire_make curl
 	ipfire_make pinentry
