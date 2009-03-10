@@ -123,7 +123,7 @@ distcc_test_hosts() {
 
 		if ping -c3 -w5 ${ip} &>/dev/null; then
 			if [ -n "$(which nc 2>/dev/null)" ]; then
-				if (echo | nc -w 5 ${ip} ${port} 2>/dev/null); then
+				if (echo | nc -w 15 ${ip} ${port} 2>/dev/null); then
 					echo "${ip}:${port}/${jobs},lzo # ${host}"
 				else
 					echo "# Host $host ($ip) is reachable but distcc does not respond."

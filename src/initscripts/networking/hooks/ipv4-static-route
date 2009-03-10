@@ -15,6 +15,8 @@
 . /lib/lsb/init-functions
 [ -n "${CONFIG}" ] && . ${CONFIG}
 
+zone=$1
+
 case "${TYPE}" in
 	("" | "network")
 		need_ip=1
@@ -38,7 +40,7 @@ case "${TYPE}" in
 	;;
 
 	(*)
-		boot_mesg "Unknown route type (${TYPE}) in ${IFCONFIG}, cannot continue." ${FAILURE}
+		boot_mesg "Unknown route type (${TYPE}) in ${CONFIG}, cannot continue." ${FAILURE}
 		echo_failure
 		exit 1
 	;;
@@ -46,13 +48,13 @@ esac
 
 if [ -n "${need_ip}" ]; then
 	if [ -z "${IP}" ]; then
-		boot_mesg "IP variable missing from ${IFCONFIG}, cannot continue." ${FAILURE}
+		boot_mesg "IP variable missing from ${CONFIG}, cannot continue." ${FAILURE}
 		echo_failure
 		exit 1
 	fi
 
 	if [ -z "${PREFIX}" ]; then
-		boot_mesg "PREFIX variable missing from ${IFCONFIG}, cannot continue." ${FAILURE}
+		boot_mesg "PREFIX variable missing from ${CONFIG}, cannot continue." ${FAILURE}
 		echo_failure
 		exit 1
 	fi
@@ -63,7 +65,7 @@ fi
 
 if [ -n "${need_gateway}" ]; then
 	if [ -z "${GATEWAY}" ]; then
-		boot_mesg "GATEWAY variable missing from ${IFCONFIG}, cannot continue." ${FAILURE}
+		boot_mesg "GATEWAY variable missing from ${CONFIG}, cannot continue." ${FAILURE}
 		echo_failure
 		exit 1
 	fi
@@ -72,14 +74,14 @@ fi
 
 case "${2}" in
 	up)
-		boot_mesg "Adding '${desc}' route to the ${1} interface..."
-		ip route add ${args} dev ${1}
+		boot_mesg "Adding '${desc}' route to zone ${zone}..."
+		ip route add ${args} dev ${zone}
 		evaluate_retval
 	;;
 	
 	down)
-		boot_mesg "Removing '${desc}' route from the ${1} interface..."
-		ip route del ${args} dev ${1}
+		boot_mesg "Removing '${desc}' route from zone ${zone}..."
+		ip route del ${args} dev ${zone}
 		evaluate_retval
 	;;
 	

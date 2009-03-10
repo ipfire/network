@@ -15,21 +15,27 @@
 . /lib/lsb/init-functions
 [ -n "${CONFIG}" ] && . ${CONFIG}
 
+zone=$1
+
 case "${2}" in
 	up)
-		MESSAGE="Enabling Spanning Tree Protocol on interface ${1}..."
-		brctl stp ${1} on
+		MESSAGE="Enabling Spanning Tree Protocol on zone ${zone}..."
+		brctl stp ${zone} on
 		evaluate_retval
 	;;
 
 	down)
-		MESSAGE="Disabling Spanning Tree Protocol on interface ${1}..."
-		brctl stp ${1} off
+		MESSAGE="Disabling Spanning Tree Protocol on zone ${zone}..."
+		brctl stp ${zone} off
 		evaluate_retval
 	;;
 
+	config)
+		: # TODO
+	;;
+
 	*)
-		echo "Usage: ${0} [interface] {up|down}"
+		echo "Usage: ${0} [interface] {up|down|config}"
 		exit 1
 	;;
 esac

@@ -30,17 +30,26 @@ function is_mac() {
 
 function get_device_by_mac() {
 	local mac
-	local i
+	local device
 
 	mac=$1
 
-	for i in /sys/class/net/*; do
-		if [ "$(cat $i/address)" = "$mac" ]; then
-			grep -q "^${i##*/}" /proc/net/vlan/config 2>/dev/null && continue
-			echo ${i##*/}
-			break
+	for device in /sys/class/net/*; do
+		if [ "$(cat $device/address)" = "$mac" ]; then
+			device=${device##*/}
+			# Skip virtual devices
+			if [ -e "/proc/net/vlan/$device" ]; then
+				continue
+			fi
+			# Skip zones
+			if zone_exists ${device}; then
+				continue
+			fi
+			echo ${device}
+			return 0
 		fi
 	done
+	return 1
 }
 
 function get_device_by_mac_and_vid() {
@@ -53,17 +62,24 @@ function get_device_by_mac_and_vid() {
 	local i
 	local VID
 	local DEVICE
-	for i in $(cat /proc/net/vlan/config 2>/dev/null); do
-		awk -F'|' '{ print $2 $3 }' | read DEVICE VID PARENT
-		if [ -n "${VID}" ] || [ -n "${DEVICE}" ]; then
-			continue
-		fi
-		if [ "${vid}" = "${VID}" ] && [ "$(macify ${PARENT})" = "${mac}" ]; then
-			echo "${DEVICE}"
-			return 0
-		fi
-	done
+	if [ -e "/proc/net/vlan/config" ]; then
+		grep '|' /proc/net/vlan/config | sed "s/|//g" | \
+			while read DEVICE VID PARENT; do
+				if [ "${vid}" = "${VID}" ] && [ "$(macify ${PARENT})" = "${mac}" ]; then
+					echo "${DEVICE}"
+					return 0
+				fi
+			done
+	fi
 	return 1
+}
+
+function get_device() {
+	if [ ${#@} -gt 1 ]; then
+		get_device_by_mac_and_vid $@
+	else
+		get_device_by_mac $@
+	fi
 }
 
 function get_mac_by_device() {
@@ -76,6 +92,10 @@ function get_mac_by_device() {
 	return 1
 }
 
+function get_mac() {
+	get_mac_by_device $@
+}
+
 function devicify() {
 	local device
 	local mac
@@ -86,7 +106,13 @@ function devicify() {
 		mac=${device}
 		device=$(get_device_by_mac ${device})
 	fi
-	echo ${device}
+	if [ -n "${device}" ]; then
+		echo ${device}
+		return 0
+	else
+		echo "devicify: Could not find device of $@" >&2
+		return 1
+	fi
 }
 
 function macify() {
@@ -114,12 +140,28 @@ function rename_device() {
 	source=$1
 	destination=$2
 
+	# Replace + by a valid number
+	if grep -q "+$" <<<${destination}; then
+		local number
+		destination=$(sed -e "s/+//" <<<$destination)
+		number=0
+		while :; do
+			if ! device_exists "${destination}${number}"; then
+				destination="${destination}${number}"
+				break
+			fi
+			number=$(($number + 1))
+		done
+	fi
+
 	# Check if devices exist
 	if ! device_exists ${source} || device_exists ${destination}; then
 		return 4
 	fi
 
+	ip link set ${source} down
 	ip link set ${source} name ${destination}
+	ip link set ${destination} up
 	return $?
 }
 
@@ -135,7 +177,23 @@ function bridge_devices() {
 }
 
 function zone_add_port() {
-	brctl addif ${1} ${2}
+	local zone
+	local port
+
+	zone=${1}
+	port=${2}
+
+	brctl addif ${zone} ${port}
+}
+
+function zone_del_port() {
+	local zone
+	local port
+
+	zone=${1}
+	port=${2}
+
+	brctl delif ${zone} ${port}
 }
 
 function all_zones() {

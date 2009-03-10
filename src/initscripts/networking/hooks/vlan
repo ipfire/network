@@ -21,16 +21,20 @@ device=$(devicify ${port})
 
 case "${2}" in
 	up)
-		modprobe 8021q
-		MESSAGE="Adding VLAN ${ID} to port ${port}..."
-		vconfig add ${device} ${ID} &>/dev/null
-		evaluate_retval
+		if ! get_device_by_mac_and_vid ${port} ${ID} >/dev/null; then
+			modprobe 8021q
+			MESSAGE="Adding VLAN ${ID} to port ${port}..."
+			vconfig add ${device} ${ID} >/dev/null
+			evaluate_retval
+		fi
 	;;
 
 	down)
-		MESSAGE="Removing VLAN ${ID} from port ${port}..."
-		vconfig rem ${device} ${ID} &>/dev/null
-		evaluate_retval
+		if get_device_by_mac_and_vid ${port} ${ID} >/dev/null; then
+			MESSAGE="Removing VLAN ${ID} from port ${port}..."
+			vconfig rem ${device} ${ID} >/dev/null
+			evaluate_retval
+		fi
 	;;
 
 	add)
@@ -44,13 +48,24 @@ EOF
 	;;
 
 	remove)
+		# Should we do this here? What about detaching?
+		CONFIG=${CONFIG_ZONES}/${ZONE}/port-${port}-vlan-${ID} ${0} ${port} down
 		rm -f \
 			${CONFIG_PORTS}/${port}/vlan-${ID} \
 			${CONFIG_ZONES}/${ZONE}/port-${port}-vlan-${ID}
 	;;
 
+	attach)
+		rename_device $(get_device_by_mac_and_vid ${port} ${ID}) ${ZONE}v${ID}
+		zone_add_port ${ZONE} $(get_device ${port} ${ID})
+	;;
+	
+	detach)
+		zone_del_port ${ZONE} $(get_device_by_mac_and_vid ${port} ${ID})
+	;;
+
 	*)
-		echo "Usage: ${0} [interface] {up|down|add|remove}"
+		echo "Usage: ${0} [interface] {up|down|add|remove|attach|detach}"
 		exit 1
 	;;
 esac

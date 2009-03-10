@@ -5,7 +5,7 @@
 # Description : IPV4 Static Boot Script
 #
 # Authors     : Nathan Coulson - nathan@linuxfromscratch.org
-#		Kevin P. Fleming - kpfleming@linuxfromscratch.org
+#               Kevin P. Fleming - kpfleming@linuxfromscratch.org
 #
 # Version     : 00.00
 #
@@ -16,17 +16,19 @@
 . /lib/lsb/init-functions
 [ -n "${CONFIG}" ] && . ${CONFIG}
 
+zone=$1
+
 if [ -z "${IP}" ]; then
-	log_failure_msg "IP variable missing from ${IFCONFIG}, cannot continue."
+	log_failure_msg "IP variable missing from ${CONFIG}, cannot continue."
 	exit 1
 fi
 
 if [ -z "${PREFIX}" -a -z "${PEER}" ]; then
-	log_warning_msg "PREFIX variable missing from ${IFCONFIG}, assuming 24."
+	log_warning_msg "PREFIX variable missing from ${CONFIG}, assuming 24."
 	PREFIX=24
 	args="${args} ${IP}/${PREFIX}"
 elif [ -n "${PREFIX}" -a -n "${PEER}" ]; then
-	log_failure_msg "PREFIX and PEER both specified in ${IFCONFIG}, cannot continue."
+	log_failure_msg "PREFIX and PEER both specified in ${CONFIG}, cannot continue."
 	exit 1
 elif [ -n "${PREFIX}" ]; then
 	args="${args} ${IP}/${PREFIX}"
@@ -44,8 +46,8 @@ fi
 
 case "${2}" in
 	up)
-		MESSAGE="Adding IPv4 address ${IP} to the ${1} interface..."
-		ip addr add ${args} dev ${1}
+		MESSAGE="Adding IPv4 address ${IP} to zone ${zone} interface..."
+		ip addr add ${args} dev ${zone}
 		evaluate_retval
 	
 		if [ -n "${GATEWAY}" ]; then
@@ -53,7 +55,7 @@ case "${2}" in
 				log_warning_msg "Gateway already setup; skipping." ${WARNING}
 			else
 				MESSAGE="Setting up default gateway..."
-				ip route add default via ${GATEWAY} dev ${1}
+				ip route add default via ${GATEWAY} dev ${zone}
 				evaluate_retval
 			 fi
 		fi
@@ -66,13 +68,17 @@ case "${2}" in
 			evaluate_retval
 		fi
 	
-		MESSAGE="Removing IPv4 address ${IP} from the ${1} interface..."
-		ip addr del ${args} dev ${1}
+		MESSAGE="Removing IPv4 address ${IP} from zone ${zone}..."
+		ip addr del ${args} dev ${zone}
 		evaluate_retval
 	;;
 	
+	config)
+		: # TODO
+	;;
+	
 	*)
-		echo "Usage: ${0} [interface] {up|down}"
+		echo "Usage: ${0} [interface] {up|down|config}"
 		exit 1
 	;;
 esac

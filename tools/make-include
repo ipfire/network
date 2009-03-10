@@ -166,6 +166,9 @@ entershell() {
 ################################################################################
 lfsmakecommoncheck()
 {
+	unset NAME VERSION
+	eval $(pkg_info $1)
+
 	logger "Building $*"
 	build_spy package $1
 
@@ -174,8 +177,7 @@ lfsmakecommoncheck()
 		exiterror "No such file or directory: $BASEDIR/lfs/$1"
 	fi
 
-	local PKG_VER=$(get_pkg_ver $BASEDIR/lfs/$1)
-	beautify make_pkg "$PKG_VER $*"
+	beautify make_pkg "$VERSION $*"
 
 	# Script slipped?
 	local i
@@ -354,6 +356,62 @@ ipfire_make() {
 
 	return 0
 } # End of ipfire_make()
+
+
+################################################################################
+# This is the function that compresses every package                           #
+################################################################################
+package_make() {
+	SKIP_PACKAGE_LIST="SKIP_PACKAGE_LIST Config adjust-toolchain cdrom images pxe test-toolchain usb-key usb-stick" \
+		lfsmakecommoncheck $*
+	[ $? == 1 ] && return 0
+
+	local PKG_VER=$(get_pkg_ver $BASEDIR/lfs/$1)
+
+	local PKG_TIME_START=$(date +%s)
+	chroot $LFS $TOOLS_DIR/bin/env -i \
+		HOME=/root \
+		TERM=$TERM \
+		PS1='\u:\w\$ ' \
+		PATH=$PATH \
+		CONFIG_ROOT=${CONFIG_ROOT} \
+		VERSION=${VERSION} \
+		NAME=${NAME} \
+		SNAME=${SNAME} \
+		SLOGAN="$SLOGAN" \
+		LINKER=$LINKER \
+		TOOLS_DIR=$TOOLS_DIR \
+		INSTALLER_DIR=$INSTALLER_DIR \
+		CDROM_DIR=$CDROM_DIR \
+		IMAGES_DIR=$IMAGES_DIR \
+		MACHINE="$MACHINE" \
+		MACHINE_REAL="$MACHINE_REAL" \
+		IFS_HOST="$IFS_HOST" \
+		IFS_TARGET="$IFS_TARGET" \
+		TARGET="$TARGET" \
+		BUILD_DEBUG=$BUILD_DEBUG \
+		BUILD_EXTRAS=$BUILD_EXTRAS \
+		KVER=$KVER \
+		EMB=$EMB \
+		IMAGENAME=$IMAGENAME \
+		ROOTFILE=$(rootfiles_findone $1 | sed "s,$BASEDIR,/usr/src,g") \
+		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
+		bash -x -c "cd /usr/src/lfs && \
+		$EXTRA_MAKE make -f $* LFS_BASEDIR=/usr/src package" >>$LOGFILE 2>&1
+
+	local COMPILE_SUCCESS=$?
+	local PKG_TIME_END=$(date +%s)
+
+	if [ $COMPILE_SUCCESS -ne 0 ]; then
+		beautify result FAIL $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		exiterror "Packageing $*"
+	else
+		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		PACKAGES_DONE="$PACKAGES_DONE $1"
+	fi
+
+	return 0
+} # End of package_make()
 
 ################################################################################
 # This prepares the build environment                                          #

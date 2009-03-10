@@ -46,6 +46,12 @@ build_spy_send_profile() {
 		awk -F: '{ print $2 }' | $BASEDIR/tools/base64)
 	build_spy machine  $(uname -m)
 	build_spy toolchain "${NAME}-${TOOLCHAINVERSION}"
+	for i in system fedora redhat $SNAME debian ubuntu lsb; do
+		if [ -e "/etc/${i}-release" ]; then
+			build_spy system "$($BASEDIR/tools/base64 < /etc/${i}-release)"
+			break
+		fi
+	done
 }
 
 if [ "$(basename $0)" == "make-buildspy" ]; then

@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,75 +19,61 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/lsb/init-functions
-. /etc/init.d/networking/functions
+PKG_NAME=$1
+PKG_VER=$2
+PKG_REL=$3
+ROOTFILE=$4
 
-port=$(macify $1)
-action=$2
-
-shift 2
-
-if [ -z "${port}" ] || [ -z "${action}" ]; then
-	echo "Usage: $0 <port> <up|down|attach|detach> [hooks]"
-	echo
+if [ -z "$TARGET" ]; then
+	echo "TARGET is not set. Cannot continue." >&2
 	exit 1
 fi
 
-if ! device_exists ${port}; then
-	echo "Port ${port} does not exist."
+if [ ! -e "$ROOTFILE" ]; then
+	echo "Rootfile does not exist." >&2
 	exit 1
 fi
 
-for arg in ${@-$(find ${CONFIG_PORTS}/${port}/)}; do
-	[ -L "${arg}" ] && arg=$(readlink ${arg})
-	arg=${arg##*/}
-	[ -e "${CONFIG_PORTS}/${port}/${arg}" ] || continue
-	hooks="${hooks} ${CONFIG_PORTS}/${port}/${arg}"
+PKG_LIST="normal"
+# Checking for a devel package
+grep -q "^D" $ROOTFILE && PKG_LIST="$PKG_LIST devel"
+
+for PKG_EXTRA in $PKG_LIST; do
+	# Prepare target name.
+	PKG_TARGET=${PKG_NAME}-${PKG_VER}-${SNAME}-${PKG_REL}
+	if [ "$PKG_EXTRA" != "normal" ]; then
+		PKG_TARGET="$PKG_TARGET-$PKG_EXTRA"
+	fi
+	PKG_TARGET="$PKG_TARGET.$SNAME"
+
+	echo "Running for $PKG_TARGET..."
+
+	ARCHIEVE=$(mktemp)
+
+	# Remove unused files from filelist
+	FILELIST=$(grep -v "^#" $ROOTFILE)
+
+	if [ "$PKG_EXTRA" = "devel" ]; then
+		FILELIST=$(echo "$FILELIST" | grep "^D" | sed -e "s/^D//g")
+	else
+		FILELIST=$(echo "$FILELIST" | grep -v "^D")
+	fi
+
+	FILELIST=$(echo "$FILELIST" | sed \
+		-e "s/KVER/$KVER/g" \
+		-e "s/IFS_TARGET/$IFS_TARGET/g")
+
+	if [ -z "$FILELIST" ]; then
+		rm -f $ARCHIEVE
+		continue
+	fi
+
+	# Changing to root
+	cd /
+
+	echo "$FILELIST" | cpio -o | lzma -czv - > $ARCHIEVE
+
+	cat $ARCHIEVE > /tmp/$PKG_TARGET
+
+	rm -f $ARCHIEVE
 done
-
-case "$action" in
-	up)
-		message="Setting up port ${port}..."
-		ip link set $(devicify ${port}) up
-		evaluate_retval
-		;;
-
-	down)
-		;;
-
-	attach|detach)
-		if [ -z "${ZONE}" ]; then
-			log_failure_msg "ZONE is not set."
-			exit 1
-		fi
-		;;
-
-	*)
-		log_failure_msg "\"${action}\" is not a valid command."
-		exit 1
-		;;
-esac
-
-for hook in ${hooks}; do
-	[ -d "${hook}" ] && continue
-	(
-		. ${hook}
-		if [ -n "${HOOK}" -a -x "/etc/init.d/networking/hooks/${HOOK}" ]; then
-			CONFIG=${hook} /etc/init.d/networking/hooks/${HOOK} ${port} ${action}
-		else
-			echo -e "${FAILURE}Unable to process ${hook}. Either"
-			echo -e "${FAILURE}the HOOK variable was not set,"
-			echo -e "${FAILURE}or the specified hook cannot be executed."
-			message=""
-			log_failure_msg
-		fi
-	)
-done
-
-case "${action}" in
-	down)
-		message="Pushing down port ${port}..."
-		ip link set $(devicify ${port}) down
-		evaluate_retval
-		;;
-esac

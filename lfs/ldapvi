@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,8 +24,9 @@
 
 include Config
 
-PKG_NAME   = openssl
-PKG_VER    = 0.9.8j
+PKG_NAME   = ldapvi
+PKG_VER    = 1.7
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,94 +34,54 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-ifneq "$(MACHINE)" "i686"
-	SSL_ARCH = no-asm 386 # 386 implies no-sse2
-endif
+MAINTAINER =
+GROUP      = Applications/Editors
+EXTRA      = no
+DEBUG      = no
+DEPS       = glib2 libxslt ncurses openldap openssl pkg-config popt readline
 
-# These arches do support sse2.
-ifneq "$(TARGET)" "via-c7"
-ifneq "$(TARGET)" "atom"
-ifneq "$(TARGET)" "core2duo"
-	SSL_ARCH += no-sse2
-endif
-endif
-endif
+URL        = http://www.lichteblau.com/ldapvi/
+LICENSE    = GPLv2+
+SHORT_DESC = An interactive LDAP client.
+
+define LONG_DESC
+	ldapvi is an interactive LDAP client for Unix terminals. Using it, you can \
+	update LDAP entries with a text editor, which is the same as vi. Think of \
+	it as vipw(1) for LDAP.
+endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	$(THISAPP)-fix_manpages-1.patch \
-	$(THISAPP)-enginesdir.patch
+objects = $(DL_FILE)
+
+download: $(objects)
 
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix_manpages-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-enginesdir.patch
-
-	cd $(DIR_APP) && sed -i -e 's/-O3 -fomit-frame-pointer/$(CFLAGS)/' Configure
-
-	cd $(DIR_APP) && sed -e 's/__OpenBSD__/__linux__/' -e 's/arandom/urandom/' \
-				-i.orig crypto/rand/randfile.c
-
-	cd $(DIR_APP) && sed 's/__OpenBSD__/__linux__/' -i.orig crypto/uid.c
-
-	cd $(DIR_APP) && find crypto/ -name Makefile -exec \
-		sed 's/^ASFLAGS=/&-Wa,--noexecstack /' -i.orig {} \;
-
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
-		./Configure \
+		./configure \
+			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--openssldir=/etc/pki/tls \
-			--enginesdir=/usr/lib/openssl/engines \
-			linux-elf $(SSL_ARCH) \
-			shared \
-			zlib-dynamic \
-			enable-camellia \
-			enable-seed \
-			enable-tlsext \
-			enable-rfc3779 \
-			no-idea \
-			no-mdc2 \
-			no-rc5 \
-			no-ec \
-			no-ecdh \
-			no-ecdsa \
-			-DSSL_FORBID_ENULL
-
-	# Build.
-	cd $(DIR_APP) && make all build-shared #$(PARALLELISMFLAGS)
-
-	# Generate hashes for the included certs.
-	cd $(DIR_APP) && make rehash build-shared
-
-	cd $(DIR_APP) && make install build-shared
-	cd $(DIR_APP) && cp -v -r certs /etc/pki/tls
-
-	mv -v /usr/lib/{libcrypto,libssl}.a /usr/lib/static
-	install -d /usr/lib/openssl
-	mv -v /usr/lib/engines /usr/lib/openssl
-
-	-mkdir -m700 /etc/pki/CA
-	-mkdir -m700 /etc/pki/CA/private
-
-	install -m 0644 $(DIR_SRC)/config/ssl/openssl.cnf /etc/pki/tls
-
-	@rm -rf $(DIR_APP) /etc/pki/tls/man
+			--disable-static
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install
+	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

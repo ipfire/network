@@ -57,6 +57,8 @@ DIR_TMP     = /tmp
 DIR_PATCHES = $(DIR_DL)/../patches
 DIR_CONFIG  = $(DIR_CONF)
 DIR_SOURCE  = $(DIR_SRC)/src
+DIR_PKG     = $(LFS_BASEDIR)/lfs
+DIR_TARGET  = $(LFS_BASEDIR)/target
 
 VPATH = $(DIR_DL):$(DIR_PATCHES)
 
@@ -88,19 +90,27 @@ PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 
 define DO_PKG_INFO
 	@## ALPHABETICAL ORDER ##
-	@echo "DEBUG=\"$(DEBUG)\""
-	@echo "DEPS=\"$(DEPS)\""
-	@echo "DESC=\"$(value LONG_DESC)\""
-	@echo "EXTRA=\"$(EXTRA)\""
-	@echo "FILES=\"$(objects)\""
-	@echo "GROUP=\"$(GROUP)\""
-	@echo "LICENSE=\"$(LICENSE)\""
-	@echo "MAINTAINER=\"$(MAINTAINER)\""
-	@echo "NAME=\"$(PKG_NAME)\""
-	@echo "VERSION=\"$(PKG_VER)\""
-	@echo "RELEASE=\"$(PKG_REL)\""
-	@echo "SHORT=\"$(value SHORT_DESC)\""
-	@echo "URL=\"$(URL)\""
+	@echo "local DEBUG=\"$(DEBUG)\""
+	@echo "local DEPS=\"$(DEPS)\""
+	@echo "local DESC=\"$(value LONG_DESC)\""
+	@echo "local EXTRA=\"$(EXTRA)\""
+	@echo "local FILES=\"$(objects)\""
+	@echo "local GROUP=\"$(GROUP)\""
+	@echo "local LICENSE=\"$(LICENSE)\""
+	@echo "local MAINTAINER=\"$(MAINTAINER)\""
+	@echo "local NAME=\"$(PKG_NAME)\""
+	@echo "local VERSION=\"$(PKG_VER)\""
+	@echo "local RELEASE=\"$(PKG_REL)\""
+	@echo "local SHORT=\"$(value SHORT_DESC)\""
+	@echo "local URL=\"$(URL)\""
+endef
+
+define DO_PACKAGE
+	if [ -n "$$ROOTFILE" ]; then \
+		NAME=$(NAME) SNAME=$(SNAME) VERSION=$(VERSION) KVER=$(KVER) \
+		TARGET=$(TARGET) MACHINE=$(MACHINE) IFS_TARGET=$(IFS_TARGET) \
+			$(DIR_SOURCE)/pakfire/compressor $(PKG_NAME) $(PKG_VER) $(PKG_REL) $$ROOTFILE; \
+	fi
 endef
 
 # For each package we create a list of files that it installed under 
