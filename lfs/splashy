@@ -68,6 +68,7 @@ $(OBJECT) :
 			--datarootdir=/usr/share \
 			--mandir=/usr/share/man
 	cd $(DIR_APP) && sed -e "s/-Werror//g" -i src/Makefile
+	cd $(DIR_APP) && echo "#undef ENABLE_NLS" >> config.h
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
