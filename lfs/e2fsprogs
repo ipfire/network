@@ -113,6 +113,12 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP)/build && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP)/build && make install
 	cd $(DIR_APP)/build && make install-libs
+	ln -svf ../../lib/libblkid.so.1 /usr/lib/libblkid.so
+	ln -svf ../../lib/libcom_err.so.2 /usr/lib/libcom_err.so
+	ln -svf ../../lib/libe2p.so.2 /usr/lib/libe2p.so
+	ln -svf ../../lib/libext2fs.so.2 /usr/lib/libext2fs.so
+	ln -svf ../../lib/libss.so.2 /usr/lib/libss.so
+	ln -svf ../../lib/libuuid.so.1 /usr/lib/libuuid.so
 endif
 
 	@rm -rf $(DIR_APP)
