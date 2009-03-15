@@ -24,11 +24,11 @@
 
 include Config
 
-PKG_NAME   = ulogd2
-PKG_VER    = 20090209
+PKG_NAME   = ulogd
+PKG_VER    = 2.0.0beta3
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
+DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
@@ -56,7 +56,7 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./autogen.sh
+	#cd $(DIR_APP) && ./autogen.sh
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \

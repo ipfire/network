@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,8 +24,8 @@
 
 include Config
 
-PKG_NAME   = tcpdump
-PKG_VER    = 4.0.0
+PKG_NAME   = ldapvi
+PKG_VER    = 1.7
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -35,30 +35,26 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
-GROUP      = Networking/Sniffer
-EXTRA      = yes
+GROUP      = Applications/Editors
+EXTRA      = no
 DEBUG      = no
-DEPS       = libpcap openssl
+DEPS       = glib2 libxslt ncurses openldap openssl pkg-config popt readline
 
-URL        = http://www.tcpdump.org/
-LICENSE    = BSD with advertising
-SHORT_DESC = A network traffic monitoring tool.
+URL        = http://www.lichteblau.com/ldapvi/
+LICENSE    = GPLv2+
+SHORT_DESC = An interactive LDAP client.
 
 define LONG_DESC
-	Tcpdump is a command-line tool for monitoring network traffic. \
-	Tcpdump can capture and display the packet headers on a particular \
-	network interface or on all interfaces.  Tcpdump can display all of \
-	the packet headers, or just the ones that match particular criteria.
+	ldapvi is an interactive LDAP client for Unix terminals. Using it, you can \
+	update LDAP entries with a text editor, which is the same as vi. Think of \
+	it as vipw(1) for LDAP.
 endef
-
-CFLAGS    += -O2 -fno-strict-aliasing
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	$(THISAPP)-ipv6-build.patch
+objects = $(DL_FILE)
 
 download: $(objects)
 
@@ -80,11 +76,11 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-ipv6-build.patch
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
-			--prefix=/usr
+			--prefix=/usr \
+			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)

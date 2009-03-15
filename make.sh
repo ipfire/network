@@ -254,6 +254,7 @@ ipfire_build() {
 	ipfire_make openldap
 	ipfire_make pam_ldap
 	ipfire_make nss_ldap
+	ipfire_make ldapvi
 	ipfire_make sqlite
 	ipfire_make curl
 	ipfire_make pinentry
@@ -365,7 +366,11 @@ misc_build() {
 	ipfire_make tcpdump
 	ipfire_make htop
 	ipfire_make nano
+
+	### Servers
+	#
 	ipfire_make squid
+	ipfire_make samba
 
 	### Assembler
 	#
@@ -397,7 +402,6 @@ misc_build() {
 	#ipfire_make ghostscript
 	#ipfire_make foomatic
 	#ipfire_make hplip
-	#ipfire_make samba
 	#ipfire_make postfix
 	#ipfire_make fetchmail
 	#ipfire_make cyrus-imapd
@@ -450,6 +454,7 @@ packages_build() {
 	build_spy stage ${STAGE}
 
 	toolchain_make strip
+	ipfire_make quality-agent
 
 	# Generate ChangeLog
 	git_log

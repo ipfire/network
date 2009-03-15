@@ -48,7 +48,7 @@ build_spy_send_profile() {
 	build_spy toolchain "${NAME}-${TOOLCHAINVERSION}"
 	for i in system fedora redhat $SNAME debian ubuntu lsb; do
 		if [ -e "/etc/${i}-release" ]; then
-			build_spy system $(cat /etc/${i}-release)
+			build_spy system "$($BASEDIR/tools/base64 < /etc/${i}-release)"
 			break
 		fi
 	done
