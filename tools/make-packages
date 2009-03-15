@@ -99,14 +99,20 @@ pkg_info_wiki() {
 
 		# Output everything in wiki format
 		echo "^  $PKG_NAME  ^^"
-		echo "| Version:  | $PKG_VER  |"
-		echo "| Release:  | $PKG_REL  |"
-		echo "| Group:  | $PKG_GROUP  |"
-		echo "| License:  | $PKG_LICENSE  |"
-		echo "| Maintainer:  | $PKG_MAINTAINER  |"
-		echo "| Dependencies: | $(for dep in $PKG_DEPS; do echo \"[[$dep]]\"; done) |"
+		echo "| **Version:**  | $PKG_VER  |"
+		echo "| **Release:**  | $PKG_REL  |"
+		echo "| **Group:**  | $PKG_GROUP  |"
+		echo "| **License:**  | $PKG_LICENSE  |"
+		echo "| **Maintainer:**  | $PKG_MAINTAINER  |"
+
+		# Dependencies
+		echo -n "| **Dependencies:** | "
+		for dep in $DEPS; do
+			echo -n "[[$dep]] "
+		done; echo "|"
+
 		echo "| $(echo $PKG_DESC) ||"
-		echo "| Website:  | $PKG_URL  |"
+		echo "| **Website:**  | $PKG_URL  |"
 		if [ "$PKG_DEBUG" = "yes" ]; then
 			echo "<color red>This is a debug-package.</color>"
 		fi
@@ -114,8 +120,11 @@ pkg_info_wiki() {
 			echo "<color green>This is an extra package.</color>"
 		fi
 		echo
-		for file in $(find $BASEDIR/src/rootfiles -name "$1" | xargs cat); do
-			echo "  $file"
+		for file in $(find $BASEDIR/src/rootfiles -name "$1"); do
+			echo "**.${file#$BASEDIR}**"
+			for i in $(cat ${file}); do
+				echo "  $i"
+			done
 		done
 	)
 }

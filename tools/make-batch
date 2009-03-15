@@ -47,9 +47,9 @@ batch_attach() {
 ###############################################################################
 batch_run() {
 	gettoolchain
-	$0 build | $BASEDIR/tools/tee $BATCHLOG
-	sleep 5
-	if [ -e $FAILED ]; then
+	$0 build &> $BATCHLOG
+	sleep 30
+	if [ -e "$FAILED" ]; then
 		SUBJECT="Failed :("
 	else
 		SUBJECT="Success!"
