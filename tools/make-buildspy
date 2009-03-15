@@ -31,7 +31,7 @@ build_spy() {
 		LOGFILE="$BASEDIR/log_${TARGET}/_build.00-buildspy.log" \
 		$BASEDIR/tools/make-buildspy &
 	elif [ "$COMMAND" = "exit" ]; then
-		echo -n "BUILDSPY_EXIT " >> $BUILD_SPY_FILENAME
+		sleep 11 && echo -n "BUILDSPY_EXIT " >> $BUILD_SPY_FILENAME &
 	else
 		echo -n "${COMMAND}=$* " >> $BUILD_SPY_FILENAME
 	fi

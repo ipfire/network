@@ -85,8 +85,9 @@ exiterror() {
 	dialogerror $*
 	build_spy state error
 	if [ -n "$LOGFILE" ]; then
+		tail -n16 $LOGFILE > $FAILED
 		echo "$(date -u '+%b %e %T') ERROR: $*" >> $LOGFILE
-		build_spy log $(tail -n16 $LOGFILE | $BASEDIR/tools/base64)
+		build_spy log $($BASEDIR/tools/base64 < $FAILED)
 	fi
 	build_spy exit
 	touch $FAILED
