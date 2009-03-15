@@ -177,14 +177,14 @@ lfsmakecommoncheck()
 	
 	shift 1
 
-	build_spy package $NAME
+	build_spy package $PKG_NAME
 
-	beautify package "$NAME" "$VERSION" "$*"
+	beautify package "$PKG_NAME" "$PKG_VER" "$*"
 
 	# Script slipped?
 	local i
 	for i in $SKIP_PACKAGE_LIST; do
-		if [ "$i" == "$NAME" ]; then
+		if [ "$i" == "$PKG_NAME" ]; then
 			beautify result SKIP
 			return 1
 		fi
@@ -192,26 +192,26 @@ lfsmakecommoncheck()
 
 	# On debug build, we don't strip
 	if [ "$STAGE" != "toolchain" -a \
-			"$NAME" == "strip" -a "$BUILD_DEBUG" == "1" ]; then
+			"$PKG_NAME" == "strip" -a "$BUILD_DEBUG" == "1" ]; then
 		beautify result SKIP
 		return 1
 	fi
 
 	# Don't create addons?
-	if [ "$EXTRA" == "yes" ] && [ "$BUILD_EXTRAS" == "0" ]; then
+	if [ "$PKG_EXTRA" == "yes" ] && [ "$BUILD_EXTRAS" == "0" ]; then
 			beautify result SKIP
 			return 1
 	fi
 
 	# Don't create debugging tools?
-	if [ "$DEBUG" == "yes" ] && [ "$BUILD_DEBUG" == "0" ]; then
+	if [ "$PKG_DEBUG" == "yes" ] && [ "$BUILD_DEBUG" == "0" ]; then
 			beautify result SKIP
 			return 1
 	fi
 
 	# Searching for dependencies
 	local found message
-	for dep in ${DEPS}; do
+	for dep in $PKG_DEPS; do
 		found=0
 		for package in $PACKAGES_DONE; do
 			if [ "$dep" = "$package" ]; then
@@ -223,7 +223,7 @@ lfsmakecommoncheck()
 	done
 	if [ "$message" != "" ]; then
 		message="Deps are missing: $message"
-		if [ "$EXTRA" = "yes" ]; then
+		if [ "$PKG_EXTRA" = "yes" ]; then
 			echo -ne "${WARN}${message}${NORMAL}"
 			beautify message SKIP
 			return 1

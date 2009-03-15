@@ -90,19 +90,19 @@ PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 
 define DO_PKG_INFO
 	@## ALPHABETICAL ORDER ##
-	@echo "local DEBUG=\"$(DEBUG)\""
-	@echo "local DEPS=\"$(DEPS)\""
-	@echo "local DESC=\"$(value LONG_DESC)\""
-	@echo "local EXTRA=\"$(EXTRA)\""
-	@echo "local FILES=\"$(objects)\""
-	@echo "local GROUP=\"$(GROUP)\""
-	@echo "local LICENSE=\"$(LICENSE)\""
-	@echo "local MAINTAINER=\"$(MAINTAINER)\""
-	@echo "local NAME=\"$(PKG_NAME)\""
-	@echo "local VERSION=\"$(PKG_VER)\""
-	@echo "local RELEASE=\"$(PKG_REL)\""
-	@echo "local SHORT=\"$(value SHORT_DESC)\""
-	@echo "local URL=\"$(URL)\""
+	@echo "local PKG_DEBUG=\"$(DEBUG)\""
+	@echo "local PKG_DEPS=\"$(DEPS)\""
+	@echo "local PKG_DESC=\"$(value LONG_DESC)\""
+	@echo "local PKG_EXTRA=\"$(EXTRA)\""
+	@echo "local PKG_FILES=\"$(objects)\""
+	@echo "local PKG_GROUP=\"$(GROUP)\""
+	@echo "local PKG_LICENSE=\"$(LICENSE)\""
+	@echo "local PKG_MAINTAINER=\"$(MAINTAINER)\""
+	@echo "local PKG_NAME=\"$(PKG_NAME)\""
+	@echo "local PKG_VER=\"$(PKG_VER)\""
+	@echo "local PKG_REL=\"$(PKG_REL)\""
+	@echo "local PKG_SHORT=\"$(value SHORT_DESC)\""
+	@echo "local PKG_URL=\"$(URL)\""
 endef
 
 define DO_PACKAGE
