@@ -146,23 +146,24 @@ beautify() {
 			echo -ne "${BOLD}*** ${MESSAGE}${SET_OPT_COL}  options${SET_VER_COL}     version "
 			echo -ne "${SET_TIME_COL} time (sec)${SET_RESULT_COL} status${NORMAL}\n"
 			;;
-		make_pkg)
-			echo "$2" | while read PKG_VER PROGRAM OPTIONS
-			do
-				SET_VER_COL_REAL=`position_cursor $TIME_COL $PKG_VER -3`
+		package)
+			local PKG_NAME=$2
+			local PKG_VER=$(shrink_string $VER_WIDTH $3)
+			local OPTIONS=$4
 
-				echo -ne "${PROGRAM}"
-				if ! [ "$OPTIONS" == "" ]; then
-					echo -ne "${SET_OPT_COL}${BRACKET_L} ${BOLD}${OPTIONS}${NORMAL} ${BRACKET_R}"
-				fi
+			SET_VER_COL_REAL=`position_cursor $TIME_COL "$PKG_VER" -3`
 
-				if [ "${PKG_VER}" == "${SNAME}" ] || [ "${PKG_VER}" == "LFS" ]; then
-					echo -ne "${SET_RESULT_COL}"
-				else
-					echo -ne "${SET_VER_COL}${BRACKET_L} ${BOLD}${SET_VER_COL_REAL}${PKG_VER}"
-					echo -ne "${NORMAL} ${BRACKET_R}${SET_RESULT_COL}"
-				fi
-			done
+			echo -ne "${PKG_NAME}"
+			if ! [ "$OPTIONS" == "" ]; then
+				echo -ne "${SET_OPT_COL}${BRACKET_L} ${BOLD}${OPTIONS}${NORMAL} ${BRACKET_R}"
+			fi
+
+			if [ -z "${PKG_VER}" ]; then
+				echo -ne "${SET_RESULT_COL}"
+			else
+				echo -ne "${SET_VER_COL}${BRACKET_L} ${BOLD}${SET_VER_COL_REAL}${PKG_VER}"
+				echo -ne "${NORMAL} ${BRACKET_R}${SET_RESULT_COL}"
+			fi
 			;;
 		result)
 			RESULT=$2
@@ -184,26 +185,24 @@ beautify() {
 	esac
 } # End of beautify()
 
-get_pkg_ver() {
-	PKG_VER=`grep ^PKG_VER $1 | awk '{print $3}'`
+function shrink_string() {
+	local LENGTH=$1
+	shift
+	local STRING=$@
 
-	if [ -z $PKG_VER ]; then
-		PKG_VER=`grep "Exp " $1 | awk '{print $4}'`
-	fi
-
-	if [ ${#PKG_VER} -gt $VER_WIDTH ]; then
-		# If a package version number is greater than $VER_WIDTH, we keep the first 4 characters
-		# and replace enough characters to fit the resulting string on the screen.  We'll replace
-		# the extra character with .. (two dots).  That's why the "+ 2" in the formula below.
-		# Example: if we have a 21-long version number that we want to fit into a 10-long space,
+	if [ ${#STRING} -gt $LENGTH ]; then
+		# If a string is greater than $LENGTH, we keep the first 4 characters
+		# and replace enough characters to fit the resulting string on the screen. We'll replace
+		# the extra character with .. (two dots). That's why the "+ 2" in the formula below.
+		# Example: if we have a 21-long string that we want to fit into a 10-long space,
 		# we have to remove 11 characters.  But if we replace 11 characters with 2 characters, we'll
 		# end up with a 12-character long string.  That's why we replace 12 characters with ..
-		REMOVE=`expr substr "$PKG_VER" 4 $[ ${#PKG_VER} - $VER_WIDTH + 2 ]`
-		PKG_VER=`echo ${PKG_VER/$REMOVE/..}`
+		REMOVE=$(expr substr "$STRING" 4 $[ ${#STRING} - $LENGTH + 2 ])
+		STRING=$(echo ${STRING/$REMOVE/..})
 	fi
 
-	echo "$PKG_VER"
-} # End of get_pkg_ver()
+	echo "$STRING"
+} # End of shrink_string()
 
 dialogerror() {
 	beautify message FAIL
