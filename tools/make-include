@@ -166,23 +166,25 @@ entershell() {
 ################################################################################
 lfsmakecommoncheck()
 {
-	unset NAME VERSION
-	eval $(pkg_info $1)
-
-	logger "Building $*"
-	build_spy package $1
-
 	# Script present?
 	if [ ! -f $BASEDIR/lfs/$1 ]; then
 		exiterror "No such file or directory: $BASEDIR/lfs/$1"
 	fi
 
-	beautify make_pkg "$VERSION $*"
+	unset NAME VERSION
+	eval $(pkg_info $1)
+	logger "Building $*"
+	
+	shift 1
+
+	build_spy package $NAME
+
+	beautify package "$NAME" "$VERSION" "$*"
 
 	# Script slipped?
 	local i
 	for i in $SKIP_PACKAGE_LIST; do
-		if [ "$i" == "$1" ]; then
+		if [ "$i" == "$NAME" ]; then
 			beautify result SKIP
 			return 1
 		fi
@@ -190,20 +192,18 @@ lfsmakecommoncheck()
 
 	# On debug build, we don't strip
 	if [ "$STAGE" != "toolchain" -a \
-			"$1" == "strip" -a "$BUILD_DEBUG" == "1" ]; then
+			"$NAME" == "strip" -a "$BUILD_DEBUG" == "1" ]; then
 		beautify result SKIP
 		return 1
 	fi
 
 	# Don't create addons?
-	local EXTRA=$(grep ^EXTRA $BASEDIR/lfs/$1 | awk '{print $3}')
 	if [ "$EXTRA" == "yes" ] && [ "$BUILD_EXTRAS" == "0" ]; then
 			beautify result SKIP
 			return 1
 	fi
 
 	# Don't create debugging tools?
-	local DEBUG=$(grep ^DEBUG $BASEDIR/lfs/$1 | awk '{print $3}')
 	if [ "$DEBUG" == "yes" ] && [ "$BUILD_DEBUG" == "0" ]; then
 			beautify result SKIP
 			return 1
@@ -211,7 +211,7 @@ lfsmakecommoncheck()
 
 	# Searching for dependencies
 	local found message
-	for dep in $(pkg_deps $1); do
+	for dep in ${DEPS}; do
 		found=0
 		for package in $PACKAGES_DONE; do
 			if [ "$dep" = "$package" ]; then
@@ -232,11 +232,6 @@ lfsmakecommoncheck()
 		fi
 	fi
 
-	cd $BASEDIR/lfs && make -s -f $* MACHINE=$MACHINE LFS_BASEDIR=$BASEDIR MESSAGE="$1\t " download  >> $LOGFILE 2>&1
-	if [ $? -ne 0 ]; then
-		exiterror "Download error in $1"
-	fi
-
 	distcc_reload &
 
 	return 0	# pass all!
@@ -249,12 +244,8 @@ toolchain_make() {
 	lfsmakecommoncheck $*
 	[ $? == 1 ] && return 0
 
-	local PKG_VER=$(get_pkg_ver $BASEDIR/lfs/$1)
-
-	local EXTRA_MAKE=$EXTRA_MAKE
-
 	local PKG_TIME_START=$(date +%s)
-	cd $BASEDIR/lfs && $EXTRA_MAKE make -f $* \
+	cd $BASEDIR/lfs && make -f $* \
 		CONFIG_ROOT=$CONFIG_ROOT \
 		LINKER=$LINKER \
 		TOOLS_DIR=$TOOLS_DIR \
@@ -293,17 +284,6 @@ ipfire_make() {
 	lfsmakecommoncheck $*
 	[ $? == 1 ] && return 0
 
-	local PKG_VER=$(get_pkg_ver $BASEDIR/lfs/$1)
-
-	local EXTRA_MAKE=$EXTRA_MAKE
-	# When cross-compiling, make sure the kernel is compiled for the target
-	[ "$MACHINE" != "$MACHINE_REAL" -a "$1" == "linux" ] && unset EXTRA_MAKE
-
-	# Also, make sure external kernel modules are compiled 64bit
-	if grep -qEi 'KERNEL_MOD = yes' $1 ; then
-		unset EXTRA_MAKE
-	fi
-
 	local PKG_TIME_START=$(date +%s)
 	chroot $LFS $TOOLS_DIR/bin/env -i \
 		HOME=/root \
@@ -341,16 +321,16 @@ ipfire_make() {
 		IMAGENAME=$IMAGENAME \
 		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
 		bash -x -c "cd /usr/src/lfs && \
-		$EXTRA_MAKE make -f $* LFS_BASEDIR=/usr/src install" >>$LOGFILE 2>&1
+		make -f $* LFS_BASEDIR=/usr/src install" >>$LOGFILE 2>&1
 
 	local COMPILE_SUCCESS=$?
 	local PKG_TIME_END=$(date +%s)
 
 	if [ $COMPILE_SUCCESS -ne 0 ]; then
-		beautify result FAIL $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		beautify result FAIL $[ $PKG_TIME_END - $PKG_TIME_START ]
 		exiterror "Building $*"
 	else
-		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ]
 		PACKAGES_DONE="$PACKAGES_DONE $1"
 	fi
 
@@ -365,8 +345,6 @@ package_make() {
 	SKIP_PACKAGE_LIST="SKIP_PACKAGE_LIST Config adjust-toolchain cdrom images pxe test-toolchain usb-key usb-stick" \
 		lfsmakecommoncheck $*
 	[ $? == 1 ] && return 0
-
-	local PKG_VER=$(get_pkg_ver $BASEDIR/lfs/$1)
 
 	local PKG_TIME_START=$(date +%s)
 	chroot $LFS $TOOLS_DIR/bin/env -i \
@@ -397,16 +375,16 @@ package_make() {
 		ROOTFILE=$(rootfiles_findone $1 | sed "s,$BASEDIR,/usr/src,g") \
 		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
 		bash -x -c "cd /usr/src/lfs && \
-		$EXTRA_MAKE make -f $* LFS_BASEDIR=/usr/src package" >>$LOGFILE 2>&1
+		make -f $* LFS_BASEDIR=/usr/src package" >>$LOGFILE 2>&1
 
 	local COMPILE_SUCCESS=$?
 	local PKG_TIME_END=$(date +%s)
 
 	if [ $COMPILE_SUCCESS -ne 0 ]; then
-		beautify result FAIL $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		beautify result FAIL $[ $PKG_TIME_END - $PKG_TIME_START ]
 		exiterror "Packageing $*"
 	else
-		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ] $1 $PKG_VER $STAGE_ORDER $STAGE
+		beautify result DONE $[ $PKG_TIME_END - $PKG_TIME_START ]
 		PACKAGES_DONE="$PACKAGES_DONE $1"
 	fi
 
@@ -473,7 +451,6 @@ prepareenv() {
 		beautify message FAIL
 		exiterror "Not building as root"
 	fi
-
 
 	##############################################################################
 	# Checking for necessary temporary space                                     #
