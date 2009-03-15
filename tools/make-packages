@@ -92,7 +92,7 @@ pkg_info() {
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
-		info
+		info 2>/dev/null
 }
 
 pkg_info_wiki() {
@@ -109,7 +109,8 @@ pkg_info_wiki() {
 		echo "| Group:  | $GROUP  |"
 		echo "| License:  | $LICENSE  |"
 		echo "| Maintainer:  | $MAINTAINER  |"
-		echo "| $DESC ||"
+		echo "| Dependencies: | $(for dep in $DEPS; do echo \"[[$dep]]\"; done) |"
+		echo "| $(echo $DESC) ||"
 		echo "| Website:  | $URL  |"
 		if [ "$DEBUG" = "yes" ]; then
 			echo "<color red>This is a debug-package.</color>"
