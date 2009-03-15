@@ -86,15 +86,14 @@ rootfiles_commit() {
 
 rootfiles_copy() {
 	for i in $@; do
-		(	unset NAME VERSION
-			ROOTFILE=$(rootfiles_findone $i)
+		(	ROOTFILE=$(rootfiles_findone $i)
 			if [ "$ROOTFILE" = "" ]; then
 				dialogerror "Rootfile of \"$i\" not found. Create it first."
 				return 1
 			fi
 			eval $(pkg_info $i)
-			for j in $NAME{-$VERSION,} \
-				$(sed 's/\([a-z]\)\([a-zA-Z0-9]*\)/\u\1\2/g' <<< $NAME){,$VERSION}; do
+			for j in $PKG_NAME{-$PKG_VER,} \
+				$(sed 's/\([a-z]\)\([a-zA-Z0-9]*\)/\u\1\2/g' <<< $PKG_NAME){,$PKG_VER}; do
 				LOGFILE=$(find $BASEDIR/log_$TARGET/ -type f -name $j ! -name *_old)
 				[ -n "$LOGFILE" ] && break
 			done

@@ -32,11 +32,10 @@ pkg_list_groups_wiki() {
 	for group in $(pkg_list_groups); do
 		echo "===== $group ====="
 		for package in $BASEDIR/lfs/*; do
-			(	unset NAME VERSION
-				eval $(pkg_info ${package})
-				if [ -n "$NAME" ] && [ "$RELEASE" != "-1" ] && [ "$GROUP" = "$group" ]; then
-					[ -n "$VERSION" ] && NAME="${NAME}-${VERSION}"
-					echo "  * [[.:package:$(basename $package)|${NAME}]] - ${SHORT}"
+			(	eval $(pkg_info ${package})
+				if [ -n "$PKG_NAME" ] && [ "$PKG_REL" != "-1" ] && [ "$PKG_GROUP" = "$group" ]; then
+					[ -n "$PKG_VERSION" ] && NAME="${PKG_NAME}-${PKG_VERSION}"
+					echo "  * [[.:package:$(basename $package)|${PKG_NAME}]] - ${PKG_SHORT}"
 				fi
 			)
 		done
@@ -49,11 +48,10 @@ pkg_list_packages() {
 	for i in $BASEDIR/lfs/*; do
 		[ -L "$i" ] && continue
 		package=$(basename $i)
-		(	unset NAME VERSION
-			eval $(pkg_info ${package})
-			if [ -n "$NAME" ] && [ "$RELEASE" != "-1" ]; then
-				printf "  * %-30s" ${NAME}-${VERSION}
-				echo "${SHORT}"
+		(	eval $(pkg_info ${package})
+			if [ -n "$PKG_NAME" ] && [ "$PKG_REL" != "-1" ]; then
+				printf "  * %-30s" ${PKG_NAME}-${PKG_VER}
+				echo "${PKG_SHORT}"
 			fi
 		)
 	done
@@ -65,11 +63,10 @@ pkg_list_packages_wiki() {
 	for i in $BASEDIR/lfs/*; do
 		[ -L "$i" ] && continue
 		package=$(basename $i)
-		(	unset NAME VERSION
-			eval $(pkg_info ${package})
-			if [ -n "$NAME" ] && [ "$RELEASE" != "-1" ]; then
-				[ -n "$VERSION" ] && NAME="${NAME}-${VERSION}"
-				echo "  * [[.:package:$package|${NAME}]] - ${SHORT}"
+		(	eval $(pkg_info ${package})
+			if [ -n "$PKG_NAME" ] && [ "$PKG_REL" != "-1" ]; then
+				[ -n "$PKG_VER" ] && PKG_NAME="${PKG_NAME}-${PKG_VERSION}"
+				echo "  * [[.:package:$package|${PKG_NAME}]] - ${PKG_SHORT}"
 			fi
 		)
 	done
@@ -92,52 +89,99 @@ pkg_info() {
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
-		info
+		info 2>/dev/null
 }
 
 pkg_info_wiki() {
-	(
-		unset NAME VERSION
-		eval $(pkg_info ${1})
+	(	eval $(pkg_info ${1})
 
-		[ "$NAME" = "" ] && exit
+		[ "$PKG_NAME" = "" ] && exit
 
 		# Output everything in wiki format
-		echo "^  $NAME  ^^"
-		echo "| Version:  | $VERSION  |"
-		echo "| Release:  | $RELEASE  |"
-		echo "| Group:  | $GROUP  |"
-		echo "| License:  | $LICENSE  |"
-		echo "| Maintainer:  | $MAINTAINER  |"
-		echo "| $DESC ||"
-		echo "| Website:  | $URL  |"
-		if [ "$DEBUG" = "yes" ]; then
+		echo "^  $PKG_NAME  ^^"
+		echo "| **Version:**  | $PKG_VER  |"
+		echo "| **Release:**  | $PKG_REL  |"
+		echo "| **Group:**  | $PKG_GROUP  |"
+		echo "| **License:**  | $PKG_LICENSE  |"
+		echo "| **Maintainer:**  | $PKG_MAINTAINER  |"
+
+		# Dependencies
+		echo -n "| **Dependencies:** | "
+		for dep in $DEPS; do
+			echo -n "[[$dep]] "
+		done; echo "|"
+
+		echo "| $(echo $PKG_DESC) ||"
+		echo "| **Website:**  | $PKG_URL  |"
+		if [ "$PKG_DEBUG" = "yes" ]; then
 			echo "<color red>This is a debug-package.</color>"
 		fi
-		if [ "$EXTRA" = "yes" ]; then
+		if [ "$PKG_EXTRA" = "yes" ]; then
 			echo "<color green>This is an extra package.</color>"
 		fi
 		echo
-		for file in $(find $BASEDIR/src/rootfiles -name "$1" | xargs cat); do
-			echo "  $file"
+		for file in $(find $BASEDIR/src/rootfiles -name "$1"); do
+			echo "**.${file#$BASEDIR}**"
+			for i in $(cat ${file}); do
+				echo "  $i"
+			done
 		done
 	)
 }
 
 pkg_deps() {
 	(
-		unset NAME VERSION
 		eval $(pkg_info ${1})
-		echo $DEPS
+		echo $PKG_DEPS
 	)
 }
 
 pkg_files() {
 	(
-		unset NAME VERSION
 		eval $(pkg_info ${1})
-		for i in $FILES; do
+		for i in $PKG_FILES; do
 			echo $i
 		done
 	)
+}
+
+function pkg_info_shell() {
+	format_desc() {
+		MAX_LENGTH=38
+		INPUT=$@
+
+		LINE=""
+		LENGTH=0
+		for word in $INPUT; do
+			LENGTH=$(expr $LENGTH + ${#word})
+			if [ "$LENGTH" -ge "$MAX_LENGTH" ]; then
+				printf "$LINE\n"
+				LINE="              ${word} "
+				LENGTH=${#word}
+			else
+				LINE="$LINE${word} "
+			fi
+			#echo "-- ($word) $LINE"
+		done
+		printf "$LINE\n"
+	}
+	for pkg in $@; do
+		(
+			eval "$(pkg_info ${pkg})"
+			echo    "############################################################"
+			echo -e "# ${CLR_BOLD_RED}PACKAGE INFO${NORMAL}"
+			echo    "############################################################"
+			for val in PKG_NAME PKG_VER PKG_REL break PKG_GROUP PKG_MAINTAINER break PKG_URL PKG_LICENSE; do
+				if [ "${val}" == "break" ]; then
+					echo "         ----------------------------------------         "
+				else
+					printf "${CLR_BOLD_RED}%-12s${NORMAL}: ${!val}\n" ${val#PKG_}
+				fi
+			done
+			for val in PKG_SHORT PKG_DESC; do
+				printf "${CLR_BOLD_RED}%-12s${NORMAL}: " ${val#PKG_}
+				format_desc ${!val}
+			done
+			)
+	done
 }
