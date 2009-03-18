@@ -71,7 +71,7 @@ objects = $(DL_FILE) \
 	gmp-$(GMP).tar.bz2 mpfr-$(MPFR).tar.bz2 \
 	$(THISAPP)-fstack_protector-1.patch \
 	$(THISAPP)-fortify_source-2.patch \
-	$(THISAPP)-fpie-1.patch \
+	$(THISAPP)-fpie-2.patch \
 	$(THISAPP)-branch-startfiles-1.patch \
 	$(THISAPP)-asprintf_fix.patch
 
@@ -150,7 +150,7 @@ ifeq "$(PASS)" "2"
 	# This fpie patch also warns about DT_TEXTREL in shared objects (libraries and
 	# PIE's), and makes linker warnings fatal. Disable --fatal-warnings with
 	# -Wl,--no-fatal-warnings.
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fpie-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fpie-2.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-branch-startfiles-1.patch
 
 	# This patch fixes a conflict between libiberty's asprintf() and Glibc's, when
@@ -201,7 +201,7 @@ endif
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fortify_source-2.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fstack_protector-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fpie-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fpie-2.patch
 	cd $(DIR_APP) && sed -i 's/install_to_$$(INSTALL_DEST) //' libiberty/Makefile.in
 	cd $(DIR_APP) && sed -i 's/^XCFLAGS =$$/& -fomit-frame-pointer/' gcc/Makefile.in
 	cd $(DIR_APP) && sed -i 's@\./fixinc\.sh@-c true@' gcc/Makefile.in
