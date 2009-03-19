@@ -31,7 +31,7 @@ build_spy() {
 		LOGFILE="$BASEDIR/log_${TARGET}/_build.00-buildspy.log" \
 		$BASEDIR/tools/make-buildspy &
 	elif [ "$COMMAND" = "exit" ]; then
-		echo -n "BUILDSPY_EXIT " >> $BUILD_SPY_FILENAME
+		sleep 11 && echo -n "BUILDSPY_EXIT " >> $BUILD_SPY_FILENAME &
 	else
 		echo -n "${COMMAND}=$* " >> $BUILD_SPY_FILENAME
 	fi
@@ -46,9 +46,11 @@ build_spy_send_profile() {
 		awk -F: '{ print $2 }' | $BASEDIR/tools/base64)
 	build_spy machine  $(uname -m)
 	build_spy toolchain "${NAME}-${TOOLCHAINVERSION}"
-	for i in system fedora redhat $SNAME debian ubuntu lsb; do
-		if [ -e "/etc/${i}-release" ]; then
-			build_spy system "$($BASEDIR/tools/base64 < /etc/${i}-release)"
+	for i in /etc/{system,fedora,redhat,$SNAME,debian,ubuntu,lsb}-release /etc/debian_version; do
+		if [ -e "${i}" ]; then
+			SYSTEM_STRING=$(cat ${i} 2>/dev/null)
+			grep -q "debian" <<<${i} && SYSTEM_STRING="Debian $SYSTEM_STRING"
+			build_spy system "$($BASEDIR/tools/base64 <<<$SYSTEM_STRING)"
 			break
 		fi
 	done

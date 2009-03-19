@@ -114,9 +114,9 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP)/source && make install
 
 	cd $(DIR_APP) && install -m 755 source/nsswitch/libnss_winbind.so /lib/libnss_winbind.so.2
-	ln -sf /lib/libnss_winbind.so.2  /usr/lib/libnss_winbind.so
+	ln -sf ../../lib/libnss_winbind.so.2  /usr/lib/libnss_winbind.so
 	cd $(DIR_APP) && install -m 755 source/nsswitch/libnss_wins.so /lib/libnss_wins.so.2
-	ln -sf /lib/libnss_wins.so.2 /usr/lib/libnss_wins.so
+	ln -sf ../../lib/libnss_wins.so.2 /usr/lib/libnss_wins.so
 	-mkdir -pv /etc/samba
 	echo "127.0.0.1 localhost" > /etc/samba/lmhosts
 	@rm -rf $(DIR_APP)

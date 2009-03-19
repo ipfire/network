@@ -74,6 +74,9 @@ buildspy|bs)
 		stop)
 			build_spy exit
 			;;
+		send|profile)
+			build_spy_send_profile
+			;;
 		*)
 			usage
 			;;
@@ -282,44 +285,7 @@ package*|pkg)
 			;;
 		info)
 			shift 2
-			format_desc() {
-				MAX_LENGTH=38
-				INPUT=$@
-
-				LINE=""
-				LENGTH=0
-				for word in $INPUT; do
-					LENGTH=$(expr $LENGTH + ${#word})
-					if [ "$LENGTH" -ge "$MAX_LENGTH" ]; then
-						printf "$LINE\n"
-						LINE="              ${word} "
-						LENGTH=${#word}
-					else
-						LINE="$LINE${word} "
-					fi
-					#echo "-- ($word) $LINE"
-				done
-				printf "$LINE\n"
-			}
-			for pkg in $@; do
-				(
-					eval "$(pkg_info ${pkg})"
-					echo    "############################################################"
-					echo -e "# ${CLR_BOLD_RED}PACKAGE INFO${NORMAL}"
-					echo    "############################################################"
-					for val in NAME VERSION RELEASE break GROUP MAINTAINER break URL LICENSE; do
-						if [ "${val}" == "break" ]; then
-							echo "         ----------------------------------------         "
-						else
-							printf "${CLR_BOLD_RED}%-12s${NORMAL}: ${!val}\n" ${val}
-						fi
-					done
-					for val in SHORT DESC; do
-						printf "${CLR_BOLD_RED}%-12s${NORMAL}: " ${val}
-						format_desc ${!val}
-					done
-					)
-			done
+			pkg_info_shell $@
 			;;
 		group*)
 			echo "#### All available groups of packages in ${NAME}-${VERSION} ####"
