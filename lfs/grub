@@ -51,7 +51,7 @@ define LONG_DESC
 	systems.
 endef
 
-CFLAGS     =
+CFLAGS     = -Os -g -fno-strict-aliasing -fno-stack-protector -fno-pic -fno-pie -nopie
 CXXFLAGS   =
 
 ###############################################################################
@@ -112,12 +112,12 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && autoconf
 	
 	cd $(DIR_APP) && \
-		CC="gcc -fno-stack-protector -fno-pic -fno-pie -nopie" \
+		grub_cv_prog_objcopy_absolute=yes \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr
 
-	cd $(DIR_APP) && make -j $(PRALLELISM)
+	cd $(DIR_APP) && make -j $(PRALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	
 	sed -e "s/pkgdatadir/pkglibdir/g" -i /usr/sbin/grub-install
