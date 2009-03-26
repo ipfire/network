@@ -92,7 +92,7 @@ else
 fi
 
 LINKER=/lib/ld-linux.so.2
-GLOBAL_CFLAGS="-pipe -fPIC"
+GLOBAL_CFLAGS="-pipe -fpic"
 if [ 'i686' = $TARGET -o 'i586' = $TARGET \
 	-o 'i486' = $TARGET ]; then
 	MACHINE=${TARGET}

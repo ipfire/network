@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = iptables
-PKG_VER    = 1.4.2
+PKG_VER    = 1.4.3.1
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -100,7 +100,6 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && install -v -m 644 include/ip{,6}tables.h /usr/include
 	cd $(DIR_APP) && install -v -d /usr/include/libiptc
 	cd $(DIR_APP) && install -v -m 644 include/libiptc/*.h /usr/include/libiptc
-	cd $(DIR_APP) && install -v -m 644 libiptc/libiptc.a /lib
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
