@@ -48,6 +48,8 @@ define LONG_DESC
 	A library that detects raid devices.
 endef
 
+VERSION    = 0.1
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -75,6 +77,6 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -e "s/^CFLAGS += -Iinclude/CFLAGS = $(CFLAGS) -fpic -Iinclude/g" -i Makefile
-	cd $(DIR_APP) && export VER=0.1; make install
+	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

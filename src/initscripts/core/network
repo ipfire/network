@@ -44,8 +44,14 @@ case "${1}" in
 		${0} start
 		;;
 
+	reload)
+		if [ -e /var/lock/subsys/network ]; then
+			: # TODO
+		fi
+		;;
+
 	*)
-		echo "Usage: ${0} {start|stop|restart}"
+		echo "Usage: ${0} {start|stop|restart|reload}"
 		exit 1
 		;;
 esac

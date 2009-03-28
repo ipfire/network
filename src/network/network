@@ -157,8 +157,23 @@ function error() {
 }
 
 function _exit() {
+	if [ $1 -eq 0 ] && [ "$DO_RELOAD" = "1" ]; then
+		# Reloading network to apply changes immediately
+		vecho "Reloading network settings..."
+		cmd $0 $(verbose && echo "-v") $(debug && echo "-d") reload
+	fi
+
 	decho "Exiting with code $1."
 	exit $1
+}
+
+function cmd() {
+	decho "Running command: $@"
+	if verbose; then
+		$@
+	else
+		$@ >/dev/null
+	fi
 }
 
 function port_show() {
@@ -209,7 +224,7 @@ function port_add() {
 		RET=$?
 		if [ "$RET" -eq "0" ]; then
 			vecho "Successfully added port ${BOLD}${port}${NORMAL} (${hook} $@) to ${BOLD}${zone}${NORMAL}."
-			/etc/init.d/networking/port ${port} up
+			cmd /etc/init.d/networking/port ${port} up
 		else
 			error "Hook ${BOLD}${hook}${NORMAL} exited with $RET."
 			return $RET
@@ -235,8 +250,8 @@ function port_del() {
 	decho "  Zone: ${zone} Port: ${port} Hook: ${hook}"
 
 	if [ -x "/etc/init.d/networking/hooks/${hook}" ]; then
-		/etc/init.d/networking/port ${port} down ## XXX How do we identify only that one hook?
-		ZONE=${zone} /etc/init.d/networking/hooks/${hook} ${port} remove $@
+		cmd /etc/init.d/networking/port ${port} down ## XXX How do we identify only that one hook?
+		ZONE=${zone} cmd /etc/init.d/networking/hooks/${hook} ${port} remove $@
 		RET=$?
 		if [ "$RET" -eq "0" ]; then
 			vecho "Successfully removed port ${BOLD}${port}${NORMAL} (${hook} $@) from ${BOLD}${zone}${NORMAL}."
@@ -271,7 +286,7 @@ function zone_show() {
 	echo    "##################################################"
 
 	# Up or down?
-	if device_exists ${zone}; then
+	if device_is_up ${zone}; then
 		echo -e "# Device is ${ERROR}up${NORMAL}."
 	else
 		echo -e "# Device is ${ERROR}down${NORMAL}."
@@ -280,11 +295,15 @@ function zone_show() {
 
 	# Ports
 	echo -e "# ${ERROR}Ports:${NORMAL}"
+	local config
 	local port
-	for port in ${CONFIG_ZONES}/${zone}/port-*; do
-		port=${port##*/}
-		echo "#  ${port#port-}"
-		debug && echo "#  TODO: Is port up or down?"
+	for config in ${CONFIG_ZONES}/${zone}/port-*; do
+		port=${config##*/}; port=${port#port-}; port=${port%%-*}
+		if ZONE=${zone} cmd /etc/init.d/networking/port ${port} attach ${config} &>/dev/null; then
+			echo "#  ${config#port-} is up"
+		else
+			echo "#  ${config#port-} is down"
+		fi
 	done
 	echo "#"
 
@@ -316,6 +335,9 @@ function zone_del() {
 	vecho "Successfully removed zone ${zone}."
 }
 
+DO_RELOAD=1
+
+# See what to do
 while [ "$#" -gt 0 ]; do
 	arg=$1
 	shift
@@ -340,7 +362,7 @@ while [ "$#" -gt 0 ]; do
 			case "$arg" in
 				show)
 					port_show $@
-					_exit $?
+					DO_RELOAD=0 _exit $?
 					;;
 				help)
 					usage port 0
@@ -361,7 +383,7 @@ while [ "$#" -gt 0 ]; do
 					;;
 				show)
 					zone_show $@
-					_exit $?
+					DO_RELOAD=0 _exit $?
 					;;
 				addport)
 					port_add $@
@@ -372,9 +394,12 @@ while [ "$#" -gt 0 ]; do
 					_exit $?
 					;;
 				help)
-					usage zone 0
+					DO_RELOAD=0 usage zone 0
 					;;
 			esac
+			;;
+		-*)
+			DO_RELOAD=0 error "Option \"$arg\" is not known."
 			;;
 	esac
 done
