@@ -82,7 +82,6 @@ $(OBJECT) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -p0 < $(DIR_PATCHES)/$(THISAPP).patch
 	cd $(DIR_APP) && \
-		CFLAGS="-O2 -static" \
 			./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=$(PREFIX)
