@@ -25,12 +25,13 @@
 #                                                                             #
 ###############################################################################
 
+echo "Running the Pomona Text Installer..."
+echo -n "Loading modules: "
 for i in md_mod dm_mod ext3 xfs reiserfs reiser4; do
-	echo "Loading module $i"
+	echo -n "$i"
 	modprobe $i
 done
-
-echo "Running the Pomona Text Installer..."
+echo
 
 python /usr/lib/pomona/installer.py $@
 

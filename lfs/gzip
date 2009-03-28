@@ -79,7 +79,6 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
-ifeq "$(STAGE)" "toolchain"	
 	cd $(DIR_APP) && \
 		for file in gzip.c lib/utimens.{c,h}; do \
 			cp -v $$file{,.orig}; \
@@ -96,9 +95,11 @@ ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-cve-2006-4337_len.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-cve-2006-4338.patch
 
+ifeq "$(STAGE)" "toolchain"
 	# NO_ASM is for textrels.
 	cd $(DIR_APP) && \
 		DEFS=NO_ASM \
+		CPPFLAGS="-DHAVE_LSTAT" \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR)
@@ -107,8 +108,10 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && sed -i 's/futimens/gl_&/' gzip.c lib/utimens.{c,h}
+	# NO_ASM is for textrels.
 	cd $(DIR_APP) && \
+		DEFS=NO_ASM \
+		CPPFLAGS="-DHAVE_LSTAT" \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
