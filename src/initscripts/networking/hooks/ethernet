@@ -18,13 +18,47 @@
 
 port=$(macify ${1})
 
+function port_name() {
+	echo ${ZONE}s+
+}
+
+function do_up() {
+	: # Do nothing
+}
+
+function do_down() {
+	: # Do nothing
+}
+
+function do_attach() {
+	rename_device $(get_device ${port}) $(port_name)
+	zone_add_port ${ZONE} $(get_device_by_mac ${port})
+}
+
+function do_detach() {
+	zone_del_port ${ZONE} $(get_device_by_mac ${port})
+	rename_device $(get_device_by_mac ${port}) ${COMMON_DEVICE}
+}
+
+function do_status() {
+	device_is_up ${port}
+	RET=$?
+	if [ $RET -eq 0 ]; then
+		log_success_msg "Port $(port_name) is up"
+	else
+		log_failure_msg "Port $(port_name) is down"
+	fi
+	return $RET
+	# TODO: Check if device is attached to a bridge.
+}
+
 case "${2}" in
 	up)
-		: # Do nothing
+		do_up
 	;;
 
 	down)
-		: # Do nothing
+		do_down
 	;;
 
 	add)
@@ -36,22 +70,29 @@ EOF
 	;;
 
 	remove)
+		do_detach
+		#do_down
 		rm -f \
 			${CONFIG_ZONES}/${ZONE}/port-${port}-ethernet \
 			${CONFIG_PORTS}/${port}/ethernet
 	;;
 
 	attach)
-		rename_device $(get_device ${port}) ${ZONE}s+
-		zone_add_port ${ZONE} $(get_device_by_mac ${port})
+		do_up
+		do_attach
 	;;
 
 	detach)
-		zone_del_port ${ZONE} $(get_device_by_mac ${port})
+		do_detach
+	;;
+
+	status)
+		do_status
+		exit ${?}
 	;;
 
 	*)
-		echo "Usage: ${0} [interface] {up|down|add|remove|attach|detach}"
+		echo "Usage: ${0} [interface] {up|down|add|remove|attach|detach|status}"
 		exit 1
 	;;
 esac

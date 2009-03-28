@@ -28,7 +28,7 @@ action=$2
 shift 2
 
 if [ -z "${port}" ] || [ -z "${action}" ]; then
-	echo "Usage: $0 <port> <up|down|attach|detach> [hooks]"
+	echo "Usage: $0 <port> <up|down|attach|detach|status> [hooks]"
 	echo
 	exit 1
 fi
@@ -55,11 +55,22 @@ case "$action" in
 	down)
 		;;
 
-	attach|detach)
+	attach)
+		ip link set $(devicify ${port}) up # is this required here?
 		if [ -z "${ZONE}" ]; then
 			log_failure_msg "ZONE is not set."
 			exit 1
 		fi
+		;;
+
+	detach)
+		if [ -z "${ZONE}" ]; then
+			log_failure_msg "ZONE is not set."
+			exit 1
+		fi
+		;;
+
+	status)
 		;;
 
 	*)
@@ -74,6 +85,7 @@ for hook in ${hooks}; do
 		. ${hook}
 		if [ -n "${HOOK}" -a -x "/etc/init.d/networking/hooks/${HOOK}" ]; then
 			CONFIG=${hook} /etc/init.d/networking/hooks/${HOOK} ${port} ${action}
+			RET=$?
 		else
 			echo -e "${FAILURE}Unable to process ${hook}. Either"
 			echo -e "${FAILURE}the HOOK variable was not set,"
@@ -81,13 +93,20 @@ for hook in ${hooks}; do
 			message=""
 			log_failure_msg
 		fi
-	)
+		exit ${RET}
+	) || failed=1
 done
 
 case "${action}" in
 	down)
-		message="Pushing down port ${port}..."
-		ip link set $(devicify ${port}) down
-		evaluate_retval
+		# If no ports are running yet, push device down.
+		if ! $0 ${port} status &>/dev/null; then
+			message="Pushing down port ${port}..."
+			ip link set $(devicify ${port}) down
+			evaluate_retval
+		fi
+		;;
+	status)
+		exit ${failed}
 		;;
 esac
