@@ -1,11 +1,15 @@
 #bin/iptables-xml
 #lib/libipq.a
-#lib/libiptc.a
+#lib/libiptc.la
+lib/libiptc.so
+lib/libiptc.so.0
+lib/libiptc.so.0.0.0
 #lib/libxtables.la
 lib/libxtables.so
-lib/libxtables.so.0
-lib/libxtables.so.0.0.0
+lib/libxtables.so.1
+lib/libxtables.so.1.0.0
 #lib/pkgconfig
+#lib/pkgconfig/libiptc.pc
 #lib/pkgconfig/xtables.pc
 lib/xtables
 #lib/xtables/libip6t_HL.so
@@ -42,7 +46,6 @@ lib/xtables/libipt_ecn.so
 lib/xtables/libipt_icmp.so
 lib/xtables/libipt_policy.so
 lib/xtables/libipt_realm.so
-lib/xtables/libipt_recent.so
 lib/xtables/libipt_set.so
 lib/xtables/libipt_ttl.so
 lib/xtables/libipt_unclean.so
@@ -59,6 +62,7 @@ lib/xtables/libxt_SECMARK.so
 lib/xtables/libxt_TCPMSS.so
 lib/xtables/libxt_TCPOPTSTRIP.so
 lib/xtables/libxt_TOS.so
+lib/xtables/libxt_TPROXY.so
 lib/xtables/libxt_TRACE.so
 lib/xtables/libxt_comment.so
 lib/xtables/libxt_connbytes.so
@@ -81,7 +85,9 @@ lib/xtables/libxt_physdev.so
 lib/xtables/libxt_pkttype.so
 lib/xtables/libxt_quota.so
 lib/xtables/libxt_rateest.so
+lib/xtables/libxt_recent.so
 lib/xtables/libxt_sctp.so
+lib/xtables/libxt_socket.so
 lib/xtables/libxt_standard.so
 lib/xtables/libxt_state.so
 lib/xtables/libxt_statistic.so
