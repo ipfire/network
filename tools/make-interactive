@@ -173,6 +173,7 @@ toolchain)
 			# Check if host can build the toolchain
 			check_toolchain
 
+			distcc_get_hosts &
 			toolchain_build
 
 			stdumount
