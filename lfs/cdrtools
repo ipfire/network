@@ -25,12 +25,12 @@
 include Config
 
 PKG_NAME   = cdrtools
-PKG_VER    = 2.01
+PKG_VER    = 2.01.01a58
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+DIR_APP    = $(DIR_SRC)/$(PKG_NAME)-2.01.01
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -53,9 +53,7 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	$(THISAPP)-mkisofs_iconv-1.patch \
-	$(THISAPP)-ascii-2.patch
+objects = $(DL_FILE)
 
 download: $(objects)
 
@@ -77,9 +75,8 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-mkisofs_iconv-1.patch
-	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-ascii-2.patch
-	cd $(DIR_APP) && make INS_BASE=/usr DEFINSUSR=root DEFINSGRP=root $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make INS_BASE=/usr DEFINSUSR=root DEFINSGRP=root \
+						 LDFLAGS="-Wl,--no-fatal-warnings" $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make INS_BASE=/usr DEFINSUSR=root DEFINSGRP=root install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
