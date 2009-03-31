@@ -24,13 +24,13 @@
 
 include Config
 
-PKG_NAME   = cdrtools
-PKG_VER    = 2.01.01a58
+PKG_NAME   = dvdrtools
+PKG_VER    = 0.2.1
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
-DIR_APP    = $(DIR_SRC)/$(PKG_NAME)-2.01.01
+DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -40,13 +40,14 @@ EXTRA      = no
 DEBUG      = no
 DEPS       =
 
-URL        = http://cdrecord.berlios.de/private/cdrecord.html
-LICENSE    = CDDL GPLv2+
+URL        = http://savannah.nongnu.org/projects/dvdrtools/
+LICENSE    = GPLv2+
 SHORT_DESC = A set of command line programs that allows to record media.
 
 define LONG_DESC
-	Cdrtools is a set of command line programs that allows to record \
-	CD/DVD/BluRay media.
+	dvdrtools is a fork of cdrtools/cdrecord with support for writing to DVDs. \
+	While its primary purpose is writing data DVDs, it includes basic support \
+	for mastering video DVDs.
 endef
 
 ###############################################################################
@@ -75,8 +76,13 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && make INS_BASE=/usr DEFINSUSR=root DEFINSGRP=root \
-						 LDFLAGS="-Wl,--no-fatal-warnings" $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make INS_BASE=/usr DEFINSUSR=root DEFINSGRP=root install
+	cd $(DIR_APP) && \
+		CFLAGS=$$(sed "s/-O2/-O0/g" <<<$$CFLAGS) \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--disable-static
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

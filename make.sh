@@ -325,7 +325,7 @@ ipfire_build() {
 	ipfire_make logrotate
 	#ipfire_make logwatch	
 	ipfire_make cpio
-	ipfire_make cdrtools
+	ipfire_make dvdrtools
 	ipfire_make python-parted
 	ipfire_make python-pyblock
 	ipfire_make libbdevid
