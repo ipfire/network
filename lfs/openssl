@@ -52,7 +52,8 @@ endif
 
 objects = $(DL_FILE) \
 	$(THISAPP)-fix_manpages-1.patch \
-	$(THISAPP)-enginesdir.patch
+	$(THISAPP)-enginesdir.patch \
+	$(THISAPP)-no-rpath.patch
 
 info:
 	$(DO_PKG_INFO)
@@ -73,6 +74,7 @@ $(OBJECT) :
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix_manpages-1.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-enginesdir.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-no-rpath.patch
 
 	cd $(DIR_APP) && sed -i -e 's/-O3 -fomit-frame-pointer/$(CFLAGS)/' Configure
 
