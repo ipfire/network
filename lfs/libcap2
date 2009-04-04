@@ -80,8 +80,8 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && sed -e "s#sys/types.h#linux/types.h#g" \
-		-i libcap/include/sys/capability.h
+	cd $(DIR_APP) && sed -e "s@<stdlib.h>@&\n#include <asm/types.h>@g" \
+		-i progs/capsh.c
 	cd $(DIR_APP) && sed 's/--static//' -i.orig progs/Makefile
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
