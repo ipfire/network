@@ -49,12 +49,6 @@ case "$action" in
 			(exit ${failed})
 			evaluate_retval standard
 
-			# We should bring up every port
-			for config in ${CONFIG_ZONES}/${zone}/port-*; do
-				port=${config##*/}; port=${port#port-}; port=${port%%-*}
-				ZONE=${zone} /etc/init.d/networking/port ${port} up
-			done
-
 			# Attach ports
 			for config in ${CONFIG_ZONES}/${zone}/port-*; do
 				port=${config##*/}; port=${port#port-}; port=${port%%-*}
@@ -78,9 +72,8 @@ case "$action" in
 
 			# Detach ports
 			for config in ${CONFIG_ZONES}/${zone}/port-*; do
-				port=${file#port-}; port=${port%%-*}
-				ZONE=${zone} CONFIG=${config} \
-					/etc/init.d/networking/port ${port} detach
+				port=${config##*/}; port=${port#port-}; port=${port%%-*}
+				ZONE=${zone} /etc/init.d/networking/port ${port} detach ${config}
 			done
 
 			# Bring down the zone and delete it

@@ -25,7 +25,7 @@
 NAME="IPFire"			# Software name
 SNAME="ipfire"			# Short name
 VERSION="3.0-prealpha2"		# Version number
-TOOLCHAINVERSION="${VERSION}-1"	# Toolchain
+TOOLCHAINVERSION="${VERSION}-3"	# Toolchain
 SLOGAN="Gluttony"		# Software slogan
 
 # Include funtions
@@ -325,7 +325,7 @@ ipfire_build() {
 	ipfire_make logrotate
 	#ipfire_make logwatch	
 	ipfire_make cpio
-	ipfire_make cdrtools
+	ipfire_make dvdrtools
 	ipfire_make python-parted
 	ipfire_make python-pyblock
 	ipfire_make libbdevid
@@ -355,7 +355,7 @@ misc_build() {
 
 	ipfire_make stage4
 
-	ipfire_make miniupnpd
+	#ipfire_make miniupnpd
 
 	### Console tools
 	#

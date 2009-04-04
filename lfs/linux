@@ -159,15 +159,12 @@ ifeq "$(STAGE)" "ipfire"
 		cp -f $(DIR_CONF)/kernel/kernel.config $(DIR_APP)/.config; \
 	fi
 
-	# Fixed CFLAGS when using distcc
-	cd $(DIR_APP) && sed -e "s/-D__KERNEL__/& -fno-PIE/" -i Makefile
-
 	cd $(DIR_APP) && yes "" | make oldconfig
 
 	cd $(DIR_APP) && cp -vf $(DIR_CONFIG)/kernel/$(SNAME)_logo.ppm \
 		drivers/video/logo/logo_linux_clut224.ppm
 	
-	cd $(DIR_APP) && CC="gcc -U_FORTIFY_SOURCE" make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make modules_install
 	
 	cd $(DIR_APP) && cp -v arch/x86/boot/bzImage /boot/$(SNAME)kernel-$(FULLVER)

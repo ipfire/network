@@ -24,6 +24,8 @@ CONFIG_DIR=/etc/sysconfig/networking
 CONFIG_ZONES=${CONFIG_DIR}/zones
 CONFIG_PORTS=${CONFIG_DIR}/ports
 
+COMMON_DEVICE=black+
+
 function is_mac() {
 	egrep -q "^[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]$" <<<$1
 }
@@ -133,6 +135,10 @@ function device_exists() {
 	ip link show $(devicify ${1}) &>/dev/null
 }
 
+function device_is_up() {
+	ip link show $(devicify ${1}) 2>/dev/null | grep -qE "<.*UP.*>"
+}
+
 function rename_device() {
 	local source
 	local destination
@@ -167,6 +173,14 @@ function rename_device() {
 
 function zone_exists() {
 	[ -e "$CONFIG_ZONES/$1" ] #|| device_exists $@
+}
+
+function port_is_up() {
+	device_is_up $@
+}
+
+function zone_is_up() {
+	zone_exists $@ && device_is_up $@
 }
 
 function bridge_devices() {

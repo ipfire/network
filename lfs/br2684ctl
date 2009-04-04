@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = br2684ctl
 PKG_VER    = ipfire-1
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,29 +34,52 @@ DIR_APP    = $(DIR_SRC)/$(PKG_NAME)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Networking/Tools
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://cvs.linux-atm.sourceforge.net/viewcvs.py/linux-atm/linux-atm/src/br2684/Attic/br2684ctl.8?rev=1.1.2.1&hideattic=0&only_with_tag=V2_5_0
+LICENSE    = GPLv2+
+SHORT_DESC = Utilities for configuring an ATM/ethernet bridge.
+
+define LONG_DESC
+	Utility for configuring RFC 2684 ATM/Ethernet bridging \
+	ATM bridging is a way to extend Ethernet over an ATM network and is \
+	mainly used for DSL connections. This package contains the user space \
+	utility needed to configure the kernel driver. \
+	This package is needed if you own an USB DSL modem and your connection \
+	uses one of these protocols: RFC 1483 bridged (RFC 2684 bridged), \
+	PPP over Ethernet (PPPoE).
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
 objects = $(DL_FILE)
 
+download: $(objects)
+
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && gcc $(CFLAGS) -latm br2684ctl.c -o br2684ctl
 	cd $(DIR_APP) && install -v -m 755 br2684ctl /usr/bin/br2684ctl
 	@rm -rf $(DIR_APP)

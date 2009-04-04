@@ -82,6 +82,8 @@ $(OBJECT): $(objects)
 	#cd $(DIR_APP) && autoreconf --install
 
 ifeq "$(STAGE)" "toolchain"
+	cd $(DIR_APP) && sed -e "s/^AC_PROG_CXX$$//g" -i configure.ac
+	cd $(DIR_APP) && autoreconf --install
 	cd $(DIR_APP) && \
 		ac_cv_func_working_mktime=yes \
 		./configure \

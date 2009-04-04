@@ -54,6 +54,7 @@ $(OBJECT) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
+		mpfr_cv_working_tls=yes \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
