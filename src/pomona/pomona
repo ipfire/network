@@ -27,7 +27,7 @@
 
 echo "Running the Pomona Text Installer..."
 echo -n "Loading modules:"
-for i in md_mod dm_mod ext3 xfs reiserfs reiser4 btrfs; do
+for i in md_mod dm_mod ext3 ext4 xfs reiserfs reiser4 btrfs; do
 	echo -n " $i"
 	modprobe $i
 done
