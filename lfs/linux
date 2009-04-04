@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = linux
-PKG_VER    = 2.6.27.10
+PKG_VER    = 2.6.29.1
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -58,8 +58,8 @@ LOCALVERSION = -ipfire1
 FULLVER= $(PKG_VER)$(LOCALVERSION)
 
 # Patches
-GRSEC_PATCH    = grsecurity-2.1.12-$(PKG_VER)-200812271347.patch
-OCF_PATCH      = ocf-linux-26-20080917.patch
+GRSEC_PATCH    = grsecurity-2.1.14-$(PKG_VER)-200903281534.patch
+#OCF_PATCH      = ocf-linux-26-20080917.patch
 REISER4_PATCH  = reiser4-for-$(PKG_VER).patch
 SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
 H12Y_PATCH     = linux-h12y-mmio-quirks.patch
@@ -71,7 +71,6 @@ H12Y_PATCH     = linux-h12y-mmio-quirks.patch
 objects = $(DL_FILE) \
 	$(OCF_PATCH) \
 	$(REISER4_PATCH) \
-	$(SQUASHFS_PATCH) \
 	$(GRSEC_PATCH) \
 	$(H12Y_PATCH)
 
@@ -100,16 +99,12 @@ $(OBJECT): $(objects)
 
 	### OCF
 	#
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(OCF_PATCH)
-	cd $(DIR_APP) && echo "source \"crypto/ocf/Kconfig\"" >> crypto/Kconfig
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(OCF_PATCH)
+	#cd $(DIR_APP) && echo "source \"crypto/ocf/Kconfig\"" >> crypto/Kconfig
 
 	### Reiser4
 	#
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(REISER4_PATCH)
-
-	### Squashfs
-	#
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(SQUASHFS_PATCH)
 
 	### GrSecurity
 	#
