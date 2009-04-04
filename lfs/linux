@@ -58,6 +58,7 @@ LOCALVERSION = -ipfire1
 FULLVER= $(PKG_VER)$(LOCALVERSION)
 
 # Patches
+AUFS_PATCH     = aufs2-$(PKG_VER)-1.patch
 GRSEC_PATCH    = grsecurity-2.1.14-$(PKG_VER)-200903281534.patch
 #OCF_PATCH      = ocf-linux-26-20080917.patch
 REISER4_PATCH  = reiser4-for-$(PKG_VER).patch
@@ -96,6 +97,10 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 	cd $(DIR_APP) && echo "$(LOCALVERSION)" > localversion-ipfire
+
+	### Aufs2
+	#
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(AUFS_PATCH)
 
 	### OCF
 	#
