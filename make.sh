@@ -191,7 +191,6 @@ ipfire_build() {
 	ipfire_make xz
 
 	ipfire_make linux
-	ipfire_make aufs
 
 	### Building some general stuff
 	#   STAGE 1
