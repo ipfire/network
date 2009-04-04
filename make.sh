@@ -286,6 +286,7 @@ ipfire_build() {
 	
 	### Building filesystem stuff
 	#
+	ipfire_make btrfs-progs
 	ipfire_make reiserfsprogs
 	ipfire_make libaal
 	ipfire_make reiser4progs
