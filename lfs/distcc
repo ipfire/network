@@ -52,7 +52,7 @@ define LONG_DESC
 endef
 
 PREFIX     = $(TOOLS_DIR)/usr
-CFLAGS    += -static
+CFLAGS    := $(subst -fPIC,,$(CFLAGS)) -static
 
 ###############################################################################
 # Top-level Rules
@@ -92,6 +92,5 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
 		distcc distccd distccmon-text lsdistcc
 	cd $(DIR_APP) && make install-programs
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
