@@ -1,0 +1,63 @@
+#!/bin/sh
+# Begin /etc/init.d/openssh
+
+### BEGIN INIT INFO
+# Provides:            ssh
+# Required-Start:      $network
+# Should-Start:
+# Required-Stop:
+# Should-Stop:         netfs
+# Default-Start:       3 4 5
+# Default-Stop:        0 1 2 6
+# Short-Description:   Starts OpenSSH daemon.
+# Description:         Starts OpenSSH daemon.
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+MESSAGE="OpenSSH Server"
+BIN_FILE="/usr/sbin/sshd"
+
+function generate_keys() {
+	for algo in dsa rsa; do
+		[ -e "/etc/ssh/ssh_host_${algo}_key" ] && continue
+		ssh-keygen -q -t ${algo} -N "" /etc/ssh/ssh_host_${algo}_key
+	done
+}
+
+case "$1" in
+    start)
+        generate_keys
+        start_daemon "${BIN_FILE}"
+        evaluate_retval start
+    ;;
+
+    stop)
+        killproc "${BIN_FILE}"
+        evaluate_retval stop
+    ;;
+
+    reload)
+        killproc "${BIN_FILE}" -HUP
+        evaluate_retval reload
+    ;;
+
+    restart)
+        killproc "${BIN_FILE}"
+        sleep 1
+        start_daemon "${BIN_FILE}"
+        evaluate_retval restart
+    ;;
+
+    status)
+        statusproc "${BIN_FILE}"
+    ;;
+
+    *)
+        echo "Usage: $0 {start|stop|reload|restart|status}"
+        exit 1
+    ;;
+
+esac
+
+# End $rc_base/init.d/openssh
