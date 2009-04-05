@@ -254,7 +254,11 @@ toolchain_make() {
 	[ $? == 1 ] && return 0
 
 	local PKG_TIME_START=$(date +%s)
-	cd $BASEDIR/lfs && make -f $* \
+	cd $BASEDIR/lfs && env -i \
+		HOME=/root \
+		TERM=$TERM \
+		PS1='\u:\w\$ ' \
+		PATH=$PATH \
 		CONFIG_ROOT=$CONFIG_ROOT \
 		LINKER=$LINKER \
 		TOOLS_DIR=$TOOLS_DIR \
@@ -272,7 +276,7 @@ toolchain_make() {
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
-		install >> $LOGFILE 2>&1
+		make -f $* install >> $LOGFILE 2>&1
 
 	local COMPILE_SUCCESS=$?
 	local PKG_TIME_END=$(date +%s)
