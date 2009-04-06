@@ -21,7 +21,7 @@ BIN_FILE="/usr/sbin/sshd"
 function generate_keys() {
 	for algo in dsa rsa; do
 		[ -e "/etc/ssh/ssh_host_${algo}_key" ] && continue
-		ssh-keygen -q -t ${algo} -N "" /etc/ssh/ssh_host_${algo}_key
+		/usr/bin/ssh-keygen -q -t ${algo} -N "" -f /etc/ssh/ssh_host_${algo}_key
 	done
 }
 
