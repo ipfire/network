@@ -53,7 +53,8 @@ check_common() {
 	echo # Empty line
 }
 
-check_toolchain() {	
+check_toolchain() {
+	check_common "GNU autoconf"	"2.63"		"autoconf --version | head -n1"
 	check_common "GNU Bash"		"2.05a"		"bash --version | head -n1 | cut -d\" \" -f2-4"
 	check_common "/bin/sh links bash?"		"if ! which sh; then echo \"command not found\"; fi"
 	check_common "GNU Binutils"	"2.12"		"ld --version | head -n1 | cut -d\" \" -f3-" "Binutils: "
@@ -66,6 +67,7 @@ check_toolchain() {
 	check_common "GNU awk"		"3.0"		"gawk --version | head -n1"
 	check_common "/bin/awk links gawk?"		"if ! which awk; then echo \"command not found\"; fi"
 	check_common "GNU CC"		"3.0.1"		"gcc --version | head -n1"
+	check_common "GNU C++"		"3.0.1"		"g++ --version | head -n1"
 	check_common "GNU libc"		"2.2.5"		"/lib/libc.so.6 | head -n1 | cut -d\" \" -f1-7"
 	check_common "GNU Grep"		"2.5"		"grep --version | head -n1"
 	check_common "GNU zip"		"1.2.4"		"gzip --version | head -n1"
@@ -76,6 +78,7 @@ check_toolchain() {
 	check_common "GNU tar"		"1.14"		"tar --version | head -n1"
 	check_common "GNU Texinfo"	"4.8"		"makeinfo --version | head -n1"
 	check_common "GNU m4"		"1.4.8"		"m4 --version | head -n1"
+	check_common "GNU libtool"			"libtool --version | head -n1"
 }
 
 check_build() {

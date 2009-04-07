@@ -443,37 +443,6 @@ class jfsFileSystem(FileSystemType):
 
 fileSystemTypeRegister(jfsFileSystem())
 
-class gfs2FileSystem(FileSystemType):
-    def __init__(self):
-        FileSystemType.__init__(self)
-        self.partedFileSystemType = None
-        self.formattable = 1
-        self.checked = 1
-        self.linuxnativefs = 1
-        if flags.cmdline.has_key("gfs2"):
-            self.supported = -1
-        else:
-            self.supported = 0
-
-        self.name = "gfs2"
-        self.packages = [ "gfs2-utils" ]
-        self.needProgram = [ "mkfs.gfs2" ]
-
-        self.maxSizeMB = 8 * 1024 * 1024
-
-    def formatDevice(self, entry, progress, chroot='/'):
-        devicePath = entry.device.setupDevice(chroot)
-        rc = iutil.execWithRedirect("mkfs.gfs2",
-                                    ["-j", "1", "-p", "lock_nolock",
-                                     "-O", devicePath],
-                                    stdout = "/dev/tty5",
-                                    stderr = "/dev/tty5", searchPath = 1)
-
-        if rc:
-            raise SystemError
-
-fileSystemTypeRegister(gfs2FileSystem())
-
 class extFileSystem(FileSystemType):
     def __init__(self):
         FileSystemType.__init__(self)
@@ -706,18 +675,68 @@ class ext4FileSystem(extFileSystem):
         self.extraFormatArgs = [ "-t", "ext4" ]
         self.bootable = False
 
-        # this is way way experimental at present...
-        if flags.cmdline.has_key("ext4"):
-            self.supported = -1
-        else:
-            self.supported = 0
-
-
     def formatDevice(self, entry, progress, chroot='/'):
         extFileSystem.formatDevice(self, entry, progress, chroot)
         extFileSystem.setExt3Options(self, entry, progress, chroot)
 
 fileSystemTypeRegister(ext4FileSystem())
+
+class btrfsFileSystem(FileSystemType):
+    def __init__(self):
+        FileSystemType.__init__(self)
+        self.formattable = 1
+        self.checked = 1
+        self.linuxnativefs = 1
+        self.bootable = False
+        self.maxLabelChars = 256
+
+        self.name = "btrfs"
+        self.packages = [ "btrfs-progs" ]
+        self.needProgram = [ "mkfs.btrfs", "btrfsctl" ]
+
+	# Bigger, really, depending on machine
+        self.maxSizeMB = 16 * 1024 * 1024
+
+    # We'll sneakily label it here, too.
+    def formatDevice(self, entry, progress, chroot='/'):
+        devicePath = entry.device.setupDevice(chroot)
+        label = self.createLabel(entry.mountpoint, self.maxLabelChars,
+                                 kslabel = entry.label)
+
+        rc = iutil.execWithRedirect("mkfs.btrfs", ["-L", label, devicePath],
+                                    stdout = "/dev/tty5",
+                                    stderr = "/dev/tty5", searchPath = 1)
+
+        if rc:
+            raise SystemError
+        entry.setLabel(label)
+
+    def labelDevice(self, entry, chroot):
+        # We did this on the initial format; no standalone labeler yet
+        pass
+
+    def resize(self, entry, size, progress, chroot='/'):
+        devicePath = entry.device.setupDevice(chroot)
+        log.info("resizing %s" %(devicePath,))
+
+        w = None
+        if progress:
+            w = progress(_("Resizing"),
+                         _("Resizing filesystem on %s...") %(devicePath),
+                         100, pulse = True)
+
+        rc = iutil.execWithPulseProgress("btrfsctl",
+                                         ["-r", "%sM" %(size,), devicePath],
+                                         stdout="/tmp/resize.out",
+                                         stderr="/tmp/resize.out",
+                                         progress = w)
+        if progress:
+            w.pop()
+        if rc:
+            raise ResizeError, ("Resize of %s failed: %s" %(devicePath, rc), devicePath)
+
+
+fileSystemTypeRegister(btrfsFileSystem())
 
 class raidMemberDummyFileSystem(FileSystemType):
     def __init__(self):

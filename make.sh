@@ -25,7 +25,7 @@
 NAME="IPFire"			# Software name
 SNAME="ipfire"			# Short name
 VERSION="3.0-prealpha2"		# Version number
-TOOLCHAINVERSION="${VERSION}-3"	# Toolchain
+TOOLCHAINVERSION="${VERSION}-4"	# Toolchain
 SLOGAN="Gluttony"		# Software slogan
 
 # Include funtions
@@ -191,7 +191,6 @@ ipfire_build() {
 	ipfire_make xz
 
 	ipfire_make linux
-	ipfire_make aufs
 
 	### Building some general stuff
 	#   STAGE 1
@@ -286,6 +285,7 @@ ipfire_build() {
 	
 	### Building filesystem stuff
 	#
+	ipfire_make btrfs-progs
 	ipfire_make reiserfsprogs
 	ipfire_make libaal
 	ipfire_make reiser4progs

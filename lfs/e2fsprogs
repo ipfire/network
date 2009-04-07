@@ -50,8 +50,6 @@ define LONG_DESC
 	and third extended (ext2/ext3) filesystems.
 endef
 
-CFLAGS    += -fpic
-
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -80,7 +78,6 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	-mkdir $(DIR_APP)/build
 
-ifeq "$(STAGE)" "toolchain"
 	# Fix DT_TEXTREL in e2fsprogs libraries. --disable-shared and
 	# --with-pic are not options in E2fsprogs:
 	cd $(DIR_APP) && \
@@ -96,6 +93,7 @@ ifeq "$(STAGE)" "toolchain"
 		-e "s/getenv(\"BLKID_DEBUG\")/safe_getenv(\"BLKID_DEBUG\")/" \
 		-i lib/blkid/cache.c
 
+ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP)/build && \
 		../configure \
 			$(CONFIGURE_ARCH) \

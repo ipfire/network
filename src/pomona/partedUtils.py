@@ -852,11 +852,6 @@ class DiskSet:
         return False
 
     def _askForLabelPermission(self, intf, drive, clearDevs, initAll, ks):
-        #Do not try to initialize device's part. table in rescue mode
-        if self.pomona.rescue:
-            self._removeDisk(drive)
-            return False
-
         rc = 0
         if (ks and (drive in clearDevs) and initAll) or \
             self.isDisciplineFBA(drive):
