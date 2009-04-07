@@ -941,7 +941,7 @@ class DiskSet:
             initAll = False
 
             if initAll and ((clearDevs is None) or (len(clearDevs) == 0) \
-                       or (drive in clearDevs)) and not flags.test \
+                       or (drive in clearDevs)) and \
                        and not hasProtectedPartitions(drive, self.pomona):
                 try:
                     disk, dev = self._labelDevice(drive)
@@ -974,7 +974,7 @@ class DiskSet:
 
                     recreate = 1
 
-                if recreate == 1 and not flags.test:
+                if recreate == 1:
                     try:
                         disk, dev = self._labelDevice(drive)
                     except:
