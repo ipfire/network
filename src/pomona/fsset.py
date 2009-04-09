@@ -694,7 +694,7 @@ class btrfsFileSystem(FileSystemType):
         self.packages = [ "btrfs-progs" ]
         self.needProgram = [ "mkfs.btrfs", "btrfsctl" ]
 
-	# Bigger, really, depending on machine
+        # Bigger, really, depending on machine
         self.maxSizeMB = 16 * 1024 * 1024
 
     # We'll sneakily label it here, too.
