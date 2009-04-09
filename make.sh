@@ -291,7 +291,7 @@ ipfire_build() {
 	ipfire_make reiser4progs
 	ipfire_make xfsprogs
 	ipfire_make sysfsutils
-	ipfire_make squashfs
+	ipfire_make squashfs-tools
 	ipfire_make dosfstools
 	ipfire_make lvm2
 	ipfire_make mdadm
