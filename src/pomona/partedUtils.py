@@ -942,7 +942,7 @@ class DiskSet:
 
             if initAll and ((clearDevs is None) or (len(clearDevs) == 0) \
                        or (drive in clearDevs)) and \
-                       and not hasProtectedPartitions(drive, self.pomona):
+                       not hasProtectedPartitions(drive, self.pomona):
                 try:
                     disk, dev = self._labelDevice(drive)
                 except:
