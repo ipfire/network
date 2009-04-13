@@ -169,7 +169,7 @@ function _exit() {
 
 function cmd() {
 	decho "Running command: $@"
-	if verbose; then
+	if debug; then
 		$@
 	else
 		$@ >/dev/null
@@ -233,6 +233,7 @@ function port_add() {
 		error "Hook ${BOLD}${hook}${NORMAL} does not exist or is not executeable."
 		return 1
 	fi
+	cmd /etc/init.d/networking/zone ${zone} up
 }
 
 function port_del() {
@@ -320,6 +321,7 @@ function zone_add() {
 
 	mkdir -p ${CONFIG_ZONES}/${zone}
 	vecho "Successfully added zone ${zone}."
+	cmd /etc/init.d/networking/zone ${zone} up
 }
 
 function zone_del() {
@@ -331,6 +333,7 @@ function zone_del() {
 		return 1
 	fi
 
+	cmd /etc/init.d/networking/zone ${zone} down
 	rm -rf ${CONFIG_ZONES}/${zone}
 	vecho "Successfully removed zone ${zone}."
 }
@@ -392,6 +395,21 @@ while [ "$#" -gt 0 ]; do
 				delport)
 					port_del $@
 					_exit $?
+					;;
+				list)
+					all_zones
+					_exit $?
+					;;
+				config)
+					zone=$1; shift
+					hook=$1; shift
+					if [ -x /etc/init.d/networking/hooks/${hook} ]; then
+						/etc/init.d/networking/hooks/${hook} config ${zone} $@
+						RET=$?
+					else
+						error "\"${hook}\" is not a known hook."
+					fi
+					_exit $RET
 					;;
 				help)
 					DO_RELOAD=0 usage zone 0

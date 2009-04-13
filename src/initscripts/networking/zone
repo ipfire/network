@@ -40,6 +40,8 @@ case "$action" in
 	up)
 		message="Bringing up zone ${zone}..."
 
+		run_hooks pre-up ${CONFIG_ZONES}/${zone} ${zone}
+
 		# Check if bridge already exists
 		zone_status=`brctl show 2>/dev/null`
 		if ! echo "${zone_status}" | grep -q "^${zone}"; then
@@ -48,19 +50,15 @@ case "$action" in
 			ip link set ${zone} up || failed=1
 			(exit ${failed})
 			evaluate_retval standard
-
-			# Attach ports
-			for config in ${CONFIG_ZONES}/${zone}/port-*; do
-				port=${config##*/}; port=${port#port-}; port=${port%%-*}
-				ZONE=${zone} /etc/init.d/networking/port ${port} attach ${config}
-			done
-
-			###/etc/init.d/networking/hooks post-up ${CONFIG_ZONES}/${zone}
-		else
-			log_warning_msg
-			message="Zone ${zone} does already exist."
-			log_warning_msg
 		fi
+
+		# Attach ports
+		for config in $(find ${CONFIG_ZONES}/${zone}/ -name "port-*" 2>/dev/null); do
+			port=${config##*/}; port=${port#port-}; port=${port%%-*}
+			ZONE=${zone} /etc/init.d/networking/port ${port} attach ${config}
+		done
+
+		run_hooks post-up ${CONFIG_ZONES}/${zone} ${zone}
 		;;
 
 	down)
@@ -68,10 +66,10 @@ case "$action" in
 		# Check if bridge already exists
 		zone_status=`brctl show 2>/dev/null`
 		if echo "${zone_status}" | grep -q "^${zone}"; then
-			#/etc/init.d/networking/hooks pre-down ${CONFIG_ZONES}/${zone}
+			run_hooks pre-down ${CONFIG_ZONES}/${zone} ${zone}
 
 			# Detach ports
-			for config in ${CONFIG_ZONES}/${zone}/port-*; do
+			for config in $(find ${CONFIG_ZONES}/${zone}/ -name "port-*" 2>/dev/null); do
 				port=${config##*/}; port=${port#port-}; port=${port%%-*}
 				ZONE=${zone} /etc/init.d/networking/port ${port} detach ${config}
 			done
@@ -81,10 +79,11 @@ case "$action" in
 			brctl delbr ${zone} || failed=1
 			(exit ${failed})
 			evaluate_retval standard
+
+			run_hooks post-down ${CONFIG_ZONES}/${zone} ${zone}
 		else
-			log_warning_msg
-			message="Zone ${zone} does not exist."
-			log_warning_msg
+			log_warning_msg ${message}
+			log_warning_msg "Zone ${zone} does not exist."
 		fi
 		;;
 esac

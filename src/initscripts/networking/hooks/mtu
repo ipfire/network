@@ -16,28 +16,52 @@
 ########################################################################
 
 . /lib/lsb/init-functions
+. /etc/init.d/networking/functions
 [ -n "${CONFIG}" ] && . ${CONFIG}
 
-zone=$1
+function check_config() {
+	if [ -z "${MTU}" ]; then
+		log_failure_msg "MTU variable missing from ${CONFIG}, cannot continue."
+		exit 1
+	fi
+	if [ -z "${zone}" ]; then
+		usage
+		exit 1
+	fi
+}
 
-if [ -z "${MTU}" ]
-then
-	log_failure_msg "MTU variable missing from ${CONFIG}, cannot continue."
-	exit 1
-fi
+function usage() {
+	echo "Usage: ${0} {pre-up|post-up|pre-down|post-down|config} [interface]"
+}
 
-case "${2}" in
-	up)
+zone=$2
+
+case "${1}" in
+	pre-up)
+		;;
+
+	post-up)
+		check_config
 		message="Setting the MTU for ${zone} to ${MTU}..."
 		echo "${MTU}" > "/sys/class/net/${zone}/mtu"
 		evaluate_retval standard
-	;;
+		;;
 
-	down)
-	;;
+	pre-down)
+		check_config
+		message="Resetting MTU for ${zone} to 1500..."
+		echo "1500" > "/sys/class/net/${zone}/mtu"
+		evaluate_retval standard
+		;;
+
+	post-down)
+		;;
+
+	config)
+		;;
 
 	*)
-		echo "Usage: ${0} [interface] {up|down}"
+		usage
 		exit 1
 	;;
 esac
