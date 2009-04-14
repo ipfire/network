@@ -35,8 +35,6 @@ DEPS       = openssl pam
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-INITSCRIPT = sshd
-
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -78,6 +76,7 @@ $(OBJECT) :
 	chmod 644 /etc/pam.d/sshd
 
 	@$(INSTALL_INITSCRIPT)
+	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/sshd_config /etc/ssh/sshd_config
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

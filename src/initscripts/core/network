@@ -22,7 +22,7 @@
 case "${1}" in
 	start)
 		# Start all network interfaces
-		for zone in $(find ${CONFIG_ZONES}/* -maxdepth 1); do
+		for zone in $(find ${CONFIG_ZONES}/* -maxdepth 1 2>/dev/null); do
 			[ -d "${zone}" ] || continue
 			/etc/init.d/networking/zone ${zone##*/} up
 		done
@@ -31,7 +31,7 @@ case "${1}" in
 
 	stop)
 		# Stop all network interfaces
-		for zone in $(find ${CONFIG_ZONES}/* -maxdepth 1); do
+		for zone in $(find ${CONFIG_ZONES}/* -maxdepth 1 2>/dev/null); do
 			[ -d "${zone}" ] || continue
 			/etc/init.d/networking/zone ${zone##*/} down
 		done

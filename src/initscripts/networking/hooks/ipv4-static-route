@@ -15,7 +15,7 @@
 . /lib/lsb/init-functions
 [ -n "${CONFIG}" ] && . ${CONFIG}
 
-zone=$1
+zone=$2
 
 case "${TYPE}" in
 	("" | "network")
@@ -72,7 +72,7 @@ if [ -n "${need_gateway}" ]; then
 	args="${args} via ${GATEWAY}"
 fi
 
-case "${2}" in
+case "${1}" in
 	up)
 		boot_mesg "Adding '${desc}' route to zone ${zone}..."
 		ip route add ${args} dev ${zone}

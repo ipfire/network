@@ -216,3 +216,39 @@ function all_zones() {
 		[ -d "${zone}" ] && echo ${zone}
 	done
 }
+
+function run_hooks() {
+	local action
+	local dir
+	local failed
+	local hook
+	local hooks
+
+	action=${1}
+	dir=${2}
+	shift 2
+
+	if [ -z "${action}" ] || [ -z "${dir}" ]; then
+		echo "Not enough parameters given." >&2
+		return 1
+	fi
+
+	for hook in $(find ${dir} -type f); do
+		(
+			. ${hook}
+			if [ -n "${HOOK}" -a -x "/etc/init.d/networking/hooks/${HOOK}" ]; then
+				CONFIG=${hook} /etc/init.d/networking/hooks/${HOOK} ${action} $@
+				RET=$?
+			else
+				echo -e "${FAILURE}Unable to process ${hook}. Either"
+				echo -e "${FAILURE}the HOOK variable was not set,"
+				echo -e "${FAILURE}or the specified hook cannot be executed."
+				message=""
+				log_failure_msg
+			fi
+			exit ${RET}
+		) || failed=1
+	done
+
+	return ${failed}
+}

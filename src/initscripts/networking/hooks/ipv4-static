@@ -14,38 +14,45 @@
 ########################################################################
 
 . /lib/lsb/init-functions
+. /etc/init.d/networking/functions
 [ -n "${CONFIG}" ] && . ${CONFIG}
 
-zone=$1
+zone=$2
 
-if [ -z "${IP}" ]; then
-	log_failure_msg "IP variable missing from ${CONFIG}, cannot continue."
-	exit 1
-fi
+function check_config() {
+	if [ -z "${IP}" ]; then
+		log_failure_msg "IP variable missing, cannot continue."
+		exit 1
+	fi
+	
+	if [ -z "${PREFIX}" -a -z "${PEER}" ]; then
+		log_warning_msg "PREFIX variable missing, assuming 24."
+		PREFIX=24
+		args="${args} ${IP}/${PREFIX}"
+	elif [ -n "${PREFIX}" -a -n "${PEER}" ]; then
+		log_failure_msg "PREFIX and PEER both specified, cannot continue."
+		exit 1
+	elif [ -n "${PREFIX}" ]; then
+		args="${args} ${IP}/${PREFIX}"
+	elif [ -n "${PEER}" ]; then
+		args="${args} ${IP} peer ${PEER}"
+	fi
+	
+	if [ -n "${BROADCAST}" ]; then
+		args="${args} broadcast ${BROADCAST}"
+	fi
+	
+	if [ -n "${SOURCE}" ]; then
+		args="${args} src ${SOURCE}"
+	fi
+}
 
-if [ -z "${PREFIX}" -a -z "${PEER}" ]; then
-	log_warning_msg "PREFIX variable missing from ${CONFIG}, assuming 24."
-	PREFIX=24
-	args="${args} ${IP}/${PREFIX}"
-elif [ -n "${PREFIX}" -a -n "${PEER}" ]; then
-	log_failure_msg "PREFIX and PEER both specified in ${CONFIG}, cannot continue."
-	exit 1
-elif [ -n "${PREFIX}" ]; then
-	args="${args} ${IP}/${PREFIX}"
-elif [ -n "${PEER}" ]; then
-	args="${args} ${IP} peer ${PEER}"
-fi
+case "${1}" in
+	pre-up)
+		;;
 
-if [ -n "${BROADCAST}" ]; then
-	args="${args} broadcast ${BROADCAST}"
-fi
-
-if [ -n "${SOURCE}" ]; then
-	args="${args} src ${SOURCE}"
-fi
-
-case "${2}" in
-	up)
+	post-up)
+		check_config
 		MESSAGE="Adding IPv4 address ${IP} to zone ${zone} interface..."
 		ip addr add ${args} dev ${zone}
 		evaluate_retval
@@ -60,8 +67,9 @@ case "${2}" in
 			 fi
 		fi
 	;;
-	
-	down)
+
+	pre-down)
+		check_config
 		if [ -n "${GATEWAY}" ];	then
 			MESSAGE="Removing default gateway..."
 			ip route del default
@@ -71,14 +79,60 @@ case "${2}" in
 		MESSAGE="Removing IPv4 address ${IP} from zone ${zone}..."
 		ip addr del ${args} dev ${zone}
 		evaluate_retval
-	;;
-	
+		;;
+
+	post-down)
+		;;
+
 	config)
-		: # TODO
-	;;
+		shift 2
+		while [ $# -gt 0 ]; do
+			case "$1" in
+				--ip)
+					IP=$2
+					shift 2
+					;;
+				--prefix)
+					PREFIX=$2
+					shift 2
+					;;
+				--peer)
+					PEER=$2
+					shift 2
+					;;
+				--broadcast)
+					BROADCAST=$2
+					shift 2
+					;;
+				--source)
+					SOURCE=$2
+					shift 2
+					;;
+				--gateway)
+					GATEWAY=$2
+					shift 2
+					;;
+				*)
+					echo "Unknown option: $1" >&2
+					exit 1
+					;;
+			esac
+		done
+		check_config
+		cat << EOF >> ${CONFIG_ZONES}/${zone}/ipv4-static_$IP
+HOOK=ipv4-static
+IP=$IP
+PREFIX=$PREFIX
+PEER=$PEER
+BROADCAST=$BROADCAST
+SOURCE=$SOURCE
+GATEWAY=$GATEWAY
+EOF
+		exit $?
+		;;
 	
 	*)
-		echo "Usage: ${0} [interface] {up|down|config}"
+		echo "Usage: ${0} {pre-up|post-up|pre-down|post-down|config} [interface]"
 		exit 1
 	;;
 esac

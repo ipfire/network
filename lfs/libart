@@ -53,9 +53,9 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) $(THISAPP)-upstream_fix-1.patch
 
-download: $(objects) $(THISAPP)-upstream_fix-1.patch
+download: $(objects)
 
 info:
 	$(DO_PKG_INFO)
