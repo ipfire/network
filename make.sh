@@ -361,7 +361,7 @@ misc_build() {
 	#
 	ipfire_make mc
 	#ipfire_make traceroute
-	#ipfire_make nmap
+	ipfire_make nmap
 	#ipfire_make rsync
 	ipfire_make tcpdump
 	ipfire_make htop
