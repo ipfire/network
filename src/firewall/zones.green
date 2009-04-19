@@ -33,6 +33,6 @@ function zones_policy_green() {
 	device=$1
 
 	# Accept any traffic from green
-	iptables -A ${device}_POLICY -i $device -j ACCEPT
-
+	iptables -A ZONE_${device}_POLICY -i $device -j ACCEPT
+	iptables -A ZONE_${device}_POLICY -o $device -j ACCEPT
 }

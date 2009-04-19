@@ -19,15 +19,3 @@
 #                                                                             #
 ###############################################################################
 
-function zones_management_init() {
-
-	chain_create MANAGEMENT
-	# Add rules for management hosts/subnets here
-
-}
-
-function zones_management_insert() {
-
-	iptables "-A $1 -j MANAGEMENT"
-
-}

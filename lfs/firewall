@@ -72,9 +72,10 @@ $(objects):
 
 $(OBJECT): $(objects)
 	@$(PREBUILD)
-	-mkdir -pv /usr/lib/firewall
+	-mkdir -pv /usr/{lib,share}/firewall
 	for i in $(DIR_APP)/{functions,zones}*; do \
 		install -m 644 -v $$i /usr/lib/firewall; \
 	done
+	cp -avf $(DIR_APP)/macros /usr/share/firewall/
 	install -m 755 -v $(DIR_APP)/firewall /usr/bin
 	@$(POSTBUILD)

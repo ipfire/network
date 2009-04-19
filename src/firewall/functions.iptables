@@ -22,33 +22,92 @@
 IPTABLES_FILE=$TMPDIR/iptables
 
 function iptables() {
-	echo "$@" >> $IPTABLES_FILE
+	local arg
+	local args
+	local table
+
+	table=filter
+
+	# Parsing arguments
+	while [ $# -gt 0 ]; do
+		arg=${1}
+		shift
+		case "${arg}" in
+			-t)
+				table=${1}
+				shift
+				;;
+			-A)
+				args="${args} -A $(uppercase ${1})"
+				shift
+				;;
+			*)
+				args="${args} ${arg}"
+				;;
+		esac
+	done
+	echo "${args:1:${#args}}" >> ${IPTABLES_FILE}-${table}
 }
 
 function iptables_flush() {
 	decho "Flushing iptables"
-	: # TODO
+	iptables "* filter"
+	chain_create INPUT ACCEPT
+	chain_create OUTPUT ACCEPT
+	chain_create FORWARD ACCEPT
 }
 
 function iptables_init() {
-	iptables_flush
-
 	iptables "* filter"
-	chain_create INPUT DROP
-	chain_create OUTPUT DROP
-	chain_create FORWARD DROP
+	chain_create -t filter INPUT       DROP
+	chain_create -t filter OUTPUT      DROP
+	chain_create -t filter FORWARD     DROP
+
+	iptables -t mangle "* mangle"
+	chain_create -t mangle PREROUTING  ACCEPT
+	chain_create -t mangle INPUT       ACCEPT
+	chain_create -t mangle OUTPUT      ACCEPT
+	chain_create -t mangle FORWARD     ACCEPT
+	chain_create -t mangle POSTROUTING ACCEPT
+
+	iptables -t nat "* nat"
+	chain_create -t nat    PREROUTING  ACCEPT
+	chain_create -t nat    OUTPUT      ACCEPT
+	chain_create -t nat    POSTROUTING ACCEPT
 }
 
 function iptables_commit() {
+	local chain
+
 	vecho "Committing firewall configuration."
-	iptables "COMMIT"
+	iptables -t filter "COMMIT"
+	iptables -t mangle "COMMIT"
+	iptables -t nat    "COMMIT"
+
+	for table in filter mangle nat; do
+		[ -e ${IPTABLES_FILE}-${table} ] || continue
+		cat ${IPTABLES_FILE}-${table} >> $IPTABLES_FILE
+	done
+
 	decho "Dumping iptables output"
-	debug && cat $IPTABLES_FILE
-	#iptables-restore < $IPTABLES_FILE
+	if debug; then
+		counter=1
+		cat $IPTABLES_FILE | while read LINE; do
+			printf "%4d | %s\n" "$counter" "$LINE"
+			counter=$(( $counter + 1 ))
+		done
+	fi
+
+	iptables-restore $(debug && echo "-v") < $IPTABLES_FILE
 }
 
 function chain_create() {
-	iptables ":$1 ${2--} [0:0]"
+	local args
+	if [ "${1}" = "-t" ]; then
+		args="${1} ${2}"
+		shift 2
+	fi
+	iptables ${args} ":$1 ${2--} [0:0]"
 }
 
 function iptables_LOG() {
