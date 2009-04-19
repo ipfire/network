@@ -389,10 +389,6 @@ misc_build() {
 	#
 	## Net tools
 	#ipfire_make bwm-ng
-	#
-	## UPNP
-	#ipfire_make libupnp
-	#ipfire_make linux-igd
 
 	### These will become addons as usual but will be integrated later
 	#
