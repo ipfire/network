@@ -361,7 +361,7 @@ misc_build() {
 	#
 	ipfire_make mc
 	#ipfire_make traceroute
-	#ipfire_make nmap
+	ipfire_make nmap
 	#ipfire_make rsync
 	ipfire_make tcpdump
 	ipfire_make htop
@@ -389,10 +389,6 @@ misc_build() {
 	#
 	## Net tools
 	#ipfire_make bwm-ng
-	#
-	## UPNP
-	#ipfire_make libupnp
-	#ipfire_make linux-igd
 
 	### These will become addons as usual but will be integrated later
 	#
