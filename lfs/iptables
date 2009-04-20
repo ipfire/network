@@ -100,7 +100,10 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
+	# install ip*tables.h header files
 	cd $(DIR_APP) && install -v -m 644 include/ip{,6}tables.h /usr/include
+	cd $(DIR_APP) && install -v -d /usr/include/iptables
+	cd $(DIR_APP) && install -v -m 644 include/iptables/internal.h /usr/include/iptables/
 	cd $(DIR_APP) && install -v -d /usr/include/libiptc
 	cd $(DIR_APP) && install -v -m 644 include/libiptc/*.h /usr/include/libiptc
 
