@@ -59,15 +59,15 @@ objects = $(DL_FILE)
 download: $(objects)
 
 info:
-        $(DO_PKG_INFO)
+	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
 package:
-        @$(DO_PACKAGE)
+	@$(DO_PACKAGE)
 
 $(objects):
-        @$(LOAD)
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details
@@ -87,7 +87,7 @@ $(OBJECT) :
 	ln -sfv /proc/self/fd/2 /lib/udev/devices/stderr
 	ln -sfv /proc/kcore /lib/udev/devices/core
 	
-	cd $(DIR_APP) && autoconf
+#	cd $(DIR_APP) && autoconf
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
