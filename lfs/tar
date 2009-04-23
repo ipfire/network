@@ -25,7 +25,8 @@
 include Config
 
 PKG_NAME   = tar
-PKG_VER    = 1.20
+PKG_VER    = 1.22
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,17 +34,44 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Packaging
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.gnu.org/software/tar/
+LICENSE    = GLPv3+
+SHORT_DESC = A GNU file archiving program.
+
+define LONG_DESC
+	The GNU tar program saves many files together in one archive \
+	and can restore individual files (or all of the files) from  \
+	that archive. Tar can also be used to add supplemental files \
+	to an archive and to update or list files in the archive. Tar \
+	includes multivolume support,automatic archive \
+	compression/decompression, the ability to perform remote archives, \
+	and the ability to perform incremental and full backups.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-vfatTruncate.patch
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+info:
+	$(DO_PKG_INFO)
 
-$(objects) :
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
@@ -52,7 +80,7 @@ $(objects) :
 
 $(OBJECT) : 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
 	# Normally the 'rmt' programs goes in sbin/.
@@ -67,6 +95,11 @@ endif
 
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && CC="gcc -std=gnu99 -fgnu89-inline" \
+
+	# Fix extracting sparse files to a filesystem like vfat, when ftruncate may fail to grow the size of a file
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-vfatTruncate.patch
+
+	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
