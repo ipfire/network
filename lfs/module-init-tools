@@ -25,13 +25,32 @@
 include Config
 
 PKG_NAME   = module-init-tools
-PKG_VER    = 3.5
+PKG_VER    = 3.7
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = Sytem/Base
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://ftp.kernel.org/pub/linux/utils/kernel/module-init-tools/
+LICENSE    = GPLv2+
+SHORT_DESC = Kernel module management utilities.
+
+define LONG_DESC
+	The module-init-tools package includes various programs needed \
+	for automatic loading and unloading of modules under 2.6 and \
+	later kernels, as well as other module management programs. \
+	Device drivers and filesystems are two examples of loaded and \
+	unloaded modules.
+endef
 
 ###############################################################################
 # Top-level Rules
@@ -40,11 +59,17 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 objects = $(DL_FILE) \
 	$(THISAPP)-nostatic-1.patch
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+info:
+	$(DO_PKG_INFO)
 
-$(objects) :
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
@@ -57,6 +82,7 @@ $(OBJECT) :
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-nostatic-1.patch
 	cd $(DIR_APP) && autoreconf --force
 	cd $(DIR_APP) && \
+		DOCBOOKTOMAN=true \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/ \
