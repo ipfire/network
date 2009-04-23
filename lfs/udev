@@ -47,7 +47,6 @@ SHORT_DESC = A userspace implementation of devfs.
 define LONG_DESC
         The udev package contains an implementation \
         of devfs in userspace using sysfs and netlink.
-
 endef
 
 ###############################################################################
@@ -86,8 +85,7 @@ $(OBJECT) :
 	ln -sfv /proc/self/fd/1 /lib/udev/devices/stdout
 	ln -sfv /proc/self/fd/2 /lib/udev/devices/stderr
 	ln -sfv /proc/kcore /lib/udev/devices/core
-	
-#	cd $(DIR_APP) && autoconf
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
