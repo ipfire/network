@@ -25,7 +25,8 @@
 include Config
 
 PKG_NAME   = strongswan
-PKG_VER    = 4.2.14
+PKG_VER    = 4.3.0
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,21 +34,42 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Networking/VPN
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.strongswan.org/
+LICENSE    = GPL
+SHORT_DESC = IPsec and IKEv1 implementation for Linux 2.4 and 2.6 kernels.
+
+define LONG_DESC
+	StrongSwan is a complete IPsec and IKEv1 implementation for \
+	Linux 2.4 and 2.6 kernels. It also fully supports the new IKEv2 \
+	protocol with Linux 2.6 kernels. It interoperates in both IKEv1 \
+	and IKEv2 mode with most other IPsec-based VPN products.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
 objects = $(DL_FILE)
 
+download: $(objects)
+
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
+
 
 ###############################################################################
 # Installation Details
@@ -55,7 +77,7 @@ $(objects) :
 
 $(OBJECT) : 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
