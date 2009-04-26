@@ -60,5 +60,6 @@ $(OBJECT) :
 	cd $(DIR_APP) && make SHARED=yes PREFIX=/usr install
 	install -v -m 755 -d /usr/include/pci
 	cd $(DIR_APP) && install -v -m 644 lib/*.h /usr/include/pci
+	ln -svf libpci.so.3 /usr/lib/libpci.so
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
