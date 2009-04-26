@@ -54,11 +54,12 @@ $(OBJECT) :
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
 
-ifeq "$(STAGE)" "toolchain"
 	# We need wide character support for the Linux kernel menuconfig.
 	# --enable-symlinks installs the 'tic' program as a symbolic link (why not).
 	# --disable-root-environ restricts some environment variables, like TERMINFO,
 	# when running as root, so it can not be customized (why not).
+
+ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
@@ -88,26 +89,23 @@ ifeq "$(STAGE)" "base"
 			--with-shared \
 			--without-debug \
 			--enable-widec \
-			#--disable-static
-	
+			--disable-static \
+			--enable-symlinks \
+			--disable-root-environ
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	
-	chmod -v 644 /usr/lib/libncurses++w.a
+
 	mv -v /usr/lib/libncursesw.so.5* /lib
 	ln -sfv ../../lib/libncursesw.so.5 /usr/lib/libncursesw.so
 	for lib in curses ncurses form panel menu; do \
 		rm -vf /usr/lib/lib$${lib}.so ; \
 		echo "INPUT(-l$${lib}w)" >/usr/lib/lib$${lib}.so ; \
-		ln -sfv lib$${lib}w.a /usr/lib/lib$${lib}.a ; \
 	done
-	ln -sfv libncurses++w.a /usr/lib/libncurses++.a
 	
 	rm -vf /usr/lib/libcursesw.so
 	echo "INPUT(-lncursesw)" >/usr/lib/libcursesw.so
 	ln -sfv libncurses.so /usr/lib/libcurses.so
-	ln -sfv libncursesw.a /usr/lib/libcursesw.a
-	ln -sfv libncurses.a /usr/lib/libcurses.a
 endif
 
 	@rm -rf $(DIR_APP)

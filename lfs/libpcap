@@ -61,6 +61,7 @@ $(OBJECT) :
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--disable-static
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make shared $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install install-shared-so

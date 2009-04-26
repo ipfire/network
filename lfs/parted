@@ -66,7 +66,9 @@ $(OBJECT) :
 			--disable-Werror \
 			--disable-dependency-tracking \
 			--disable-debug \
-			--with-gnu-ld
+			--with-gnu-ld \
+			--disable-static
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)

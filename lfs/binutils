@@ -147,6 +147,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install
 
 	cp -fv ../$(THISAPP)/include/libiberty.h /usr/include
+	rm -vf /usr/lib/libiberty.a
 endif
 
 	@rm -rf $(DIR_APP) $(DIR_SRC)/binutils-build

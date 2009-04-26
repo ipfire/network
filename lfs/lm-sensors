@@ -60,5 +60,6 @@ $(OBJECT) :
 										-e "s/^MACHINE\ :=\ .*/MACHINE=$(MACHINE)/g" -i Makefile
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) EXLDFLAGS=
 	cd $(DIR_APP) && make install
+	rm -vf /usr/lib/libsensors.a
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

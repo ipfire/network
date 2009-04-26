@@ -62,7 +62,9 @@ $(OBJECT) :
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--without-gpm-support \
-			--without-tcl
+			--without-tcl \
+			--disable-static
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
