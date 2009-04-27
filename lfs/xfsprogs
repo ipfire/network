@@ -26,12 +26,27 @@ include Config
 
 PKG_NAME   = xfsprogs
 PKG_VER    = 2.10.2
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP)-1.tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = System/Filesystems
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://oss.sgi.com/projects/xfs/
+LICENSE    = GPL+ and LGPLv2+
+SHORT_DESC = Utilities for managing the XFS filesystem.
+
+define LONG_DESC
+	A set of commands to use the XFS filesystem, including mkfs.xfs.
+endif
 
 ###############################################################################
 # Top-level Rules
@@ -40,12 +55,15 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 objects = $(DL_FILE) \
 	$(THISAPP)-parallel-build.patch
 
+download: $(objects)
+
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
 $(objects) :
 	@$(LOAD)
