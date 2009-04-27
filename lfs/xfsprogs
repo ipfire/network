@@ -38,7 +38,7 @@ MAINTAINER =
 GROUP      = System/Filesystems
 EXTRA      = no
 DEBUG      = no
-DEPS       =
+DEPS       = libtool gettext
 
 URL        = http://oss.sgi.com/projects/xfs/
 LICENSE    = GPL+ and LGPLv2+
@@ -72,7 +72,7 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects) 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np2 -i $(DIR_PATCHES)/$(THISAPP)-parallel-build.patch
