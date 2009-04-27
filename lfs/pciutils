@@ -42,7 +42,7 @@ DEPS       =
 
 URL        = http://atrey.karlin.mff.cuni.cz/~mj/pciutils.shtml
 LICENSE    = GPLv2+
-SHORT_DESC = PCI bus related utilities
+SHORT_DESC = PCI bus related utilities.
 
 define LONG_DESC
 	The pciutils package contains various utilities for inspecting \
@@ -73,7 +73,7 @@ $(objects):
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects) 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && make SHARED=yes OPT="$(CFLAGS)" PREFIX=/usr ZLIB=no $(PARALLELISMFLAGS)
