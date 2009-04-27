@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = libtool
 PKG_VER    = 2.2.6a
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,7 +34,22 @@ DIR_APP    = $(DIR_SRC)/$(PKG_NAME)-2.2.6
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
+EXTRA      = no
+DEBUG      = no
 DEPS       = findutils
+
+URL        = http://www.gnu.org/software/libtool/
+LICENSE    = GPLv2+ and LGPLv2+ and GFDL
+SHORT_DESC = Runtime libraries for GNU Libtool Dynamic Module Loader.
+
+define LONG_DESC
+	GNU Libtool is a set of shell scripts which automatically \
+	configure UNIX and UNIX-like systems to generically build \
+	shared libraries. Libtool provides a consistent, portable \
+	interface which simplifies the process of using shared libraries.
+endef
 
 ###############################################################################
 # Top-level Rules
@@ -41,9 +57,15 @@ DEPS       = findutils
 
 objects = $(DL_FILE)
 
+download: $(objects)
+
+info:
+	$(DO_PKG_INFO)
+
 install : $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
 $(objects) :
 	@$(LOAD)
@@ -52,9 +74,9 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects) 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
