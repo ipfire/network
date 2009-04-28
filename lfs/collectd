@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = collectd
-PKG_VER    = 4.5.0
+PKG_VER    = 4.6.2
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -102,7 +102,7 @@ $(OBJECT): $(objects)
 			--enable-exec \
 			--enable-hddtemp \
 			--enable-interface \
-			--enable-iptables \
+			--disable-iptables \
 			--disable-ipmi \
 			--disable-ipvs \
 			--enable-irq \
@@ -140,6 +140,7 @@ $(OBJECT): $(objects)
 			--disable-vserver \
 			--enable-wireless \
 			--disable-xmms
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/collectd.conf /etc/
