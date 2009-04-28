@@ -37,7 +37,8 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	  $(THISAPP)-bad_elif.patch
 
 info:
 	$(DO_PKG_INFO)
@@ -56,6 +57,7 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-bad_elif.patch
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
