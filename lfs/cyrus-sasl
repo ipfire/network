@@ -54,7 +54,8 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	  $(THISAPP)-bad-elif.patch
 
 download: $(objects)
 
@@ -76,6 +77,7 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-bad-elif.patch
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
