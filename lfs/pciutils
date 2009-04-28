@@ -75,7 +75,7 @@ $(objects):
 
 $(OBJECT): $(objects) 
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && make SHARED=yes OPT=$(CLFLAGS) PREFIX=/usr ZLIB=no $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make SHARED=yes PREFIX=/usr install
 	install -v -m 755 -d /usr/include/pci
