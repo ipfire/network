@@ -96,10 +96,11 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
-			--prefix=/usr
+			--prefix=/usr \
+			--disable-static
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	ln -sfv libfl.a /usr/lib/libl.a
 	echo "#!/bin/sh"			>  /usr/bin/lex
 	echo "exec /usr/bin/flex -l \"$$@\""	>> /usr/bin/lex
 	chmod 755 /usr/bin/lex

@@ -90,15 +90,24 @@ include functions.macros
 include functions.zones
 
 function _start() {
+	local zone
+	local policy
+
 	firewall_init
 	zones_local_add
 
-	# Need to get all zones here
+	for zone in $(network zone list); do
+		zone=$(basename ${zone})
+		policy=${zone%%[0-9]*}
+		zones_${policy}_add ${zone}
+	done
 
 	iptables_commit
 	touch /var/lock/subsys/firewall
 }
 
 function _stop() {
+	iptables_flush
+	iptables_commit
 	rm -f /var/lock/subsys/firewall
 }

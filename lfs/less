@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = less
-PKG_VER    = 418
+PKG_VER    = 429
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -38,7 +38,7 @@ MAINTAINER =
 GROUP      = Applications/Text
 EXTRA      = no
 DEBUG      = no
-DEPS       =
+DEPS       = pcre
 
 URL        = http://www.greenwoodsoftware.com/less/
 LICENSE    = GPLv3+
@@ -83,7 +83,8 @@ $(OBJECT): $(objects)
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--sysconfdir=/etc \
-			--with-secure
+			--with-secure \
+			--with-regex=pcre
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)

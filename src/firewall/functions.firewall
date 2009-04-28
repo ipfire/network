@@ -29,8 +29,7 @@ function firewall_init() {
 function firewall_tcp_state_flags() {
 	vecho "Adding ${BOLD}TCP State Flags${NORMAL} chain..."
 	chain_create BADTCP_LOG
-	iptables -A BADTCP_LOG -p tcp -j LOG --log-prefix \"Illegal TCP state: \" \
-		--log-ip-options --log-tcp-options
+	iptables -A BADTCP_LOG -p tcp -j $(iptables_LOG "Illegal TCP state: ")
 	iptables -A BADTCP_LOG -j DROP
 
 	chain_create BADTCP

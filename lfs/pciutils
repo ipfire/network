@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = pciutils
 PKG_VER    = 3.0.3
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,33 +34,52 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Base
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://atrey.karlin.mff.cuni.cz/~mj/pciutils.shtml
+LICENSE    = GPLv2+
+SHORT_DESC = PCI bus related utilities.
+
+define LONG_DESC
+	The pciutils package contains various utilities for inspecting \
+	and setting devices connected to the PCI bus. The utilities \
+	provided require kernel version 2.1.82 or newer.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
 objects = $(DL_FILE)
 
+download: $(objects)
+
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects) 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && make OPT=$(CLFLAGS) PREFIX=/usr ZLIB=no SHARED=yes $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make PREFIX=/usr SHARED=yes install
-	ln -svf libpci.so.3 /usr/lib/libpci.so
+	cd $(DIR_APP) && make SHARED=yes OPT=$(CLFLAGS) PREFIX=/usr ZLIB=no $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make SHARED=yes PREFIX=/usr install
 	install -v -m 755 -d /usr/include/pci
 	cd $(DIR_APP) && install -v -m 644 lib/*.h /usr/include/pci
+	ln -svf libpci.so.3 /usr/lib/libpci.so
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

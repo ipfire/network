@@ -93,13 +93,7 @@ while [ "$#" -gt 0 ]; do
 			;;
 		reload)
 			;;
-		restart)
-			# XXX Do restart function here
-			_stop
-			_start
-			_exit $@
-			;;
-		start)
+		start|restart)
 			_start
 			_exit $@
 			;;

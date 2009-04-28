@@ -82,7 +82,8 @@ $(OBJECT): $(objects)
 			--sysconfdir=/etc \
 			--libexecdir=/usr/lib/hal \
 			--localstatedir=/var \
-			--disable-policy-kit
+			--disable-policy-kit \
+			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	-mv -v /etc/udev/rules.d/90-hal.rules /lib/udev/rules.d/

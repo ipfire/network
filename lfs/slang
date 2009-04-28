@@ -64,7 +64,9 @@ $(OBJECT) :
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--sysconfdir=/etc
+			--sysconfdir=/etc \
+			--disable-static
+
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install_doc_dir=/usr/share/doc/slang-$(PKG_VER) \
 		SLSH_DOC_DIR=/usr/share/doc/slang-$(PKG_VER)/slsh install-all

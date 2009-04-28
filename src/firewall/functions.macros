@@ -21,55 +21,55 @@
 
 function macro() {
 	local file
-	file="macros/$1"
+	local line
+	local rules
+
+	file=$1
+	if [ "${file:0:1}" != "/" ]; then
+		file="/usr/share/firewall/macros/$file"
+	fi
+	shift
 
 	if _config_is_sqlite $file; then
-		macro_sqlite $file
+		rules=$(macro_parse $@ < $file)
 	else
-		macro_text $file
+		rules=$(sqlite -noheader -column $file | macro_parse $@)
 	fi
-}
 
-function macro_text() {
-	macro_parse < $1
-}
-
-function macro_sqlite() {
-	sqlite3 -noheader -column $1 | macro_parse
-}
-
-# Just a scatch of concept... Need a lot to do here
-function macro_parse() {
-	local STRING
-	grep -v "^#" | while read TARGET SOURCE DESTINATION PROTOCOL SOURCE_PORT DESTINATION_PORT RATE; do
-		STRING=""
-		# Protocol
-		STRING="$STRING $(iptables_protocol $PROTOCOL)"
-		# Ports
-		STRING="$STRING $(iptables_source_port $SOURCE_PORT)"
-		STRING="$STRING $(iptables_destination_port $DESTINATION_PORT)"
-
-		if [ "$TARGET" = "ACCEPT" ]; then
-			STRING="$STRING -j ACCEPT"
-
-		elif [ "$TARGET" = "DROP" ]; then
-			STRING="$STRING -j DROP"
-
-		# elif ...
-
-		fi
-		[ -n "$STRING" ] && echo $STRING
+	while read line <<< ${rules}; do
+		iptables ${line}
 	done
 }
 
-function macro_add() {
-	local file
-	local line
+function macro_parse() {
+	local STRING
+	grep -v "^#" | while read ACTION SOURCE DESTINATION PROTOCOL LOCAL_PORT REMOTE_PORT RATE; do
+		STRING=""
 
-	file=$1
-	shift
-	
-	macro $file | while read line; do
-		iptables $line $@
+		# Handle inlcudes
+		if [ "$ACTION" = "INCLUDE" ]; then
+			marco $SOURCE $@
+		fi
+
+		# Protocol
+		STRING="$STRING $(iptables_protocol $PROTOCOL)"
+		# Ports
+		if [ -n "$PORT_SWITCH" ]; then
+			# Switch ports for upload rule
+			STRING="$STRING $(iptables_source_port $REMOTE_PORT)"
+			STRING="$STRING $(iptables_destination_port $LOCAL_PORT)"
+		else
+			STRING="$STRING $(iptables_source_port $LOCAL_PORT)"
+			STRING="$STRING $(iptables_destination_port $REMOTE_PORT)"
+		fi
+
+		if [ "$ACTION" = "ACCEPT" ]; then
+			STRING="$STRING -j ACCEPT"
+
+		elif [ "$ACTION" = "DROP" ]; then
+			STRING="$STRING -j DROP"
+
+		fi
+		[ -n "$STRING" ] && echo "$STRING $@"
 	done
 }

@@ -90,7 +90,8 @@ $(OBJECT): $(objects)
 			--with-cli-lease-file=/var/lib/dhclient/dhclient.leases \
 			--with-srv-pid-file=/var/run/dhcpd.pid \
 			--with-cli-pid-file=/var/run/dhclient.pid \
-			--with-relay-pid-file=/var/run/dhcrelay.pid
+			--with-relay-pid-file=/var/run/dhcrelay.pid \
+			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 

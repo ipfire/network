@@ -21,9 +21,8 @@
 
 include zones.blue
 include zones.green
-include zones.local
 include zones.orange
-include zones.management
+include zones.red
 
 function zones_global_add() {
 	local device
@@ -31,10 +30,11 @@ function zones_global_add() {
 
 	device=$1
 
-	decho "Adding zone \"$device\""
-	zones_exists $device || error "Zone $device does not exist."
+	vecho "Adding zone \"$device\""
 
 	name=$(uppercase "ZONE_$device")
+
+	### FILTER
 	chain_create $name
 	iptables -A INPUT   -i $device -j $name
 	iptables -A FORWARD -i $device -j $name
@@ -45,24 +45,59 @@ function zones_global_add() {
 	chain_create ${name}_CUSTOM
 	iptables -A $name -j ${name}_CUSTOM
 
-	# Policy rules
-	chain_create ${name}_POLICY
-	iptables -A $name -j ${name}_POLICY
-
 	# Intrusion Preventions System
 	chain_create ${name}_IPS
 	iptables -A $name -i $device -j ${name}_IPS
 
-	# Portforwaring
+	# Portforwarding
 	chain_create ${name}_PORTFW
 	iptables -A $name -i $device -j ${name}_PORTFW
-	
+
 	# Outgoing firewall
 	chain_create ${name}_OUTFW
 	iptables -A $name -o $device -j ${name}_OUTFW
+
+	# Policy rules
+	chain_create ${name}_POLICY
+	iptables -A $name -j ${name}_POLICY
+
+	### MANGLE
+	chain_create -t mangle $name
+	iptables -t mangle -A PREROUTING  -i $device -j $name
+	iptables -t mangle -A POSTROUTING -o $device -j $name
+
+	# Quality of Service
+	chain_create -t mangle ${name}_QOS_INC
+	iptables -t mangle -A $name -i $device -j ${name}_QOS_INC
+	chain_create -t mangle ${name}_QOS_OUT
+	iptables -t mangle -A $name -o $device -j ${name}_QOS_OUT
+
+	### NAT
+	chain_create -t nat ${name}
+	iptables -t nat -A PREROUTING  -i $device -j ${name}
+	iptables -t nat -A POSTROUTING -o $device -j ${name}
+
+    # Network Address Translation
+	chain_create -t nat ${name}_NAT
+	iptables -t nat -A $name -i $device -j ${name}_NAT
+
+    # Portforwarding
+	chain_create -t nat ${name}_PORTFW
+	iptables -t nat -A $name -i $device -j ${name}_PORTFW
+
+    # UPNP
+	chain_create -t nat ${name}_UPNP
+	iptables -t nat -A $name -j ${name}_UPNP
 }
 
-function zones_exists() {
-	decho "Checking if zone $1 exists."
-	cmd_quiet ip link show $1
+
+### LOCAL ZONE
+function zones_local_add() {
+
+	decho "Adding zone \"local\""
+
+	# Accept everything on lo
+	iptables -A INPUT  -i lo -j ACCEPT
+	iptables -A OUTPUT -o lo -j ACCEPT
+
 }

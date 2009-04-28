@@ -90,7 +90,8 @@ $(OBJECT): $(objects)
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--with-readline
+			--with-readline \
+			#--disable-static
 	cd $(DIR_APP) && sed -e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
 						 -e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' -i libtool
 	# hack so that only /usr/bin/lua gets linked with readline as it is the
@@ -99,5 +100,6 @@ $(OBJECT): $(objects)
 	# also remove readline from lua.pc
 	cd $(DIR_APP) && sed -i 's/-lreadline -lncurses //g' etc/lua.pc
 	cd $(DIR_APP) && make install
+	rm -vf /usr/lib/liblua.a
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

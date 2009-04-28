@@ -225,7 +225,8 @@ ifeq "$(STAGE)" "base"
 			--enable-languages=c,c++ \
 			--disable-bootstrap \
 			--disable-werror \
-			--disable-libssp
+			--disable-libssp \
+			--disable-static
 
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/gcc-build && make install
