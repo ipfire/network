@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = openldap
-PKG_VER    = 2.4.12
+PKG_VER    = 2.4.16
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tgz
@@ -41,7 +41,8 @@ CFLAGS    += -D_GNU_SOURCE
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	  $(THISAPP)-disable_sys_err.patch
 
 info:
 	$(DO_PKG_INFO)
@@ -60,6 +61,7 @@ $(objects) :
 $(OBJECT) : 
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disable_sys_err.patch
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
