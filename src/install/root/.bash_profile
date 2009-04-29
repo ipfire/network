@@ -38,7 +38,7 @@ done
 
 if [ "$mode" = "install" ] && [[ "$(tty)" =~ "tty1" ]]; then
 	if [ "$debug" == "on" ]; then
-		command="strace -ff -F -o /tmp/strace.log $command --debug"
+		command="$command --debug"
 	fi
 	exec $command
 fi
