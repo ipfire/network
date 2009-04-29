@@ -25,10 +25,26 @@
 include Config
 
 PKG_NAME   = strip
-PKG_VER    = LFS
+PKG_VER    =
+PKG_REL    = -1
 
-THISAPP    = $(PKG_NAME)-$(PKG_VER)
+THISAPP    = $(PKG_NAME)
+
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      =
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        =
+LICENSE    =
+SHORT_DESC = This script strips the whole system.
+
+define LONG_DESC
+	This script strips the whole system.
+endef
 
 WHAT       = -mount -type f -not -path '.$(TOOLS_DIR)*' \
 	-not -path './tmp*' -not -path './usr/src*' -not -path './dev*' \
@@ -43,15 +59,26 @@ WHAT       = -mount -type f -not -path '.$(TOOLS_DIR)*' \
 # Top-level Rules
 ###############################################################################
 
-install : $(OBJECT)
+objects =
 
-download :
+download: $(objects)
+
+info:
+	$(DO_PKG_INFO)
+
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) :
+$(OBJECT): $(objects)
 
 ifeq "$(STAGE)" "toolchain"
 	## Strip debugging symbols

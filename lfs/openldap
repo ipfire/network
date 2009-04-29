@@ -35,7 +35,7 @@ DEPS       = berkeley cyrus-sasl openssl pth
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-CFLAGS    += -D_GNU_SOURCE
+CFLAGS    += -D_GNU_SOURCE -D_REENTRANT
 
 ###############################################################################
 # Top-level Rules
