@@ -33,7 +33,7 @@ for i in md_mod dm_mod ext3 ext4 xfs reiserfs reiser4 btrfs; do
 done
 echo # Newline
 
-python /usr/lib/pomona/installer.py $@
+python /usr/lib/pomona/pomona.py $@
 
 for i in $@; do
 	if [ "$i" == "--debug" ]; then
