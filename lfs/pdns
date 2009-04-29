@@ -55,7 +55,8 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-gcc44-fixes.patch
 
 download: $(objects)
 
@@ -77,6 +78,7 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-gcc44-fixes.patch
 	cd $(DIR_APP) && CPPFLAGS="-DLDAP_DEPRECATED" \
 		./configure \
 			$(CONFIGURE_ARCH) \
