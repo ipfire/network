@@ -43,9 +43,20 @@ WHAT       = -mount -type f -not -path '.$(TOOLS_DIR)*' \
 # Top-level Rules
 ###############################################################################
 
-install : $(OBJECT)
+objects = $(DL_FILE)
 
-download :
+download: $(objects)
+
+info:
+	$(DO_PKG_INFO)
+
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details

@@ -53,7 +53,9 @@ endef
 # Top-level Rules
 ###############################################################################
 
-download:
+objects = $(DL_FILE)
+
+download: $(objects)
 
 info:
 	$(DO_PKG_INFO)
@@ -62,6 +64,9 @@ install: $(OBJECT)
 
 package:
 	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details

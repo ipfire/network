@@ -55,14 +55,17 @@ objects = $(DL_FILE) \
 	$(THISAPP)-enginesdir.patch \
 	$(THISAPP)-no-rpath.patch
 
+download: $(objects)
+
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################

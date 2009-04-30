@@ -39,16 +39,21 @@ CFLAGS     = -Werror -Wno-unused -finline-limit=2000
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-nopie.patch $(THISAPP)-nostrip.patch
+objects = $(DL_FILE) \
+	$(THISAPP)-nopie.patch \
+	$(THISAPP)-nostrip.patch
+
+download: $(objects)
 
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################

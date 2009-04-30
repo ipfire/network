@@ -24,9 +24,22 @@
 
 include Config
 
-VER = ipfire
+PKG_NAME   = images
+PKG_VER    =
+PKG_REL    = -1
 
-THISAPP    = images
+THISAPP    = $(PKG_NAME)
+
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      =
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        =
+LICENSE    =
 
 PASS       = $(firstword $(MAKEFILE_LIST))
 
@@ -35,8 +48,6 @@ ifeq "$(PASS)" "pxe"
 else
 	PREFIX = isolinux
 endif
-
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 ROOTFILES  = $(DIR_SOURCE)/rootfiles/core
 ifeq "$(BUILD_DEBUG)" "1"
@@ -47,9 +58,20 @@ endif
 # Top-level Rules
 ###############################################################################
 
-install : $(OBJECT)
+objects =
 
-download :
+download: $(objects)
+
+info:
+	$(DO_PKG_INFO)
+
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details

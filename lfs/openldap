@@ -44,14 +44,17 @@ CFLAGS    += -D_GNU_SOURCE
 objects = $(DL_FILE) \
 	  $(THISAPP)-disable_sys_err.patch
 
+download: $(objects)
+
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################

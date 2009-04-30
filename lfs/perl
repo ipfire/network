@@ -41,11 +41,17 @@ objects = $(DL_FILE) \
 	$(THISAPP)-page-1.patch \
 	$(THISAPP)-security_fix-1.patch
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+info:
+	$(DO_PKG_INFO)
 
-$(objects) :
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################

@@ -37,16 +37,21 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-gcc-4.patch $(THISAPP)-nmu.diff
+objects = $(DL_FILE) \
+	$(THISAPP)-gcc-4.patch \
+	$(THISAPP)-nmu.diff
+
+download: $(objects)
 
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
