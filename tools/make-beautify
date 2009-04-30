@@ -144,7 +144,7 @@ beautify() {
 		build_stage)
 			MESSAGE=$2
 			echo -ne "${BOLD}*** ${MESSAGE}${SET_OPT_COL}  options${SET_VER_COL}     version "
-			echo -ne "${SET_TIME_COL} time (sec)${SET_RESULT_COL} status${NORMAL}\n"
+			echo -ne "${SET_TIME_COL}    time    ${SET_RESULT_COL} status${NORMAL}\n"
 			;;
 		package)
 			local PKG_NAME=$2
@@ -173,6 +173,9 @@ beautify() {
 			else
 				PKG_TIME=$3
 			fi
+
+			# If time is lager than one minute display it like this: <minutes>:<seconds>, e.g. 1:16
+			[ $PKG_TIME -ge 60 ] && PKG_TIME=$(printf "%d:%02d" $[ $PKG_TIME / 60 ] $[ $PKG_TIME % 60 ])
 
 			SET_TIME_COL_REAL=`position_cursor $RESULT_COL $PKG_TIME -3`
 			echo -ne "${SET_TIME_COL}${BRACKET_L} ${BOLD}${SET_TIME_COL_REAL}$PKG_TIME${NORMAL} ${BRACKET_R}"
