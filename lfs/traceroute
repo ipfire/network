@@ -80,9 +80,9 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && sed -i 's|hints.ai_flags = AI_IDN;|/* hints.ai_flags = AI_IDN; */|g' traceroute/traceroute.c
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install prefix=/usr bindir=/usr/sbin
-	chmod u-s /usr/sbin/traceroute
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CFLAGS="$(CFLAGS)" LDFLAGS=""
+	cd $(DIR_APP) && make install prefix=/usr
+	chmod u-s /usr/bin/traceroute
+	ln -svf traceroute /usr/bin/traceroute6
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
