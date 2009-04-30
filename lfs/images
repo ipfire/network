@@ -77,7 +77,7 @@ $(objects):
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
 
 ifeq "$(PASS)" "$(THISAPP)"

@@ -56,9 +56,9 @@ $(objects):
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && sed -e "s/^PREFIX\ :=\ .*/PREFIX=\/usr/g" \
 										-e "s/^MACHINE\ :=\ .*/MACHINE=$(MACHINE)/g" -i Makefile
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) EXLDFLAGS=

@@ -56,7 +56,7 @@ $(objects):
 # Installation Details
 ###############################################################################
 
-$(OBJECT) :
+$(OBJECT): $(objects)
 	@$(PREBUILD)
 	install -m 755 $(DIR_APP)/lsinitramfs /sbin/lsinitramfs
 	install -m 755 $(DIR_APP)/mkinitramfs /sbin/mkinitramfs

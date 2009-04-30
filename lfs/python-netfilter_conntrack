@@ -56,9 +56,9 @@ $(objects):
 # Installation Details
 ###############################################################################
 
-$(OBJECT):
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 	cd $(DIR_APP) && python setup.py install
 

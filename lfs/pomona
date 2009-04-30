@@ -55,7 +55,7 @@ $(objects):
 # Installation Details
 ###############################################################################
 
-$(OBJECT) :
+$(OBJECT): $(objects)
 	@$(PREBUILD)
 	cd $(DIR_APP) && make clean
 	#cd $(DIR_APP) && make -C po update-po

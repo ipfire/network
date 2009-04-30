@@ -54,6 +54,6 @@ $(objects):
 # Installation Details
 ###############################################################################
 
-$(OBJECT) :
+$(OBJECT): $(objects)
 	@depmod -a $(KVER)
 	/sbin/mkliveramfs -f -v $(IMAGES_DIR)/$(PKG_NAME)-$(VERSION).img $(KVER)
