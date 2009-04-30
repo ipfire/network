@@ -110,7 +110,7 @@ define DO_PACKAGE
 	if [ -n "$$ROOTFILE" ]; then \
 		NAME=$(NAME) SNAME=$(SNAME) VERSION=$(VERSION) KVER=$(KVER) \
 		TARGET=$(TARGET) MACHINE=$(MACHINE) IFS_TARGET=$(IFS_TARGET) \
-			$(DIR_SOURCE)/pakfire/compressor $(PKG_NAME) $(PKG_VER) $(PKG_REL) $$ROOTFILE; \
+			$(DIR_SOURCE)/pakfire/compressor "$(PKG_NAME)" "$(PKG_VER)" "$(PKG_REL)" "$$ROOTFILE"; \
 	fi
 endef
 
