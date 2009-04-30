@@ -72,7 +72,8 @@ objects = $(DL_FILE) \
 	$(AUFS_PATCH) \
 	$(OCF_PATCH) \
 	$(REISER4_PATCH) \
-	$(GRSEC_PATCH)
+	$(GRSEC_PATCH) \
+	$(THISAPP)-disable-compat_vdso-1.patch
 
 download: $(objects)
 
@@ -114,6 +115,8 @@ $(OBJECT): $(objects)
 	#
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(GRSEC_PATCH)
 	rm -f $(DIR_APP)/localversion-grsec
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disable-compat_vdso-1.patch
 
 ifeq "$(STAGE)" "toolchain"
 	install -dv $(TOOLS_DIR)/include
