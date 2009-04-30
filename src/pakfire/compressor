@@ -30,7 +30,7 @@ if [ -z "$TARGET" ]; then
 fi
 
 if [ ! -e "$ROOTFILE" ]; then
-	echo "Rootfile does not exist." >&2
+	echo "Rootfile does not exist: $ROOTFILE" >&2
 	exit 1
 fi
 
@@ -38,9 +38,15 @@ PKG_LIST="normal"
 # Checking for a devel package
 grep -q "^D" $ROOTFILE && PKG_LIST="$PKG_LIST devel"
 
+if [ -n "${PKG_VER}" ]; then
+    PKG_STRING="${PKG_NAME}-${PKG_VER}"
+else
+    PKG_STRING="${PKG_NAME}"
+fi
+
 for PKG_EXTRA in $PKG_LIST; do
 	# Prepare target name.
-	PKG_TARGET=${PKG_NAME}-${PKG_VER}-${SNAME}-${PKG_REL}
+	PKG_TARGET=${PKG_STRING}-${SNAME}-${PKG_REL}
 	if [ "$PKG_EXTRA" != "normal" ]; then
 		PKG_TARGET="$PKG_TARGET-$PKG_EXTRA"
 	fi
@@ -73,7 +79,8 @@ for PKG_EXTRA in $PKG_LIST; do
 
 	echo "$FILELIST" | cpio -o | lzma -czv - > $ARCHIEVE
 
-	cat $ARCHIEVE > /tmp/$PKG_TARGET
+	mkdir -p /images/packages 2>/dev/null
+	cat $ARCHIEVE > /images/packages/$PKG_TARGET
 
 	rm -f $ARCHIEVE
 done

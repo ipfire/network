@@ -461,10 +461,12 @@ packages_build() {
 	beautify message DONE
 
 	# Build packages
-	#local package
-	#for package in $BASEDIR/lfs/*; do
-	#	package_make $(basename $package)
-	#done
+	local package
+	for package in $BASEDIR/lfs/*; do
+		package_make $(basename $package)
+	done
+	mkdir -p $BASEDIR/packages/${TARGET} 2>/dev/null
+	mv $LFS/$IMAGES_DIR/packages/* $BASEDIR/packages/${TARGET}/ >>$LOGFILE 2>&1
 
 	if [ ${EMB} -eq 0 ]; then
 		ipfire_make initramfs
