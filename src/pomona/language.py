@@ -1,6 +1,7 @@
 #/usr/bin/python
 
 import os
+import locale
 import string
 
 from snack import ListboxChoiceWindow
@@ -68,6 +69,13 @@ class Language:
 
     def setLanguage(self, lang):
         self.installer.log.debug("Set language to \"%s\"" % lang)
+        os.environ["LC_NUMERIC"] = 'C'
+        #XXX os.environ["LANG"] = "de_DE.utf8"
+
+        try:
+            locale.setlocale(locale.LC_ALL, "")
+        except locale.Error:
+            pass
 
 
 class LanguageWindow:

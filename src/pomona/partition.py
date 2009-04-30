@@ -3,18 +3,45 @@
 from snack import *
 
 import storage.formats as formats
+from storage.devicelibs.lvm import safeLvmName
 
 from constants import *
 
 import gettext
 _ = lambda x: gettext.ldgettext("pomona", x)
 
+def logicalVolumeGroupList(installer):
+    storage = installer.ds.storage
+    
+    vgs = []
+    for vg in storage.vgs:
+        vgs.append(vg.name)
+    (button, choice) = ListboxChoiceWindow(installer.intf.screen,
+                           _("Volume Group Selection"),
+                           _("What language would you like to use during the "
+                             "installation process?"), vgs,
+                           buttons = [TEXT_OK_BUTTON, TEXT_BACK_BUTTON],
+                           width = 30, scroll = 1,
+                           height = min((8, len(vgs))))
+    if button == TEXT_BACK_CHECK:
+        return
+    
+    for vg in storage.vgs:
+        if choice == vg.name:
+            return vg
+    return
+
 class PartitionWindow(object):
     def populate(self):
         self.lb.clear()
 
         for vg in self.storage.vgs:
-            self.lb.append([vg.name, "", "", "",], None)
+            self.lb.append([vg.name, "", "", "",], vg)
+            
+            freespace = vg.freeSpace
+            if freespace:
+                self.lb.append(["  %s" % _("Free Space"), "", "", "%dM" % freespace,],
+                               None, [LEFT, LEFT, LEFT, RIGHT])
             
         for disk in self.storage.disks:
             self.lb.append([disk.path, "", "", "",], None)
@@ -80,6 +107,14 @@ class PartitionWindow(object):
         grid.setField(mount, 1, 0, anchorRight = 1, growx = 1)
 
         return (grid, mount)
+    
+    def makeVGName(self, device):
+        grid = Grid(2, 1)
+        label = Label(_("VG Name:"))
+        grid.setField(label, 0, 0, (0,0,0,0), anchorLeft = 1)
+        name = Entry(20, device.name)
+        grid.setField(name, 1, 0, anchorRight = 1, growx = 1)
+        return (grid, name)
 
     def newCb(self):
         choices = [_("Partition"), _("RAID"), _("Logical Volume Group")]
@@ -98,17 +133,30 @@ class PartitionWindow(object):
 
         choice = choices[choice]
         if choice == _("Partition"):
-            device = self.storage.newPartition()
+            self.newPart()
         elif choice == _("RAID"):
-            device = None # XXX RAID
+            pass # XXX self.newRaid()
         elif choice == _("Logical Volume Group"):
-            device = self.storage.newVG()
+            self.newVG()
         elif choice == _("Logical Volume Device"):
-            device = self.storage.newLV()
+            self.newLV()
 
-        self.edit(device=device)
+    def newPart(self):
+        device = self.storage.newPartition()
+        self.editPart(device=device)
 
-    def edit(self, device=None):
+    def newVG(self):
+        device = self.storage.newVG()
+        self.storage.createDevice(device)
+        self.editVG(device=device)
+    
+    def newLV(self):
+        vg = logicalVolumeGroupList(self.installer)
+        if vg:
+            device = self.storage.newLV(vg=vg)
+        self.editLV(device=device)
+
+    def editPart(self, device):
         if not device:
             return
         
@@ -126,12 +174,12 @@ class PartitionWindow(object):
         
         if not device.exists:
             subgrid1 = Grid(2, 1)
+        
+            (devgrid, drivelist) = self.makeDriveList(device)
+            subgrid1.setField(devgrid, 0, 0, (0,1,0,0), growx=1)
             
             (fsgrid, fstype) = self.makeFileSystemList(device)
-            subgrid1.setField(fsgrid, 0, 0)
-            
-            (devgrid, drivelist) = self.makeDriveList(device)
-            subgrid1.setField(devgrid, 1, 0, (0,1,0,0), growx=1)
+            subgrid1.setField(fsgrid, 1, 0)
             
             grid.add(subgrid1, 0, row, (0,1,0,0), growx=1)
             row += 1
@@ -158,6 +206,44 @@ class PartitionWindow(object):
             break
         
         self.screen.popWindow()
+
+    def editVG(self, device):
+        if not device.exists:
+            tstr = _("Add Logical Volume Group")
+        else:
+            tstr = _("Edit Logical Volume Group")
+        grid = GridForm(self.screen, tstr, 1, 6)
+        row = 0
+        
+        (namegrid, name) = self.makeVGName(device)
+        grid.add(namegrid, 0, row)
+        row += 1
+        
+        # XXX size?
+        
+        bb = ButtonBar(self.screen, (TEXT_OK_BUTTON, TEXT_CANCEL_BUTTON))
+        grid.add(bb, 0, row, (0,1,0,0), growx = 1)
+        row += 1
+        
+        while 1:
+            rc = grid.run()
+            button = bb.buttonPressed(rc)
+
+            if button == TEXT_CANCEL_CHECK:
+                break
+
+            if not name.value():
+                self.installer.intf.messageWindow(_("Error"),
+                                                  _("You must enter a name for the "
+                                                    "Logical Volume Group."))
+                continue
+            device.name = safeLvmName(name.value())
+
+            break
+
+        self.screen.popWindow()
+        
+    editLV = editPart
         
     def editCb(self):
         device = self.lb.current()
@@ -166,19 +252,25 @@ class PartitionWindow(object):
                                               _("You must first select a partition to edit."))
             return
 
-        self.edit(device)
+        self.editPart(device)
 
     def deleteCb(self):
         device = self.lb.current()
+        
+        self.installer.log.debug("%s" % device.type)
         
         if not device:
             self.installer.intf.messageWindow(_("Unable To Delete"),
                                               _("You must first select a partition to delete."))
             return
         
-        if not self.installer.intf.messageWindow(_("Confirm Delete"),
-                                                 _("Do you really want to delete the selected partition?"),
-                                                 type="yesno"):
+        if device.type == "lvmvg":
+            text = _("Do you really want to delete the selected Logical Volume Group and "
+                     "all its Logical Volumes?")
+        else:
+            text = _("Do you really want to delete the selected partition?")
+
+        if not self.installer.intf.messageWindow(_("Confirm Delete"), text, type="yesno"):
             return
         
         self.storage.destroyDevice(device)

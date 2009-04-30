@@ -7,9 +7,9 @@ from constants import *
 from windows import *
 
 installSteps = [
-                #("welcome",       welcomeWindow,),
-                #("experimental",  experimentalWindow,),
-                #("console",       [ "LanguageWindow", "KeyboardWindow",]),
+                ("welcome",       welcomeWindow,),
+                ("experimental",  experimentalWindow,),
+                ("console",       [ "LanguageWindow", "KeyboardWindow",]),
                 ("storage",       storageInitialize,),
                 ("partmethod",    partmethodWindow,),
                 ("autopartition", autopartitionWindow,),
