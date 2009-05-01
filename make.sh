@@ -464,9 +464,11 @@ packages_build() {
 
 	# Build packages
 	local package
+	echo -n "Building packages"
 	for package in $BASEDIR/lfs/*; do
-		package_make $(basename $package)
+		package_make $(basename $package) >/dev/null
 	done
+	beautify message DONE
 
 	if [ ${EMB} -eq 0 ]; then
 		ipfire_make initramfs
