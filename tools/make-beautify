@@ -208,9 +208,9 @@ function shrink_string() {
 } # End of shrink_string()
 
 dialogerror() {
-	beautify message FAIL
+	beautify message FAIL >&2
 
-	echo -ne "${FAIL}ERROR${NORMAL}: ${BOLD}$*${NORMAL}\n"
+	echo -ne "${FAIL}ERROR${NORMAL}: ${BOLD}$*${NORMAL}\n" >&2
 	[ -z "$LOGFILE" ] || \
-	echo "       Check $LOGFILE for errors if applicable"
+	echo "       Check $LOGFILE for errors if applicable" >&2
 } # End of dialogerror()
