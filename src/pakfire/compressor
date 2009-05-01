@@ -79,8 +79,7 @@ for PKG_EXTRA in $PKG_LIST; do
 
 	echo "$FILELIST" | cpio -o | lzma -czv - > $ARCHIEVE
 
-	mkdir -p /images/packages 2>/dev/null
-	cat $ARCHIEVE > /images/packages/$PKG_TARGET
+	cat $ARCHIEVE > /packages/$PKG_TARGET
 
 	rm -f $ARCHIEVE
 done

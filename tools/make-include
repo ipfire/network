@@ -540,11 +540,12 @@ prepareenv() {
 	mkdir -p $BASEDIR/build_${TARGET}/{$TOOLS_DIR,cdrom,$INSTALLER_DIR,$IMAGES_DIR} 2>/dev/null
 	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
 	mkdir -p $BASEDIR/cache/{toolchains,patches,tarballs} 2>/dev/null
+	mkdir -p $BASEDIR/packages_${TARGET} 2>/dev/null
 	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/{dev,etc,proc,sys} 2>/dev/null
 	mkdir -p $LFS/dev/pts 2>/dev/null
 	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${TARGET},src,ccache,distcc} 2>/dev/null
-	mkdir -p $LFS/{$INSTALLER_DIR,cdrom,images} 2>/dev/null
+	mkdir -p $LFS/{$INSTALLER_DIR,cdrom,images,packages} 2>/dev/null
 
 	mknod -m 600 $BASEDIR/build/dev/console c 5 1 2>/dev/null
 	mknod -m 666 $BASEDIR/build/dev/null c 1 3 2>/dev/null
@@ -565,6 +566,7 @@ prepareenv() {
 	mount --bind $BASEDIR/build_${TARGET}/$CDROM_DIR	$LFS/$CDROM_DIR
 	mount --bind $BASEDIR/build_${TARGET}/$INSTALLER_DIR	$LFS/$INSTALLER_DIR
 	mount --bind $BASEDIR/build_${TARGET}/$IMAGES_DIR	$LFS/$IMAGES_DIR
+	mount --bind $BASEDIR/packages_${TARGET}	$LFS/packages
 
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache
@@ -723,7 +725,7 @@ puttarget() {
 	rm -rf ${BASEDIR}/${HOSTNAME} 2>/dev/null
 	mkdir -p ${DIR}
 
-	[ -e "${BASEDIR}/packages" ] && cp -al ${BASEDIR}/packages ${DIR}
+	[ -e "${BASEDIR}/packages_${TARGET}" ] && cp -al ${BASEDIR}/packages_${TARGET} ${DIR}
 	[ -e "${BATCHLOG}" ] && \
 		python ${BASEDIR}/tools/alog2html < ${BATCHLOG} > ${DIR}/build_log.html
 	pkg_list_packages > ${DIR}/packages-list.txt
