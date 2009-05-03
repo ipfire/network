@@ -41,7 +41,7 @@ DEBUG      = no
 DEPS       =
 
 URL        = http://neil.brown.name/portmap/
-LICENSE    = 
+LICENSE    = BSD 3 - Clause 
 SHORT_DESC = DARPA port to RPC program number mapper.
 
 define LONG_DESC
@@ -84,7 +84,7 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	
 	#Patch to allow compile without tcp-wrappers
-	patch -Np1 -i portmap-6.0-tcpd.patch
+	cd $(DIR_APP) && patch -Np1 -i portmap-6.0-tcpd.patch
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
