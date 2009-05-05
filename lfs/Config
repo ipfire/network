@@ -138,6 +138,8 @@ define PREBUILD
 	echo "# Description: $(SHORT_DESC)"
 	echo "######################################################################"
 	echo "# Saving file list..."
+	# Remove package if exists
+	rm -f $(DIR_PACKAGES)/$(PKG_PACKAGE) 2>/dev/null
 	if [ ! -f $(DIR_SRC)/lsalr ]; then $(FIND_FILES) > $(DIR_SRC)/lsalr; fi
 endef
 else
