@@ -37,15 +37,26 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-install : $(OBJECT)
+objects =
 
-download :
+download: $(objects)
+
+info:
+	$(DO_PKG_INFO)
+
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) :
+$(OBJECT): $(objects)
 	@$(PREBUILD)
 	install -m 755 $(DIR_APP)/lsinitramfs /sbin/lsinitramfs
 	install -m 755 $(DIR_APP)/mkinitramfs /sbin/mkinitramfs

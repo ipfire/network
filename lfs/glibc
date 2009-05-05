@@ -36,6 +36,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
 GROUP      = System/Base
+CORE       = yes
 EXTRA      = no
 DEBUG      = no
 DEPS       =
@@ -56,6 +57,8 @@ endef
 
 CFLAGS     = -O2 -pipe
 CXXFLAGS   =
+
+OPTIMIZED_KERNEL = 2.6.18
 
 ###############################################################################
 # Top-level Rules
@@ -221,7 +224,7 @@ ifeq "$(STAGE)" "toolchain"
 			--with-binutils=$(TOOLS_DIR)/bin \
 			--disable-profile \
 			--enable-add-ons \
-			--enable-kernel=2.6.0 \
+			--enable-kernel=$(OPTIMIZED_KERNEL) \
 			--without-selinux \
 			--without-gd \
 			--enable-bind-now \
@@ -242,7 +245,7 @@ ifeq "$(STAGE)" "base"
 			--libexecdir=/usr/lib/glibc \
 			--disable-profile \
 			--enable-add-ons \
-			--enable-kernel=2.6.0 \
+			--enable-kernel=$(OPTIMIZED_KERNEL) \
 			--without-selinux \
 			--disable-werror \
 			--enable-bind-now \

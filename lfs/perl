@@ -41,20 +41,26 @@ objects = $(DL_FILE) \
 	$(THISAPP)-page-1.patch \
 	$(THISAPP)-security_fix-1.patch
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+info:
+	$(DO_PKG_INFO)
 
-$(objects) :
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_SRC)/perl* && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_SRC)/perl* && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	-mkdir -v $(DIR_SRC)/perl-build
 
 ifeq "$(STAGE)" "toolchain"

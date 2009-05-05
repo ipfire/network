@@ -37,25 +37,30 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) $(THISAPP)-gcc-4.patch $(THISAPP)-nmu.diff
+objects = $(DL_FILE) \
+	$(THISAPP)-gcc-4.patch \
+	$(THISAPP)-nmu.diff
+
+download: $(objects)
 
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-gcc-4.patch
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-nmu.diff
 	cd $(DIR_APP) && \

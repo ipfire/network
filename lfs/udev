@@ -36,6 +36,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
 GROUP      = System/Base
+CORE       = yes
 EXTRA      = no
 DEBUG      = no
 DEPS       =
@@ -53,7 +54,8 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	udev-CVE-2009-1186.patch
 
 download: $(objects)
 
@@ -72,7 +74,7 @@ $(objects):
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
@@ -92,6 +94,10 @@ $(OBJECT) :
 			--prefix=/usr \
 			--exec-prefix="" \
 			--sysconfdir=/etc
+
+	#This patch fixes a local privilege escalation in udev.( CVE-2009-1186 )
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/udev-CVE-2009-1186.patch
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 

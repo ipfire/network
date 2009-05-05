@@ -39,20 +39,26 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 objects = $(DL_FILE)
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+info:
+	$(DO_PKG_INFO)
 
-$(objects) :
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \

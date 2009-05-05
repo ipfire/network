@@ -35,14 +35,25 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-install : $(OBJECT)
+objects =
 
-download :
+download: $(objects)
+
+info:
+	$(DO_PKG_INFO)
+
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) :
+$(OBJECT): $(objects)
 	@depmod -a $(KVER)
 	/sbin/mkliveramfs -f -v $(IMAGES_DIR)/$(PKG_NAME)-$(VERSION).img $(KVER)

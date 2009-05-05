@@ -19,61 +19,51 @@
 #                                                                             #
 ###############################################################################
 
-PKG_NAME=$1
-PKG_VER=$2
-PKG_REL=$3
-ROOTFILE=$4
+while [ $# -gt 0 ]; do
+	case "$1" in
+		*)
+			if [ -z "$PKG_TARGET" ]; then
+				PKG_TARGET=$1
+			else
+				if [ ! -e "$1" ]; then
+					echo "Rootfile do not exist: $1" >&2
+					exit 1
+				fi
+				ROOTFILES="$ROOTFILES $1"
+			fi
+			;;
+	esac
+	shift
+done
 
 if [ -z "$TARGET" ]; then
 	echo "TARGET is not set. Cannot continue." >&2
 	exit 1
 fi
 
-if [ ! -e "$ROOTFILE" ]; then
-	echo "Rootfile does not exist." >&2
-	exit 1
+echo -n "Running for $PKG_TARGET..."
+
+if [ -e "/packages/$PKG_TARGET" ]; then
+	echo "Skip."
+	exit 0
 fi
 
-PKG_LIST="normal"
-# Checking for a devel package
-grep -q "^D" $ROOTFILE && PKG_LIST="$PKG_LIST devel"
+ARCHIEVE=$(mktemp)
+TMP_DIR=$(mktemp -d)
 
-for PKG_EXTRA in $PKG_LIST; do
-	# Prepare target name.
-	PKG_TARGET=${PKG_NAME}-${PKG_VER}-${SNAME}-${PKG_REL}
-	if [ "$PKG_EXTRA" != "normal" ]; then
-		PKG_TARGET="$PKG_TARGET-$PKG_EXTRA"
-	fi
-	PKG_TARGET="$PKG_TARGET.$SNAME"
-
-	echo "Running for $PKG_TARGET..."
-
-	ARCHIEVE=$(mktemp)
-
-	# Remove unused files from filelist
-	FILELIST=$(grep -v "^#" $ROOTFILE)
-
-	if [ "$PKG_EXTRA" = "devel" ]; then
-		FILELIST=$(echo "$FILELIST" | grep "^D" | sed -e "s/^D//g")
-	else
-		FILELIST=$(echo "$FILELIST" | grep -v "^D")
-	fi
-
-	FILELIST=$(echo "$FILELIST" | sed \
-		-e "s/KVER/$KVER/g" \
-		-e "s/IFS_TARGET/$IFS_TARGET/g")
-
-	if [ -z "$FILELIST" ]; then
-		rm -f $ARCHIEVE
-		continue
-	fi
-
-	# Changing to root
-	cd /
-
-	echo "$FILELIST" | cpio -o | lzma -czv - > $ARCHIEVE
-
-	cat $ARCHIEVE > /tmp/$PKG_TARGET
-
-	rm -f $ARCHIEVE
+for rootfile in $ROOTFILES; do
+	cd / && grep -v "^#" < $rootfile | \
+			sed -e "s/KVER/$KVER/g" \
+				-e "s/IFS_TARGET/$IFS_TARGET/g" | \
+			cpio -pdl --quiet $TMP_DIR
 done
+
+cd $TMP_DIR
+
+find . | cpio -o --quiet | lzma -czv - > $ARCHIEVE
+
+cat $ARCHIEVE > /packages/$PKG_TARGET
+
+echo "Done."
+
+rm -rf $ARCHIEVE $TMP_DIR

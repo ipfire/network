@@ -35,6 +35,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
 GROUP      = System/Webinterface
+CORE       = yes
 EXTRA      = no
 DEBUG      = no
 DEPS       =
@@ -53,7 +54,9 @@ endef
 # Top-level Rules
 ###############################################################################
 
-download:
+objects = $(DL_FILE)
+
+download: $(objects)
 
 info:
 	$(DO_PKG_INFO)
@@ -62,6 +65,9 @@ install: $(OBJECT)
 
 package:
 	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details

@@ -27,6 +27,7 @@ include Config
 PKG_NAME   = mc
 PKG_VER    = 4.6.2
 
+CORE       = no
 EXTRA      = yes
 DEBUG      = no
 DEPS       = glib2 slang
@@ -44,23 +45,26 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 objects = $(DL_FILE) \
 	$(THISAPP)-utf8.patch
 
+download: $(objects)
+
 info:
 	$(DO_PKG_INFO)
 
 install: $(OBJECT)
 
-download : $(objects)
+package:
+	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar zxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-utf8.patch
 	cd $(DIR_APP) && autoreconf -f -v
 	cd $(DIR_APP) && \

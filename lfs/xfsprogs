@@ -36,6 +36,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
 GROUP      = System/Filesystems
+CORE       = yes
 EXTRA      = no
 DEBUG      = no
 DEPS       = libtool gettext
@@ -72,7 +73,7 @@ $(objects) :
 # Installation Details
 ###############################################################################
 
-$(OBJECT): $(objects) 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np2 -i $(DIR_PATCHES)/$(THISAPP)-parallel-build.patch

@@ -296,6 +296,8 @@ ipfire_build() {
 	ipfire_make lvm2
 	ipfire_make mdadm
 	ipfire_make dmraid
+	ipfire_make cryptsetup-luks
+	ipfire_make python-cryptsetup
 
 	### Building hardware utils
 	#
@@ -360,7 +362,7 @@ misc_build() {
 	### Console tools
 	#
 	ipfire_make mc
-	#ipfire_make traceroute
+	ipfire_make traceroute
 	ipfire_make nmap
 	#ipfire_make rsync
 	ipfire_make tcpdump
@@ -406,6 +408,7 @@ misc_build() {
 	#ipfire_make mpfire
 	#ipfire_make guardian
 	#ipfire_make ipfireseeder
+	ipfire_make portmap
 	#ipfire_make nfs
 
 	### Debugging
@@ -461,10 +464,12 @@ packages_build() {
 	beautify message DONE
 
 	# Build packages
-	#local package
-	#for package in $BASEDIR/lfs/*; do
-	#	package_make $(basename $package)
-	#done
+	local package
+	echo -n "Building packages"
+	for package in $BASEDIR/lfs/*; do
+		package_make $(basename $package) >/dev/null
+	done
+	beautify message DONE
 
 	if [ ${EMB} -eq 0 ]; then
 		ipfire_make initramfs

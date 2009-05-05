@@ -89,6 +89,7 @@ pkg_info() {
 		KVER=$KVER \
 		STAGE=$STAGE \
 		STAGE_ORDER=$STAGE_ORDER \
+		SNAME=$SNAME \
 		info 2>/dev/null
 }
 
@@ -107,7 +108,7 @@ pkg_info_wiki() {
 
 		# Dependencies
 		echo -n "| **Dependencies:** | "
-		for dep in $DEPS; do
+		for dep in $PKG_DEPS; do
 			echo -n "[[$dep]] "
 		done; echo "|"
 

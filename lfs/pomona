@@ -36,15 +36,26 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 # Top-level Rules
 ###############################################################################
 
-install : $(OBJECT)
+objects =
 
-download :
+download: $(objects)
+
+info:
+	$(DO_PKG_INFO)
+
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) :
+$(OBJECT): $(objects)
 	@$(PREBUILD)
 	cd $(DIR_APP) && make clean
 	#cd $(DIR_APP) && make -C po update-po

@@ -41,20 +41,26 @@ objects = $(DL_FILE) \
 	$(THISAPP)-fixes-4.patch \
 	$(THISAPP)-mandir-1.patch
 
-install : $(OBJECT)
+download: $(objects)
 
-download : $(objects)
+info:
+	$(DO_PKG_INFO)
 
-$(objects) :
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT) : 
+$(OBJECT): $(objects)
 	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && tar jxf $(DIR_DL)/$(DL_FILE)
+	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-fixes-4.patch
 	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-mandir-1.patch
 	cd $(DIR_APP) && echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
