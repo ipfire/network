@@ -19,51 +19,38 @@
 #                                                                             #
 ###############################################################################
 
+FILES=
+ROOT=/
+
 while [ $# -gt 0 ]; do
 	case "$1" in
-		*)
-			if [ -z "$PKG_TARGET" ]; then
-				PKG_TARGET=$1
+		--root=*)
+			ROOT=${1#--root=}
+			;;
+		*.ipk)
+			file=$1
+			[ ${file:0:1} != / ] && file="$(pwd)/$file"
+			if [ -e "$file" ]; then
+				FILES="$FILES $file"
 			else
-				if [ ! -e "$1" ]; then
-					echo "Rootfile do not exist: $1" >&2
-					exit 1
-				fi
-				ROOTFILES="$ROOTFILES $1"
+				echo "File does not exist: $file" >&2
+				exit 1
 			fi
 			;;
 	esac
 	shift
 done
 
-if [ -z "$TARGET" ]; then
-	echo "TARGET is not set. Cannot continue." >&2
-	exit 1
+if [ "$ROOT" != "/" ]; then
+	[ -d "$ROOT" ] || mkdir -p $ROOT
+	cd $ROOT
+	if [ "$(pwd)" != "$ROOT" ]; then
+		echo "Could not change to root: $ROOT" >&2
+		exit 1
+	fi
 fi
 
-echo -n "Running for $PKG_TARGET..."
-
-if [ -e "/packages/$PKG_TARGET" ]; then
-	echo "Skip."
-	exit 0
-fi
-
-ARCHIEVE=$(mktemp)
-TMP_DIR=$(mktemp -d)
-
-for rootfile in $ROOTFILES; do
-	cd / && grep -v "^#" < $rootfile | \
-			sed -e "s/KVER/$KVER/g" \
-				-e "s/IFS_TARGET/$IFS_TARGET/g" | \
-			cpio -pdl --quiet $TMP_DIR
+for file in $FILES; do
+	echo "Extracting $file..."
+	lzma -cd $file | cpio -diu --no-absolute-filenames --quiet
 done
-
-cd $TMP_DIR
-
-find . | cpio -o --quiet | lzma -czv - > $ARCHIEVE
-
-cat $ARCHIEVE > /packages/$PKG_TARGET
-
-echo "Done."
-
-rm -rf $ARCHIEVE $TMP_DIR
