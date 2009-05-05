@@ -1,1 +1,98 @@
-images
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include Config
+
+PKG_NAME   = pxe
+PKG_VER    =
+PKG_REL    = -1
+
+THISAPP    = $(PKG_NAME)
+
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      =
+CORE       = no
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        =
+LICENSE    =
+
+PXE_DIR    = $(CDROM_DIR)
+
+###############################################################################
+# Top-level Rules
+###############################################################################
+
+objects =
+
+download: $(objects)
+
+info:
+	$(DO_PKG_INFO)
+
+install: $(OBJECT)
+
+package:
+	@$(DO_PACKAGE)
+
+$(objects):
+	@$(LOAD)
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(OBJECT): $(objects)
+	@rm -rf $(PXE_DIR)/* && mkdir -pv $(PXE_DIR)/{pxelinux.cfg,$(SNAME)}
+
+	# Make image with networking support
+	mkliveramfs -f --with-net $(CDROM_DIR)/$(SNAME)/initrd0 $(KVER)
+
+	cp -vf /boot/ipfirekernel-$(KVER) $(CDROM_DIR)/$(SNAME)/$(SNAME)0
+	cp -vf /usr/share/syslinux/vesamenu.c32 \
+		$(DIR_CONF)/bootloader/splash.{jpg,lss} \
+		$(DIR_CONF)/bootloader/*.msg $(CDROM_DIR)/$(SNAME)/
+
+	cp -vf /usr/share/syslinux/pxelinux.0 $(CDROM_DIR)/
+	sed	-e "s/SNAME/$(SNAME)/g" \
+		-e "s/NAME/$(NAME)/g" \
+		-e "s/VERSION/$(VERSION)/g" \
+		-e "s@$(SNAME)0@$(SNAME)/$(SNAME)0@g" \
+		-e "s@initrd0@$(SNAME)/initrd0@g" \
+		-e "s@splash@$(SNAME)/splash@g" \
+		-e "s@vesamenu.c32@$(SNAME)/vesamenu.c32@g" \
+		$(DIR_CONF)/bootloader/installer.conf \
+		> $(CDROM_DIR)/pxelinux.cfg/$(SNAME)-pxe-$(VERSION).model
+
+	sed -e "s@splash@$(SNAME)/splash@g" \
+		-i $(CDROM_DIR)/$(SNAME)/boot.msg
+
+	cd $(CDROM_DIR) && \
+		tar cfz $(IMAGES_DIR)/$(IMAGENAME).pxe.tar.gz *
+
+	@rm -rf $(PXE_DIR)/*
