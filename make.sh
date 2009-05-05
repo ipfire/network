@@ -407,6 +407,7 @@ misc_build() {
 	#ipfire_make mpfire
 	#ipfire_make guardian
 	#ipfire_make ipfireseeder
+	ipfire_make portmap
 	#ipfire_make nfs
 
 	### Debugging
