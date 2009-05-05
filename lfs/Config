@@ -59,6 +59,7 @@ DIR_CONFIG  = $(DIR_CONF)
 DIR_SOURCE  = $(DIR_SRC)/src
 DIR_PKG     = $(LFS_BASEDIR)/lfs
 DIR_TARGET  = $(LFS_BASEDIR)/target
+DIR_PACKAGES= /packages
 
 VPATH = $(DIR_DL):$(DIR_PATCHES)
 
@@ -67,6 +68,8 @@ INITSCRIPT = $(PKG_NAME)
 CONFIGURE_ARCH = \
 	--build=$(IFS_TARGET) \
 	--host=$(IFS_TARGET)
+
+PKG_PACKAGE=$(PKG_NAME)-$(PKG_VER)-$(SNAME)$(PKG_REL).$(TARGET).ipk
 
 ###############################################################################
 # Common Macro Definitions
@@ -91,6 +94,7 @@ PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 
 define DO_PKG_INFO
 	@## ALPHABETICAL ORDER ##
+	@echo "local PKG_CORE=\"$(CORE)\""
 	@echo "local PKG_DEBUG=\"$(DEBUG)\""
 	@echo "local PKG_DEPS=\"$(DEPS)\""
 	@echo "local PKG_DESC=\"$(value LONG_DESC)\""
@@ -100,6 +104,7 @@ define DO_PKG_INFO
 	@echo "local PKG_LICENSE=\"$(LICENSE)\""
 	@echo "local PKG_MAINTAINER=\"$(MAINTAINER)\""
 	@echo "local PKG_NAME=\"$(PKG_NAME)\""
+	@echo "local PKG_PACKAGE=\"$(PKG_PACKAGE)\""
 	@echo "local PKG_VER=\"$(PKG_VER)\""
 	@echo "local PKG_REL=\"$(PKG_REL)\""
 	@echo "local PKG_SHORT=\"$(value SHORT_DESC)\""
@@ -110,7 +115,7 @@ define DO_PACKAGE
 	if [ -n "$$ROOTFILE" ]; then \
 		NAME=$(NAME) SNAME=$(SNAME) VERSION=$(VERSION) KVER=$(KVER) \
 		TARGET=$(TARGET) MACHINE=$(MACHINE) IFS_TARGET=$(IFS_TARGET) \
-			$(DIR_SOURCE)/pakfire/compressor "$(PKG_NAME)" "$(PKG_VER)" "$(PKG_REL)" "$$ROOTFILE"; \
+			$(DIR_SOURCE)/pakfire/compressor $(PKG_PACKAGE) $$ROOTFILE; \
 	fi
 endef
 

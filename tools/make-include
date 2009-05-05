@@ -181,14 +181,14 @@ lfsmakecommoncheck()
 	
 	shift 1
 
-	build_spy package $PKG_NAME
+	[ "$STAGE" != "packages" ] && build_spy package $PKG_NAME
 
 	beautify package "$PKG_NAME" "$PKG_VER" "$*"
 
 	# Script slipped?
 	local i
 	for i in $SKIP_PACKAGE_LIST; do
-		if [ "$i" == "$PKG_NAME" ]; then
+		if [ "$i" = "$PKG_NAME" ]; then
 			beautify result SKIP
 			return 1
 		fi
@@ -196,21 +196,32 @@ lfsmakecommoncheck()
 
 	# On debug build, we don't strip
 	if [ "$STAGE" != "toolchain" -a \
-			"$PKG_NAME" == "strip" -a "$BUILD_DEBUG" == "1" ]; then
+			"$PKG_NAME" = "strip" -a "$BUILD_DEBUG" = "1" ]; then
 		beautify result SKIP
 		return 1
 	fi
 
 	# Don't create addons?
-	if [ "$PKG_EXTRA" == "yes" ] && [ "$BUILD_EXTRAS" == "0" ]; then
-			beautify result SKIP
-			return 1
+	if [ "$PKG_EXTRA" = "yes" ] && [ "$BUILD_EXTRAS" = "0" ]; then
+		beautify result SKIP
+		return 1
 	fi
 
 	# Don't create debugging tools?
-	if [ "$PKG_DEBUG" == "yes" ] && [ "$BUILD_DEBUG" == "0" ]; then
-			beautify result SKIP
-			return 1
+	if [ "$PKG_DEBUG" = "yes" ] && [ "$BUILD_DEBUG" = "0" ]; then
+		beautify result SKIP
+		return 1
+	fi
+
+	# Append package to the list it belongs to
+	if [ "$STAGE" != "packages" ]; then
+		if [ "$PKG_CORE" = "yes" ]; then
+			PACKAGES_CORE="$PACKAGES_CORE $PKG_PACKAGE"
+		elif [ "$PKG_EXTRA" = "yes" ]; then
+			PACKAGES_EXTRA="$PACKAGES_EXTRA $PKG_PACKAGE"
+		elif [ "$PKG_DEBUG" = "yes" ]; then
+			PACKAGES_DEBUG="$PACKAGES_DEBUG $PKG_PACKAGE"
+		fi
 	fi
 
 	# Searching for dependencies
@@ -255,31 +266,53 @@ toolchain_make() {
 
 	local PKG_TIME_START=$(date +%s)
 	cd $BASEDIR/lfs && env -i \
-		HOME=/root \
-		TERM=$TERM \
+		HOME="/root" \
+		TERM="${TERM}" \
 		PS1='\u:\w\$ ' \
-		PATH=$PATH \
-		CONFIG_ROOT=$CONFIG_ROOT \
-		VERSION=${VERSION} \
-		NAME=${NAME} \
-		SNAME=${SNAME} \
-		SLOGAN="$SLOGAN" \
-		LINKER=$LINKER \
-		TOOLS_DIR=$TOOLS_DIR \
-		CFLAGS="$CFLAGS" \
-		CXXFLAGS="$CXXFLAGS" \
-		MACHINE="$MACHINE" \
-		MACHINE_REAL="$MACHINE_REAL" \
-		IFS_HOST="$IFS_HOST" \
-		IFS_TARGET="$IFS_TARGET" \
+		PATH="${PATH}" \
+		\
+		NAME="${NAME}" \
+		SNAME="${SNAME}" \
+		SLOGAN="${SLOGAN}" \
+		VERSION="${VERSION}" \
 		TARGET="$TARGET" \
-		LFS_BASEDIR=$BASEDIR \
-		LFS=$LFS \
-		INSTALLER_DIR=$INSTALLER_DIR \
-		PARALLELISMFLAGS=$PARALLELISMFLAGS \
-		KVER=$KVER \
-		STAGE=$STAGE \
-		STAGE_ORDER=$STAGE_ORDER \
+		BUILD_DEBUG="${BUILD_DEBUG}" \
+		BUILD_EXTRAS="${BUILD_EXTRAS}" \
+		KVER="${KVER}" \
+		EMB="${EMB}" \
+		\
+		CCACHE_DIR="/usr/src/ccache" \
+		CCACHE_PREFIX="${CCACHE_PREFIX}" \
+		CCACHE_HASHDIR="${CCACHE_HASHDIR}" \
+		DISTCC_DIR="/usr/src/distcc" \
+		\
+		LINKER="${LINKER}" \
+		MACHINE="${MACHINE}" \
+		MACHINE_REAL="${MACHINE_REAL}" \
+		\
+		CFLAGS="${CFLAGS}" \
+		CXXFLAGS="${CXXFLAGS}" \
+		IFS_HOST="${IFS_HOST}" \
+		IFS_TARGET="${IFS_TARGET}" \
+		PARALLELISMFLAGS="${PARALLELISMFLAGS}" \
+		\
+		CONFIG_ROOT="${CONFIG_ROOT}" \
+		CDROM_DIR="${CDROM_DIR}" \
+		IMAGES_DIR="${IMAGES_DIR}" \
+		INSTALLER_DIR="${INSTALLER_DIR}" \
+		TOOLS_DIR="${TOOLS_DIR}" \
+		\
+		STAGE="${STAGE}" \
+		STAGE_ORDER="${STAGE_ORDER}" \
+		\
+		IMAGENAME="${IMAGENAME}" \
+		PACKAGES_CORE="${PACKAGES_CORE}" \
+		PACKAGES_EXTRA="${PACKAGES_EXTRA}" \
+		PACKAGES_DEBUG="${PACKAGES_DEBUG}" \
+		\
+		ROOTFILE=$(rootfiles_findone $1 | sed "s,$BASEDIR,/usr/src,g") \
+		LOGFILE=$(echo ${LOGFILE} | sed "s,${BASEDIR},/usr/src,g") \
+		\
 		make -f $* install >> $LOGFILE 2>&1
 
 	local COMPILE_SUCCESS=$?
@@ -305,42 +338,55 @@ ipfire_make() {
 
 	local PKG_TIME_START=$(date +%s)
 	chroot $LFS $TOOLS_DIR/bin/env -i \
-		HOME=/root \
-		TERM=$TERM \
+		HOME="/root" \
+		TERM="${TERM}" \
 		PS1='\u:\w\$ ' \
-		PATH=$PATH \
-		CONFIG_ROOT=${CONFIG_ROOT} \
-		VERSION=${VERSION} \
-		NAME=${NAME} \
-		SNAME=${SNAME} \
-		SLOGAN="$SLOGAN" \
-		CCACHE_DIR=/usr/src/ccache \
-		CCACHE_PREFIX=${CCACHE_PREFIX} \
-		CCACHE_HASHDIR=${CCACHE_HASHDIR} \
-		DISTCC_DIR=/usr/src/distcc \
-		PARALLELISMFLAGS=$PARALLELISMFLAGS \
-		LINKER=$LINKER \
-		TOOLS_DIR=$TOOLS_DIR \
-		INSTALLER_DIR=$INSTALLER_DIR \
-		CDROM_DIR=$CDROM_DIR \
-		IMAGES_DIR=$IMAGES_DIR \
-		MACHINE="$MACHINE" \
-		MACHINE_REAL="$MACHINE_REAL" \
-		CFLAGS="$CFLAGS" \
-		CXXFLAGS="$CXXFLAGS" \
-		IFS_HOST="$IFS_HOST" \
-		IFS_TARGET="$IFS_TARGET" \
+		PATH="${PATH}" \
+		\
+		NAME="${NAME}" \
+		SNAME="${SNAME}" \
+		SLOGAN="${SLOGAN}" \
+		VERSION="${VERSION}" \
 		TARGET="$TARGET" \
-		BUILD_DEBUG=$BUILD_DEBUG \
-		BUILD_EXTRAS=$BUILD_EXTRAS \
-		KVER=$KVER \
-		STAGE=$STAGE \
-		STAGE_ORDER=$STAGE_ORDER \
-		EMB=$EMB \
-		IMAGENAME=$IMAGENAME \
-		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
+		BUILD_DEBUG="${BUILD_DEBUG}" \
+		BUILD_EXTRAS="${BUILD_EXTRAS}" \
+		KVER="${KVER}" \
+		EMB="${EMB}" \
+		\
+		CCACHE_DIR="/usr/src/ccache" \
+		CCACHE_PREFIX="${CCACHE_PREFIX}" \
+		CCACHE_HASHDIR="${CCACHE_HASHDIR}" \
+		DISTCC_DIR="/usr/src/distcc" \
+		\
+		LINKER="${LINKER}" \
+		MACHINE="${MACHINE}" \
+		MACHINE_REAL="${MACHINE_REAL}" \
+		\
+		CFLAGS="${CFLAGS}" \
+		CXXFLAGS="${CXXFLAGS}" \
+		IFS_HOST="${IFS_HOST}" \
+		IFS_TARGET="${IFS_TARGET}" \
+		PARALLELISMFLAGS="${PARALLELISMFLAGS}" \
+		\
+		CONFIG_ROOT="${CONFIG_ROOT}" \
+		CDROM_DIR="${CDROM_DIR}" \
+		IMAGES_DIR="${IMAGES_DIR}" \
+		INSTALLER_DIR="${INSTALLER_DIR}" \
+		TOOLS_DIR="${TOOLS_DIR}" \
+		\
+		STAGE="${STAGE}" \
+		STAGE_ORDER="${STAGE_ORDER}" \
+		\
+		IMAGENAME="${IMAGENAME}" \
+		PACKAGES_CORE="${PACKAGES_CORE}" \
+		PACKAGES_EXTRA="${PACKAGES_EXTRA}" \
+		PACKAGES_DEBUG="${PACKAGES_DEBUG}" \
+		\
+		ROOTFILE=$(rootfiles_findone $1 | sed "s,$BASEDIR,/usr/src,g") \
+		LOGFILE=$(echo ${LOGFILE} | sed "s,${BASEDIR},/usr/src,g") \
+		\
 		bash -x -c "cd /usr/src/lfs && \
-		make -f $* LFS_BASEDIR=/usr/src install" >>$LOGFILE 2>&1
+		make -f $* LFS_BASEDIR=/usr/src install" >> ${LOGFILE} 2>&1
 
 	local COMPILE_SUCCESS=$?
 	local PKG_TIME_END=$(date +%s)
@@ -370,32 +416,53 @@ package_make() {
 
 	local PKG_TIME_START=$(date +%s)
 	chroot $LFS $TOOLS_DIR/bin/env -i \
-		HOME=/root \
-		TERM=$TERM \
+		HOME="/root" \
+		TERM="${TERM}" \
 		PS1='\u:\w\$ ' \
-		PATH=$PATH \
-		CONFIG_ROOT=${CONFIG_ROOT} \
-		VERSION=${VERSION} \
-		NAME=${NAME} \
-		SNAME=${SNAME} \
-		SLOGAN="$SLOGAN" \
-		LINKER=$LINKER \
-		TOOLS_DIR=$TOOLS_DIR \
-		INSTALLER_DIR=$INSTALLER_DIR \
-		CDROM_DIR=$CDROM_DIR \
-		IMAGES_DIR=$IMAGES_DIR \
-		MACHINE="$MACHINE" \
-		MACHINE_REAL="$MACHINE_REAL" \
-		IFS_HOST="$IFS_HOST" \
-		IFS_TARGET="$IFS_TARGET" \
+		PATH="${PATH}" \
+		\
+		NAME="${NAME}" \
+		SNAME="${SNAME}" \
+		SLOGAN="${SLOGAN}" \
+		VERSION="${VERSION}" \
 		TARGET="$TARGET" \
-		BUILD_DEBUG=$BUILD_DEBUG \
-		BUILD_EXTRAS=$BUILD_EXTRAS \
-		KVER=$KVER \
-		EMB=$EMB \
-		IMAGENAME=$IMAGENAME \
+		BUILD_DEBUG="${BUILD_DEBUG}" \
+		BUILD_EXTRAS="${BUILD_EXTRAS}" \
+		KVER="${KVER}" \
+		EMB="${EMB}" \
+		\
+		CCACHE_DIR="/usr/src/ccache" \
+		CCACHE_PREFIX="${CCACHE_PREFIX}" \
+		CCACHE_HASHDIR="${CCACHE_HASHDIR}" \
+		DISTCC_DIR="/usr/src/distcc" \
+		\
+		LINKER="${LINKER}" \
+		MACHINE="${MACHINE}" \
+		MACHINE_REAL="${MACHINE_REAL}" \
+		\
+		CFLAGS="${CFLAGS}" \
+		CXXFLAGS="${CXXFLAGS}" \
+		IFS_HOST="${IFS_HOST}" \
+		IFS_TARGET="${IFS_TARGET}" \
+		PARALLELISMFLAGS="${PARALLELISMFLAGS}" \
+		\
+		CONFIG_ROOT="${CONFIG_ROOT}" \
+		CDROM_DIR="${CDROM_DIR}" \
+		IMAGES_DIR="${IMAGES_DIR}" \
+		INSTALLER_DIR="${INSTALLER_DIR}" \
+		TOOLS_DIR="${TOOLS_DIR}" \
+		\
+		STAGE="${STAGE}" \
+		STAGE_ORDER="${STAGE_ORDER}" \
+		\
+		IMAGENAME="${IMAGENAME}" \
+		PACKAGES_CORE="${PACKAGES_CORE}" \
+		PACKAGES_EXTRA="${PACKAGES_EXTRA}" \
+		PACKAGES_DEBUG="${PACKAGES_DEBUG}" \
+		\
 		ROOTFILE=$(rootfiles_findone $1 | sed "s,$BASEDIR,/usr/src,g") \
-		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
+		LOGFILE=$(echo ${LOGFILE} | sed "s,${BASEDIR},/usr/src,g") \
+		\
 		bash -x -c "cd /usr/src/lfs && \
 		make -f $* LFS_BASEDIR=/usr/src package" >>$LOGFILE 2>&1
 
