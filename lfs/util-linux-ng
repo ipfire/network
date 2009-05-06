@@ -25,13 +25,15 @@
 include Config
 
 PKG_NAME   = util-linux-ng
-PKG_VER    = 2.14.2
+PKG_VER    = 2.15
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+CFLAGS    += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
 ###############################################################################
 # Top-level Rules
@@ -61,8 +63,6 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 ifeq "$(STAGE)" "toolchain"
-	# There's a bug with this version of Util-linux-ng and the E2fsprogs version
-	# we installed, so -luuid needs to be added.
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
