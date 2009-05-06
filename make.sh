@@ -472,8 +472,10 @@ packages_build() {
 	beautify message DONE
 
 	if [ ${EMB} -eq 0 ]; then
-		ipfire_make initramfs
-		ipfire_make images
+		ipfire_make images-core
+		ipfire_make images-info
+		ipfire_make images-initramfs
+		ipfire_make images-overlays
 		ipfire_make pxe
 		ipfire_make cdrom
 

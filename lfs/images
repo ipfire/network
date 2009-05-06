@@ -42,20 +42,24 @@ DEPS       =
 URL        =
 LICENSE    =
 
-IMAGE_FILE = $(IMAGES_DIR)/$(SNAME)-$(VERSION).img
-
-PASS       = $(firstword $(MAKEFILE_LIST))
-
-ifeq "$(PASS)" "pxe"
-	PREFIX = $(SNAME)-$(VERSION)
-else
-	DEPS2 = $(IMAGE_FILE)
-	PREFIX = isolinux
+ifeq "$(firstword $(MAKEFILE_LIST))" "images-initramfs"
+	PASS = initramfs
 endif
 
-ROOTFILES  = $(DIR_SOURCE)/rootfiles/core
-ifeq "$(BUILD_DEBUG)" "1"
-	ROOTFILES += $(DIR_SOURCE)/rootfiles/debug
+ifeq "$(firstword $(MAKEFILE_LIST))" "images-overlays"
+	PASS = overlays
+endif
+
+ifeq "$(firstword $(MAKEFILE_LIST))" "images-core"
+	PASS = core
+endif
+
+ifeq "$(firstword $(MAKEFILE_LIST))" "images-info"
+	PASS = info
+endif
+
+ifneq "$(PASS)" ""
+	PKG_NAME = images-$(PASS)
 endif
 
 ###############################################################################
@@ -81,96 +85,33 @@ $(objects):
 # Installation Details
 ###############################################################################
 
-$(IMAGE_FILE):
-	@rm -rf $(IMAGES_DIR)/$(SNAME)-$(VERSION).img /tmp/$(SNAME)-$(VERSION)
+$(OBJECT): $(objects)
 
-	# For the moment, we extract all available packages.
-	cd $(DIR_PACKAGES) && $(DIR_SOURCE)/pakfire/decompressor --root=/tmp/$(SNAME)-$(VERSION) $(PACKAGES_CORE)
+ifeq "$(PASS)" "info"
+	# info file
+	(echo "Release: $(NAME)-$(VERSION) ($(SLOGAN))"; \
+	 echo "Build host: $$(hostname -f)"; \
+	 echo "Date: $$(date -u)") >> $(IMAGES_DIR)/.$(SNAME)info
+endif
+
+ifeq "$(PASS)" "initramfs"
+	mkliveramfs -v -f --with-net $(IMAGES_DIR)/initramfs-$(VERSION).img $(KVER)
+endif
+
+ifeq "$(PASS)" "core"
+	@rm -rf /tmp/$(SNAME)-$(VERSION)
+
+	cd $(DIR_PACKAGES) && $(DIR_SOURCE)/pakfire/decompressor \
+		--root=/tmp/$(SNAME)-$(VERSION) $(PACKAGES_CORE)
 
 	# Do some tests im the environment is sane
 	ldconfig -r /tmp/$(SNAME)-$(VERSION)
 
-	cd /tmp/$(SNAME)-$(VERSION) && mksquashfs * $(IMAGES_DIR)/$(SNAME)-$(VERSION).img -b 1M
+	cd /tmp/$(SNAME)-$(VERSION) && mksquashfs * $(IMAGE_FILE) -b 1M -noappend
 	rm -rf /tmp/$(SNAME)-$(VERSION)
-
-$(OBJECT): $(objects) $(DEPS2)
-	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info
-
-ifeq "$(PASS)" "pxe"
-	mkdir -pv $(CDROM_DIR)/{pxelinux.cfg,$(PREFIX)}
 endif
 
-ifeq "$(PASS)" "cdrom"
-	mkdir -pv $(CDROM_DIR)/{isolinux,doc}
-
-	cp -vf $(IMAGES_DIR)/$(SNAME)-$(VERSION).img $(CDROM_DIR)
-	cd $(CDROM_DIR) && unsquashfs -ls $(SNAME)-$(VERSION).img > $(SNAME)-$(VERSION).ls
-
-	cd $(INSTALLER_DIR) && mksquashfs * $(CDROM_DIR)/pomona-$(VERSION).overlay -b 1M
-
-	# These files won't be included in the iso
-	@rm -rf $(CDROM_DIR)/archive.{files,errors} $(CDROM_DIR)/tmp
-
-	# Other files
-	sed 's/VERSION/$(VERSION)/' $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README
-	cp -vf $(DIR_SRC)/doc/COPYING $(CDROM_DIR)
-	cp -vf $(DIR_SRC)/doc/{ChangeLog,packages-list.txt} $(CDROM_DIR)/doc
+ifeq "$(PASS)" "overlays"
+	# Creating installer's overlay
+	cd $(INSTALLER_DIR) && mksquashfs * $(IMAGES_DIR)/pomona-$(VERSION).overlay -b 1M -noappend
 endif
-
-ifneq "$(PASS)" "$(THISAPP)"
-	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/$(PREFIX)/initrd0
-	cp -vf /boot/ipfirekernel-$(KVER) $(CDROM_DIR)/$(PREFIX)/$(SNAME)0
-
-	cp -vf /usr/share/syslinux/vesamenu.c32 \
-		$(DIR_CONF)/bootloader/splash.{jpg,lss} \
-		$(DIR_CONF)/bootloader/*.msg \
-			$(CDROM_DIR)/$(PREFIX)/
-endif
-
-ifeq "$(PASS)" "pxe"
-	cp -vf /usr/share/syslinux/pxelinux.0 $(CDROM_DIR)/
-	sed	-e "s/SNAME/$(SNAME)/g" \
-		-e "s/NAME/$(NAME)/g" \
-		-e "s/VERSION/$(VERSION)/g" \
-		-e "s@$(SNAME)0@$(PREFIX)/$(SNAME)0@g" \
-		-e "s@initrd0@$(PREFIX)/initrd0@g" \
-		-e "s@splash@$(PREFIX)/splash@g" \
-		-e "s@vesamenu.c32@$(PREFIX)/vesamenu.c32@g" \
-		$(DIR_CONF)/bootloader/installer.conf \
-		> $(CDROM_DIR)/pxelinux.cfg/$(SNAME)-pxe-$(VERSION).model
-
-	sed -e "s@splash@$(PREFIX)/splash@g" \
-		-i $(CDROM_DIR)/$(PREFIX)/boot.msg
-
-	cd $(CDROM_DIR) && \
-		tar cfz $(IMAGES_DIR)/$(IMAGENAME).pxe.tar.gz *
-endif
-
-ifeq "$(PASS)" "cdrom"
-	cp -vf /usr/share/syslinux/isolinux.bin $(CDROM_DIR)/$(PREFIX)/
-
-	# Copying extra packages to cdrom
-	mkdir -pv $(CDROM_DIR)/packages
-	for package in $(PACKAGES_EXTRA); do \
-		cp -vf $(DIR_PACKAGES)/$$package $(CDROM_DIR)/packages; \
-	done
-	sed	-e "s/SNAME/$(SNAME)/g" \
-		-e "s/NAME/$(NAME)/g" \
-		-e "s/VERSION/$(VERSION)/g" \
-		$(DIR_CONF)/bootloader/installer.conf \
-		> $(CDROM_DIR)/$(PREFIX)/isolinux.cfg
-	cp -vf /usr/lib/memtest86+/memtest.bin $(CDROM_DIR)/$(PREFIX)/memtest
-
-	# info file
-	echo "Release: $(NAME)-$(VERSION)" >> $(CDROM_DIR)/.$(SNAME)info
-	echo "Build host: $$(hostname)" >> $(CDROM_DIR)/.$(SNAME)info
-	echo "Date: $$(date)" >> $(CDROM_DIR)/.$(SNAME)info
-	echo "SHA1: $$(sha1sum $(CDROM_DIR)/$(SNAME)-$(VERSION).img | awk '{ print $$1 }')" \
-		>> $(CDROM_DIR)/.$(SNAME)info
-
-	cd $(CDROM_DIR) && mkisofs -J -r -V "$(NAME)_$(VERSION)" \
-		-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
-		-boot-info-table . > $(IMAGES_DIR)/$(IMAGENAME).iso
-endif
-	
-	@rm -rf $(CDROM_DIR)/* $(CDROM_DIR)/.$(SNAME)info

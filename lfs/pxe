@@ -37,7 +37,7 @@ GROUP      =
 CORE       = no
 EXTRA      = no
 DEBUG      = no
-DEPS       =
+DEPS       = images-initramfs
 
 URL        =
 LICENSE    =
@@ -70,9 +70,8 @@ $(objects):
 $(OBJECT): $(objects)
 	@rm -rf $(PXE_DIR)/* && mkdir -pv $(PXE_DIR)/{pxelinux.cfg,$(SNAME)}
 
-	# Make image with networking support
-	mkliveramfs -f --with-net $(CDROM_DIR)/$(SNAME)/initrd0 $(KVER)
-
+	# Copy image with networking support
+	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/$(SNAME)/initrd0
 	cp -vf /boot/ipfirekernel-$(KVER) $(CDROM_DIR)/$(SNAME)/$(SNAME)0
 	cp -vf /usr/share/syslinux/vesamenu.c32 \
 		$(DIR_CONF)/bootloader/splash.{jpg,lss} \

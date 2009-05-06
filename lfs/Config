@@ -71,6 +71,8 @@ CONFIGURE_ARCH = \
 
 PKG_PACKAGE=$(PKG_NAME)-$(PKG_VER)-$(SNAME)$(PKG_REL).$(TARGET).ipk
 
+IMAGE_FILE  = $(IMAGES_DIR)/$(SNAME)-$(VERSION).sfs
+
 ###############################################################################
 # Common Macro Definitions
 ###############################################################################
@@ -112,11 +114,9 @@ define DO_PKG_INFO
 endef
 
 define DO_PACKAGE
-	if [ -n "$$ROOTFILE" ]; then \
-		NAME=$(NAME) SNAME=$(SNAME) VERSION=$(VERSION) KVER=$(KVER) \
-		TARGET=$(TARGET) MACHINE=$(MACHINE) IFS_TARGET=$(IFS_TARGET) \
-			$(DIR_SOURCE)/pakfire/compressor $(PKG_PACKAGE) $$ROOTFILE; \
-	fi
+	NAME=$(NAME) SNAME=$(SNAME) VERSION=$(VERSION) KVER=$(KVER) \
+	TARGET=$(TARGET) MACHINE=$(MACHINE) IFS_TARGET=$(IFS_TARGET) \
+		$(DIR_SOURCE)/pakfire/compressor $(PKG_PACKAGE) $$ROOTFILE
 endef
 
 # For each package we create a list of files that it installed under 
