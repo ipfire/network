@@ -277,6 +277,10 @@ ipfire_build() {
 	ipfire_make directfb
 	ipfire_make pdns
 	ipfire_make pdns-recursor
+	ipfire_make libevent
+	ipfire_make libnfsidmap
+	ipfire_make libgssglue
+	ipfire_make librpcsecgss
 	
 	### Building vpn stuff
 	#
@@ -409,7 +413,7 @@ misc_build() {
 	#ipfire_make guardian
 	#ipfire_make ipfireseeder
 	ipfire_make portmap
-	#ipfire_make nfs
+	ipfire_make nfs-utils
 
 	### Debugging
 	#
