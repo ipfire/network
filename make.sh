@@ -278,9 +278,9 @@ ipfire_build() {
 	ipfire_make pdns
 	ipfire_make pdns-recursor
 	ipfire_make libevent
-        ipfire_make libnfsidmap
-        ipfire_make libgssglue
-        ipfire_make librpcsecgss
+	ipfire_make libnfsidmap
+	ipfire_make libgssglue
+	ipfire_make librpcsecgss
 	
 	### Building vpn stuff
 	#
