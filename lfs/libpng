@@ -57,7 +57,8 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-pngconf.patch
 
 download: $(objects)
 
@@ -79,6 +80,10 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	
+	#This patch adds new CFLAGS for compiling.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pngconf.patch
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
