@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = libnfnetlink
 PKG_VER    = 0.0.41
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,23 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+
+URL        = http://www.netfilter.org/projects/libnfnetlink/downloads.html
+LICENSE    = GPL
+SHORT_DESC = A low-level library for netfilter.
+
+define LONG_DESC
+	libnfnetlink is a low-level userspace library for \ 
+	nfnetlink-based communication between the kernel-side netfilter \ 
+	and the user-space world. It is therefore the fundamental layer \
+	for all other nfnetlink-enabled user-space programs interfacing \
+	with the netfilter subsystem of the Linux kernel.
+endef
 
 ###############################################################################
 # Top-level Rules
