@@ -277,7 +277,7 @@ if [ -n "$OVERLAY" ]; then
 	aufsmountoptions="$aufsmountoptions:/mnt/overlayfs=rr"
 fi
 
-SQUASHED=$(ls /mnt/source/*.img 2>/dev/null || true)
+SQUASHED=$(ls /mnt/source/*.sfs 2>/dev/null || true)
 if [ -n "$SQUASHED" ] ; then
 	vecho "Setting up embedded squashfs..."
 	mount -t squashfs -o loop,ro $SQUASHED /mnt/squashfs

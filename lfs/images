@@ -90,8 +90,8 @@ $(OBJECT): $(objects)
 ifeq "$(PASS)" "info"
 	# info file
 	(echo "Release: $(NAME)-$(VERSION) ($(SLOGAN))"; \
-	 echo "Build host: $$(hostname -f)"; \
-	 echo "Date: $$(date -u)") >> $(IMAGES_DIR)/.$(SNAME)info
+	 echo "Build host: $$(cat /proc/sys/kernel/hostname)"; \
+	 echo "Date: $$(date -u)") > $(IMAGES_DIR)/.$(SNAME)info
 endif
 
 ifeq "$(PASS)" "initramfs"
@@ -106,6 +106,15 @@ ifeq "$(PASS)" "core"
 
 	# Do some tests im the environment is sane
 	ldconfig -r /tmp/$(SNAME)-$(VERSION)
+
+	# Create needed directories and device nodes
+	cd /tmp/$(SNAME)-$(VERSION) && mkdir -pv {dev,proc,sys}
+	cd /tmp/$(SNAME)-$(VERSION) && mknod -m 0666 dev/null c 1 3
+	cd /tmp/$(SNAME)-$(VERSION) && mknod -m 0600 dev/console c 5 1
+
+	# Hack for bash
+	cd /tmp/$(SNAME)-$(VERSION) && cp -vf /bin/bash bin/bash
+	cd /tmp/$(SNAME)-$(VERSION) && ln -svf bash bin/sh
 
 	cd /tmp/$(SNAME)-$(VERSION) && mksquashfs * $(IMAGE_FILE) -b 1M -noappend
 	rm -rf /tmp/$(SNAME)-$(VERSION)

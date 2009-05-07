@@ -95,7 +95,7 @@ endif
 		$(DIR_CONF)/bootloader/splash.{jpg,lss} \
 		$(DIR_CONF)/bootloader/*.msg $(CDROM_DIR)/isolinux/
 	$(INSTALL_CONFIG) $(DIR_CONF)/bootloader/installer.conf \
-		> $(CDROM_DIR)/$(PREFIX)/isolinux.cfg
+		> $(CDROM_DIR)/isolinux/isolinux.cfg
 
 	# Info file
 	echo "Release: $(NAME)-$(VERSION)" >> $(CDROM_DIR)/.$(SNAME)info

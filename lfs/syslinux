@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = syslinux
-PKG_VER    = 3.73
+PKG_VER    = 3.80
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,15 +33,17 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+CORE       = yes
+EXTRA      = no
+DEBUG      = no
+
 CFLAGS     = -Werror -Wno-unused -finline-limit=2000
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	$(THISAPP)-nopie.patch \
-	$(THISAPP)-nostrip.patch
+objects = $(DL_FILE)
 
 download: $(objects)
 
@@ -63,9 +65,8 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-nopie.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-nostrip.patch
 	cd $(DIR_APP) && make clean
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) install
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) install \
+		CC="gcc -std=gnu99 -fgnu89-inline -fno-pic -fno-pie -nopie"
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
