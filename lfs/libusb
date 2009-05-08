@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = libusb
 PKG_VER    = 1.0.0
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,20 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       =
+
+URL        = http://sourceforge.net/projects/libusb/
+LICENSE    = LGPLv2+
+SHORT_DESC = A library which allows userspace access to USB devices.
+
+define LONG_DESC
+	This package provides a way for applications to access USB devices.
+endef
 
 ###############################################################################
 # Top-level Rules

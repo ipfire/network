@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = libpcap
 PKG_VER    = 1.0.0
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,25 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+
+URL        = http://www.tcpdump.org/
+LICENSE    = BSD with advertising
+SHORT_DESC = A system-independent interface for user-level packet capture.
+
+define LONG_DESC
+	Libpcap provides a portable framework for low-level network \
+	monitoring.  Libpcap can provide network statistics collection, \
+	security monitoring and network debugging.  Since almost every \
+	system vendor provides a different interface for packet capture, \ 
+	the libpcap authors created this system-independent API to ease in \
+	porting and to alleviate the need for several system-dependent \ 
+	packet capture modules in each application.
+endef
 
 ###############################################################################
 # Top-level Rules
@@ -68,7 +85,6 @@ $(OBJECT): $(objects)
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--disable-static
-
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make shared $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install install-shared-so

@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,8 +24,8 @@
 
 include Config
 
-PKG_NAME   = nano
-PKG_VER    = 2.0.9
+PKG_NAME   = fuse
+PKG_VER    = 2.7.4
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -35,24 +35,29 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
-CORE       = no
-EXTRA      = yes
+GROUP      = System/Filesystems
+CORE       = yes
+EXTRA      = no
 DEBUG      = no
-DEPS       = slang
+DEPS       =
 
-URL        = http://www.nano-editor.org/
-LICENSE    = GPLv2+
-SHORT_DESC = A small text editor.
+URL        = http://fuse.sf.net/
+LICENSE    = GPL+
+SHORT_DESC = File System in Userspace (FUSE) utilities.
 
 define LONG_DESC
-	GNU nano is a small and friendly text editor.
+	With FUSE it is possible to implement a fully functional \ 
+	filesystem in a userspace program. This package contains the \
+	FUSE userspace tools to mount a FUSE filesystem.
 endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) 
+objects = $(DL_FILE) \
+	fuse-2.7.4-openfix.patch \
+	fuse-2.7.4.-udev_rules.patch
 
 download: $(objects)
 
@@ -78,12 +83,11 @@ $(OBJECT): $(objects)
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--sysconfdir=/etc/nano \
-			--enable-color \
-			--enable-multibuffer \
-			--enable-nanorc
+			--disable-kernel-module \
+			--disable-static
+#	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/fuse-2.7.4-openfix.patch
+#	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/fuse-2.7.4.-udev_rules.patch
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	cd $(DIR_APP) && install -v -m644 -D doc/nanorc.sample /etc/nano/nanorc.sample
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

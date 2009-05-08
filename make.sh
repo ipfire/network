@@ -302,6 +302,7 @@ ipfire_build() {
 	ipfire_make dmraid
 	ipfire_make cryptsetup-luks
 	ipfire_make python-cryptsetup
+	ipfire_make fuse
 
 	### Building hardware utils
 	#

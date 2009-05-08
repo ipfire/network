@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = libnetfilter_conntrack
 PKG_VER    = 0.0.98
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,22 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       =
+
+URL        = http://www.netfilter.org/projects/libnetfilter_conntrack/downloads.html
+LICENSE    = GPL
+SHORT_DESC = libnetfilter_conntrack is a userspace library.
+
+define LONG_DESC
+	libnetfilter_conntrack is a library that allows user-space \ 
+	programs to interface the kernel connection tracking table of \ 
+	the netfilter subsystem in the Linux kernel.
+endef
 
 ###############################################################################
 # Top-level Rules
