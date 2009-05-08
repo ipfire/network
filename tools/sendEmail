@@ -56,5 +56,5 @@ server = smtplib.SMTP(server)
 if auth:
 	server.login(user, password)
 
-server.sendmail(fromaddr, toaddrs, msg.as_string())
+server.sendmail(fromaddr, toaddrs.split(", "), msg.as_string())
 server.quit()
