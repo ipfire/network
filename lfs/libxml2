@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = libxml2
 PKG_VER    = 2.7.2
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,28 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       =
+
+URL        = http://xmlsoft.org/
+LICENSE    = MIT
+SHORT_DESC = Library providing XML and HTML support.
+
+define LONG_DESC
+	This library allows to manipulate XML files. It includes support \
+	to read, modify and write XML and HTML files. There is DTDs support \
+	this includes parsing and validation even with complex DtDs, either \
+	at parse time or later once the document has been modified. The output \
+	can be a simple SAX stream or and in-memory DOM like representations. \
+	In this case one can use the built-in XPath and XPointer implementation \
+	to select subnodes or ranges. A flexible Input/Output mechanism is \
+	available, with existing HTTP and FTP modules and combined to an URI \
+	library.
+endef
 
 ###############################################################################
 # Top-level Rules
