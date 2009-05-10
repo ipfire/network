@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import block
 
 import formats
 
@@ -18,6 +19,7 @@ class DeviceTree:
         self._actions = []
 
         self._ignoredDisks = []
+        self.immutableDevices = []
         for disk in self.storage.ignoredDisks:
             self.addIgnoredDisk(disk)
 
@@ -251,46 +253,45 @@ class DeviceTree:
         sysfs_path = udev_device_get_sysfs_path(info)
 
         if self.isIgnored(info):
-            #self.installer.log.debug("Ignoring %s (%s)" % (name, sysfs_path))
+            self.installer.log.debug("Ignoring %s (%s)" % (name, sysfs_path))
             return
 
-        #self.installer.log.debug("Scanning %s (%s)..." % (name, sysfs_path))
+        self.installer.log.debug("Scanning %s (%s)..." % (name, sysfs_path))
         device = self.getDeviceByName(name)
 
         #
         # The first step is to either look up or create the device
         #
         if udev_device_is_dm(info):
-            pass
-        #    # try to look up the device
-        #    if device is None and uuid:
-        #        # try to find the device by uuid
-        #        device = self.getDeviceByUuid(uuid)
-        #
-        #    if device is None:
-        #        device = self.addUdevDMDevice(info)
-        #elif udev_device_is_md(info):
-        #    if device is None and uuid:
-        #        # try to find the device by uuid
-        #        device = self.getDeviceByUuid(uuid)
-        #
-        #    if device is None:
-        #        device = self.addUdevMDDevice(info)
-        #elif udev_device_is_cdrom(info):
-        #    if device is None:
-        #        device = self.addUdevOpticalDevice(info)
-        #elif udev_device_is_dmraid(info):
+            # try to look up the device
+            if device is None and uuid:
+                # try to find the device by uuid
+                device = self.getDeviceByUuid(uuid)
+        
+            if device is None:
+                device = self.addUdevDMDevice(info)
+        elif udev_device_is_md(info):
+            if device is None and uuid:
+                # try to find the device by uuid
+                device = self.getDeviceByUuid(uuid)
+        
+            if device is None:
+                device = self.addUdevMDDevice(info)
+        elif udev_device_is_cdrom(info):
+            if device is None:
+                device = self.addUdevOpticalDevice(info)
+        elif udev_device_is_dmraid(info):
             # This is special handling to avoid the "unrecognized disklabel"
             # code since dmraid member disks won't have a disklabel. We
             # use a StorageDevice because DiskDevices need disklabels.
             # Quite lame, but it doesn't matter much since we won't use
             # the StorageDevice instances for anything.
-        #    if device is None:
-        #        device = StorageDevice(name,
-        #                        major=udev_device_get_major(info),
-        #                        minor=udev_device_get_minor(info),
-        #                        sysfsPath=sysfs_path, exists=True)
-        #        self._addDevice(device)
+            if device is None:
+                device = StorageDevice(name,
+                                major=udev_device_get_major(info),
+                                minor=udev_device_get_minor(info),
+                                sysfsPath=sysfs_path, exists=True)
+                self._addDevice(device)
         elif udev_device_is_disk(info):
             if device is None:
                 device = self.addUdevDiskDevice(info)
@@ -299,7 +300,7 @@ class DeviceTree:
                 device = self.addUdevPartitionDevice(info)
 
         # now handle the device's formatting
-        #self.handleUdevDeviceFormat(info, device)
+        self.handleUdevDeviceFormat(info, device)
 
     def addUdevDiskDevice(self, info):
         name = udev_device_get_name(info)
@@ -357,6 +358,165 @@ class DeviceTree:
 
         self._addDevice(device)
         return device
+
+    def addUdevOpticalDevice(self, info):
+        # Looks like if it has ID_INSTANCE=0:1 we can ignore it.
+        device = OpticalDevice(self.installer, udev_device_get_name(info),
+                               major=udev_device_get_major(info),
+                               minor=udev_device_get_minor(info),
+                               sysfsPath=udev_device_get_sysfs_path(info))
+        self._addDevice(device)
+        return device
+
+    def handleUdevDeviceFormat(self, info, device):
+        #log.debug("%s" % info)
+        name = udev_device_get_name(info)
+        sysfs_path = udev_device_get_sysfs_path(info)
+        uuid = udev_device_get_uuid(info)
+        label = udev_device_get_label(info)
+        format_type = udev_device_get_format(info)
+
+        format = None
+        if (not device) or (not format_type) or device.format.type:
+            # this device has no formatting or it has already been set up
+            # FIXME: this probably needs something special for disklabels
+            self.installer.log.debug("no type or existing type for %s, bailing" % (name,))
+            return
+
+        # set up the common arguments for the format constructor
+        args = [format_type]
+        kwargs = {"uuid": uuid,
+                  "label": label,
+                  "device": device.path,
+                  "exists": True}
+
+        # set up type-specific arguments for the format constructor
+        if format_type == "crypto_LUKS":
+            # luks/dmcrypt
+            kwargs["name"] = "luks-%s" % uuid
+        elif format_type == "linux_raid_member":
+            # mdraid
+            try:
+                kwargs["mdUuid"] = udev_device_get_md_uuid(info)
+            except KeyError:
+                self.installer.log.debug("mdraid member %s has no md uuid" % name)
+        elif format_type == "LVM2_member":
+            # lvm
+            try:
+                kwargs["vgName"] = udev_device_get_vg_name(info)
+            except KeyError as e:
+                self.installer.log.debug("PV %s has no vg_name" % name)
+            try:
+                kwargs["vgUuid"] = udev_device_get_vg_uuid(info)
+            except KeyError:
+                self.installer.log.debug("PV %s has no vg_uuid" % name)
+            try:
+                kwargs["peStart"] = udev_device_get_pv_pe_start(info)
+            except KeyError:
+                self.installer.log.debug("PV %s has no pe_start" % name)
+
+        try:
+            self.installer.log.debug("type detected on '%s' is '%s'" % (name, format_type,))
+            device.format = formats.getFormat(format_type, *args, **kwargs)
+        except FSError, e:
+            self.installer.log.debug("type '%s' on '%s' invalid, assuming no format - %s" %
+                      (format_type, name, e,))
+            device.format = formats.DeviceFormat(self.installer)
+            return
+
+        #
+        # now do any special handling required for the device's format
+        #
+        #if device.format.type == "luks":
+        #    self.handleUdevLUKSFormat(info, device)
+        #elif device.format.type == "mdmember":
+        #    self.handleUdevMDMemberFormat(info, device)
+        #elif device.format.type == "dmraidmember":
+        #    self.handleUdevDMRaidMemberFormat(info, device)
+        #elif device.format.type == "lvmpv":
+        #    self.handleUdevLVMPVFormat(info, device)
+
+    def handleUdevDMRaidMemberFormat(self, info, device):
+        name = udev_device_get_name(info)
+        sysfs_path = udev_device_get_sysfs_path(info)
+        uuid = udev_device_get_uuid(info)
+        major = udev_device_get_major(info)
+        minor = udev_device_get_minor(info)
+
+        def _all_ignored(rss):
+            retval = True
+            for rs in rss:
+                if rs.name not in self._ignoredDisks:
+                    retval = False
+                    break
+            return retval
+
+        # Have we already created the DMRaidArrayDevice?
+        rss = block.getRaidSetFromRelatedMem(uuid=uuid, name=name,
+                                            major=major, minor=minor)
+        if len(rss) == 0:
+            # we ignore the device in the hope that all the devices
+            # from this set will be ignored.
+            # FIXME: Can we reformat a raid device?
+            self.addIgnoredDisk(device.name)
+            return
+
+        # We ignore the device if all the rss are in self._ignoredDisks
+        if _all_ignored(rss):
+            self.addIgnoredDisk(device.name)
+            return
+
+        for rs in rss:
+            dm_array = self.getDeviceByName(rs.name)
+            if dm_array is not None:
+                # We add the new device.
+                dm_array._addDevice(device)
+            else:
+                # Activate the Raid set.
+                rs.activate(mknod=True)
+
+                # Create the DMRaidArray
+                if self.zeroMbr:
+                    cb = lambda: True
+                else:
+                    cb = lambda: questionInitializeDisk(self.intf,
+                                                        rs.name)
+
+                # Create the DMRaidArray
+                if not self.clearPartDisks or \
+                   rs.name in self.clearPartDisks:
+                    # if the disk contains protected partitions
+                    # we will not wipe the disklabel even if
+                    # clearpart --initlabel was specified
+                    initlabel = self.reinitializeDisks
+                    for protected in self.protectedPartitions:
+                        disk_name = re.sub(r'p\d+$', '', protected)
+                        if disk_name != protected and \
+                           disk_name == rs.name:
+                            initlabel = False
+                            break
+
+                try:
+                    dm_array = DMRaidArrayDevice(rs.name,
+                                                 raidSet=rs,
+                                                 parents=[device],
+                                                 initcb=cb,
+                                                 initlabel=initlabel)
+
+                    self._addDevice(dm_array)
+                    # Use the rs's object on the device.
+                    # pyblock can return the memebers of a set and the
+                    # device has the attribute to hold it.  But ATM we
+                    # are not really using it. Commenting this out until
+                    # we really need it.
+                    #device.format.raidmem = block.getMemFromRaidSet(dm_array,
+                    #        major=major, minor=minor, uuid=uuid, name=name)
+                except DeviceUserDeniedFormatError:
+                    # We should ignore the dmraid and its components
+                    self.addIgnoredDisk(rs.name)
+                    if _all_ignored(rss):
+                        self.addIgnoredDisk(device.name)
+                    rs.deactivate()
 
     def getDependentDevices(self, dep):
         """ Return a list of devices that depend on dep.

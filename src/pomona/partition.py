@@ -2,6 +2,8 @@
 
 from snack import *
 
+from storage.deviceaction import *
+import storage
 import storage.formats as formats
 from storage.devicelibs.lvm import safeLvmName
 
@@ -161,12 +163,19 @@ class PartitionWindow(object):
             return
         
         row = 0
+        actions = []
         
         if not device.exists:
             tstr = _("Add Partition")
         else:
             tstr = _("Edit Partition")
         grid = GridForm(self.screen, tstr, 1, 6)
+        
+        if device.exists:
+            if device.format.exists and getattr(device.format, "label", None):
+                lbl = Label("%s %s" % (_("Original File System Label:"), device.format.label))
+                grid.add(lbl, 0, row)
+                row += 1
         
         (mountgrid, mountpoint) = self.makeMountPoint(device)
         grid.add(mountgrid, 0, row)
@@ -176,13 +185,15 @@ class PartitionWindow(object):
             subgrid1 = Grid(2, 1)
         
             (devgrid, drivelist) = self.makeDriveList(device)
-            subgrid1.setField(devgrid, 0, 0, (0,1,0,0), growx=1)
+            subgrid1.setField(devgrid, 0, 0)
             
             (fsgrid, fstype) = self.makeFileSystemList(device)
-            subgrid1.setField(fsgrid, 1, 0)
+            subgrid1.setField(fsgrid, 1, 0, (1,0,0,0), growx=1)
             
             grid.add(subgrid1, 0, row, (0,1,0,0), growx=1)
             row += 1
+        else:
+            pass
         
         bb = ButtonBar(self.screen, (TEXT_OK_BUTTON, TEXT_CANCEL_BUTTON))
         grid.add(bb, 0, row, (0,1,0,0), growx = 1)
@@ -202,10 +213,14 @@ class PartitionWindow(object):
 
             if device.format:
                 device.format.mountpoint = mountpoint.value()
+                
+            if not device.exists:
+                actions.append(ActionCreateDevice(self.installer, device))
 
             break
         
         self.screen.popWindow()
+        return actions
 
     def editVG(self, device):
         if not device.exists:
@@ -251,14 +266,30 @@ class PartitionWindow(object):
             self.installer.intf.messageWindow(_("Unable To Edit"),
                                               _("You must first select a partition to edit."))
             return
+        
+        reason = self.storage.deviceImmutable(device)
+        if reason:
+            self.installer.intf.messageWindow(_("Unable To Edit"),
+                                              _("You cannot edit this device:\n\n%s")
+                                              % reason,)
+            return
 
-        self.editPart(device)
+        actions = None
+        if device.type == "mdarray":
+            pass #self.editRaidArray(device)
+        elif device.type == "lvmvg":
+            actions = self.editVG(device)
+        elif device.type == "lvmlv":
+            actions = self.editLV(device)
+        elif isinstance(device, storage.devices.PartitionDevice):
+            actions = self.editPart(device)
+        
+        for action in actions:
+            self.storage.devicetree.registerAction(action)
 
     def deleteCb(self):
         device = self.lb.current()
-        
-        self.installer.log.debug("%s" % device.type)
-        
+
         if not device:
             self.installer.intf.messageWindow(_("Unable To Delete"),
                                               _("You must first select a partition to delete."))
@@ -280,7 +311,7 @@ class PartitionWindow(object):
         self.screen = self.installer.intf.screen
         self.storage = self.installer.ds.storage
         
-        self.installer.intf.setHelpline(_("F1-Help  F2-New  F3-Edit  F4-Delete  F5-Reset  F12-OK"))
+        self.installer.intf.setHelpline(_("F2-New  F3-Edit  F4-Delete  F5-Reset  F12-OK"))
         
         self.g = GridForm(self.screen, _("Partitioning"), 1, 5)
         self.lb = CListbox(height=10, cols=4,

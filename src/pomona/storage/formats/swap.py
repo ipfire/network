@@ -3,6 +3,7 @@
 from parted import PARTITION_SWAP
 
 from . import DeviceFormat, register_device_format
+from ..devicelibs import swap
 
 class SwapSpace(DeviceFormat):
     """ Swap space """

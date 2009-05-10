@@ -127,6 +127,8 @@ def handleException(installer, (type, value, tb)):
     # restore original exception handler
     sys.excepthook = sys.__excepthook__
 
+    installer.log.error("Exception occured. Read more in /tmp/instdump.txt.")
+
     # get traceback information
     list = formatException(type, value, tb)
     text = string.joinfields(list, "")

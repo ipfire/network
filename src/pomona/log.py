@@ -12,21 +12,27 @@ class Logger:
 
     def critical(self, msg):
         self.logfile.write(self.logline % (self.time(), "CRITICAL", msg,))
+        self.flush()
 
     def info(self, msg):
         self.logfile.write(self.logline % (self.time(), "INFO",     msg,))
+        self.flush()
 
     def debug(self, msg):
         self.logfile.write(self.logline % (self.time(), "DEBUG",    msg,))
+        self.flush()
 
     def error(self, msg):
         self.logfile.write(self.logline % (self.time(), "ERROR",    msg,))
+        self.flush()
 
     def warning(self, msg):
         self.logfile.write(self.logline % (self.time(), "WARNING",  msg,))
+        self.flush()
 
     def stdout(self, msg):
         self.logfile.write(self.logline % (self.time(), "STDOUT",   msg,))
+        self.flush()
         print msg
 
     def time(self):
@@ -34,3 +40,6 @@ class Logger:
 
     def __del__(self):
         self.logfile.close()
+
+    def flush(self):
+        self.logfile.flush()

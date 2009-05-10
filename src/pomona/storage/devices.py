@@ -1,8 +1,11 @@
 #/usr/bin/python
 
+import copy
 import math
 import parted
+import _ped
 
+from errors import *
 from formats import get_device_format_class, getFormat
 from udev import *
 from util import notify_kernel, numeric_type
@@ -79,6 +82,25 @@ class Device(object):
 
         for parent in self.parents:
             parent.addChild()
+
+    def __deepcopy__(self, memo):
+        """ Create a deep copy of a Device instance.
+
+            We can't do copy.deepcopy on parted objects, which is okay.
+            For these parted objects, we just do a shallow copy.
+        """
+        new = self.__class__.__new__(self.__class__)
+        memo[id(self)] = new
+        shallow_copy_attrs = ('partedDisk', '_partedDevice',
+                             '_partedPartition', '_origPartedDisk',
+                             '_raidSet', 'installer', 'screen')
+        for (attr, value) in self.__dict__.items():
+            if attr in shallow_copy_attrs:
+                setattr(new, attr, copy.copy(value))
+            else:
+                setattr(new, attr, copy.deepcopy(value, memo))
+
+        return new
 
     def removeChild(self):
         self.kids -= 1
@@ -1008,6 +1030,57 @@ class PartitionDevice(StorageDevice):
             return maxPartSize
         else:
             return self.format.maxSize
+
+class OpticalDevice(StorageDevice):
+    """ An optical drive, eg: cdrom, dvd+r, &c.
+
+        XXX Is this useful?
+    """
+    _type = "cdrom"
+
+    def __init__(self, installer, name, major=None, minor=None, exists=None,
+                 format=None, parents=None, sysfsPath=''):
+        StorageDevice.__init__(self, installer, name, format=format,
+                               major=major, minor=minor, exists=True,
+                               parents=parents, sysfsPath=sysfsPath)
+
+    @property
+    def mediaPresent(self):
+        """ Return a boolean indicating whether or not the device contains
+            media.
+        """
+        if not self.exists:
+            raise DeviceError("device has not been created", self.path)
+
+        try:
+            fd = os.open(self.path, os.O_RDONLY)
+        except OSError as e:
+            # errno 123 = No medium found
+            if e.errno == 123:
+                return False
+            else:
+                return True
+        else:
+            os.close(fd)
+            return True
+
+    def eject(self):
+        """ Eject the drawer. """
+        #import _isys
+
+        if not self.exists:
+            raise DeviceError("device has not been created", self.path)
+
+        # Make a best effort attempt to do the eject.  If it fails, it's not
+        # critical.
+        fd = os.open(self.path, os.O_RDONLY | os.O_NONBLOCK)
+
+        #try:
+        #    _isys.ejectcdrom(fd)
+        #except SystemError as e:
+        #    log.warning("error ejecting cdrom %s: %s" % (self.name, e))
+
+        os.close(fd)
 
 class DMDevice(StorageDevice):
     """ A device-mapper device """

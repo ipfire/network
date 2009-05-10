@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import copy
 
 device_formats = {}
 def register_device_format(fmt_class):
@@ -99,7 +100,7 @@ def get_default_filesystem_type(boot=None):
 
     raise DeviceFormatError("None of %s is supported by your kernel" % ",".join(fstypes))
 
-class DeviceFormat:
+class DeviceFormat(object):
     """ Generic device format. """
     _type = None
     _name = "Unknown"
@@ -132,6 +133,18 @@ class DeviceFormat:
         self.exists = kwargs.get("exists")
         self.options = kwargs.get("options")
         self._migrate = False
+
+    def __deepcopy__(self, memo):
+        new = self.__class__.__new__(self.__class__)
+        memo[id(self)] = new
+        shallow_copy_attrs = ('installer', 'screen')
+        for (attr, value) in self.__dict__.items():
+            if attr in shallow_copy_attrs:
+                setattr(new, attr, copy.copy(value))
+            else:
+                setattr(new, attr, copy.deepcopy(value, memo))
+
+        return new
 
     def _setOptions(self, options):
         self._options = options

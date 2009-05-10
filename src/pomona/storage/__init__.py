@@ -415,6 +415,70 @@ class Storage(object):
 
         return lvtemplate
 
+    def deviceImmutable(self, device):
+        """ Return any reason the device cannot be modified/removed.
+
+            Return False if the device can be removed.
+
+            Devices that cannot be removed include:
+
+                - protected partitions
+                - devices that are part of an md array or lvm vg
+                - extended partition containing logical partitions that
+                  meet any of the above criteria
+
+        """
+        if not isinstance(device, Device):
+            raise ValueError("arg1 (%s) must be a Device instance" % device)
+
+        if device.name in self.protectedDisks:
+            return _("This partition is holding the data for the hard "
+                      "drive install.")
+        elif device.format.type == "mdmember":
+            for array in self.mdarrays:
+                if array.dependsOn(device):
+                    if array.minor is not None:
+                        return _("This device is part of the RAID "
+                                 "device %s.") % (array.path,)
+                    else:
+                        return _("This device is part of a RAID device.")
+        elif device.format.type == "lvmpv":
+            for vg in self.vgs:
+                if vg.dependsOn(device):
+                    if vg.name is not None:
+                        return _("This device is part of the LVM "
+                                 "volume group '%s'.") % (vg.name,)
+                    else:
+                        return _("This device is part of a LVM volume "
+                                 "group.")
+        elif device.format.type == "luks":
+            try:
+                luksdev = self.devicetree.getChildren(device)[0]
+            except IndexError:
+                pass
+            else:
+                return self.deviceImmutable(luksdev)
+        elif isinstance(device, PartitionDevice) and device.isExtended:
+            reasons = {}
+            for dep in self.deviceDeps(device):
+                reason = self.deviceImmutable(dep)
+                if reason:
+                    reasons[dep.path] = reason
+            if reasons:
+                msg =  _("This device is an extended partition which "
+                         "contains logical partitions that cannot be "
+                         "deleted:\n\n")
+                for dev in reasons:
+                    msg += "%s: %s" % (dev, reasons[dev])
+                return msg
+
+        for i in self.devicetree.immutableDevices:
+            if i[0] == device.name:
+                return i[1]
+
+        return False
+
+
 class FSSet(object):
     """ A class to represent a set of filesystems. """
     def __init__(self, installer):

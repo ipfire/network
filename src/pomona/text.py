@@ -62,7 +62,7 @@ class ExceptionWindow(TextWindow):
 
     def run(self):
         self.rc = ButtonChoiceWindow(self.screen, _("Exception Occurred"),
-                                                  self.text, self.buttons)
+                                                  self.text, self.buttons, width=60)
 
     def getrc(self):
         return 0
