@@ -281,11 +281,6 @@ toolchain_make() {
 		KVER="${KVER}" \
 		EMB="${EMB}" \
 		\
-		CCACHE_DIR="/usr/src/ccache" \
-		CCACHE_PREFIX="${CCACHE_PREFIX}" \
-		CCACHE_HASHDIR="${CCACHE_HASHDIR}" \
-		DISTCC_DIR="/usr/src/distcc" \
-		\
 		LINKER="${LINKER}" \
 		MACHINE="${MACHINE}" \
 		MACHINE_REAL="${MACHINE_REAL}" \
@@ -312,6 +307,9 @@ toolchain_make() {
 		\
 		ROOTFILE=$(rootfiles_findone $1 | sed "s,$BASEDIR,/usr/src,g") \
 		LOGFILE=$(echo ${LOGFILE} | sed "s,${BASEDIR},/usr/src,g") \
+		\
+		LFS="${LFS}" \
+		LFS_BASEDIR="${BASEDIR}" \
 		\
 		make -f $* install >> $LOGFILE 2>&1
 
