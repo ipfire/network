@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = libpng
 PKG_VER    = 1.2.35
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,11 +34,31 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
+CORE       = yes
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.libpng.org/pub/png/
+LICENSE    = zlib
+SHORT_DESC = A library of functions for manipulating PNG image format files.
+
+define LONG_DESC
+	The libpng package contains a library of functions for creating and \
+	manipulating PNG (Portable Network Graphics) image format files. \
+	PNG is a bit-mapped graphics format similar to the GIF format. PNG \
+	was created to replace the GIF format, since GIF uses a patented \
+	data compression algorithm.
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-pngconf.patch
 
 download: $(objects)
 
@@ -59,6 +80,10 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	
+	#This patch adds new CFLAGS for compiling.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pngconf.patch
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \

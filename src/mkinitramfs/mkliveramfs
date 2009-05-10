@@ -25,10 +25,12 @@
 MODULES="$MODULES aufs squashfs loop vfat ehci-hcd ohci-hcd uhci-hcd usb-storage"
 
 # NFS
-MODULES="$MODULES nfs"
-for module in /lib/modules/$KERNEL/kernel/drivers/net/{,*/}*; do
-	MODULES="$MODULES $(basename ${module/.ko})"
-done
+if [ "$WITH_NET" = "1" ]; then
+	MODULES="$MODULES nfs"
+	for module in /lib/modules/$KERNEL/kernel/drivers/net/{,*/}*; do
+		MODULES="$MODULES $(basename ${module/.ko})"
+	done
+fi
 
 # Add all storage modules
 for module in /lib/modules/$KERNEL/kernel/drivers/{ata,message/fusion,pcmcia,scsi{,/*}}/*; do
@@ -275,7 +277,7 @@ if [ -n "$OVERLAY" ]; then
 	aufsmountoptions="$aufsmountoptions:/mnt/overlayfs=rr"
 fi
 
-SQUASHED=$(ls /mnt/source/*.img 2>/dev/null || true)
+SQUASHED=$(ls /mnt/source/*.sfs 2>/dev/null || true)
 if [ -n "$SQUASHED" ] ; then
 	vecho "Setting up embedded squashfs..."
 	mount -t squashfs -o loop,ro $SQUASHED /mnt/squashfs

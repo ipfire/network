@@ -33,6 +33,10 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+CORE       = yes
+EXTRA      = no
+DEBUG      = no
+
 CONFIGURE_ARGS = --disable-mmx --disable-sse2
 
 ifeq "$(TARGET)" "via-c7"

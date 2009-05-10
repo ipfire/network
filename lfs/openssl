@@ -33,6 +33,10 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+CORE       = yes
+EXTRA      = no
+DEBUG      = no
+
 ifneq "$(MACHINE)" "i686"
 	SSL_ARCH = no-asm 386 # 386 implies no-sse2
 endif

@@ -26,20 +26,42 @@ include Config
 
 PKG_NAME   = libtiff
 PKG_VER    = 3.8.2
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = tiff-$(PKG_VER).tar.gz
 DIR_APP    = $(DIR_SRC)/tiff-$(PKG_VER)
 
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = System/Libraries
+CORE       = yes
+EXTRA      = no
+DEBUG      = no
 DEPS       = libjpeg
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+URL        = http://www.libtiff.org/
+LICENSE    = libtiff ( own )
+SHORT_DESC = Library of functions for manipulating TIFF format image files.
+
+define LONG_DESC
+	The libtiff package contains a library of functions for manipulating \
+	TIFF (Tagged Image File Format) image format files.  TIFF is a widely \
+	used file format for bitmapped images.  TIFF files usually end in the \
+	.tif extension and they are often quite large.
+endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-CVE-2006-2193.patch \
+	$(THISAPP)-ormandy.patch \
+	$(THISAPP)-lzw-bugs.patch \
+	$(THISAPP)-tiffsplit-overflow.patch \
+	$(THISAPP)-mantypo.patch
 
 download: $(objects)
 
@@ -61,6 +83,21 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	
+	#These patches are fixing bufferoverflows.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-CVE-2006-2193.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-tiffsplit-overflow.patch
+
+	#This patch fixes several vulnerabilities.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ormandy.patch
+	
+	#This patch fixes LZW decoding vulnerabilities (CVE-2008-2327)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-lzw-bugs.patch
+
+	#This patch fixes CVE-2006-2193, tiff2pdf buffer overflow (#194362)
+	#and fix typo in man page for tiffset (#186297)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-mantypo.patch 
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \

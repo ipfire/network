@@ -46,12 +46,12 @@ SHORT_DESC = DARPA port to RPC program number mapper.
 
 define LONG_DESC
 	Portmap is a server that converts RPC program numbers into \
-	DARPA protocol port numbers. It must be running in order to \ 
+	DARPA protocol port numbers. It must be running in order to \
 	make RPC calls. When an RPC server is started, it will tell \
-	portmap what port number it is listening to, and what RPC \ 
+	portmap what port number it is listening to, and what RPC \
 	program numbers it is prepared to serve. When a client \
-	wishes to make an RPC call to a given program number, it \ 
-	will first contact portmap on the server machine to determine \ 
+	wishes to make an RPC call to a given program number, it \
+	will first contact portmap on the server machine to determine \
 	the port number where RPC packets should be sent. 
 endef
 

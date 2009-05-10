@@ -451,6 +451,9 @@ while [ $# -gt 0 ] ; do
 		--with=*)
 			MODULES="$MODULES ${1#--with=*}"
 			;;
+		--with-net)
+			WITH_NET=1
+			;;
 		*)
 			if [ -z "$target" ] ; then
 				target=$1
@@ -581,7 +584,7 @@ $HEADER
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin
 export TERM=linux
 
-INIT="/sbin/init"
+init="/sbin/init"
 VERBOSE=-v
 
 READONLY=0
@@ -643,7 +646,7 @@ echo "" > /proc/sys/kernel/hotplug
 for o in $(cat /proc/cmdline) ; do
 	case $o in
 	init=*)
-		INIT=${o#init=}
+		init=${o#init=}
 		;;
 	ro)
 		READONLY=1

@@ -26,12 +26,30 @@ include Config
 
 PKG_NAME   = libuser
 PKG_VER    = 0.56.9
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = System/Libraries
+CORE       = yes
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = https://fedorahosted.org/libuser/
+LICENSE    = LGPLv2+
+SHORT_DESC = A user and group account administration library.
+
+define LONG_DESC
+	The libuser library implements a standardized interface for \
+	manipulating and administering user and group accounts. The \
+	library uses pluggable back-ends to interface to its data sources.
+endef
 
 ###############################################################################
 # Top-level Rules

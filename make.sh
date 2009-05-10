@@ -277,6 +277,10 @@ ipfire_build() {
 	ipfire_make directfb
 	ipfire_make pdns
 	ipfire_make pdns-recursor
+	ipfire_make libevent
+	ipfire_make libnfsidmap
+	ipfire_make libgssglue
+	ipfire_make librpcsecgss
 	
 	### Building vpn stuff
 	#
@@ -298,6 +302,7 @@ ipfire_build() {
 	ipfire_make dmraid
 	ipfire_make cryptsetup-luks
 	ipfire_make python-cryptsetup
+	ipfire_make fuse
 
 	### Building hardware utils
 	#
@@ -409,7 +414,7 @@ misc_build() {
 	#ipfire_make guardian
 	#ipfire_make ipfireseeder
 	ipfire_make portmap
-	#ipfire_make nfs
+	ipfire_make nfs-utils
 
 	### Debugging
 	#
@@ -472,8 +477,10 @@ packages_build() {
 	beautify message DONE
 
 	if [ ${EMB} -eq 0 ]; then
-		ipfire_make initramfs
-		ipfire_make images
+		ipfire_make images-core
+		ipfire_make images-info
+		ipfire_make images-initramfs
+		ipfire_make images-overlays
 		ipfire_make pxe
 		ipfire_make cdrom
 

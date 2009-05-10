@@ -26,12 +26,31 @@ include Config
 
 PKG_NAME   = libnetfilter_queue
 PKG_VER    = 0.0.17
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = System/Libraries
+CORE       = yes
+EXTRA      = no
+DEBUG      = no
+DEPS       =
+
+URL        = http://www.netfilter.org/projects/libnetfilter_queue/downloads.html
+LICENSE    = GPL
+SHORT_DESC = The libnetfilter_queue userspace library.
+
+define LONG_DESC
+	libnetfilter_queue is a userspace library that provides an API \
+	for manipulating packets that have been queued by the kernel \
+	packet filter. It is is part of a system that deprecates the old \
+	ip_queue/libipq mechanism.
+endef
 
 ###############################################################################
 # Top-level Rules
