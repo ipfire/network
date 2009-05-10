@@ -58,21 +58,7 @@ git_pull() {
 		[ "$(expr $RANDOM % 25)" -eq "0" ] && git_gc
 	else
 		if [ "$CURRENT_BRANCH" == "master" ]; then
-			if ! (git status | grep -q "working directory clean"); then
-				echo    "Your \"master\" branch is not clean. This may cause a merge commit."
-				echo -n "Do you want this? [y/N]"
-				read
-				[ -z $REPLY ] && return 0
-				for i in y Y j J; do
-					if [ "$i" == "$REPLY" ]; then
-						git pull
-						return $?
-					fi
-				done
-				return 0
-			else
-				git pull
-			fi
+			git pull
 		else
 			echo -n "You are not on branch \"master\". Do you want to rebase from \"master\"? [y/N]"
 			read
