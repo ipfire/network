@@ -136,9 +136,11 @@ base_build() {
 	ipfire_make attr
 	ipfire_make libcap2
 	ipfire_make paxctl
+	ipfire_make shadow
 	ipfire_make autoconf
 	ipfire_make automake
 	ipfire_make bash
+	ipfire_make cracklib
 	ipfire_make diffutils
 	ipfire_make eventlog
 	ipfire_make file
@@ -160,9 +162,9 @@ base_build() {
 	ipfire_make man-db
 	ipfire_make module-init-tools
 	ipfire_make mpfr
+	ipfire_make pam
 	ipfire_make patch
 	ipfire_make psmisc
-	ipfire_make shadow
 	ipfire_make syslog-ng
 	ipfire_make sysvinit
 	ipfire_make tar
@@ -202,6 +204,7 @@ ipfire_build() {
 	ipfire_make perl-xml-parser
 	ipfire_make intltool
 	ipfire_make python
+	ipfire_make python-cracklib
 	ipfire_make python-dbus
 	ipfire_make python-urlgrabber
 	ipfire_make python-IPy
@@ -243,9 +246,6 @@ ipfire_build() {
 	ipfire_make libgpg-error
 	ipfire_make libgcrypt
 	ipfire_make libksba
-	ipfire_make cracklib
-	ipfire_make pam
-	ipfire_make shadow-pam
 	ipfire_make slang
 	ipfire_make newt
 	ipfire_make cyrus-sasl

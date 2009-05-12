@@ -36,6 +36,9 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       = pam
+
+CFLAGS    += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
 ###############################################################################
 # Top-level Rules
@@ -83,11 +86,37 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
+			--bindir=/bin \
+			--sbindir=/sbin \
+			--disable-wall \
 			--enable-arch \
+			--enable-kill \
+			--enable-login-utils \
 			--enable-partx \
-			--enable-write
+			--enable-write \
+			--with-fsprobe=blkid \
+			--disable-makeinstall-chown
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	# Build nologin
+	cd $(DIR_APP) && gcc $(CFLAGS) -o nologin $(DIR_SOURCE)/$(PKG_NAME)/nologin.c
+	cd $(DIR_APP) && install -m 755 nologin /sbin
+	install -m 644 $(DIR_SOURCE)/$(PKG_NAME)/nologin.8 /usr/share/man/man8
+
+	# Install mount tmpfs helper
+	install -m 755 $(DIR_SOURCE)/$(PKG_NAME)/mount.tmpfs /sbin
+
+	ln -svf ../../sbin/hwclock /usr/sbin/hwclock
+	ln -svf hwclock /sbin/clock
+	ln -sf ../../bin/kill /usr/bin/kill
+
+	touch /var/log/lastlog
+
+	# Remove deprecated commands
+	rm -rfv /sbin/{fsck,mkfs}.{bfs,minix} \
+		/usr/share/man/man*/{fsck,mkfs}.{bfs,minix}*
 
 	#chmod -v -s /bin/mount
 	#setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep /bin/mount

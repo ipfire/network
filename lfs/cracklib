@@ -39,7 +39,6 @@ GROUP      = Security/Password
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-DEPS       = python
 
 URL        = http://sourceforge.net/projects/cracklib/
 LICENSE    = GPLv2
@@ -54,6 +53,12 @@ define LONG_DESC
 	for simplistic patterns in passwords; and it checks for the password \
 	in a dictionary.
 endef
+
+ifeq "$(LFS_FILE)" "python-cracklib"
+	DEPS = python
+	SHORT_DESC = Python-bindings for cracklib.
+	LONG_DESC = A python module to use safe passwords.
+endif
 
 ###############################################################################
 # Top-level Rules
@@ -82,14 +87,20 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	-rm -rf /usr/share/dict
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--disable-static \
 			--with-default-dict=/lib/cracklib/pw_dict
+
+ifeq "$(LFS_FILE)" "python-cracklib"
+	cd $(DIR_APP)/python && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP)/python && make install
+else
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	-rm -rf /usr/share/dict
 	cd $(DIR_APP) && make install
 	mv -v /usr/lib/libcrack.so.2* /lib
 	ln -v -sf ../../lib/libcrack.so.2.8.0 /usr/lib/libcrack.so
@@ -102,5 +113,7 @@ $(OBJECT): $(objects)
 	echo -ne "$(NAME)\n$(SNAME)\n" >> /usr/share/dict/cracklib-extra-words
 	create-cracklib-dict /usr/share/dict/cracklib-words \
 		/usr/share/dict/cracklib-extra-words
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

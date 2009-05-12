@@ -73,6 +73,8 @@ PKG_PACKAGE=$(PKG_NAME)-$(PKG_VER)-$(SNAME)$(PKG_REL).$(TARGET).ipk
 
 IMAGE_FILE  = $(IMAGES_DIR)/$(SNAME)-$(VERSION).sfs
 
+LFS_FILE    = $(firstword $(MAKEFILE_LIST))
+
 ###############################################################################
 # Common Macro Definitions
 ###############################################################################
