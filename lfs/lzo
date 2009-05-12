@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = lzo
 PKG_VER    = 2.03
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,24 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/Compression
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       = zlib
+
+URL        = http://www.oberhumer.com/opensource/lzo/
+LICENSE    = GPLv2+
+SHORT_DESC = Data compression library with very fast (de)compression.
+
+define LONG_DESC
+	LZO is a portable lossless data compression library written in ANSI C. \
+	It offers pretty fast compression and very fast decompression. \
+	Decompression requires no memory. In addition there are slower \
+	compression levels achieving a quite competitive compression ratio \
+	while still decompressing at this very high speed.
+endef
 
 ###############################################################################
 # Top-level Rules

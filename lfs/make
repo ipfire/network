@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = make
 PKG_VER    = 3.81
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,26 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+
+MAINTAINER =
+GROUP      = Development/Tools
 CORE       = no
 EXTRA      = no
 DEBUG      = no
+DEPS       =
+
+URL        = http://www.gnu.org/software/make/
+LICENSE    = GPLv2+
+SHORT_DESC = A GNU tool which simplifies the build process for users.
+
+define LONG_DESC
+	A GNU tool for controlling the generation of executables and other \
+	non-source files of a program from the program's source files. Make \
+	allows users to build and install packages without any significant \
+	knowledge about the details of the build process. The details about \
+	how the program should be built are provided for make in the program's \
+	makefile.
+endef
 
 ###############################################################################
 # Top-level Rules
