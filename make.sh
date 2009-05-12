@@ -244,9 +244,8 @@ ipfire_build() {
 	ipfire_make libgcrypt
 	ipfire_make libksba
 	ipfire_make cracklib
-	ipfire_make pam					PASS=1
+	ipfire_make pam
 	ipfire_make shadow-pam
-	ipfire_make pam					PASS=2
 	ipfire_make slang
 	ipfire_make newt
 	ipfire_make cyrus-sasl
