@@ -1,0 +1,20 @@
+#! /bin/bash
+#
+# Copyright (C) 2009 Eric Paris <eparis@redhat.com>
+#                    Daniel Walsh <dwalsh@redhat.com>
+#                    Karel Zak <kzak@redhat.com>
+#
+# http://bugzilla.redhat.com/show_bug.cgi?id=476964
+#
+# Usage:
+# /sbin/mount.tmpfs spec dir [-sfnv] [-o options]
+#
+
+if ! echo "$@" | grep -q -E '(fs|def|root)?context='; then
+  con=$(ls --scontext -d "$2" | cut -f 1 -d ' ')
+  if [ -n "$con" ] && [ "$con" != "?" ] && [ "$con" != "unlabeled" ]; then 
+      exec /bin/mount "$@" -o "rootcontext=\"$con\"" -i -t tmpfs
+  fi
+fi
+
+exec /bin/mount "$@" -i -t tmpfs
