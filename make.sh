@@ -273,6 +273,7 @@ ipfire_build() {
 	ipfire_make etherwake
 	ipfire_make beep
 	ipfire_make libuser
+	ipfire_make passwd
 	ipfire_make directfb
 	ipfire_make pdns
 	ipfire_make pdns-recursor
