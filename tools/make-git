@@ -72,6 +72,7 @@ git_pull() {
 			exiterror "\"$REPLY\" is not a valid answer."
 		fi
 	fi
+	GIT_REV=$(git rev-list --max-count=1 HEAD)
 }
 
 git_push() {

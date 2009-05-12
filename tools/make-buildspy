@@ -54,6 +54,7 @@ build_spy_send_profile() {
 			break
 		fi
 	done
+	build_spy rev ${GIT_REV}
 }
 
 if [ "$(basename $0)" == "make-buildspy" ]; then
