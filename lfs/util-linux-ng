@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = util-linux-ng
-PKG_VER    = 2.14.2
+PKG_VER    = 2.15
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -44,7 +44,10 @@ CFLAGS    += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-compile_fix-1.patch \
+	$(THISAPP)-blkid_detection-1.patch \
+	$(THISAPP)-pic-fix-1.patch
 
 download: $(objects)
 
@@ -67,9 +70,11 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-compile_fix-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-blkid_detection-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pic-fix-1.patch
+
 ifeq "$(STAGE)" "toolchain"
-	# There's a bug with this version of Util-linux-ng and the E2fsprogs version
-	# we installed, so -luuid needs to be added.
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
@@ -117,6 +122,9 @@ ifeq "$(STAGE)" "base"
 	# Remove deprecated commands
 	rm -rfv /sbin/{fsck,mkfs}.{bfs,minix} \
 		/usr/share/man/man*/{fsck,mkfs}.{bfs,minix}*
+
+	# PAM
+	cp -vf $(DIR_CONFIG)/pam.d/login /etc/pam.d/
 
 	#chmod -v -s /bin/mount
 	#setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep /bin/mount

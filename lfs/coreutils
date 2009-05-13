@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = coreutils
-PKG_VER    = 7.2
+PKG_VER    = 7.4
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -80,6 +80,8 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-i18n-1.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uname_PIC-1.patch
 
 ifeq "$(STAGE)" "toolchain"	
@@ -96,8 +98,6 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-i18n-1.patch
-	
 	cd $(DIR_APP) && \
 		gl_cv_func_printf_directive_n=no \
 		./configure \
@@ -107,7 +107,7 @@ ifeq "$(STAGE)" "base"
 			--enable-no-install-program=kill,uptime
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	
+
 	mv -v /usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo} /bin
 	mv -v /usr/bin/{false,hostname,ln,ls,mkdir,mknod,mv,pwd,readlink,rm} /bin
 	mv -v /usr/bin/{rmdir,stty,sync,touch,true,uname} /bin
@@ -121,6 +121,6 @@ ifeq "$(STAGE)" "base"
 	-mkdir -pv /etc/pam.d/
 	cp -vf $(DIR_CONFIG)/pam.d/su /etc/pam.d
 endif
-	
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
