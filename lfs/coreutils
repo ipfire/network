@@ -116,6 +116,10 @@ ifeq "$(STAGE)" "base"
 
 	# Dump /etc/dircolors.
 	dircolors -p > /etc/dircolors
+
+	# PAM
+	-mkdir -pv /etc/pam.d/
+	cp -vf $(DIR_CONFIG)/pam.d/su /etc/pam.d
 endif
 	
 	@rm -rf $(DIR_APP)
