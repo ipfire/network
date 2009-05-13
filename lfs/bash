@@ -60,6 +60,7 @@ endef
 
 objects = $(DL_FILE) \
 	$(THISAPP)-rng.patch \
+	$(THISAPP)-fixes-1.patch \
 	#$(THISAPP)-arc4random-1.patch
 
 download: $(objects)
@@ -82,6 +83,10 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	
+	# This patch fixes various reportded issures. It is the latest posted
+	# patch from linuxfromscratch.org.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fixes-1.patch	
 
 	# This patch modifies Bash to use /dev/urandom (settable with
 	# --with-randomdev=) for $RANDOM, instead of getpid() and gettimeofday().
