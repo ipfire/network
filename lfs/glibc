@@ -76,7 +76,8 @@ objects = $(DL_FILE) \
 	$(THISAPP)-res_randomid.patch \
 	$(THISAPP)-resolv_response_length.patch \
 	$(THISAPP)-undefine-__i686.patch \
-	$(THISAPP)-d_tlsdec.patch
+	$(THISAPP)-d_tlsdec.patch \
+	$(THISAPP)-arc4random.patch
 
 download: $(objects)
 
@@ -187,6 +188,8 @@ $(OBJECT): $(objects)
 
 	# Build nscd with -fstack-protector-all, instead of -fstack-protector:
 	cd $(DIR_APP) && sed -e "s/fstack-protector/&-all/" -i nscd/Makefile
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-arc4random.patch
 
 	# We don't need to set -march=i?86 in confparams because GCC was built with
 	# --with-arch=i?86.
