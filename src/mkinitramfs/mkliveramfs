@@ -80,7 +80,7 @@ else
 	case $root in
 		/dev/disk/by-label/*)
 			LABEL=${root#/dev/disk/by-label/}
-			echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
 			if is_verbose; then
 				echo "Added udev rule 00-label.rules:"
 				cat /etc/udev/rules.d/00-label.rules
@@ -90,9 +90,9 @@ else
 		CDLABEL=*)
 			CDLABEL=${root#CDLABEL=}
 			echo "KERNEL==\"hd[a-z]\", BUS==\"ide\", SYSFS{removable}==\"1\", ATTRS{media}==\"cdrom\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-cdlabel.rules
-			echo "KERNEL==\"sr[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
-			echo "KERNEL==\"scd[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
-			echo "KERNEL==\"pcd[0-9]\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
+			echo "KERNEL==\"sr[0-9]\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
+			echo "KERNEL==\"scd[0-9]\", PROGRAM=\"/sbin/blkid -s LABEL -o value  %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
+			echo "KERNEL==\"pcd[0-9]\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
 			if is_verbose; then
 				echo "Added udev rule 00-cdlabel.rules:"
 				cat /etc/udev/rules.d/00-cdlabel.rules
@@ -101,7 +101,7 @@ else
 			;;
 		LABEL=*)
 			LABEL=${root#LABEL=}
-			echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
 			if is_verbose; then
 				echo "Added udev rule 00-label.rules:"
 				cat /etc/udev/rules.d/00-label.rules
@@ -110,7 +110,7 @@ else
 			;;
 		/dev/disk/by-id/*)
 			UUID=${root#/dev/disk/by-id/}
-			echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -u %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/sbin/blkid -s UUID -o value %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
 			if is_verbose; then
 				echo "Added udev rule 01-uuid.rules:"
 				cat /etc/udev/rules.d/01-uuid.rules
@@ -119,7 +119,7 @@ else
 			;;
 		UUID=*)
 			UUID=${root#UUID=}
-			echo "SUBSYSTEM==\"block\", PROGRAM=\"/lib/udev/vol_id -u %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/sbin/blkid -s UUID -o value %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
 			if is_verbose; then
 				echo "Added udev rule 01-uuid.rules:"
 				cat /etc/udev/rules.d/01-uuid.rules

@@ -493,10 +493,10 @@ mkdir -p bin sbin dev sys proc sysroot \
 	etc/udev/rules.d lib/udev/rules.d
 
 # Install some essential binaries
-install bash chmod cat cut dd dmesg env grep head ip kbd_mode kill killall5 less ln \
+install bash blkid chmod cat cut dd dmesg env grep head ip kbd_mode kill killall5 less ln \
 	ls lsmod mkdir mknod modprobe mount mountpoint openvt pidof ps rm sed \
 	setfont sh sleep switchroot udevadm udevd umount \
-	/lib/udev/console_init /lib/udev/vol_id
+	/lib/udev/console_init
 
 # Copy modprobe.conf and friends over
 [ -e /etc/modprobe.conf ] && install /etc/modprobe.conf
