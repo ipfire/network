@@ -39,7 +39,7 @@ GROUP      = System/Base
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-DEPS       =
+DEPS       = attr libcap2 ncurses pam shadow util-linux-ng
 
 URL        = http://www.gnu.org/software/coreutils/
 LICENSE    = GPLv3+
@@ -50,7 +50,7 @@ define LONG_DESC
 	the old GNU fileutils, sh-utils, and textutils packages.
 endef
 
-CFLAGS    += -fno-strict-aliasing
+CFLAGS    += -D_GNU_SOURCE=1 -fno-strict-aliasing
 
 ###############################################################################
 # Top-level Rules
@@ -103,9 +103,12 @@ ifeq "$(STAGE)" "base"
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--enable-install-program=hostname \
+			--enable-largefile \
+			--enable-install-program=arch,hostname,su \
 			--enable-no-install-program=kill,uptime
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
+		CPPFLAGS="-DUSE_PAM" su_LDFLAGS="-pie -lpam -lpam_misc"
 	cd $(DIR_APP) && make install
 
 	mv -v /usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo} /bin
@@ -114,12 +117,13 @@ ifeq "$(STAGE)" "base"
 	mv -v /usr/bin/chroot /usr/sbin
 	mv -v /usr/bin/{head,sleep,nice} /bin
 
+	cd $(DIR_APP) && install -m 4755 src/su /bin
+
 	# Dump /etc/dircolors.
 	dircolors -p > /etc/dircolors
 
 	# PAM
-	-mkdir -pv /etc/pam.d/
-	cp -vf $(DIR_CONFIG)/pam.d/su /etc/pam.d
+	cp -vf $(DIR_CONFIG)/pam.d/su{,-l} /etc/pam.d
 endif
 
 	@rm -rf $(DIR_APP)
