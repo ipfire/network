@@ -112,9 +112,6 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && install -m 755 nologin /sbin
 	install -m 644 $(DIR_SOURCE)/$(PKG_NAME)/nologin.8 /usr/share/man/man8
 
-	# Install mount tmpfs helper
-	install -m 755 $(DIR_SOURCE)/$(PKG_NAME)/mount.tmpfs /sbin
-
 	ln -svf ../../sbin/hwclock /usr/sbin/hwclock
 	ln -svf hwclock /sbin/clock
 	ln -sf ../../bin/kill /usr/bin/kill
