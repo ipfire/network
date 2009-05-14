@@ -121,7 +121,6 @@ base_build() {
 	ipfire_make pkg-config
 	ipfire_make berkeley
 	ipfire_make sed
-	ipfire_make e2fsprogs
 	ipfire_make iana-etc
 	ipfire_make m4
 	ipfire_make bison
@@ -133,6 +132,7 @@ base_build() {
 	ipfire_make attr
 	ipfire_make libcap2
 	ipfire_make util-linux-ng
+	ipfire_make e2fsprogs
 	ipfire_make coreutils
 	ipfire_make procps
 	ipfire_make perl
