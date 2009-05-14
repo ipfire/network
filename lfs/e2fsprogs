@@ -106,6 +106,7 @@ endif
 
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP)/build && \
+		LDFLAGS=-lblkid \
 		../configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
