@@ -36,7 +36,7 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-DEPS       = pam
+DEPS       = ncurses pam zlib
 
 CFLAGS    += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
@@ -99,7 +99,7 @@ ifeq "$(STAGE)" "base"
 			--enable-login-utils \
 			--enable-partx \
 			--enable-write \
-			--with-fsprobe=blkid \
+			--with-fsprobe=builtin \
 			--disable-makeinstall-chown
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
