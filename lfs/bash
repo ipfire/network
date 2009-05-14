@@ -61,7 +61,7 @@ endef
 objects = $(DL_FILE) \
 	$(THISAPP)-rng.patch \
 	$(THISAPP)-fixes-1.patch \
-	#$(THISAPP)-arc4random-1.patch
+#	$(THISAPP)-arc4random-1.patch
 
 download: $(objects)
 
@@ -120,7 +120,7 @@ endif
 ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && sed -i "s|htmldir = @htmldir@|htmldir = /usr/share/doc/$(THISAPP)|" \
 		Makefile.in
-	#cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-arc4random-1.patch
+#	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-arc4random-1.patch
 	cd $(DIR_APP) && \
 		ac_cv_func_working_mktime=yes \
 		./configure \
