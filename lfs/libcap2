@@ -35,31 +35,27 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
-GROUP      = Networking/Tools
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-DEPS       =
+DEPS       = attr pam
 
-URL        = http://www.tcpdump.org/
-LICENSE    = BSD with advertising
-SHORT_DESC = A system-independent interface for user-level packet capture.
+URL        = http://ftp.kernel.org/pub/linux/libs/security/linux-privs/kernel-2.6/
+LICENSE    = LGPL2+
+SHORT_DESC = Library for getting and setting POSIX.1e capabilities.
 
 define LONG_DESC
-	Libpcap provides a portable framework for low-level network \
-	monitoring.  Libpcap can provide network statistics collection, \
-	security monitoring and network debugging.  Since almost every system \
-	vendor provides a different interface for packet capture, the libpcap \
-	authors created this system-independent API to ease in porting and to \
-	alleviate the need for several system-dependent packet capture modules \
-	in each application.
+	libcap is a library for getting and setting POSIX.1e (formerly POSIX 6) \
+	draft 15 capabilities.
 endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-headerfix.patch
 
 download: $(objects)
 
@@ -81,10 +77,11 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-headerfix.patch
 	cd $(DIR_APP) && sed -e "s@<stdlib.h>@&\n#include <asm/types.h>@g" \
 		-i progs/capsh.c
 	cd $(DIR_APP) && sed 's/--static//' -i.orig progs/Makefile
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) COPTFLAG="$(CFLAGS)"
 	cd $(DIR_APP) && make install
 
 	rm -vf /lib/libcap.a
