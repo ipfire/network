@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = udev
-PKG_VER    = 141
+PKG_VER    = 142
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -39,7 +39,7 @@ GROUP      = System/Base
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-DEPS       =
+DEPS       = util-linux-ng
 
 URL        = ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/
 LICENSE    = GPLv2+
@@ -54,8 +54,7 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	udev-CVE-2009-1186.patch
+objects = $(DL_FILE)
 
 download: $(objects)
 
@@ -94,9 +93,6 @@ $(OBJECT): $(objects)
 			--prefix=/usr \
 			--exec-prefix="" \
 			--sysconfdir=/etc
-
-	#This patch fixes a local privilege escalation in udev.( CVE-2009-1186 )
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/udev-CVE-2009-1186.patch
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
