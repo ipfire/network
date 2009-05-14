@@ -115,37 +115,39 @@ base_build() {
 	ipfire_make zlib
 	ipfire_make binutils
 	ipfire_make gcc
+	ipfire_make make
+	ipfire_make libtool
+	ipfire_make gettext
+	ipfire_make pkg-config
 	ipfire_make berkeley
 	ipfire_make sed
 	ipfire_make e2fsprogs
-	ipfire_make coreutils
 	ipfire_make iana-etc
 	ipfire_make m4
 	ipfire_make bison
+	ipfire_make flex
 	ipfire_make ncurses
+	ipfire_make shadow
+	ipfire_make cracklib
+	ipfire_make pam
+	ipfire_make attr
+	ipfire_make libcap2
+	ipfire_make util-linux-ng
+	ipfire_make coreutils
 	ipfire_make procps
-	ipfire_make libtool
 	ipfire_make perl
 	ipfire_make readline
-	ipfire_make gettext
-	ipfire_make make
 	ipfire_make libidn
 	ipfire_make bzip2
 	ipfire_make pcre
-	ipfire_make pkg-config
-	ipfire_make attr
-	ipfire_make libcap2
 	ipfire_make paxctl
-	ipfire_make shadow
 	ipfire_make autoconf
 	ipfire_make automake
 	ipfire_make bash
-	ipfire_make cracklib
 	ipfire_make diffutils
 	ipfire_make eventlog
 	ipfire_make file
 	ipfire_make findutils
-	ipfire_make flex
 	ipfire_make gmp
 	ipfire_make grub
 	ipfire_make gawk
@@ -162,7 +164,6 @@ base_build() {
 	ipfire_make man-db
 	ipfire_make module-init-tools
 	ipfire_make mpfr
-	ipfire_make pam
 	ipfire_make patch
 	ipfire_make psmisc
 	ipfire_make syslog-ng
@@ -170,7 +171,6 @@ base_build() {
 	ipfire_make tar
 	ipfire_make texinfo
 	ipfire_make udev
-	ipfire_make util-linux-ng
 	ipfire_make vim
 }
 
