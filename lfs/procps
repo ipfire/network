@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = procps
-PKG_VER    = 3.2.7
+PKG_VER    = 3.2.8
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -41,8 +41,7 @@ DEBUG      = no
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	$(THISAPP)-watch_unicode-1.patch
+objects = $(DL_FILE)
 
 download: $(objects)
 
@@ -64,7 +63,6 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-watch_unicode-1.patch
 	cd $(DIR_APP) && make SHARED=1 CFLAGS="$(CFLAGS)" \
 		W_SHOWFROM=-DW_SHOWFROM $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
