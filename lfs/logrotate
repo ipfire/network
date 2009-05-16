@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = logrotate
 PKG_VER    = 3.7.7
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,16 +34,33 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Base
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       =
+
+URL        = https://fedorahosted.org/releases/l/o/logrotate/
+LICENSE    = GPL+
+SHORT_DESC = Rotates, compresses, removes and mails system log files.
+
+define LONG_DESC
+	The logrotate utility is designed to simplify the administration of \
+	log files on a system which generates a lot of log files. Logrotate \
+	allows for the automatic rotation compression, removal and mailing of \
+	log files.  Logrotate can be set to handle a log file daily, weekly, \
+	monthly or when the log file gets to a certain size.
+endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
-
+objects = $(DL_FILE) \
+	$(THISAPP)-toolarge.patch \
+	$(THISAPP)-curdir.patch
+	
 download: $(objects)
 
 info:
@@ -63,6 +81,13 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
+	# This patch fixes a problem with too large files.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-toolarge.patch
+	
+	# This patch fixes a prblem with the current directory.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-curdir.patch
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	touch /var/lib/logrotate.status
