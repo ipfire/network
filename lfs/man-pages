@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = man-pages
 PKG_VER    = 3.18
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,21 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Documentation
 CORE       = no
 EXTRA      = no
 DEBUG      = no
+DEPS       =
+
+URL        = http://www.kernel.org/pub/linux/docs/manpages/
+LICENSE    = GPLv2+ and GPL+ and BSD and MIT and Copyright only and IEEE
+SHORT_DESC = Man (manual) pages from the Linux Documentation Project.
+
+define LONG_DESC
+	A large collection of man pages (documentation) from the Linux \
+	Documentation Project (LDP).
+endef
 
 ###############################################################################
 # Top-level Rules
