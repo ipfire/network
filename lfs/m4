@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = m4
 PKG_VER    = 1.4.11
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,25 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/Text
 CORE       = no
 EXTRA      = no
 DEBUG      = no
+DEPS       =
+
+URL        = http://www.gnu.org/software/m4/
+LICENSE    = GPLv3+
+SHORT_DESC = The GNU macro processor.
+
+define LONG_DESC
+	A GNU implementation of the traditional UNIX macro processor. M4 is \
+	useful for writing text files which can be logically parsed, and is \
+	used by many programs as part of their build process.  M4 has \
+	built-in functions for including files, running shell commands, \
+	doing arithmetic, etc. The autoconf program needs m4 for generating \
+	configure scripts, but not for running configure scripts.
+endef
 
 ###############################################################################
 # Top-level Rules
