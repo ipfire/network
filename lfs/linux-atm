@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = linux-atm
 PKG_VER    = 2.4.1
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,21 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Daemons
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       = 
+
+URL        = http://linux-atm.sourceforge.net/
+LICENSE    = BSD and GPLv2 and GPLv2+ and LGPLv2+ and MIT
+SHORT_DESC = Tools to support ATM networking under Linux
+
+define LONG_DESC
+	This package contains header files and libraries for development \
+	using theLinux ATM API.
+endef
 
 ###############################################################################
 # Top-level Rules
