@@ -55,7 +55,8 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-CVE-2008-2935.patch
 
 download: $(objects)
 
@@ -82,6 +83,10 @@ $(OBJECT): $(objects)
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--disable-static
+
+	# This Patch fixes CVE-2008-2935
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-CVE-2008-2935.patch
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	$(PYTHON_COMPILE)
