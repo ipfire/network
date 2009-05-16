@@ -41,7 +41,8 @@ DEBUG      = no
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-watch_unicode-1.patch
 
 download: $(objects)
 
@@ -63,6 +64,7 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-watch_unicode-1.patch
 	cd $(DIR_APP) && make SHARED=1 CFLAGS="$(CFLAGS)" \
 		W_SHOWFROM=-DW_SHOWFROM $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
