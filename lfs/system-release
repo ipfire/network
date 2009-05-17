@@ -24,34 +24,35 @@
 
 include Config
 
-PKG_NAME   = stage2
-PKG_VER    =
-PKG_REL    = -1
+PKG_NAME   = system-release
+PKG_VER    = $(VERSION)
+PKG_REL    = 0
 
-THISAPP    = $(PKG_NAME)
+THISAPP    = $(PKG_NAME)-$(PKG_VER)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-MAINTAINER =
-GROUP      =
+MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+GROUP      = System/Base
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
 DEPS       =
 
-URL        =
+URL        = http://www.ipfire.org
 LICENSE    =
-SHORT_DESC = This script initializes stage 2.
+SHORT_DESC = IPFire release files.
 
 define LONG_DESC
-	This script initializes stage 2.
+	IPFire release files such as pakfire configs and various /etc/ files that \
+	define the release.
 endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects =
+objects = $(DL_FILE)
 
 download: $(objects)
 
@@ -72,47 +73,10 @@ $(objects):
 
 $(OBJECT): $(objects)
 	@$(PREBUILD)
+	echo "$(NAME) v$(VERSION) for $(MACHINE) - $(SLOGAN) (\l)" > /etc/issue
+	echo "===============================" >> /etc/issue
+	echo "\n running on \s \r \m"          >> /etc/issue
 
-	# Create directories
-	-mkdir -pv /{bin,boot,etc/{grsec,opt,sysconfig},home,lib,mnt,opt}
-	-mkdir -pv /{media/{floppy,cdrom},sbin,srv,var}
-	-install -dv -m 0750 /root
-	-install -dv -m 1777 /tmp /var/tmp
-	-mkdir -pv /usr/{,local/}{bin,include,lib,sbin,src}
-	-mkdir -pv /usr/{,local/}share/{doc,info,locale,man}
-	-mkdir -v  /usr/{,local/}share/{misc,terminfo,zoneinfo}
-	-mkdir -pv /usr/{,local/}share/man/man{1..8}
-	-for dir in /usr /usr/local; do \
-		ln -sfv share/{man,doc,info} $$dir; \
-	done
-	-mkdir -pv /var/{lock/subsys,log,mail,run,spool}
-	-mkdir -pv /var/{opt,cache,lib/{misc,locate},local}
-
-	# Creating an empty mtab
-	touch /etc/mtab
-
-	# Config files
-	for i in $$(find $(DIR_SRC)/config/etc/ -type f); do \
-		cp -vf $$i /etc; \
-	done
-	for i in $$(find $(DIR_CONFIG)/root/ -type f); do \
-		cp -vf $$i /root; \
-	done
-	for i in $$(find $(DIR_SRC)/config/grsecurity/ -type f); do \
-		cp -vf $$i /etc/grsec; \
-	done
-
-ifeq "$(EMB)" "1"
-	# Enable serial on console 7
-	sed -e "s/^#7/7/" -i /etc/inittab
-endif
-
-	touch /var/run/utmp /var/log/{btmp,lastlog,wtmp}
-	#chgrp -v utmp /var/run/utmp /var/log/lastlog
-	chmod -v 664 /var/run/utmp /var/log/lastlog
-
-	# Nobody user
-	-mkdir -p /home/nobody
-	chown -R nobody:nobody /home/nobody
-
+	echo "$(NAME) Release $(VERSION) ($(SLOGAN))" > /etc/$(SNAME)-release
+	ln -svf $(SNAME)-release /etc/system-release
 	@$(POSTBUILD)

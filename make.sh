@@ -107,6 +107,7 @@ base_build() {
 
 	ipfire_make stage2
 	ipfire_make scripts
+	ipfire_make system-release
 	ipfire_make linux-headers
 	ipfire_make man-pages
 	ipfire_make glibc
