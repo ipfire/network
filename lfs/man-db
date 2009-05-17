@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = man-db
 PKG_VER    = 2.5.3
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,23 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Documentation
 CORE       = no
 EXTRA      = no
 DEBUG      = no
+DEPS       =
+
+URL        = http://bzr.savannah.gnu.org/r/man-db/
+LICENSE    = GPL
+SHORT_DESC = man-db is an on-line manual database.
+
+define LONG_DESC
+	man-db is an implementation of the standard Unix documentation \
+	system accessed using the man command. It uses a Berkeley DB database \
+	in place of the traditional flat-text whatis databases. man-db is \
+	used by several popular GNU/Linux distributions.
+endef
 
 ###############################################################################
 # Top-level Rules
