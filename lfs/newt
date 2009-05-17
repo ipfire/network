@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = newt
 PKG_VER    = 0.52.10
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,26 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       =
+
+URL        = https://fedorahosted.org/releases/n/e/newt/
+LICENSE    = LGPLv2
+SHORT_DESC = A library for text mode user interfaces.
+
+define LONG_DESC
+	Newt is a programming library for color text mode, widget based user \
+	interfaces.  Newt can be used to add stacked windows, entry widgets, \
+	checkboxes, radio buttons, labels, plain text fields, scrollbars, \
+	etc., to text mode user interfaces.  This package also contains the \
+	shared library needed by programs built with newt, as well as a \
+	/usr/bin/dialog replacement called whiptail.  Newt is based on the \
+	slang library.
+endef
 
 ###############################################################################
 # Top-level Rules
