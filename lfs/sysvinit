@@ -73,6 +73,14 @@ $(OBJECT): $(objects)
 		src/init.c
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) -C src 
 	cd $(DIR_APP) && make -C src install
+
+	# Install /etc/inittab
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/inittab /etc
+
+ifeq "$(EMB)" "1"
+	# Enable serial on console 7
+	sed -e "s/^#7/7/" -i /etc/inittab
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
