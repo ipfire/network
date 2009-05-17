@@ -91,20 +91,6 @@ $(OBJECT): $(objects)
 	# Creating an empty mtab
 	touch /etc/mtab
 
-	# This trick is necessary in order to create two devices in the target /dev
-	# rather than in the host /dev
-	mkdir -p /dev1
-	mount --move /dev /dev1
-
-	# Make /dev/null and /dev/console
-	cd /dev && rm -f null console
-	cd /dev && mknod -m 0666 null c 1 3
-	cd /dev && mknod -m 0600 console c 5 1
-
-	# Now move the target /dev to point back to the host /dev
-	mount --move /dev1 /dev
-	rm -fr /dev1
-
 	# Config files
 	for i in $$(find $(DIR_SRC)/config/etc/ -type f); do \
 		cp -vf $$i /etc; \
