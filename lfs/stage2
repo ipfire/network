@@ -101,8 +101,6 @@ $(OBJECT): $(objects)
 	for i in $$(find $(DIR_SRC)/config/grsecurity/ -type f); do \
 		cp -vf $$i /etc/grsec; \
 	done
-	-mkdir -pv /etc/modprobe.d
-	cp -av $(DIR_CONF)/modprobe.d/* /etc/modprobe.d/
 
 ifeq "$(EMB)" "1"
 	# Enable serial on console 7
