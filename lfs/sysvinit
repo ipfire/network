@@ -73,5 +73,6 @@ $(OBJECT): $(objects)
 		src/init.c
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) -C src 
 	cd $(DIR_APP) && make -C src install
+	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/inittab /etc
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
