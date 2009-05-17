@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = memtest86+
 PKG_VER    = 2.11
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,23 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Base
 CORE       = no
 EXTRA      = no
 DEBUG      = no
+DEPS       = 
+
+URL        = http://www.memtest.org/
+LICENSE    = GPLv2
+SHORT_DESC = Stand-alone memory tester for x86 and x86-64 computers.
+
+define LONG_DESC
+	Memtest86+ is a thorough stand-alone memory test for x86 and x86-64 \
+	architecture computers. BIOS based memory tests are only a quick \
+	check and often miss many of the failures that are detected by \
+	Memtest86+.
+endef
 
 ###############################################################################
 # Top-level Rules
