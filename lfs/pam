@@ -93,8 +93,9 @@ $(OBJECT): $(objects)
 
 	useradd -D -b /home
 	sed -i 's/yes/no/' /etc/default/useradd
-	install -v -m644 $(DIR_CONFIG)/pam/login.defs /etc/login.defs
 	install -v -m644 $(DIR_CONFIG)/pam/pam_env.conf /etc/security/pam_env.conf
+	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/{login.defs,securetty} /etc
+
 	install -v -d -m755 /etc/pam.d
 	cp -vf $(DIR_CONFIG)/pam.d/{other,system-auth} /etc/pam.d/
 
