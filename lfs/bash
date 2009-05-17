@@ -131,6 +131,12 @@ ifeq "$(STAGE)" "base"
 			--with-installed-readline
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	# Bash startup files
+	install --directory --mode=0755 --owner=root --group=root /etc/profile.d
+	for i in $(DIR_CONFIG)/profile.d/*; do \
+	    [ -f $$i ] && cp $$i /etc/profile.d; \
+	done
 endif
 
 	@rm -rf $(DIR_APP)

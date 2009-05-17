@@ -120,12 +120,6 @@ endif
 	#chgrp -v utmp /var/run/utmp /var/log/lastlog
 	chmod -v 664 /var/run/utmp /var/log/lastlog
 
-	# Bash startup files
-	install --directory --mode=0755 --owner=root --group=root /etc/profile.d
-	for i in $(DIR_SRC)/config/profile.d/*; do \
-	    [ -f $$i ] && cp $$i /etc/profile.d; \
-	done
-
 	# Nobody user
 	-mkdir -p /home/nobody
 	chown -R nobody:nobody /home/nobody
