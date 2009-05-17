@@ -215,7 +215,6 @@ ipfire_build() {
 	ipfire_make libusb
 	ipfire_make libusb-compat	# Can be removed if usbutils supports libusb-1.0
 	ipfire_make bc
-	ipfire_make mingetty
 	ipfire_make boost
 	ipfire_make lua
 	
