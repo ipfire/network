@@ -79,4 +79,5 @@ $(OBJECT): $(objects)
 	done
 	cp -avf $(DIR_APP)/macros /usr/share/firewall/
 	install -m 755 -v $(DIR_APP)/firewall /usr/bin
+	$(INSTALL_INITSCRIPT)
 	@$(POSTBUILD)

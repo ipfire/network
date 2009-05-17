@@ -101,5 +101,6 @@ $(OBJECT): $(objects)
 	install -v -m 755 $(DIR_CONF)/$(PKG_NAME)/ids-block \
 		/usr/sbin/ids-block
 
+	$(INSTALL_INITSCRIPT)
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

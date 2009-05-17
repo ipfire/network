@@ -74,4 +74,5 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	install -m 755 -v $(DIR_APP)/network /usr/bin
+	$(INSTALL_INITSCRIPT)
 	@$(POSTBUILD)

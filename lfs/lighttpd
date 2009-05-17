@@ -96,5 +96,6 @@ $(OBJECT): $(objects)
 	touch /var/log/$(PKG_NAME)/{access,error}.log
 	chown nobody.nobody -R /var/log/$(PKG_NAME)
 
+	$(INSTALL_INITSCRIPT)
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

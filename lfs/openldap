@@ -93,5 +93,6 @@ $(OBJECT): $(objects)
 	for LINK in lber ldap ldap_r; do \
 		chmod -v 0755 /usr/lib/$$(readlink /usr/lib/lib$${LINK}.so); \
 	done
+	$(INSTALL_INITSCRIPT)
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -98,5 +98,6 @@ $(OBJECT): $(objects)
 
 	fcrontab $(DIR_CONFIG)/$(PKG_NAME)/crontab
 
+	$(INSTALL_INITSCRIPT)
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
