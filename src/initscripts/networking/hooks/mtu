@@ -37,6 +37,13 @@ function usage() {
 zone=$2
 
 case "${1}" in
+	status)
+		check_config
+		mtu=$(cat /sys/class/net/${zone}/mtu 2>/dev/null)
+		[ "$MTU" = "$mtu" ]
+		exit $?
+		;;
+
 	pre-up)
 		;;
 
