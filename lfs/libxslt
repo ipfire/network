@@ -80,7 +80,7 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 	# This Patch fixes CVE-2008-2935
-	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-CVE-2008-2935.$
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-CVE-2008-2935.patch
 
 	cd $(DIR_APP) && \
 		./configure \
