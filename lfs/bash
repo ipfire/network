@@ -133,10 +133,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make install
 
 	# Bash startup files
-	install --directory --mode=0755 --owner=root --group=root /etc/profile.d
-	for i in $(DIR_CONFIG)/profile.d/*; do \
-	    [ -f $$i ] && cp $$i /etc/profile.d; \
-	done
+	cp -avf $(DIR_CONFIG)/bash/{bashrc,inputrc,profile,profile.d,shells} /etc
 endif
 
 	@rm -rf $(DIR_APP)
