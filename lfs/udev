@@ -53,7 +53,8 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	udev-CVE-2009-1186.patch
 
 download: $(objects)
 
@@ -92,6 +93,10 @@ $(OBJECT): $(objects)
 			--prefix=/usr \
 			--exec-prefix="" \
 			--sysconfdir=/etc
+
+	#This patch fixes a local privilege escalation in udev.( CVE-2009-1186 )
+	cd $(DIR_APP) && patch -Np1 -i udev-CVE-2009-1186.patch
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
