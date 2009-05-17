@@ -48,6 +48,12 @@ function check_config() {
 }
 
 case "${1}" in
+	status)
+		# XXX Is there a better way?
+		ip route get ${IP} | grep -q ^local
+		exit $?
+		;;
+
 	pre-up)
 		;;
 
