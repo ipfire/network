@@ -38,7 +38,8 @@ GROUP      = System/Boot
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-DEPS       =
+DEPS       = coreutils e2fsprogs initd-tools module-init-tools procps sysvinit \
+	udev util-linux-ng
 
 URL        =
 LICENSE    = GPLv2+
@@ -54,24 +55,17 @@ endef
 SCRIPTS = \
 	checkfs \
 	cleanfs \
-	firewall \
-	haldaemon \
 	halt \
-	lighttpd \
 	localnet \
-	messagebus \
 	modules \
 	mountfs \
 	mountkernfs \
-	network \
-	openldap \
 	random \
 	reboot \
 	sendsignals \
 	setclock \
 	swap \
 	sysctl \
-	syslog-ng \
 	udev \
 	udev_retry
 
@@ -142,5 +136,7 @@ $(OBJECT): $(objects)
 		install -v -m 644 $$i /etc/sysconfig/; \
 	done
 	chmod -v 755 /etc/sysconfig/rc.local
+
+	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/sysctl.conf /etc
 
 	@$(POSTBUILD)

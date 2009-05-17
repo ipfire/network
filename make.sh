@@ -157,7 +157,6 @@ base_build() {
 	ipfire_make groff
 	ipfire_make gzip
 	ipfire_make initd-tools
-	ipfire_make initscripts
 	ipfire_make iputils
 	ipfire_make iproute2
 	ipfire_make kbd
@@ -173,6 +172,7 @@ base_build() {
 	ipfire_make texinfo
 	ipfire_make udev
 	ipfire_make vim
+	ipfire_make initscripts
 }
 
 ################################################################################
