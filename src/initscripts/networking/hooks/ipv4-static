@@ -94,35 +94,30 @@ case "${1}" in
 		shift 2
 		while [ $# -gt 0 ]; do
 			case "$1" in
-				--ip)
-					IP=$2
-					shift 2
+				--ip=)
+					IP=${2#--ip=}
 					;;
-				--prefix)
-					PREFIX=$2
-					shift 2
+				--prefix=)
+					PREFIX=${2#--prefix=}
 					;;
-				--peer)
-					PEER=$2
-					shift 2
+				--peer=)
+					PEER=${2#--peer=}
 					;;
-				--broadcast)
-					BROADCAST=$2
-					shift 2
+				--broadcast=)
+					BROADCAST=${2#--broadcast=}
 					;;
-				--source)
-					SOURCE=$2
-					shift 2
+				--source=)
+					SOURCE=${2#--source=}
 					;;
-				--gateway)
-					GATEWAY=$2
-					shift 2
+				--gateway=)
+					GATEWAY=${2#--gateway=}
 					;;
 				*)
 					echo "Unknown option: $1" >&2
 					exit 1
 					;;
 			esac
+			shift
 		done
 		check_config
 		cat << EOF >> ${CONFIG_ZONES}/${zone}/ipv4-static_$IP
