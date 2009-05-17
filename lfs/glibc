@@ -322,10 +322,8 @@ ifeq "$(STAGE)" "base"
 	# Timezone
 	cp -v --remove-destination /usr/share/zoneinfo/GMT /etc/localtime
 
-	# Set up ld.so.conf
-	echo -e "# Begin /etc/ld.so.conf\n"	>> /etc/ld.so.conf
-	echo -e "/usr/local/lib\n"		>> /etc/ld.so.conf
-	echo    "# End /etc/ld.so.conf"		>> /etc/ld.so.conf
+	# Configuration
+	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/{ld.so.conf,nsswitch.conf} /etc
 
 	if [ -h /bin/pwd ]; then rm -f /bin/pwd; fi
 endif
