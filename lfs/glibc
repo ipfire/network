@@ -136,7 +136,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-issetugid-1.patch
 
 	# This patch resticts the environment, particularly with setuid programs:
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-sanitize_env.patch
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-sanitize_env.patch
 
 	# This patch adds the strlcpy and strlcat functions and manual pages to Glibc.
 	# A paper written about these functions is available here:
