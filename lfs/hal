@@ -85,6 +85,7 @@ $(OBJECT): $(objects)
 			--sysconfdir=/etc \
 			--libexecdir=/usr/lib/hal \
 			--localstatedir=/var \
+			--with-udev-prefix=/etc \
 			--disable-policy-kit \
 			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
