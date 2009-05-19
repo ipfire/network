@@ -78,6 +78,8 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
+	cd $(DIR_APP) && sed -i 's@\(ln -s -f \)$$(PREFIX)/bin/@\1@' Makefile
+
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make PREFIX=$(TOOLS_DIR) install
