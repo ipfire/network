@@ -55,7 +55,7 @@ endef
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-libs-2.patch \
+	$(THISAPP)-libs-3.patch \
 	$(THISAPP)-pam_hostname.patch \
 	$(THISAPP)-build_ssl.patch \
 	$(THISAPP)-close-std-fds.patch \
@@ -86,7 +86,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-build_ssl.patch
 
 	# This patch modifies the detection of the needed libs.
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libs-2.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libs-3.patch
 
 	# This patch adds the pam_hostname feature to vsftpd.
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pam_hostname.patch
