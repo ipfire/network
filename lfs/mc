@@ -81,7 +81,7 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-utf8.patch
-	cd $(DIR_APP) && autoreconf -f -v
+	cd $(DIR_APP) && AUTOPOINT=true autoreconf -f -v -i
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
