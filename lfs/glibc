@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = glibc
-PKG_VER    = 2.9
+PKG_VER    = 2.10.1
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -55,7 +55,7 @@ define LONG_DESC
 	Linux system will not function.
 endef
 
-CFLAGS     = -O2 -pipe
+CFLAGS     = -O3 -pipe
 CXXFLAGS   =
 
 OPTIMIZED_KERNEL = 2.6.18
@@ -65,7 +65,6 @@ OPTIMIZED_KERNEL = 2.6.18
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(PKG_NAME)-libidn-$(PKG_VER).tar.bz2 \
 	$(THISAPP)-pt_pax-1.patch \
 	$(THISAPP)-strlcpy_strlcat-1.patch \
 	$(THISAPP)-asprintf_reset2null-1.patch \
@@ -76,7 +75,6 @@ objects = $(DL_FILE) \
 	$(THISAPP)-res_randomid.patch \
 	$(THISAPP)-resolv_response_length.patch \
 	$(THISAPP)-undefine-__i686.patch \
-	$(THISAPP)-d_tlsdec.patch \
 	$(THISAPP)-arc4random.patch
 
 download: $(objects)
@@ -100,10 +98,6 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	@mkdir $(DIR_SRC)/glibc-build
-
-	# Extracting libidn
-	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/$(PKG_NAME)-libidn-$(PKG_VER).tar.bz2
-	cd $(DIR_APP) && mv -v $(PKG_NAME)-libidn-$(PKG_VER) libidn
 
 	# In the vi_VN.TCVN locale, bash enters an infinite loop at startup. It is
 	# unknown whether this is a bash bug or a Glibc problem. Disable
@@ -142,7 +136,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-issetugid-1.patch
 
 	# This patch resticts the environment, particularly with setuid programs:
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-sanitize_env.patch
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-sanitize_env.patch
 
 	# This patch adds the strlcpy and strlcat functions and manual pages to Glibc.
 	# A paper written about these functions is available here:
@@ -196,9 +190,6 @@ $(OBJECT): $(objects)
 ifeq "$(MACHINE)" "i686"
 	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-undefine-__i686.patch
 endif
-
-	# Replace a direct call of a i686 function (Not able to compile at i586)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-d_tlsdec.patch
 
 	# --sbindir=$(TOOLS_DIR)/bin does not work... anyone want to fix this?
 	# We don't need Glibc's sbin programs, but still.
