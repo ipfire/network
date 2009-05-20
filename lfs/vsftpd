@@ -100,8 +100,8 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	
 	cd $(DIR_APP) && install -v -m 755 vsftpd /usr/sbin/vsftpd
-        cd $(DIR_APP) && install -v -m 644 vsftpd.8 /usr/share/man/man8
-        cd $(DIR_APP) && install -v -m 644 vsftpd.conf.5 /usr/share/man/man5
+	cd $(DIR_APP) && install -v -m 644 vsftpd.8 /usr/share/man/man8
+	cd $(DIR_APP) && install -v -m 644 vsftpd.conf.5 /usr/share/man/man5
 	cd $(DIR_APP) && install -v -m 644 $(DIR_CONFIG)/$(PKG_NAME)/vsftpd.conf /etc
 	cd $(DIR_APP) && install -v -m 644 $(DIR_CONFIG)/$(PKG_NAME)/vsftpd.user_list /etc
 	cd $(DIR_APP) && install -v -m 644 $(DIR_CONFIG)/pam.d/vsftpd.pam /etc/pam.d
