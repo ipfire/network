@@ -391,7 +391,6 @@ misc_build() {
 	#ipfire_make vsftpd
 
 	## NTFS
-	#ipfire_make fuse
 	#ipfire_make ntfs-3g
 	#
 	## Net tools
