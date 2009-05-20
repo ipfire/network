@@ -388,7 +388,7 @@ misc_build() {
 	ipfire_make mkinitramfs
 	ipfire_make splashy
 
-	#ipfire_make vsftpd
+	ipfire_make vsftpd
 
 	## NTFS
 	#ipfire_make ntfs-3g
