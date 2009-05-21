@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = squid
-PKG_VER    = 3.0.STABLE8
+PKG_VER    = 3.0.STABLE15
 
 CORE       = yes
 EXTRA      = yes
@@ -71,7 +71,7 @@ $(OBJECT): $(objects)
 			--libexecdir=/usr/lib/squid \
 			--localstatedir=/var \
 			--sysconfdir=/etc/squid \
-			--enable-storeio="aufs,coss,diskd,null,ufs" \
+			--enable-storeio="aufs,diskd,null,ufs" \
 			--enable-removal-policies="heap,lru" \
 			--enable-icmp \
 			--enable-delay-pools \
