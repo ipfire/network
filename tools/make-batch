@@ -50,19 +50,17 @@ batch_run() {
 	$0 build &> $BATCHLOG
 	sleep 30
 	if [ -e "$FAILED" ]; then
-		SUBJECT="Failed :("
+		batch_mail "Build failed :("
 	else
-		SUBJECT="Success!"
 		puttarget
 	fi
-	SUBJECT=$SUBJECT batch_mail
 }
 
 ###############################################################################                   
 # A function to send an email to the developers                               #
 ###############################################################################
 batch_mail() {
-	MAIL_SUBJECT="[build.ipfire.org - ${HOSTNAME}] - ${SUBJECT}"
+	MAIL_SUBJECT="[${HOSTNAME}] - ${1}"
 
 	for i in MAIL_SERVER MAIL_TO MAIL_FROM MAIL_USER MAIL_PASS MAIL_SUBJECT; do
 		[ -n "${!i}" ] && export ${i}="${!i}"
