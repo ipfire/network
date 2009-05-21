@@ -77,6 +77,8 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && for i in $$(find . -name "*.[ch]"); do \
+						sed -e "s/getline/_&/g" -i $$i; done
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
