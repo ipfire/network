@@ -98,6 +98,7 @@ PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 
 define DO_PKG_INFO
 	@## ALPHABETICAL ORDER ##
+	@echo "local PKG_BUILD_DEPS=\"$(BUILD_DEPS)\""
 	@echo "local PKG_CORE=\"$(CORE)\""
 	@echo "local PKG_DEBUG=\"$(DEBUG)\""
 	@echo "local PKG_DEPS=\"$(DEPS)\""
