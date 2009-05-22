@@ -73,6 +73,7 @@ pkg_list_packages_wiki() {
 }
 
 pkg_info() {
+	[ "$1" = "Config" ] && return
 	cd $BASEDIR/lfs && $EXTRA_MAKE make -f $1 \
 		CONFIG_ROOT=$CONFIG_ROOT \
 		LINKER=$LINKER \
