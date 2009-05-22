@@ -49,4 +49,8 @@ for i in $@; do
 		break
 	fi
 done
+
+/etc/init.d/messagebus stop
+/etc/init.d/haldaemon stop
+
 reboot

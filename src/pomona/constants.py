@@ -15,7 +15,7 @@ kernelVersion = "KVER"
 HARDDISK_PATH = "/mnt/target"
 SOURCE_PATH = "/mnt/source"
 INFO_FILE = ".%sinfo" % (sname,)
-IMAGE_FILE = "%s-%s.img" % (sname, version)
+IMAGE_FILE = "%s-%s.sfs" % (sname, version)
 IMAGE_FILE_LS = "%s-%s.ls" % (sname, version)
 
 REQUIRED_FILES = (IMAGE_FILE,)
