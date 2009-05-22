@@ -116,6 +116,12 @@ pkg_info_wiki() {
 			echo -n "[[$dep]] "
 		done; echo "|"
 
+		# Build dependencies
+		echo -n "| **Build dependencies:** | "
+		for dep in $PKG_BUILD_DEPS; do
+			echo -n "[[$dep]] "
+		done; echo "|"
+
 		echo "| $(echo $PKG_DESC) ||"
 		echo "| **Website:**  | $PKG_URL  |"
 		if [ "$PKG_DEBUG" = "yes" ]; then
@@ -183,6 +189,12 @@ function pkg_info_shell() {
 					printf "${CLR_BOLD_RED}%-12s${NORMAL}: ${!val}\n" ${val#PKG_}
 				fi
 			done
+			echo "         ----------------------------------------         "
+			for val in PKG_DEPS PKG_BUILD_DEPS; do
+				printf "${CLR_BOLD_RED}%-12s${NORMAL}: " ${val#PKG_}
+				format_desc ${!val}
+			done
+			echo "         ----------------------------------------         "
 			for val in PKG_SHORT PKG_DESC; do
 				printf "${CLR_BOLD_RED}%-12s${NORMAL}: " ${val#PKG_}
 				format_desc ${!val}
