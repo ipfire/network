@@ -39,7 +39,40 @@ case "${1}" in
 		;;
 
 	config)
-		: # TODO
+		shift 2
+		while [ $# -gt 0 ]; do
+			case "$1" in
+				--ageing=*)
+					AGEING=${1#--ageing=}
+					;;
+				--priority=*)
+					PRIORITY=${1#--priority=}
+					;;
+				--delay=*)
+					DELAY=${1#--delay=}
+					;;
+				--hello=*)
+					HELLO=${1#--hello=}
+					;;
+				--maxage=*)
+					MAXAGE=${1#--maxage=}
+					;;
+				*)
+					echo "Unknown option: $1" >&2
+					exit 1
+					;;
+			esac
+			shift
+		done
+		cat << EOF >> ${CONFIG_ZONES}/${zone}/stp
+HOOK=stp
+AGEING=$AGEING
+PRIORITY=$PRIORITY
+DELAY=$DELAY
+HELLO=$HELLO
+MAXAGE=$MAXAGE
+EOF
+		exit $?
 		;;
 
 	*)
