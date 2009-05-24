@@ -29,7 +29,7 @@ ERROR="\\033[1;31m"
 . /lib/network/functions
 
 function usage() {
-	echo -e "${BOLD}Usage $0${NORMAL}\n"
+	echo -e "${BOLD}Usage $0${NORMAL}:\n"
 	case "$1" in
 		main|"")
 			echo    "This script will help you configuring your network."
@@ -213,9 +213,10 @@ function port_add() {
 	
 	zone=$1
 	port=$(macify $2)
-	hook=${3-ethernet}
+	shift 2
 
-	shift 3
+	hook=${1-ethernet}
+	shift
 
 	decho "Function: port_add"
 	decho "  Zone: ${zone} Port: ${port} Hook: ${hook} $@"
@@ -372,7 +373,7 @@ while [ "$#" -gt 0 ]; do
 			usage main 0
 			;;
 		start|stop|restart|reload)
-			exec /etc/init.d/network $arg
+			#exec /etc/init.d/network $arg
 			;;
 		port|po|p)
 			arg=$1
@@ -426,7 +427,7 @@ while [ "$#" -gt 0 ]; do
 					else
 						error "\"${hook}\" is not a known hook."
 					fi
-					_exit $RET
+					_exit --reload $RET
 					;;
 				help)
 					usage zone 0
