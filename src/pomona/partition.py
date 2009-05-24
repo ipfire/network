@@ -145,7 +145,20 @@ class PartitionWindow(object):
             self.newLV()
 
     def newPart(self):
-        device = self.storage.newPartition()
+        disks = []
+        for disk in self.storage.disks:
+            disks.append(("%s - %s" % (disk.name, disk.model,), disk,))
+
+        (button, disk) = ListboxChoiceWindow(self.installer.intf.screen,
+                                             _("Disk Selection"),
+                                             _("Choose the disk you want create the new "
+                                               "partition on."),
+                                             disks, buttons = [TEXT_OK_BUTTON, TEXT_CANCEL_BUTTON],
+                                             height=len(disks))
+        if button == TEXT_CANCEL_CHECK:
+            return
+
+        device = self.storage.newPartition(parents=disk)
         self.editPart(device=device)
 
     def newVG(self):
@@ -184,12 +197,15 @@ class PartitionWindow(object):
         
         if not device.exists:
             subgrid1 = Grid(2, 1)
-        
-            (devgrid, drivelist) = self.makeDriveList(device)
-            subgrid1.setField(devgrid, 0, 0)
             
             (fsgrid, fstype) = self.makeFileSystemList(device)
-            subgrid1.setField(fsgrid, 1, 0, (1,0,0,0), growx=1)
+            subgrid1.setField(fsgrid, 0, 0)
+
+            #(devgrid, drivelist) = self.makeDriveList(device)
+            #subgrid1.setField(devgrid, 0, 0)
+            
+            #(fsgrid, fstype) = self.makeFileSystemList(device)
+            #subgrid1.setField(fsgrid, 1, 0, (1,0,0,0), growx=1)
             
             grid.add(subgrid1, 0, row, (0,1,0,0), growx=1)
             row += 1

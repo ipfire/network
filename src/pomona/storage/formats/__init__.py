@@ -31,9 +31,6 @@ def getFormat(fmt_type, *args, **kwargs):
             exists -- whether or not the format exists on the device
 
     """
-
-    #installer = kwargs["installer"]
-
     fmt_class = get_device_format_class(fmt_type)
     fmt = None
     if fmt_class:
@@ -42,7 +39,6 @@ def getFormat(fmt_type, *args, **kwargs):
         className = fmt.__class__.__name__
     except AttributeError:
         className = None
-    #installer.log.debug("getFormat('%s') returning %s instance" % (fmt_type, className))
     return fmt
 
 def get_device_format_class(fmt_type):
