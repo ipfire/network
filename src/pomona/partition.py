@@ -53,7 +53,8 @@ class PartitionWindow(object):
                     if part.format:
                         type = part.format.name
                         try:
-                            mountpoint = part.format.mountpoint
+                            if part.format.mountpoint:
+                                mountpoint = part.format.mountpoint
                         except AttributeError:
                             pass
                     self.lb.append(["  %s" % part.name,

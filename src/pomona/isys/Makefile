@@ -18,34 +18,34 @@
 #                                                                             #
 ###############################################################################
 
-include Makefile.inc
+include ../Makefile.inc
 
-SUBDIRS = isys po
+OBJECTS = isys.o mount.o
 
-all: subdirs
+CFLAGS += -I$(PYTHONINCLUDE)
+LDFLAGS =
+LIBS =
 
-install: all
-	rm -rf $(PYTHONLIBDIR)
-	-mkdir -p $(PYTHONLIBDIR)
-	[ -d "$(PYTHONLIBDIR)" ]
-	for d in $(SUBDIRS); do \
-		make DESTDIR=`cd $(DESTDIR); pwd` -C $$d install; \
-		[ $$? = 0 ] || exit 1; \
-	done
-	cp -avf *.py storage lang-table $(PYTHONLIBDIR)
-	#sed -e "s/VERSION/$(VERSION)/g" \
-	#	-e "s/SNAME/$(SNAME)/g" \
-	#	-e "s/NAME/$(NAME)/g" \
-	#	-i $(PYTHONLIBDIR)/constants.py
-	-mkdir -p $(DESTDIR)/sbin
-	install -m 755 pomona $(DESTDIR)/sbin/pomona
+all: depend _isys.so
 
-test:
-	./runpychecker.sh
+depend: $(patsubst %.o,%.c,$(OBJECTS))
+	$(CPP) -M $(CFLAGS) $(patsubst %.o,%.c,$(OBJECTS)) > depend
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+_isys.so: $(OBJECTS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $(OBJECTS)
+
+install: _isys.so isys.py
+	cp -vf _isys.so isys.py $(PYTHONLIBDIR)
 
 clean:
-	rm -vf *.o *.so *.pyc *.pyo
-	for d in $(SUBDIRS); do make -C $$d clean; done
+	rm -vf $(OBJECTS) depend _isys.so *.py[co]
 
-subdirs:
-	for d in $(SUBDIRS); do make -C $$d; [ $$? = 0 ] || exit 1; done
+test: _isys.so
+	python -c "import isys"
+
+ifeq (depend,$(wildcard depend))
+include depend
+endif

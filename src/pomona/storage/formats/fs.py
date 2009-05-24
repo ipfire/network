@@ -3,6 +3,8 @@
 import os
 import tempfile
 
+import isys
+
 import util
 
 from ..errors import *

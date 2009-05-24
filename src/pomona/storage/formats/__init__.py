@@ -156,7 +156,7 @@ class DeviceFormat(object):
 
     def _setDevice(self, devspec):
         if devspec and not devspec.startswith("/"):
-            raise ValueError("device must be a fully qualified path")
+            raise ValueError("device must be a fully qualified path: %s" % devspec)
         self._device = devspec
 
     def _getDevice(self):
