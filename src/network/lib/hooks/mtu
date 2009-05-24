@@ -16,7 +16,8 @@
 ########################################################################
 
 . /lib/lsb/init-functions
-. /etc/init.d/networking/functions
+. /lib/network/functions
+
 [ -n "${CONFIG}" ] && . ${CONFIG}
 
 function check_config() {

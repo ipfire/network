@@ -20,70 +20,93 @@
 ###############################################################################
 
 . /lib/lsb/init-functions
-. /etc/init.d/networking/functions
+. /lib/network/functions
 
-zone=$1
+port=$(macify $1)
 action=$2
 
-if [ -z "${zone}" ] || [ -z "${action}" ]; then
-	echo "Usage: $0 <zone> <up|down>"
+shift 2
+
+if [ -z "${port}" ] || [ -z "${action}" ]; then
+	echo "Usage: $0 <port> <up|down|attach|detach|status> [hooks]"
 	echo
 	exit 1
 fi
 
-if ! zone_exists ${zone}; then
-	echo "Zone ${zone} does not exist."
+if ! device_exists ${port}; then
+	echo "Port ${port} does not exist."
 	exit 1
 fi
 
+for arg in ${@-$(find ${CONFIG_PORTS}/${port}/)}; do
+	[ -L "${arg}" ] && arg=$(readlink ${arg})
+	arg=${arg##*/}
+	[ -e "${CONFIG_PORTS}/${port}/${arg}" ] || continue
+	hooks="${hooks} ${CONFIG_PORTS}/${port}/${arg}"
+done
+
 case "$action" in
 	up)
-		message="Bringing up zone ${zone}..."
-
-		run_hooks pre-up ${CONFIG_ZONES}/${zone} ${zone}
-
-		# Check if bridge already exists
-		zone_status=`brctl show 2>/dev/null`
-		if ! echo "${zone_status}" | grep -q "^${zone}"; then
-			# Create and bring up the zone
-			brctl addbr ${zone} || failed=1
-			ip link set ${zone} up || failed=1
-			(exit ${failed})
-			evaluate_retval standard
-		fi
-
-		# Attach ports
-		for config in $(find ${CONFIG_ZONES}/${zone}/ -name "port-*" 2>/dev/null); do
-			port=${config##*/}; port=${port#port-}; port=${port%%-*}
-			ZONE=${zone} /etc/init.d/networking/port ${port} attach ${config}
-		done
-
-		run_hooks post-up ${CONFIG_ZONES}/${zone} ${zone}
+		message="Setting up port ${port}..."
+		ip link set $(devicify ${port}) up
+		evaluate_retval
 		;;
 
 	down)
-		message="Bringing down zone ${zone}..."
-		# Check if bridge already exists
-		zone_status=`brctl show 2>/dev/null`
-		if echo "${zone_status}" | grep -q "^${zone}"; then
-			run_hooks pre-down ${CONFIG_ZONES}/${zone} ${zone}
+		;;
 
-			# Detach ports
-			for config in $(find ${CONFIG_ZONES}/${zone}/ -name "port-*" 2>/dev/null); do
-				port=${config##*/}; port=${port#port-}; port=${port%%-*}
-				ZONE=${zone} /etc/init.d/networking/port ${port} detach ${config}
-			done
-
-			# Bring down the zone and delete it
-			ip link set ${zone} down || failed=1
-			brctl delbr ${zone} || failed=1
-			(exit ${failed})
-			evaluate_retval standard
-
-			run_hooks post-down ${CONFIG_ZONES}/${zone} ${zone}
-		else
-			log_warning_msg ${message}
-			log_warning_msg "Zone ${zone} does not exist."
+	attach)
+		ip link set $(devicify ${port}) up # is this required here?
+		if [ -z "${ZONE}" ]; then
+			log_failure_msg "ZONE is not set."
+			exit 1
 		fi
+		;;
+
+	detach)
+		if [ -z "${ZONE}" ]; then
+			log_failure_msg "ZONE is not set."
+			exit 1
+		fi
+		;;
+
+	status)
+		;;
+
+	*)
+		log_failure_msg "\"${action}\" is not a valid command."
+		exit 1
+		;;
+esac
+
+for hook in ${hooks}; do
+	[ -d "${hook}" ] && continue
+	(
+		. ${hook}
+		if [ -n "${HOOK}" -a -x "/etc/init.d/networking/hooks/${HOOK}" ]; then
+			CONFIG=${hook} /etc/init.d/networking/hooks/${HOOK} ${port} ${action}
+			RET=$?
+		else
+			echo -e "${FAILURE}Unable to process ${hook}. Either"
+			echo -e "${FAILURE}the HOOK variable was not set,"
+			echo -e "${FAILURE}or the specified hook cannot be executed."
+			message=""
+			log_failure_msg
+		fi
+		exit ${RET}
+	) || failed=1
+done
+
+case "${action}" in
+	down)
+		# If no ports are running yet, push device down.
+		if ! $0 ${port} status &>/dev/null; then
+			message="Pushing down port ${port}..."
+			ip link set $(devicify ${port}) down
+			evaluate_retval
+		fi
+		;;
+	status)
+		exit ${failed}
 		;;
 esac

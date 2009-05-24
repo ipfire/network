@@ -26,7 +26,7 @@ BOLD="\\033[1;39m"
 NORMAL="\\033[0;39m"
 ERROR="\\033[1;31m"
 
-. /etc/init.d/networking/functions
+. /lib/network/functions
 
 function usage() {
 	echo -e "${BOLD}Usage $0${NORMAL}\n"
@@ -98,7 +98,7 @@ function usage() {
 			echo    "        Adds a port to a zone."
 			echo
 			echo    "        Requires a \"zone\" and \"port\"."
-			echo    "        Example: $0 zone addport green0"
+			echo    "        Example: $0 zone addport green0 black0"
 			echo
 			echo    "        You may also pass a hook and its parameters:"
 			echo    "            $0 zone addport green0 black0 vlan 10"
@@ -148,7 +148,7 @@ function decho() {
 }
 
 function vecho() {
-	verbose && echo -e "$@"  >&2
+	verbose && echo -e "$@" >&2
 }
 
 function error() {
@@ -157,14 +157,31 @@ function error() {
 }
 
 function _exit() {
-	if [ $1 -eq 0 ] && [ "$DO_RELOAD" = "1" ]; then
+	local code
+	local reload
+
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			--reload)
+				reload=1
+				;;
+			[0-9]*)
+				code=$1
+				;;
+			*)
+				error "Unrecognized argument: $1"
+				;;
+		esac
+		shift
+	done
+	if [ ${reload} -eq 1 ]; then
 		# Reloading network to apply changes immediately
 		vecho "Reloading network settings..."
 		cmd $0 $(verbose && echo "-v") $(debug && echo "-d") reload
 	fi
 
-	decho "Exiting with code $1."
-	exit $1
+	decho "Exiting with code ${code}."
+	exit ${code}
 }
 
 function cmd() {
@@ -219,12 +236,12 @@ function port_add() {
 	fi
 
 	mkdir -p ${CONFIG_PORTS}/${port} 2>/dev/null
-	if [ -x "/etc/init.d/networking/hooks/${hook}" ]; then
-		ZONE=${zone} /etc/init.d/networking/hooks/${hook} ${port} add $@
+	if [ -x "/lib/network/hooks/${hook}" ]; then
+		ZONE=${zone} /lib/network/hooks/${hook} ${port} add $@
 		RET=$?
 		if [ "$RET" -eq "0" ]; then
 			vecho "Successfully added port ${BOLD}${port}${NORMAL} (${hook} $@) to ${BOLD}${zone}${NORMAL}."
-			cmd /etc/init.d/networking/port ${port} up
+			cmd /lib/network/port ${port} up
 		else
 			error "Hook ${BOLD}${hook}${NORMAL} exited with $RET."
 			return $RET
@@ -233,7 +250,7 @@ function port_add() {
 		error "Hook ${BOLD}${hook}${NORMAL} does not exist or is not executeable."
 		return 1
 	fi
-	cmd /etc/init.d/networking/zone ${zone} up
+	cmd /lib/network/zone ${zone} up
 }
 
 function port_del() {
@@ -250,9 +267,9 @@ function port_del() {
 	decho "Function: port_del"
 	decho "  Zone: ${zone} Port: ${port} Hook: ${hook}"
 
-	if [ -x "/etc/init.d/networking/hooks/${hook}" ]; then
-		cmd /etc/init.d/networking/port ${port} down ## XXX How do we identify only that one hook?
-		ZONE=${zone} cmd /etc/init.d/networking/hooks/${hook} ${port} remove $@
+	if [ -x "/lib/network/hooks/${hook}" ]; then
+		cmd /lib/network/port ${port} down ## XXX How do we identify only that one hook?
+		ZONE=${zone} cmd /lib/network/hooks/${hook} ${port} remove $@
 		RET=$?
 		if [ "$RET" -eq "0" ]; then
 			vecho "Successfully removed port ${BOLD}${port}${NORMAL} (${hook} $@) from ${BOLD}${zone}${NORMAL}."
@@ -300,7 +317,7 @@ function zone_show() {
 	local port
 	for config in ${CONFIG_ZONES}/${zone}/port-*; do
 		port=${config##*/}; port=${port#port-}; port=${port%%-*}
-		if ZONE=${zone} cmd /etc/init.d/networking/port ${port} attach ${config} &>/dev/null; then
+		if ZONE=${zone} cmd /lib/network/port ${port} attach ${config} &>/dev/null; then
 			echo "#  ${config#port-} is up"
 		else
 			echo "#  ${config#port-} is down"
@@ -321,7 +338,7 @@ function zone_add() {
 
 	mkdir -p ${CONFIG_ZONES}/${zone}
 	vecho "Successfully added zone ${zone}."
-	cmd /etc/init.d/networking/zone ${zone} up
+	cmd /lib/network/zone ${zone} up
 }
 
 function zone_del() {
@@ -333,12 +350,10 @@ function zone_del() {
 		return 1
 	fi
 
-	cmd /etc/init.d/networking/zone ${zone} down
+	cmd /lib/network/zone ${zone} down
 	rm -rf ${CONFIG_ZONES}/${zone}
 	vecho "Successfully removed zone ${zone}."
 }
-
-DO_RELOAD=1
 
 # See what to do
 while [ "$#" -gt 0 ]; do
@@ -365,7 +380,7 @@ while [ "$#" -gt 0 ]; do
 			case "$arg" in
 				show)
 					port_show $@
-					DO_RELOAD=0 _exit $?
+					_exit $?
 					;;
 				help)
 					usage port 0
@@ -378,33 +393,35 @@ while [ "$#" -gt 0 ]; do
 			case "$arg" in
 				add)
 					zone_add $@
-					_exit $?
+					_exit --reload $?
 					;;
 				del)
 					zone_del $@
-					_exit $?
+					_exit --reload $?
 					;;
 				show)
 					zone_show $@
-					DO_RELOAD=0 _exit $?
+					_exit $?
 					;;
 				addport)
 					port_add $@
-					_exit $?
+					_exit --reload $?
 					;;
 				delport)
 					port_del $@
-					_exit $?
+					_exit --reload $?
 					;;
 				list)
 					all_zones
 					_exit $?
 					;;
 				config)
-					zone=$1; shift
-					hook=$1; shift
-					if [ -x /etc/init.d/networking/hooks/${hook} ]; then
-						/etc/init.d/networking/hooks/${hook} config ${zone} $@
+					zone=$1; hook=$2; shift 2
+					if [ -z "${zone}" ] || [ -z "${hook}" ]; then
+						usage config
+					fi
+					if [ -x /lib/network/hooks/${hook} ]; then
+						/lib/network/hooks/${hook} config ${zone} $@
 						RET=$?
 					else
 						error "\"${hook}\" is not a known hook."
@@ -412,12 +429,12 @@ while [ "$#" -gt 0 ]; do
 					_exit $RET
 					;;
 				help)
-					DO_RELOAD=0 usage zone 0
+					usage zone 0
 					;;
 			esac
 			;;
 		-*)
-			DO_RELOAD=0 error "Option \"$arg\" is not known."
+			error "Option \"$arg\" is not known."
 			;;
 	esac
 done

@@ -39,7 +39,7 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 BUILD_DEPS =
-DEPS       = initscripts
+DEPS       =
 
 URL        = http://www.ipfire.org/
 LICENSE    = GPL3+
@@ -74,6 +74,8 @@ $(objects):
 
 $(OBJECT): $(objects)
 	@$(PREBUILD)
-	install -m 755 -v $(DIR_APP)/network /usr/bin
+	install -m 755 -v $(DIR_APP)/network /sbin
+	-mkdir -pv /lib/network
+	cp -av $(DIR_APP)/lib/* /lib/network/
 	$(INSTALL_INITSCRIPT)
 	@$(POSTBUILD)
