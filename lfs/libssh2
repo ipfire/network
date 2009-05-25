@@ -24,34 +24,33 @@
 
 include Config
 
-PKG_NAME   = curl
-PKG_VER    = 7.16.3
+PKG_NAME   = libssh2
+PKG_VER    = 1.1
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.bz2
+DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
-GROUP      = Applications/Internet
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-BUILD_DEPS = pkg-config
-DEPS       = libssh2 openssl openldap
+BUILD_DEPS =
+DEPS       = openssl zlib
 
-URL        = http://curl.haxx.se/
-LICENSE    = MIT
-SHORT_DESC = A utility for getting files from remote servers (FTP, HTTP, and others).
+URL        = http://www.libssh2.org/
+LICENSE    = BSD
+SHORT_DESC = A library implementing the SSH2 protocol.
 
 define LONG_DESC
-	cURL is a tool for getting files from HTTP, FTP, FILE, LDAP, LDAPS, \
-	DICT, TELNET and TFTP servers, using any of the supported protocols. \
-	cURL is designed to work without user interaction or any kind of \
-	interactivity. cURL offers many useful capabilities, like proxy support, \
-	user authentication, FTP upload, HTTP post, and file transfer resume.
+    libssh2 is a library implementing the SSH2 protocol as defined by \
+    Internet Drafts: SECSH-TRANS(22), SECSH-USERAUTH(25), \
+    SECSH-CONNECTION(23), SECSH-ARCH(20), SECSH-FILEXFER(06)*, \
+    SECSH-DHGEX(04), and SECSH-NUMBERS(10).
 endef
 
 ###############################################################################
