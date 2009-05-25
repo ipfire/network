@@ -89,7 +89,7 @@ else
 			;;
 		CDLABEL=*)
 			CDLABEL=${root#CDLABEL=}
-			echo "KERNEL==\"hd[a-z]\", BUS==\"ide\", SYSFS{removable}==\"1\", ATTRS{media}==\"cdrom\", PROGRAM=\"/lib/udev/vol_id -l %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-cdlabel.rules
+			echo "KERNEL==\"hd[a-z]\", BUS==\"ide\", SYSFS{removable}==\"1\", ATTRS{media}==\"cdrom\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-cdlabel.rules
 			echo "KERNEL==\"sr[0-9]\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
 			echo "KERNEL==\"scd[0-9]\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
 			echo "KERNEL==\"pcd[0-9]\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
