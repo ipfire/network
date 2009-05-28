@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = gnupg
-PKG_VER    = 2.0.8
+PKG_VER    = 2.0.11
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -88,6 +88,5 @@ $(OBJECT): $(objects)
 			--libexecdir=/usr/lib/gnupg2
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	#chmod -v 4755 /usr/bin/gpg2 --- We don't do this anymore
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
