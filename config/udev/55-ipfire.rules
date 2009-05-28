@@ -3,7 +3,7 @@
 # Core kernel devices
 
 KERNEL=="aio",      MODE="0444"
-KERNEL=="rtc",      MODE="0666"
+SUBSYSTEM=="rtc",   MODE="0644", ACTION=="add", RUN+="/etc/init.d/setclock start"
 
 # Comms devices
 
