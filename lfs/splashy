@@ -84,6 +84,7 @@ $(OBJECT): $(objects)
 	cp -vf $(DIR_SOURCE)/bootsplash/* /usr/share/splashy/themes/$(SNAME)/
 	splashy_config --set-theme $(SNAME)
 
-	rm -rf /etc/{console-tools,default/splashy,lsb-base-logging.sh} /usr/share/initramfs-tools
+	rm -rvf /etc/{console-tools,default/splashy,lsb-base-logging.sh} \
+		/usr/share/initramfs-tools /lib/libsplashy{,cnf}.la
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

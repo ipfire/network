@@ -100,12 +100,14 @@ $(OBJECT): $(objects)
 ifeq "$(LFS_FILE)" "python-cracklib"
 	cd $(DIR_APP)/python && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP)/python && make install
+	rm -vf /usr/lib/python2.6/site-packages/cracklibmodule.la
 else
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	-rm -rf /usr/share/dict
 	cd $(DIR_APP) && make install
 	mv -v /usr/lib/libcrack.so.2* /lib
 	ln -v -sf ../../lib/libcrack.so.2.8.0 /usr/lib/libcrack.so
+	rm -vf /usr/lib/libcrack.la
 
 	install -v -m644 -D $(DIR_DL)/cracklib-words-20080507.gz \
 		/usr/share/dict/cracklib-words.gz

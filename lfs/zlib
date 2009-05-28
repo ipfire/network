@@ -107,7 +107,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	cd $(DIR_APP) && cp -pfv zconf.h zlib.h /usr/include
-	rm -v /lib/libz.so
+	rm -v /lib/libz.{la,so}
 	ln -sfv ../../lib/libz.so.$(PKG_VER) /usr/lib/libz.so
 endif
 

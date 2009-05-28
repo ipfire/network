@@ -72,5 +72,6 @@ $(OBJECT): $(objects)
 			--disable-static
 	cd $(DIR_SRC)/sqlite-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/sqlite-build && make install
+	rm -vf /usr/lib/libsqlite3.la
 	@rm -rf $(DIR_APP) $(DIR_SRC)/sqlite-build
 	@$(POSTBUILD)

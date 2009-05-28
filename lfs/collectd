@@ -145,6 +145,9 @@ $(OBJECT): $(objects)
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+	
+	rm -vf /usr/lib/libcollectdclient.la /usr/lib/collectd/*.la
+
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/collectd.conf /etc/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

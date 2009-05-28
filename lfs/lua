@@ -102,6 +102,6 @@ $(OBJECT): $(objects)
 	# also remove readline from lua.pc
 	cd $(DIR_APP) && sed -i 's/-lreadline -lncurses //g' etc/lua.pc
 	cd $(DIR_APP) && make install
-	rm -vf /usr/lib/liblua.a
+	rm -vf /usr/lib/liblua.{,l}a
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

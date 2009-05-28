@@ -87,6 +87,7 @@ $(OBJECT): $(objects)
 
 	mv -v /usr/lib/libevtlog.so.0* /lib
 	ln -svf ../../lib/libevtlog.so.0.* /usr/lib/libevtlog.so
+	rm -vf /usr/lib/libevtlog.la
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
