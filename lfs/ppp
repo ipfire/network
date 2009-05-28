@@ -70,7 +70,7 @@ $(OBJECT): $(objects)
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr
-	cd $(DIR_APP) && make HAVE_INET6=y $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make CC="gcc $(CFLAGS)" HAVE_INET6=yes $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	install -d /etc/ppp/peers
 	for i in $(DIR_CONFIG)/$(PKG_NAME)/* ; do \
