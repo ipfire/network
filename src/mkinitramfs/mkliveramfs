@@ -30,14 +30,13 @@ if [ "$WITH_NET" = "1" ]; then
 	for module in /lib/modules/$KERNEL/kernel/drivers/net/{,*/}*; do
 		MODULES="$MODULES $(basename ${module/.ko})"
 	done
+	install arping curl dhclient dhclient-script ping
 fi
 
 # Add all storage modules
 for module in /lib/modules/$KERNEL/kernel/drivers/{ata,message/fusion,pcmcia,scsi{,/*}}/*; do
 	MODULES="$MODULES $(basename ${module/.ko})"
 done
-
-install arping dhclient dhclient-script ping
 
 # Creating folders
 mkdir -p mnt/{source,tmpfs,overlayfs,squashfs}
