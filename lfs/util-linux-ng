@@ -103,10 +103,13 @@ ifeq "$(STAGE)" "base"
 			--enable-partx \
 			--enable-write \
 			--with-fsprobe=builtin \
-			--disable-makeinstall-chown
+			--disable-makeinstall-chown \
+			--disable-static
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+	
+	rm -vf /lib/libblkid.la
 
 	# Build nologin
 	cd $(DIR_APP) && gcc $(CFLAGS) -o nologin $(DIR_SOURCE)/$(PKG_NAME)/nologin.c

@@ -91,6 +91,7 @@ $(OBJECT): $(objects)
 	cd /usr/lib   && for name in glib gobject gmodule gthread gio; do \
 		mv -v lib$${name}-2.0.so.* ../../lib; \
 		ln -svf ../../lib/lib$${name}-2.0.so.*.* lib$${name}-2.0.so; \
+		rm -vf /usr/lib/lib$${name}-2.0.la; \
 	done
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/glib2-locale.sh /etc/profile.d/
 	@rm -rf $(DIR_APP)

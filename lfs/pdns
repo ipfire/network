@@ -91,5 +91,6 @@ $(OBJECT): $(objects)
 			--with-dynmodules="pipe geo ldap gsqlite3"
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+	rm -vf /usr/lib/lib{geo,gsqlite3,ldap,pipe}backend.la
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
