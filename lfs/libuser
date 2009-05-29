@@ -89,7 +89,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make install
 
 	rm -vf /usr/lib/libuser.la /usr/lib/libuser/*.la \
-        /usr/lib/python*/site-packages/libusermodule.la
+	    /usr/lib/python*/site-packages/libusermodule.la
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
