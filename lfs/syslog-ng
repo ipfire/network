@@ -53,6 +53,14 @@ define LONG_DESC
 	infrastructure even in heterogeneous environments.
 endef
 
+define CONTROL_POSTIN
+	install_initd /etc/init.d/syslog-ng
+endef
+
+define CONTROL_POSTUN
+	remove_initd /etc/init.d/syslog-ng
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
