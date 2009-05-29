@@ -55,5 +55,6 @@ FILES=$(for i in $FILES; do echo $i; done | sort -u)
 
 for file in $FILES; do
 	echo "Extracting $file..."
-	lzma -cd $file | cpio -diu --no-absolute-filenames --quiet
+	cpio --extract --quiet --to-stdout data.img < $file | lzmadec | \
+		cpio -diu --no-absolute-filenames --quiet
 done

@@ -49,6 +49,8 @@ if [ -e "/packages/$PKG_TARGET" ]; then
 fi
 
 ARCHIEVE=$(mktemp)
+CONTROL=$(mktemp)
+INFO=$(mktemp)
 TMP_DIR=$(mktemp -d)
 
 for rootfile in $ROOTFILES; do
@@ -60,10 +62,67 @@ done
 
 cd $TMP_DIR
 
-find . | cpio -o --quiet | lzma -czv - > $ARCHIEVE
+find . | cpio -o -H newc --quiet | lzma -czv - > $ARCHIEVE
+
+cat <<EOF >$INFO
+### $NAME package
+
+BUILD_HOST="$(cat /proc/sys/kernel/hostname)"
+BUILD_DATE="$(date -u)"
+
+# Version info
+PKG_NAME="$PKG_NAME"
+PKG_VER="$PKG_VER"
+PKG_REL="$PKG_REL"
+PKG_GROUP="$PKG_GROUP"
+
+PKG_MAINTAINER="$PKG_MAINTAINER"
+PKG_LICENSE="$PKG_LICENSE"
+
+PKG_SUMMARY="$PKG_SHORT"
+PKG_DESCRIPTION="$PKG_LONG"
+
+# Dependency info
+PKG_DEPS="$PKG_DEPS"
+PKG_BUILD_DEPS="$PKG_BUILD_DEPS"
+
+PKG_DATA_SHA1="$(sha1sum $ARCHIEVE | awk '{ print $1 }')"
+
+###
+EOF
+
+cat <<EOF >$CONTROL
+#!/bin/sh
+
+function prein() {
+$CONTROL_PREIN
+}
+
+function preun() {
+$CONTROL_PREUN
+}
+
+function postin() {
+$CONTROL_POSTIN
+}
+
+function postun() {
+$CONTROL_POSTUN
+}
+
+###
+EOF
+
+rm -rf $TMP_DIR/*
+
+cat $ARCHIEVE > $TMP_DIR/data.img
+cat $CONTROL  > $TMP_DIR/control
+cat $INFO     > $TMP_DIR/info
+
+find . | cpio -o -H newc --quiet > $ARCHIEVE
 
 cat $ARCHIEVE > /packages/$PKG_TARGET
 
 echo "Done."
 
-rm -rf $ARCHIEVE $TMP_DIR
+rm -rf $ARCHIEVE $CONTROL $INFO $TMP_DIR
