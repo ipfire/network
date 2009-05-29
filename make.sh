@@ -239,6 +239,7 @@ ipfire_build() {
 	ipfire_make whois
 	ipfire_make avahi
 	ipfire_make libssh2
+	ipfire_make libdnet
 	
 	### Building some general stuff
 	#   STAGE 2
