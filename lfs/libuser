@@ -87,5 +87,9 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && sed -e "s/^SUBDIRS = .*/SUBDIRS = po/" -i Makefile
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	rm -vf /usr/lib/libuser.la /usr/lib/libuser/*.la \
+	    /usr/lib/python*/site-packages/libusermodule.la
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

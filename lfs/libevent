@@ -89,5 +89,8 @@ $(OBJECT): $(objects)
 			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	rm -vf /usr/lib/libevent{,_core,_extra}.la
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

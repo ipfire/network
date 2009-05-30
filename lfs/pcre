@@ -79,5 +79,6 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make install
 	mv -v /usr/lib/libpcre.so.* /lib/
 	ln -v -sf ../../lib/libpcre.so.0 /usr/lib/libpcre.so
+	rm -vf /usr/lib/libpcre{,cpp,posix}.la
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

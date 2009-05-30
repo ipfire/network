@@ -47,8 +47,8 @@ LICENSE    = GPLv2+
 SHORT_DESC = A utility for setting up encrypted filesystems.
 
 define LONG_DESC
-    This package contains cryptsetup, a utility for setting up \
-    encrypted filesystems using Device Mapper and the dm-crypt target.
+	This package contains cryptsetup, a utility for setting up \
+	encrypted filesystems using Device Mapper and the dm-crypt target.
 endef
 
 ###############################################################################
@@ -86,7 +86,7 @@ $(OBJECT): $(objects)
 			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	rm -rvf /lib/cryptsetup{,.so}
+	rm -rvf /lib/cryptsetup{,.la,.so}
 	ln -svf ../../lib/libcryptsetup.so.0.0.0 /usr/lib/libcryptsetup.so
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

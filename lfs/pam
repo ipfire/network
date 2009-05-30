@@ -82,8 +82,7 @@ $(OBJECT): $(objects)
 	chmod -v 4755 /lib/security/unix_chkpwd
 	mv -v /lib/security/pam_tally /sbin
 	
-	mv -v /lib/libpam{,c,_misc}.la /usr/lib
-	sed -i 's| /lib| /usr/lib|' /usr/lib/libpam_misc.la
+	rm -vf /lib/libpam{,c,_misc}.la /lib/security/*.la
 	
 	if [ -L /lib/libpam.so ]; then \
 		for LINK in libpam{,c,_misc}.so; do \
