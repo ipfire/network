@@ -44,7 +44,18 @@ DEBUG      = no
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-libutil.patch \
+	$(THISAPP)-pie.patch \
+	$(THISAPP)-fix.patch \
+	$(THISAPP)-ipv6-accept-remote.patch \
+	$(THISAPP)-pppoatm-mtu.patch \
+	$(THISAPP)-local.patch \
+	$(THISAPP)-dontwriteetc.patch \
+	$(THISAPP)-closelog.patch \
+	$(THISAPP)-response_len.patch \
+	$(THISAPP)-new_speeds.patch \
+	$(THISAPP)-bogus_dns_addr.patch
 
 download: $(objects)
 
@@ -66,10 +77,35 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
+	# This patch removes logwtmp in libutil, because glibc also provides that.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libutil.patch
+
+	# This patch adds pie chat to ppp.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pie.patch
+
+	# Add ipv6cp-accept-remote to allow DSL to work with demand dial and native IPv6
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ipv6-accept-remote.patch
+
+	# This patch removes local from the path of ppp and all used binaries.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-local.patch
+
+	# Some more patches, but the name of each should tell what it's doing.	
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-dontwriteetc.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pppoatm-mtu.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-closelog.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-bogus_dns_addr.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-new_speeds.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-response_len.patch
+
+	sed -e "s/^LIBS =/LIBS=-lutil/" -i $(DIR_APP)/pppd/Makefile.linux
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr
+
 	cd $(DIR_APP) && make CC="gcc $(CFLAGS)" HAVE_INET6=yes $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	install -d /etc/ppp/peers
@@ -81,5 +117,6 @@ $(OBJECT): $(objects)
 	chmod 755 /etc/ppp/{dialer,ip-up,ip-down}
 	ln -sf $(CONFIG_ROOT)/ppp/secrets /etc/ppp/pap-secrets
 	ln -sf $(CONFIG_ROOT)/ppp/secrets /etc/ppp/chap-secrets
+	cp -vf $(DIR_CONFIG)/pam.d/$(PKG_NAME) /etc/pam.d/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
