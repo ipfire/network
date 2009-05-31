@@ -36,7 +36,11 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
 GROUP      = System/Base
-CORE       = yes
+ifeq "$(LFS_FILE)" "linux-headers"
+	CORE = no
+else
+	CORE = yes
+endif
 EXTRA      = no
 DEBUG      = no
 BUILD_DEPS =
