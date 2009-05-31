@@ -14,7 +14,8 @@
 ########################################################################
 
 . /lib/lsb/init-functions
-. /etc/init.d/networking/functions
+. /lib/network/functions
+
 [ -n "${CONFIG}" ] && . ${CONFIG}
 
 zone=$2
@@ -94,23 +95,23 @@ case "${1}" in
 		shift 2
 		while [ $# -gt 0 ]; do
 			case "$1" in
-				--ip=)
-					IP=${2#--ip=}
+				--ip=*)
+					IP=${1#--ip=}
 					;;
-				--prefix=)
-					PREFIX=${2#--prefix=}
+				--prefix=*)
+					PREFIX=${1#--prefix=}
 					;;
-				--peer=)
-					PEER=${2#--peer=}
+				--peer=*)
+					PEER=${1#--peer=}
 					;;
-				--broadcast=)
-					BROADCAST=${2#--broadcast=}
+				--broadcast=*)
+					BROADCAST=${1#--broadcast=}
 					;;
-				--source=)
-					SOURCE=${2#--source=}
+				--source=*)
+					SOURCE=${1#--source=}
 					;;
-				--gateway=)
-					GATEWAY=${2#--gateway=}
+				--gateway=*)
+					GATEWAY=${1#--gateway=}
 					;;
 				*)
 					echo "Unknown option: $1" >&2
@@ -133,7 +134,7 @@ EOF
 		;;
 	
 	*)
-		echo "Usage: ${0} {pre-up|post-up|pre-down|post-down|config} [interface]"
+		echo "Usage: ${0} {config|pre-up|post-up|pre-down|post-down|status} [interface]"
 		exit 1
 	;;
 esac

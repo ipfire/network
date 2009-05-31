@@ -93,6 +93,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make install
 	for LINK in lber ldap ldap_r; do \
 		chmod -v 0755 /usr/lib/$$(readlink /usr/lib/lib$${LINK}.so); \
+		rm -vf /usr/lib/lib$${LINK}.la; \
 	done
 	$(INSTALL_INITSCRIPT)
 	@rm -rf $(DIR_APP)

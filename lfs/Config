@@ -89,6 +89,7 @@ INSTALL_CONFIG = sed \
 	-e "s/@NAME@/$(NAME)/g" \
 	-e "s/@SNAME@/$(SNAME)/g" \
 	-e "s/@VERSION@/$(VERSION)/g" \
+	-e "s/@SLOGAN@/$(SLOGAN)/g" \
 	-e "s/@DATE@/$(shell date '+%Y%m%d')/g"
 
 INSTALL_INITSCRIPT = echo "Installing initscript \"$(INITSCRIPT)\" -> /etc/init.d"; \

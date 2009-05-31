@@ -116,17 +116,6 @@ $(OBJECT): $(objects)
 	done
 	chmod 644 /etc/init.d/ipfire-functions
 
-	# Install networking scripts
-	for i in $(DIR_APP)/networking/*; do \
-		[ -d "$$i" ] && continue; \
-		install -v -m 754 $$i /etc/init.d/networking; \
-	done
-	chmod 644 /etc/init.d/networking/functions
-
-	for i in $(DIR_APP)/networking/hooks/*; do \
-		install -v -m 754 $$i /etc/init.d/networking/hooks; \
-	done
-
 	install -m 644 $(DIR_APP)/lsb/init-functions /lib/lsb/
 	install -m 644 $(DIR_APP)/lsb/manage-functions /lib/lsb/
 	install -m 644 $(DIR_APP)/etc/lsb-config /etc/lsb/

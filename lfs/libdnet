@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,13 +24,13 @@
 
 include Config
 
-PKG_NAME   = libtool
-PKG_VER    = 2.2.6a
+PKG_NAME   = libdnet
+PKG_VER    = 1.12
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
-DIR_APP    = $(DIR_SRC)/$(PKG_NAME)-2.2.6
+DL_FILE    = $(THISAPP).tgz
+DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -42,34 +42,37 @@ DEBUG      = no
 BUILD_DEPS =
 DEPS       =
 
-URL        = http://www.gnu.org/software/libtool/
-LICENSE    = GPLv2+ and LGPLv2+ and GFDL
-SHORT_DESC = Runtime libraries for GNU Libtool Dynamic Module Loader.
+URL        = http://code.google.com/p/libdnet/
+LICENSE    = BSD
+SHORT_DESC = Simple portable interface to lowlevel networking routines.
 
 define LONG_DESC
-	GNU Libtool is a set of shell scripts which automatically \
-	configure UNIX and UNIX-like systems to generically build \
-	shared libraries. Libtool provides a consistent, portable \
-	interface which simplifies the process of using shared libraries.
+	libdnet provides a simplified, portable interface to several \
+	low-level networking routines, including network address \
+	manipulation, kernel arp(4) cache and route(4) table lookup and \
+	manipulation, network firewalling (IP filter, ipfw, ipchains, \
+	pf, ...), network interface lookup and manipulation, raw IP \
+	packet and Ethernet frame, and data transmission.
 endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-shrext.patch
 
 download: $(objects)
 
 info:
 	$(DO_PKG_INFO)
 
-install : $(OBJECT)
+install: $(OBJECT)
 
 package:
 	@$(DO_PACKAGE)
 
-$(objects) :
+$(objects):
 	@$(LOAD)
 
 ###############################################################################
@@ -79,15 +82,17 @@ $(objects) :
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
+	# Patch for inconsistent shrext variable
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-shrext.patch
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
+			--sbindir=/sbin \
 			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-
-	rm -vf /usr/lib/libltdl.la
-
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

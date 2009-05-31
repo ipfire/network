@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = curl
-PKG_VER    = 7.16.3
+PKG_VER    = 7.19.5
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -40,7 +40,7 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 BUILD_DEPS = pkg-config
-DEPS       = openssl openldap
+DEPS       = libssh2 openssl openldap
 
 URL        = http://curl.haxx.se/
 LICENSE    = MIT
@@ -81,11 +81,26 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
+		CPPFLAGS="-DHAVE_PK11_CREATEGENERICOBJECT" \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--disable-static
+			--disable-static \
+			--with-ca-bundle=/etc/pki/tls/certs/ca-bundle.crt \
+			--with-libidn \
+			--with-libssh2 \
+			--enable-ldaps \
+			--enable-ipv6
+
+	# Remove bogus rpath
+	cd $(DIR_APP) && sed -i \
+		-e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
+		-e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	rm -vf /usr/lib/libcurl.la
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

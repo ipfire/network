@@ -17,37 +17,10 @@
 ### END INIT INFO
 
 . /lib/lsb/init-functions
-. /etc/init.d/networking/functions
 
 case "${1}" in
-	start)
-		# Start all network interfaces
-		for zone in $(find ${CONFIG_ZONES}/* -maxdepth 1 2>/dev/null); do
-			[ -d "${zone}" ] || continue
-			/etc/init.d/networking/zone ${zone##*/} up
-		done
-		touch /var/lock/subsys/network
-		;;
-
-	stop)
-		# Stop all network interfaces
-		for zone in $(find ${CONFIG_ZONES}/* -maxdepth 1 2>/dev/null); do
-			[ -d "${zone}" ] || continue
-			/etc/init.d/networking/zone ${zone##*/} down
-		done
-		rm -f /var/lock/subsys/network
-		;;
-
-	restart)
-		${0} stop
-		sleep 1
-		${0} start
-		;;
-
-	reload)
-		if [ -e /var/lock/subsys/network ]; then
-			: # TODO
-		fi
+	start|stop|reload|restart)
+		exec /sbin/network $@
 		;;
 
 	*)

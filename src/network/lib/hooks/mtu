@@ -16,7 +16,8 @@
 ########################################################################
 
 . /lib/lsb/init-functions
-. /etc/init.d/networking/functions
+. /lib/network/functions
+
 [ -n "${CONFIG}" ] && . ${CONFIG}
 
 function check_config() {
@@ -65,6 +66,13 @@ case "${1}" in
 		;;
 
 	config)
+		MTU=$3
+		check_config
+		cat << EOF >> ${CONFIG_ZONES}/${zone}/mtu
+HOOK=mtu
+MTU=$MTU
+EOF
+		exit $?
 		;;
 
 	*)

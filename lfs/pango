@@ -71,5 +71,6 @@ $(OBJECT): $(objects)
 			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+	rm -vf /usr/lib/libpango{,cairo,ft2}-1.0.la /usr/lib/pango/1.6.0/modules/*.la
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

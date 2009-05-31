@@ -37,6 +37,8 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 
+DEPS       = sqlite
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -73,7 +75,11 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/ulogd.conf /etc/ulogd.conf
+
 	-mkdir -pv /var/log/ulogd
+	rm -vf /var/log/ulogd/ulogd.db
 	sqlite3 -echo /var/log/ulogd/ulogd.db < $(DIR_CONFIG)/$(PKG_NAME)/sqlite3.table
+
+	rm -vf /usr/lib/ulogd/*.la
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

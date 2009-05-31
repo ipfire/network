@@ -233,6 +233,8 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/gcc-build && make install
 
+	rm -vf /usr/lib/lib{gomp,mudflap{,th},stdc++,supc++}.la
+
 	ln -sfv ../usr/bin/cpp /lib
 	ln -sfv gcc /usr/bin/cc
 endif

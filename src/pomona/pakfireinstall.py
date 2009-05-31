@@ -115,11 +115,12 @@ class PomonaPakfire:
         filename    = os.path.join(SOURCE_PATH, IMAGE_FILE)
         filename_ls = os.path.join(SOURCE_PATH, IMAGE_FILE_LS)
 
-        fd = open(filename_ls, 'r')
-        filesize = 0
-        while fd.readline():
-            filesize += 1
-        fd.close()
+        # XXX Temporarily disabled
+        #fd = open(filename_ls, 'r')
+        filesize = 1000
+        #while fd.readline():
+        #    filesize += 1
+        #fd.close()
         cb.setSize(filesize)
 
         filesize = int(os.path.getsize(filename))
