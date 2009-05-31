@@ -1,0 +1,49 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function pkg_get_file() {
+	cpio --extract --quiet --to-stdout $1 < $2
+}
+
+function pkg_info() {
+	pkg_get_file info $1
+}
+
+function pkg_data() {
+	pkg_get_file data.img $1
+}
+
+function pkg_control() {
+	pkg_get_file control $1
+}
+
+function pkg_verify() {
+	local pak=$1
+	(
+		eval $(pkg_info $pak | grep ^PKG_DATA_SHA1)
+		if [ "$(pkg_data $pak | sha1sum | awk '{ print $1 }')" = "$PKG_DATA_SHA1" ]; then
+			exit 0
+		else
+			exit 1
+		fi
+	)
+	return $?
+}

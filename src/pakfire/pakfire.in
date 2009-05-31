@@ -1,0 +1,61 @@
+#!/usr/bin/python
+
+import sys
+
+from optparse import OptionParser
+
+import pakfire
+from pakfire.package import Package
+from pakfire.transactionset import Transactionset
+
+__version__ = "@VERSION@"
+
+op = OptionParser(usage="%prog [options] <action> ...", version="%prog " + __version__)
+op.add_option("-r", "--root", dest="root", metavar="DIR")
+op.add_option("-v", "--verbose", dest="verbose",
+              action="store_true", default=False,
+              help="Be verbose.")
+op.add_option("-y", "--yes", dest="allyes",
+              action="store_true", default=False,
+              help="Answer all questions with \"yes\".")
+op.add_option("--nogpgcheck", dest="gpgcheck",
+              action="store_false", default=True,
+              help="Omit gpg check (unsafe).")
+
+def usage(exit=1):
+    op.print_help()
+    sys.exit(exit)
+
+def parse_options():
+    (options, args) = op.parse_args()
+    
+    # When no command was given
+    if not args:
+        usage()
+    
+    # The first argument is the action
+    action = args.pop(0)
+    if not action in ["install", "remove", "info", "provides",]:
+        op.error("\"%s\" is not a valid action." % action)
+    
+    if not args:
+        op.error("Action \"%s\" needs at least one argument.")
+
+    return (action, options, args)
+
+(action, options, args) = parse_options()
+
+pakfire = pakfire.Pakfire()
+
+if action == "install":
+    pakfire.ts = Transactionset()
+    for a in args:
+        p = Package(a)
+        pakfire.ts.addPackage(p)
+
+    pakfire.ts.run()
+
+elif action == "info":
+    for a in args:
+        p = Package(a)
+        print p.print_info()

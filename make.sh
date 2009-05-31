@@ -254,6 +254,7 @@ ipfire_build() {
 	ipfire_make nss_ldap
 	ipfire_make ldapvi
 	ipfire_make sqlite
+	ipfire_make python-sqlite2
 	ipfire_make curl
 	ipfire_make pinentry
 	ipfire_make gnupg2
@@ -344,6 +345,7 @@ ipfire_build() {
 	ipfire_make pyfire
 	ipfire_make network
 	ipfire_make firewall
+	ipfire_make pakfire
 }
 
 ################################################################################
