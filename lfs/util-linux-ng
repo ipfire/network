@@ -37,7 +37,12 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 BUILD_DEPS =
-DEPS       = ncurses pam zlib
+
+ifneq "$(STAGE)" "toolchain"
+	DEPS = ncurses pam zlib
+else
+	DEPS = ncurses zlib
+endif
 
 CFLAGS    += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 

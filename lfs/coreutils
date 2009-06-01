@@ -40,7 +40,11 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 BUILD_DEPS =
-DEPS       = attr libcap2 ncurses pam shadow util-linux-ng
+
+# Don't check deps at toolchain build
+ifneq "$(STAGE)" "toolchain"
+	DEPS       = attr libcap2 ncurses pam shadow util-linux-ng
+endif
 
 URL        = http://www.gnu.org/software/coreutils/
 LICENSE    = GPLv3+
