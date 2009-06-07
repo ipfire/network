@@ -33,19 +33,10 @@ qemu_start() {
 	# Create a qemu disk if not present (4G)
 	[ -e $QEMU_DISK ] || qemu-img create $QEMU_DISK 4G
 
-	# Load the kernel module
-	if ! grep -q ^kqemu /proc/modules; then
-		modprobe kqemu 2>/dev/null
-	fi
-
 	# Prepare qemu command
 	QEMU_COMMAND="qemu -name $NAME-$VERSION -m 256"
 	QEMU_COMMAND="$QEMU_COMMAND -k de -localtime -vga std -usb"
 	QEMU_COMMAND="$QEMU_COMMAND -no-reboot -vnc :2 -hda $QEMU_DISK"
-
-	if ! grep -q ^kqemu /proc/modules; then
-		QEMU_COMMAND="$QEMU_COMMAND -no-kqemu"
-	fi
 
 	case "$1" in
 		""|cd*)
