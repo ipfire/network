@@ -37,6 +37,10 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 
+define QUALITY_AGENT_WHITELIST_RPATH
+	/usr/lib/perl5/site_perl/*/auto/XML/Parser/Expat/Expat.so
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
