@@ -460,8 +460,6 @@ packages_build() {
 
 	build_spy stage ${STAGE}
 
-	ipfire_make quality-agent
-
 	# Generate ChangeLog
 	git_log
 
