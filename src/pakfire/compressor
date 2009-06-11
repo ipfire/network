@@ -19,6 +19,15 @@
 #                                                                             #
 ###############################################################################
 
+PACKAGE_VERSION="0"
+
+function cleanup() {
+	echo " Cleaning up..."
+	for i in $ARCHIEVE $CONTROL $INFO $TMP_DIR; do
+		rm -rf ${i}
+	done
+}
+
 while [ $# -gt 0 ]; do
 	case "$1" in
 		*)
@@ -41,7 +50,7 @@ if [ -z "$TARGET" ]; then
 	exit 1
 fi
 
-echo -n "Running for $PKG_TARGET..."
+echo "Packaging $PKG_TARGET..."
 
 if [ -e "/packages/$PKG_TARGET" ]; then
 	echo "Skip."
@@ -53,25 +62,40 @@ CONTROL=$(mktemp)
 INFO=$(mktemp)
 TMP_DIR=$(mktemp -d)
 
+echo " Collecting files..."
 for rootfile in $ROOTFILES; do
 	ERROR=$(cd / && \
 			grep -v "^#" < $rootfile | \
 			sed -e "s/KVER/$KVER/g" \
 				-e "s/IFS_TARGET/$IFS_TARGET/g" | \
-			cpio -pdl --quiet $TMP_DIR 2>&1)
+			cpio -pd --quiet $TMP_DIR 2>&1)
 	if [ -n "${ERROR}" ]; then
 		echo -e "When copying the files, an error occoured:\n\n${ERROR}" >&2
-		rm -rf $ARCHIEVE $CONTROL $INFO $TMP_DIR
+		cleanup
+		exit 1
+	fi
+done
+
+echo " Running quality agent hooks..."
+for hook in $(dirname $0)/compressor.d/*; do
+	[ -x "${hook}" ] || continue
+	${hook} $TMP_DIR
+	if [ "$?" != "0" ]; then
+		cleanup
 		exit 1
 	fi
 done
 
 cd $TMP_DIR
 
+echo " Writing data.img..."
 find . | cpio -o -H newc --quiet | lzma -cz - > $ARCHIEVE
 
+echo " Writing meta-data..."
 cat <<EOF >$INFO
 ### $NAME package
+
+PACKAGE_VERSION="$PACKAGE_VERSION"
 
 BUILD_HOST="$(cat /proc/sys/kernel/hostname)"
 BUILD_DATE="$(date -u)"
@@ -97,6 +121,7 @@ PKG_DATA_SHA1="$(sha1sum $ARCHIEVE | awk '{ print $1 }')"
 ###
 EOF
 
+echo " Writing control file..."
 cat <<EOF >$CONTROL
 #!/bin/sh
 
@@ -125,10 +150,9 @@ cat $ARCHIEVE > $TMP_DIR/data.img
 cat $CONTROL  > $TMP_DIR/control
 cat $INFO     > $TMP_DIR/info
 
+echo " Packaging archive..."
 find . | cpio -o -H newc --quiet > $ARCHIEVE
 
 cat $ARCHIEVE > /packages/$PKG_TARGET
 
-echo "Done."
-
-rm -rf $ARCHIEVE $CONTROL $INFO $TMP_DIR
+cleanup

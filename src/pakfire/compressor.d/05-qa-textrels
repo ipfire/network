@@ -1,0 +1,35 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# TEXTREL's are baaaaaaaad
+
+echo "  Searching for bad TEXTRELs..."
+f=$(scanelf -qyRF '%t %p' ${1} 2>/dev/null | awk '{ print $NF }')
+if [ -n "$f" ]; then
+	echo "  QA Notice: The following files contain runtime text relocations"
+	echo "   Text relocations force the dynamic linker to perform extra"
+	echo "   work at startup, waste system resources, and may pose a security"
+	echo "   risk. On some architectures, the code may not even function"
+	echo "   properly, if at all."
+	echo "${f}"
+
+	exit 1
+fi

@@ -1,0 +1,51 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+TMP_DIR=$1
+
+echo "  Searching for bad RPATH attributes..."
+
+# Make sure we disallow insecure RUNPATH/RPATH's
+# Don't want paths that point to the tree where the package was built
+# (older, broken libtools would do this).  Also check for null paths
+# because the loader will search $PWD when it finds null paths.
+
+command="scanelf -qyRF '%r %p' ${TMP_DIR} 2>/dev/null | awk '{ print $NF }'"
+
+for i in $QUALITY_AGENT_WHITELIST_RPATH; do
+	if [ -n "$FILTER" ]; then
+		FILTER="$FILTER|$i"
+	else
+		FILTER="$i"
+	fi
+done
+
+if [ -n "$FILTER" ]; then
+	command="$command | grep -vE \"$FILTER\""
+fi
+
+files=$($command)
+if [ -n "$files" ]; then
+	echo "  QA Notice: The following files contain insecure RUNPATH's"
+	echo "${files}"
+	echo
+	exit 1
+fi
