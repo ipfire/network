@@ -42,20 +42,11 @@ DEPS       =
 
 URL        =
 LICENSE    =
-SHORT_DESC = This script strips the whole system.
+SHORT_DESC = This script strips the toolchain.
 
 define LONG_DESC
-	This script strips the whole system.
+	This script strips the toolchain.
 endef
-
-WHAT       = -mount -type f -not -path '.$(TOOLS_DIR)*' \
-	-not -path './tmp*' -not -path './usr/src*' -not -path './dev*' \
-	-not -path './proc*' -not -path './sys*' -not -name '*.h' \
-	-not -name '*.txt' -not -name '*.m4' -not -name '*.c' -not -name '*.pl' \
-	-not -name '*.py' -not -name '*.sh' -not -name '*.bash' \
-	-not -name '*.info' -not -name '*.gz' -not -name '*.bz2' \
-	-not -name '*.a' -not -name '*.la' -not -name '*.mo' -not -name '*.ipp' \
-	-not -name '*.hpp'
 
 ###############################################################################
 # Top-level Rules
@@ -81,8 +72,6 @@ $(objects):
 ###############################################################################
 
 $(OBJECT): $(objects)
-
-ifeq "$(STAGE)" "toolchain"
 	## Strip debugging symbols
 	for f in $$(find $(TOOLS_DIR)/ -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
 		grep -v ' shared object,' | \
@@ -102,31 +91,3 @@ ifeq "$(STAGE)" "toolchain"
 		$(TOOLS_DIR)/share/locale/* \
 		$(TOOLS_DIR)/var
 	chown -R root:root $(LFS)$(TOOLS_DIR)
-endif
-
-ifeq "$(STAGE)" "packages"
-	## If the pyc and pyo files are the same, we can hardlink them
-	for pyc in $$(find $(LFS)/usr/lib/python* -type f -name "*.pyc"); do \
-		pyo=$$(echo "$$pyc" | sed "s/.pyc$$/.pyo/"); \
-		if cmp -s "$$pyc" "$$pyo"; then \
-			ln -f "$$pyc" "$$pyo"; \
-		fi; \
-	done
-
-	## Strip debugging symbols
-	cd $(LFS) && \
-	for f in $$($(TOOLS_DIR)/bin/find $(WHAT) -type f \
-			\( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
-		grep -v ' shared object,' | \
-		sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped/\1/p'); do \
-		$(TOOLS_DIR)/bin/strip --strip-debug "$$f" || :; \
-	done
-
-	## Strip unneeded symbols
-	cd $(LFS) && \
-	for f in $$($(TOOLS_DIR)/bin/find $(WHAT) -a -exec file {} \; | \
-		grep ' shared object,' | \
-		sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped/\1/p'); do \
-		$(TOOLS_DIR)/bin/strip --strip-unneeded "$$f"; \
-	done
-endif

@@ -460,7 +460,6 @@ packages_build() {
 
 	build_spy stage ${STAGE}
 
-	toolchain_make strip
 	ipfire_make quality-agent
 
 	# Generate ChangeLog
