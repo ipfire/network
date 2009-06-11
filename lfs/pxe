@@ -79,14 +79,7 @@ $(OBJECT): $(objects)
 		$(DIR_CONF)/bootloader/*.msg $(CDROM_DIR)/$(SNAME)/
 
 	cp -vf /usr/share/syslinux/pxelinux.0 $(CDROM_DIR)/
-	sed	-e "s/SNAME/$(SNAME)/g" \
-		-e "s/NAME/$(NAME)/g" \
-		-e "s/VERSION/$(VERSION)/g" \
-		-e "s@$(SNAME)0@$(SNAME)/$(SNAME)0@g" \
-		-e "s@initrd0@$(SNAME)/initrd0@g" \
-		-e "s@splash@$(SNAME)/splash@g" \
-		-e "s@vesamenu.c32@$(SNAME)/vesamenu.c32@g" \
-		$(DIR_CONF)/bootloader/installer.conf \
+	$(INSTALL_CONFIG) $(DIR_CONF)/bootloader/pxe.conf \
 		> $(CDROM_DIR)/pxelinux.cfg/$(SNAME)-pxe-$(VERSION).model
 
 	sed -e "s@splash@$(SNAME)/splash@g" \
