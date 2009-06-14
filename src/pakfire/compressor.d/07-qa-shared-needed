@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,50 +19,16 @@
 #                                                                             #
 ###############################################################################
 
-qemu_start() {
-	# Check if we have a qemu binary
-	if ! which qemu &>/dev/null; then
-		dialogerror "Cannot find qemu."
+TMP_DIR=$1
+
+check_files=$(find ${TMP_DIR} -name lib*.so*)
+
+echo "  Searching bad libs that lack the NEEDED attribute..."
+if [ -n "$check_files" ]; then
+	f=$(scanelf -ByF '%n %p' $check_files | awk '$2 == "" { print }')
+	if [ -n "$f" ]; then
+		echo "  QA Notice: The following shared libraries lack NEEDED entries"
+		echo "${f}"
 		exit 1
 	fi
-
-	# Check if the working directory is present
-	[ -d "$BASEDIR/vm" ] || mkdir $BASEDIR/vm
-	QEMU_DISK=$BASEDIR/vm/qemu-hda-$HOSTNAME.img
-
-	# Create a qemu disk if not present (4G)
-	[ -e $QEMU_DISK ] || qemu-img create $QEMU_DISK 4G
-
-	# Prepare qemu command
-	QEMU_COMMAND="qemu -name $NAME-$VERSION -m 256"
-	QEMU_COMMAND="$QEMU_COMMAND -k de -localtime -vga std -usb"
-	QEMU_COMMAND="$QEMU_COMMAND -no-reboot -vnc :2 -hda $QEMU_DISK"
-
-	case "$1" in
-		""|cd*)
-			QEMU_COMMAND="$QEMU_COMMAND -boot d -cdrom"
-			if [ -n "$2" ]; then
-				QEMU_COMMAND="$QEMU_COMMAND $2"
-			else
-				QEMU_COMMAND="$QEMU_COMMAND $BASEDIR/$IMAGENAME.iso"
-			fi
-			;;
-		disk|hd*)
-			QEMU_COMMAND="$QEMU_COMMAND -boot c"
-			;;
-	esac
-	
-	echo -e "We are going to run a ${BOLD}virtual machine${NORMAL}, now."
-	echo
-	echo "You may connect to this machine with a vnc viewer to $HOSTNAME:2."
-	echo "Kill this vm by pressing Ctrl+C."
-	echo
-	$QEMU_COMMAND
-	if [ $? -eq 0 ]; then
-		echo -n "The virtual machine quit gracefully."
-		beautify message DONE
-	else
-		echo -n "The virtual machine quit with an error!"
-		beautify message FAIL
-	fi
-}
+fi

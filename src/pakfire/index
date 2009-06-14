@@ -1,0 +1,117 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. functions
+
+db_fields="name version release group maintainer license summary description deps hash"
+for field in $db_fields; do
+	if [ -n "${fields}" ]; then
+		fields="${fields}, '${field}'"
+	else
+		fields="'${field}'"
+	fi
+done
+
+
+function db() {
+	if [ -z "${database}" ]; then
+		echo "Database is not defined."
+		exit 1
+	fi
+	#echo "SQL: $@"
+	sqlite3 ${database} "$@"
+}
+
+while [ "$#" -gt "0" ]; do
+	case "$1" in
+		--database=*)
+			database=${1#--database=}
+			;;
+		--force|-f)
+			FORCE=1
+			;;
+		*.ipk)
+			packages="${packages} ${1}"
+			;;
+		*)
+			echo "Unrecognized option: \"${1}\"."
+			;;
+	esac
+	shift
+done
+
+if [ -e "${database}" ]; then
+	echo "Database \"${database}\" does already exist."
+	if [ "$FORCE" = "1" ]; then
+		> ${database}
+	else
+		exit 1
+	fi
+fi
+
+echo "Collecting available packages..."
+available=$(for package in ${packages}; do
+	echo $(pkg_name $package)
+done | sort -u)
+
+printf " There are %4d packages available.\n\n" $(echo "${available}" | wc -w)
+
+echo "Checking dependency tree..."
+for package in ${packages}; do
+	#echo " ${package##*/}"
+	for dep in $(pkg_deps ${package}); do
+		okay=
+		for avail in ${available}; do
+			if [ "${dep}" = "${avail}" ]; then
+				okay=1
+				break
+			fi
+		done
+		if [ "${okay}" != "1" ]; then
+			echo "Dependency \"${dep}\" of \"${package##*/}\" could not be resolved."
+			[ "${FORCE}" = "1" ] || exit 1
+		fi
+	done
+done
+
+echo "Creating database..."
+db "CREATE TABLE packages($fields);"
+
+echo "Writing packages to database..."
+for package in ${packages}; do
+	echo " ${package##*/}"
+	args=
+	IFS=$", "
+	for field in $db_fields; do
+		if [ -n "${args}" ]; then
+			args="${args}, \"$(pkg_$field ${package})\""
+		else
+			args="\"$(pkg_$field ${package})\""
+		fi
+	done
+	unset IFS
+
+	db "INSERT INTO packages VALUES($args);"
+done
+
+db "CREATE TABLE info(key, value);"
+db "INSERT INTO info(key, value) VALUES('date', '$(date -u)');"
+db "INSERT INTO info(key, value) VALUES('host', '$(cat /proc/sys/kernel/hostname)');"

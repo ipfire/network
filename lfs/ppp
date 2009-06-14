@@ -80,6 +80,7 @@ $(OBJECT): $(objects)
 
 	# This patch removes logwtmp in libutil, because glibc also provides that.
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libutil.patch
+	cd $(DIR_APP) && sed -e "s/^LIBS =/LIBS=-lutil/" -i pppd/Makefile.linux
 
 	# This patch adds pie chat to ppp.
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pie.patch
@@ -99,15 +100,14 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-new_speeds.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-response_len.patch
 
-	sed -e "s/^LIBS =/LIBS=-lutil/" -i $(DIR_APP)/pppd/Makefile.linux
-
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr
 
-	cd $(DIR_APP) && make CC="gcc $(CFLAGS)" HAVE_INET6=yes $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make CC="gcc $(CFLAGS)" HAVE_INET6=yes USE_PAM=y $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
 	install -d /etc/ppp/peers
 	for i in $(DIR_CONFIG)/$(PKG_NAME)/* ; do \
 	    if [ -f $$i ]; then \

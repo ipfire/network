@@ -37,6 +37,8 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 
+CFLAGS    += -D_GNU_SOURCE
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -71,7 +73,7 @@ $(OBJECT): $(objects)
 
 	cd $(DIR_APP) && sed -i 's@Sending processes@& configured via /etc/inittab@g' \
 		src/init.c
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) -C src 
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) -C src CFLAGS="$(CFLAGS)"
 	cd $(DIR_APP) && make -C src install
 
 	# Install /etc/inittab

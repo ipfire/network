@@ -100,7 +100,7 @@ $(OBJECT): $(objects)
 	mv -v /usr/sbin/dhclient /sbin
 	ln -sf $(CONFIG_ROOT)/dhcp/dhcpd.conf /etc/dhcpd.conf
 
-	install -v -m 755 $(DIR_CONFIG)/$(PKG_NAME)/dhclient-script /etc/dhclient-script
+	install -v -m 755 $(DIR_CONFIG)/$(PKG_NAME)/dhclient-script /sbin/dhclient-script
 
 	@$(INSTALL_INITSCRIPT)
 

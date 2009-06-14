@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
@@ -18,59 +19,12 @@
 #                                                                             #
 ###############################################################################
 
-###############################################################################
-# Definitions
-###############################################################################
+## If the pyc and pyo files are the same, we can hardlink them
 
-include Config
-
-PKG_NAME   = quality-agent
-PKG_VER    =
-PKG_REL    = -1
-
-THISAPP    = $(PKG_NAME)
-DIR_APP    = $(DIR_SOURCE)/$(PKG_NAME)
-
-OBJECT = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-
-MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
-GROUP      =
-CORE       = no
-EXTRA      = no
-DEBUG      = no
-BUILD_DEPS =
-DEPS       =
-
-URL        =
-LICENSE    =
-SHORT_DESC = This script does some quality checks on the distribution.
-
-define LONG_DESC
-	This script does some quality checks on the distribution.
-endef
-
-###############################################################################
-# Top-level Rules
-###############################################################################
-
-objects =
-
-download: $(objects)
-
-info:
-	$(DO_PKG_INFO)
-
-install: $(OBJECT)
-
-package:
-	@$(DO_PACKAGE)
-
-$(objects):
-	@$(LOAD)
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-$(OBJECT): $(objects)
-	cd $(DIR_APP) && ./quality-agent
+echo "  Hard-linking python bytecode files..."
+for pyc in $(find ${1} -type f -name "*.pyc"); do
+	pyo=$(echo "$pyc" | sed "s/.pyc$/.pyo/")
+	if cmp -s "$pyc" "$pyo"; then
+		ln -f "$pyc" "$pyo"
+	fi
+done

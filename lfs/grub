@@ -53,6 +53,10 @@ define LONG_DESC
 	systems.
 endef
 
+define QUALITY_AGENT_WHITELIST_EXECSTACK
+	/usr/sbin/grub
+endef
+
 CFLAGS     = -Os -g -fno-strict-aliasing -fno-stack-protector -fno-pic -fno-pie -nopie
 CXXFLAGS   =
 

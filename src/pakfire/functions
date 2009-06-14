@@ -27,6 +27,11 @@ function pkg_info() {
 	pkg_get_file info $1
 }
 
+function pkg_info_get() {
+	( eval "$(pkg_info $2)"
+	echo ${!1} )
+}
+
 function pkg_data() {
 	pkg_get_file data.img $1
 }
@@ -46,4 +51,46 @@ function pkg_verify() {
 		fi
 	)
 	return $?
+}
+
+### package properties
+
+function pkg_description() {
+	pkg_info_get PKG_DESCRIPTION $1
+}
+
+function pkg_deps() {
+	pkg_info_get PKG_DEPS $1
+}
+
+function pkg_group() {
+	pkg_info_get PKG_GROUP $1
+}
+
+function pkg_hash() {
+	sha1sum $1 | awk '{ print $1 }'
+}
+
+function pkg_license() {
+	pkg_info_get PKG_LICENSE $1
+}
+
+function pkg_maintainer() {
+	pkg_info_get PKG_MAINTAINER $1
+}
+
+function pkg_name() {
+	pkg_info_get PKG_NAME $1
+}
+
+function pkg_release() {
+	pkg_info_get PKG_REL $1
+}
+
+function pkg_summary() {
+	pkg_info_get PKG_SUMMARY $1
+}
+
+function pkg_version() {
+	pkg_info_get PKG_VER $1
 }
