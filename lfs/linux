@@ -123,6 +123,8 @@ $(OBJECT): $(objects)
 	rm -f $(DIR_APP)/localversion-grsec
 
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disable-compat_vdso-1.patch
+	
+	cd $(DIR_APP) && sed -e "s/^HOSTCFLAGS.*=.*/& -fPIC/g" -i Makefile
 
 ifeq "$(STAGE)" "toolchain"
 	install -dv $(TOOLS_DIR)/include
