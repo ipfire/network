@@ -16,14 +16,14 @@
 . /lib/lsb/init-functions
 . /lib/network/functions
 
-[ -n "${CONFIG}" ] && . ${CONFIG}
-
-zone=$2
+HOOK_NAME="ipv4-static"
+HOOK_TYPE="zone"
 
 function check_config() {
+	args=
 	if [ -z "${IP}" ]; then
 		log_failure_msg "IP variable missing, cannot continue."
-		exit 1
+		exit ${EXIT_CONF_ERROR}
 	fi
 	
 	if [ -z "${PREFIX}" -a -z "${PEER}" ]; then
@@ -32,7 +32,7 @@ function check_config() {
 		args="${args} ${IP}/${PREFIX}"
 	elif [ -n "${PREFIX}" -a -n "${PEER}" ]; then
 		log_failure_msg "PREFIX and PEER both specified, cannot continue."
-		exit 1
+		exit ${EXIT_CONF_ERROR}
 	elif [ -n "${PREFIX}" ]; then
 		args="${args} ${IP}/${PREFIX}"
 	elif [ -n "${PEER}" ]; then
@@ -48,11 +48,49 @@ function check_config() {
 	fi
 }
 
-case "${1}" in
+# First, parse the command line
+
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		--zone=*)
+			zone=${1#--zone=}
+			;;
+		--config=*)
+			. ${1#--config=}
+			check_config
+			;;
+		-*)
+			log_failure_msg "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
+			;;
+		*)
+			action=${1}
+			shift
+			break
+			;;
+	esac
+	shift
+done
+
+# Second, do the $action
+
+case "${action}" in
+	help)
+		;;
+
+    info)
+        echo "HOOK_NAME=$HOOK_NAME"
+        echo "HOOK_TYPE=$HOOK_TYPE"
+        ;;
+
 	status)
+		check_config
 		# XXX Is there a better way?
-		ip route get ${IP} | grep -q ^local
-		exit $?
+		if (ip route get ${IP} | grep -q ^local); then
+			exit ${EXIT_OK}
+		else
+			exit ${EXIT_ERROR}
+		fi
 		;;
 
 	pre-up)
@@ -121,21 +159,21 @@ case "${1}" in
 			shift
 		done
 		check_config
-		cat << EOF >> ${CONFIG_ZONES}/${zone}/ipv4-static_$IP
-HOOK=ipv4-static
-IP=$IP
-PREFIX=$PREFIX
-PEER=$PEER
-BROADCAST=$BROADCAST
-SOURCE=$SOURCE
-GATEWAY=$GATEWAY
+		cat <<EOF >${CONFIG_ZONES}/${zone}/ipv4-static_$IP
+HOOK="${HOOK_NAME}"
+IP="${IP}"
+PREFIX="${PREFIX}"
+PEER="${PEER}"
+BROADCAST="${BROADCAST}"
+SOURCE="${SOURCE}"
+GATEWAY="${GATEWAY}"
 EOF
-		exit $?
+		[ "$?" = "0" ] && exit ${EXIT_OK} || exit ${EXIT_ERROR}
 		;;
 	
 	*)
 		echo "Usage: ${0} {config|pre-up|post-up|pre-down|post-down|status} [interface]"
-		exit 1
+		exit ${EXIT_ERROR}
 	;;
 esac
 

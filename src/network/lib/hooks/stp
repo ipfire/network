@@ -15,11 +15,48 @@
 . /lib/lsb/init-functions
 . /lib/network/functions
 
-[ -n "${CONFIG}" ] && . ${CONFIG}
+HOOK_NAME=stp
+HOOK_TYPE=zone
 
-zone=$2
+function check_config() {
+	: # XXX TODO
+}
 
-case "${1}" in
+# First, parse the command line
+
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		--zone=*)
+			zone=${1#--zone=}
+			;;
+		--config=*)
+			. ${1#--config=}
+			check_config
+			;;
+		-*)
+			log_failure_msg "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
+			;;
+		*)
+			action=${1}
+			shift
+			break
+			;;
+	esac
+	shift
+done
+
+# Second, do the $action
+
+case "${action}" in
+	help)
+		;;
+
+	info)
+		echo "HOOK_NAME=$HOOK_NAME"
+		echo "HOOK_TYPE=$HOOK_TYPE"
+		;;
+
 	pre-up)
 		;;
 
@@ -64,13 +101,13 @@ case "${1}" in
 			esac
 			shift
 		done
-		cat << EOF >> ${CONFIG_ZONES}/${zone}/stp
-HOOK=stp
-AGEING=$AGEING
-PRIORITY=$PRIORITY
-DELAY=$DELAY
-HELLO=$HELLO
-MAXAGE=$MAXAGE
+		cat <<EOF >${CONFIG_ZONES}/${zone}/${HOOK_NAME}
+HOOK="${HOOK_NAME}"
+AGEING="${AGEING}"
+PRIORITY="${PRIORITY}"
+DELAY="${DELAY}"
+HELLO="${HELLO}"
+MAXAGE="${MAXAGE}"
 EOF
 		exit $?
 		;;
