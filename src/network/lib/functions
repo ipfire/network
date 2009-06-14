@@ -19,12 +19,21 @@
 #                                                                             #
 ###############################################################################
 
+HOME_DIR=/lib/network
 CONFIG_DIR=/etc/sysconfig/networking
+HOOKS_DIR=${HOME_DIR}/hooks
 
 CONFIG_ZONES=${CONFIG_DIR}/zones
 CONFIG_PORTS=${CONFIG_DIR}/ports
 
 COMMON_DEVICE=black+
+
+EXIT_OK=0
+EXIT_ERROR=1
+EXIT_CONF_ERROR=2
+
+[ -n "${DEBUG}"   ] || DEBUG=
+[ -n "${VERBOSE}" ] || VERBOSE=
 
 function is_mac() {
 	egrep -q "^[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]$" <<<$1
@@ -55,11 +64,8 @@ function get_device_by_mac() {
 }
 
 function get_device_by_mac_and_vid() {
-	local mac
-	local vid
-
-	mac=$1
-	vid=$2
+	local mac=$1
+	local vid=$2
 
 	local i
 	local VID
@@ -99,10 +105,8 @@ function get_mac() {
 }
 
 function devicify() {
-	local device
+	local device=${1}
 	local mac
-
-	device=$1
 
 	if is_mac ${device}; then
 		mac=${device}
@@ -118,10 +122,8 @@ function devicify() {
 }
 
 function macify() {
-	local input
+	local input=${1}
 	local mac
-	
-	input=$1
 	
 	if is_mac ${input}; then
 		mac=${input}
@@ -139,19 +141,16 @@ function device_is_up() {
 	ip link show $(devicify ${1}) 2>/dev/null | grep -qE "<.*UP.*>"
 }
 
-function rename_device() {
-	local source
-	local destination
-	
-	source=$1
-	destination=$2
+function device_rename() {
+	local source=$1
+	local destination=$2
 
 	# Replace + by a valid number
 	if grep -q "+$" <<<${destination}; then
 		local number
 		destination=$(sed -e "s/+//" <<<$destination)
 		number=0
-		while :; do
+		while [ "${number}" -le "100" ]; do
 			if ! device_exists "${destination}${number}"; then
 				destination="${destination}${number}"
 				break
@@ -171,12 +170,20 @@ function rename_device() {
 	return $?
 }
 
-function zone_exists() {
-	[ -e "$CONFIG_ZONES/$1" ] #|| device_exists $@
+function hook_exists() {
+	[ -x "${HOOKS_DIR}/${1}" ]
+}
+
+function port_exists() {
+	device_exists $@
 }
 
 function port_is_up() {
-	device_is_up $@
+	port_exists $@ && device_is_up $@
+}
+
+function zone_exists() {
+	[ -e "$CONFIG_ZONES/${1}" ]
 }
 
 function zone_is_up() {
@@ -184,48 +191,38 @@ function zone_is_up() {
 }
 
 function bridge_devices() {
-	local bridge
-	bridge=$1
+	local bridge=$1
 	[ -z "${bridge}" ] && return 2
 	brctl show | grep "^${bridge}" | awk '{ print $NF }' | grep -v "^interfaces$"
 }
 
 function zone_add_port() {
-	local zone
-	local port
-
-	zone=${1}
-	port=${2}
+	local zone=${1}
+	local port=${2}
 
 	brctl addif ${zone} ${port}
 }
 
 function zone_del_port() {
-	local zone
-	local port
-
-	zone=${1}
-	port=${2}
+	local zone=${1}
+	local port=${2}
 
 	brctl delif ${zone} ${port}
 }
 
-function all_zones() {
+function zone_list() {
 	local zone
-	for zone in ${CONFIG_ZONES}/*; do
+	for zone in $(find ${CONFIG_ZONES}/* 2>/dev/null); do
 		[ -d "${zone}" ] && echo ${zone}
 	done
 }
 
 function run_hooks() {
-	local action
-	local dir
+	local action=${1}
+	local dir=${2}
 	local failed
 	local hook
 	local hooks
-
-	action=${1}
-	dir=${2}
 	shift 2
 
 	if [ -z "${action}" ] || [ -z "${dir}" ]; then
@@ -236,8 +233,8 @@ function run_hooks() {
 	for hook in $(find ${dir} -type f); do
 		(
 			. ${hook}
-			if [ -n "${HOOK}" -a -x "/etc/init.d/networking/hooks/${HOOK}" ]; then
-				CONFIG=${hook} /etc/init.d/networking/hooks/${HOOK} ${action} $@
+			if [ -n "${HOOK}" ] && hook_exists ${HOOK}; then
+				/lib/network/hooks/${HOOK} --config=${hook} $@ ${action}
 				RET=$?
 			else
 				echo -e "${FAILURE}Unable to process ${hook}. Either"
@@ -251,4 +248,83 @@ function run_hooks() {
 	done
 
 	return ${failed}
+}
+
+function hook_type() {
+	local hook=${1}
+	(
+		. $(hook_run ${hook} info)
+		echo "${HOOK_TYPE}"
+	)
+}
+
+function config_get_hook() {
+	local config=${1}
+	if [ ! -e "${config}" ]; then
+		log_failure_msg "Config file \"${config}\" does not exist."
+		return ${EXIT_ERROR}
+	fi
+	( . ${config}; echo ${HOOK}	)
+}
+
+function hook_run() {
+	local hook=${1}
+	shift
+
+	if ! hook_exists ${hook}; then
+		log_failure_msg "Hook ${hook} cannot be found or is not executeable."
+		return ${EXIT_ERROR}
+	fi
+	decho "Running hook: ${hook} $@"
+	DEBUG=${DEBUG} VERBOSE=${VERBOSE} ${HOOKS_DIR}/${hook} $@
+	return $?
+}
+
+function hook_run_multiple() {
+	local zone
+	local config
+	local hook
+	local hook_type2
+	local type
+	
+	while [ "$#" -gt "0" ]; do
+		case "${1}" in
+			--type=*)
+				type=${1#--type=}
+				;;
+			*)
+				zone=${1}
+				break
+				;;			
+		esac
+		shift
+	done
+
+	if ! zone_exists ${zone}; then
+		return ${EXIT_ERROR}
+	fi
+
+	for config in $(find ${CONFIG_ZONES}/${zone} 2>/dev/null); do
+		hook=$(config_get_hook ${config})
+		if [ -n "${type}" ]; then
+			hook_type2=$(hook_type ${hook})
+			if [ "${type}" != "${hook_type2}" ]; then
+				continue
+			fi
+		fi
+		hook_run ${hook} $@
+	done
+}
+
+function zone_run() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		log_failure_msg "Zone ${zone} does not exist."
+		exit ${EXIT_ERROR}
+	fi
+	decho "Running zone: ${zone} $@"
+	DEBUG=${DEBUG} VERBOSE=${VERBOSE} ${HOME_DIR}/zone --zone=${zone} $@
+	return $?
 }

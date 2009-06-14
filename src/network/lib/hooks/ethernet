@@ -15,12 +15,15 @@
 . /lib/lsb/init-functions
 . /lib/network/functions
 
-[ -n "${CONFIG}" ] && . ${CONFIG}
+HOOK_NAME=ethernet
+HOOK_TYPE=port
 
-port=$(macify ${1})
+function check_config() {
+	: # XXX TODO
+}
 
 function port_name() {
-	echo ${ZONE}s+
+	echo ${zone}s+
 }
 
 function do_up() {
@@ -32,13 +35,13 @@ function do_down() {
 }
 
 function do_attach() {
-	rename_device $(get_device ${port}) $(port_name)
-	zone_add_port ${ZONE} $(get_device_by_mac ${port})
+	device_rename $(get_device ${port}) $(port_name)
+	zone_add_port ${zone} $(get_device_by_mac ${port})
 }
 
 function do_detach() {
-	zone_del_port ${ZONE} $(get_device_by_mac ${port})
-	rename_device $(get_device_by_mac ${port}) ${COMMON_DEVICE}
+	zone_del_port ${zone} $(get_device_by_mac ${port})
+	device_rename $(get_device_by_mac ${port}) ${COMMON_DEVICE}
 }
 
 function do_status() {
@@ -53,7 +56,42 @@ function do_status() {
 	# TODO: Check if device is attached to a bridge.
 }
 
-case "${2}" in
+# First, parse the command line
+
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		--port=*)
+			port=$(macify ${1#--port=})
+			;;
+		--config=*)
+			. ${1#--config=}
+			check_config
+			;;
+		--zone=*)
+			zone=${1#--zone=}
+			;;
+		-*)
+			log_failure_msg "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
+			;;
+		*)
+			action=${1}
+			shift
+			break
+			;;
+	esac
+	shift
+done
+
+case "${action}" in
+	help)
+		;;
+
+	info)
+		echo "HOOK_NAME=${HOOK_NAME}"
+		echo "HOOK_TYPE=${HOOK_TYPE}"
+		;;
+
 	up)
 		do_up
 	;;
@@ -67,14 +105,14 @@ case "${2}" in
 HOOK=ethernet
 EOF
 		ln -sf ${CONFIG_PORTS}/${port}/ethernet \
-			${CONFIG_ZONES}/${ZONE}/port-${port}-ethernet
+			${CONFIG_ZONES}/${zone}/port-${port}-ethernet
 	;;
 
 	remove)
 		do_detach
 		#do_down
 		rm -f \
-			${CONFIG_ZONES}/${ZONE}/port-${port}-ethernet \
+			${CONFIG_ZONES}/${zone}/port-${port}-ethernet \
 			${CONFIG_PORTS}/${port}/ethernet
 	;;
 

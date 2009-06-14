@@ -18,7 +18,8 @@
 . /lib/lsb/init-functions
 . /lib/network/functions
 
-[ -n "${CONFIG}" ] && . ${CONFIG}
+HOOK_NAME=mtu
+HOOK_TYPE=zone
 
 function check_config() {
 	if [ -z "${MTU}" ]; then
@@ -35,9 +36,41 @@ function usage() {
 	echo "Usage: ${0} {pre-up|post-up|pre-down|post-down|config} [interface]"
 }
 
-zone=$2
+# First, parse the command line
 
-case "${1}" in
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		--zone=*)
+			zone=${1#--zone=}
+			;;
+		--config=*)
+			. ${1#--config=}
+			check_config
+			;;
+		-*)
+			log_failure_msg "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
+			;;
+		*)
+			action=${1}
+			shift
+			break
+			;;
+	esac
+	shift
+done
+
+# Second, do the $action
+
+case "${action}" in
+	help)
+		;;
+	
+	info)
+		echo "HOOK_NAME=$HOOK_NAME"
+		echo "HOOK_TYPE=$HOOK_TYPE"
+		;;
+
 	status)
 		check_config
 		mtu=$(cat /sys/class/net/${zone}/mtu 2>/dev/null)
@@ -66,11 +99,11 @@ case "${1}" in
 		;;
 
 	config)
-		MTU=$3
+		MTU=$1
 		check_config
-		cat << EOF >> ${CONFIG_ZONES}/${zone}/mtu
-HOOK=mtu
-MTU=$MTU
+		cat << EOF >> ${CONFIG_ZONES}/${zone}/${HOOK_NAME}
+HOOK="${HOOK_NAME}"
+MTU="${MTU}"
 EOF
 		exit $?
 		;;

@@ -22,28 +22,37 @@
 . /lib/lsb/init-functions
 . /lib/network/functions
 
-zone=$1
-action=$2
+while [ "$#" -gt "0" ]; do
+	case "${1}" in
+		--zone=*)
+			zone=${1#--zone=}
+			;;
+		*)
+			action=${1}
+			break
+			;;		
+	esac
+	shift
+done
 
 if [ -z "${zone}" ] || [ -z "${action}" ]; then
-	echo "Usage: $0 <zone> <up|down>"
-	echo
-	exit 1
+	log_failure_msg "Wrong number of arguments."
+	exit ${EXIT_ERROR}
 fi
 
 if ! zone_exists ${zone}; then
 	echo "Zone ${zone} does not exist."
-	exit 1
+	exit ${EXIT_ERROR}
 fi
 
 case "$action" in
-	up)
+	start|up)
 		message="Bringing up zone ${zone}..."
 
-		run_hooks pre-up ${CONFIG_ZONES}/${zone} ${zone}
+		run_hooks pre-up ${CONFIG_ZONES}/${zone} --zone=${zone}
 
 		# Check if bridge already exists
-		zone_status=`brctl show 2>/dev/null`
+		zone_status=$(brctl show 2>/dev/null)
 		if ! echo "${zone_status}" | grep -q "^${zone}"; then
 			# Create and bring up the zone
 			brctl addbr ${zone} || failed=1
@@ -55,23 +64,23 @@ case "$action" in
 		# Attach ports
 		for config in $(find ${CONFIG_ZONES}/${zone}/ -name "port-*" 2>/dev/null); do
 			port=${config##*/}; port=${port#port-}; port=${port%%-*}
-			ZONE=${zone} /etc/init.d/networking/port ${port} attach ${config}
+			/lib/network/port --port=${port} --zone=${zone} attach ${config}
 		done
 
-		run_hooks post-up ${CONFIG_ZONES}/${zone} ${zone}
+		run_hooks post-up ${CONFIG_ZONES}/${zone} --zone=${zone}
 		;;
 
-	down)
+	stop|down)
 		message="Bringing down zone ${zone}..."
 		# Check if bridge already exists
-		zone_status=`brctl show 2>/dev/null`
+		zone_status=$(brctl show 2>/dev/null)
 		if echo "${zone_status}" | grep -q "^${zone}"; then
-			run_hooks pre-down ${CONFIG_ZONES}/${zone} ${zone}
+			run_hooks pre-down ${CONFIG_ZONES}/${zone} --zone=${zone}
 
 			# Detach ports
 			for config in $(find ${CONFIG_ZONES}/${zone}/ -name "port-*" 2>/dev/null); do
 				port=${config##*/}; port=${port#port-}; port=${port%%-*}
-				ZONE=${zone} /etc/init.d/networking/port ${port} detach ${config}
+				/lib/network/port --port=${port} --zone=${zone} detach ${config}
 			done
 
 			# Bring down the zone and delete it
@@ -80,10 +89,14 @@ case "$action" in
 			(exit ${failed})
 			evaluate_retval standard
 
-			run_hooks post-down ${CONFIG_ZONES}/${zone} ${zone}
+			run_hooks post-down ${CONFIG_ZONES}/${zone} --zone=${zone}
 		else
 			log_warning_msg ${message}
 			log_warning_msg "Zone ${zone} does not exist."
 		fi
 		;;
+
+	*)
+		exit 1
+		;;	
 esac

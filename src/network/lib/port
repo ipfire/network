@@ -22,10 +22,26 @@
 . /lib/lsb/init-functions
 . /lib/network/functions
 
-port=$(macify $1)
-action=$2
-
-shift 2
+# Parse the command line
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		--port=*)
+			port=$(macify ${1#--port=})
+			;;
+		--zone=*)
+			zone=${1#--zone=}
+			;;
+		-*)
+			log_failure_msg "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
+			;;
+		*)
+			action=${1}
+			break
+			;;
+	esac
+	shift
+done
 
 if [ -z "${port}" ] || [ -z "${action}" ]; then
 	echo "Usage: $0 <port> <up|down|attach|detach|status> [hooks]"
@@ -34,9 +50,11 @@ if [ -z "${port}" ] || [ -z "${action}" ]; then
 fi
 
 if ! device_exists ${port}; then
-	echo "Port ${port} does not exist."
+	log_failure_msg "Port ${port} does not exist."
 	exit 1
 fi
+
+device=$(devicify ${port})
 
 for arg in ${@-$(find ${CONFIG_PORTS}/${port}/)}; do
 	[ -L "${arg}" ] && arg=$(readlink ${arg})
@@ -57,17 +75,9 @@ case "$action" in
 
 	attach)
 		ip link set $(devicify ${port}) up # is this required here?
-		if [ -z "${ZONE}" ]; then
-			log_failure_msg "ZONE is not set."
-			exit 1
-		fi
 		;;
 
 	detach)
-		if [ -z "${ZONE}" ]; then
-			log_failure_msg "ZONE is not set."
-			exit 1
-		fi
 		;;
 
 	status)
@@ -83,8 +93,8 @@ for hook in ${hooks}; do
 	[ -d "${hook}" ] && continue
 	(
 		. ${hook}
-		if [ -n "${HOOK}" -a -x "/etc/init.d/networking/hooks/${HOOK}" ]; then
-			CONFIG=${hook} /etc/init.d/networking/hooks/${HOOK} ${port} ${action}
+		if [ -n "${HOOK}" ] && hook_exists ${HOOK}; then
+			/lib/network/hooks/${HOOK} --config=${hook} --port=${port} --zone=${zone} ${action}
 			RET=$?
 		else
 			echo -e "${FAILURE}Unable to process ${hook}. Either"

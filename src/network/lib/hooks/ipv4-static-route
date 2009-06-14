@@ -15,77 +15,142 @@
 . /lib/lsb/init-functions
 . /lib/network/functions
 
-[ -n "${CONFIG}" ] && . ${CONFIG}
+HOOK_NAME=ipv4-static-route
+HOOK_TYPE=zone
 
-zone=$2
-
-case "${TYPE}" in
-	("" | "network")
-		need_ip=1
-		need_gateway=1
-	;;
-
-	("default")
-		need_gateway=1
-		args="${args} default"
-		desc="default"
-	;;
-
-	("host")
-		need_ip=1
-	;;
-
-	("unreachable")
-		need_ip=1
-		args="${args} unreachable"
-		desc="unreachable "
-	;;
-
-	(*)
-		boot_mesg "Unknown route type (${TYPE}) in ${CONFIG}, cannot continue." ${FAILURE}
-		echo_failure
-		exit 1
-	;;
-esac
-
-if [ -n "${need_ip}" ]; then
-	if [ -z "${IP}" ]; then
-		boot_mesg "IP variable missing from ${CONFIG}, cannot continue." ${FAILURE}
-		echo_failure
-		exit 1
-	fi
-
-	if [ -z "${PREFIX}" ]; then
-		boot_mesg "PREFIX variable missing from ${CONFIG}, cannot continue." ${FAILURE}
-		echo_failure
-		exit 1
+function check_config() {
+	args=
+	case "${TYPE}" in
+		""|network)
+			need_ip=1
+			need_gateway=1
+			;;
+	
+		default)
+			need_gateway=1
+			args="${args} default"
+			desc="default"
+			;;
+	
+		host)
+			need_ip=1
+			;;
+	
+		unreachable)
+			need_ip=1
+			args="${args} unreachable"
+			desc="unreachable"
+			;;
+	
+		*)
+			log_failure_msg "Unknown route type (${TYPE}) in ${CONFIG}, cannot continue."
+			exit ${EXIT_CONF_ERROR}
+			;;
+	esac
+	
+	if [ -n "${need_ip}" ]; then
+		if [ -z "${IP}" ]; then
+			log_failure_msg "IP variable missing from ${CONFIG}, cannot continue."
+			exit ${EXIT_CONF_ERROR}
+		fi
+	
+		if [ -z "${PREFIX}" ]; then
+			log_failure_msg "PREFIX variable missing from ${CONFIG}, cannot continue."
+			exit ${EXIT_CONF_ERROR}
+		fi
+		
+		args="${args} ${IP}/${PREFIX}"
+		desc="${desc}${IP}/${PREFIX}"
 	fi
 	
-	args="${args} ${IP}/${PREFIX}"
-	desc="${desc}${IP}/${PREFIX}"
-fi
-
-if [ -n "${need_gateway}" ]; then
-	if [ -z "${GATEWAY}" ]; then
-		boot_mesg "GATEWAY variable missing from ${CONFIG}, cannot continue." ${FAILURE}
-		echo_failure
-		exit 1
+	if [ -n "${need_gateway}" ]; then
+		if [ -z "${GATEWAY}" ]; then
+			log_failure_msg "GATEWAY variable missing from ${CONFIG}, cannot continue."
+			exit ${EXIT_CONF_ERROR}
+		fi
+		args="${args} via ${GATEWAY}"
 	fi
-	args="${args} via ${GATEWAY}"
-fi
+}
 
-case "${1}" in
-	up)
+# First, parse the command line
+
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		--zone=*)
+			zone=${1#--zone=}
+			;;
+		--config=*)
+			. ${1#--config=}
+			check_config
+			;;
+		-*)
+			log_failure_msg "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
+			;;
+		*)
+			action=${1}
+			shift
+			break
+			;;
+	esac
+	shift
+done
+
+case "${action}" in
+	config)
+		while [ $# -gt 0 ]; do
+			case "${1}" in
+				--ip=*)
+					IP=${1#--ip=}
+					;;
+				--gateway=*)
+					GATEWAY=${1#--gateway=}
+					;;
+				--prefix=*)
+					PREFIX=${1#--prefix=}
+					;;
+				--type=*)
+					TYPE=${1#--type=}
+					;;
+			esac
+			shift
+		done
+		check_config
+		cat <<EOF >${CONFIG_ZONES}/${zone}/${HOOK_NAME}_${IP-${GATEWAY}}
+HOOK="${HOOK_NAME}"
+IP="${IP}"
+GATEWAY="${GATEWAY}"
+PREFIX="${PREFIX}"
+TYPE="${TYPE}"
+EOF
+		[ "$?" = "0" ] && exit ${EXIT_OK} || exit ${EXIT_ERROR}
+		;;
+
+	help)
+		;;
+
+	info)
+		echo "HOOK_NAME=${HOOK_NAME}"
+		echo "HOOK_TYPE=${HOOK_TYPE}"
+		;;
+
+	pre-up)
+		;;
+
+	post-up)
 		boot_mesg "Adding '${desc}' route to zone ${zone}..."
 		ip route add ${args} dev ${zone}
 		evaluate_retval
-	;;
+		;;
 	
-	down)
+	pre-down)
 		boot_mesg "Removing '${desc}' route from zone ${zone}..."
 		ip route del ${args} dev ${zone}
 		evaluate_retval
-	;;
+		;;
+	
+	post-down)
+		;;
 	
 	*)
 		echo "Usage: ${0} [interface] {up|down}"

@@ -19,14 +19,18 @@
 #                                                                             #
 ###############################################################################
 
-DEBUG=
-VERBOSE=
-
 BOLD="\\033[1;39m"
 NORMAL="\\033[0;39m"
 ERROR="\\033[1;31m"
 
-. /lib/network/functions
+if [ -e "/lib/network/functions" ]; then
+	. /lib/network/functions
+elif [ -e "lib/functions" ]; then
+	. lib/functions
+else
+	echo "Cannot find functions library. Exiting." >&2
+	exit 1
+fi
 
 function usage() {
 	echo -e "${BOLD}Usage $0${NORMAL}:\n"
@@ -55,6 +59,9 @@ function usage() {
 			echo    "    zone - Run \"$0 zone help\" for more information."
 			echo    "    port - Run \"$0 port help\" for more information."
 			echo
+			;;
+		hook)
+			echo "TODO"
 			;;
 		port)
 			echo -e "${BOLD}Port Configuration:${NORMAL}"
@@ -174,10 +181,10 @@ function _exit() {
 		esac
 		shift
 	done
-	if [ ${reload} -eq 1 ]; then
+	if [ "${reload}" = "1" ]; then
 		# Reloading network to apply changes immediately
 		vecho "Reloading network settings..."
-		cmd $0 $(verbose && echo "-v") $(debug && echo "-d") reload
+		cmd $0 reload
 	fi
 
 	decho "Exiting with code ${code}."
@@ -187,9 +194,9 @@ function _exit() {
 function cmd() {
 	decho "Running command: $@"
 	if debug; then
-		$@
+		DEBUG=${DEBUG} VERBOSE=${VERBOSE} $@
 	else
-		$@ >/dev/null
+		DEBUG=${DEBUG} VERBOSE=${VERBOSE} $@ >/dev/null
 	fi
 }
 
@@ -198,7 +205,7 @@ function port_show() {
 
 	port=$(devicify $1)
 
-	if ! device_exists ${port}; then
+	if ! port_exists ${port}; then
 		error "Port ${BOLD}${port}${NORMAL} does not exist."
 		return 1
 	fi
@@ -207,16 +214,21 @@ function port_show() {
 }
 
 function port_add() {
-	local port
-	local zone
-	local hook
+	local port=${2}
+	local zone=${1}
+	local hook=${3}
+	shift 3
 	
-	zone=$1
-	port=$(macify $2)
-	shift 2
+	if [ -n "${port}" ]; then
+		port=$(macify ${port})
+	else
+		error "No port given on command line."
+		return 1
+	fi
 
-	hook=${1-ethernet}
-	shift
+	if [ -z "${hook}" ]; then
+		hook="ethernet"
+	fi
 
 	decho "Function: port_add"
 	decho "  Zone: ${zone} Port: ${port} Hook: ${hook} $@"
@@ -237,12 +249,12 @@ function port_add() {
 	fi
 
 	mkdir -p ${CONFIG_PORTS}/${port} 2>/dev/null
-	if [ -x "/lib/network/hooks/${hook}" ]; then
-		ZONE=${zone} /lib/network/hooks/${hook} ${port} add $@
+	if hook_exists ${hook}; then
+		/lib/network/hooks/${hook} --port=${port} --zone=${zone} add $@
 		RET=$?
 		if [ "$RET" -eq "0" ]; then
 			vecho "Successfully added port ${BOLD}${port}${NORMAL} (${hook} $@) to ${BOLD}${zone}${NORMAL}."
-			cmd /lib/network/port ${port} up
+			cmd /lib/network/port --port=${port} up
 		else
 			error "Hook ${BOLD}${hook}${NORMAL} exited with $RET."
 			return $RET
@@ -251,7 +263,7 @@ function port_add() {
 		error "Hook ${BOLD}${hook}${NORMAL} does not exist or is not executeable."
 		return 1
 	fi
-	cmd /lib/network/zone ${zone} up
+	cmd /lib/network/zone --zone=${zone} up
 }
 
 function port_del() {
@@ -267,10 +279,10 @@ function port_del() {
 
 	decho "Function: port_del"
 	decho "  Zone: ${zone} Port: ${port} Hook: ${hook}"
-
+	
 	if [ -x "/lib/network/hooks/${hook}" ]; then
 		cmd /lib/network/port ${port} down ## XXX How do we identify only that one hook?
-		ZONE=${zone} cmd /lib/network/hooks/${hook} ${port} remove $@
+		cmd /lib/network/hooks/${hook} --port=${port} --zone=${zone} remove $@
 		RET=$?
 		if [ "$RET" -eq "0" ]; then
 			vecho "Successfully removed port ${BOLD}${port}${NORMAL} (${hook} $@) from ${BOLD}${zone}${NORMAL}."
@@ -329,66 +341,96 @@ function zone_show() {
 }
 
 function zone_add() {
-	local zone
+	local zone=$1
 
-	zone=$1
 	if zone_exists ${zone}; then
 		error "Zone ${BOLD}${zone}${NORMAL} already exists."
-		return 2
+		return 1
 	fi
 
 	mkdir -p ${CONFIG_ZONES}/${zone}
-	vecho "Successfully added zone ${zone}."
-	cmd /lib/network/zone ${zone} up
+	vecho "Successfully added zone ${BOLD}${zone}${NORMAL}."
+	cmd /lib/network/zone --zone=${zone} up # Done by reload??
 }
 
 function zone_del() {
-	local zone
+	local zone=$1
 
-	zone=$1
 	if ! zone_exists ${zone}; then
 		error "Zone ${BOLD}${zone}${NORMAL} does not exist."
 		return 1
 	fi
 
-	cmd /lib/network/zone ${zone} down
+	cmd /lib/network/zone --zone=${zone} down
 	rm -rf ${CONFIG_ZONES}/${zone}
-	vecho "Successfully removed zone ${zone}."
+	vecho "Successfully removed zone ${BOLD}${zone}${NORMAL}."
 }
 
 # See what to do
 while [ "$#" -gt 0 ]; do
 	arg=$1
 	shift
+
 	case "$arg" in
 		--debug|-d)
 			debug 1
-			decho "Debug mode is enabled."
+			decho "Debug mode enabled."
 			;;
 		--verbose|-v)
 			verbose 1
-			vecho "${BOLD}Verbose mode is enabled.${NORMAL}"
+			vecho "${BOLD}Verbose mode enabled.${NORMAL}"
 			;;
 		help|-h|--help)
 			usage main 0
 			;;
-		start|stop|restart|reload)
-			#exec /etc/init.d/network $arg
+		start|stop|reload)
+			action=${arg}
+			for zone in $(zone_list); do
+				zone=${zone##*/}
+				decho "Running command: ${HOME_DIR}/zone --zone=${zone} ${action}"
+				DEBUG=${DEBUG} VERBOSE=${VERBOSE} ${HOME_DIR}/zone --zone=${zone} ${action}
+			done
+			_exit $?
 			;;
-		port|po|p)
+		restart)
+			DEBUG=${DEBUG} VERBOSE=${VERBOSE} $0 stop $@
+			sleep 1
+			DEBUG=${DEBUG} VERBOSE=${VERBOSE} $0 start $@
+			_exit $?
+			;;
+		hook|hooks)
 			arg=$1
 			shift
 			case "$arg" in
+				help|info)
+					hook=$1
+					if hook_exists ${hook}; then
+						hook_run ${hook} ${arg}
+						_exit $?
+					else
+						error "Hook ${hook} does not exist or is not executeable."
+						_exit 1
+					fi
+					;;
+				*)
+					usage hook
+					;;
+			esac
+			;;
+		p*)
+			arg=$1
+			shift
+			case "$arg" in
+				help)
+					usage port 0
+					;;
 				show)
 					port_show $@
 					_exit $?
 					;;
-				help)
-					usage port 0
-					;;
 			esac
 			;;
-		zone|zo|z)
+		z*)
 			arg=$1
 			shift
 			case "$arg" in
@@ -396,41 +438,40 @@ while [ "$#" -gt 0 ]; do
 					zone_add $@
 					_exit --reload $?
 					;;
-				del)
-					zone_del $@
-					_exit --reload $?
-					;;
-				show)
-					zone_show $@
-					_exit $?
-					;;
 				addport)
 					port_add $@
 					_exit --reload $?
-					;;
-				delport)
-					port_del $@
-					_exit --reload $?
-					;;
-				list)
-					all_zones
-					_exit $?
 					;;
 				config)
 					zone=$1; hook=$2; shift 2
 					if [ -z "${zone}" ] || [ -z "${hook}" ]; then
 						usage config
 					fi
-					if [ -x /lib/network/hooks/${hook} ]; then
-						/lib/network/hooks/${hook} config ${zone} $@
-						RET=$?
-					else
-						error "\"${hook}\" is not a known hook."
-					fi
-					_exit --reload $RET
+					hook_run ${hook} --zone=${zone} config $@
+					_exit --reload $?
+					;;
+				del)
+					zone_del $@
+					_exit --reload $?
+					;;
+				delport)
+					port_del $@
+					_exit --reload $?
 					;;
 				help)
 					usage zone 0
+					;;
+				list)
+					zone_list
+					_exit $?
+					;;
+				show)
+					zone_show $@
+					_exit $?
+					;;
+				start|stop)
+					zone=$1; shift
+					zone_run --zone=${zone} ${arg} $@
 					;;
 			esac
 			;;

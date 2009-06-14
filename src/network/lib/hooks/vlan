@@ -15,10 +15,12 @@
 . /lib/lsb/init-functions
 . /lib/network/functions
 
-[ -n "${CONFIG}" ] && . ${CONFIG}
+HOOK_NAME=vlan
+HOOK_TYPE=port
 
-port=$(macify ${1})
-device=$(devicify ${port})
+function check_config() {
+	: # TODO
+}
 
 function port_name() {
 	echo "${ZONE}v${ID}"
@@ -61,7 +63,35 @@ function do_status() {
 	return $RET
 }
 
-case "${2}" in
+# First, parse the command line
+
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		--port=*)
+			port=$(macify ${1#--port=})
+			device=$(devicify ${port})
+			;;
+		--config=*)
+			. ${1#--config=}
+			check_config
+			;;
+		--zone=*)
+			zone=${1#--zone=}
+			;;
+		-*)
+			log_failure_msg "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
+			;;
+		*)
+			action=${1}
+			shift
+			break
+			;;
+	esac
+	shift
+done
+
+case "${action}" in
 	up)
 		do_up
 	;;
