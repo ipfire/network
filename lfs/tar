@@ -40,7 +40,7 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 BUILD_DEPS =
-DEPS       =
+DEPS       = acl attr
 
 URL        = http://www.gnu.org/software/tar/
 LICENSE    = GPLv3+
@@ -70,7 +70,9 @@ info:
 
 install: $(OBJECT)
 
-package:
+packages: $(PACKAGES)
+
+$(PACKAGES): $(OBJECT)
 	@$(DO_PACKAGE)
 
 $(objects):
@@ -88,9 +90,13 @@ $(OBJECT): $(objects)
 	# may fail to grow the size of a file
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-vfatTruncate.patch
 
+	# Add support for ACLs in the tarballs.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-xattrs-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-xattrs-conf-1.patch
+
 ifeq "$(STAGE)" "toolchain"
 	# Normally the 'rmt' programs goes in sbin/.
-	cd $(DIR_APP) && \
+	cd $(DIR_APP) && LDFLAGS="-z muldefs" \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR) \
