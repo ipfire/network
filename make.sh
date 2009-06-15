@@ -66,11 +66,15 @@ toolchain_build() {
 	toolchain_make binutils		PASS=2
 	toolchain_make test-toolchain	PASS=2
 	toolchain_make ncurses
+	toolchain_make attr
+	toolchain_make acl
 	toolchain_make bash
 	toolchain_make bzip2
 	toolchain_make coreutils
+	toolchain_make cpio
 	toolchain_make diffutils
 	toolchain_make e2fsprogs
+	toolchain_make file
 	toolchain_make findutils
 	toolchain_make gawk
 	toolchain_make gettext
@@ -79,13 +83,14 @@ toolchain_build() {
 	toolchain_make m4
 	toolchain_make make
 	toolchain_make patch
+	toolchain_make pax-utils
 	toolchain_make perl
 	toolchain_make sed
 	toolchain_make tar
 	toolchain_make texinfo
 	toolchain_make flex
 	toolchain_make bc
-	toolchain_make util-linux-ng
+	toolchain_make xz
 	toolchain_make strip
 	export PATH=$ORG_PATH SKIP_PACKAGE_LIST=$SAVE_SKIP_PACKAGE_LIST
 	unset SAVE_SKIP_PACKAGE_LIST
@@ -131,6 +136,7 @@ base_build() {
 	ipfire_make cracklib
 	ipfire_make pam
 	ipfire_make attr
+	ipfire_make acl
 	ipfire_make libcap2
 	ipfire_make util-linux-ng
 	ipfire_make e2fsprogs
@@ -145,6 +151,7 @@ base_build() {
 	ipfire_make autoconf
 	ipfire_make automake
 	ipfire_make bash
+	ipfire_make cpio
 	ipfire_make diffutils
 	ipfire_make eventlog
 	ipfire_make file
@@ -165,6 +172,7 @@ base_build() {
 	ipfire_make module-init-tools
 	ipfire_make mpfr
 	ipfire_make patch
+	ipfire_make pax-utils
 	ipfire_make psmisc
 	ipfire_make syslog-ng
 	ipfire_make sysvinit
@@ -333,8 +341,7 @@ ipfire_build() {
 	ipfire_make webinterface
 	ipfire_make collectd
 	ipfire_make logrotate
-	#ipfire_make logwatch	
-	ipfire_make cpio
+	#ipfire_make logwatch
 	ipfire_make dvdrtools
 	ipfire_make python-parted
 	ipfire_make python-pyblock
@@ -421,7 +428,6 @@ misc_build() {
 
 	### Debugging
 	#
-	ipfire_make pax-utils
 	ipfire_make paxtest
 	ipfire_make gdb
 	ipfire_make strace
