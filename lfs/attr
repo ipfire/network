@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = attr
-PKG_VER    = 2.4.41
+PKG_VER    = 2.4.43
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -64,7 +64,9 @@ info:
 
 install: $(OBJECT)
 
-package:
+packages: $(PACKAGES)
+
+$(PACKAGES): $(OBJECT)
 	@$(DO_PACKAGE)
 
 $(objects):
@@ -77,6 +79,25 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
+ifeq "$(STAGE)" "toolchain"
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR) \
+			--enable-shared
+	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC" #$(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install
+
+	install -v -m0755 $(DIR_APP)/libattr/.libs/libattr.so.1.1.0 $(TOOLS_DIR)/lib
+	ln -vsf libattr.so.1.1.0 $(TOOLS_DIR)/lib/libattr.so.1
+	ln -vsf libattr.so.1.1.0 $(TOOLS_DIR)/lib/libattr.so
+	install -v -d $(TOOLS_DIR)/include/attr
+	cp -vf $(DIR_APP)/include/{attributes.h,error_context.h,libattr.h,xattr.h} \
+		$(TOOLS_DIR)/include/attr/
+endif
+
+ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
@@ -90,7 +111,9 @@ $(OBJECT): $(objects)
 	ln -vsf libattr.so.1.1.0 /lib/libattr.so.1
 	ln -vsf libattr.so.1.1.0 /lib/libattr.so
 	install -v -d /usr/include/attr
-	install -v -m0644 $(DIR_APP)/include/xattr.h /usr/include/attr/
+	cp -vf $(DIR_APP)/include/{attributes.h,error_context.h,libattr.h,xattr.h} \
+		/usr/include/attr/
+endif
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
