@@ -71,7 +71,9 @@ info:
 
 install: $(OBJECT)
 
-package:
+packages: $(PACKAGES)
+
+$(PACKAGES): $(OBJECT)
 	@$(DO_PACKAGE)
 
 $(objects):

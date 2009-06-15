@@ -71,7 +71,9 @@ info:
 
 install: $(OBJECT)
 
-package:
+packages: $(PACKAGES)
+
+$(PACKAGES): $(OBJECT)
 	@$(DO_PACKAGE)
 
 $(objects):
@@ -89,7 +91,9 @@ ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
-			--prefix=$(TOOLS_DIR)
+			--prefix=$(TOOLS_DIR) \
+			--disable-static
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 endif

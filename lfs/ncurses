@@ -67,7 +67,9 @@ info:
 
 install: $(OBJECT)
 
-package:
+packages: $(PACKAGES)
+
+$(PACKAGES): $(OBJECT)
 	@$(DO_PACKAGE)
 
 $(objects):
@@ -98,7 +100,9 @@ ifeq "$(STAGE)" "toolchain"
 			--enable-widec \
 			--without-cxx-binding \
 			--enable-symlinks \
-			--disable-root-environ
+			--disable-root-environ \
+			--disable-static
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	for lib in curses ncurses form panel menu; do \
