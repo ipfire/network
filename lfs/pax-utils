@@ -40,7 +40,9 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no # But it gets packaged on debug builds.
 BUILD_DEPS =
-DEPS       =
+ifeq "$(STAGE)" "base"
+	DEPS = libcap2
+endif
 
 URL        = http://www.gentoo.org/proj/en/hardened/pax-utils.xml
 LICENSE    = GPLv2+
@@ -63,7 +65,9 @@ info:
 
 install: $(OBJECT)
 
-package:
+packages: $(PACKAGES)
+
+$(PACKAGES): $(OBJECT)
 	@$(DO_PACKAGE)
 
 $(objects):
@@ -76,7 +80,16 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+ifeq "$(STAGE)" "toolchain"
+	cd $(DIR_APP) && make scanelf CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && install -m 755 -v scanelf $(TOOLS_DIR)/bin/scanelf
+endif
+
+ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" USE_CAP=yes $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+endif
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
