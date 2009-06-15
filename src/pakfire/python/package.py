@@ -11,11 +11,11 @@ class Package(object):
 
     def __init__(self, archive):
         self.archive = io.CpioArchive(archive)
-    
+
     def check(self):
         print "Checking package %s..." % self.name
         return self.verify()
-    
+
     def extract(self, root="/"):
         if not os.path.exists(root):
             os.makedirs(root)
@@ -61,7 +61,7 @@ class Package(object):
     def install(self, root="/"):
         print "Installing %s..." % self.name
         self.extract(root)
-    
+
     def print_info(self):
         ret = ""
         info = (("Name", self.name),
@@ -76,14 +76,14 @@ class Package(object):
 
         for (key, value) in info:
             ret += "%-12s: %s\n" % (key, value,)
-        
+
         if self.verify:
             ret += "%-12s: %s\n" % ("Signature", "OK")
         else:
             ret += "%-12s: %s\n" % ("Signature", "Broken")
-        
+
         return ret
-        
+
     def verify(self):
         hash = hashlib.sha1(self.archive["data.img"]).hexdigest()
         if hash == self.sha1:
@@ -148,4 +148,3 @@ class Package(object):
     @property
     def version(self):
         return self.info.get("PKG_VER", None)
-

@@ -10,7 +10,7 @@ REPOS_PATH = "/etc/pakfire.repos.d"
 
 class Repositories(object):
     _repositories = []
-    
+
     def __init__(self):
         for file in os.listdir(REPOS_PATH):
             if not file.endswith(".repo"):
@@ -23,7 +23,7 @@ class Repositories(object):
     @property
     def all(self):
         return sorted(self._repositories)
-    
+
     @property
     def enabled(self):
         ret = []
@@ -31,7 +31,7 @@ class Repositories(object):
             if r.enabled:
                 ret.append(r)
         return ret
-    
+
     @property
     def repositories(self):
         return self.enabled
@@ -45,19 +45,19 @@ class Repository(object):
             for (key, value) in items:
                 config[key] = value
             self.config = config
-        
+
         self.db = database.Database("%s.db" % self.name)
         self.servers = Servers(self.db)
-    
+
     def __cmp__(self, other):
         return cmp(self.name, other.name)
-    
+
     def __str__(self):
         return self.name
-    
+
     def __repr__(self):
         return "<Repository %s>" % self.name
-    
+
     def update_mirrorlist(self, mirrorlist=None):
         if not mirrorlist:
             mirrorlist = self.mirrorlist
@@ -76,7 +76,7 @@ class Repository(object):
     @property
     def gpgkey(self):
         return self.config.get("gpgkey", None)
-    
+
     @property
     def mirrorlist(self):
         return self.config.get("mirrorlist", None)

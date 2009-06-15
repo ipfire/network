@@ -29,17 +29,17 @@ def rwx(mode):
         ret += "r"
     else:
         ret += "-"
-    
+
     if mode & stat.S_IWUSR:
         ret += "w"
     else:
         ret += "-"
-    
+
     if mode & stat.S_IXUSR:
         ret += "x"
     else:
         ret += "-"
-    
+
     return ret
 
 def fmode(mode):
@@ -57,19 +57,19 @@ class CpioEntry(object):
     def __init__(self, hdr, archive, offset):
         self.archive = archive
         self.hdr = hdr
-        
+
         self.offset  = offset + 110 + self.namesize
         self.offset += (4 - (self.offset % 4)) % 4
         self.current = 0
-        
+
         self.closed = False
-        
+
         if len(self.hdr) < 110:
             raise CpioError("Header too short.")
-        
+
         if not self.hdr.startswith("070701") and not self.hdr.startswith("070702"):
             raise CpioError("Invalid header: %s" % self.hdr[:6])
-    
+
     def close(self):
         self.closed = True
 
@@ -96,7 +96,7 @@ class CpioEntry(object):
 
     def seek(self, offset, whence=0):
         """Move to new position within an entry.
-    
+
         Keyword arguments:
         offset -- Byte count
         whence -- Describes how offset is used.
@@ -129,11 +129,11 @@ class CpioEntry(object):
     @property
     def checksum(self):
         return int(self.hdr[102:110], 16)
-    
+
     @property
     def devmajor(self):
         return int(self.hdr[62:70], 16)
-    
+
     @property
     def devminor(self):
         return int(self.hdr[70:78], 16)
@@ -149,7 +149,7 @@ class CpioEntry(object):
     @property
     def mode(self):
         return int(self.hdr[14:22], 16)
-    
+
     @property
     def mtime(self):
         return int(self.hdr[46:54], 16)
@@ -162,7 +162,7 @@ class CpioEntry(object):
     @property
     def namesize(self):
         return int(self.hdr[94:102], 16)
-    
+
     @property
     def nlinks(self):
         return int(self.hdr[38:46], 16)
@@ -170,7 +170,7 @@ class CpioEntry(object):
     @property
     def rdevmajor(self):
         return int(self.hdr[78:86], 16)
-    
+
     @property
     def rdevminor(self):
         return int(self.hdr[86:94], 16)
@@ -178,7 +178,7 @@ class CpioEntry(object):
     @property
     def size(self):
         return int(self.hdr[54:62], 16)
-    
+
     @property
     def uid(self):
         return int(self.hdr[22:30], 16)
@@ -189,20 +189,20 @@ class CpioArchive(object):
     file = None
 
     def __init__(self, filename):
-        
+
         self.filename = filename
         self.file = open(self.filename, "r")
         self.__readfile()
 
         self.closed = False
-    
+
     def close(self):
         if self.closed:
             return
         self.closed = True
 
         self.file.close()
-    
+
     def __readfile(self):
         if not self.file:
             raise CpioError("File was not yet opened.")
@@ -226,21 +226,21 @@ class CpioArchive(object):
             hdr = self.file.read(110)
         else:
             raise CpioError("Premature end of headers.")
-    
+
     @property
     def entries(self):
         return sorted(self._entries)
-    
+
     @property
     def size(self):
         return os.path.getsize(self.filename)
-    
+
     def ls(self):
         for x in self.entries:
             print x.name
-    
+
     def ll(self):
-        for x in self.entries:        
+        for x in self.entries:
             print "%s %s %s %s %9d %s %s" % \
                 (fmode(x.mode),
                  x.nlinks,
@@ -249,13 +249,13 @@ class CpioArchive(object):
                  x.size,
                  time.strftime("%Y-%m-%d %H:%M", time.localtime(x.mtime)),
                  x.name,)
-    
+
     def get(self, item):
         for x in self.entries:
             if x.name == item:
                 return x
         raise KeyError("No such file or directory.")
-    
+
     def __getitem__(self, item):
         x = self.get(item)
         x.seek(0)

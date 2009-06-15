@@ -8,7 +8,7 @@ class Transactionset(object):
 
     def addPackage(self, package):
         self._packages.append(package)
-    
+
     def check(self):
         print "Checking Transactionset..."
         for package in self.packages:

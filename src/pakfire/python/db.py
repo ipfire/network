@@ -9,7 +9,7 @@ class Database(object):
         self.filename = filename
 
         self.connection = sqlite.connect(self.filename)
-    
+
     def add(self, table):
         c = self.cursor
         c.executescript("CREATE TABLE IF NOT EXISTS %s(id, key, value);" % table)
@@ -23,7 +23,7 @@ class Database(object):
         c.execute("DELETE FROM %s" % table)
         c.close()
         self.commit()
-    
+
     def get(self, table, id, key):
         ret = None
         c = self.cursor
