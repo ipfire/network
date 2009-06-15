@@ -20,27 +20,34 @@
 ###############################################################################
 
 PACKAGE_VERSION="0"
+TAR_OPTIONS="--posix --acls --no-recursion --sparse"
 
 function cleanup() {
 	echo " Cleaning up..."
-	for i in $ARCHIEVE $CONTROL $INFO $TMP_DIR; do
+	for i in $ARCHIEVE $CONTROL $FILES $INFO $TMP_DIR; do
 		rm -rf ${i}
 	done
 }
 
 while [ $# -gt 0 ]; do
 	case "$1" in
-		*)
+		--rootfile=*)
+			rootfile=${1#--rootfile=}
+			if [ ! -e "${rootfile}" ]; then
+				echo "Rootfile \"${rootfile}\" does not exist." >&2
+				exit 1
+			fi
+			ROOTFILES="$ROOTFILES ${rootfile}"
+			;;
+		*.ipk)
 			if [ -z "$PKG_TARGET" ]; then
 				PKG_TARGET=$1
-			else
-				if [ ! -e "$1" ]; then
-					echo "Rootfile do not exist: $1" >&2
-					exit 1
-				fi
-				ROOTFILES="$ROOTFILES $1"
 			fi
 			;;
+		*)
+			echo "Unrecognized option: ${1}" >&2
+			exit 1
+			;;		
 	esac
 	shift
 done
@@ -52,29 +59,27 @@ fi
 
 echo "Packaging $PKG_TARGET..."
 
-if [ -e "/packages/$PKG_TARGET" ]; then
-	echo "Skip."
-	exit 0
-fi
-
 ARCHIEVE=$(mktemp)
 CONTROL=$(mktemp)
+FILES=$(mktemp)
 INFO=$(mktemp)
 TMP_DIR=$(mktemp -d)
 
 echo " Collecting files..."
 for rootfile in $ROOTFILES; do
-	ERROR=$(cd / && \
-			grep -v "^#" < $rootfile | \
-			sed -e "s/KVER/$KVER/g" \
-				-e "s/IFS_TARGET/$IFS_TARGET/g" | \
-			cpio -pd --quiet $TMP_DIR 2>&1)
-	if [ -n "${ERROR}" ]; then
-		echo -e "When copying the files, an error occoured:\n\n${ERROR}" >&2
-		cleanup
-		exit 1
-	fi
+	grep -v "^#" ${rootfile} >> ${FILES}
 done
+
+sed -e "s/KVER/${KVER}/g" \
+	-e "s/IFS_TARGET/${IFS_TARGET}/g" \
+	-i ${FILES}
+
+(cd / && tar --create ${TAR_OPTIONS} --files-from=${FILES} | tar --extract -C ${TMP_DIR})
+if [ "$?" != "0" ]; then
+	echo -e "When copying the files, an error occoured." >&2
+	cleanup
+	exit 1
+fi
 
 echo " Running quality agent hooks..."
 for hook in $(dirname $0)/compressor.d/*; do
@@ -89,7 +94,7 @@ done
 cd $TMP_DIR
 
 echo " Writing data.img..."
-find . | cpio -o -H newc --quiet | lzma -cz - > $ARCHIEVE
+cd ${TMP_DIR} && tar --create --xz --file=${ARCHIEVE} .
 
 echo " Writing meta-data..."
 cat <<EOF >$INFO
@@ -153,6 +158,6 @@ cat $INFO     > $TMP_DIR/info
 echo " Packaging archive..."
 find . | cpio -o -H newc --quiet > $ARCHIEVE
 
-cat $ARCHIEVE > /packages/$PKG_TARGET
+cat $ARCHIEVE > $PKG_TARGET
 
 cleanup
