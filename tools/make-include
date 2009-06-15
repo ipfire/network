@@ -305,7 +305,6 @@ toolchain_make() {
 		PACKAGES_EXTRA="${PACKAGES_EXTRA}" \
 		PACKAGES_DEBUG="${PACKAGES_DEBUG}" \
 		\
-		ROOTFILE=$(rootfiles_findone $1 | sed "s,$BASEDIR,/usr/src,g") \
 		LOGFILE=$(echo ${LOGFILE} | sed "s,${BASEDIR},/usr/src,g") \
 		\
 		LFS="${LFS}" \
@@ -380,11 +379,10 @@ ipfire_make() {
 		PACKAGES_EXTRA="${PACKAGES_EXTRA}" \
 		PACKAGES_DEBUG="${PACKAGES_DEBUG}" \
 		\
-		ROOTFILE=$(rootfiles_findone $1 | sed "s,$BASEDIR,/usr/src,g") \
 		LOGFILE=$(echo ${LOGFILE} | sed "s,${BASEDIR},/usr/src,g") \
 		\
 		bash -x -c "cd /usr/src/lfs && \
-		make -f $* LFS_BASEDIR=/usr/src install" >> ${LOGFILE} 2>&1
+		make -f $* LFS_BASEDIR=/usr/src install packages" >> ${LOGFILE} 2>&1
 
 	local COMPILE_SUCCESS=$?
 	local PKG_TIME_END=$(date +%s)
@@ -455,7 +453,6 @@ package_make() {
 		PACKAGES_EXTRA="${PACKAGES_EXTRA}" \
 		PACKAGES_DEBUG="${PACKAGES_DEBUG}" \
 		\
-		ROOTFILE=$(rootfiles_findone $1 | sed "s,$BASEDIR,/usr/src,g") \
 		LOGFILE=$(echo ${LOGFILE} | sed "s,${BASEDIR},/usr/src,g") \
 		\
 		bash -x -c "cd /usr/src/lfs && \
