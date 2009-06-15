@@ -69,7 +69,14 @@ CONFIGURE_ARCH = \
 	--build=$(IFS_TARGET) \
 	--host=$(IFS_TARGET)
 
-PKG_PACKAGE=$(LFS_FILE)-$(PKG_VER)-$(SNAME)$(PKG_REL).$(TARGET).ipk
+DEFAULT_PACKAGE = $(DIR_PACKAGES)/$(LFS_FILE)-$(PKG_VER)-$(SNAME)$(PKG_REL).$(TARGET).ipk
+DEVEL_PACKAGE = $(DIR_PACKAGES)/$(LFS_FILE)-devel-$(PKG_VER)-$(SNAME)$(PKG_REL).$(TARGET).ipk
+#ifeq "$(shell grep ^D $(DO_FIND_ROOTFILE))" ""
+#	PACKAGES = $(DEFAULT_PACKAGE)
+#else
+#	PACKAGES = $(DEFAULT_PACKAGE) $(DEVEL_PACKAGE)
+#endif
+PACKAGES = $(DEFAULT_PACKAGE)
 
 IMAGE_FILE  = $(IMAGES_DIR)/$(SNAME)-$(VERSION).sfs
 
@@ -98,6 +105,9 @@ INSTALL_INITSCRIPT = echo "Installing initscript \"$(INITSCRIPT)\" -> /etc/init.
 
 PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 
+DO_FIND_ROOTFILE = $$(find $(DIR_SOURCE)/rootfiles/{core,extras,debug}/{$(TARGET),}/ -type f \
+		-name "$(LFS_FILE)" 2>/dev/null | head -n1)
+
 define DO_PKG_INFO
 	@## ALPHABETICAL ORDER ##
 	@echo "local PKG_BUILD_DEPS=\"$(BUILD_DEPS)\""
@@ -119,21 +129,44 @@ define DO_PKG_INFO
 endef
 
 define DO_PACKAGE
-	NAME=$(NAME) SNAME=$(SNAME) VERSION=$(VERSION) KVER=$(KVER) \
-	TARGET=$(TARGET) MACHINE=$(MACHINE) IFS_TARGET=$(IFS_TARGET) \
-	PKG_BUILD_DEPS="$(BUILD_DEPS)" PKG_CORE="$(CORE)" \
-	PKG_DEBUG="$(DEBUG)" PKG_DEPS="$(DEPS)" PKG_EXTRA="$(EXTRA)" \
-	PKG_GROUP="$(GROUP)" PKG_LICENSE="$(LICENSE)" PKG_MAINTAINER="$(MAINTAINER)" \
-	PKG_NAME="$(PKG_NAME)" PKG_VER="$(PKG_VER)" PKG_REL="$(PKG_REL)" \
-	PKG_SHORT="$(value SHORT_DESC)" PKG_URL="$(URL)" \
-	CONTROL_PREIN="$(value CONTROL_PREIN)" CONTROL_PREUN="$(value CONTROL_POSTUN)" \
-	CONTROL_POSTIN="$(value CONTROL_POSTIN)" CONTROL_POSTUN="$(value CONTROL_POSTUN)" \
-	\
-	QUALITY_AGENT_WHITELIST_EXECSTACK="$(value QUALITY_AGENT_WHITELIST_EXECSTACK)" \
-	QUALITY_AGENT_WHITELIST_RPATH="$(value QUALITY_AGENT_WHITELIST_RPATH)" \
-	QUALITY_AGENT_WHITELIST_SONAME="$(value QUALITY_AGENT_WHITELIST_SONAME)" \
-	\
-		$(DIR_SOURCE)/pakfire/compressor $(PKG_PACKAGE) $$ROOTFILE
+	if [ "$(CORE)" = "yes" -o "$(EXTRA)" = "yes" ]; then \
+		if [ -z "$(DO_FIND_ROOTFILE)" ]; then \
+			touch $@_no_rootfile; \
+			exit 0; \
+		fi; \
+		NAME=$(LFS_FILE) \
+		SNAME=$(SNAME) \
+		VERSION=$(VERSION) \
+		KVER=$(KVER) \
+		TARGET=$(TARGET) \
+		MACHINE=$(MACHINE) \
+		IFS_TARGET=$(IFS_TARGET) \
+		\
+		PKG_BUILD_DEPS="$(BUILD_DEPS)" \
+		PKG_CORE="$(CORE)" \
+		PKG_DEBUG="$(DEBUG)" \
+		PKG_DEPS="$(DEPS)" \
+		PKG_EXTRA="$(EXTRA)" \
+		PKG_GROUP="$(GROUP)" \
+		PKG_LICENSE="$(LICENSE)" \
+		PKG_MAINTAINER="$(MAINTAINER)" \
+		PKG_NAME="$(PKG_NAME)" \
+		PKG_VER="$(PKG_VER)" \
+		PKG_REL="$(PKG_REL)" \
+		PKG_SHORT="$(value SHORT_DESC)" \
+		PKG_URL="$(URL)" \
+		\
+		CONTROL_PREIN="$(value CONTROL_PREIN)" \
+		CONTROL_PREUN="$(value CONTROL_POSTUN)" \
+		CONTROL_POSTIN="$(value CONTROL_POSTIN)" \
+		CONTROL_POSTUN="$(value CONTROL_POSTUN)" \
+		\
+		QUALITY_AGENT_WHITELIST_EXECSTACK="$(value QUALITY_AGENT_WHITELIST_EXECSTACK)" \
+		QUALITY_AGENT_WHITELIST_RPATH="$(value QUALITY_AGENT_WHITELIST_RPATH)" \
+		QUALITY_AGENT_WHITELIST_SONAME="$(value QUALITY_AGENT_WHITELIST_SONAME)" \
+		\
+			$(DIR_SOURCE)/pakfire/compressor --rootfile=$(DO_FIND_ROOTFILE) $@; \
+	fi
 endef
 
 # For each package we create a list of files that it installed under 
@@ -143,7 +176,7 @@ define FIND_FILES
 	cd $(LFS)/ && $(TOOLS_DIR)/bin/find -mount \
 	-not -path '.$(TOOLS_DIR)*' -not -path './tmp*' -not -path './usr/src*' \
 	-not -path './dev*' -not -path './proc*' -not -path './sys*' \
-	-not -path '.$(INSTALLER_DIR)*'
+	-not -path '.$(INSTALLER_DIR)*' -not -path './packages*'
 endef
 
 # This is common starting logic for builds.
@@ -156,7 +189,9 @@ define PREBUILD
 	echo "######################################################################"
 	echo "# Saving file list..."
 	# Remove package if exists
-	rm -f $(DIR_PACKAGES)/$(PKG_PACKAGE) 2>/dev/null
+	for package in $(PACKAGES); do \
+		rm -f $(DIR_PACKAGES)/$$package 2>/dev/null; \
+	done
 	if [ ! -f $(DIR_SRC)/lsalr ]; then $(FIND_FILES) > $(DIR_SRC)/lsalr; fi
 endef
 else
