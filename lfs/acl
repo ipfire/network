@@ -56,7 +56,13 @@ endef
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-build-1.patch
+	$(THISAPP)-build-1.patch \
+	$(THISAPP)-nfs4.patch \
+	$(THISAPP)-params.patch \
+	$(THISAPP)-path_max.patch \
+	$(THISAPP)-segfault.patch \
+	$(THISAPP)-walk.patch \
+	$(THISAPP)-exitcode.patch
 
 download: $(objects)
 
@@ -82,7 +88,23 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-build-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-exitcode.patch
 
+	# This patch adds NFS4 Support
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-nfs4.patch
+
+	# This patch adds new short parameters
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-params.patch
+
+	# This patch fixes the usage of long UTF-8 filenames
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-path_max.patch
+
+	# This patch fixes the segfault when using only "--" as parameter
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-segfault.patch
+
+	# This patch makes the order consistent
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-walk.patch
+	
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && \
 		./configure \
