@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
 				FILES="$FILES $file"
 			else
 				echo "File does not exist: $file" >&2
-				exit 1
+				#exit 1
 			fi
 			;;
 	esac
@@ -55,6 +55,6 @@ FILES=$(for i in $FILES; do echo $i; done | sort -u)
 
 for file in $FILES; do
 	echo "Extracting $file..."
-	cpio --extract --quiet --to-stdout data.img < $file | lzmadec | \
-		cpio -diu --no-absolute-filenames --quiet
+	cpio --extract --quiet --to-stdout data.img < $file | \
+		tar --extract --xz -C ${ROOT}
 done

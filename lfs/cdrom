@@ -89,7 +89,11 @@ $(OBJECT): $(objects)
 ifeq "$(BUILD_EXTRAS)" "1"
 	# Copying extra packages to cdrom
 	mkdir -pv $(CDROM_DIR)/packages
-	cd $(DIR_PACKAGES) && cp -vf $(PACKAGES_EXTRA) $(CDROM_DIR)/packages
+	for package in $(PACKAGES_EXTRA); do \
+		if [ -e "$$package" ]; then \
+			cp -vf $$package $(CDROM_DIR)/packages; \
+		fi; \
+	done
 endif
 
 	# Install isolinux & configuration

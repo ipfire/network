@@ -216,11 +216,11 @@ lfsmakecommoncheck()
 	# Append package to the list it belongs to
 	if [ "$STAGE" != "packages" ]; then
 		if [ "$PKG_CORE" = "yes" ]; then
-			PACKAGES_CORE="$PACKAGES_CORE $PKG_PACKAGE"
+			PACKAGES_CORE="$PACKAGES_CORE $PKG_PACKAGES"
 		elif [ "$PKG_EXTRA" = "yes" ]; then
-			PACKAGES_EXTRA="$PACKAGES_EXTRA $PKG_PACKAGE"
+			PACKAGES_EXTRA="$PACKAGES_EXTRA $PKG_PACKAGES"
 		elif [ "$PKG_DEBUG" = "yes" ]; then
-			PACKAGES_DEBUG="$PACKAGES_DEBUG $PKG_PACKAGE"
+			PACKAGES_DEBUG="$PACKAGES_DEBUG $PKG_PACKAGES"
 		fi
 	fi
 
