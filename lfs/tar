@@ -61,7 +61,9 @@ endef
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-vfatTruncate.patch
+	$(THISAPP)-vfatTruncate.patch \
+	$(THISAPP)-xattrs-1.patch \
+	$(THISAPP)-xattrs-conf-1.patch
 
 download: $(objects)
 
