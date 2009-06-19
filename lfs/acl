@@ -90,8 +90,10 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-build-1.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-exitcode.patch
 
+ifneq "$(STAGE)" "toolchain"
 	# This patch adds NFS4 Support
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-nfs4.patch
+endif
 
 	# This patch adds new short parameters
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-params.patch
@@ -103,7 +105,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-segfault.patch
 
 	# This patch makes the order consistent
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-walk.patch
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-walk.patch
 	
 ifeq "$(STAGE)" "toolchain"
 	cd $(DIR_APP) && \
