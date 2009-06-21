@@ -109,7 +109,7 @@ ifeq "$(STAGE)" "base"
 
 	install -v -m0755 $(DIR_APP)/libattr/.libs/libattr.so.1.1.0 /lib
 	ln -vsf libattr.so.1.1.0 /lib/libattr.so.1
-	ln -vsf libattr.so.1.1.0 /lib/libattr.so
+	ln -vsf ../../lib/libattr.so.1 /usr/lib/libattr.so
 	install -v -d /usr/include/attr
 	cp -vf $(DIR_APP)/include/{attributes.h,error_context.h,libattr.h,xattr.h} \
 		/usr/include/attr/
