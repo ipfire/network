@@ -280,6 +280,12 @@ package*|pkg)
 		list|show|ls)
 			pkg_list_packages
 			;;
+		depedencies|deps)
+			shift 2
+			for pkg in $@; do
+				printf "%-26s: %s\n" "${pkg}" "$(pkg_deps_solve ${pkg})"
+			done
+			;;
 		file*)
 			for i in $BASEDIR/lfs/*; do
 				pkg_files $i
@@ -348,6 +354,19 @@ rootfiles|rf)
 			usage
 			;;
 	esac
+	;;
+
+tree)
+	shift
+	for pkg in $(for i in $BASEDIR/lfs/*; do echo ${i##*/}; done); do
+		to_build="${to_build} $(pkg_deps_solve ${pkg}) ${pkg}"
+	done
+	old_to_build=${to_build}
+	to_build=
+	for pkg in ${old_to_build}; do
+		grep -qw "${pkg}" <<<${to_build} || to_build="${to_build} ${pkg}"
+	done
+	echo $to_build
 	;;
 
 vm|qemu)

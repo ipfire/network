@@ -147,6 +147,31 @@ pkg_deps() {
 	)
 }
 
+pkg_build_deps() {
+	(
+		eval $(pkg_info ${1})
+		echo $PKG_BUILD_DEPS
+	)
+}
+
+pkg_deps_solve() {
+	local pkg=${1}
+	local dep
+	local deps
+	local old_deps
+
+	for dep in $(pkg_deps ${pkg}) $(pkg_build_deps ${pkg}); do
+		deps="$(pkg_deps_solve ${dep}) ${dep} ${deps}"
+	done
+
+	old_deps=${deps}
+	deps=
+	for dep in ${old_deps}; do
+		grep -qw "${dep}" <<<${deps} || deps="${deps} ${dep}"
+	done
+	echo ${deps}
+}
+
 pkg_files() {
 	(
 		eval $(pkg_info ${1})
