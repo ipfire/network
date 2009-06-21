@@ -26,6 +26,7 @@ ERROR="\\033[1;31m"
 if [ -e "/lib/network/functions" ]; then
 	. /lib/network/functions
 elif [ -e "lib/functions" ]; then
+	HOME_DIR="lib"
 	. lib/functions
 else
 	echo "Cannot find functions library. Exiting." >&2
@@ -37,12 +38,14 @@ function usage() {
 	case "$1" in
 		main|"")
 			echo    "This script will help you configuring your network."
-			echo    "You should know that there are two different things:"
 			echo
+			echo    "You should know that there are three different things:"
+			echo
+			echo    "    hook: A script to control connections and protocols."
+			echo    "    port: A physical connection to somewhere."
 			echo    "    zone: A group of ports."
-			echo    "    port: Connection to somewhere."
 			echo
-			echo    "    $0 [global flags] <port|zone> ... or"
+			echo    "    $0 [global flags] <hook|port|zone> ... or"
 			echo    "    $0 [global flags] <cmd line options...>"
 			echo
 			echo -e "${BOLD}Global flags:${NORMAL}"
@@ -56,12 +59,29 @@ function usage() {
 			echo    "    restart       - Restarts the whole network."
 			echo    "    reload        - Reloads the whole network."
 			echo
-			echo    "    zone - Run \"$0 zone help\" for more information."
+			echo    "    hook - Run \"$0 hook help\" for more information."
 			echo    "    port - Run \"$0 port help\" for more information."
+			echo    "    zone - Run \"$0 zone help\" for more information."
 			echo
 			;;
-		hook)
-			echo "TODO"
+		hook*)
+			echo -e "${BOLD}Hook configuration:${NORMAL}"
+			echo
+			echo    "    ${0} [global options] hook <command>"
+			echo
+			echo -e "${BOLD}1st level commands:${NORMAL}"
+			echo -e "    ${BOLD}list:${NORMAL}"
+			echo    "        Returns a list of all available hooks."
+			echo
+			echo
+			echo    "    ${0} [global options] hook <hook> <command>"
+			echo
+			echo -e "${BOLD}2nd level commands:${NORMAL}"
+			echo -e "    ${BOLD}help:${NORMAL}"
+			echo    "        Displays some help about the given hook."
+			echo
+			echo    "        Example: $0 hook ethernet help"
+			echo
 			;;
 		port)
 			echo -e "${BOLD}Port Configuration:${NORMAL}"
@@ -399,13 +419,25 @@ while [ "$#" -gt 0 ]; do
 			_exit $?
 			;;
 		hook|hooks)
-			arg=$1
+			case "$1" in
+				list)
+					for i in ${HOOKS_DIR}/*; do
+						hook_exists ${i##*/} && echo ${i}
+					done
+					_exit $?
+					;;
+				*)
+					if hook_exists ${1}; then
+						hook=${1}
+					else
+						usage hook
+					fi
+			esac
 			shift
-			case "$arg" in
+			case "$1" in
 				help|info)
-					hook=$1
 					if hook_exists ${hook}; then
-						hook_run ${hook} ${arg}
+						hook_run ${hook} ${1}
 						_exit $?
 					else
 						error "Hook ${hook} does not exist or is not executeable."
