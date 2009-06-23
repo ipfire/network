@@ -120,7 +120,7 @@ define DO_PKG_INFO
 	@echo "local PKG_GROUP=\"$(GROUP)\""
 	@echo "local PKG_LICENSE=\"$(LICENSE)\""
 	@echo "local PKG_MAINTAINER=\"$(MAINTAINER)\""
-	@echo "local PKG_NAME=\"$(LFS_FILE)\""
+	@echo "local PKG_NAME=\"$$(basename $(LFS_FILE))\""
 	@echo "local PKG_PACKAGES=\"$(PACKAGES)\""
 	@echo "local PKG_VER=\"$(PKG_VER)\""
 	@echo "local PKG_REL=\"$(PKG_REL)\""
