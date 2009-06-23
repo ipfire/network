@@ -26,8 +26,9 @@ include Config
 
 PKG_NAME   = squid
 PKG_VER    = 3.0.STABLE15
+PKG_REL    = 0
 
-CORE       = yes
+CORE       = no
 EXTRA      = yes
 DEBUG      = no
 
@@ -36,6 +37,27 @@ DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER = Christian Schmidt <christian.schmidt@ipfire.org>
+GROUP      = Networking/Daemons
+CORE       = no
+EXTRA      = yes
+DEBUG      = no
+BUILD_DEPS =
+DEPS       = # unknown atm
+
+URL        = http://www.samba.org/
+LICENSE    = GPLv3+ and LGPLv3+
+SHORT_DESC = Caching proxy for the Web supporting HTTP, HTTPS, FTP
+
+define LONG_DESC
+	Squid is used by hundreds of Internet Providers world-wide to provide \
+	their users with the best possible web access. Squid optimises the \
+	data flow between client and server to improve performance and caches \
+	frequently-used content to save bandwidth. Squid can also route \
+	content requests to servers in a wide variety of ways to build cache \
+	server hierarchies which optimise network throughput.
+endef
 
 ###############################################################################
 # Top-level Rules
@@ -73,7 +95,7 @@ $(OBJECT): $(objects)
 			--libexecdir=/usr/lib/squid \
 			--localstatedir=/var \
 			--sysconfdir=/etc/squid \
-			--enable-storeio="aufs,diskd,null,ufs" \
+			--enable-storeio="aufs,diskd,ufs,null" \
 			--enable-removal-policies="heap,lru" \
 			--enable-icmp \
 			--enable-delay-pools \
@@ -84,7 +106,7 @@ $(OBJECT): $(objects)
 			--disable-wccp \
 			--disable-wccpv2 \
 			--enable-kill-parent-hack \
-			--disable-snmp \
+			--enable-snmp \
 			--enable-arp-acl \
 			--enable-htcp \
 			--enable-ssl \
