@@ -83,7 +83,7 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-makefile.patch
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) BUILD_SHARED=1 FORCE_WEXT_VERSION=16
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) BUILD_SHARED=1 FORCE_WEXT_VERSION=16 OPT_FLAGS="$(CFLAGS)"
 	cd $(DIR_APP) && make install PREFIX=/usr INSTALL_DIR=/sbin INSTALL_LIB=/lib
 	rm -vf /lib/libiw.{a,so}
 	ln -svf ../../lib/libiw.so.$(PKG_VER) /usr/lib/libiw.so
