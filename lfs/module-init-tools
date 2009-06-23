@@ -93,7 +93,7 @@ $(OBJECT): $(objects)
 			$(CONFIGURE_ARCH) \
 			--prefix=/ \
 			--mandir=/usr/share/man \
-			--enable-zlib
+			--enable-zlib-dynamic
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make INSTALL=install install
 	rm -vf /sbin/insmod.static
