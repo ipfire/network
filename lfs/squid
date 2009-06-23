@@ -28,10 +28,6 @@ PKG_NAME   = squid
 PKG_VER    = 3.0.STABLE15
 PKG_REL    = 0
 
-CORE       = no
-EXTRA      = yes
-DEBUG      = no
-
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
@@ -44,19 +40,19 @@ CORE       = no
 EXTRA      = yes
 DEBUG      = no
 BUILD_DEPS =
-DEPS       = # unknown atm
+DEPS       =
 
-URL        = http://www.samba.org/
-LICENSE    = GPLv3+ and LGPLv3+
-SHORT_DESC = Caching proxy for the Web supporting HTTP, HTTPS, FTP
+URL        = http://www.squid-cache.org/
+LICENSE    = GPLv2+
+SHORT_DESC = The Squid proxy caching server.
 
 define LONG_DESC
-	Squid is used by hundreds of Internet Providers world-wide to provide \
-	their users with the best possible web access. Squid optimises the \
-	data flow between client and server to improve performance and caches \
-	frequently-used content to save bandwidth. Squid can also route \
-	content requests to servers in a wide variety of ways to build cache \
-	server hierarchies which optimise network throughput.
+	Squid is a high-performance proxy caching server for Web clients, \
+	supporting FTP, gopher, and HTTP data objects. Unlike traditional \
+	caching software, Squid handles all requests in a single, \
+	non-blocking, I/O-driven process. Squid keeps meta data and especially \
+	hot objects cached in RAM, caches DNS lookups, supports non-blocking \
+	DNS lookups, and implements negative caching of failed requests.
 endef
 
 ###############################################################################
