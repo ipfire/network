@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = nss_ldap
 PKG_VER    = 262
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,25 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Base
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+LICENSE    = LGPLv2+
+URL        = http://www.padl.com/
+SHORT_DES  = NSS library and PAM module for LDAP.
+
+define LONG_DESC
+	This package includes two LDAP access clients: nss_ldap and \
+	pam_ldap. Nss_ldap is a set of C library extensions that allow \
+	X.500 and LDAP directory servers to be used as a primary source \
+	of aliases, ethers, groups, hosts, networks, protocol, users, \
+	RPCs, services, and shadow passwords.
+endef
 
 ###############################################################################
 # Top-level Rules
