@@ -154,13 +154,20 @@ pkg_build_deps() {
 	)
 }
 
+pkg_all_deps() {
+	(
+		eval $(pkg_info ${1})
+		echo $PKG_BUILD_DEPS $PKG_DEPS
+	)
+}
+
 pkg_deps_solve() {
 	local pkg=${1}
 	local dep
 	local deps
 	local old_deps
 
-	for dep in $(pkg_deps ${pkg}) $(pkg_build_deps ${pkg}); do
+	for dep in $(pkg_all_deps ${pkg}); do
 		deps="$(pkg_deps_solve ${dep}) ${dep} ${deps}"
 	done
 
