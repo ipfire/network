@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = noip
 PKG_VER    = 2.1.7
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,24 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Daemons
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       = 
+
+URL        = http://www.no-ip.com/
+LICENSE    = GPLv2+
+SHORT_DESC = A dynamic DNS update client.
+
+define LONG_DESC
+	Keep your current IP address in sync with your No-IP host or domain \
+	with this Dynamic Update Client (DUC). The client continually checks \
+	for IP address changes in the background and automatically updates \
+	the DNS at No-IP whenever it changes.
+endef
 
 ###############################################################################
 # Top-level Rules
