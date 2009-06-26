@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = parted
 PKG_VER    = 1.8.8
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,24 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/System
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       = libtool
+
+LICENSE    = GPLv3+
+URL        = http://www.gnu.org/software/parted
+SHORT_DESC = The GNU disk partition manipulation program.
+
+define LONG_DESC
+	The GNU Parted program allows you to create, destroy, resize, move, \
+	and copy hard disk partitions. Parted can be used for creating space \
+	for new operating systems, reorganizing disk usage, and copying data \
+	to new hard disks.
+endef
 
 ###############################################################################
 # Top-level Rules
