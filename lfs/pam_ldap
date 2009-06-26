@@ -26,19 +26,31 @@ include Config
 
 PKG_NAME   = pam_ldap
 PKG_VER    = 184
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = System/Base
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-
 BUILD_DEPS =
 DEPS       = openldap
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+LICENSE    = GPL and LGPL
+URL        = http://www.padl.com/OSS/pam_ldap.html
+SHORT_DESC = A pam/ldap module that supports password changes.
+
+define LONG_DESC
+	The pam_ldap module provides the means for Solaris and Linux servers \
+	and workstations to authenticate against LDAP directories, and to \
+	change their passwords in the directory.
+endef
 
 ###############################################################################
 # Top-level Rules
