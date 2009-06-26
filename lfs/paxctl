@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = paxctl
 PKG_VER    = 0.5
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,22 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/System
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+LICENSE    = GPL v2
+URL        = http://pax.grsecurity.net/
+SHORT_DESC = Application to control PaX flags.
+
+define LONG_DESC
+	paxctl may be used to control PaX flags on a per-binary basis. PaX \
+	is a set of kernel security patches to enhance a system's security.
+endef
 
 ###############################################################################
 # Top-level Rules
