@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = pixman
 PKG_VER    = 0.13.2
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,21 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+LICENSE    = MIT
+URL        = http://xorg.freedesktop.org/archive/individual/lib/
+SHORT_DESC = Pixel manipulation library.
+
+define LONG_DESC
+	Pixman is a pixel manipulation library for X and cairo.
+endef
 
 CONFIGURE_ARGS = --disable-mmx --disable-sse2
 

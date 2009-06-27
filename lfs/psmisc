@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = psmisc
 PKG_VER    = 22.7
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,27 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/System
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS = 
+DEPS       = 
+
+LICENSE    = GPLv2+
+URL        = http://sourceforge.net/projects/psmisc
+SHORT_DESC = Utilities for managing processes on your system.
+
+define LONG_DESC
+	The psmisc package contains utilities for managing processes on your \
+	system: pstree, killall and fuser. The pstree command displays a \
+	tree structure of all of the running processes on your system. The \
+	killall command sends a specified signal (SIGTERM if nothing is \
+	specified) to processes identified by name. The fuser command \
+	identifies the PIDs of processes that are using specified files or \
+	filesystems.
+endef
 
 ###############################################################################
 # Top-level Rules

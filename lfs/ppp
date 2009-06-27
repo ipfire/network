@@ -26,19 +26,33 @@ include Config
 
 PKG_NAME   = ppp
 PKG_VER    = 2.4.4
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-BUILD_DEPS =
-DEPS       = libpcap linux-atm
-
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Daemons
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       = libpcap linux-atm
+
+LICENSE    = BSD and LGPLv2+ and GPLv2+ and Public Domain
+URL        = ftp://ftp.samba.org/pub/ppp/ 
+SHORT_DESC = The PPP (Point-to-Point Protocol) daemon.
+
+define LONG_DESC
+	The ppp package contains the PPP (Point-to-Point Protocol) daemon and \
+	documentation for PPP support. The PPP protocol provides a method for \
+	transmitting datagrams over serial point-to-point links. PPP is \
+	usually used to dial in to an ISP or other organization over a modem \
+	and phone line.
+endef
 
 ###############################################################################
 # Top-level Rules
