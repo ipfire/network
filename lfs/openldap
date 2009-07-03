@@ -26,19 +26,34 @@ include Config
 
 PKG_NAME   = openldap
 PKG_VER    = 2.4.16
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tgz
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-BUILD_DEPS =
-DEPS       = berkeley cyrus-sasl openssl pth
-
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Daemons
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       = berkeley cyrus-sasl openssl pth
+
+LICENSE    = OpenLDAP
+URL        = http://www.openldap.org/
+SHORT_DESC = LDAP support libraries
+
+define LONG_DESC
+	OpenLDAP is an open source suite of LDAP (Lightweight Directory Access \
+	Protocol) applications and development tools. LDAP is a set of \
+	protocols for accessing directory services over the Internet, similar \
+	to the way DNS information is propagated over the Internet. The \
+	openldap package contains configuration files, libraries, and \
+	documentation for OpenLDAP.
+endef
 
 CFLAGS    += -D_GNU_SOURCE -D_REENTRANT
 

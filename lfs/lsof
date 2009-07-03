@@ -81,7 +81,7 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && ./Configure linux -n
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make DEBUG="$(CFLAGS)" $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && install -m 4750 -o root -g nobody lsof /usr/bin
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

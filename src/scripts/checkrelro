@@ -1,0 +1,41 @@
+#!/bin/bash
+
+function message() {
+	printf "%-40s - %s\n" "${file}" "$@"
+}
+
+function verbose() {
+	[ "${verbose}" = "1" ]
+}
+
+files=
+for arg in $@; do
+	case "${arg}" in
+		--verbose|-v)
+			verbose=1
+			continue
+			;;
+	esac
+	if [ -d "${arg}" ]; then
+		files="${files} $(find ${arg} -type f)"
+	else
+		files="${files} ${arg}"
+	fi
+done
+
+for file in ${files}; do
+	if  [ -L "${file}" ] || \
+		(file ${file} | grep -vq "shared object"); then
+		continue
+	fi
+
+	if readelf -l ${file} 2>/dev/null | grep -q "GNU_RELRO"; then
+		if readelf -d ${file} 2>/dev/null | grep -q "BIND_NOW"; then
+			verbose && message "full RELRO"
+		else
+			message "partial RELRO"
+		fi
+	else
+		message "no RELRO"
+	fi
+done

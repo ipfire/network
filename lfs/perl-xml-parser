@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = XML-Parser
 PKG_VER    = 2.34
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,23 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Development/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       = perl
+
+LICENSE    = GPL+ or Artistic
+URL        = http://search.cpan.org/dist/XML-Parser/
+SHORT_DESC = Perl module for parsing XML files.
+
+define LONG_DESC
+	This module provides ways to parse XML documents. It is built on \
+	top of XML::Parser::Expat, which is a lower level interface to \
+	James Clark's expat library.
+endef
 
 define QUALITY_AGENT_WHITELIST_RPATH
 	/usr/lib/perl5/site_perl/*/auto/XML/Parser/Expat/Expat.so

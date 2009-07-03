@@ -105,8 +105,8 @@ INSTALL_INITSCRIPT = echo "Installing initscript \"$(INITSCRIPT)\" -> /etc/init.
 
 PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 
-DO_FIND_ROOTFILE = $$(find $(DIR_SOURCE)/rootfiles/{core,extras,debug}/{$(TARGET),}/ -type f \
-		-name "$(LFS_FILE)" 2>/dev/null | head -n1)
+DO_FIND_ROOTFILE = $$(find $(DIR_SOURCE)/rootfiles/{core,extras,debug}/{$(TARGET),} -type f \
+	-maxdepth 1 -name "$(LFS_FILE)" 2>/dev/null | head -n1)
 
 define DO_PKG_INFO
 	@## ALPHABETICAL ORDER ##
@@ -120,7 +120,7 @@ define DO_PKG_INFO
 	@echo "local PKG_GROUP=\"$(GROUP)\""
 	@echo "local PKG_LICENSE=\"$(LICENSE)\""
 	@echo "local PKG_MAINTAINER=\"$(MAINTAINER)\""
-	@echo "local PKG_NAME=\"$(LFS_FILE)\""
+	@echo "local PKG_NAME=\"$$(basename $(LFS_FILE))\""
 	@echo "local PKG_PACKAGES=\"$(PACKAGES)\""
 	@echo "local PKG_VER=\"$(PKG_VER)\""
 	@echo "local PKG_REL=\"$(PKG_REL)\""

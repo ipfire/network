@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = popt
 PKG_VER    = 1.14
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,23 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       = gettext
+
+LICENSE    = MIT
+URL        = http://www.rpm5.org/
+SHORT_DESC = C library for parsing command line parameters.
+
+define LONG_DESC
+	Popt is a C library for parsing command line parameters. Popt was \
+	heavily influenced by the getopt() and getopt_long() functions, but \
+	it improves on them by allowing more powerful argument expansion.
+endef
 
 ###############################################################################
 # Top-level Rules

@@ -128,7 +128,7 @@ ifeq "$(STAGE)" "base"
 
 	install -v -m0755 $(DIR_APP)/libacl/.libs/libacl.so.1.1.0 /lib
 	ln -vsf libacl.so.1.1.0 /lib/libacl.so.1
-	ln -vsf libacl.so.1 /lib/libacl.so
+	ln -vsf ../../lib/libacl.so.1 /usr/lib/libacl.so
 	-mkdir -pv /usr/include/{acl,sys}
 	cp -vf $(DIR_APP)/include/libacl.h /usr/include/acl/
 	cp -vf $(DIR_APP)/include/acl.h /usr/include/sys/

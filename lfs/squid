@@ -26,16 +26,34 @@ include Config
 
 PKG_NAME   = squid
 PKG_VER    = 3.0.STABLE15
-
-CORE       = yes
-EXTRA      = yes
-DEBUG      = no
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER = Christian Schmidt <christian.schmidt@ipfire.org>
+GROUP      = Networking/Daemons
+CORE       = no
+EXTRA      = yes
+DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = http://www.squid-cache.org/
+LICENSE    = GPLv2+
+SHORT_DESC = The Squid proxy caching server.
+
+define LONG_DESC
+	Squid is a high-performance proxy caching server for Web clients, \
+	supporting FTP, gopher, and HTTP data objects. Unlike traditional \
+	caching software, Squid handles all requests in a single, \
+	non-blocking, I/O-driven process. Squid keeps meta data and especially \
+	hot objects cached in RAM, caches DNS lookups, supports non-blocking \
+	DNS lookups, and implements negative caching of failed requests.
+endef
 
 ###############################################################################
 # Top-level Rules
@@ -73,7 +91,7 @@ $(OBJECT): $(objects)
 			--libexecdir=/usr/lib/squid \
 			--localstatedir=/var \
 			--sysconfdir=/etc/squid \
-			--enable-storeio="aufs,diskd,null,ufs" \
+			--enable-storeio="aufs,diskd,ufs,null" \
 			--enable-removal-policies="heap,lru" \
 			--enable-icmp \
 			--enable-delay-pools \
@@ -84,7 +102,7 @@ $(OBJECT): $(objects)
 			--disable-wccp \
 			--disable-wccpv2 \
 			--enable-kill-parent-hack \
-			--disable-snmp \
+			--enable-snmp \
 			--enable-arp-acl \
 			--enable-htcp \
 			--enable-ssl \

@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = patch
 PKG_VER    = 2.5.9
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,25 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Development/Tools
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+LICENSE    = GPLv2+
+URL        = http://www.gnu.org/software/patch/patch.html
+SHORT_DESC = Utility for modifying/upgrading files.
+
+define LONG_DESC
+	The patch program applies diff files to originals. The diff \
+	command is used to compare an original to a changed file.\
+	 Diff lists the changes made to the file. A person who has \
+	the original file can then use the patch command with the \
+	diff file to add the changes to their original file.
+endef
 
 ###############################################################################
 # Top-level Rules

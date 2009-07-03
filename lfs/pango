@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = pango
 PKG_VER    = 1.22.3
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,22 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+LICENSE    = LGPLv2+
+URL        = http://www.pango.org/
+SHORT_DESC = System for layout and rendering of internationalized text.
+
+define LONG_DESC
+	Pango is a library for laying out and rendering of text, with an \
+	emphasis on internationalization.
+endef
 
 ###############################################################################
 # Top-level Rules

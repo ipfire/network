@@ -33,7 +33,7 @@ function macro() {
 	if _config_is_sqlite $file; then
 		rules=$(macro_parse $@ < $file)
 	else
-		rules=$(sqlite -noheader -column $file | macro_parse $@)
+		rules=$(sqlite3 -noheader -column $file | macro_parse $@)
 	fi
 
 	while read line <<< ${rules}; do

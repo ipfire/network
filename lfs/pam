@@ -26,19 +26,31 @@ include Config
 
 PKG_NAME   = Linux-PAM
 PKG_VER    = 1.0.4
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
+OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+
+MAINTAINER =
+GROUP      = System/Base
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-
 BUILD_DEPS = bison flex
 DEPS       = cracklib
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+LICENSE    = BSD and GPLv2+ and BSD with advertising
+URL        = http://www.us.kernel.org/pub/linux/libs/pam/index.html
+SHORT_DESC = An extensible library which provides authentication for applications.
+
+define LONG_DESC
+	PAM (Pluggable Authentication Modules) is a system security tool that \
+	allows system administrators to set authentication policy without \
+	having to recompile programs that handle authentication.
+endef
 
 ###############################################################################
 # Top-level Rules
