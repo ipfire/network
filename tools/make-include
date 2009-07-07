@@ -56,6 +56,7 @@ mkdir $BASEDIR/log_${TARGET}/ 2>/dev/null
 . $BASEDIR/tools/make-buildspy
 . $BASEDIR/tools/make-check
 . $BASEDIR/tools/make-batch
+. $BASEDIR/tools/make-cluster
 . $BASEDIR/tools/make-compilers
 . $BASEDIR/tools/make-git
 . $BASEDIR/tools/make-packages
@@ -98,8 +99,8 @@ exiterror() {
 logger() {
 	local logfile=$LOGFILE
 	case "$1" in
-		--distcc)
-			logfile=$BASEDIR/log_$TARGET/_build.00-distcc.log
+		--cluster)
+			logfile=$BASEDIR/log_$TARGET/_build.00-cluster.log
 			shift
 			;;
 	esac
@@ -133,7 +134,6 @@ entershell() {
 		CCACHE_DIR=/usr/src/ccache \
 		CCACHE_PREFIX=${CCACHE_PREFIX} \
 		CCACHE_HASHDIR=${CCACHE_HASHDIR} \
-		DISTCC_DIR=/usr/src/distcc \
 		PARALLELISMFLAGS=$PARALLELISMFLAGS \
 		LINKER=$LINKER \
 		TOOLS_DIR=$TOOLS_DIR \
@@ -252,8 +252,6 @@ lfsmakecommoncheck()
 		exiterror "Download error in $1"
 	fi
 
-	distcc_reload &
-
 	return 0	# pass all!
 } # End of lfsmakecommoncheck()
 
@@ -353,7 +351,9 @@ ipfire_make() {
 		CCACHE_DIR="/usr/src/ccache" \
 		CCACHE_PREFIX="${CCACHE_PREFIX}" \
 		CCACHE_HASHDIR="${CCACHE_HASHDIR}" \
-		DISTCC_DIR="/usr/src/distcc" \
+		ICECC="${ICECC}" \
+		ICECC_VERSION="${ICECCD_TOOLCHAIN}" \
+		USE_SCHEDULER="${ICECC_SCHEDULER}" \
 		\
 		LINKER="${LINKER}" \
 		MACHINE="${MACHINE}" \
@@ -427,7 +427,6 @@ package_make() {
 		CCACHE_DIR="/usr/src/ccache" \
 		CCACHE_PREFIX="${CCACHE_PREFIX}" \
 		CCACHE_HASHDIR="${CCACHE_HASHDIR}" \
-		DISTCC_DIR="/usr/src/distcc" \
 		\
 		LINKER="${LINKER}" \
 		MACHINE="${MACHINE}" \
@@ -597,13 +596,13 @@ prepareenv() {
 
 	# Make some extra directories
 	mkdir -p $BASEDIR/build_${TARGET}/{$TOOLS_DIR,cdrom,$INSTALLER_DIR,$IMAGES_DIR} 2>/dev/null
-	mkdir -p $BASEDIR/{cache,ccache,distcc} 2>/dev/null
+	mkdir -p $BASEDIR/{cache,ccache} 2>/dev/null
 	mkdir -p $BASEDIR/cache/{toolchains,patches,tarballs} 2>/dev/null
 	mkdir -p $BASEDIR/packages_${TARGET} 2>/dev/null
 	mkdir -p $LFS/{$TOOLS_DIR,usr/src} 2>/dev/null
 	mkdir -p $LFS/{dev,etc,proc,sys} 2>/dev/null
 	mkdir -p $LFS/dev/pts 2>/dev/null
-	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${TARGET},src,ccache,distcc} 2>/dev/null
+	mkdir -p $LFS/usr/src/{cache,config,doc,lfs,log_${TARGET},src,ccache} 2>/dev/null
 	mkdir -p $LFS/{$INSTALLER_DIR,cdrom,images,packages} 2>/dev/null
 
 	mknod -m 600 $BASEDIR/build/dev/console c 5 1 2>/dev/null
@@ -615,7 +614,6 @@ prepareenv() {
 	mount --bind /sys					$LFS/sys
 	mount --bind $BASEDIR/cache				$LFS/usr/src/cache
 	mount --bind $BASEDIR/ccache				$LFS/usr/src/ccache
-	mount --bind $BASEDIR/distcc				$LFS/usr/src/distcc
 	mount --bind $BASEDIR/config				$LFS/usr/src/config
 	mount --bind $BASEDIR/doc				$LFS/usr/src/doc
 	mount --bind $BASEDIR/lfs				$LFS/usr/src/lfs
@@ -630,8 +628,7 @@ prepareenv() {
 	# Run LFS static binary creation scripts one by one
 	export CCACHE_DIR=$BASEDIR/ccache
 	export CCACHE_HASHDIR=1
-	export CCACHE_PREFIX="distcc"
-	export DISTCC_DIR=$BASEDIR/distcc
+	export CCACHE_PREFIX="icecc"
 
 	# Remove pre-install list of installed files in case user erase some files before rebuild
 	rm -f $LFS/usr/src/lsalr 2>/dev/null
@@ -654,7 +651,6 @@ build() {
 	build_spy_send_profile
 	build_spy state compiling
 	build_spy start
-	distcc_get_hosts &
 
 	if [ -f $BASEDIR/log_${TARGET}/02_base/stage2 ]; then
 		prepareenv
@@ -676,8 +672,8 @@ build() {
 		fi
 	fi
 
-	# Run distcc daemon
-	distccd_start
+	# Run icecc daemon
+	iceccd_start
 
 	beautify build_stage "Building base"
 	base_build

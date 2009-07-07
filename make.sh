@@ -25,7 +25,7 @@
 NAME="IPFire"			# Software name
 SNAME="ipfire"			# Short name
 VERSION="3.0-prealpha2"		# Version number
-TOOLCHAINVERSION="${VERSION}-6"	# Toolchain
+TOOLCHAINVERSION="${VERSION}-7"	# Toolchain
 SLOGAN="Gluttony"		# Software slogan
 
 # Include funtions
@@ -53,7 +53,7 @@ toolchain_build() {
 
 	toolchain_make stage1
 	# make distcc first so that CCACHE_PREFIX works immediately
-	toolchain_make distcc
+	toolchain_make icecc
 	toolchain_make ccache
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
@@ -92,6 +92,11 @@ toolchain_build() {
 	toolchain_make bc
 	toolchain_make xz
 	toolchain_make strip
+
+	ICECC_CC="${TOOLS_DIR}/bin/gcc" \
+	ICECC_CXX="${TOOLS_DIR}/bin/g++" \
+		icecc_build_native ${ICECC_TOOLCHAIN}
+
 	export PATH=$ORG_PATH SKIP_PACKAGE_LIST=$SAVE_SKIP_PACKAGE_LIST
 	unset SAVE_SKIP_PACKAGE_LIST
 }

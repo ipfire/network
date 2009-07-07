@@ -106,24 +106,6 @@ config)
 	esac
 	;;
 
-distcc|distccd)
-	# distcc(d) commands
-	case "$2" in
-		start)
-			distccd_start
-			;;
-		stop)
-			distccd_stop
-			;;
-		restart)
-			distccd_restart
-			;;
-		stats|mon)
-			distcc_mon
-			;;
-	esac
-	;;
-
 clean)
 	for i in $(mount | grep $BASEDIR | cut -d " " -f 1); do
 		umount $i

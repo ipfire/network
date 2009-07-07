@@ -54,10 +54,6 @@ BUILD_DEBUG=0
 # Default parallelism options
 PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
 
-# Default distcc options
-DISTCC_PORT=3632
-DISTCC_JOBS=4
-
 # Default hostname
 HOSTNAME=$(hostname -f || hostname)
 
@@ -162,3 +158,6 @@ IMAGES_DIR=/images
 # Files that indicates that we are running or failed
 RUNNING=$BASEDIR/.running
 FAILED=$BASEDIR/.failed
+
+ICECC=off # icecc is currently disabled
+ICECC_SCHEDULER=$(${BASEDIR}/tools/resolver ${ICECC_SCHEDULER} 2>/dev/null)
