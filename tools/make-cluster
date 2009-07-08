@@ -34,7 +34,7 @@ function iceccd_start() {
 		return
 	fi
 	local toolchain=${1}
-	ICECC_VERSION=${toolchain} iceccd -s minerva.ipfire.org -d -m ${ICECC_JOBS-5}
+	ICECC_VERSION=${toolchain} iceccd -d -s ${ICECC_SCHEDULER} -m ${ICECC_JOBS-5}
 }
 
 function iceccd_stop() {

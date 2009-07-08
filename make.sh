@@ -50,9 +50,14 @@ toolchain_build() {
 	# We can't skip packages in toolchain stage
 	SAVE_SKIP_PACKAGE_LIST=$SKIP_PACKAGE_LIST
 	SKIP_PACKAGE_LIST=
+	
+	# Disable icecc in here
+	SAVE_ICECC=$ICECC
+	ICECC=off
+	iceccd_stop
 
 	toolchain_make stage1
-	# make distcc first so that CCACHE_PREFIX works immediately
+	# make icecc first so that CCACHE_PREFIX works immediately
 	toolchain_make icecc
 	toolchain_make ccache
 	toolchain_make binutils		PASS=1
@@ -65,6 +70,15 @@ toolchain_build() {
 	toolchain_make gcc		PASS=2
 	toolchain_make binutils		PASS=2
 	toolchain_make test-toolchain	PASS=2
+
+	ICECC=$SAVE_ICECC
+	unset SAVE_ICECC
+
+	ICECC_CC="${TOOLS_DIR}/bin/gcc" \
+	ICECC_CXX="${TOOLS_DIR}/bin/g++" \
+		icecc_build_native ${ICECC_TOOLCHAIN}
+	iceccd_start
+
 	toolchain_make ncurses
 	toolchain_make attr
 	toolchain_make acl
@@ -92,10 +106,6 @@ toolchain_build() {
 	toolchain_make bc
 	toolchain_make xz
 	toolchain_make strip
-
-	ICECC_CC="${TOOLS_DIR}/bin/gcc" \
-	ICECC_CXX="${TOOLS_DIR}/bin/g++" \
-		icecc_build_native ${ICECC_TOOLCHAIN}
 
 	export PATH=$ORG_PATH SKIP_PACKAGE_LIST=$SAVE_SKIP_PACKAGE_LIST
 	unset SAVE_SKIP_PACKAGE_LIST

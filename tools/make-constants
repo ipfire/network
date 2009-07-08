@@ -57,6 +57,9 @@ PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
 # Default hostname
 HOSTNAME=$(hostname -f || hostname)
 
+# Default scheduler
+ICECC_SCHEDULER="minerva.ipfire.org"
+
 ###############################################################################
 #
 # Read the local configuration to override the environment variables
@@ -158,6 +161,3 @@ IMAGES_DIR=/images
 # Files that indicates that we are running or failed
 RUNNING=$BASEDIR/.running
 FAILED=$BASEDIR/.failed
-
-ICECC=off # icecc is currently disabled
-ICECC_SCHEDULER=$(${BASEDIR}/tools/resolver ${ICECC_SCHEDULER} 2>/dev/null)
