@@ -56,8 +56,9 @@ define LONG_DESC
 	Linux system will not function.
 endef
 
-CFLAGS     = -O2 -pipe
-CXXFLAGS   =
+CFLAGS     = -O2 -fomit-frame-pointer -pipe -DPIC -fno-strict-aliasing \
+	-mno-tls-direct-seg-refs -D_FORTIFY_SOURCE=2 -fstack-protector-all
+CXXFLAGS   = $(CFLAGS)
 
 OPTIMIZED_KERNEL = 2.6.18
 
@@ -76,7 +77,10 @@ objects = $(DL_FILE) \
 	$(THISAPP)-res_randomid.patch \
 	$(THISAPP)-resolv_response_length.patch \
 	$(THISAPP)-undefine-__i686.patch \
-	$(THISAPP)-arc4random.patch
+	$(THISAPP)-arc4random.patch \
+	$(THISAPP)-hardened-configure-picdefault.patch \
+	$(THISAPP)-hardened-inittls-nosysenter.patch \
+	$(THISAPP)-hardened-pie.patch
 
 download: $(objects)
 
@@ -194,6 +198,16 @@ ifeq "$(MACHINE)" "i686"
 	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-undefine-__i686.patch
 endif
 
+	# Some hardening patches
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-hardened-pie.patch
+	cd $(DIR_APP) && patch -Np0 -i \
+		$(DIR_PATCHES)/$(THISAPP)-hardened-configure-picdefault.patch
+	cd $(DIR_APP) && patch -Np0 -i \
+		$(DIR_PATCHES)/$(THISAPP)-hardened-inittls-nosysenter.patch
+
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/$(THISAPP)-stack_chk_fail.c \
+		$(DIR_APP)/debug/stack_chk_fail.c
+
 	# --sbindir=$(TOOLS_DIR)/bin does not work... anyone want to fix this?
 	# We don't need Glibc's sbin programs, but still.
 
@@ -213,6 +227,8 @@ ifeq "$(STAGE)" "toolchain"
 	touch $(TOOLS_DIR)/etc/ld.so.conf
 
 	cd $(DIR_SRC)/glibc-build && \
+		CFLAGS= \
+		CXXFLAGS= \
 		../$(THISAPP)/configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR) \
@@ -236,6 +252,8 @@ ifeq "$(STAGE)" "base"
 	touch /etc/ld.so.conf
 
 	cd $(DIR_SRC)/glibc-build && \
+		CFLAGS= \
+		CXXFLAGS= \
 		../$(THISAPP)/configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
@@ -246,7 +264,8 @@ ifeq "$(STAGE)" "base"
 			--without-selinux \
 			--disable-werror \
 			--enable-bind-now \
-			--enable-stackguard-randomization
+			--enable-stackguard-randomization \
+			--with-stack-protector=all
 endif
 
 	# Our GCC is already passing -fPIC, and that's all we want for the libraries.
@@ -255,46 +274,16 @@ endif
 	# the libraries, not the programs:
 	echo "build-programs=no" \
 		>> $(DIR_SRC)/glibc-build/configparms
-	echo "CC = gcc -fPIC -fno-stack-protector -U_FORTIFY_SOURCE -nonow -nopie" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo "CXX = g++ -fPIC -fno-stack-protector -U_FORTIFY_SOURCE -nonow -nopie" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo "LDFLAGS.so += -Wl,--warn-shared-textrel,--fatal-warnings" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
+	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS) \
+		CFLAGS="-O2 -DPIC -fno-stack-protector -U_FORTIFY_SOURCE" \
+		CXXFLAGS="-O2 -DPIC -fno-stack-protector -U_FORTIFY_SOURCE"
 
 	# Then build the programs with hardening, so everything possible in
 	# $(TOOLS_DIR) is hardened:
-	@rm -f $(DIR_SRC)/glibc-build/configparms
-	echo "CC = gcc -fPIE -fstack-protector-all -D_FORTIFY_SOURCE=2" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo "CXX = g++ -fPIE -fstack-protector-all -D_FORTIFY_SOURCE=2" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo "CFLAGS-sln.c += -fno-PIC -fno-PIE" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo "+link = \$$(CC) -nostdlib -nostartfiles -fPIE -pie -o \$$@ \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(sysdep-LDFLAGS) \$$(config-LDFLAGS) \$$(LDFLAGS) \$$(LDFLAGS-\$$(@F)) \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " -Wl,-z,combreloc -Wl,-z,relro -Wl,-z,now \$$(hashstyle-LDFLAGS) \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " -Wl,--warn-shared-textrel,--fatal-warnings \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(addprefix \$$(csu-objpfx),S\$$(start-installed-name)) \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(+preinit) `\$$(CC) --print-file-name=crtbeginS.o` \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(filter-out \$$(addprefix \$$(csu-objpfx),start.o \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(start-installed-name))\\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(+preinit) \$$(link-extra-libs) \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(common-objpfx)libc% \$$(+postinit),\$$^) \\" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	echo " \$$(link-extra-libs) \$$(link-libc) `\$$(CC) --print-file-name=crtendS.o` \$$(+postinit)" \
-		>> $(DIR_SRC)/glibc-build/configparms
-	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
+	echo "CFLAGS   = $(CFLAGS)"   >  $(DIR_SRC)/glibc-build/configparms
+	echo "CXXFLAGS = $(CXXFLAGS)" >> $(DIR_SRC)/glibc-build/configparms
+	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS) \
+		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)"
 	cd $(DIR_SRC)/glibc-build && make install
 
 ifeq "$(STAGE)" "base"
