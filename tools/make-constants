@@ -91,7 +91,7 @@ else
 fi
 
 LINKER=/lib/ld-linux.so.2
-GLOBAL_CFLAGS="-fomit-frame-pointer -fPIC -pipe -g"
+GLOBAL_CFLAGS="-fomit-frame-pointer -pipe"
 if [ 'i686' = $TARGET -o 'i586' = $TARGET \
 	-o 'i486' = $TARGET ]; then
 	MACHINE=${TARGET}

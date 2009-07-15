@@ -38,7 +38,7 @@ SLOGAN="Gluttony"		# Software slogan
 toolchain_build() {
 
 	ORG_PATH=$PATH
-	export PATH=${TOOLS_DIR}/usr/bin:${TOOLS_DIR}/bin:$PATH
+	export PATH=${TOOLS_DIR}/usr/bin:${TOOLS_DIR}/usr/sbin:${TOOLS_DIR}/bin:${TOOLS_DIR}/sbin:$PATH
 	STAGE_ORDER=01
 	STAGE=toolchain
 
@@ -50,15 +50,11 @@ toolchain_build() {
 	# We can't skip packages in toolchain stage
 	SAVE_SKIP_PACKAGE_LIST=$SKIP_PACKAGE_LIST
 	SKIP_PACKAGE_LIST=
-	
-	# Disable icecc in here
-	SAVE_ICECC=$ICECC
-	ICECC=off
-	iceccd_stop
+
+	SAVE_CCACHE_PREFIX=$CCACHE_PREFIX
+	unset CCACHE_PREFIX
 
 	toolchain_make stage1
-	# make icecc first so that CCACHE_PREFIX works immediately
-	toolchain_make icecc
 	toolchain_make ccache
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
@@ -70,15 +66,6 @@ toolchain_build() {
 	toolchain_make gcc		PASS=2
 	toolchain_make binutils		PASS=2
 	toolchain_make test-toolchain	PASS=2
-
-	ICECC=$SAVE_ICECC
-	unset SAVE_ICECC
-
-	ICECC_CC="${TOOLS_DIR}/bin/gcc" \
-	ICECC_CXX="${TOOLS_DIR}/bin/g++" \
-		icecc_build_native ${ICECC_TOOLCHAIN}
-	iceccd_start
-
 	toolchain_make ncurses
 	toolchain_make attr
 	toolchain_make acl
@@ -105,10 +92,16 @@ toolchain_build() {
 	toolchain_make flex
 	toolchain_make bc
 	toolchain_make xz
+	toolchain_make icecc
+	toolchain_make autoconf
+	toolchain_make automake
 	toolchain_make strip
 
 	export PATH=$ORG_PATH SKIP_PACKAGE_LIST=$SAVE_SKIP_PACKAGE_LIST
 	unset SAVE_SKIP_PACKAGE_LIST
+
+	CCACHE_PREFIX=$SAVE_CCACHE_PREFIX
+	unset SAVE_CCACHE_PREFIX
 }
 
 ################################################################################
@@ -125,6 +118,8 @@ base_build() {
 
 	build_spy stage ${STAGE}
 
+	iceccd_stop
+
 	ipfire_make stage2
 	ipfire_make scripts
 	ipfire_make system-release
@@ -136,6 +131,11 @@ base_build() {
 	ipfire_make zlib
 	ipfire_make binutils
 	ipfire_make gcc
+
+	icecc_build_native ${ICECC_TOOLCHAIN}
+	iceccd_start
+	ICECC_VERSION=${ICECC_TOOLCHAIN}
+
 	ipfire_make make
 	ipfire_make libtool
 	ipfire_make gettext

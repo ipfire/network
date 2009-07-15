@@ -280,10 +280,10 @@ toolchain_make() {
 		EMB="${EMB}" \
 		\
 		CCACHE_DIR="${BASEDIR}/ccache" \
-		CCACHE_PREFIX="${CCACHE_PREFIX}" \
+		$([ -n "${CCACHE_PREFIX}" ] && echo CCACHE_PREFIX="${CCACHE_PREFIX}") \
 		CCACHE_HASHDIR="${CCACHE_HASHDIR}" \
 		ICECC="${ICECC}" \
-		$([ -n "${ICECC_VERSION}" ] && echo ICECC_VERSION="${ICECC_TOOLCHAIN}") \
+		$([ -n "${ICECC_VERSION}" ] && echo ICECC_VERSION="${ICECC_VERSION}") \
 		USE_SCHEDULER="${ICECC_SCHEDULER}" \
 		\
 		LINKER="${LINKER}" \
@@ -356,10 +356,9 @@ ipfire_make() {
 		EMB="${EMB}" \
 		\
 		CCACHE_DIR="/usr/src/ccache" \
-		CCACHE_PREFIX="${CCACHE_PREFIX}" \
+		$([ -n "${CCACHE_PREFIX}" ] && echo CCACHE_PREFIX="${CCACHE_PREFIX}") \
 		CCACHE_HASHDIR="${CCACHE_HASHDIR}" \
-		$([ -n "${ICECC_VERSION}" ] && echo ICECC_VERSION="${ICECC_TOOLCHAIN}")
-		ICECC_VERSION="${ICECC_TOOLCHAIN}" \
+		$([ -n "${ICECC_VERSION}" ] && echo ICECC_VERSION="${ICECC_VERSION}") \
 		USE_SCHEDULER="${ICECC_SCHEDULER}" \
 		\
 		LINKER="${LINKER}" \
@@ -678,9 +677,6 @@ build() {
 			prepareenv
 		fi
 	fi
-
-	# Run icecc daemon
-	iceccd_start
 
 	beautify build_stage "Building base"
 	base_build
