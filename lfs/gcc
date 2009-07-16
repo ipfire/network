@@ -122,6 +122,7 @@ ifeq "$(PASS)" "1"
 	# libssp is a waste of space... so --disable-libssp. 
 
 	cd $(DIR_SRC)/gcc-build && \
+		CC="gcc -B/usr/bin/" \
 		../$(THISAPP)/configure \
 			$(CONFIGURE_ARCH) \
 			--target=$(IFS_TARGET) \
