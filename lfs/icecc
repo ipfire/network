@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = icecream
-PKG_VER    = 0.9.4.2
+PKG_VER    = 0.9.4.3
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -40,9 +40,9 @@ CORE       = no
 EXTRA      = no
 DEBUG      = no
 BUILD_DEPS =
-DEPS       =
+DEPS       = # e2fsprogs (but is statically linked)
 
-URL        = ftp://ftp.suse.com/pub/projects/icecream
+URL        = http://git.ipfire.org/?p=thirdparty/icecream.git;a=summary
 LICENSE    = GPLv2+
 SHORT_DESC = A distributed C/C++ compiler based on distcc.
 
