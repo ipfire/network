@@ -183,6 +183,7 @@ endef
 #
 ifneq "$(STAGE)" "toolchain"
 define PREBUILD
+	set > $(DIR_TMP)/set
 	echo "### STARTING INSTALL #################################################"
 	echo "# Application: $(THISAPP)"
 	echo "# Description: $(SHORT_DESC)"

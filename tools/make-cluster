@@ -44,6 +44,7 @@ function icecc_toolchain() {
 	done
 
 	if [ -e "${file}" ]; then
+		ICECC_VERSION=${file}
 		return
 	fi
 	
@@ -62,7 +63,8 @@ function iceccd_start() {
 	if [ -n "$(pidof iceccd)" ]; then
 		return
 	fi
-	${TOOLS_DIR}/usr/sbin/iceccd -vvv -d -s ${ICECC_SCHEDULER} -m ${ICECC_JOBS-5}
+	${TOOLS_DIR}/usr/sbin/iceccd -vvv -d -s ${ICECC_SCHEDULER} -m ${ICECC_JOBS-5} \
+		-N ${HOSTNAME}
 }
 
 function iceccd_stop() {
@@ -71,11 +73,15 @@ function iceccd_stop() {
 
 function icecc_disable() {
 	ICECC=off
+	SAVE_CCACHE_PREFIX=${CCACHE_PREFIX}
+	unset CCACHE_PREFIX
 }
 
 function icecc_enable() {
 	unset ICECC
 	iceccd_start
+	CCACHE_PREFIX=$SAVE_CCACHE_PREFIX
+	unset SAVE_CCACHE_PREFIX
 }
 
 function icecc_use() {

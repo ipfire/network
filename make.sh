@@ -51,10 +51,9 @@ toolchain_build() {
 	SAVE_SKIP_PACKAGE_LIST=$SKIP_PACKAGE_LIST
 	SKIP_PACKAGE_LIST=
 
+	icecc_disable
+
 	toolchain_make stage1
-	toolchain_make icecc
-	iceccd_start			# Start iceccd
-	icecc_use host			# Use the host's tools
 	toolchain_make ccache
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
@@ -66,7 +65,6 @@ toolchain_build() {
 	toolchain_make gcc		PASS=2
 	toolchain_make binutils		PASS=2
 	toolchain_make test-toolchain	PASS=2
-	icecc_use toolchain		# Use the fresh gcc
 	toolchain_make ncurses
 	toolchain_make attr
 	toolchain_make acl
@@ -76,6 +74,9 @@ toolchain_build() {
 	toolchain_make cpio
 	toolchain_make diffutils
 	toolchain_make e2fsprogs
+	toolchain_make icecc
+	icecc_enable
+	icecc_use toolchain		# Use the fresh gcc
 	toolchain_make file
 	toolchain_make findutils
 	toolchain_make gawk
