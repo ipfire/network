@@ -107,6 +107,11 @@ logger() {
 	echo "$(date -u '+%b %e %T') $*" >> $logfile
 }
 
+function ifdef() {
+	local var=${1}
+	[ -n "${!var}" ] &&	echo "${var}=${!var}"
+}
+
 ################################################################################
 # This is the function that sets the environment of a chroot and enters it     #
 ################################################################################
@@ -117,10 +122,18 @@ entershell() {
 		exiterror "No such file or directory: $LFS/usr/src/lfs/"
 	fi
 
-	COMMAND=${@-bash} # Run command, given as parameters.
-	
 	echo -ne "Entering ${BOLD}$MACHINE${NORMAL} LFS chroot, type exit to return to host environment\n"
 	
+	chroot_cmd ${@-bash} # Run command, given as parameters.
+
+	if [ $? -ne 0 ]; then
+		exiterror "chroot error"
+	else
+		stdumount
+	fi
+} # End of entershell()
+
+function chroot_cmd() {
 	chroot $LFS $TOOLS_DIR/bin/env -i \
 		HOME=/root \
 		TERM=$TERM \
@@ -134,6 +147,8 @@ entershell() {
 		CCACHE_DIR=/usr/src/ccache \
 		CCACHE_PREFIX=${CCACHE_PREFIX} \
 		CCACHE_HASHDIR=${CCACHE_HASHDIR} \
+		$(ifdef ICECC_CC) \
+		$(ifdef ICECC_CXX) \
 		PARALLELISMFLAGS=$PARALLELISMFLAGS \
 		LINKER=$LINKER \
 		TOOLS_DIR=$TOOLS_DIR \
@@ -145,19 +160,8 @@ entershell() {
 		IFS_HOST="$IFS_HOST" \
 		IFS_TARGET="$IFS_TARGET" \
 		KVER=$KVER \
-		STAGE=$STAGE \
-		STAGE_ORDER=$STAGE_ORDER \
-		LOGFILE=$(echo $LOGFILE | sed "s,$BASEDIR,/usr/src,g") \
-		$COMMAND
-
-	if [ $? -ne 0 ]; then
-		exiterror "chroot error"
-	else
-		stdumount
-	fi
-} # End of entershell()
-
-
+		$@
+}
 
 ################################################################################
 # Common checking before entering the chroot and compilling                    #
@@ -279,12 +283,16 @@ toolchain_make() {
 		KVER="${KVER}" \
 		EMB="${EMB}" \
 		\
+		$(ifdef CCACHE) \
 		CCACHE_DIR="${BASEDIR}/ccache" \
-		$([ -n "${CCACHE_PREFIX}" ] && echo CCACHE_PREFIX="${CCACHE_PREFIX}") \
 		CCACHE_HASHDIR="${CCACHE_HASHDIR}" \
-		ICECC="${ICECC}" \
-		$([ -n "${ICECC_VERSION}" ] && echo ICECC_VERSION="${ICECC_VERSION}") \
+		$(ifdef CCACHE_PREFIX) \
+		\
+		$(ifdef ICECC) \
+		$(ifdef ICECC_VERSION) \
 		USE_SCHEDULER="${ICECC_SCHEDULER}" \
+		$(ifdef ICECC_CC) \
+		$(ifdef ICECC_CXX) \
 		\
 		LINKER="${LINKER}" \
 		MACHINE="${MACHINE}" \
@@ -355,11 +363,16 @@ ipfire_make() {
 		KVER="${KVER}" \
 		EMB="${EMB}" \
 		\
+		$(ifdef CCACHE) \
 		CCACHE_DIR="/usr/src/ccache" \
-		$([ -n "${CCACHE_PREFIX}" ] && echo CCACHE_PREFIX="${CCACHE_PREFIX}") \
 		CCACHE_HASHDIR="${CCACHE_HASHDIR}" \
-		$([ -n "${ICECC_VERSION}" ] && echo ICECC_VERSION="${ICECC_VERSION}") \
+		$(ifdef CCACHE_PREFIX) \
+		\
+		$(ifdef ICECC) \
+		$(ifdef ICECC_VERSION) \
 		USE_SCHEDULER="${ICECC_SCHEDULER}" \
+		$(ifdef ICECC_CC) \
+		$(ifdef ICECC_CXX) \
 		\
 		LINKER="${LINKER}" \
 		MACHINE="${MACHINE}" \

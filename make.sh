@@ -25,7 +25,7 @@
 NAME="IPFire"			# Software name
 SNAME="ipfire"			# Short name
 VERSION="3.0-prealpha2"		# Version number
-TOOLCHAINVERSION="${VERSION}-8"	# Toolchain
+TOOLCHAINVERSION="${VERSION}-9"	# Toolchain
 SLOGAN="Gluttony"		# Software slogan
 
 # Include funtions
@@ -51,10 +51,10 @@ toolchain_build() {
 	SAVE_SKIP_PACKAGE_LIST=$SKIP_PACKAGE_LIST
 	SKIP_PACKAGE_LIST=
 
-	SAVE_CCACHE_PREFIX=$CCACHE_PREFIX
-	unset CCACHE_PREFIX
-
 	toolchain_make stage1
+	toolchain_make icecc
+	iceccd_start			# Start iceccd
+	icecc_use host			# Use the host's tools
 	toolchain_make ccache
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
@@ -66,6 +66,7 @@ toolchain_build() {
 	toolchain_make gcc		PASS=2
 	toolchain_make binutils		PASS=2
 	toolchain_make test-toolchain	PASS=2
+	icecc_use toolchain		# Use the fresh gcc
 	toolchain_make ncurses
 	toolchain_make attr
 	toolchain_make acl
@@ -92,16 +93,12 @@ toolchain_build() {
 	toolchain_make flex
 	toolchain_make bc
 	toolchain_make xz
-	toolchain_make icecc
 	toolchain_make autoconf
 	toolchain_make automake
 	toolchain_make strip
 
 	export PATH=$ORG_PATH SKIP_PACKAGE_LIST=$SAVE_SKIP_PACKAGE_LIST
 	unset SAVE_SKIP_PACKAGE_LIST
-
-	CCACHE_PREFIX=$SAVE_CCACHE_PREFIX
-	unset SAVE_CCACHE_PREFIX
 }
 
 ################################################################################
@@ -118,7 +115,9 @@ base_build() {
 
 	build_spy stage ${STAGE}
 
-	iceccd_stop
+	# Start distributed compiling with toolchain
+	iceccd_start
+	icecc_use toolchain
 
 	ipfire_make stage2
 	ipfire_make scripts
@@ -132,9 +131,8 @@ base_build() {
 	ipfire_make binutils
 	ipfire_make gcc
 
-	icecc_build_native ${ICECC_TOOLCHAIN}
-	iceccd_start
-	ICECC_VERSION=${ICECC_TOOLCHAIN}
+	# Change to self-built gcc
+	icecc_use base
 
 	ipfire_make make
 	ipfire_make libtool

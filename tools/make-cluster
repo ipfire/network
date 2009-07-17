@@ -19,24 +19,88 @@
 #                                                                             #
 ###############################################################################
 
-ICECC_TOOLCHAIN="${TOOLS_DIR}/${SNAME}-${TOOLCHAINVERSION}-iceccd.tar.gz"
+function ccache_disable() {
+	CCACHE=off
+}
 
-function icecc_build_native() {
-	local file=${1}
-	cd /tmp
-	OUT=$(icecc --build-native)
-	#echo "$OUT"
-	mv -f $(tail -n 1 <<<$OUT | awk '{ print $NF }') ${file}
+function ccache_enable() {
+	unset CCACHE
+}
+
+function icecc_toolchain() {
+	local chroot
+	local file
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--chroot)
+				chroot=1
+				;;
+			*)
+				file=${1}
+				;;			
+		esac
+		shift
+	done
+
+	if [ -e "${file}" ]; then
+		return
+	fi
+	
+	if [ "${chroot}" = "1" ]; then
+		chroot_cmd ${TOOLS_DIR}/usr/lib/icecc/icecc-create-env ${file} \
+			--gcc=${ICECC_CC} --gxx=${ICECC_CXX} --as=${ICECC_AS}
+	else
+		${TOOLS_DIR}/usr/lib/icecc/icecc-create-env ${file} \
+			--gcc=${ICECC_CC} --gxx=${ICECC_CXX} --as=${ICECC_AS}
+	fi
+
+	ICECC_VERSION=${file}
 }
 
 function iceccd_start() {
 	if [ -n "$(pidof iceccd)" ]; then
 		return
 	fi
-	local toolchain=${1}
-	ICECC_VERSION=${toolchain} ${TOOLS_DIR}/usr/sbin/iceccd -vvv -d -s ${ICECC_SCHEDULER} -m ${ICECC_JOBS-5}
+	${TOOLS_DIR}/usr/sbin/iceccd -vvv -d -s ${ICECC_SCHEDULER} -m ${ICECC_JOBS-5}
 }
 
 function iceccd_stop() {
 	killall iceccd 2>/dev/null
+}
+
+function icecc_disable() {
+	ICECC=off
+}
+
+function icecc_enable() {
+	unset ICECC
+	iceccd_start
+}
+
+function icecc_use() {
+	local stage=${1}
+	local options
+	local file=${TOOLS_DIR}/${SNAME}-${TOOLCHAINVERSION}-${stage}.tar.gz
+
+	case "${stage}" in
+		toolchain)
+			ICECC_AS=${TOOLS_DIR}/bin/as
+			ICECC_CC=${TOOLS_DIR}/bin/gcc
+			ICECC_CXX=${TOOLS_DIR}/bin/g++
+			;;
+		base)
+			ICECC_AS=/usr/bin/as
+			ICECC_CC=/usr/bin/gcc
+			ICECC_CXX=/usr/bin/g++
+			options=--chroot
+			;;
+		host)
+			ICECC_AS=/usr/bin/as
+			ICECC_CC=/usr/bin/gcc
+			ICECC_CXX=/usr/bin/g++
+			file=${TOOLS_DIR}/${SNAME}-${TOOLCHAINVERSION}-${HOSTNAME}.tar.gz
+			;;
+	esac
+	icecc_toolchain ${options} ${file} >/dev/null
 }

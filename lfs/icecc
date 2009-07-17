@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = icecream
-PKG_VER    = 0.9.4.1
+PKG_VER    = 0.9.4.2
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -52,6 +52,8 @@ define LONG_DESC
 endef
 
 PREFIX     = $(TOOLS_DIR)/usr
+CFLAGS    := $(subst -fPIC,,$(CFLAGS)) -static
+CXXFLAGS  := $(subst -fPIC,,$(CXXFLAGS)) -static
 
 ###############################################################################
 # Top-level Rules
@@ -87,6 +89,8 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-dont-create-symlinks.patch
 
 	cd $(DIR_APP) && \
+		CFLAGS="$(CFLAGS)" \
+		CXXFLAGS="$(CXXFLAGS)" \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=$(PREFIX)
