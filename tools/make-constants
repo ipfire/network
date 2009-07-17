@@ -55,7 +55,7 @@ BUILD_DEBUG=0
 PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
 
 # Default hostname
-HOSTNAME=$(hostname -f || hostname)
+HOSTNAME=${HOSTNAME-$(cat /proc/sys/kernel/hostname)}
 
 # Default scheduler
 ICECC_SCHEDULER="minerva.ipfire.org"
