@@ -63,7 +63,7 @@ function iceccd_start() {
 	if [ -n "$(pidof iceccd)" ]; then
 		return
 	fi
-	${TOOLS_DIR}/usr/sbin/iceccd -vvv -d -s ${ICECC_SCHEDULER} -m ${ICECC_JOBS-5} \
+	${TOOLS_DIR}/usr/sbin/iceccd -vvv -d -s ${ICECC_SCHEDULER} -m ${ICECC_JOBS-8} \
 		-N ${HOSTNAME}
 }
 
