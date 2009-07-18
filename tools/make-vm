@@ -35,7 +35,7 @@ qemu_start() {
 
 	# Prepare qemu command
 	QEMU_COMMAND="qemu -name $NAME-$VERSION -m 256"
-	QEMU_COMMAND="$QEMU_COMMAND -k de -localtime -vga std -usb"
+	QEMU_COMMAND="$QEMU_COMMAND -k de -localtime -usb"
 	QEMU_COMMAND="$QEMU_COMMAND -no-reboot -vnc :2 -hda $QEMU_DISK"
 
 	case "$1" in
