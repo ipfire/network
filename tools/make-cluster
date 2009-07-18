@@ -87,7 +87,7 @@ function icecc_enable() {
 function icecc_use() {
 	local stage=${1}
 	local options
-	local file=${TOOLS_DIR}/${SNAME}-${TOOLCHAINVERSION}-${stage}.tar.gz
+	local file=${TOOLS_DIR}/${SNAME}-${TOOLCHAINVERSION}-${stage}-${TARGET}.tar.gz
 
 	case "${stage}" in
 		toolchain)
