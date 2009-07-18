@@ -107,6 +107,8 @@ config)
 	;;
 
 clean)
+	iceccd_stop
+
 	for i in $(mount | grep $BASEDIR | cut -d " " -f 1); do
 		umount $i
 	done
