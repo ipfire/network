@@ -82,6 +82,7 @@ udevd --daemon
 
 vecho "Creating devices..."
 udevadm trigger
+udevadm settle
 
 vecho "Mounting root filesystem $rootdev..."
 [ -n "$rootopts"   ] && rootopts="-o $rootopts"
