@@ -262,6 +262,7 @@ ipfire_build() {
 	ipfire_make avahi
 	ipfire_make libssh2
 	ipfire_make libdnet
+	ipfire_make rstp
 	
 	### Building some general stuff
 	#   STAGE 2
