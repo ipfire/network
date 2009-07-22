@@ -54,6 +54,11 @@ endef
 
 CFLAGS    += -fno-stack-protector
 
+define QUALITY_AGENT_WHITELIST_RPATH
+	/sbin/ebtables-restore \
+	/sbin/ebtables
+endef
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
