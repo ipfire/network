@@ -263,6 +263,7 @@ ipfire_build() {
 	ipfire_make libssh2
 	ipfire_make libdnet
 	ipfire_make rstp
+	ipfire_make ebtables
 	
 	### Building some general stuff
 	#   STAGE 2
