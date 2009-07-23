@@ -78,6 +78,6 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	install -m 755 -v $(DIR_APP)/network /sbin
 	-mkdir -pv /lib/network
-	cp -av $(DIR_APP)/lib/* /lib/network/
+	cp -av $(DIR_APP)/{hooks,functions,port,zone} /lib/network/
 	$(INSTALL_INITSCRIPT)
 	@$(POSTBUILD)
