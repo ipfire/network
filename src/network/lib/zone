@@ -96,6 +96,21 @@ case "$action" in
 		fi
 		;;
 
+	reload)
+		if ! zone_is_up ${zone}; then
+			$0 --zone=${zone} start
+			exit $?
+		fi
+
+		# Attach all ports
+		for config in $(find ${CONFIG_ZONES}/${zone}/ -name "port-*" 2>/dev/null); do
+			port=${config##*/}; port=${port#port-}; port=${port%%-*}
+			/lib/network/port --port=${port} --zone=${zone} attach ${config}
+		done
+
+		run_hooks post-up ${CONFIG_ZONES}/${zone} --zone=${zone}
+		;;
+
 	*)
 		exit 1
 		;;	

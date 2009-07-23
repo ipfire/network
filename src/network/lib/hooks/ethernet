@@ -18,30 +18,34 @@
 HOOK_NAME=ethernet
 HOOK_TYPE=port
 
-function check_config() {
-	: # XXX TODO
-}
-
 function port_name() {
 	echo ${zone}s+
 }
 
 function do_up() {
-	: # Do nothing
+	device_is_up ${port} || ip link set $(devicify ${port}) up
 }
 
 function do_down() {
-	: # Do nothing
+	: # TODO
+	# Check if there are depending devices (like vlans, etc)
+	# If not, then pull down the device.
 }
 
 function do_attach() {
+	if zone_has_device_attached ${zone} $(get_device ${port}); then
+		# Device is already attached to the bridge
+		return 0
+	fi
 	device_rename $(get_device ${port}) $(port_name)
 	zone_add_port ${zone} $(get_device_by_mac ${port})
 }
 
 function do_detach() {
-	zone_del_port ${zone} $(get_device_by_mac ${port})
-	device_rename $(get_device_by_mac ${port}) ${COMMON_DEVICE}
+	if zone_has_device_attached ${zone} $(get_device ${port}); then
+		zone_del_port ${zone} $(get_device_by_mac ${port})
+		device_rename $(get_device_by_mac ${port}) ${COMMON_DEVICE}
+	fi
 }
 
 function do_status() {
@@ -120,12 +124,14 @@ case "${action}" in
 		;;
 
 	up)
+		check_config port zone
 		do_up
-	;;
+		;;
 
 	down)
+		check_config port zone
 		do_down
-	;;
+		;;
 
 	add)
 		cat <<EOF > ${CONFIG_PORTS}/${port}/ethernet
@@ -133,34 +139,39 @@ HOOK=ethernet
 EOF
 		ln -sf ${CONFIG_PORTS}/${port}/ethernet \
 			${CONFIG_ZONES}/${zone}/port-${port}-ethernet
-	;;
+		;;
 
 	remove)
+		check_config port zone
 		do_detach
-		#do_down
+		do_down
 		rm -f \
 			${CONFIG_ZONES}/${zone}/port-${port}-ethernet \
 			${CONFIG_PORTS}/${port}/ethernet
-	;;
+		;;
 
 	attach)
+		check_config port zone
 		do_up
 		do_attach
-	;;
+		;;
 
 	detach)
+		check_config port zone
 		do_detach
-	;;
+		do_down
+		;;
 
 	status)
+		check_config port zone
 		do_status
 		exit ${?}
-	;;
+		;;
 
 	*)
 		echo "Usage: ${0} [interface] {up|down|add|remove|attach|detach|status}"
 		exit 1
-	;;
+		;;
 esac
 
 # End $NETWORK_DEVICES/services/ethernet

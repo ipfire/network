@@ -54,8 +54,6 @@ if ! device_exists ${port}; then
 	exit 1
 fi
 
-device=$(devicify ${port})
-
 for arg in ${@-$(find ${CONFIG_PORTS}/${port}/)}; do
 	[ -L "${arg}" ] && arg=$(readlink ${arg})
 	arg=${arg##*/}
@@ -74,7 +72,6 @@ case "$action" in
 		;;
 
 	attach)
-		ip link set $(devicify ${port}) up # is this required here?
 		;;
 
 	detach)
