@@ -100,6 +100,8 @@ $(OBJECT): $(objects)
 	-mkdir -p /var/log/$(PKG_NAME)
 	touch /var/log/$(PKG_NAME)/{access,error}.log
 	chown nobody.nobody -R /var/log/$(PKG_NAME)
+	-mkdir -pv /var/cache/lighttpd/compress
+	chown nobody.nobody -Rv /var/cache/lighttpd/
 
 	$(INSTALL_INITSCRIPT)
 	@rm -rf $(DIR_APP)

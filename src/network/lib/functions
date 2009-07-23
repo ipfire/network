@@ -32,18 +32,18 @@ EXIT_OK=0
 EXIT_ERROR=1
 EXIT_CONF_ERROR=2
 
+VALID_ZONES="blue green orange red grey"
+
 [ -n "${DEBUG}"   ] || DEBUG=
 [ -n "${VERBOSE}" ] || VERBOSE=
 
 function is_mac() {
-	egrep -q "^[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]$" <<<$1
+	[[ $1 =~ ^[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]$ ]]
 }
 
 function get_device_by_mac() {
-	local mac
+	local mac=${1}
 	local device
-
-	mac=$1
 
 	for device in /sys/class/net/*; do
 		if [ "$(cat $device/address)" = "$mac" ]; then
@@ -233,8 +233,8 @@ function run_hooks() {
 	for hook in $(find ${dir} -type f); do
 		(
 			. ${hook}
-			if [ -n "${HOOK}" ] && hook_exists ${HOOK}; then
-				/lib/network/hooks/${HOOK} --config=${hook} $@ ${action}
+			if [ -n "${HOOK}" ]; then
+				hook_run ${HOOK} --config=${hook} $@ ${action}
 				RET=$?
 			else
 				echo -e "${FAILURE}Unable to process ${hook}. Either"
@@ -275,7 +275,7 @@ function hook_run() {
 		log_failure_msg "Hook ${hook} cannot be found or is not executeable."
 		return ${EXIT_ERROR}
 	fi
-	decho "Running hook: ${hook} $@"
+	[ -n "${DEBUG}" ] && echo "Running hook: ${hook} $@"
 	DEBUG=${DEBUG} VERBOSE=${VERBOSE} ${HOOKS_DIR}/${hook} $@
 	return $?
 }
@@ -327,4 +327,59 @@ function zone_run() {
 	decho "Running zone: ${zone} $@"
 	DEBUG=${DEBUG} VERBOSE=${VERBOSE} ${HOME_DIR}/zone --zone=${zone} $@
 	return $?
+}
+
+function zone_valid_name() {
+	local zone=${1}
+	local match
+
+	local i
+	for i in ${VALID_ZONES}; do
+		match="${match}|${i}[0-9]{1,5}"
+	done
+	[[ ${zone} =~ ${match:1:${#match}} ]]
+	return $?
+}
+
+function isset() {
+	local key=${1}
+	[ -n "${!key}" ] && return
+	if [[ ${key} =~ port|zone ]]; then
+		echo "ERROR: The --${key} flag is not set." >&2
+	else
+		echo "ERROR: The \"${key}\" variable is not set properly." >&2
+	fi
+	return 1
+}
+
+# Test if device is attached to the given bridge
+function zone_has_device_attached () {
+	local zone=${1}
+	local device=${2}
+
+	if device_exists ${device} || zone_exists ${zone}; then
+		return 2
+	fi
+
+	[ -d "/sys/class/net/${zone}/brif/${device}" ]
+	return $?
+}
+
+function device_has_ipv4() {
+	local device=${1}
+	local ip=${2}
+	ip addr show ${device} | grep inet | fgrep -q ${ip}
+}
+
+function check_config() {
+	local failed
+	local i
+
+	for i in $@; do
+		isset ${i} || failed=1
+	done
+	if [ "${failed}" = "1" ]; then
+		echo "Exiting..."
+		exit ${EXIT_ERROR}
+	fi
 }

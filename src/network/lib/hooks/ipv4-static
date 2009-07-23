@@ -98,9 +98,11 @@ case "${action}" in
 
 	post-up)
 		check_config
-		MESSAGE="Adding IPv4 address ${IP} to zone ${zone} interface..."
-		ip addr add ${args} dev ${zone}
-		evaluate_retval
+		if ! device_has_ipv4 ${zone} ${IP}; then
+			MESSAGE="Adding IPv4 address ${IP} to zone ${zone} interface..."
+			ip addr add ${args} dev ${zone}
+			evaluate_retval
+		fi
 	
 		if [ -n "${GATEWAY}" ]; then
 			if ip route | grep -q default; then
@@ -121,16 +123,17 @@ case "${action}" in
 			evaluate_retval
 		fi
 	
-		MESSAGE="Removing IPv4 address ${IP} from zone ${zone}..."
-		ip addr del ${args} dev ${zone}
-		evaluate_retval
+		if device_has_ipv4 ${zone} ${IP}; then
+			MESSAGE="Removing IPv4 address ${IP} from zone ${zone}..."
+			ip addr del ${args} dev ${zone}
+			evaluate_retval
+		fi
 		;;
 
 	post-down)
 		;;
 
 	config)
-		shift 2
 		while [ $# -gt 0 ]; do
 			case "$1" in
 				--ip=*)
@@ -158,7 +161,7 @@ case "${action}" in
 			esac
 			shift
 		done
-		check_config
+		#check_config
 		cat <<EOF >${CONFIG_ZONES}/${zone}/ipv4-static_$IP
 HOOK="${HOOK_NAME}"
 IP="${IP}"

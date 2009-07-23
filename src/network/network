@@ -367,6 +367,11 @@ function zone_add() {
 		error "Zone ${BOLD}${zone}${NORMAL} already exists."
 		return 1
 	fi
+	
+	if ! zone_valid_name ${zone}; then
+		error "The given zone name is not valid."
+		return 1
+	fi
 
 	mkdir -p ${CONFIG_ZONES}/${zone}
 	vecho "Successfully added zone ${BOLD}${zone}${NORMAL}."
