@@ -108,6 +108,8 @@ function devicify() {
 	local device=${1}
 	local mac
 
+	[ -n "${device}" ] || return 1
+
 	if is_mac ${device}; then
 		mac=${device}
 		device=$(get_device_by_mac ${device})
@@ -146,10 +148,9 @@ function device_rename() {
 	local destination=$2
 
 	# Replace + by a valid number
-	if grep -q "+$" <<<${destination}; then
-		local number
+	if [[ ${destination} =~ +$ ]]; then
+		local number=0
 		destination=$(sed -e "s/+//" <<<$destination)
-		number=0
 		while [ "${number}" -le "100" ]; do
 			if ! device_exists "${destination}${number}"; then
 				destination="${destination}${number}"
@@ -159,7 +160,7 @@ function device_rename() {
 		done
 	fi
 
-	# Check if devices exist
+	# Check if devices exists
 	if ! device_exists ${source} || device_exists ${destination}; then
 		return 4
 	fi

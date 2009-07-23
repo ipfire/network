@@ -42,12 +42,16 @@ function do_down() {
 }
 
 function do_attach() {
-	device_rename $(get_device_by_mac_and_vid ${port} ${ID}) $(port_name)
-	zone_add_port ${zone} $(get_device ${port} ${ID})
+	if ! zone_has_device_attached ${zone} $(port_name); then
+		device_rename $(get_device_by_mac_and_vid ${port} ${ID}) $(port_name)
+		zone_add_port ${zone} $(get_device ${port} ${ID})
+	fi
 }
 
 function do_detach() {
-	zone_del_port ${zone} $(get_device_by_mac_and_vid ${port} ${ID})
+	if zone_has_device_attached ${zone} $(port_name); then
+		zone_del_port ${zone} $(get_device_by_mac_and_vid ${port} ${ID})
+	fi
 }
 
 function do_status() {

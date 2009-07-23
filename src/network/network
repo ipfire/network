@@ -274,7 +274,6 @@ function port_add() {
 		RET=$?
 		if [ "$RET" -eq "0" ]; then
 			vecho "Successfully added port ${BOLD}${port}${NORMAL} (${hook} $@) to ${BOLD}${zone}${NORMAL}."
-			cmd /lib/network/port --port=${port} up
 		else
 			error "Hook ${BOLD}${hook}${NORMAL} exited with $RET."
 			return $RET
@@ -283,7 +282,6 @@ function port_add() {
 		error "Hook ${BOLD}${hook}${NORMAL} does not exist or is not executeable."
 		return 1
 	fi
-	cmd /lib/network/zone --zone=${zone} up
 }
 
 function port_del() {
@@ -375,7 +373,6 @@ function zone_add() {
 
 	mkdir -p ${CONFIG_ZONES}/${zone}
 	vecho "Successfully added zone ${BOLD}${zone}${NORMAL}."
-	cmd /lib/network/zone --zone=${zone} up # Done by reload??
 }
 
 function zone_del() {
