@@ -22,7 +22,6 @@
 import os
 import cgi
 
-from pyfire.translate import _, textdomain, addPoPath
 import pyfire.net as net
 
 addPoPath("/srv/www/ipfire/cgi-bin/po/")
