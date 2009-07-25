@@ -441,7 +441,7 @@ local exitstatus="0"
 ################################################################################
 log_success_msg()
 {
-    echo -n -e "${PREFIX_SUCCESS}${@}"
+    echo -n -e "${PREFIX_SUCCESS}${INDENT}${@}"
     echo -e "${SET_COL}${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}"
     if [ "${BOOTLOG_ENAB}" = "yes" ]; then
         if [ $( hostname ) = "(none)" ]; then
@@ -468,7 +468,7 @@ log_success_msg()
 ################################################################################
 log_failure_msg()
 {
-    echo -n -e "${PREFIX_FAILURE}${@}"
+    echo -n -e "${PREFIX_FAILURE}${INDENT}${@}"
     echo -e "${SET_COL}${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}"
     if [ "${BOOTLOG_ENAB}" = "yes" ]; then
         if [ $( hostname ) = "(none)" ]; then
@@ -495,7 +495,7 @@ log_failure_msg()
 ################################################################################
 log_warning_msg()
 {
-    echo -n -e "${PREFIX_WARNING}${@}"
+    echo -n -e "${PREFIX_WARNING}${INDENT}${@}"
     echo -e "${SET_COL}${BRACKET}[${WARNING} WARN ${BRACKET}]${NORMAL}"
     if [ "${BOOTLOG_ENAB}" = "yes" ]; then
         if [ $( hostname ) = "(none)" ]; then
