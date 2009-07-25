@@ -15,52 +15,16 @@
 #
 ########################################################################
 
-. /lib/lsb/init-functions
-. /lib/network/functions
+. /lib/network/hook-header
 
 HOOK_NAME=mtu
 HOOK_TYPE=zone
 
-function check_config() {
-	if [ -z "${MTU}" ]; then
-		log_failure_msg "MTU variable missing from ${CONFIG}, cannot continue."
-		exit 1
-	fi
-	if [ -z "${zone}" ]; then
-		usage
-		exit 1
-	fi
-}
+DEFAULT_MTU=1500
 
 function usage() {
 	echo "Usage: ${0} {pre-up|post-up|pre-down|post-down|config} [interface]"
 }
-
-# First, parse the command line
-
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		--zone=*)
-			zone=${1#--zone=}
-			;;
-		--config=*)
-			. ${1#--config=}
-			check_config
-			;;
-		-*)
-			log_failure_msg "Unrecognized option: ${1}"
-			exit ${EXIT_ERROR}
-			;;
-		*)
-			action=${1}
-			shift
-			break
-			;;
-	esac
-	shift
-done
-
-# Second, do the $action
 
 case "${action}" in
 	help)
@@ -72,7 +36,7 @@ case "${action}" in
 		;;
 
 	status)
-		check_config
+		check_config zone MTU
 		mtu=$(cat /sys/class/net/${zone}/mtu 2>/dev/null)
 		[ "$MTU" = "$mtu" ]
 		exit $?
@@ -82,16 +46,16 @@ case "${action}" in
 		;;
 
 	post-up)
-		check_config
+		check_config zone MTU
 		message="Setting the MTU for ${zone} to ${MTU}..."
 		echo "${MTU}" > "/sys/class/net/${zone}/mtu"
 		evaluate_retval standard
 		;;
 
 	pre-down)
-		check_config
+		check_config zone MTU
 		message="Resetting MTU for ${zone} to 1500..."
-		echo "1500" > "/sys/class/net/${zone}/mtu"
+		echo ${DEFAULT_MTU} > "/sys/class/net/${zone}/mtu"
 		evaluate_retval standard
 		;;
 
@@ -100,7 +64,7 @@ case "${action}" in
 
 	config)
 		MTU=$1
-		check_config
+		check_config zone MTU
 		cat << EOF >> ${CONFIG_ZONES}/${zone}/${HOOK_NAME}
 HOOK="${HOOK_NAME}"
 MTU="${MTU}"

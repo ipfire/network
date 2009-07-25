@@ -91,7 +91,7 @@ for hook in ${hooks}; do
 	(
 		. ${hook}
 		if [ -n "${HOOK}" ] && hook_exists ${HOOK}; then
-			/lib/network/hooks/${HOOK} --config=${hook} --port=${port} --zone=${zone} ${action}
+			hook_run ${HOOK} --config=${hook} --port=${port} --zone=${zone} ${action}
 			RET=$?
 		else
 			echo -e "${FAILURE}Unable to process ${hook}. Either"

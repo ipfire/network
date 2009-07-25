@@ -148,7 +148,7 @@ function device_rename() {
 	local destination=$2
 
 	# Replace + by a valid number
-	if grep -qE "+$" <<<${destination}; then
+	if grep -q "+$" <<<${destination}; then
 		local number=0
 		destination=$(sed -e "s/+//" <<<$destination)
 		while [ "${number}" -le "100" ]; do

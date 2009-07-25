@@ -12,8 +12,7 @@
 #
 ########################################################################
 
-. /lib/lsb/init-functions
-. /lib/network/functions
+. /lib/network/hook-header
 
 HOOK_NAME=vlan
 HOOK_TYPE=port
@@ -67,33 +66,6 @@ function do_status() {
 	fi
 	return $RET
 }
-
-# First, parse the command line
-
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		--port=*)
-			port=$(macify ${1#--port=})
-			;;
-		--config=*)
-			. ${1#--config=}
-			check_config
-			;;
-		--zone=*)
-			zone=${1#--zone=}
-			;;
-		-*)
-			log_failure_msg "Unrecognized option: ${1}"
-			exit ${EXIT_ERROR}
-			;;
-		*)
-			action=${1}
-			shift
-			break
-			;;
-	esac
-	shift
-done
 
 case "${action}" in
 	help)

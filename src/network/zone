@@ -56,6 +56,8 @@ case "$action" in
 		if ! echo "${zone_status}" | grep -q "^${zone}"; then
 			# Create and bring up the zone
 			brctl addbr ${zone} || failed=1
+			brctl stp ${zone} on || failed=1
+			brctl setfd ${zone} 0 || failed=1
 			ip link set ${zone} up || failed=1
 			(exit ${failed})
 			evaluate_retval standard
