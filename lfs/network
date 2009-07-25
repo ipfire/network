@@ -39,7 +39,7 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 BUILD_DEPS =
-DEPS       =
+DEPS       = dhcp iproute2 vlan
 
 URL        = http://www.ipfire.org/
 LICENSE    = GPL3+
@@ -78,6 +78,6 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	install -m 755 -v $(DIR_APP)/network /sbin
 	-mkdir -pv /lib/network
-	cp -av $(DIR_APP)/{hooks,functions,port,zone} /lib/network/
+	cp -av $(DIR_APP)/{hooks,hook-header,functions,port,zone} /lib/network/
 	$(INSTALL_INITSCRIPT)
 	@$(POSTBUILD)
