@@ -26,9 +26,12 @@ function do_up() {
 	if ! port_is_up $(port_name); then
 		grep -q ^8021q /proc/modules || modprobe 8021q
 		MESSAGE="Adding VLAN ${ID} to port ${port}..."
+		if ! device_is_up $(devicify ${port}); then
+			ip link set $(devicify ${port}) up
+		fi
 		vconfig add $(devicify ${port}) ${ID} >/dev/null
 		evaluate_retval
-		ebtables -t broute -A BROUTING -p 802_1Q -i $(devicify ${port}) -j DROP
+		ebtables -t broute -A BROUTING -p 802_1Q --vlan-id=${ID} -j DROP
 	fi
 }
 
@@ -37,7 +40,7 @@ function do_down() {
 		MESSAGE="Removing VLAN ${ID} from port ${port}..."
 		vconfig rem $(get_device_by_mac_and_vid ${port} ${ID}) >/dev/null
 		evaluate_retval
-		ebtables -t broute -D BROUTING -p 802_1Q -i $(devicify ${port}) -j DROP
+		ebtables -t broute -D BROUTING -p 802_1Q --vlan-id=${ID} -j DROP
 	fi
 }
 
