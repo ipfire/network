@@ -804,6 +804,14 @@ puttarget() {
 	git_export; cp -l ${BASEDIR}/${SNAME}-${VERSION}.source.tar.gz ${DIR}
 	git_diff >/dev/null && cp -l ${DIFF_NAME} ${DIR}
 	cp -l ${BASEDIR}/${IMAGENAME}.* ${DIR}
+cat <<EOF > ${DIR}/.buildinfo
+HOSTNAME=${HOSTNAME}
+ARCH=${TARGET}
+DATE=$(date "+%s")
+DURATION=${DURATION}
+RELEASE=${NAME}-${VERSION}
+ISO=${IMAGENAME}.iso
+EOF
 
 	cd $BASEDIR && \
 		scp -2 -r ${HOSTNAME} ${IPFIRE_USER}@${URL_TARGET} || :
