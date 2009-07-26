@@ -55,7 +55,7 @@ define LONG_DESC
 	You'll need this package in order to compile C code.
 endef
 
-CFLAGS     = -pipe
+CFLAGS     = -D__USE_XOPEN2K8 -pipe
 CXXFLAGS   =
 
 GMP        = $(shell grep ^PKG_VER $(DIR_LFS)/gmp  | awk '{ print $$3 }')
