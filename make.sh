@@ -223,6 +223,7 @@ ipfire_build() {
 	ipfire_make expat
 	ipfire_make dbus
 	ipfire_make dbus-glib
+	ipfire_make upstart
 	ipfire_make openssl
 	ipfire_make perl-xml-parser
 	ipfire_make intltool
