@@ -64,7 +64,7 @@ function iceccd_start() {
 		return
 	fi
 	${TOOLS_DIR}/usr/sbin/iceccd -vvv -d -s ${ICECC_SCHEDULER} -m ${ICECC_JOBS-8} \
-		-N ${HOSTNAME}
+		-N ${HOSTNAME} -p ${ICECC_PORT-10245}
 }
 
 function iceccd_stop() {
