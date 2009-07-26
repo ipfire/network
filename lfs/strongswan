@@ -57,7 +57,8 @@ endef
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-gcc44-inline-fix.patch
 
 download: $(objects)
 
@@ -82,6 +83,11 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
+	# Patch for gcc4.4.x
+	cd $(DIR_APP) && patch -Np1 -i \
+		$(DIR_PATCHES)/$(THISAPP)-gcc44-inline-fix.patch
+
 	cd $(DIR_APP) && for i in $$(find . -name "*.[ch]"); do \
 						sed -e "s/getline/_&/g" -i $$i; done
 	cd $(DIR_APP) && \
