@@ -93,8 +93,6 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-open-args.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-rpathFix.patch
 
-	cd $(DIR_APP) && autoconf
-
 ifeq "$(STAGE)" "toolchain" 
 	cd $(DIR_APP)/gettext-tools && \
 		./configure \
@@ -107,6 +105,8 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
+	cd $(DIR_APP) && autoconf
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
