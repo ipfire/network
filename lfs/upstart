@@ -24,8 +24,8 @@
 
 include Config
 
-PKG_NAME   = udev
-PKG_VER    = 142
+PKG_NAME   = upstart
+PKG_VER    = 0.6.2
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -34,21 +34,23 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-MAINTAINER =
-GROUP      = System/Base
+MAINTAINER = 
+GROUP      = System/Base 
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-BUILD_DEPS =
-DEPS       = util-linux-ng
+DEPS       = 
+BUILD_DEPS = gettext dbus
 
-URL        = ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/
 LICENSE    = GPLv2+
-SHORT_DESC = A userspace implementation of devfs.
+URL        = http://upstart.ubuntu.com/
+SHORT_DESC = An event-driven init system.
 
 define LONG_DESC
-	    The udev package contains an implementation \
-	    of devfs in userspace using sysfs and netlink.
+	Upstart is an event-based replacement for the /sbin/init daemon \
+	which handles starting of tasks and services during boot, \
+	stopping them during shutdown and supervising them while the \
+	system is running.
 endef
 
 ###############################################################################
@@ -79,33 +81,18 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-
-	-rm -rf /lib/udev/devices
-	install -dv /lib/{firmware,udev/devices/{pts,shm}}
-	-mknod -m0600 /lib/udev/devices/console c 5 1
-	-mknod -m0666 /lib/udev/devices/null c 1 3
-	-mknod -m0600 /lib/udev/devices/kmsg c 1 11
-	ln -sfv /proc/self/fd /lib/udev/devices/fd
-	ln -sfv /proc/self/fd/0 /lib/udev/devices/stdin
-	ln -sfv /proc/self/fd/1 /lib/udev/devices/stdout
-	ln -sfv /proc/self/fd/2 /lib/udev/devices/stderr
-	ln -sfv /proc/kcore /lib/udev/devices/core
-
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
+	
+	cd $(DIR_APP) && ./configure \
 			--prefix=/usr \
-			--exec-prefix="" \
-			--sysconfdir=/etc
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+			--sbindir=/sbin \
+			--sysconfdir=/etc \
+			--libdir=/lib 
+			
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CFLAGS="$(CFLAGS)"
 	cd $(DIR_APP) && make install
 
-	install -m644 -v $(DIR_CONFIG)/$(PKG_NAME)/*.rules /lib/udev/rules.d/
-
-	for i in $(DIR_SOURCE)/initscripts/udev/*; do \
-		install -m 755 -v $$i /lib/udev/$$(basename $$i); \
-	done
+	# Install Upstart events
+	cp -vaf $(DIR_SRC)/src/$(PKG_NAME)/* /etc/init/
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
