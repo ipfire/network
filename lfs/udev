@@ -82,6 +82,7 @@ $(OBJECT): $(objects)
 
 	-rm -rf /lib/udev/devices
 	install -dv /lib/{firmware,udev/devices/{pts,shm}}
+	-mknod -m0600 /lib/udev/devices/console c 5 1
 	-mknod -m0666 /lib/udev/devices/null c 1 3
 	-mknod -m0600 /lib/udev/devices/kmsg c 1 11
 	ln -sfv /proc/self/fd /lib/udev/devices/fd
