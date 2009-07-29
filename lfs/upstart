@@ -42,8 +42,8 @@ DEBUG      = no
 DEPS       = 
 BUILD_DEPS = gettext dbus
 
-LICENSE    = GPLv2+
 URL        = http://upstart.ubuntu.com/
+LICENSE    = GPLv2+
 SHORT_DESC = An event-driven init system.
 
 define LONG_DESC
@@ -82,17 +82,15 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	
-	cd $(DIR_APP) && ./configure \
+	cd $(DIR_APP) && \
+		./configure \
 			--prefix=/usr \
 			--sbindir=/sbin \
 			--sysconfdir=/etc \
-			--libdir=/lib 
-			
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CFLAGS="$(CFLAGS)"
-	cd $(DIR_APP) && make install
+			--libdir=/lib
 
-	# Install Upstart events
-	cp -vaf $(DIR_SRC)/src/$(PKG_NAME)/* /etc/init/
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
