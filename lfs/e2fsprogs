@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = e2fsprogs
-PKG_VER    = 1.41.5
+PKG_VER    = 1.41.8
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -116,7 +116,9 @@ ifeq "$(STAGE)" "base"
 			--with-root-prefix="" \
 			--enable-elf-shlibs \
 			--disable-libblkid \
-			--disable-fsck
+			--disable-fsck \
+			--disable-uuidd \
+			--disable-libuuid
 	cd $(DIR_APP)/build && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP)/build && make install
 	cd $(DIR_APP)/build && make install-libs
