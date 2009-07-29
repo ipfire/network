@@ -175,7 +175,6 @@ base_build() {
 	ipfire_make grep
 	ipfire_make groff
 	ipfire_make gzip
-	ipfire_make initd-tools
 	ipfire_make iputils
 	ipfire_make iproute2
 	ipfire_make kbd
