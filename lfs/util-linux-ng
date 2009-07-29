@@ -25,7 +25,8 @@
 include Config
 
 PKG_NAME   = util-linux-ng
-PKG_VER    = 2.15
+PKG_VER    = 2.16
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,10 +34,24 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Base
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       =
 BUILD_DEPS =
+
+LICENSE    = GPLv2 and GPLv2+ and BSD with advertising and Public Domain
+URL        = ftp://ftp.kernel.org/pub/linux/utils/util-linux-ng
+SHORT_DESC = A collection of basic system utilities.
+
+define LONG_DESC
+	The util-linux-ng package contains a large variety of low-level system \
+	utilities that are necessary for a Linux system to function. Among \
+	others, Util-linux contains the fdisk configuration tool and the login \
+	program.
+endef
 
 ifneq "$(STAGE)" "toolchain"
 	DEPS = ncurses pam zlib
@@ -50,11 +65,7 @@ CFLAGS    += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	$(THISAPP)-compile_fix-1.patch \
-	$(THISAPP)-blkid_detection-1.patch \
-	$(THISAPP)-pic-fix-1.patch \
-	$(THISAPP)-uuid-fix-1.patch
+objects = $(DL_FILE) 
 
 download: $(objects)
 
@@ -79,11 +90,6 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-compile_fix-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-blkid_detection-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pic-fix-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-uuid-fix-1.patch
-
 	cd $(DIR_APP) && sed -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
 	    -i $$(grep -rl '/etc/adjtime' .)
 	mkdir -pv /var/lib/hwclock
@@ -105,7 +111,8 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	
-	rm -vf /lib/libblkid.la
+	rm -vf /usr/lib/libblkid.la
+	rm -vf /usr/lib/libuuid.la
 
 	# Build nologin
 	cd $(DIR_APP) && gcc $(CFLAGS) -o nologin $(DIR_SOURCE)/$(PKG_NAME)/nologin.c
