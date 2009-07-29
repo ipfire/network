@@ -103,26 +103,31 @@ elif [ 'atom' = $TARGET ]; then
 	IFS_TARGET="${MACHINE}-atom-linux-gnu"
 	CFLAGS="-O2 -march=${MACHINE} $GLOBAL_CFLAGS -mmmx -msse -msse2 -msse3 -mssse3"
 	CXXFLAGS="${CFLAGS}"
+	ICECC=off
 elif [ 'core2duo' = $TARGET ]; then
 	MACHINE=i686
 	IFS_TARGET="${MACHINE}-c2d-linux-gnu"
 	CFLAGS="-O2 -march=pentium-m $GLOBAL_CFLAGS -msse2"
 	CXXFLAGS="${CFLAGS}"
+	ICECC=off
 elif [ 'via-c7' = $TARGET ]; then
 	MACHINE=i686
 	IFS_TARGET="${MACHINE}-via-linux-gnu"
 	CFLAGS="-O2 -march=${MACHINE} $GLOBAL_CFLAGS -mmmx -msse -msse2 -msse3"
 	CXXFLAGS="${CFLAGS}"
+	ICECC=off
 elif [ 'via-c3' = $TARGET ]; then
 	MACHINE=i586
 	IFS_TARGET="${MACHINE}-via-linux-gnu"
 	CFLAGS="-O2 -march=c3 -m3dnow $GLOBAL_CFLAGS"
 	CXXFLAGS="${CFLAGS}"
+	ICECC=off
 elif [ 'geodelx' = $TARGET ]; then
 	MACHINE=i586
 	IFS_TARGET="${MACHINE}-geode-linux-gnu"
 	CFLAGS="-Os -march=geode $GLOBAL_CFLAGS"
 	CXXFLAGS="${CFLAGS}"
+	ICECC=off
 else
 	beautify message FAIL
 	echo "Not a valid target arch ($POSSIBLE_TARGETS) - $TARGET"
