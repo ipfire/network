@@ -410,7 +410,6 @@ misc_build() {
 	ipfire_make nasm
 	ipfire_make syslinux
 
-	ipfire_make bootutils
 	ipfire_make mkinitramfs
 	ipfire_make splashy
 
