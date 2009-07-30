@@ -147,6 +147,7 @@ function chroot_cmd() {
 		CCACHE_DIR=/usr/src/ccache \
 		CCACHE_PREFIX=${CCACHE_PREFIX} \
 		CCACHE_HASHDIR=${CCACHE_HASHDIR} \
+		$(ifdef ICECC) \
 		$(ifdef ICECC_CC) \
 		$(ifdef ICECC_CXX) \
 		PARALLELISMFLAGS=$PARALLELISMFLAGS \
