@@ -150,6 +150,7 @@ function chroot_cmd() {
 		$(ifdef ICECC) \
 		$(ifdef ICECC_CC) \
 		$(ifdef ICECC_CXX) \
+		$(ifdef ICECC_PREFERRED_HOST) \
 		PARALLELISMFLAGS=$PARALLELISMFLAGS \
 		LINKER=$LINKER \
 		TOOLS_DIR=$TOOLS_DIR \
@@ -294,6 +295,7 @@ toolchain_make() {
 		USE_SCHEDULER="${ICECC_SCHEDULER}" \
 		$(ifdef ICECC_CC) \
 		$(ifdef ICECC_CXX) \
+		$(ifdef ICECC_PREFERRED_HOST) \
 		\
 		LINKER="${LINKER}" \
 		MACHINE="${MACHINE}" \
@@ -374,6 +376,7 @@ ipfire_make() {
 		USE_SCHEDULER="${ICECC_SCHEDULER}" \
 		$(ifdef ICECC_CC) \
 		$(ifdef ICECC_CXX) \
+		$(ifdef ICECC_PREFERRED_HOST) \
 		\
 		LINKER="${LINKER}" \
 		MACHINE="${MACHINE}" \
