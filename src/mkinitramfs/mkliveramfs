@@ -370,7 +370,7 @@ if [ -x /sysroot$init ]; then
 	kill $(pidof udevd)
 	vecho "Transfering control to $init"
 
-	exec switchroot $(get_verbose) /sysroot
+	exec switch_root /sysroot ${init}
 	echo "---------------------------------"
 	echo "WARNING: Error switching to real rootfs!"
 	echo "---------------------------------"

@@ -92,7 +92,7 @@ mount $rootdev /sysroot $rootopts
 kill $(pidof udevd)
 
 vecho "Switching to new root and running init..."
-exec switchroot $(get_verbose) /sysroot
+exec switch_root /sysroot /sbin/init
 
 echo exec switchroot failed...
 bash
