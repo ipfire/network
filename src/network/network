@@ -94,7 +94,7 @@ function usage() {
 			echo
 			echo    "        Requires a \"port\"."
 			echo    "        Example: $0 port show 00:11:22:33:44:55"
-			echo    "                 $0 port show black0"
+			echo    "                 $0 port show port0"
 			echo
 			;;
 		zone)
@@ -125,10 +125,10 @@ function usage() {
 			echo    "        Adds a port to a zone."
 			echo
 			echo    "        Requires a \"zone\" and \"port\"."
-			echo    "        Example: $0 zone addport green0 black0"
+			echo    "        Example: $0 zone addport green0 port0"
 			echo
 			echo    "        You may also pass a hook and its parameters:"
-			echo    "            $0 zone addport green0 black0 vlan 10"
+			echo    "            $0 zone addport green0 port0 vlan 10"
 			echo
 			echo -e "    ${BOLD}delport:${NORMAL}"
 			echo    "        Deletes a port from a zone."
@@ -137,7 +137,7 @@ function usage() {
 			echo    "        Example: $0 zone delport green0"
 			echo
 			echo    "        You may also pass a hook and its parameters:"
-			echo    "            $0 zone delport green0 black0 vlan 10"
+			echo    "            $0 zone delport green0 port0 vlan 10"
 			echo
 	esac
 	_exit ${2-1}
