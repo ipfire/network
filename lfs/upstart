@@ -92,10 +92,10 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make
 	cd $(DIR_APP) && make install
 
-	rm -vf etc/init/control-alt-delete.conf
-	rm -vf etc/init/rc-sysinit.conf
-	rm -vf etc/init/rc.conf
-	rm -vf etc/init/rcS.conf
+	rm -vf /etc/init/control-alt-delete.conf
+	rm -vf /etc/init/rc-sysinit.conf
+	rm -vf /etc/init/rc.conf
+	rm -vf /etc/init/rcS.conf
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
