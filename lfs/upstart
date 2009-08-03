@@ -89,7 +89,7 @@ $(OBJECT): $(objects)
 			--sysconfdir=/etc \
 			--libdir=/lib
 
-	cd $(DIR_APP) && make
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
 	rm -vf /etc/init/control-alt-delete.conf
