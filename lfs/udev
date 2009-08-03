@@ -96,7 +96,12 @@ $(OBJECT): $(objects)
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--exec-prefix="" \
-			--sysconfdir=/etc
+			--sbindir=/sbin \
+			--sysconfdir=/etc \
+			--with-libdir-name=/lib \
+			--libexecdir=/lib/udev \
+			--with-rootlibdir=/lib \
+			--disable-rpath
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
