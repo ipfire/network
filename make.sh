@@ -189,7 +189,6 @@ base_build() {
 	ipfire_make sysvinit
 	ipfire_make tar
 	ipfire_make texinfo
-	ipfire_make udev
 	ipfire_make vim
 }
 
@@ -307,6 +306,7 @@ ipfire_build() {
 	ipfire_make libnfsidmap
 	ipfire_make libgssglue
 	ipfire_make librpcsecgss
+	ipfire_make gperf
 	
 	### Building vpn stuff
 	#
@@ -340,6 +340,7 @@ ipfire_build() {
 	ipfire_make parted
 	ipfire_make hal
 	ipfire_make hal-info
+	ipfire_make udev
 
 	### Building some important tools
 	#

@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = udev
-PKG_VER    = 142
+PKG_VER    = 145
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -106,6 +106,9 @@ $(OBJECT): $(objects)
 	for i in $(DIR_SOURCE)/initscripts/udev/*; do \
 		install -m 755 -v $$i /lib/udev/$$(basename $$i); \
 	done
+	
+	rm -vf /lib/libgudev-1.0.la
+	rm -vf /lib/libudev.la
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
