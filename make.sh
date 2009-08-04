@@ -269,6 +269,7 @@ ipfire_build() {
 	ipfire_make libassuan
 	ipfire_make libgpg-error
 	ipfire_make libgcrypt
+	ipfire_make gnutls
 	ipfire_make libksba
 	ipfire_make slang
 	ipfire_make newt
@@ -447,6 +448,12 @@ misc_build() {
 	ipfire_make gdb
 	ipfire_make strace
 	ipfire_make pychecker
+
+	### Virtualization
+	#
+	ipfire_make xen
+	ipfire_make qemu
+	ipfire_make libvirt
 }
 
 ################################################################################
