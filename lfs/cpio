@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = cpio
-PKG_VER    = 2.9
+PKG_VER    = 2.10
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -93,8 +93,8 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && LDFLAGS="-z muldefs" \
-		CPIO_MT_PROG=mt \
+	cd $(DIR_APP) && autoreconf --force
+	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH)\
 			--prefix=/usr \
