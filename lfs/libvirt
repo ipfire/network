@@ -42,12 +42,13 @@ DEBUG      = no
 BUILD_DEPS =
 DEPS       = gnutls
 
-URL        = http://www..org/
+URL        = http://www.libvirt.org/
 LICENSE    = LGPLv2.1+
 SHORT_DESC = A library for controlling VMs.
 
 define LONG_DESC
-	   A toolkit to interact with the virtualization capabilities of recent versions of Linux
+	A toolkit to interact with the virtualization capabilities of recent \
+	versions of Linux.
 endef
 
 ###############################################################################
@@ -78,13 +79,14 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--disable-static \
 			--with-xen=no \
-			 --with-qemu
+			--with-qemu
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 

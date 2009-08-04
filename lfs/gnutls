@@ -42,7 +42,7 @@ DEBUG      = no
 BUILD_DEPS =
 DEPS       = libgcrypt
 
-URL        = http://www.gnupg.org/
+URL        = http://www.gnu.org/software/gnutls/
 LICENSE    = LGPLv2.1+
 SHORT_DESC = A general-purpose cryptography library.
 
@@ -81,18 +81,19 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--disable-static
-			--with-included-libcfg
-			--disable-srp-authentication
+			--disable-static \
+			--with-included-libcfg \
+			--disable-srp-authentication \
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	cd $(DIR_APP) && install -v -m755 -d /usr/share/doc/gnutls-2.8.1/reference
-	cd $(DIR_APP) && install -v -m644 doc/reference/html/* /usr/share/doc/gnutls-2.8.1/reference
-	cd $(DIR_APP) && install -v -m644 doc/*.{html,png,eps,pdf,ps} /usr/share/doc/gnutls-2.8.1
+
+	rm -fv /usr/lib/libgnutls*.la
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

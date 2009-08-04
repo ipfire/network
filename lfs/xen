@@ -52,13 +52,14 @@ define LONG_DESC
 	feature set for virtualization.
 endef
 
-CFLAGS    += -fPIC
-
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-co_assignment.patch \
+	$(THISAPP)-cpufreq.patch \
+	xend-config-3.4.0.patch
 
 download: $(objects)
 
@@ -92,12 +93,11 @@ $(OBJECT): $(objects)
 	# adjust config file of the daemon
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/xend-config-3.4.0.patch
 
-	cd $(DIR_APP) && make clean
-	cd $(DIR_APP) && CFLAGS="-Werror" make xen && make install-xen
-#	cd $(DIR_APP) && make tools && make install-tools
+	cd $(DIR_APP) && make xen $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install-xen
 
 	# sometimes the auto directory is not created
-	mkdir -p /etc/xen/auto
+	-mkdir -pv /etc/xen/auto
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
