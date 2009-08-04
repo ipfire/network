@@ -27,21 +27,25 @@ from IPy import IP
 
 #os.system('modprobe ipt_recent ip_list_tot=1000')
 
-try:
-	ip = IP(sys.argv[1])
-except KeyError:
-	sys.stderr.write("Not enough parameters given.\n")
-	sys.exit(1)
-except ValueError:
-	sys.stderr.write("Given value is not a valid ip address.\n")
-	sys.exit(1)
+def main():
+	for data in sys.stdin.readlines():
+		try:
+			ip = IP(sys.data)
+		except KeyError:
+			#sys.stderr.write("Not enough parameters given.\n")
+			#sys.exit(1)
+			next()
+		except ValueError:
+			sys.stderr.write("Given value is not a valid ip address.\n")
+			sys.exit(1)
 
-try:
-	f = open("/proc/net/ipt_recent/BLOCK", "w")
-	f.write("%s\n" % ip)
-	f.close()
-except:
-	sys.stderr.write("Cannot write ip \"%s\" to file.\n" % ip)
-	sys.exit(1)
+		try:
+			f = open("/proc/net/ipt_recent/BLOCK", "w")
+			f.write("%s\n" % ip)
+			f.close()
+		except:
+			sys.stderr.write("Cannot write ip \"%s\" to file.\n" % ip)
+			sys.exit(1)
 
+main()
 sys.exit(0)
