@@ -63,6 +63,8 @@ SONAMEVERSION = 5
 
 CFLAGS   += -fno-strict-aliasing
 
+PARALLELISMFLAGS := $(shell $(DIR_SOURCE)/scripts/parallelismflags --max=8 $(PARALLELISMFLAGS))
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
