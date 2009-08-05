@@ -116,9 +116,9 @@ $(OBJECT): $(objects)
 
 	# install libs
 	cd $(DIR_APP) && for i in $$(find stage -type f -name "*.so"); do \
-		install -v -p -m 755 $$i /usr/lib/$$(basename $$i).$(PKG_VER).$(SONAMEVERSION); \
-		ln -svf $$(basename $$i).$(PKG_VER).$(SONAMEVERSION) /usr/lib/$(basename $$i).$(PKG_VER); \
-		ln -svf $$(basename $$i).$(PKG_VER) /usr/lib/$$(basename $$i); \
+		install -v -p -m 755 $$i /usr/lib/$$(basename $$i).$(PKG_VER); \
+		ln -svf $$(basename $$i).$(PKG_VER) /usr/lib/$$(basename $$i).$(SONAMEVERSION); \
+		ln -svf $$(basename $$i).$(SONAMEVERSION) /usr/lib/$$(basename $$i); \
 	done
 
 	# install includes
