@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = pynetfilter_conntrack
 PKG_VER    = 0.4.2
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,24 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       = libnetfilter_conntrack python
+BUILD_DEPS =
+
+LICENSE    =
+URL        = http://software.inl.fr/trac/wiki/pynetfilter_conntrack
+SHORT_DESC = Python binding of libnetfilter_conntrack.
+
+define LONG_DESC
+	This python library is based on libnetfilter_conntrack, which lets \
+	you manipulate conntrack objects. In other words, \
+	pynetfilter_conntrack lets you deal with Netfilter's stateful \
+	inspection objects from the Python world. 
+endef
 
 ###############################################################################
 # Top-level Rules
