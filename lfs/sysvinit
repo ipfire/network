@@ -43,7 +43,8 @@ CFLAGS    += -D_GNU_SOURCE
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-remove-utils-1.patch
 
 download: $(objects)
 
@@ -68,20 +69,10 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 
-	cd $(DIR_APP) && sed -e 's/libcrypt.a/libcrypt.so/' \
-						 -e 's/utmpdump wall/utmpdump/' \
-						 -e 's/mountpoint.1 wall.1/mountpoint.1/' \
-						 -i src/Makefile
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-remove-utils-1.patch
 
-	cd $(DIR_APP) && sed -i 's@Sending processes@& configured via /etc/inittab@g' \
-		src/init.c
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) -C src CFLAGS="$(CFLAGS)"
 	cd $(DIR_APP) && make -C src install
-
-ifeq "$(EMB)" "1"
-	# Enable serial on console 7
-	sed -e "s/^#7/7/" -i /etc/inittab
-endif
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
