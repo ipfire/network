@@ -26,15 +26,28 @@ include Config
 
 PKG_NAME   = pomona
 PKG_VER    = ipfire
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)
 DIR_APP    = $(DIR_SOURCE)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Installer
 CORE       = no
 EXTRA      = no
 DEBUG      = no
+DEPS       = popt parted python-parted e2fsprogs
+BUILD_DEPS =
+
+LICENSE    = GPLv3+
+URL        = http://www.ipfire.org
+SHORT_DESC = The IPFire 3.x installer.
+
+define LONG_DESC
+	Pomona is the installer for IPFire 3.x.
+endef
 
 ###############################################################################
 # Top-level Rules
