@@ -52,7 +52,7 @@ BUILD_EXTRAS=1
 BUILD_DEBUG=0
 
 # Default parallelism options
-PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
+PARALLELISMFLAGS=$($BASEDIR/src/scripts/parallelismflags --auto)
 
 # Default hostname
 HOSTNAME=${HOSTNAME-$(cat /proc/sys/kernel/hostname)}
