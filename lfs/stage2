@@ -91,6 +91,7 @@ $(OBJECT): $(objects)
 	-mkdir -pv /var/{lock/subsys,log,mail,run,spool}
 	-mkdir -pv /var/{opt,cache,lib/{misc,locate},local}
 	-mkdir -pv /etc/init{,.d}
+	-mkdir -pv /{etc,lib}/udev/rules.d
 
 	# Creating an empty mtab
 	touch /etc/mtab
