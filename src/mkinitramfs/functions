@@ -182,7 +182,7 @@ function install() {
 		
 		# Destination file
 		dest="$TMPDIR$file"
-		[ -e "$dest" ] && return 0
+		[ -e "$dest" ] && continue
 
 		mkdir -p "$(dirname $dest)" 2>/dev/null
 
