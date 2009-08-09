@@ -91,6 +91,8 @@ $(OBJECT): $(objects)
 	splashy_config --set-theme $(SNAME)
 
 	rm -rvf /etc/{console-tools,default/splashy,lsb-base-logging.sh} \
-		/usr/share/initramfs-tools /lib/libsplashy{,cnf}.la
+		/usr/share/initramfs-tools /lib/libsplashy{,cnf}.la \
+		/etc/init.d/splashy
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
