@@ -83,6 +83,7 @@ $(OBJECT): $(objects)
 		make OPTFLAGS= PROFILEFLAGS=-fprofile-use #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
+	$(INSTALL_INITSCRIPT)
 	rm -vf /etc/init.d/pdns_recursor
 
 	@rm -rf $(DIR_APP)
