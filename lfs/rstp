@@ -83,6 +83,9 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && sed -e "s/^CFLAGS = .*/& $(CFLAGS)/g" -i Makefile
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	cd $(DIR_APP) && cp -vf bridge-stp /sbin
+
+	install -v -m 755 $(DIR_SOURCE)/$(PKG_NAME)/bridge-stp /sbin/bridge-stp
+	$(INSTALL_INITSCRIPT)
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
