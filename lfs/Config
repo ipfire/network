@@ -101,7 +101,7 @@ INSTALL_CONFIG = sed \
 	-e "s/@IMAGENAME@/$(IMAGENAME)/g"
 
 INSTALL_INITSCRIPT = echo "Installing initscript \"$(INITSCRIPT)\" -> /etc/init"; \
-	install -m 754 $(DIR_SOURCE)/initscripts/extras/$(INITSCRIPT).conf /etc/init/
+	install -m 644 $(DIR_SOURCE)/initscripts/extras/$(INITSCRIPT).conf /etc/init/
 
 PYTHON_COMPILE = find /usr/lib/python*/ -name *.py | xargs /usr/bin/py-compile
 

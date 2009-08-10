@@ -91,5 +91,8 @@ $(OBJECT): $(objects)
 		MANDIR="/usr/share/man" $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install DESTDIR="/" BINDIR="/sbin" LIBDIR="/lib/ebtables" \
 		MANDIR="/usr/share/man" INITDIR="/etc/init.d"
+
+	rm -vf /etc/init.d/ebtables
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

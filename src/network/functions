@@ -168,7 +168,6 @@ function device_rename() {
 	ip link set ${source} down
 	ip link set ${source} name ${destination}
 	ip link set ${destination} up
-	return $?
 }
 
 function hook_exists() {
@@ -327,7 +326,6 @@ function zone_run() {
 	fi
 	decho "Running zone: ${zone} $@"
 	DEBUG=${DEBUG} VERBOSE=${VERBOSE} ${HOME_DIR}/zone --zone=${zone} $@
-	return $?
 }
 
 function zone_valid_name() {
@@ -339,7 +337,6 @@ function zone_valid_name() {
 		match="${match}|${i}[0-9]{1,5}"
 	done
 	[[ ${zone} =~ ${match:1:${#match}} ]]
-	return $?
 }
 
 function isset() {
@@ -358,12 +355,7 @@ function zone_has_device_attached () {
 	local zone=${1}
 	local device=${2}
 
-	if device_exists ${device} || zone_exists ${zone}; then
-		return 2
-	fi
-
 	[ -d "/sys/class/net/${zone}/brif/${device}" ]
-	return $?
 }
 
 function device_has_ipv4() {

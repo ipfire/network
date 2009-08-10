@@ -82,5 +82,9 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && LUA=1 LUA_CPPFLAGS_CONFIG= LUA_LIBS_CONFIG=-llua \
 		make OPTFLAGS= PROFILEFLAGS=-fprofile-use #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	$(INSTALL_INITSCRIPT)
+	rm -vf /etc/init.d/pdns-recursor
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
