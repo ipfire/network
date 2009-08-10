@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = dbus-glib
-PKG_VER    = 0.78
+PKG_VER    = 0.82
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -50,6 +50,8 @@ define LONG_DESC
 	D-Bus add-on library to integrate the standard D-Bus library with \
 	the GLib thread abstraction and main loop.
 endef
+
+CFLAGS    += -fno-strict-aliasing -fPIC
 
 ###############################################################################
 # Top-level Rules

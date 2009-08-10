@@ -52,14 +52,13 @@ BUILD_EXTRAS=1
 BUILD_DEBUG=0
 
 # Default parallelism options
-PARALLELISMFLAGS=-j$(( $(grep processor < /proc/cpuinfo | wc -l) * 2 + 1 ))
-
-# Default distcc options
-DISTCC_PORT=3632
-DISTCC_JOBS=4
+PARALLELISMFLAGS=$($BASEDIR/src/scripts/parallelismflags --auto)
 
 # Default hostname
-HOSTNAME=$(hostname -f || hostname)
+HOSTNAME=${HOSTNAME-$(cat /proc/sys/kernel/hostname)}
+
+# Default scheduler
+ICECC_SCHEDULER="minerva.ipfire.org"
 
 ###############################################################################
 #
@@ -92,7 +91,7 @@ else
 fi
 
 LINKER=/lib/ld-linux.so.2
-GLOBAL_CFLAGS="-fomit-frame-pointer -fPIC -pipe -g"
+GLOBAL_CFLAGS="-fomit-frame-pointer -pipe"
 if [ 'i686' = $TARGET -o 'i586' = $TARGET \
 	-o 'i486' = $TARGET ]; then
 	MACHINE=${TARGET}
@@ -104,26 +103,31 @@ elif [ 'atom' = $TARGET ]; then
 	IFS_TARGET="${MACHINE}-atom-linux-gnu"
 	CFLAGS="-O2 -march=${MACHINE} $GLOBAL_CFLAGS -mmmx -msse -msse2 -msse3 -mssse3"
 	CXXFLAGS="${CFLAGS}"
+	ICECC=off
 elif [ 'core2duo' = $TARGET ]; then
 	MACHINE=i686
 	IFS_TARGET="${MACHINE}-c2d-linux-gnu"
 	CFLAGS="-O2 -march=pentium-m $GLOBAL_CFLAGS -msse2"
 	CXXFLAGS="${CFLAGS}"
+	ICECC=off
 elif [ 'via-c7' = $TARGET ]; then
 	MACHINE=i686
 	IFS_TARGET="${MACHINE}-via-linux-gnu"
 	CFLAGS="-O2 -march=${MACHINE} $GLOBAL_CFLAGS -mmmx -msse -msse2 -msse3"
 	CXXFLAGS="${CFLAGS}"
+	ICECC=off
 elif [ 'via-c3' = $TARGET ]; then
 	MACHINE=i586
 	IFS_TARGET="${MACHINE}-via-linux-gnu"
 	CFLAGS="-O2 -march=c3 -m3dnow $GLOBAL_CFLAGS"
 	CXXFLAGS="${CFLAGS}"
+	ICECC=off
 elif [ 'geodelx' = $TARGET ]; then
 	MACHINE=i586
 	IFS_TARGET="${MACHINE}-geode-linux-gnu"
 	CFLAGS="-Os -march=geode $GLOBAL_CFLAGS"
 	CXXFLAGS="${CFLAGS}"
+	ICECC=off
 else
 	beautify message FAIL
 	echo "Not a valid target arch ($POSSIBLE_TARGETS) - $TARGET"

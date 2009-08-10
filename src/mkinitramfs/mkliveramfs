@@ -24,17 +24,6 @@
 # Modules needed by the live system
 MODULES="$MODULES aufs squashfs loop vfat ehci-hcd ohci-hcd uhci-hcd usb-storage"
 
-# NFS
-if [ "$WITH_NET" = "1" ]; then
-	MODULES="$MODULES af_packet"
-	for module in /lib/modules/$KERNEL/kernel/drivers/net/{,*/}*; do
-		MODULES="$MODULES $(basename ${module/.ko})"
-	done
-	install arping curl dhclient dhclient-script ping sha1sum /etc/nsswitch.conf \
-		/usr/lib/libnsl.so /usr/lib/libnss_{dns,files}.so
-	mkdir -p $TMPDIR/var/lib/dhclient
-fi
-
 # Add all storage modules
 for module in /lib/modules/$KERNEL/kernel/drivers/{ata,message/fusion,pcmcia,scsi{,/*}}/*; do
 	MODULES="$MODULES $(basename ${module/.ko})"
@@ -370,7 +359,7 @@ if [ -x /sysroot$init ]; then
 	kill $(pidof udevd)
 	vecho "Transfering control to $init"
 
-	exec switchroot $(get_verbose) /sysroot
+	exec switch_root /sysroot ${init}
 	echo "---------------------------------"
 	echo "WARNING: Error switching to real rootfs!"
 	echo "---------------------------------"

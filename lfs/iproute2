@@ -84,7 +84,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np2 -i $(DIR_PATCHES)/$(THISAPP)-opt_flags.patch
 	cd $(DIR_APP) && sed -i -e "s@DESTDIR=.*@DESTDIR=@" \
 				-e "s@/share/@/usr/share/@g" Makefile
-	cd $(DIR_APP) && make OPT_FLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make OPT_FLAGS="$(CFLAGS)" #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	cd $(DIR_APP) && mv -v /sbin/arpd /usr/sbin
 	@rm -rf $(DIR_APP)

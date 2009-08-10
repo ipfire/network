@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = Python
 PKG_VER    = 2.6.2
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,25 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Development/Languages
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       =
+BUILD_DEPS =
+
+LICENSE    = Python
+URL        = http://www.python.org
+SHORT_DESC = An interpreted, interactive, object-oriented programming language.
+
+define LONG_DESC
+	Python is an interpreted, interactive, object-oriented programming \
+	language often compared to Tcl, Perl, Scheme or Java. Python includes \
+	modules, classes, exceptions, very high level dynamic data types and \
+	dynamic typing. Python supports interfaces to many system calls and \
+	libraries, as well as to various windowing systems.
+endef
 
 ###############################################################################
 # Top-level Rules

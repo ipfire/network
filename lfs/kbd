@@ -89,8 +89,6 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/kbd-latsun-fonts.tar.bz2
 	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/kbd-latarcyrheb-16-fixed.tar.bz2
 
-	cd $(DIR_APP) && sed -e '1i KEYCODES_PROGS = @KEYCODES_PROGS@' \
-		-e '1i RESIZECONS_PROGS = @RESIZECONS_PROGS@' -i src/Makefile.in
 	cd $(DIR_APP) && sed -i "s/ifdef OPTIONAL_PROGS/ifeq (\$$(OPTIONAL_PROGS),yes)/" man/Makefile.in
 	cd $(DIR_APP) && \
 		./configure \

@@ -108,8 +108,6 @@ ifeq "$(PASS)" "1"
 			--target=$(IFS_TARGET) \
 			--prefix=$(TOOLS_DIR) \
 			--disable-nls \
-			--enable-shared \
-			--disable-static \
 			--disable-werror
 	cd $(DIR_SRC)/binutils-build && make tooldir=$(TOOLS_DIR) $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/binutils-build && make tooldir=$(TOOLS_DIR) install

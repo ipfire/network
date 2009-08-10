@@ -1,0 +1,133 @@
+#!/bin/sh
+########################################################################
+# Begin $NETWORK_DEVICES/services/vlan
+#
+# Description : VLAN Script
+#
+# Authors     : Michael Tremer - michael.tremer@ipfire.org
+#
+# Version     : 00.00
+#
+# Notes       : This script adds vlan support.
+#
+########################################################################
+
+. /lib/network/hook-header
+
+HOOK_NAME=vlan
+HOOK_TYPE=port
+
+function port_name() {
+	echo "${zone}v${ID}"
+}
+
+function do_up() {
+	if ! port_is_up $(port_name); then
+		grep -q ^8021q /proc/modules || modprobe 8021q
+		MESSAGE="Adding VLAN ${ID} to port ${port}..."
+		if ! device_is_up $(devicify ${port}); then
+			ip link set $(devicify ${port}) up
+		fi
+		vconfig add $(devicify ${port}) ${ID} >/dev/null
+		evaluate_retval
+		ebtables -t broute -A BROUTING -p 802_1Q --vlan-id=${ID} -j DROP
+	fi
+}
+
+function do_down() {
+	if port_is_up $(port_name); then
+		MESSAGE="Removing VLAN ${ID} from port ${port}..."
+		vconfig rem $(get_device_by_mac_and_vid ${port} ${ID}) >/dev/null
+		evaluate_retval
+		ebtables -t broute -D BROUTING -p 802_1Q --vlan-id=${ID} -j DROP
+	fi
+}
+
+function do_attach() {
+	if ! zone_has_device_attached ${zone} $(port_name); then
+		device_rename $(get_device_by_mac_and_vid ${port} ${ID}) $(port_name)
+		zone_add_port ${zone} $(get_device ${port} ${ID})
+	fi
+}
+
+function do_detach() {
+	if zone_has_device_attached ${zone} $(port_name); then
+		zone_del_port ${zone} $(get_device_by_mac_and_vid ${port} ${ID})
+	fi
+}
+
+function do_status() {
+	device_is_up $(port_name)
+	RET=$?
+	if [ $RET -eq 0 ]; then
+		log_success_msg "Port $(port_name) is up"
+	else
+		log_failure_msg "Port $(port_name) is down"
+	fi
+	return $RET
+}
+
+case "${action}" in
+	help)
+		;;
+
+	info)
+		echo "HOOK_NAME=${HOOK_NAME}"
+		echo "HOOK_TYPE=${HOOK_TYPE}"
+		;;
+
+	up)
+		check_config port ID
+		do_up
+		;;
+
+	down)
+		check_config port ID
+		do_down
+		;;
+
+	add)
+		ID=$1
+		check_config port zone ID
+		cat <<EOF > ${CONFIG_PORTS}/${port}/vlan-${ID}
+HOOK=vlan
+ID=${ID}
+EOF
+		ln -sf ${CONFIG_PORTS}/${port}/vlan-${ID} \
+			${CONFIG_ZONES}/${zone}/port-${port}-vlan-${ID}
+		;;
+
+	remove)
+		check_config port zone ID
+		do_detach
+		do_down
+		rm -f \
+			${CONFIG_PORTS}/${port}/vlan-${ID} \
+			${CONFIG_ZONES}/${zone}/port-${port}-vlan-${ID}
+		;;
+
+	attach)
+		check_config port zone ID
+		do_up
+		do_attach
+		;;
+
+	detach)
+		check_config port zone ID
+		do_detach
+		do_down
+		;;
+
+	status)
+		check_config zone ID
+		do_status
+		exit ${?}
+		;;
+
+	*)
+		echo "Usage: ${0} [interface] {up|down|add|remove|attach|detach|status}"
+		exit 1
+	;;
+esac
+
+# End $NETWORK_DEVICES/services/vlan

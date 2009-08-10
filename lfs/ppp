@@ -116,6 +116,10 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-new_speeds.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-response_len.patch
 
+	cd $(DIR_APP) && sed -e "s@^RUNDIR .*@RUNDIR = /var/run/ppp@" \
+			-e "s@^LOGDIR .*@LOGDIR = /var/log/ppp@" \
+			-i linux/Makefile.top
+
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \

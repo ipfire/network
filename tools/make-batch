@@ -47,12 +47,14 @@ batch_attach() {
 ###############################################################################
 batch_run() {
 	gettoolchain
+	local DURATION=$(date "+%s")
 	$0 build &> $BATCHLOG
+	DURATION=$(( $(date "+%s") - ${DURATION} ))
 	sleep 30
 	if [ -e "$FAILED" ]; then
 		batch_mail "Build failed :("
 	else
-		puttarget
+		DURATION=${DURATION} puttarget
 	fi
 }
 

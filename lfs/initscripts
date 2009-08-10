@@ -39,36 +39,17 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 BUILD_DEPS =
-DEPS       = coreutils e2fsprogs initd-tools module-init-tools procps sysvinit \
-	udev util-linux-ng
+DEPS       = coreutils e2fsprogs module-init-tools procps sysvinit system-release \
+	upstart util-linux-ng
 
 URL        =
 LICENSE    = GPLv2+
-SHORT_DESC = The /etc/init.d scripts.
+SHORT_DESC = The set of scripts that initalize the system.
 
 define LONG_DESC
 	The initscripts package contains the basic system scripts used to boot \
-	your system, change runlevels, and shut the system down cleanly. \
-	Initscripts also contains the scripts that activate and \
-	deactivate the network interfaces.
+	your system and shut the system down cleanly.
 endef
-
-SCRIPTS = \
-	checkfs \
-	cleanfs \
-	halt \
-	localnet \
-	modules \
-	mountfs \
-	mountkernfs \
-	random \
-	reboot \
-	sendsignals \
-	setclock \
-	swap \
-	sysctl \
-	udev \
-	udev_retry
 
 ###############################################################################
 # Top-level Rules
@@ -97,30 +78,12 @@ $(objects):
 
 $(OBJECT): $(objects)
 	@$(PREBUILD)
-	install -d -m 755 /etc/rc0.d
-	install -d -m 755 /etc/rc1.d
-	install -d -m 755 /etc/rc2.d
-	install -d -m 755 /etc/rc3.d
-	install -d -m 755 /etc/rc4.d
-	install -d -m 755 /etc/rc5.d
-	install -d -m 755 /etc/rc6.d
-	install -d -m 755 /etc/rcS.d
-	install -d -m 755 /etc/init.d
-	install -d -m 755 /etc/init.d/boottemp
+	install -d -m 755 /etc/init
 	install -d -m 755 /etc/sysconfig
-	install -d -m 755 /etc/lsb/state
-	install -d -m 755 /lib/lsb
 
 	for i in $(DIR_APP)/core/*; do \
-		install -v -m 754 $$i /etc/init.d/; \
+		install -v -m 644 $$i /etc/init/; \
 	done
-	chmod 644 /etc/init.d/ipfire-functions
-
-	install -m 644 $(DIR_APP)/lsb/init-functions /lib/lsb/
-	install -m 644 $(DIR_APP)/lsb/manage-functions /lib/lsb/
-	install -m 644 $(DIR_APP)/etc/lsb-config /etc/lsb/
-
-	cd /etc/init.d && install_initd -v $(SCRIPTS)
 
 	for i in $(DIR_SRC)/src/initscripts/sysconfig/*; do \
 		install -v -m 644 $$i /etc/sysconfig/; \

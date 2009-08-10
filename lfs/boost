@@ -25,12 +25,12 @@
 include Config
 
 PKG_NAME   = boost
-PKG_VER    = 1_38_0
+PKG_VER    = 1.39.0
 PKG_REL    = 0
 
-THISAPP    = $(PKG_NAME)_$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.bz2
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+THISAPP    = $(PKG_NAME)-$(PKG_VER)
+DL_FILE    = $(PKG_NAME)_$(subst .,_,$(PKG_VER)).tar.bz2
+DIR_APP    = $(DIR_SRC)/$(PKG_NAME)_$(subst .,_,$(PKG_VER))
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
@@ -56,12 +56,24 @@ define LONG_DESC
 	Standards Committee's upcoming C++ Standard Library Technical Report.)
 endef
 
+export BOOST_ROOT=$(DIR_APP)
+BUILD_FLAGS = -d2 --layout=system variant=release threading=single,multi \
+	debug-symbols=on link=shared runtime-link=shared
+SONAMEVERSION = 5
+
+CFLAGS   += -fno-strict-aliasing
+
+PARALLELISMFLAGS := $(shell $(DIR_SOURCE)/scripts/parallelismflags --max=8 $(PARALLELISMFLAGS))
+
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-sonamevers.patch
+	$(THISAPP)-version-override.patch \
+	$(THISAPP)-unneccessary_iostreams.patch \
+	$(THISAPP)-function_template.patch \
+	$(THISAPP)-fs_gcc44.patch
 
 download: $(objects)
 
@@ -87,19 +99,36 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	# Let bjam use our own cflags
 	cd $(DIR_APP) && sed -e "s/-O3/$(CFLAGS)/g" -i tools/build/v2/tools/gcc.jam
-	cd $(DIR_APP) && sed -e "s/!!!SONAME!!!/4/" $(DIR_PATCHES)/$(THISAPP)-sonamevers.patch | patch -Np1
+
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-version-override.patch
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-unneccessary_iostreams.patch	
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-function_template.patch
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-fs_gcc44.patch
+
+	# build jam
+	cd $(DIR_APP)/tools/jam/src && ./build.sh
+
+	# build libs
+	cd $(DIR_APP) && ./bootstrap.sh \
+		--with-toolset=gcc \
+		--with-icu
 
 	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr
+		./bjam $(BUILD_FLAGS) $(PARALLELISMFLAGS) stage
 
-	# Support parallel build and pass several flags
-	cd $(DIR_APP) && sed -e \
-		"s/^BJAM_CONFIG=/& $(PARALLELISMFLAGS) -d2 --layout=system variant=release threading=multi/" \
-		-i Makefile
+	# install libs
+	cd $(DIR_APP) && for i in $$(find stage -type f -name "*.so"); do \
+		install -v -p -m 755 $$i /usr/lib/$$(basename $$i).$(PKG_VER); \
+		ln -svf $$(basename $$i).$(PKG_VER) /usr/lib/$$(basename $$i).$(SONAMEVERSION); \
+		ln -svf $$(basename $$i).$(SONAMEVERSION) /usr/lib/$$(basename $$i); \
+	done
 
-	cd $(DIR_APP) && make
-	cd $(DIR_APP) && make install
-	rm -vf /usr/lib/libboost_*.a
+	# install includes
+	cd $(DIR_APP) && find boost -type d | while read a; do \
+		mkdir -pv /usr/include/$$a; \
+		find $$a -mindepth 1 -maxdepth 1 -type f | \
+			xargs -r install -v -m 644 -p -t /usr/include/$$a; \
+	done
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -108,7 +108,6 @@ ifeq "$(STAGE)" "toolchain"
 	for lib in curses ncurses form panel menu; do \
 		rm -vf $(TOOLS_DIR)/lib/lib$${lib}.so ; \
 		echo "INPUT(-l$${lib}w)" >$(TOOLS_DIR)/lib/lib$${lib}.so ; \
-		ln -sfv lib$${lib}w.a $(TOOLS_DIR)/lib/lib$${lib}.a ; \
 	done
 endif
 

@@ -1,0 +1,48 @@
+#/bin/bash
+
+auto=
+max=
+
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		--max=*)
+			max=${1#--max=}
+			;;
+		--auto)
+			auto=1
+			;;
+		*)
+			jobs=${1#-j}
+			;;
+	esac
+	shift
+done
+
+
+if [ -n "${max}" ]; then
+
+	if ! [[ ${jobs} =~ ^[0-9]{1,}$ ]]; then
+		echo "-j${jobs}"
+		exit 0
+	fi
+
+	if [ ${jobs} -gt ${max} ]; then
+		echo "-j${max}"
+		exit 0
+	fi
+
+elif [ "${auto}" = "1" ]; then
+	mem=$(( $(grep ^MemTotal: /proc/meminfo | awk '{ print $2 }') / 1024))
+	memjobs=$(( $mem / 80 ))
+
+	cpus=$(grep ^processor /proc/cpuinfo | wc -l)
+
+	cpujobs=$(( $cpus * 10 ))
+
+	if [ ${memjobs} -lt ${cpujobs} ]; then
+		echo "-j${memjobs}"
+	else
+		echo "-j${cpujobs}"
+	fi
+fi
+

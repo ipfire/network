@@ -1,31 +1,29 @@
 #!/bin/bash
-############################################################################
-#                                                                          #
-# This file is part of the IPFire Firewall.                                #
-#                                                                          #
-# IPFire is free software; you can redistribute it and/or modify           #
-# it under the terms of the GNU General Public License as published by     #
-# the Free Software Foundation; either version 2 of the License, or        #
-# (at your option) any later version.                                      #
-#                                                                          #
-# IPFire is distributed in the hope that it will be useful,                #
-# but WITHOUT ANY WARRANTY; without even the implied warranty of           #
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            #
-# GNU General Public License for more details.                             #
-#                                                                          #
-# You should have received a copy of the GNU General Public License        #
-# along with IPFire; if not, write to the Free Software                    #
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA #
-#                                                                          #
-# Copyright (C) 2008 IPFire-Team <info@ipfire.org>.                        #
-#                                                                          #
-############################################################################
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
 #
 
 NAME="IPFire"			# Software name
 SNAME="ipfire"			# Short name
 VERSION="3.0-prealpha2"		# Version number
-TOOLCHAINVERSION="${VERSION}-6"	# Toolchain
+TOOLCHAINVERSION="${VERSION}-12"	# Toolchain
 SLOGAN="Gluttony"		# Software slogan
 
 # Include funtions
@@ -38,7 +36,7 @@ SLOGAN="Gluttony"		# Software slogan
 toolchain_build() {
 
 	ORG_PATH=$PATH
-	export PATH=${TOOLS_DIR}/usr/bin:${TOOLS_DIR}/bin:$PATH
+	export PATH=${TOOLS_DIR}/usr/bin:${TOOLS_DIR}/usr/sbin:${TOOLS_DIR}/bin:${TOOLS_DIR}/sbin:$PATH
 	STAGE_ORDER=01
 	STAGE=toolchain
 
@@ -51,9 +49,9 @@ toolchain_build() {
 	SAVE_SKIP_PACKAGE_LIST=$SKIP_PACKAGE_LIST
 	SKIP_PACKAGE_LIST=
 
+	icecc_disable
+
 	toolchain_make stage1
-	# make distcc first so that CCACHE_PREFIX works immediately
-	toolchain_make distcc
 	toolchain_make ccache
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
@@ -74,6 +72,9 @@ toolchain_build() {
 	toolchain_make cpio
 	toolchain_make diffutils
 	toolchain_make e2fsprogs
+	toolchain_make icecc
+	icecc_enable
+	icecc_use toolchain		# Use the fresh gcc
 	toolchain_make file
 	toolchain_make findutils
 	toolchain_make gawk
@@ -91,7 +92,10 @@ toolchain_build() {
 	toolchain_make flex
 	toolchain_make bc
 	toolchain_make xz
+	toolchain_make autoconf
+	toolchain_make automake
 	toolchain_make strip
+
 	export PATH=$ORG_PATH SKIP_PACKAGE_LIST=$SAVE_SKIP_PACKAGE_LIST
 	unset SAVE_SKIP_PACKAGE_LIST
 }
@@ -110,6 +114,10 @@ base_build() {
 
 	build_spy stage ${STAGE}
 
+	# Start distributed compiling with toolchain
+	iceccd_start
+	icecc_use toolchain
+
 	ipfire_make stage2
 	ipfire_make scripts
 	ipfire_make system-release
@@ -121,6 +129,10 @@ base_build() {
 	ipfire_make zlib
 	ipfire_make binutils
 	ipfire_make gcc
+
+	# Change to self-built gcc
+	icecc_use base
+
 	ipfire_make make
 	ipfire_make libtool
 	ipfire_make gettext
@@ -163,7 +175,6 @@ base_build() {
 	ipfire_make grep
 	ipfire_make groff
 	ipfire_make gzip
-	ipfire_make initd-tools
 	ipfire_make iputils
 	ipfire_make iproute2
 	ipfire_make kbd
@@ -178,9 +189,7 @@ base_build() {
 	ipfire_make sysvinit
 	ipfire_make tar
 	ipfire_make texinfo
-	ipfire_make udev
 	ipfire_make vim
-	ipfire_make initscripts
 }
 
 ################################################################################
@@ -209,6 +218,8 @@ ipfire_build() {
 	ipfire_make expat
 	ipfire_make dbus
 	ipfire_make dbus-glib
+	ipfire_make upstart
+	ipfire_make initscripts
 	ipfire_make openssl
 	ipfire_make perl-xml-parser
 	ipfire_make intltool
@@ -248,6 +259,9 @@ ipfire_build() {
 	ipfire_make avahi
 	ipfire_make libssh2
 	ipfire_make libdnet
+	ipfire_make rstp
+	ipfire_make ebtables
+	ipfire_make openlldp
 	
 	### Building some general stuff
 	#   STAGE 2
@@ -255,6 +269,7 @@ ipfire_build() {
 	ipfire_make libassuan
 	ipfire_make libgpg-error
 	ipfire_make libgcrypt
+	ipfire_make gnutls
 	ipfire_make libksba
 	ipfire_make slang
 	ipfire_make newt
@@ -292,6 +307,7 @@ ipfire_build() {
 	ipfire_make libnfsidmap
 	ipfire_make libgssglue
 	ipfire_make librpcsecgss
+	ipfire_make gperf
 	
 	### Building vpn stuff
 	#
@@ -325,6 +341,7 @@ ipfire_build() {
 	ipfire_make parted
 	ipfire_make hal
 	ipfire_make hal-info
+	ipfire_make udev
 
 	### Building some important tools
 	#
@@ -395,7 +412,6 @@ misc_build() {
 	ipfire_make nasm
 	ipfire_make syslinux
 
-	ipfire_make bootutils
 	ipfire_make mkinitramfs
 	ipfire_make splashy
 
@@ -432,6 +448,12 @@ misc_build() {
 	ipfire_make gdb
 	ipfire_make strace
 	ipfire_make pychecker
+
+	### Virtualization
+	#
+	ipfire_make xen
+	ipfire_make qemu
+	ipfire_make libvirt
 }
 
 ################################################################################

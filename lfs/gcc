@@ -25,11 +25,11 @@
 include Config
 
 PKG_NAME   = gcc
-PKG_VER    = 4.4.0
+PKG_VER    = 4.4.1
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
+DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 ifeq "$(STAGE)" "base"
@@ -55,7 +55,7 @@ define LONG_DESC
 	You'll need this package in order to compile C code.
 endef
 
-CFLAGS     = -pipe
+CFLAGS     = -D__USE_XOPEN2K8 -pipe
 CXXFLAGS   =
 
 GMP        = $(shell grep ^PKG_VER $(DIR_LFS)/gmp  | awk '{ print $$3 }')
@@ -71,9 +71,7 @@ endif
 
 objects = $(DL_FILE) \
 	gmp-$(GMP).tar.bz2 mpfr-$(MPFR).tar.bz2 \
-	$(THISAPP)-fstack_protector-1.patch \
-	$(THISAPP)-fortify_source-2.patch \
-	$(THISAPP)-fpie-3.patch \
+	$(THISAPP)-espf-1.patch \
 	$(THISAPP)-branch-startfiles-1.patch \
 	$(THISAPP)-asprintf_fix.patch
 
@@ -149,13 +147,8 @@ endif
 
 ifeq "$(PASS)" "2"
 	# Enable hardening by default:
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fortify_source-2.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fstack_protector-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-espf-1.patch
 
-	# This fpie patch also warns about DT_TEXTREL in shared objects (libraries and
-	# PIE's), and makes linker warnings fatal. Disable --fatal-warnings with
-	# -Wl,--no-fatal-warnings.
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fpie-3.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-branch-startfiles-1.patch
 
 	# This patch fixes a conflict between libiberty's asprintf() and Glibc's, when
@@ -187,6 +180,7 @@ ifeq "$(PASS)" "2"
 			--prefix=$(TOOLS_DIR) \
 			--with-local-prefix=$(TOOLS_DIR) \
 			--libexecdir=$(TOOLS_DIR)/lib \
+			--enable-espf \
 			--enable-clocale=gnu \
 			--enable-shared \
 			--enable-threads=posix \
@@ -205,9 +199,8 @@ endif
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fortify_source-2.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fstack_protector-1.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fpie-3.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-espf-1.patch
+
 	cd $(DIR_APP) && sed -i 's/install_to_$$(INSTALL_DEST) //' libiberty/Makefile.in
 	cd $(DIR_APP) && sed -i 's/^XCFLAGS =$$/& -fomit-frame-pointer/' gcc/Makefile.in
 	cd $(DIR_APP) && sed -i 's@\./fixinc\.sh@-c true@' gcc/Makefile.in
@@ -224,6 +217,7 @@ ifeq "$(STAGE)" "base"
 			--with-arch=$(MACHINE) \
 			--prefix=/usr \
 			--libexecdir=/usr/lib \
+			--enable-espf \
 			--enable-shared \
 			--enable-threads=posix \
 			--enable-__cxa_atexit \

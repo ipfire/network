@@ -27,14 +27,11 @@
 
 echo "Running the Pomona Text Installer..."
 echo -n "Loading modules:"
-for i in md_mod dm_mod ext3 ext4 xfs reiserfs reiser4 btrfs; do
+for i in md_mod dm_mod ext3 xfs reiserfs reiser4 btrfs; do
 	echo -n " $i"
 	modprobe $i
 done
 echo # Newline
-
-/etc/init.d/messagebus start
-/etc/init.d/haldaemon start
 
 python /usr/lib/pomona/installer.py $@
 
@@ -49,8 +46,5 @@ for i in $@; do
 		break
 	fi
 done
-
-/etc/init.d/messagebus stop
-/etc/init.d/haldaemon stop
 
 reboot

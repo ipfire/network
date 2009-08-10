@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = pyparted
 PKG_VER    = 1.8.9
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,22 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       = parted python
+BUILD_DEPS =
+
+LICENSE    = GPLv2+
+URL        = http://fedorahosted.org/pyparted
+SHORT_DESC = Python module for GNU parted.
+
+define LONG_DESC
+	Python module for the parted library. It is used for manipulating \
+	partition tables.
+endef
 
 ###############################################################################
 # Top-level Rules

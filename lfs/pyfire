@@ -26,15 +26,28 @@ include Config
 
 PKG_NAME   = pyfire
 PKG_VER    = 0.99.1
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DIR_APP    = $(DIR_SOURCE)/$(PKG_NAME)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+DEPS       = python-dbus hal
+BUILD_DEPS =
+
+LICENSE    = GPLv3+
+URL        = http://www.ipfire.org
+SHORT_DESC = A python library for easy functions.
+
+define LONG_DESC
+	Pyfire is a library which offers a lot of easy to use functions.
+endef
 
 ###############################################################################
 # Top-level Rules
