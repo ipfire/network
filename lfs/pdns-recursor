@@ -84,7 +84,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make install
 
 	$(INSTALL_INITSCRIPT)
-	rm -vf /etc/init.d/pdns_recursor
+	rm -vf /etc/init.d/pdns-recursor
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
