@@ -93,7 +93,7 @@ $(OBJECT): $(objects)
 			--prefix=/usr \
 			--libexecdir=/usr/sbin \
 			--sysconfdir=/etc \
-			--localstatedir=/srv/ldap \
+			--localstatedir=/var \
 			--disable-debug \
 			--enable-dynamic \
 			--enable-crypt \
@@ -108,10 +108,17 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make depend
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	rm -rvf /var/openldap-data
+
 	for LINK in lber ldap ldap_r; do \
 		chmod -v 0755 /usr/lib/$$(readlink /usr/lib/lib$${LINK}.so); \
 		rm -vf /usr/lib/lib$${LINK}.la; \
 	done
 	$(INSTALL_INITSCRIPT)
+
+	-mkdir -pv /var/lib/ldap
+	chmod 700 -Rv /var/lib/ldap
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
