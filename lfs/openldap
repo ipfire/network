@@ -115,7 +115,11 @@ $(OBJECT): $(objects)
 		chmod -v 0755 /usr/lib/$$(readlink /usr/lib/lib$${LINK}.so); \
 		rm -vf /usr/lib/lib$${LINK}.la; \
 	done
+
+	# Install configuration
 	$(INSTALL_INITSCRIPT)
+	$(INSTALL_CONFIG) $(DIR_SOURCE)/$(PKG_NAME)/slapd.conf \
+		> /etc/$(PKG_NAME)/slapd.conf
 
 	-mkdir -pv /var/lib/ldap
 	chmod 700 -Rv /var/lib/ldap
