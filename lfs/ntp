@@ -94,5 +94,8 @@ $(OBJECT): $(objects)
 	echo "restrict 127.0.0.1" >> /etc.ntp.conf
 	echo "server de.pool.ntp.org" >> /etc/ntp.conf
 	echo "driftfile /etc/ntp/drift" >> /etc/ntp.conf
+
+	$(INSTALL_INITSCRIPT)
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
