@@ -114,7 +114,7 @@ $(OBJECT): $(objects)
 			--with-winbind \
 			--with-shared-modules=idmap_ad,idmap_rid,idmap_adex,idmap_hash
 	cd $(DIR_APP)/source && make pch all \
-		nsswitch/libnss_wins.so modules
+		nsswitch/libnss_wins.so modules $(PARALLELISMFLAGS)
 	cd $(DIR_APP)/source && make install
 
 	cd $(DIR_APP) && install -m 755 source/nsswitch/libnss_winbind.so /lib/libnss_winbind.so.2

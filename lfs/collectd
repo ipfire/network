@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = collectd
-PKG_VER    = 4.6.2
+PKG_VER    = 4.7.2
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -125,7 +125,7 @@ $(OBJECT): $(objects)
 			--enable-ntpd \
 			--disable-nut \
 			--disable-perl \
-			--enable-ping \
+			--disable-ping \
 			--disable-powerdns \
 			--enable-processes \
 			--enable-rrdtool \
