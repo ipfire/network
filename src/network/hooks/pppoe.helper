@@ -1,0 +1,66 @@
+#!/bin/bash
+
+. /lib/network/functions
+. /lib/network/functions.ppp
+
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		--config=*)
+			. ${1#--config=}
+			;;
+		*)
+			action=${1}
+			break
+			;;
+	esac
+	shift
+done
+
+zone=${DEVICE}
+
+case "${action}" in
+	ip-up)
+		# Update firewall with new IP address(es)
+
+		# Prepare main routing table
+		ip route add ${IPREMOTE}/32 dev ${IFNAME} src ${IPLOCAL}
+
+		# Configure our own routing table
+		ip route add table ${zone} default via ${IPREMOTE} dev ${IFNAME}
+
+		if [ "${DEFAULTROUTE}" = "1" ]; then
+			: # Set default route
+		fi
+
+		ip route flush cache
+
+		if [ "${PEERDNS}" = "1" ]; then
+			: # $DNS1 --> pdns server
+		fi
+
+		connection --up --zone=${zone} --name=${NAME} \
+			--iplocal=${IPLOCAL} --ipremote=${IPREMOTE} --dns="${DNS1} ${DNS2}" \
+			--weight=${WEIGHT} --pid=${PPPD_PID}
+		;;
+
+	ip-down)
+		# Flush firewall
+
+		if [ "${DEFAULTROUTE}" = "1" ]; then
+			:
+		fi
+
+		ip route flush table ${zone}
+
+		if [ "${PEERDNS}" = "1" ]; then
+			:
+		fi
+
+		# Save statistics
+		ppp_stat "${NAME}" "${CONNECT_TIME}" "${BYTES_RCVD}" "${BYTES_SENT}"
+
+		connection --down --zone=${zone}
+		;;
+esac
+
+exit 0

@@ -1,0 +1,81 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+PPP_RUN=/var/run/ppp
+PPP_SECRETS=/etc/ppp/secrets
+
+function ppp_pre_up() {
+	# Load the ppp_generic module if not already done
+	grep -q ^ppp_generic /proc/modules || modprobe ppp_generic
+
+	connection --starting --zone=${zone}
+}
+
+function ppp_post_up() {
+	: #connection --up --zone=${zone}
+}
+
+function ppp_pre_down() {
+	connection --stopping --zone=${zone}
+}
+
+function ppp_post_down() {
+	: #connection --down --zone=${zone}
+}
+
+function ppp_secret() {
+	local USER=${1}
+	local SECRET=${2}
+	local a
+	local secret
+	local user
+
+	# Updateing secret file
+	> ${PPP_SECRETS}.tmp
+	while read user a secret; do
+		if [ "'${USER}'" != "${user}" ]; then
+			echo "${user} ${a} ${secret}" >> ${PPP_SECRETS}.tmp
+		fi
+	done < ${PPP_SECRETS}
+	echo "'${USER}' * '${SECRET}'" >> ${PPP_SECRETS}.tmp
+	cat ${PPP_SECRETS}.tmp > ${PPP_SECRETS}
+	rm -f ${PPP_SECRETS}.tmp
+}
+
+function ppp_stat() {
+	local name=${1}
+	local time=${2}
+	local rcvd=${3}
+	local sent=${4}
+
+	local file="${LOG_DIR}/ppp_${name}.db"
+	if ! [ -e "${file}" ]; then
+	sqlite3 -batch ${file} <<EOF
+CREATE TABLE connections(date, duration, rcvd, sent);
+EOF
+	fi
+	ppp_stat_init ${file}
+
+	sqlite3 -batch ${file} <<EOF
+INSERT INTO connections(date, duration, rcvd, sent) VALUES('$(date -u '+%s')', '${time}', '${rcvd}', '${sent}');
+EOF
+}
+
