@@ -135,7 +135,6 @@ $(OBJECT): $(objects)
 	        sed 's%CONFIG_ROOT%$(CONFIG_ROOT)%g' $$i > /etc/ppp/`basename $$i`; \
 	    fi; \
 	done
-	chmod 755 /etc/ppp/{dialer,ip-up,ip-down}
 
 	touch /etc/ppp/secrets
 	chmod -v 600 /etc/ppp/secrets
