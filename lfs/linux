@@ -68,6 +68,7 @@ AUFS_PATCH     = aufs2-$(PKG_VER)-1.patch
 GRSEC_PATCH    = grsecurity-2.1.14-$(PKG_VER)-200903281534.patch
 #OCF_PATCH      = ocf-linux-26-20080917.patch
 REISER4_PATCH  = reiser4-for-$(PKG_VER).patch
+ROUTES_PATCH   = routes-2.6.29-16.diff # Taken from http://www.ssi.bg/~ja/#routes
 SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
 
 ###############################################################################
@@ -79,7 +80,8 @@ objects = $(DL_FILE) \
 	$(OCF_PATCH) \
 	$(REISER4_PATCH) \
 	$(GRSEC_PATCH) \
-	$(THISAPP)-disable-compat_vdso-1.patch
+	$(THISAPP)-disable-compat_vdso-1.patch \
+	$(ROUTES_PATCH)
 
 download: $(objects)
 
@@ -118,6 +120,10 @@ $(OBJECT): $(objects)
 	### Reiser4
 	#
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(REISER4_PATCH)
+
+	### Routes
+	#
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(ROUTES_PATCH)
 
 	### GrSecurity
 	#
