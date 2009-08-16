@@ -91,16 +91,18 @@ $(OBJECT): $(objects)
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--libexecdir=/usr/sbin \
+			--libexecdir=/usr/lib \
 			--sysconfdir=/etc \
 			--localstatedir=/var \
+			--with-threads=posix \
 			--disable-debug \
+			--disable-perl \
 			--enable-dynamic \
 			--enable-crypt \
 			--enable-modules \
 			--enable-rlookups \
-			--enable-backends \
-			--enable-overlays \
+			--enable-backends=mod \
+			--enable-overlays=mod \
 			--enable-sql=no \
 			--enable-ndb=no \
 			--disable-static
@@ -109,7 +111,8 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
-	rm -rvf /var/openldap-data
+	mv -v /usr/lib/slapd /usr/sbin/slapd
+	rm -rvf /var/openldap-data /usr/lib/openldap/*.la
 
 	for LINK in lber ldap ldap_r; do \
 		chmod -v 0755 /usr/lib/$$(readlink /usr/lib/lib$${LINK}.so); \
