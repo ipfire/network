@@ -130,6 +130,7 @@ $(OBJECT): $(objects)
 
 	rm -rfv /etc/ppp/plugins
 
+	-mkdir -pv /etc/ppp
 	for i in $(DIR_CONFIG)/$(PKG_NAME)/* ; do \
 	    if [ -f $$i ]; then \
 	        sed 's%CONFIG_ROOT%$(CONFIG_ROOT)%g' $$i > /etc/ppp/`basename $$i`; \
