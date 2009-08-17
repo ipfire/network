@@ -36,11 +36,11 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
 GROUP      = Networking/Daemons
-CORE       = yes
-EXTRA      = no
+CORE       = no
+EXTRA      = yes
 DEBUG      = no
 BUILD_DEPS =
-DEPS       =
+DEPS       = openssl pam
 
 URL        = ftp://vsftpd.beasts.org/users/cevans/
 LICENSE    = GPLv2 with exceptions

@@ -128,15 +128,20 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make CC="gcc $(CFLAGS)" HAVE_INET6=yes USE_PAM=y $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
-	install -d /etc/ppp/peers
+	rm -rfv /etc/ppp/plugins
+
 	for i in $(DIR_CONFIG)/$(PKG_NAME)/* ; do \
 	    if [ -f $$i ]; then \
 	        sed 's%CONFIG_ROOT%$(CONFIG_ROOT)%g' $$i > /etc/ppp/`basename $$i`; \
 	    fi; \
 	done
-	chmod 755 /etc/ppp/{dialer,ip-up,ip-down}
-	ln -sf $(CONFIG_ROOT)/ppp/secrets /etc/ppp/pap-secrets
-	ln -sf $(CONFIG_ROOT)/ppp/secrets /etc/ppp/chap-secrets
+
+	touch /etc/ppp/secrets
+	chmod -v 600 /etc/ppp/secrets
+	ln -svf secrets /etc/ppp/pap-secrets
+	ln -svf secrets /etc/ppp/chap-secrets
+
 	cp -vf $(DIR_CONFIG)/pam.d/$(PKG_NAME) /etc/pam.d/
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

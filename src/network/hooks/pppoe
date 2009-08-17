@@ -1,0 +1,178 @@
+#!/bin/sh
+########################################################################
+# Begin $NETWORK_DEVICES/services/ipv4-static
+#
+# Description : IPV4 Static Boot Script
+#
+# Authors     : Nathan Coulson - nathan@linuxfromscratch.org
+#               Kevin P. Fleming - kpfleming@linuxfromscratch.org
+#
+# Version     : 00.00
+#
+# Notes       :
+#
+########################################################################
+
+. /lib/network/hook-header
+. /lib/network/functions.ppp
+
+HOOK_NAME="pppoe"
+HOOK_TYPE="zone"
+
+PPPOE_PLUGIN=rp-pppoe.so
+
+case "${action}" in
+	help)
+		;;
+
+	info)
+		echo "HOOK_NAME=$HOOK_NAME"
+		echo "HOOK_TYPE=$HOOK_TYPE"
+		;;
+
+	status)
+		#check_config
+		# XXX Is there a better way?
+		if (ip route get ${IP} | grep -q ^local); then
+			exit ${EXIT_OK}
+		else
+			exit ${EXIT_ERROR}
+		fi
+		;;
+
+	pre-up)
+		ppp_pre_up
+
+		check_config NAME
+		# Creating necessary files
+		[ -d "${PPP_RUN}/${NAME}" ] || mkdir -p ${PPP_RUN}/${NAME}
+
+		ppp_secret "${USER}" "${SECRET}"
+
+		cat <<EOF >${PPP_RUN}/${NAME}/options
+# Naming options
+name ${NAME}
+linkname ${NAME}
+
+plugin ${PPPOE_PLUGIN} ${zone}
+
+# User configuration
+user ${USER}
+
+$([ "${PEERDNS}" = "1" ] && echo "usepeerdns")
+$([ "${DEFAULTROUTE}" = "1" ] && echo "defaultroute")
+
+noauth
+$([ -n "${AUTH}" ] && echo "require-${AUTH}")
+
+noipdefault
+
+# Maximum transmission/receive unit
+mtu ${MTU}
+mru ${MTU}
+
+# Disable the compression
+noaccomp nodeflate nopcomp novj novjccomp nobsdcomp
+
+debug
+EOF
+		;;
+
+	post-up)
+		check_config zone NAME
+		MESSAGE="Starting PPP Daemon on interface ${zone}..."
+		pppd file ${PPP_RUN}/${NAME}/options >/dev/null
+		evaluate_retval
+		
+		ppp_post_up
+		;;
+
+	pre-down)
+		ppp_pre_down
+
+		MESSAGE="Stopping PPP Daemon on interface ${zone}..."
+		pid=$(head -n1 /var/run/ppp-${NAME}.pid)
+		if [ -n "${pid}" ]; then
+			kill ${pid} &>/dev/null
+			evaluate_retval
+		fi
+		;;
+
+	post-down)
+		ppp_post_down
+		;;
+
+	config)
+		# A pregenerated connection name
+		NAME=$(</proc/sys/kernel/random/uuid)
+		DEFAULTROUTE=1
+		PEERDNS=1
+		MTU=1492
+
+		while [ $# -gt 0 ]; do
+			case "$1" in
+				--user=*)
+					USER=${1#--user=}
+					;;
+				--secret=*)
+					SECRET=${1#--secret=}
+					;;
+				--name=*)
+					NAME=${1#--name=}
+					;;
+				--mtu=*)
+					MTU=${1#--mtu=}
+					;;
+				--no-defaultroute)
+					DEFAULTROUTE=0
+					;;
+				--no-dns)
+					PEERDNS=0
+					;;
+				--auth=*)
+					AUTH=${1#--auth=}
+					;;
+				*)
+					echo "Unknown option: $1" >&2
+					exit 1
+					;;
+			esac
+			shift
+		done
+
+		check_config zone NAME USER
+		cat <<EOF >${CONFIG_ZONES}/${zone}/${HOOK_NAME}_${NAME}
+HOOK="${HOOK_NAME}"
+USER="${USER}"
+SECRET="${SECRET}"
+NAME="${NAME}"
+MTU="${MTU}"
+DEFAULTROUTE="${DEFAULTROUTE}"
+PEERDNS="${PEERDNS}"
+AUTH="${AUTH}"
+EOF
+
+		ln -sf ${CONFIG_ZONES}/${zone}/${HOOK_NAME}_${NAME} \
+			${CONFIG_PPP}/${NAME}
+
+		exit ${EXIT_OK}
+		;;
+
+	discover)
+		output=$(pppoe-discovery -I ${zone} \
+			-U $(</proc/sys/kernel/random/uuid) 2>&1)
+		if grep -q "Timeout" <<<${output}; then
+			exit ${EXIT_ERROR}
+		else
+			echo "${output}"
+			exit ${EXIT_OK}
+		fi
+		;;
+	
+	*)
+		echo "Usage: ${0} {config|pre-up|post-up|pre-down|post-down|status} [interface]"
+		exit ${EXIT_ERROR}
+	;;
+esac
+
+# End $NETWORK_DEVICES/services/ipv4-static

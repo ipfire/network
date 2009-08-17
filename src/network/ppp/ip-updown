@@ -19,33 +19,18 @@
 #                                                                             #
 ###############################################################################
 
-. /etc/sysconfig/rc
-. $rc_functions
+umask 022
+export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
-PRIMARY_DNS=$DNS1
-SECONDARY_DNS=$DNS2
+. /lib/network/functions
 
-eval $(/usr/local/bin/readhash /var/ipfire/ppp/settings)
-
-if [ "$DNS" == "Automatic" ]; then
-	if [ "$TYPE" == "isdn" ]; then
-		echo -n "$MS_DNS1" > /var/ipfire/red/dns1
-		echo -n "$MS_DNS2" > /var/ipfire/red/dns2
-	else
-		echo -n "$PRIMARY_DNS" > /var/ipfire/red/dns1
-		echo -n "$SECONDARY_DNS" > /var/ipfire/red/dns2
-	fi
-else
-	echo -n "$DNS1" > /var/ipfire/red/dns1
-	echo -n "$DNS2" > /var/ipfire/red/dns2
+if [ -e "${CONFIG_PPP}/${LINKNAME}" ]; then
+	. ${CONFIG_PPP}/${LINKNAME}
 fi
 
-echo -n "$1" > /var/ipfire/red/iface
-echo -n "$4" > /var/ipfire/red/local-ipaddress
-echo -n "$5" > /var/ipfire/red/remote-ipaddress
+if [ -n "${HOOK}" ] && [ -x "${HOOKS_DIR}/${HOOK}.helper" ]; then
+	exec ${HOOKS_DIR}/${HOOK}.helper --config=${CONFIG_PPP}/${LINKNAME} \
+		$(basename $0) $@
+fi
 
-touch /var/ipfire/red/active
-
-run_subdir ${rc_base}/init.d/networking/red.up/
-
-[ -e "/var/ipfire/ppp/nobeeps" ] || /etc/rc.d/init.d/beep up
+exit ${EXIT_ERROR}

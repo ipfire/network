@@ -114,13 +114,13 @@ function iptables_LOG() {
 	local prefix
 	prefix=$1
 
-	if [ "$LOG_FACILITY" = "ulogd2" ]; then
+	if [ "$LOG_FACILITY" = "syslog" ]; then
+		echo -n "LOG"
+		[ -n "$prefix" ] && echo -n " --log-prefix \"$prefix\""
+	else
 		echo -n "NFLOG"
 		[ -n "$prefix" ] && echo -n " --nflog-prefix \"$prefix\""
 		echo -n " --nflog-threshold 30"
-	else
-		echo -n "LOG"
-		[ -n "$prefix" ] && echo -n " --log-prefix \"$prefix\""
 	fi
 	echo
 }

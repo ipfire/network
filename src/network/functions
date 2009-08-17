@@ -22,9 +22,13 @@
 HOME_DIR=${HOME_DIR-/lib/network}
 CONFIG_DIR=/etc/sysconfig/networking
 HOOKS_DIR=${HOME_DIR}/hooks
+LOG_DIR=/var/log/network
+
+CONNECTIONS_FILE=/var/log/network/connections.db
 
 CONFIG_ZONES=${CONFIG_DIR}/zones
 CONFIG_PORTS=${CONFIG_DIR}/ports
+CONFIG_PPP=${CONFIG_DIR}/ppp
 
 COMMON_DEVICE=port+
 
@@ -217,6 +221,11 @@ function zone_list() {
 	done
 }
 
+function zone_is_red() {
+	local zone=${1}
+	[ "${zone#red}" != "${zone}" ]
+}
+
 function run_hooks() {
 	local action=${1}
 	local dir=${2}
@@ -375,4 +384,76 @@ function check_config() {
 		echo "Exiting..."
 		exit ${EXIT_ERROR}
 	fi
+}
+
+function connection() {
+	local action
+
+	local dns
+	local interface
+	local iplocal
+	local ipremote
+	local name
+	local status
+	local weight
+	local zone
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--up)
+				action="up"
+				;;
+			--down)
+				action="down"
+				;;
+			--starting)
+				action="starting"
+				;;
+			--stopping)
+				action="stopping"
+				;;
+			--name=*)
+				name=${1#--name=}
+				;;
+			--zone=*)
+				zone=${1#--zone=}
+				zone_is_red ${zone} || return 0
+				;;
+			--interface=*)
+				interface=${1#--interface=}
+				;;
+			--iplocal=*)
+				iplocal=${1#--iplocal=}
+				;;
+			--ipremote=*)
+				ipremote=${1#--ipremote=}
+				;;
+			--weight=*)
+				weight=${1#--weight=}
+				;;
+			--dns=*)
+				dns=${1#--dns=}
+				;;
+		esac
+		shift
+	done
+
+	if [ ! -e "${CONNECTIONS_FILE}" ]; then
+		sqlite3 -batch ${CONNECTIONS_FILE} <<EOF
+CREATE TABLE connections(name, zone, interface, iplocal, ipremote, weight, dns, status);
+EOF
+	fi
+
+	if [ -z "${zone}" ]; then
+		return 2
+	fi
+
+	status=${action}
+
+	sqlite3 -batch ${CONNECTIONS_FILE} <<EOF
+DELETE FROM connections WHERE zone = '${zone}';
+INSERT INTO connections(name, zone, interface, iplocal, ipremote, weight, dns, status)
+	VALUES('${name}', '${zone}', '${interface}', '${iplocal}', '${ipremote}', '${weight}', '${dns}', '${status}');
+EOF
+
 }

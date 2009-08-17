@@ -39,7 +39,7 @@ CORE       = yes
 EXTRA      = no
 DEBUG      = no
 BUILD_DEPS =
-DEPS       = dhcp iproute2 vlan
+DEPS       = dhcp iproute2 ppp sqlite vlan
 
 URL        = http://www.ipfire.org/
 LICENSE    = GPL3+
@@ -76,8 +76,20 @@ $(objects):
 
 $(OBJECT): $(objects)
 	@$(PREBUILD)
-	install -m 755 -v $(DIR_APP)/network /sbin
+
+	-mkdir -pv /etc/ppp
 	-mkdir -pv /lib/network
-	cp -av $(DIR_APP)/{hooks,hook-header,functions,port,zone} /lib/network/
+	-mkdir -pv /sbin
+	-mkdir -pv /var/log/network
+
+	install -m 755 -v $(DIR_APP)/network /sbin
+
+	cp -rfv $(DIR_APP)/{hooks,hook-header,functions*,port,zone} /lib/network/
+
+	install -m 755 -v $(DIR_APP)/ppp/ip-updown /etc/ppp
+	ln -svf ip-updown /etc/ppp/ip-up
+	ln -svf ip-updown /etc/ppp/ip-down
+
 	$(INSTALL_INITSCRIPT)
+
 	@$(POSTBUILD)

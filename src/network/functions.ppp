@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,16 +19,63 @@
 #                                                                             #
 ###############################################################################
 
-. /etc/sysconfig/rc
-. $rc_functions
+PPP_RUN=/var/run/ppp
+PPP_SECRETS=/etc/ppp/secrets
 
-eval $(/usr/local/bin/readhash /var/ipfire/ppp/settings)
+function ppp_pre_up() {
+	# Load the ppp_generic module if not already done
+	grep -q ^ppp_generic /proc/modules || modprobe ppp_generic
 
-rm -f /var/ipfire/red/active
+	connection --starting --zone=${zone}
+}
 
-run_subdir ${rc_base}/init.d/networking/red.down/
+function ppp_post_up() {
+	: #connection --up --zone=${zone}
+}
 
-[ -e "/var/ipfire/ppp/nobeeps" ] || /etc/rc.d/init.d/beep down
+function ppp_pre_down() {
+	connection --stopping --zone=${zone}
+}
 
-[ -e "/var/ipfire/red/keepconnected" ] && \
-		/etc/rc.d/init.d/connectd reconnect &
+function ppp_post_down() {
+	: #connection --down --zone=${zone}
+}
+
+function ppp_secret() {
+	local USER=${1}
+	local SECRET=${2}
+	local a
+	local secret
+	local user
+
+	# Updateing secret file
+	> ${PPP_SECRETS}.tmp
+	while read user a secret; do
+		if [ "'${USER}'" != "${user}" ]; then
+			echo "${user} ${a} ${secret}" >> ${PPP_SECRETS}.tmp
+		fi
+	done < ${PPP_SECRETS}
+	echo "'${USER}' * '${SECRET}'" >> ${PPP_SECRETS}.tmp
+	cat ${PPP_SECRETS}.tmp > ${PPP_SECRETS}
+	rm -f ${PPP_SECRETS}.tmp
+}
+
+function ppp_stat() {
+	local name=${1}
+	local time=${2}
+	local rcvd=${3}
+	local sent=${4}
+
+	local file="${LOG_DIR}/ppp_${name}.db"
+	if ! [ -e "${file}" ]; then
+	sqlite3 -batch ${file} <<EOF
+CREATE TABLE connections(date, duration, rcvd, sent);
+EOF
+	fi
+	ppp_stat_init ${file}
+
+	sqlite3 -batch ${file} <<EOF
+INSERT INTO connections(date, duration, rcvd, sent) VALUES('$(date -u '+%s')', '${time}', '${rcvd}', '${sent}');
+EOF
+}
+
