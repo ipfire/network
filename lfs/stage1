@@ -76,4 +76,8 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	-mkdir -p $(TOOLS_DIR)/usr/bin
+ifeq "$(MACHINE)" "x86_64"
+	#Link lib64 to lib on 64bit target
+	ln -sf ./lib $(TOOLS_DIR)/lib64
+endif
 	@$(POSTBUILD)

@@ -61,8 +61,18 @@ CXXFLAGS   =
 GMP        = $(shell grep ^PKG_VER $(DIR_LFS)/gmp  | awk '{ print $$3 }')
 MPFR       = $(shell grep ^PKG_VER $(DIR_LFS)/mpfr | awk '{ print $$3 }')
 
+ifneq "$(STAGE)" "base"
 ifeq "$(MACHINE)" "i586"
 	CONFIGURE_ARGS = --disable-decimal-float
+endif
+endif
+
+ifeq "$(MACHINE)" "x86_64"
+	CONFIGURE_ARGS = --without-cloog --without-ppl --disable-multilib
+endif
+
+ifneq "$(MACHINE)" "x86_64"
+	CONFIG_CPU = --with-cpu=$(MACHINE) --with-arch=$(MACHINE)
 endif
 
 ###############################################################################
@@ -116,6 +126,8 @@ ifeq "$(PASS)" "1"
 	## Enable -fPIC by default
 	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
 		-i gcc/config/i386/linux.h
+	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
+		-i gcc/config/i386/x86-64.h
 
 	# libssp has no use with new versions of Glibc. Glibc completely replaces all 
 	# functions in libssp, linking to libssp will cause conflicts with libc, so 
@@ -126,8 +138,7 @@ ifeq "$(PASS)" "1"
 		../$(THISAPP)/configure \
 			$(CONFIGURE_ARCH) \
 			--target=$(IFS_TARGET) \
-			--with-cpu=$(MACHINE) \
-			--with-arch=$(MACHINE) \
+			$(CONFIG_CPU) \
 			--prefix=$(TOOLS_DIR) \
 			--with-local-prefix=$(TOOLS_DIR) \
 			--libexecdir=$(TOOLS_DIR)/lib \
@@ -166,6 +177,14 @@ ifeq "$(PASS)" "2"
 			touch $$file.orig; \
 		done
 
+ifeq "$(MACHINE)" "x86_64"
+	# Remove multilib options and searchpath (/lib... /usr/lib...)
+	cd $(DIR_APP) && echo "" > gcc/config/i386/t-linux64
+	## Enable -fPIC by default (why i have to do this again ???)
+	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
+		-i gcc/config/i386/x86-64.h
+endif
+
 	# Libgomp uses -Werror regardless of --disable-werror, and this will cause a
 	# build failure when -D_FORTIFY_SOURCE=2 causes build time warnings:
 	cd $(DIR_APP) && sed -e "s/-Werror//" -i libgomp/configure
@@ -175,8 +194,7 @@ ifeq "$(PASS)" "2"
 		../$(THISAPP)/configure \
 			$(CONFIGURE_ARCH) \
 			--target=$(IFS_TARGET) \
-			--with-cpu=$(MACHINE) \
-			--with-arch=$(MACHINE) \
+			$(CONFIG_CPU) \
 			--prefix=$(TOOLS_DIR) \
 			--with-local-prefix=$(TOOLS_DIR) \
 			--libexecdir=$(TOOLS_DIR)/lib \
@@ -213,8 +231,7 @@ ifeq "$(STAGE)" "base"
 		../$(THISAPP)/configure \
 			$(CONFIGURE_ARCH) \
 			--target=$(IFS_TARGET) \
-			--with-cpu=$(MACHINE) \
-			--with-arch=$(MACHINE) \
+			$(CONFIG_CPU) \
 			--prefix=/usr \
 			--libexecdir=/usr/lib \
 			--enable-espf \
@@ -226,7 +243,8 @@ ifeq "$(STAGE)" "base"
 			--disable-bootstrap \
 			--disable-werror \
 			--disable-libssp \
-			--disable-static
+			--disable-static \
+			$(CONFIGURE_ARGS)
 
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/gcc-build && make install
