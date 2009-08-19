@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = splashy
-PKG_VER    = 0.3.11
+PKG_VER    = 0.3.13
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -93,6 +93,8 @@ $(OBJECT): $(objects)
 	rm -rvf /etc/{console-tools,default/splashy,lsb-base-logging.sh} \
 		/usr/share/initramfs-tools /lib/libsplashy{,cnf}.la \
 		/etc/init.d/splashy
+
+	$(INSTALL_INITSCRIPT)
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

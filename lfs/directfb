@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = DirectFB
-PKG_VER    = 1.0.1
+PKG_VER    = 1.4.1
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -52,6 +52,14 @@ define LONG_DESC
 	support for translucent windows and multiple display layers on top of the \
 	Linux Framebuffer Device.
 endef
+
+ifneq "$(TARGET)" "i686"
+ifneq "$(TARGET)" "i586"
+ifneq "$(TARGET)" "i486"
+	CONFIGURE_ARGS = --disable-mmx --disable-sse
+endif
+endif
+endif
 
 ###############################################################################
 # Top-level Rules
@@ -88,12 +96,16 @@ $(OBJECT): $(objects)
 			--prefix=/usr \
 			--disable-x11 \
 			--enable-sdl \
-			--enable-video4linux2
+			--enable-video4linux2 \
+			--enable-libv412 \
+			--enable-zlib \
+			$(CONFIGURE_ARGS)
+
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
 	rm -vf /usr/lib/libdirect{,fb}.la /usr/lib/libfusion.la
-	find /usr/lib/directfb-1.0-0/ -name "*.la" -exec rm -vf {} \;
+	find /usr/lib/directfb*/ -name "*.la" -exec rm -vf {} \;
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
