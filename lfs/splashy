@@ -94,5 +94,7 @@ $(OBJECT): $(objects)
 		/usr/share/initramfs-tools /lib/libsplashy{,cnf}.la \
 		/etc/init.d/splashy
 
+	$(INSTALL_INITSCRIPT)
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
