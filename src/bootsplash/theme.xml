@@ -9,59 +9,6 @@
         <urls>http://www.ipfire.org</urls>
         <author>IPFire Team</author>
     </info>
-    <progressbar>
-        <!-- here are tags to set the bar... x coordinate,
-        y coordinate, width and height are for the progress bar.
-        Remember that x, y, width and height are expressed in percentage -->
-        <dimension>
-            <x>10</x>
-            <y>90</y>
-            <width>80</width>
-            <height>5</height>
-        </dimension>
-        <!-- here you can set the color of the progressbar...
-        set the amount of red, green, blue and alpha channel. 
-        Remember that the max value is 255 and the minumun value is 0-->
-        <color>
-            <red>255</red>
-            <green>255</green>
-            <blue>255</blue>
-            <alpha>255</alpha>
-        </color>
-        <!-- whether or not you want a border around the progressbar. default: no -->
-        <border>
-            <enable>yes</enable>
-            <color>
-                <red>238</red>
-                <green>238</green>
-                <blue>238</blue>
-                <alpha>255</alpha>
-            </color>
-        </border>
-        <!-- here you can set the color of the progressbar background
-        set the amount of red, green, blue and alpha channel. 
-        Remember that the max value is 255 and the minumun value is 0-->
-        <background>
-            <color>
-                <red>127</red>
-                <green>127</green>
-                <blue>127</blue>
-                <alpha>255</alpha>
-            </color>
-        </background>
-        <direction>
-            <boot>forward</boot>
-            <shutdown>backward</shutdown>
-            <resume>forward</resume>
-            <suspend>backward</suspend>
-        </direction>
-        <visibility>
-            <boot>yes</boot>
-            <shutdown>yes</shutdown>
-            <resume>yes</resume>
-            <suspend>yes</suspend>
-        </visibility>
-    </progressbar>
     <!-- conventional path: /etc/splashy/themes + theme-name -->
     <background>
         <boot>background.png</boot>
@@ -132,6 +79,6 @@
         </text>
     </textbox>
     <autoverboseonerror>no</autoverboseonerror>
-    <fadein>no</fadein>
-    <fadeout>no</fadeout>
+    <fadein>yes</fadein>
+    <fadeout>yes</fadeout>
 </splashy>
