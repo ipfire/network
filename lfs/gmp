@@ -56,6 +56,11 @@ define LONG_DESC
 	emphasizes speed over simplicity/elegance in its operations.
 endef
 
+ifeq "$(MACHINE)" "x86_64"
+	ABI = 64
+else
+	ABI = 32
+endif
 ###############################################################################
 # Top-level Rules
 ###############################################################################
@@ -84,7 +89,7 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ABI=32 \
+	cd $(DIR_APP) && ABI=$(ABI) \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
