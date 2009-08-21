@@ -118,6 +118,6 @@ $(OBJECT): $(objects)
 ifeq "$(MACHINE)" "x86_64"
 	# Link lib64 to lib for 64bit target
 	ln -sf lib /lib64
-	ln -sf lib /use/lib64
+	ln -sf lib /usr/lib64
 endif
 	@$(POSTBUILD)

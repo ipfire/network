@@ -131,12 +131,6 @@ $(OBJECT): $(objects)
 	rm -rfv /etc/ppp/plugins
 
 	-mkdir -pv /etc/ppp
-	for i in $(DIR_CONFIG)/$(PKG_NAME)/* ; do \
-	    if [ -f $$i ]; then \
-	        sed 's%CONFIG_ROOT%$(CONFIG_ROOT)%g' $$i > /etc/ppp/`basename $$i`; \
-	    fi; \
-	done
-
 	touch /etc/ppp/secrets
 	chmod -v 600 /etc/ppp/secrets
 	ln -svf secrets /etc/ppp/pap-secrets
