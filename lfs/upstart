@@ -105,5 +105,9 @@ $(OBJECT): $(objects)
 	rm -vf /etc/init/rc.conf
 	rm -vf /etc/init/rcS.conf
 
+	# Make shutdown/reboot comfortable.
+	-mkdir -pv /etc/profile.d
+	cp -vf $(DIR_SOURCE)/profile.d/upstart.conf /etc/profile.d
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
