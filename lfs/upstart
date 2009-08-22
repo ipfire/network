@@ -107,7 +107,7 @@ $(OBJECT): $(objects)
 
 	# Make shutdown/reboot comfortable.
 	-mkdir -pv /etc/profile.d
-	cp -vf $(DIR_SOURCE)/profile.d/upstart.conf /etc/profile.d
+	cp -vf $(DIR_SOURCE)/profile.d/upstart.sh /etc/profile.d
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
