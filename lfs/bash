@@ -142,7 +142,12 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make install
 
 	# Bash startup files
-	cp -avf $(DIR_SOURCE)/bash/{bashrc,inputrc,profile,profile.d,shells} /etc
+	cp -avf $(DIR_SOURCE)/bash/{bashrc,inputrc,profile,shells} /etc
+
+	# /etc/profile.d
+	-mkdir -pv /etc/profile.d
+	cp -vf $(DIR_SOURCE)/profile.d/{extrapaths,i18n,readline,umask}.sh \
+		/etc/profile.d
 endif
 
 	@rm -rf $(DIR_APP)
