@@ -345,7 +345,6 @@ ipfire_build() {
 	### Building some important tools
 	#
 	ipfire_make ulogd2
-	ipfire_make fcron
 	ipfire_make which
 	ipfire_make screen
 	ipfire_make rrdtool
