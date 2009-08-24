@@ -93,7 +93,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make install
 
 	# These binaries are for the compatiblity mode, so we don´t need them
-	rm -vf /sbin/halt
+	rm -vf /sbin/poweroff
 	rm -vf /sbin/restart
 	rm -vf /sbin/runlevel
 	rm -vf /sbin/shutdown
