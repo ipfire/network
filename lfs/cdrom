@@ -78,7 +78,7 @@ $(OBJECT): $(objects)
 
 	# Install documentation
 	cp -vf $(DIR_SRC)/doc/{COPYING,ChangeLog,packages-list.txt} $(CDROM_DIR)/doc
-	$(INSTALL_CONFIG) $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README
+	$(INSTALL_CONFIG) $(DIR_SOURCE)/cdrom/README.txt > $(CDROM_DIR)/README
 
 	# Install kernel and initramfs
 	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/isolinux/initrd0
@@ -99,9 +99,9 @@ endif
 	# Install isolinux & configuration
 	cp -vf /usr/share/syslinux/{isolinux.bin,vesamenu.c32} \
 		/usr/lib/memtest86+/memtest.bin \
-		$(DIR_CONF)/bootloader/splash.{jpg,lss} \
-		$(DIR_CONF)/bootloader/*.msg $(CDROM_DIR)/isolinux/
-	$(INSTALL_CONFIG) $(DIR_CONF)/bootloader/installer.conf \
+		$(DIR_SOURCE)/bootloader/splash.{jpg,lss} \
+		$(DIR_SOURCE)/bootloader/*.msg $(CDROM_DIR)/isolinux/
+	$(INSTALL_CONFIG) $(DIR_SOURCE)/bootloader/installer.conf \
 		> $(CDROM_DIR)/isolinux/isolinux.cfg
 
 	# Info file

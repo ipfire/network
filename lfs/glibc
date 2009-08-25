@@ -306,7 +306,7 @@ ifeq "$(STAGE)" "base"
 	cp -v --remove-destination /usr/share/zoneinfo/GMT /etc/localtime
 
 	# Configuration
-	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/{ld.so.conf,nsswitch.conf} /etc
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/{ld.so.conf,nsswitch.conf} /etc
 
 	if [ -h /bin/pwd ]; then rm -f /bin/pwd; fi
 endif

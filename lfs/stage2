@@ -103,7 +103,7 @@ $(OBJECT): $(objects)
 	for i in $$(find $(DIR_CONFIG)/root/ -type f); do \
 		cp -vf $$i /root; \
 	done
-	for i in $$(find $(DIR_SRC)/config/grsecurity/ -type f); do \
+	for i in $$(find $(DIR_SOURCE)/grsecurity/ -type f); do \
 		cp -vf $$i /etc/grsec; \
 	done
 

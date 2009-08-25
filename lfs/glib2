@@ -95,6 +95,6 @@ $(OBJECT): $(objects)
 		ln -svf ../../lib/lib$${name}-2.0.so.*.* lib$${name}-2.0.so; \
 		rm -vf /usr/lib/lib$${name}-2.0.la; \
 	done
-	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/glib2-locale.sh /etc/profile.d/
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/glib2-locale.sh /etc/profile.d/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
