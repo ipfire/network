@@ -150,6 +150,6 @@ $(OBJECT): $(objects)
 	
 	rm -vf /usr/lib/libcollectdclient.la /usr/lib/collectd/*.la
 
-	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/collectd.conf /etc/
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/collectd.conf /etc/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
