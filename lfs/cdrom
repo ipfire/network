@@ -78,7 +78,7 @@ $(OBJECT): $(objects)
 
 	# Install documentation
 	cp -vf $(DIR_SRC)/doc/{COPYING,ChangeLog,packages-list.txt} $(CDROM_DIR)/doc
-	$(INSTALL_CONFIG) $(DIR_CONF)/cdrom/README.txt > $(CDROM_DIR)/README
+	$(INSTALL_CONFIG) $(DIR_SOURCE)/cdrom/README.txt > $(CDROM_DIR)/README
 
 	# Install kernel and initramfs
 	cp -vf $(IMAGES_DIR)/initramfs-$(VERSION).img $(CDROM_DIR)/isolinux/initrd0
