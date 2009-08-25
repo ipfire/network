@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = screen
 PKG_VER    = 4.0.3
+OKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,24 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/System
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = http://www.gnu.org/software/screen
+LICENSE    = GPLv2+
+SHORT_DESC = A screen manager that supports multiple logins on one terminal.
+
+define LONG_DESC
+	The screen utility allows you to have multiple logins on just one \
+	terminal. Screen is useful for users who telnet into a machine or \
+	are connected via a dumb terminal, but want to use more than just \
+	one login.
+endef
 
 ###############################################################################
 # Top-level Rules
