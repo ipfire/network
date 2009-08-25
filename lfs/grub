@@ -132,7 +132,7 @@ $(OBJECT): $(objects)
 
 	mkdir -vp /boot/grub
 	
-	for i in $(DIR_SRC)/config/bootloader/{grub.conf,splash.xpm.gz}; do \
+	for i in $(DIR_SOURCE)/bootloader/{grub.conf,splash.xpm.gz}; do \
 	    [ -f $$i ] && cp -vf $$i /boot/grub; \
 	done
 

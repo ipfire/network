@@ -99,9 +99,9 @@ endif
 	# Install isolinux & configuration
 	cp -vf /usr/share/syslinux/{isolinux.bin,vesamenu.c32} \
 		/usr/lib/memtest86+/memtest.bin \
-		$(DIR_CONF)/bootloader/splash.{jpg,lss} \
-		$(DIR_CONF)/bootloader/*.msg $(CDROM_DIR)/isolinux/
-	$(INSTALL_CONFIG) $(DIR_CONF)/bootloader/installer.conf \
+		$(DIR_SOURCE)/bootloader/splash.{jpg,lss} \
+		$(DIR_SOURCE)/bootloader/*.msg $(CDROM_DIR)/isolinux/
+	$(INSTALL_CONFIG) $(DIR_SOURCE)/bootloader/installer.conf \
 		> $(CDROM_DIR)/isolinux/isolinux.cfg
 
 	# Info file
