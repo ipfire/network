@@ -28,7 +28,15 @@ CONNECTIONS_FILE=/var/log/network/connections.db
 
 CONFIG_ZONES=${CONFIG_DIR}/zones
 CONFIG_PORTS=${CONFIG_DIR}/ports
+CONFIG_HOOKS=${CONFIG_DIR}/hooks
 CONFIG_PPP=${CONFIG_DIR}/ppp
+CONFIG_UUIDS=${CONFIG_DIR}/uuids
+
+# Create config directories
+for dir in ${CONFIG_ZONES} ${CONFIG_PORTS} ${CONFIG_HOOKS} ${CONFIG_PPP} ${CONFIG_UUIDS}; do
+	[ -d "${dir}" ] && continue
+	mkdir -p "${dir}"
+done
 
 COMMON_DEVICE=port+
 
@@ -50,6 +58,7 @@ function get_device_by_mac() {
 	local device
 
 	for device in /sys/class/net/*; do
+		[ -d "${device}" ] || continue
 		if [ "$(cat $device/address)" = "$mac" ]; then
 			device=${device##*/}
 			# Skip virtual devices
@@ -140,16 +149,52 @@ function macify() {
 }
 
 function device_exists() {
-	ip link show $(devicify ${1}) &>/dev/null
+	[ -n "${1}" ] || return ${EXIT_ERROR}
+	local device=$(devicify ${1})
+	[ -n "${device}" ] || return ${EXIT_ERROR}
+	ip link show ${device} &>/dev/null
+}
+
+function device_is_bonding() {
+	[ -d "/sys/class/net/${1}/bonding" ]
+}
+
+function device_is_bonded() {
+	local dev
+	for dev in /sys/class/net/*; do
+		# Skip crappy files
+		[ -d "${dev}" ] || continue
+
+		# Continue if not a bonding device
+		device_is_bonding "${dev##*/}" || continue
+
+		if grep -q "\<${1}\>" ${dev}/bonding/slaves; then
+			return 0
+		fi
+	done
+	return 1
 }
 
 function device_is_up() {
 	ip link show $(devicify ${1}) 2>/dev/null | grep -qE "<.*UP.*>"
 }
 
-function device_rename() {
-	local source=$1
-	local destination=$2
+function device_is_vlan() {
+	if [ ! -e "/proc/net/vlan/config" ]; then
+		return 1
+	fi
+	grep -q "^${1}" /proc/net/vlan/config
+}
+
+function device_has_vlans() {
+	if [ ! -e "/proc/net/vlan/config" ]; then
+		return 1
+	fi
+	grep -q "${1}$" /proc/net/vlan/config
+}
+
+function device_get_free() {
+	local destination=${1}
 
 	# Replace + by a valid number
 	if grep -q "+$" <<<${destination}; then
@@ -163,6 +208,12 @@ function device_rename() {
 			number=$(($number + 1))
 		done
 	fi
+	echo "${destination}"
+}
+
+function device_rename() {
+	local source=$1
+	local destination=$(device_get_free ${2})
 
 	# Check if devices exists
 	if ! device_exists ${source} || device_exists ${destination}; then
@@ -226,22 +277,43 @@ function zone_is_red() {
 	[ "${zone#red}" != "${zone}" ]
 }
 
-function run_hooks() {
-	local action=${1}
-	local dir=${2}
+function _run_hooks() {
+	local action
+	local type
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--type=*)
+				type=${1#--type=}
+				;;
+			*)
+				action="${1}"
+				shift; break
+				;;
+		esac
+		shift
+	done
+
+	local dir=${1}; shift
 	local failed
 	local hook
 	local hooks
-	shift 2
 
 	if [ -z "${action}" ] || [ -z "${dir}" ]; then
 		echo "Not enough parameters given." >&2
 		return 1
 	fi
 
-	for hook in $(find ${dir} -type f); do
+	for hook in $(find ${dir}); do
+		# Skip dirs
+		[ -d "${hook}" ] && continue
+
 		(
 			. ${hook}
+			# Skip hooks that are not of the given type
+			if [ -n "${type}" ] && [ "$(hook_type ${HOOK})" != "${type}" ]; then
+				continue
+			fi
 			if [ -n "${HOOK}" ]; then
 				hook_run ${HOOK} --config=${hook} $@ ${action}
 				RET=$?
@@ -259,10 +331,22 @@ function run_hooks() {
 	return ${failed}
 }
 
+function hooks_run_all() {
+	_run_hooks $@
+}
+
+function hooks_run_ports() {
+	_run_hooks --type="port" $@
+}
+
+function hooks_run_zones() {
+	_run_hooks --type="zone" $@
+}
+
 function hook_type() {
 	local hook=${1}
 	(
-		. $(hook_run ${hook} info)
+		eval $(${HOOKS_DIR}/${hook} info)
 		echo "${HOOK_TYPE}"
 	)
 }
@@ -386,6 +470,14 @@ function check_config() {
 	fi
 }
 
+function mac_generate() {
+	local mac="00"
+	while [ "${#mac}" -lt 15 ]; do
+		mac="${mac}:$(cut -c 1-2 /proc/sys/kernel/random/uuid)"
+	done
+	echo "${mac}"
+}
+
 function connection() {
 	local action
 
@@ -456,4 +548,8 @@ INSERT INTO connections(name, zone, interface, iplocal, ipremote, weight, dns, s
 	VALUES('${name}', '${zone}', '${interface}', '${iplocal}', '${ipremote}', '${weight}', '${dns}', '${status}');
 EOF
 
+}
+
+function uuid() {
+	cat /proc/sys/kernel/random/uuid
 }

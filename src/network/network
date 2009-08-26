@@ -234,46 +234,24 @@ function port_show() {
 }
 
 function port_add() {
-	local port=${2}
 	local zone=${1}
-	local hook=${3}
-	shift 3
-	
-	if [ -n "${port}" ]; then
-		port=$(macify ${port})
-	else
-		error "No port given on command line."
-		return 1
-	fi
-
-	if [ -z "${hook}" ]; then
-		hook="ethernet"
-	fi
+	local hook=${2}
+	shift 2
 
 	decho "Function: port_add"
-	decho "  Zone: ${zone} Port: ${port} Hook: ${hook} $@"
+	decho "  Zone: ${zone} Hook: ${hook} $@"
 
 	if ! zone_exists ${zone}; then
 		error "Zone ${BOLD}${zone}${NORMAL} does not exist."
 		return 1
 	fi
 
-	if [ -z "$port" ]; then
-		error "Port ${BOLD}${port}${NORMAL} could not be found."
-		return 1
-	fi
-
-	if ! device_exists ${port}; then
-		error "Port ${BOLD}${port}${NORMAL} does not exist."
-		return 1
-	fi
-
 	mkdir -p ${CONFIG_PORTS}/${port} 2>/dev/null
 	if hook_exists ${hook}; then
-		/lib/network/hooks/${hook} --port=${port} --zone=${zone} add $@
+		/lib/network/hooks/${hook} --zone=${zone} add $@
 		RET=$?
 		if [ "$RET" -eq "0" ]; then
-			vecho "Successfully added port ${BOLD}${port}${NORMAL} (${hook} $@) to ${BOLD}${zone}${NORMAL}."
+			vecho "Successfully added port to ${BOLD}${zone}${NORMAL}."
 		else
 			error "Hook ${BOLD}${hook}${NORMAL} exited with $RET."
 			return $RET

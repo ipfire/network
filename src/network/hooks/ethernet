@@ -21,48 +21,6 @@ function port_name() {
 	echo ${zone}p+
 }
 
-function do_up() {
-	device_is_up ${port} || ip link set $(devicify ${port}) up
-}
-
-function do_down() {
-	: # TODO
-	# Check if there are depending devices (like vlans, etc)
-	# If not, then pull down the device.
-}
-
-function do_attach() {
-	if zone_has_device_attached ${zone} $(get_device ${port}); then
-		# Device is already attached to the bridge
-		return 0
-	fi
-	message="Attaching ethernet port ${port}..."
-	device_rename $(get_device ${port}) $(port_name)
-	zone_add_port ${zone} $(get_device_by_mac ${port})
-	evaluate_retval
-}
-
-function do_detach() {
-	if zone_has_device_attached ${zone} $(get_device ${port}); then
-		message="Detatching ethernet port ${port}..."
-		zone_del_port ${zone} $(get_device_by_mac ${port})
-		device_rename $(get_device_by_mac ${port}) ${COMMON_DEVICE}
-		evaluate_retval
-	fi
-}
-
-function do_status() {
-	device_is_up ${port}
-	RET=$?
-	if [ $RET -eq 0 ]; then
-		log_success_msg "Port $(port_name) is up"
-	else
-		log_failure_msg "Port $(port_name) is down"
-	fi
-	return $RET
-	# TODO: Check if device is attached to a bridge.
-}
-
 case "${action}" in
 	help)
 		echo -e "${BOLD}Hook (${HOOK_NAME}) help:"
@@ -99,49 +57,66 @@ case "${action}" in
 		echo "HOOK_TYPE=${HOOK_TYPE}"
 		;;
 
-	up)
-		check_config port zone
-		do_up
+	pre-up)
+		device_is_up ${MAC} || ip link set $(devicify ${MAC}) up
 		;;
-
-	down)
-		check_config port zone
-		do_down
+	
+	post-up)
+		if zone_has_device_attached ${zone} $(get_device ${MAC}); then
+			# Device is already attached to the bridge
+			exit ${EXIT_OK}
+		fi
+		message="Attaching ethernet port ${MAC}..."
+		device_rename $(get_device ${MAC}) $(port_name)
+		zone_add_port ${zone} $(get_device_by_mac ${MAC})
+		evaluate_retval
+		;;
+		
+	pre-down)
+		if zone_has_device_attached ${zone} $(get_device ${MAC}); then
+			message="Detatching ethernet port ${MAC}..."
+			zone_del_port ${zone} $(get_device_by_mac ${MAC})
+			device_rename $(get_device_by_mac ${MAC}) ${COMMON_DEVICE}
+			evaluate_retval
+		fi
+		;;
+	
+	post-down)
+		## Possibly pull down the device (if there are no more vlan devices up...)
 		;;
 
 	add)
-		cat <<EOF > ${CONFIG_PORTS}/${port}/ethernet
-HOOK=ethernet
+		### XXX error handling
+
+		for dev in $@; do
+			MAC=$(macify ${dev})
+			UUID=$(uuid)
+			cat <<EOF > ${CONFIG_UUIDS}/${UUID}
+HOOK="${HOOK_NAME}"
+MAC="${MAC}"
 EOF
-		ln -sf ${CONFIG_PORTS}/${port}/ethernet \
-			${CONFIG_ZONES}/${zone}/port-${port}-ethernet
+			ln -sf ${CONFIG_UUIDS}/${UUID} \
+				${CONFIG_ZONES}/${zone}/${HOOK_NAME}-${UUID}
+
+			log_success_msg "Configuration successfully saved!"
+			echo    "      Device      : $(devicify ${MAC})"
+			echo    "      MAC address : ${MAC}"
+		done
 		;;
 
-	remove)
-		check_config port zone
-		do_detach
-		do_down
-		rm -f \
-			${CONFIG_ZONES}/${zone}/port-${port}-ethernet \
-			${CONFIG_PORTS}/${port}/ethernet
-		;;
-
-	attach)
-		check_config port zone
-		do_up
-		do_attach
-		;;
-
-	detach)
-		check_config port zone
-		do_detach
-		do_down
+	rem)
+		# XXX to be done
 		;;
 
 	status)
-		check_config port zone
-		do_status
-		exit ${?}
+		device_is_up ${MAC}
+		RET=$?
+		if [ $RET -eq 0 ]; then
+			echo "Port $(port_name) is up"
+		else
+			echo "Port $(port_name) is down"
+		fi
+		exit ${RET}
 		;;
 
 	*)
