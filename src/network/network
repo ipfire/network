@@ -459,7 +459,7 @@ while [ "$#" -gt 0 ]; do
 					if [ -z "${zone}" ] || [ -z "${hook}" ]; then
 						usage config
 					fi
-					hook_run ${hook} --zone=${zone} config $@
+					hook_run ${hook} --zone=${zone} add $@
 					_exit --reload $?
 					;;
 				del)
