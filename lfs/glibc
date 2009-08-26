@@ -265,7 +265,8 @@ ifeq "$(STAGE)" "base"
 			--disable-werror \
 			--enable-bind-now \
 			--enable-stackguard-randomization \
-			--with-stack-protector=all
+			--with-stack-protector=all \
+			--enable-omitfp
 endif
 
 	# Our GCC is already passing -fPIC, and that's all we want for the libraries.
