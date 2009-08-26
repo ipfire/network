@@ -117,6 +117,10 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/mpfr-$(MPFR).tar.bz2
 	cd $(DIR_APP) && ln -svf mpfr-* mpfr
 
+	# Remove unneeded features that will save some compile time
+	rm -rf $(DIR_APP)/lib{gfortran,java,objc} \
+		$(DIR_APP)/gcc/{fortran,java,objc,objcp}
+
 	# Branding gcc
 	cd $(DIR_APP) && sed -e "s:PKGVERSION:\"(GCC for $(NAME)-${VERSION}) \":" \
 		-i gcc/version.c
