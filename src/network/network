@@ -23,6 +23,8 @@ BOLD="\\033[1;39m"
 NORMAL="\\033[0;39m"
 ERROR="\\033[1;31m"
 
+. /etc/init/functions
+
 if [ -e "/lib/network/functions" ]; then
 	. /lib/network/functions
 elif [ -e "lib/functions" ]; then
@@ -309,30 +311,26 @@ function zone_show() {
 	fi
 
 	echo    "##################################################"
-	echo -e "# ${ERROR}ZONE INFO - ${zone}${NORMAL}"
-	echo    "##################################################"
+	echo    "#"
+	echo -e "# Zone ${CLR_BOLD_BLU}${zone}${NORMAL}"
+	echo    "# ------------------------------------------------"
 
 	# Up or down?
-	if device_is_up ${zone}; then
-		echo -e "# Device is ${ERROR}up${NORMAL}."
+	if zone_is_up ${zone}; then
+		echo -e "# Status: ${CLR_BOLD_GRN}up${NORMAL}"
 	else
-		echo -e "# Device is ${ERROR}down${NORMAL}."
+		echo -e "# Status: ${CLR_BOLD_RED}down${NORMAL}"
 	fi
 	echo "#"
 
 	# Ports
-	echo -e "# ${ERROR}Ports:${NORMAL}"
-	local config
-	local port
-	for config in ${CONFIG_ZONES}/${zone}/port-*; do
-		port=${config##*/}; port=${port#port-}; port=${port%%-*}
-		if ZONE=${zone} cmd /lib/network/port ${port} attach ${config} &>/dev/null; then
-			echo "#  ${config#port-} is up"
-		else
-			echo "#  ${config#port-} is down"
-		fi
-	done
-	echo "#"
+	echo -e "# ${CLR_BOLD_BLU}Ports:${NORMAL}"
+	hooks_run_ports status ${CONFIG_ZONES}/${zone} --zone=${zone}
+	
+	echo    "#"
+	echo -e "# ${CLR_BOLD_BLU}Zone configurations:${NORMAL}"
+	hooks_run_zones status ${CONFIG_ZONES}/${zone} --zone=${zone}
+	echo    "#"
 
 }
 

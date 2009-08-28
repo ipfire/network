@@ -109,14 +109,23 @@ EOF
 		;;
 
 	status)
-		device_is_up ${MAC}
-		RET=$?
-		if [ $RET -eq 0 ]; then
-			echo "Port $(port_name) is up"
+		echo -e "#  ${CLR_BOLD_CYN}Ethernet port $(devicify ${MAC}) (${MAC})${NORMAL}"
+		echo -n "#   State: "
+		if device_is_up ${MAC}; then
+			echo -e "${CLR_BOLD_GRN}up${NORMAL}"
 		else
-			echo "Port $(port_name) is down"
+			echo -e "${CLR_BOLD_RED}down${NORMAL}"
 		fi
-		exit ${RET}
+		echo -n "#   Link : "
+		if device_has_carrier ${MAC}; then
+			echo -e "${CLR_BOLD_GRN}yes${NORMAL}"
+		else
+			echo -e "${CLR_BOLD_RED}no${NORMAL}" 
+		fi
+		echo "#"
+
+		device_is_up ${MAC}
+		exit ${?}
 		;;
 
 	*)

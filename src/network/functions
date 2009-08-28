@@ -193,6 +193,11 @@ function device_has_vlans() {
 	grep -q "${1}$" /proc/net/vlan/config
 }
 
+function device_has_carrier() {
+	local device=$(devicify ${1})
+	[ "$(</sys/class/net/${device}/carrier)" = "1" ]
+}
+
 function device_get_free() {
 	local destination=${1}
 
@@ -220,9 +225,17 @@ function device_rename() {
 		return 4
 	fi
 
-	ip link set ${source} down
+	local up
+	if device_is_up ${source}; then
+		ip link set ${source} down
+		up=1
+	fi
+
 	ip link set ${source} name ${destination}
-	ip link set ${destination} up
+
+	if [ "${up}" = "1" ]; then
+		ip link set ${destination} up
+	fi
 }
 
 function hook_exists() {

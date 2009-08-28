@@ -16,10 +16,9 @@
 
 HOOK_NAME=bonding
 HOOK_TYPE=port
+HOOK_PRIO=50
 
 DEFAULT_MODE=
-
-# TODO: Need to detect link failures!
 
 function port_name() {
 	echo "${zone}t+"
@@ -55,15 +54,17 @@ case "${action}" in
 	
 		[ -n "${MODE}" ] && \
 			echo "${MODE}" > /sys/class/net/${device}/bonding/mode
-	
+
+		echo "${MIIMON-100}" > /sys/class/net/${device}/bonding/miimon
+
 		for slave in ${SLAVES}; do
 			if device_exists ${slave}; then
 				if device_is_up ${slave}; then
 					log_warning_msg "Cannot enslave device \"${slave}\"."
 					continue
 				fi
-				echo "+$(devicify ${slave})" > /sys/class/net/${device}/bonding/slaves
 				device_rename "$(devicify ${slave})" "${device}s+"
+				echo "+$(devicify ${slave})" > /sys/class/net/${device}/bonding/slaves
 			else
 				log_warning_msg "Device ${slave} does not exist."
 			fi
@@ -137,14 +138,34 @@ EOF
 		;;
 
 	status)
-		device_is_up $(devicify ${MAC})
-		RET=$?
-		if [ $RET -eq 0 ]; then
-			log_success_msg "Port $(port_name) is up"
+		DEVICE=$(devicify ${MAC})
+		echo -e "#  ${CLR_BOLD_CYN}Trunk ${DEVICE} (${MAC})${NORMAL}"
+		if device_is_up ${MAC}; then
+			 echo -e "#    State: ${CLR_BOLD_GRN}up${NORMAL}"
+			 echo    "#"
+			 for slave in $(</sys/class/net/${DEVICE}/bonding/slaves); do
+			 	echo -e "#    ${CLR_BOLD_CYN}Slave port ${slave}${NORMAL}"
+
+			 	echo -n "#      State: " 
+			 	if device_is_up ${slave}; then
+			 		echo -e "${CLR_BOLD_GRN}up${NORMAL}"
+			 	else
+			 		echo -e "${CLR_BOLD_RED}down${NORMAL}"
+			 	fi
+
+				echo -n "#      Link : "
+				if device_has_carrier ${slave}; then
+					echo -e "${CLR_BOLD_GRN}yes${NORMAL}"
+				else
+					echo -e "${CLR_BOLD_RED}no${NORMAL}" 
+				fi
+			 done
 		else
-			log_failure_msg "Port $(port_name) is down"
+			echo -e "#    State: ${CLR_BOLD_RED}down${NORMAL}"
 		fi
-		exit ${RET}
+
+		device_is_up ${MAC}
+		exit ${?}
 		;;
 
 	*)

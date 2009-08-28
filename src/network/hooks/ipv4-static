@@ -58,12 +58,18 @@ case "${action}" in
 
 	status)
 		check_config
-		# XXX Is there a better way?
-		if (ip route get ${IP} | grep -q ^local); then
-			exit ${EXIT_OK}
-		else
-			exit ${EXIT_ERROR}
+		echo -e "#  ${CLR_BOLD_CYN}IPv4 static: ${IP}/${PREFIX}${NORMAL}"
+		if [ -n "${GATEWAY}" ]; then
+			echo    "#    Gateway: ${GATEWAY}"
+			echo -n "#      Reachable: "
+			if ping -c1 -w1 -I ${zone} ${GATEWAY} &>/dev/null; then
+				echo -e "${CLR_BOLD_GRN}yes${NORMAL}"
+			else
+				echo -e "${CLR_BOLD_RED}no${NORMAL}"
+			fi
 		fi
+		ip addr show ${zone} | grep "inet " | fgrep -q "${IP}/${PREFIX}"
+		exit ${?}
 		;;
 
 	pre-up)
@@ -106,7 +112,7 @@ case "${action}" in
 	post-down)
 		;;
 
-	config)
+	add)
 		while [ $# -gt 0 ]; do
 			case "$1" in
 				--ip=*)
@@ -146,7 +152,10 @@ GATEWAY="${GATEWAY}"
 EOF
 		[ "$?" = "0" ] && exit ${EXIT_OK} || exit ${EXIT_ERROR}
 		;;
-	
+
+	rem)
+		;;
+
 	*)
 		echo "Usage: ${0} {config|pre-up|post-up|pre-down|post-down|status} [interface]"
 		exit ${EXIT_ERROR}
