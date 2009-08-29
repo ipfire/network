@@ -155,6 +155,10 @@ EOF
 
 	rem)
 		;;
+	
+	discover)
+		exit ${EXIT_ERROR}
+		;;
 
 	*)
 		echo "Usage: ${0} {config|pre-up|post-up|pre-down|post-down|status} [interface]"

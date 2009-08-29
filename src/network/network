@@ -222,17 +222,59 @@ function cmd() {
 	fi
 }
 
+function size() {
+	local size=${1}
+
+	local units
+	units[0]="Bytes "
+	units[1]="kBytes"
+	units[2]="MBytes"
+	units[3]="GBytes"
+	units[4]="TBytes"
+	
+	local count=${#units}
+	while [ ${count} -gt 0 ]; do
+		if [ ${size} -lt 1024 ]; then
+			break
+		fi
+		size=$((${size} / 1024))
+		count=$((${count} - 1))
+	done
+	printf "%4d %s\n" "${size}" "${units[$((${#units} - ${count}))]}"
+}
+
 function port_show() {
-	local port
+	local port=$(devicify $1)
 
-	port=$(devicify $1)
+	echo    "##################################################"
+	echo    "#"
+	echo -e "# Port ${CLR_BOLD_BLU}${port}${NORMAL}"
+	echo    "# ------------------------------------------------"
 
-	if ! port_exists ${port}; then
-		error "Port ${BOLD}${port}${NORMAL} does not exist."
-		return 1
+	echo -n "# State: "
+	if device_is_up ${port}; then
+		echo -e "${CLR_BOLD_GRN}up${NORMAL}"
+	else
+		echo -e "${CLR_BOLD_RED}down${NORMAL}"
 	fi
 
-	ip -s link show $port
+	echo -n "# Link : "
+	if device_has_carrier ${port}; then
+		echo -e "${CLR_BOLD_GRN}yes${NORMAL}"
+	else
+		echo -e "${CLR_BOLD_RED}no${NORMAL}"
+	fi
+
+	if device_is_up ${port}; then
+		echo "#"
+		echo "# Statistics:"
+		echo -n "#   RX: $(size $(</sys/class/net/${port}/statistics/rx_bytes))"
+		echo    " ($(</sys/class/net/${port}/statistics/rx_packets) packets)"
+		echo -n "#   TX: $(size $(</sys/class/net/${port}/statistics/tx_bytes))"
+		echo    " ($(</sys/class/net/${port}/statistics/tx_packets) packets)"
+	fi
+
+	echo "#"
 }
 
 function port_add() {
@@ -292,6 +334,14 @@ function port_del() {
 		error "Hook ${BOLD}${hook}${NORMAL} does not exist or is not executeable."
 		return 1
 	fi
+}
+
+function zone_discover() {
+	local zone=${1}
+
+	for hook in $(hook_list zone); do
+		hook_run ${hook} --zone=${zone} discover
+	done
 }
 
 function zone_show() {
@@ -468,6 +518,10 @@ while [ "$#" -gt 0 ]; do
 					port_del $@
 					_exit --reload $?
 					;;
+				discover)
+					zone_discover $@
+					_exit $?
+					;;
 				help)
 					usage zone 0
 					;;
@@ -482,6 +536,18 @@ while [ "$#" -gt 0 ]; do
 				start|stop)
 					zone=$1; shift
 					zone_run --zone=${zone} ${arg} $@
+					;;
+			esac
+			;;
+		show)
+			case "${1}" in
+				ports)
+					for port in /sys/class/net/*; do
+						port=${port##*/}
+						device_is_real ${port} || continue
+						port_show ${port}
+					done
+					_exit 0
 					;;
 			esac
 			;;

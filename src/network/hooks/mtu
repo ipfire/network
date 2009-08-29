@@ -71,6 +71,10 @@ MTU="${MTU}"
 EOF
 		exit $?
 		;;
+	
+	discover)
+		exit ${EXIT_ERROR}
+		;;
 
 	*)
 		usage

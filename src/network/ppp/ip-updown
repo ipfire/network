@@ -23,13 +23,18 @@ umask 022
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
 . /lib/network/functions
+. /lib/network/functions.ppp
 
-if [ -e "${CONFIG_PPP}/${LINKNAME}" ]; then
-	. ${CONFIG_PPP}/${LINKNAME}
-fi
+for config in ${CONFIG_ZONES}/${DEVICE}/*; do
+	if [ "$(ppp_linkname_get ${config})" = "${LINKNAME}" ]; then
+		CONFIG=${config}
+		. ${CONFIG}
+		break
+	fi
+done
 
 if [ -n "${HOOK}" ] && [ -x "${HOOKS_DIR}/${HOOK}.helper" ]; then
-	exec ${HOOKS_DIR}/${HOOK}.helper --config=${CONFIG_PPP}/${LINKNAME} \
+	exec ${HOOKS_DIR}/${HOOK}.helper --config=${CONFIG} \
 		$(basename $0) $@
 fi
 

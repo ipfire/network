@@ -43,13 +43,15 @@ case "${action}" in
 			vconfig add $(devicify ${MAC}) ${ID} >/dev/null
 			evaluate_retval
 
+			device_rename $(get_device_by_mac_and_vid ${MAC} ${ID}) $(port_name)
+			ip link set $(port_name) up
+
 			ebtables -t broute -A BROUTING -p 802_1Q --vlan-id=${ID} -j DROP
 		fi
 		;;
 
 	post-up)
 		if ! zone_has_device_attached ${zone} $(port_name); then
-			device_rename $(get_device_by_mac_and_vid ${MAC} ${ID}) $(port_name)
 			zone_add_port ${zone} $(get_device ${MAC} ${ID})
 		fi
 		;;
@@ -95,13 +97,17 @@ EOF
 		;;
 
 	status)
-		device_is_up $(port_name)
-		RET=$?
-		if [ $RET -eq 0 ]; then
-			log_success_msg "Port $(port_name) is up"
+		echo -e "#  ${CLR_BOLD_CYN}VLAN port $(port_name)${NORMAL}"
+		echo -n "#    State: "
+		if device_is_up $(port_name); then
+			echo -e "${CLR_BOLD_GRN}up${NORMAL}"
+			RET=${EXIT_OK}
 		else
-			log_failure_msg "Port $(port_name) is down"
+			echo -e "${CLR_BOLD_RED}down${NORMAL}"
+			RET=${EXIT_ERROR}
 		fi
+		echo "#    ID   : ${ID}"
+		echo "#"
 		exit ${RET}
 		;;
 

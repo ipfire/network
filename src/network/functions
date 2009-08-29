@@ -175,6 +175,10 @@ function device_is_bonded() {
 	return 1
 }
 
+function device_is_bridge() {
+	[ -d "/sys/class/net/${1}/bridge" ]
+}
+
 function device_is_up() {
 	ip link show $(devicify ${1}) 2>/dev/null | grep -qE "<.*UP.*>"
 }
@@ -184,6 +188,32 @@ function device_is_vlan() {
 		return 1
 	fi
 	grep -q "^${1}" /proc/net/vlan/config
+}
+
+function device_is_ppp() {
+	# XXX need something better
+	[ "${1:0:3}" = "ppp" ]
+}
+
+function device_is_real() {
+	local device=${1}
+
+	[ "${device}" = "lo" ] && \
+		return ${EXIT_ERROR}
+
+	device_is_bonding ${device} &&  \
+		return ${EXIT_ERROR}
+
+	device_is_bridge ${device} && \
+		return ${EXIT_ERROR}
+
+	device_is_ppp ${device} && \
+		return ${EXIT_ERROR}
+
+	device_is_vlan ${device} && \
+		return ${EXIT_ERROR}
+
+	return ${EXIT_OK}
 }
 
 function device_has_vlans() {
@@ -256,6 +286,24 @@ function zone_exists() {
 
 function zone_is_up() {
 	zone_exists $@ && device_is_up $@
+}
+
+function zone_is_forwarding() {
+	local seconds=45
+	local zone=${1}
+	
+	local device
+	while [ ${seconds} -gt 0 ]; do
+		for device in /sys/class/net/${zone}/brif/*; do
+			[ -e "${device}/state" ] || continue
+			if [ "$(<${device}/state)" = "3" ]; then
+				return ${EXIT_OK}
+			fi
+		done
+		sleep 1
+		seconds=$((${seconds} - 1))
+	done
+	return ${EXIT_ERROR}
 }
 
 function bridge_devices() {
@@ -362,6 +410,21 @@ function hook_type() {
 		eval $(${HOOKS_DIR}/${hook} info)
 		echo "${HOOK_TYPE}"
 	)
+}
+
+function hook_list() {
+	local type=${1}
+	local hook
+	for hook in ${HOOKS_DIR}/*; do
+		hook=${hook##*/}
+		
+		[[ ${hook} =~ helper$ ]] && continue
+		
+		if [ -n "${type}" ] && [ "$(hook_type ${hook})" != "${type}" ]; then
+			continue
+		fi
+		echo "${hook}"
+	done
 }
 
 function config_get_hook() {

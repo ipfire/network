@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-PPP_RUN=/var/run/ppp
+RED_RUN=/var/run/network/red
 PPP_SECRETS=/etc/ppp/secrets
 
 function ppp_pre_up() {
@@ -79,3 +79,32 @@ INSERT INTO connections(date, duration, rcvd, sent) VALUES('$(date -u '+%s')', '
 EOF
 }
 
+function ppp_linkname_get() {
+	local config=${1}
+	(
+		. ${config}
+		echo "${LINKNAME}"
+	)
+}
+
+function red_defaultroute_update() {
+	local command="ip route replace default"
+
+	for uplink in ${RED_RUN}/*; do
+		[ -d "${uplink}" ] || continue
+
+		# Skip if no gateway given
+		[ -e "${uplink}/gateway" ] || continue
+
+		command="${command} nexthop via $(<${uplink}/gateway)"
+		if [ -e "${uplink}/weight" ]; then
+			command="${command} weight $(<${uplink}/weight)"
+		fi
+	done
+	$command
+	ip route flush cache
+}
+
+function red_dns_update() {
+	: # XXX todo
+}
