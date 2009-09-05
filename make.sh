@@ -427,8 +427,10 @@ misc_build() {
 	#
 	#ipfire_make snort
 	#ipfire_make oinkmaster
-	#ipfire_make cups
-	#ipfire_make ghostscript
+	ipfire_make ghostscript
+	ipfire_make cups
+	ipfire_make sane
+	ipfire_make hplip
 	#ipfire_make postfix
 	#ipfire_make fetchmail
 	#ipfire_make clamav
