@@ -80,16 +80,19 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ./configure \
-					--prefix=/usr \
-					--with-default-snmp-version=2 \
-					--with-sys-contact=root@ \
-					--with-sys-location=localhost \
-					--with-logfile=/var/log/snmpd.log \
-					--with-persistent-directory=/var/net-snmp \
-					--libdir=/usr/lib \
-					--sysconfdir=/etc \
-					--disable-embedded-perl
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--sysconfdir=/etc \
+			--libdir=/usr/lib \
+			--with-default-snmp-version=2 \
+			--with-sys-contact=root@ \
+			--with-sys-location=localhost \
+			--with-logfile=/var/log/snmpd.log \
+			--with-persistent-directory=/var/net-snmp \
+			--disable-embedded-perl
+
 	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
