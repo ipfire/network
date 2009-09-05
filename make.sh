@@ -420,7 +420,7 @@ misc_build() {
 	#ipfire_make ntfs-3g
 	#
 	## Net tools
-#	ipfire_make net-snmp
+	ipfire_make net-snmp
 	ipfire_make bwm-ng
 
 	### These will become addons as usual but will be integrated later
