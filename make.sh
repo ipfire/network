@@ -429,16 +429,10 @@ misc_build() {
 	#ipfire_make oinkmaster
 	#ipfire_make cups
 	#ipfire_make ghostscript
-	#ipfire_make foomatic
-	#ipfire_make hplip
 	#ipfire_make postfix
 	#ipfire_make fetchmail
-	#ipfire_make cyrus-imapd
 	#ipfire_make clamav
 	#ipfire_make alsa
-	#ipfire_make mpfire
-	#ipfire_make guardian
-	#ipfire_make ipfireseeder
 	ipfire_make portmap
 	ipfire_make nfs-utils
 
