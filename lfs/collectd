@@ -129,6 +129,7 @@ $(OBJECT): $(objects)
 			--disable-powerdns \
 			--enable-processes \
 			--enable-rrdtool \
+			--enable-rrdcachd \
 			--enable-sensors \
 			--enable-serial \
 			--enable-swap \
@@ -150,6 +151,12 @@ $(OBJECT): $(objects)
 	
 	rm -vf /usr/lib/libcollectdclient.la /usr/lib/collectd/*.la
 
-	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/collectd.conf /etc/
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/$(PKG_NAME)*.conf /etc/
+	-mkdir /etc/$(PKG_NAME).d/
+	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/* /etc/$(PKG_NAME).d/
+	
+	install -v -m 755 $(DIR_SOURCE)/initscripts/extras/$(PKG_NAME)* \
+		/etc/init/
+	
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
