@@ -93,8 +93,6 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" #$(PARALLELISMFLAGS)
 	# Install config
 	install -v -m644 $(DIR_SRC)/net-snmp-5.4.2.1/python/netsnmp/tests/snmpd.conf /etc/snmpd.conf
-	install -v -m755 $(DIR_SRC)/net-snmp-5.4.2.1/dist/snmpd-init.d /etc/init.d/netsnmpd
-#FIXME: does this need to be integrated into upstart in some fancy magic way?
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
