@@ -24,9 +24,9 @@
 
 include Config
 
-PKG_NAME   = hplip_full
+PKG_NAME   = hplip
 PKG_VER    = 3.9.8
-PKG_REL    = 0
+PKG_REL    = 1
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -40,7 +40,7 @@ CORE       = no
 EXTRA      = yes
 DEBUG      = no
 BUILD_DEPS =
-DEPS       = cups
+DEPS       = cups sane
 
 URL        = http://hplipopensource.com/hplip-web/index.html
 LICENSE    = GPLv2+
@@ -86,10 +86,7 @@ $(OBJECT): $(objects)
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--sysconfdir=/etc \
-			--enable-hpijs-only-build \
-			--disable-network-build \
-			--disable-scan-build
+			--sysconfdir=/etc
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
