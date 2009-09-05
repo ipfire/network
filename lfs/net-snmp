@@ -91,7 +91,8 @@ $(OBJECT): $(objects)
 			--with-sys-location=localhost \
 			--with-logfile=/var/log/snmpd.log \
 			--with-persistent-directory=/var/net-snmp \
-			--disable-embedded-perl
+			--disable-embedded-perl \
+			--disable-static
 
 	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
