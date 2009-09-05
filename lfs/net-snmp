@@ -90,7 +90,7 @@ $(OBJECT): $(objects)
 					--libdir=/usr/lib \
 					--sysconfdir=/etc \
 					--disable-embedded-perl
-	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)"
+	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" #$(PARALLELISMFLAGS)
 	# Install config
 	install -v -m644 $(DIR_SRC)/net-snmp-5.4.2.1/python/netsnmp/tests/snmpd.conf /etc/snmpd.conf
 	install -v -m755 $(DIR_SRC)/net-snmp-5.4.2.1/dist/snmpd-init.d /etc/init.d/netsnmpd
