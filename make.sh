@@ -399,6 +399,7 @@ misc_build() {
 	ipfire_make tcpdump
 	ipfire_make htop
 	ipfire_make nano
+	ipfire_make joe
 
 	### Servers
 	#
@@ -419,7 +420,8 @@ misc_build() {
 	#ipfire_make ntfs-3g
 	#
 	## Net tools
-	#ipfire_make bwm-ng
+	#ipfire_make net-snmp
+	ipfire_make bwm-ng
 
 	### These will become addons as usual but will be integrated later
 	#
