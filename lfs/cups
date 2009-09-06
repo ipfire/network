@@ -40,10 +40,10 @@ CORE       = no
 EXTRA      = yes
 DEBUG      = no
 BUILD_DEPS = 
-DEPS       = cyrus-sasl ghostscript
+DEPS       = cyrus-sasl ghostscript libjpeg libtiff openldap
 
 URL        = http://cups.org/software.php
-LICENSE    = GPL2+
+LICENSE    = GPLv2+
 SHORT_DESC = The common UNIX printing system.
 
 define LONG_DESC
@@ -84,11 +84,14 @@ $(OBJECT): $(objects)
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--sysconfdir=/etc \
-			--disable-static \
-			--disable-nls
+			--localstatedir=/var \
+			--disable-static
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
+
+	# Remove sysvinit scripts
+	rm -vf /etc/init.d/cups /etc/rc*.d
 
 	cp -fv $(DIR_SRC)/$(THISAPP)/conf/cupsd.conf /etc/cups/
 
