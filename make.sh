@@ -209,6 +209,7 @@ ipfire_build() {
 	#
 	ipfire_make stage3
 	ipfire_make xz
+	ipfire_make unzip
 
 	ipfire_make linux
 
@@ -226,6 +227,7 @@ ipfire_build() {
 	ipfire_make python
 	ipfire_make python-cracklib
 	ipfire_make python-dbus
+	ipfire_make python-setuptools
 	ipfire_make python-urlgrabber
 	ipfire_make python-IPy
 	ipfire_make libxml2
@@ -367,6 +369,7 @@ ipfire_build() {
 	ipfire_make wireless-tools
 
 	ipfire_make python-werkzeug
+	ipfire_make python-flup
 	ipfire_make pyfire
 	ipfire_make network
 	ipfire_make firewall
