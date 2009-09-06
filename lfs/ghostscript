@@ -35,7 +35,7 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
-GROUP      = Printing
+GROUP      = Applications/Printing
 CORE       = no
 EXTRA      = yes
 DEBUG      = no
@@ -101,8 +101,6 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make install
 
 	chown -v root:root /usr/share/ghostscript/8.70/Resource/Font/*
-
-#	rm -vf /usr/share/ghostscript/8.70/doc
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
