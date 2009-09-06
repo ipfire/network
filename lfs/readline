@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = readline
 PKG_VER    = 6.0
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,26 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = ftp://ftp.gnu.org/gnu/readline/
+LICENSE    = GPLv3+
+SHORT_DESC = A library for editing typed command lines.
+
+define LONG_DESC
+	The Readline library provides a set of functions that allow users to \
+	edit command lines. Both Emacs and vi editing modes are available. \
+	The Readline library includes additional functions for maintaining a \
+	list of previously-entered command lines for recalling or editing \
+	those lines, and for performing csh-like history expansion on \
+	previous commands.
+endef
 
 ###############################################################################
 # Top-level Rules

@@ -61,6 +61,8 @@ endef
 objects = $(DL_FILE) \
 	$(THISAPP)-rng.patch \
 	$(THISAPP)-fixes-1.patch \
+	$(THISAPP)-paths-1.patch \
+	$(THISAPP)-profile-1.patch \
 #	$(THISAPP)-arc4random-1.patch
 
 download: $(objects)
@@ -95,6 +97,10 @@ $(OBJECT): $(objects)
 	# The test is "( echo $RANDOM; ( echo $RANDOM ); ( echo $RANDOM ) )":
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-rng.patch
 
+	# Some more patches.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-paths-1.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-profile-1.patch
+
 	# Bash uses the RTLD_LAZY option when loading libraries. We want to use
 	# RTLD_NOW (it is defined from <dlfcn.h>:
 	cd $(DIR_APP) && sed -e "s/filename, RTLD_LAZY/filename, RTLD_NOW/" \
@@ -123,6 +129,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && sed -i "s|htmldir = @htmldir@|htmldir = /usr/share/doc/$(THISAPP)|" \
 		Makefile.in
 #	cd $(DIR_APP) && patch -Np1 < $(DIR_PATCHES)/$(THISAPP)-arc4random-1.patch
+	cd $(DIR_APP) && autoconf --force
 	cd $(DIR_APP) && \
 		ac_cv_func_working_mktime=yes \
 		./configure \
@@ -135,7 +142,12 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_APP) && make install
 
 	# Bash startup files
-	cp -avf $(DIR_CONFIG)/bash/{bashrc,inputrc,profile,profile.d,shells} /etc
+	cp -avf $(DIR_SOURCE)/bash/{bashrc,inputrc,profile,shells} /etc
+
+	# /etc/profile.d
+	-mkdir -pv /etc/profile.d
+	cp -vf $(DIR_SOURCE)/profile.d/{extrapaths,i18n,readline,umask}.sh \
+		/etc/profile.d
 endif
 
 	@rm -rf $(DIR_APP)

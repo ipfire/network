@@ -31,12 +31,15 @@ case "${action}" in
 		;;
 
 	status)
-		#check_config
-		# XXX Is there a better way?
-		if (ip route get ${IP} | grep -q ^local); then
+		echo -e "#  ${CLR_BOLD_CYN}PPPoE: ${NAME}${NORMAL}"
+		echo -n "#    pppd's PID: "
+		pid=$(head -n1 /var/run/ppp-${NAME}.pid 2>/dev/null)
+		if [ -n "${pid}" ] && [ -d "/proc/${pid}" ]; then
+			echo -e "${CLR_BOLD_GRN}${pid}${NORMAL}"
 			exit ${EXIT_OK}
 		else
-			exit ${EXIT_ERROR}
+			echo -e "${CLR_BOLD_RED}${pid-off}${NORMAL}"
+			exit ${EXIT_OK}
 		fi
 		;;
 
@@ -45,11 +48,11 @@ case "${action}" in
 
 		check_config NAME
 		# Creating necessary files
-		[ -d "${PPP_RUN}/${NAME}" ] || mkdir -p ${PPP_RUN}/${NAME}
+		[ -d "${RED_RUN}/${NAME}" ] || mkdir -p ${RED_RUN}/${NAME}
 
 		ppp_secret "${USER}" "${SECRET}"
 
-		cat <<EOF >${PPP_RUN}/${NAME}/options
+		cat <<EOF >${RED_RUN}/${NAME}/options
 # Naming options
 name ${NAME}
 linkname ${NAME}
@@ -81,9 +84,14 @@ EOF
 	post-up)
 		check_config zone NAME
 		MESSAGE="Starting PPP Daemon on interface ${zone}..."
-		pppd file ${PPP_RUN}/${NAME}/options >/dev/null
-		evaluate_retval
-		
+		if zone_is_forwarding ${zone}; then
+			pppd file ${RED_RUN}/${NAME}/options >/dev/null
+			evaluate_retval
+		else
+			log_failure_msg "Zone ${zone} is not forwaring any traffic..."
+			exit ${EXIT_ERROR}
+		fi
+
 		ppp_post_up
 		;;
 
@@ -91,7 +99,7 @@ EOF
 		ppp_pre_down
 
 		MESSAGE="Stopping PPP Daemon on interface ${zone}..."
-		pid=$(head -n1 /var/run/ppp-${NAME}.pid)
+		pid=$(head -n1 /var/run/ppp-${NAME}.pid 2>/dev/null)
 		if [ -n "${pid}" ]; then
 			kill ${pid} &>/dev/null
 			evaluate_retval
@@ -102,7 +110,7 @@ EOF
 		ppp_post_down
 		;;
 
-	config)
+	add)
 		# A pregenerated connection name
 		NAME=$(</proc/sys/kernel/random/uuid)
 		DEFAULTROUTE=1
@@ -140,8 +148,8 @@ EOF
 			shift
 		done
 
-		check_config zone NAME USER
-		cat <<EOF >${CONFIG_ZONES}/${zone}/${HOOK_NAME}_${NAME}
+		UUID=$(uuid)
+		cat <<EOF >${CONFIG_UUIDS}/${UUID}
 HOOK="${HOOK_NAME}"
 USER="${USER}"
 SECRET="${SECRET}"
@@ -152,8 +160,8 @@ PEERDNS="${PEERDNS}"
 AUTH="${AUTH}"
 EOF
 
-		ln -sf ${CONFIG_ZONES}/${zone}/${HOOK_NAME}_${NAME} \
-			${CONFIG_PPP}/${NAME}
+		ln -sf ${CONFIG_UUIDS}/${UUID} \
+			${CONFIG_ZONES}/${zone}/${HOOK_NAME}-${UUID}
 
 		exit ${EXIT_OK}
 		;;
@@ -162,9 +170,14 @@ EOF
 		output=$(pppoe-discovery -I ${zone} \
 			-U $(</proc/sys/kernel/random/uuid) 2>&1)
 		if grep -q "Timeout" <<<${output}; then
+			echo "${HOOK_NAME}: FAILED"
 			exit ${EXIT_ERROR}
 		else
-			echo "${output}"
+			echo "${HOOK_NAME}: OK"
+			echo "${output}" | while read line; do
+				[ "${line:0:1}" = "A" ] || continue
+				echo "${HOOK_NAME}: ${line}"
+			done
 			exit ${EXIT_OK}
 		fi
 		;;

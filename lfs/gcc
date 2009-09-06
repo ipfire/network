@@ -117,6 +117,10 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/mpfr-$(MPFR).tar.bz2
 	cd $(DIR_APP) && ln -svf mpfr-* mpfr
 
+	# Remove unneeded features that will save some compile time
+	rm -rf $(DIR_APP)/lib{gfortran,java,objc} \
+		$(DIR_APP)/gcc/{fortran,java,objc,objcp}
+
 	# Branding gcc
 	cd $(DIR_APP) && sed -e "s:PKGVERSION:\"(GCC for $(NAME)-${VERSION}) \":" \
 		-i gcc/version.c
@@ -249,7 +253,7 @@ ifeq "$(STAGE)" "base"
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
 	cd $(DIR_SRC)/gcc-build && make install
 
-	rm -vf /usr/lib/lib{gomp,mudflap{,th},stdc++,supc++}.la
+	rm -vf /usr/lib/lib{ffi,gomp,mudflap{,th},stdc++,supc++}.la
 
 	ln -sfv ../usr/bin/cpp /lib
 	ln -sfv gcc /usr/bin/cc

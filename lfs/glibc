@@ -265,7 +265,8 @@ ifeq "$(STAGE)" "base"
 			--disable-werror \
 			--enable-bind-now \
 			--enable-stackguard-randomization \
-			--with-stack-protector=all
+			--with-stack-protector=all \
+			--enable-omitfp
 endif
 
 	# Our GCC is already passing -fPIC, and that's all we want for the libraries.
@@ -293,6 +294,8 @@ ifeq "$(STAGE)" "base"
 	mv -v /usr/lib/{libm,libnsl,libpthread,libresolv}.a /usr/lib/static/
 	mv -v /usr/lib/{librpcsvc,librt,libutil}.a /usr/lib/static/
 
+	rm -vf /lib/*_g.a
+
 	# Locales
 	-mkdir -pv /usr/lib/locale
 	# This would install all locales that are supported, but we do only
@@ -306,7 +309,7 @@ ifeq "$(STAGE)" "base"
 	cp -v --remove-destination /usr/share/zoneinfo/GMT /etc/localtime
 
 	# Configuration
-	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/{ld.so.conf,nsswitch.conf} /etc
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/{ld.so.conf,nsswitch.conf} /etc
 
 	if [ -h /bin/pwd ]; then rm -f /bin/pwd; fi
 endif

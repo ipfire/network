@@ -48,7 +48,7 @@ case "${action}" in
 	post-down)
 		;;
 
-	config)
+	add)
 		while [ $# -gt 0 ]; do
 			case "$1" in
 				--hostname=*)
@@ -67,7 +67,14 @@ HOSTNAME="${HOSTNAME}"
 EOF
 		[ "$?" = "0" ] && exit ${EXIT_OK} || exit ${EXIT_ERROR}
 		;;
-	
+
+	rem)
+		;;
+
+	discover)
+		exit ${EXIT_ERROR}
+		;;
+
 	*)
 		echo "Usage: ${0} {config|pre-up|post-up|pre-down|post-down|status} [interface]"
 		exit ${EXIT_ERROR}

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Extract python eggs
+
+EGG=${1}
+
+if [ -z "${EGG}" ] || [ ! -e "${EGG}" ]; then
+	echo "$0: No egg given or file does not exist." >&2
+	exit 1
+fi
+
+cd $(dirname ${EGG})
+
+unzip -o ${EGG} || exit 1
+
+rm -rf EGG-INFO #${EGG}

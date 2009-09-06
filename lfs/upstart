@@ -93,7 +93,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make install
 
 	# These binaries are for the compatiblity mode, so we don´t need them
-	rm -vf /sbin/halt
+	rm -vf /sbin/poweroff
 	rm -vf /sbin/restart
 	rm -vf /sbin/runlevel
 	rm -vf /sbin/shutdown
@@ -104,6 +104,10 @@ $(OBJECT): $(objects)
 	rm -vf /etc/init/rc-sysinit.conf
 	rm -vf /etc/init/rc.conf
 	rm -vf /etc/init/rcS.conf
+
+	# Make shutdown/reboot comfortable.
+	-mkdir -pv /etc/profile.d
+	cp -vf $(DIR_SOURCE)/profile.d/upstart.sh /etc/profile.d
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

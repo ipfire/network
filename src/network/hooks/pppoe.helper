@@ -18,8 +18,15 @@ done
 
 zone=${DEVICE}
 
+DIR=${RED_RUN}/${LINKNAME}
+
 case "${action}" in
 	ip-up)
+		mkdir -p ${DIR} 2>/dev/null
+
+		echo "${IPREMOTE}" > ${DIR}/remote-ip-address
+		echo "${IPLOCAL}"  > ${DIR}/local-ip-address
+
 		# Update firewall with new IP address(es)
 
 		# Prepare main routing table
@@ -29,18 +36,20 @@ case "${action}" in
 		ip route add table ${zone} default via ${IPREMOTE} dev ${IFNAME}
 
 		if [ "${DEFAULTROUTE}" = "1" ]; then
-			: # Set default route
-		fi
+			ln -sf remote-ip-address ${DIR}/gateway
+			[ -n "${WEIGHT}" ] && \
+				echo "${WEIGHT}" > ${DIR}/weight
 
-		ip route flush cache
+			red_defaultroute_update
+		fi
 
 		if [ "${PEERDNS}" = "1" ]; then
-			: # $DNS1 --> pdns server
+			echo "${DNS1}" > ${DIR}/dns
+			if [ -n "${DNS2}" ] && [ "${DNS1}" != "${DNS2}" ]; then
+				echo "${DNS2}" > ${DIR}/dns
+			fi
+			red_dns_update
 		fi
-
-		connection --up --zone=${zone} --name=${NAME} \
-			--iplocal=${IPLOCAL} --ipremote=${IPREMOTE} --dns="${DNS1} ${DNS2}" \
-			--weight=${WEIGHT} --pid=${PPPD_PID}
 		;;
 
 	ip-down)
@@ -58,8 +67,6 @@ case "${action}" in
 
 		# Save statistics
 		ppp_stat "${NAME}" "${CONNECT_TIME}" "${BYTES_RCVD}" "${BYTES_SENT}"
-
-		connection --down --zone=${zone}
 		;;
 esac
 

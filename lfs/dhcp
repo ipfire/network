@@ -104,6 +104,6 @@ $(OBJECT): $(objects)
 	mv -v /usr/sbin/dhclient /sbin
 	rm -vf /etc/dhclient.conf
 	-mkdir -pv /var/lib/dhclient
-	install -v -m 755 $(DIR_CONFIG)/$(PKG_NAME)/dhclient-script /sbin/dhclient-script
+	install -v -m 755 $(DIR_SOURCE)/$(PKG_NAME)/dhclient-script /sbin/dhclient-script
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = urlgrabber
 PKG_VER    = 3.1.0
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,23 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       = python
+
+URL        = http://urlgrabber.baseurl.org/
+LICENSE    = LGPLv2+
+SHORT_DESC = A high-level cross-protocol url-grabber.
+
+define LONG_DESC
+	A high-level cross-protocol url-grabber for python supporting HTTP, \
+	FTP and file locations.  Features include keepalive, byte ranges, \
+	throttling, authentication, proxies and more.
+endef
 
 ###############################################################################
 # Top-level Rules

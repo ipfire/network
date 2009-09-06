@@ -95,7 +95,7 @@ $(OBJECT): $(objects)
 	rm -vf /usr/lib/libsasl2.la /usr/lib/sasl2/*.la
 
 	install -v -m700 -d /var/lib/sasl /var/run/saslauthd
-	cp -vf $(DIR_CONFIG)/cyrus-sasl/smtpd.conf /usr/lib/sasl2/
+	cp -vf $(DIR_SOURCE)/cyrus-sasl/smtpd.conf /usr/lib/sasl2/
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

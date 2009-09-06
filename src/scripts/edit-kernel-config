@@ -2,10 +2,10 @@
 
 cd /usr/src/linux*
 
-cp -f /usr/src/config/kernel/kernel.config .config
+cp -f /usr/src/src/kernel/kernel.config .config
 
 make menuconfig
 
 if [ "$?" -eq "0" ]; then
-	cp -f .config /usr/src/config/kernel/kernel.config
+	cp -f .config /usr/src/src/kernel/kernel.config
 fi

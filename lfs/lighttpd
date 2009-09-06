@@ -95,7 +95,7 @@ $(OBJECT): $(objects)
 	
 	rm -vf /usr/lib/lighttpd/*.la
 	
-	cp -vf $(DIR_CONF)/$(PKG_NAME)/$(PKG_NAME).conf \
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/$(PKG_NAME).conf \
 		/etc/$(PKG_NAME).conf
 	-mkdir -p /var/log/$(PKG_NAME)
 	touch /var/log/$(PKG_NAME)/{access,error}.log

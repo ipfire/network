@@ -12,8 +12,7 @@
 #
 ########################################################################
 
-. /etc/init/functions
-. /lib/network/functions
+. /lib/network/hook-header
 
 HOOK_NAME=ipv4-static-route
 HOOK_TYPE=zone
@@ -72,32 +71,8 @@ function check_config() {
 	fi
 }
 
-# First, parse the command line
-
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		--zone=*)
-			zone=${1#--zone=}
-			;;
-		--config=*)
-			. ${1#--config=}
-			check_config
-			;;
-		-*)
-			log_failure_msg "Unrecognized option: ${1}"
-			exit ${EXIT_ERROR}
-			;;
-		*)
-			action=${1}
-			shift
-			break
-			;;
-	esac
-	shift
-done
-
 case "${action}" in
-	config)
+	add)
 		while [ $# -gt 0 ]; do
 			case "${1}" in
 				--ip=*)
@@ -150,6 +125,11 @@ EOF
 		;;
 	
 	post-down)
+		;;
+	
+	discover)
+
+		exit ${EXIT_ERROR}
 		;;
 	
 	*)

@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = reiser4progs
 PKG_VER    = 1.0.7
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,22 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Filesystems
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = http://www.kernel.org/pub/linux/utils/fs/reiser4/reiser4progs/
+LICENSE    = GPL
+SHORT_DESC = Administration utilities for the Reiser4 filesystem.
+
+define LONG_DESC
+	The filesystem utilities for the reiser4 filesystem, including: \
+	fsck.reiser4, measurefs.reiser4, mkfs.reiser4 and resizefs.reiser4.
+endef
 
 ###############################################################################
 # Top-level Rules

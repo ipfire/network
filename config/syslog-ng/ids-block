@@ -28,24 +28,35 @@ from IPy import IP
 #os.system('modprobe ipt_recent ip_list_tot=1000')
 
 def main():
-	for data in sys.stdin.readlines():
+	while 1:
+		data = sys.stdin.readline()
+		# need to extract the ip adress from the whole log line to get
+		# this working as expected,IPy just only returns a valid address
+		if not data: break
 		try:
-			ip = IP(sys.data)
+			ip = IP(data)
+		except AttributeError:
+			#f = open("/tmp/testfile","w")
+			#f.write("Wrong value given")
+			#f.close()
+			sys.stderr.write("Wrong attribute given.\n")
+			break
 		except KeyError:
-			#sys.stderr.write("Not enough parameters given.\n")
-			#sys.exit(1)
-			next()
+			sys.stderr.write("Not enough parameters given.\n")
+			break
 		except ValueError:
 			sys.stderr.write("Given value is not a valid ip address.\n")
-			sys.exit(1)
-
+			#f = open("/tmp/testfile","w")
+			#f.write("This does not match - %s\n" % data )
+			#f.close()
+			break
 		try:
+			#f = open("/tmp/testfile", "w")
 			f = open("/proc/net/ipt_recent/BLOCK", "w")
 			f.write("%s\n" % ip)
 			f.close()
 		except:
 			sys.stderr.write("Cannot write ip \"%s\" to file.\n" % ip)
-			sys.exit(1)
-
+			break
 main()
 sys.exit(0)

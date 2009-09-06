@@ -209,6 +209,7 @@ ipfire_build() {
 	#
 	ipfire_make stage3
 	ipfire_make xz
+	ipfire_make unzip
 
 	ipfire_make linux
 
@@ -226,6 +227,7 @@ ipfire_build() {
 	ipfire_make python
 	ipfire_make python-cracklib
 	ipfire_make python-dbus
+	ipfire_make python-setuptools
 	ipfire_make python-urlgrabber
 	ipfire_make python-IPy
 	ipfire_make libxml2
@@ -345,7 +347,6 @@ ipfire_build() {
 	### Building some important tools
 	#
 	ipfire_make ulogd2
-	ipfire_make fcron
 	ipfire_make which
 	ipfire_make screen
 	ipfire_make rrdtool
@@ -367,6 +368,8 @@ ipfire_build() {
 	#ipfire_make mISDN
 	ipfire_make wireless-tools
 
+	ipfire_make python-werkzeug
+	ipfire_make python-flup
 	ipfire_make pyfire
 	ipfire_make network
 	ipfire_make firewall
@@ -400,6 +403,7 @@ misc_build() {
 	ipfire_make tcpdump
 	ipfire_make htop
 	ipfire_make nano
+	ipfire_make joe
 
 	### Servers
 	#
@@ -420,24 +424,21 @@ misc_build() {
 	#ipfire_make ntfs-3g
 	#
 	## Net tools
-	#ipfire_make bwm-ng
+	ipfire_make net-snmp
+	ipfire_make bwm-ng
 
 	### These will become addons as usual but will be integrated later
 	#
 	#ipfire_make snort
 	#ipfire_make oinkmaster
-	#ipfire_make cups
-	#ipfire_make ghostscript
-	#ipfire_make foomatic
-	#ipfire_make hplip
+	ipfire_make ghostscript
+	ipfire_make cups
+	ipfire_make sane
+	ipfire_make hplip
 	#ipfire_make postfix
 	#ipfire_make fetchmail
-	#ipfire_make cyrus-imapd
 	#ipfire_make clamav
 	#ipfire_make alsa
-	#ipfire_make mpfire
-	#ipfire_make guardian
-	#ipfire_make ipfireseeder
 	ipfire_make portmap
 	ipfire_make nfs-utils
 

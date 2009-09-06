@@ -21,52 +21,6 @@ function port_name() {
 	echo "${zone}v${ID}"
 }
 
-function do_up() {
-	if ! port_is_up $(port_name); then
-		grep -q ^8021q /proc/modules || modprobe 8021q
-		MESSAGE="Adding VLAN ${ID} to port ${port}..."
-		if ! device_is_up $(devicify ${port}); then
-			ip link set $(devicify ${port}) up
-		fi
-		vconfig add $(devicify ${port}) ${ID} >/dev/null
-		evaluate_retval
-		ebtables -t broute -A BROUTING -p 802_1Q --vlan-id=${ID} -j DROP
-	fi
-}
-
-function do_down() {
-	if port_is_up $(port_name); then
-		MESSAGE="Removing VLAN ${ID} from port ${port}..."
-		vconfig rem $(get_device_by_mac_and_vid ${port} ${ID}) >/dev/null
-		evaluate_retval
-		ebtables -t broute -D BROUTING -p 802_1Q --vlan-id=${ID} -j DROP
-	fi
-}
-
-function do_attach() {
-	if ! zone_has_device_attached ${zone} $(port_name); then
-		device_rename $(get_device_by_mac_and_vid ${port} ${ID}) $(port_name)
-		zone_add_port ${zone} $(get_device ${port} ${ID})
-	fi
-}
-
-function do_detach() {
-	if zone_has_device_attached ${zone} $(port_name); then
-		zone_del_port ${zone} $(get_device_by_mac_and_vid ${port} ${ID})
-	fi
-}
-
-function do_status() {
-	device_is_up $(port_name)
-	RET=$?
-	if [ $RET -eq 0 ]; then
-		log_success_msg "Port $(port_name) is up"
-	else
-		log_failure_msg "Port $(port_name) is down"
-	fi
-	return $RET
-}
-
 case "${action}" in
 	help)
 		;;
@@ -76,52 +30,85 @@ case "${action}" in
 		echo "HOOK_TYPE=${HOOK_TYPE}"
 		;;
 
-	up)
-		check_config port ID
-		do_up
+	pre-up)
+		# Load the kernel module
+		grep -q ^8021q /proc/modules || modprobe 8021q
+
+		if ! port_is_up $(port_name); then
+			MESSAGE="Adding VLAN ${ID} to port ${MAC}..."
+
+			if ! device_is_up $(devicify ${MAC}); then
+				ip link set $(devicify ${MAC}) up
+			fi
+			vconfig add $(devicify ${MAC}) ${ID} >/dev/null
+			evaluate_retval
+
+			device_rename $(get_device_by_mac_and_vid ${MAC} ${ID}) $(port_name)
+			ip link set $(port_name) up
+
+			ebtables -t broute -A BROUTING -p 802_1Q --vlan-id=${ID} -j DROP
+		fi
 		;;
 
-	down)
-		check_config port ID
-		do_down
+	post-up)
+		if ! zone_has_device_attached ${zone} $(port_name); then
+			zone_add_port ${zone} $(get_device ${MAC} ${ID})
+		fi
+		;;
+	
+	pre-down)
+		if zone_has_device_attached ${zone} $(port_name); then
+			zone_del_port ${zone} $(get_device_by_mac_and_vid ${MAC} ${ID})
+		fi
+		;;
+		
+	post-down)
+		if port_is_up $(port_name); then
+			MESSAGE="Removing VLAN ${ID} from port ${MAC}..."
+
+			vconfig rem $(get_device_by_mac_and_vid ${MAC} ${ID}) >/dev/null
+			evaluate_retval
+
+			ebtables -t broute -D BROUTING -p 802_1Q --vlan-id=${ID} -j DROP
+		fi
 		;;
 
 	add)
-		ID=$1
-		check_config port zone ID
-		cat <<EOF > ${CONFIG_PORTS}/${port}/vlan-${ID}
-HOOK=vlan
-ID=${ID}
+		MAC=$(macify ${1})
+		ID=${2} # Must be integer between 1 and 4096
+
+		UUID=$(uuid)
+		cat <<EOF > ${CONFIG_UUIDS}/${UUID}
+HOOK="${HOOK_NAME}"
+ID="${ID}"
+MAC="${MAC}"
 EOF
-		ln -sf ${CONFIG_PORTS}/${port}/vlan-${ID} \
-			${CONFIG_ZONES}/${zone}/port-${port}-vlan-${ID}
+		ln -sf ${CONFIG_UUIDS}/${UUID} \
+			${CONFIG_ZONES}/${zone}/${HOOK_NAME}-${UUID}
+
+		log_success_msg "Configuration successfully saved!"
+		echo    "      Device      : $(devicify ${MAC})"
+		echo    "      MAC address : ${MAC}"
+		echo    "      VLAN tag    : ${ID}"
 		;;
 
-	remove)
-		check_config port zone ID
-		do_detach
-		do_down
-		rm -f \
-			${CONFIG_PORTS}/${port}/vlan-${ID} \
-			${CONFIG_ZONES}/${zone}/port-${port}-vlan-${ID}
-		;;
-
-	attach)
-		check_config port zone ID
-		do_up
-		do_attach
-		;;
-
-	detach)
-		check_config port zone ID
-		do_detach
-		do_down
+	rem)
+		# XXX to be done
 		;;
 
 	status)
-		check_config zone ID
-		do_status
-		exit ${?}
+		echo -e "#  ${CLR_BOLD_CYN}VLAN port $(port_name)${NORMAL}"
+		echo -n "#    State: "
+		if device_is_up $(port_name); then
+			echo -e "${CLR_BOLD_GRN}up${NORMAL}"
+			RET=${EXIT_OK}
+		else
+			echo -e "${CLR_BOLD_RED}down${NORMAL}"
+			RET=${EXIT_ERROR}
+		fi
+		echo "#    ID   : ${ID}"
+		echo "#"
+		exit ${RET}
 		;;
 
 	*)

@@ -23,6 +23,8 @@ BOLD="\\033[1;39m"
 NORMAL="\\033[0;39m"
 ERROR="\\033[1;31m"
 
+. /etc/init/functions
+
 if [ -e "/lib/network/functions" ]; then
 	. /lib/network/functions
 elif [ -e "lib/functions" ]; then
@@ -220,60 +222,80 @@ function cmd() {
 	fi
 }
 
+function size() {
+	local size=${1}
+
+	local units
+	units[0]="Bytes "
+	units[1]="kBytes"
+	units[2]="MBytes"
+	units[3]="GBytes"
+	units[4]="TBytes"
+	
+	local count=${#units}
+	while [ ${count} -gt 0 ]; do
+		if [ ${size} -lt 1024 ]; then
+			break
+		fi
+		size=$((${size} / 1024))
+		count=$((${count} - 1))
+	done
+	printf "%4d %s\n" "${size}" "${units[$((${#units} - ${count}))]}"
+}
+
 function port_show() {
-	local port
+	local port=$(devicify $1)
 
-	port=$(devicify $1)
+	echo    "##################################################"
+	echo    "#"
+	echo -e "# Port ${CLR_BOLD_BLU}${port}${NORMAL}"
+	echo    "# ------------------------------------------------"
 
-	if ! port_exists ${port}; then
-		error "Port ${BOLD}${port}${NORMAL} does not exist."
-		return 1
+	echo -n "# State: "
+	if device_is_up ${port}; then
+		echo -e "${CLR_BOLD_GRN}up${NORMAL}"
+	else
+		echo -e "${CLR_BOLD_RED}down${NORMAL}"
 	fi
 
-	ip -s link show $port
+	echo -n "# Link : "
+	if device_has_carrier ${port}; then
+		echo -e "${CLR_BOLD_GRN}yes${NORMAL}"
+	else
+		echo -e "${CLR_BOLD_RED}no${NORMAL}"
+	fi
+
+	if device_is_up ${port}; then
+		echo "#"
+		echo "# Statistics:"
+		echo -n "#   RX: $(size $(</sys/class/net/${port}/statistics/rx_bytes))"
+		echo    " ($(</sys/class/net/${port}/statistics/rx_packets) packets)"
+		echo -n "#   TX: $(size $(</sys/class/net/${port}/statistics/tx_bytes))"
+		echo    " ($(</sys/class/net/${port}/statistics/tx_packets) packets)"
+	fi
+
+	echo "#"
 }
 
 function port_add() {
-	local port=${2}
 	local zone=${1}
-	local hook=${3}
-	shift 3
-	
-	if [ -n "${port}" ]; then
-		port=$(macify ${port})
-	else
-		error "No port given on command line."
-		return 1
-	fi
-
-	if [ -z "${hook}" ]; then
-		hook="ethernet"
-	fi
+	local hook=${2}
+	shift 2
 
 	decho "Function: port_add"
-	decho "  Zone: ${zone} Port: ${port} Hook: ${hook} $@"
+	decho "  Zone: ${zone} Hook: ${hook} $@"
 
 	if ! zone_exists ${zone}; then
 		error "Zone ${BOLD}${zone}${NORMAL} does not exist."
 		return 1
 	fi
 
-	if [ -z "$port" ]; then
-		error "Port ${BOLD}${port}${NORMAL} could not be found."
-		return 1
-	fi
-
-	if ! device_exists ${port}; then
-		error "Port ${BOLD}${port}${NORMAL} does not exist."
-		return 1
-	fi
-
 	mkdir -p ${CONFIG_PORTS}/${port} 2>/dev/null
 	if hook_exists ${hook}; then
-		/lib/network/hooks/${hook} --port=${port} --zone=${zone} add $@
+		/lib/network/hooks/${hook} --zone=${zone} add $@
 		RET=$?
 		if [ "$RET" -eq "0" ]; then
-			vecho "Successfully added port ${BOLD}${port}${NORMAL} (${hook} $@) to ${BOLD}${zone}${NORMAL}."
+			vecho "Successfully added port to ${BOLD}${zone}${NORMAL}."
 		else
 			error "Hook ${BOLD}${hook}${NORMAL} exited with $RET."
 			return $RET
@@ -314,6 +336,14 @@ function port_del() {
 	fi
 }
 
+function zone_discover() {
+	local zone=${1}
+
+	for hook in $(hook_list zone); do
+		hook_run ${hook} --zone=${zone} discover
+	done
+}
+
 function zone_show() {
 	local zone
 	zone=$1
@@ -331,30 +361,26 @@ function zone_show() {
 	fi
 
 	echo    "##################################################"
-	echo -e "# ${ERROR}ZONE INFO - ${zone}${NORMAL}"
-	echo    "##################################################"
+	echo    "#"
+	echo -e "# Zone ${CLR_BOLD_BLU}${zone}${NORMAL}"
+	echo    "# ------------------------------------------------"
 
 	# Up or down?
-	if device_is_up ${zone}; then
-		echo -e "# Device is ${ERROR}up${NORMAL}."
+	if zone_is_up ${zone}; then
+		echo -e "# Status: ${CLR_BOLD_GRN}up${NORMAL}"
 	else
-		echo -e "# Device is ${ERROR}down${NORMAL}."
+		echo -e "# Status: ${CLR_BOLD_RED}down${NORMAL}"
 	fi
 	echo "#"
 
 	# Ports
-	echo -e "# ${ERROR}Ports:${NORMAL}"
-	local config
-	local port
-	for config in ${CONFIG_ZONES}/${zone}/port-*; do
-		port=${config##*/}; port=${port#port-}; port=${port%%-*}
-		if ZONE=${zone} cmd /lib/network/port ${port} attach ${config} &>/dev/null; then
-			echo "#  ${config#port-} is up"
-		else
-			echo "#  ${config#port-} is down"
-		fi
-	done
-	echo "#"
+	echo -e "# ${CLR_BOLD_BLU}Ports:${NORMAL}"
+	hooks_run_ports status ${CONFIG_ZONES}/${zone} --zone=${zone}
+	
+	echo    "#"
+	echo -e "# ${CLR_BOLD_BLU}Zone configurations:${NORMAL}"
+	hooks_run_zones status ${CONFIG_ZONES}/${zone} --zone=${zone}
+	echo    "#"
 
 }
 
@@ -481,7 +507,7 @@ while [ "$#" -gt 0 ]; do
 					if [ -z "${zone}" ] || [ -z "${hook}" ]; then
 						usage config
 					fi
-					hook_run ${hook} --zone=${zone} config $@
+					hook_run ${hook} --zone=${zone} add $@
 					_exit --reload $?
 					;;
 				del)
@@ -491,6 +517,10 @@ while [ "$#" -gt 0 ]; do
 				delport)
 					port_del $@
 					_exit --reload $?
+					;;
+				discover)
+					zone_discover $@
+					_exit $?
 					;;
 				help)
 					usage zone 0
@@ -506,6 +536,18 @@ while [ "$#" -gt 0 ]; do
 				start|stop)
 					zone=$1; shift
 					zone_run --zone=${zone} ${arg} $@
+					;;
+			esac
+			;;
+		show)
+			case "${1}" in
+				ports)
+					for port in /sys/class/net/*; do
+						port=${port##*/}
+						device_is_real ${port} || continue
+						port_show ${port}
+					done
+					_exit 0
 					;;
 			esac
 			;;
