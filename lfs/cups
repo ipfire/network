@@ -35,12 +35,12 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
-GROUP      = Applications/Internet
+GROUP      = Applications/Printing
 CORE       = no
 EXTRA      = yes
 DEBUG      = no
 BUILD_DEPS = 
-DEPS       = ghostscript cyrus-sasl
+DEPS       = cyrus-sasl ghostscript
 
 URL        = http://cups.org/software.php
 LICENSE    = GPL2+
@@ -83,18 +83,14 @@ $(OBJECT): $(objects)
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
+			--sysconfdir=/etc \
 			--disable-static \
-			--disable-nls \
-			--sysconfdir=/etc
+			--disable-nls
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
-	cd $(DIR_APP) && ln -v -sf /usr/bin/smbspool \
-						/usr/lib/cups/backend/smb
-	cp -fv $(DIR_SRC)/cups-1.4.0/conf/cupsd.conf /etc/cups/
-
-#	rm -vf /usr/lib/libcurl.la
+	cp -fv $(DIR_SRC)/$(THISAPP)/conf/cupsd.conf /etc/cups/
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
