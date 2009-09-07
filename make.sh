@@ -309,6 +309,7 @@ ipfire_build() {
 	ipfire_make libgssglue
 	ipfire_make librpcsecgss
 	ipfire_make gperf
+	ipfire_make freeradius
 	
 	### Building vpn stuff
 	#
