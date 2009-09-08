@@ -98,5 +98,7 @@ $(OBJECT): $(objects)
 	# PAM
 	cp -vf $(DIR_CONFIG)/pam.d/$(PKG_NAME) /etc/pam.d/
 
+	# Logrotate
+	cp -vf $(DIR_SRC)/logrotate/$(PKG_NAME) /etc/logrotate.d/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
