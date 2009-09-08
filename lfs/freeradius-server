@@ -24,7 +24,7 @@
 
 include Config
 
-PKG_NAME   = freeradius
+PKG_NAME   = freeradius-server
 PKG_VER    = 2.1.6
 PKG_REL    = 0
 
@@ -53,8 +53,6 @@ define LONG_DESC
 	the RADIUS protocol, as defined in RFC 2865. It allows \
 	Network Access Servers to perform authentication for dial-up users.
 endef
-
-CFLAGS     = LIBTOOL="libtool --tag=CC"
 
 ###############################################################################
 # Top-level Rules
@@ -86,17 +84,18 @@ $(OBJECT): $(objects)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
-				--with-system-libtool \
-				--libdir=/usr/lib/freeradius \ 
-				--with-gnu-ld \ 
-				--prefix=/usr \
-				--with-threads \
-				--with-thread-pool \ 
-				--disable-ltdl-install
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+                        $(CONFIGURE_ARCH) \
+			--with-gnu-ld \
+			--with-system-libtool \
+			--libdir=/usr/lib/freeradius \ 
+			--prefix=/usr \
+			--with-threads \
+			--with-thread-pool \ 
+			--disable-ltdl-install 
+	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC"
 	cd $(DIR_APP) && make install
 
+	# PAM
 	cp -vf $(DIR_CONFIG)/pam.d/$(PKG_NAME) /etc/pam.d/
 
 	@rm -rf $(DIR_APP)
