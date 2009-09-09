@@ -36,8 +36,8 @@ OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
 GROUP      = System/Daemons
-CORE       = no
-EXTRA      = yes
+CORE       = yes
+EXTRA      = no
 DEBUG      = no
 BUILD_DEPS = 
 DEPS       =
@@ -95,10 +95,13 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC"
 	cd $(DIR_APP) && make install
 
+	# Removing all static libraries
+	rm -rf /usr/lib/freeradius/*.la
+
 	# PAM
 	cp -vf $(DIR_CONFIG)/pam.d/$(PKG_NAME) /etc/pam.d/
 
 	# Logrotate
-	cp -vf $(DIR_SRC)/logrotate/$(PKG_NAME) /etc/logrotate.d/
+	cp -vf $(DIR_SRC)/src/logrotate/$(PKG_NAME) /etc/logrotate.d/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
