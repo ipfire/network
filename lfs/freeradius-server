@@ -93,7 +93,7 @@ $(OBJECT): $(objects)
 			--with-thread-pool \ 
 			--disable-ltdl-install 
 	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC"
-	cd $(DIR_APP) && make install exec_prefix=/usr
+	cd $(DIR_APP) && make install
 
 	# Removing all static libraries
 	rm -rf /usr/lib/freeradius/*.la
@@ -103,5 +103,6 @@ $(OBJECT): $(objects)
 
 	# Logrotate
 	cp -vf $(DIR_SRC)/src/logrotate/$(PKG_NAME) /etc/logrotate.d/
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
