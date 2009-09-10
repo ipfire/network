@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,44 +24,42 @@
 
 include Config
 
-PKG_NAME   = logrotate
-PKG_VER    = 3.7.7
+PKG_NAME   = freeradius-server
+PKG_VER    = 2.1.6
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
+DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
-GROUP      = System/Base
+GROUP      = System/Daemons
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-BUILD_DEPS =
+BUILD_DEPS = 
 DEPS       =
 
-URL        = https://fedorahosted.org/releases/l/o/logrotate/
-LICENSE    = GPL+
-SHORT_DESC = Rotates, compresses, removes and mails system log files.
+URL        = http://www.freeradius.org/
+LICENSE    = GPLv2+ and LGPLv2+
+SHORT_DESC = High-performance and highly configurable free RADIUS server.
 
 define LONG_DESC
-	The logrotate utility is designed to simplify the administration of \
-	log files on a system which generates a lot of log files. Logrotate \
-	allows for the automatic rotation compression, removal and mailing of \
-	log files.  Logrotate can be set to handle a log file daily, weekly, \
-	monthly or when the log file gets to a certain size.
+	The FreeRADIUS Server Project is a high performance and highly \
+	configurable GPL'd free RADIUS server. \
+	FreeRADIUS is an Internet authentication daemon, which implements \
+	the RADIUS protocol, as defined in RFC 2865. It allows \
+	Network Access Servers to perform authentication for dial-up users.
 endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE) \
-	$(THISAPP)-toolarge.patch \
-	$(THISAPP)-curdir.patch
-	
+objects = $(DL_FILE)
+
 download: $(objects)
 
 info:
@@ -84,18 +82,26 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+	cd $(DIR_APP) && \
+		./configure \
+                        $(CONFIGURE_ARCH) \
+			--with-gnu-ld \
+			--with-system-libtool \
+			--libdir=/usr/lib/freeradius \ 
+			--prefix=/usr \
+			--with-threads \
+			--with-thread-pool \ 
+			--disable-ltdl-install 
+	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC"
+	cd $(DIR_APP) && make install exec_prefix=/usr
 
-	# This patch fixes a problem with too large files.
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-toolarge.patch
-	
-	# This patch fixes a prblem with the current directory.
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-curdir.patch
+	# Removing all static libraries
+	rm -rf /usr/lib/freeradius/*.la
 
-	cd $(DIR_APP) && make RPM_OPT_FLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install
-	touch /var/lib/logrotate.status
+	# PAM
+	cp -vf $(DIR_CONFIG)/pam.d/$(PKG_NAME) /etc/pam.d/
 
-	# Creating directory for config files
-	mkdir /etc/logrotate.d
+	# Logrotate
+	cp -vf $(DIR_SRC)/src/logrotate/$(PKG_NAME) /etc/logrotate.d/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
