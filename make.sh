@@ -441,7 +441,7 @@ misc_build() {
 	#ipfire_make alsa
 	ipfire_make portmap
 	ipfire_make nfs-utils
-	ipfire_make freeradius-server
+	ipfire_make freeradius
 
 	### Debugging
 	#
