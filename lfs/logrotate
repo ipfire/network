@@ -94,5 +94,8 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make RPM_OPT_FLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	touch /var/lib/logrotate.status
+
+	# Creating directory for config files
+	mkdir /etc/logrotate.d
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,34 +24,39 @@
 
 include Config
 
-PKG_NAME   = sqlite
-PKG_VER    = 3.5.2
+PKG_NAME   = freeradius-server
+PKG_VER    = 2.1.6
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
+DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
-MAINTAINER = 
-GROUP	   = System/Databases
-LICENSE    = PublicDomain
+MAINTAINER =
+GROUP      = System/Daemons
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-BUILD_DEPS =
+BUILD_DEPS = 
 DEPS       =
 
-URL        = http://www.sqlite.org/download.html
-SHORT_DESC = A small an versative Database, that uses simple text files.
+URL        = http://www.freeradius.org/
+LICENSE    = GPLv2+ and LGPLv2+
+SHORT_DESC = High-performance and highly configurable free RADIUS server.
 
 define LONG_DESC
-	SQLite is a in-process library that implements a self-contained, \
-	serverless, zero-configuration, transactional SQL database engine. \
-	The code for SQLite is in the public domain and is thus free for \
-	use for any purpose, commercial or private. SQLite is currently \
-	found in more applications than we can count, including several \
-	high-profile projects.
+	The FreeRADIUS Server Project is a high performance and highly \
+	configurable GPL'd free RADIUS server. \
+	FreeRADIUS is an Internet authentication daemon, which implements \
+	the RADIUS protocol, as defined in RFC 2865. It allows \
+	Network Access Servers to perform authentication for dial-up users.
+endef
+
+define QUALITY_AGENT_WHITELIST_RPATH
+	/usr/bin/ra* \
+	/usr/lib/freeradius/*
 endef
 
 ###############################################################################
@@ -82,15 +87,35 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	-mkdir $(DIR_SRC)/sqlite-build
-	cd $(DIR_SRC)/sqlite-build && \
-		$(DIR_APP)/configure \
+	cd $(DIR_APP) && \
+		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
-			--disable-tcl \
-			--disable-static
-	cd $(DIR_SRC)/sqlite-build && make $(PARALLELISMFLAGS)
-	cd $(DIR_SRC)/sqlite-build && make install
-	rm -vf /usr/lib/libsqlite3.la
-	@rm -rf $(DIR_APP) $(DIR_SRC)/sqlite-build
+			--sysconfdir=/etc \
+			--libdir=/usr/lib/freeradius \
+			--localstatedir=/var \
+			--with-system-libtool \
+			--with-threads \
+			--with-thread-pool \
+			--disable-ltdl-install \
+			--with-gnu-ld \
+			--without-rlm_eap_ikev2 \
+			--without-rlm_sql_iodbc \
+			--without-rlm_sql_firebird \
+			--without-rlm_sql_db2 \
+			--without-rlm_sql_oracle
+
+	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC" #$(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install
+
+	# Removing all static libraries and unneeded/broken stuff
+	rm -rf /usr/lib/freeradius/*.la /usr/lib/freeradius/rlm_perl-$(PKG_VER).so
+
+	# PAM
+	cp -vf $(DIR_CONFIG)/pam.d/$(PKG_NAME) /etc/pam.d/
+
+	# Logrotate
+	cp -vf $(DIR_SRC)/src/logrotate/$(PKG_NAME) /etc/logrotate.d/
+
+	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

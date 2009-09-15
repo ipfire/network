@@ -91,7 +91,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make install
 
 	# Remove sysvinit scripts
-	rm -vf /etc/init.d/cups /etc/rc*.d
+	rm -vfr /etc/init.d/cups /etc/rc*.d
 
 	cp -fv $(DIR_SRC)/$(THISAPP)/conf/cupsd.conf /etc/cups/
 
