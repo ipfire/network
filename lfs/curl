@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = curl
-PKG_VER    = 7.19.5
+PKG_VER    = 7.19.6
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -91,6 +91,7 @@ $(OBJECT): $(objects)
 			--with-ca-bundle=/etc/pki/tls/certs/ca-bundle.crt \
 			--with-libidn \
 			--with-libssh2 \
+			--with-nss \
 			--enable-ldaps \
 			--enable-ipv6
 
