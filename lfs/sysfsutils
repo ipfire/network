@@ -33,9 +33,22 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = http://sourceforge.net/projects/linux-diag/
+LICENSE    = GPLv2
+SHORT_DESC = Utilities for interfacing with sysfs.
+
+define LONG_DESC
+	This package's purpose is to provide a set of utilities for interfacing \
+	with sysfs.
+endef
 
 ###############################################################################
 # Top-level Rules
