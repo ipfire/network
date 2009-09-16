@@ -55,15 +55,15 @@ int termcmp(struct termios *a, struct termios *b) {
 	    cfgetispeed(a) != cfgetispeed(b) || cfgetospeed(a) != cfgetospeed(b))
 		return 1;
 	return memcmp(a->c_cc, b->c_cc, sizeof(a->c_cc));
-}       
+}
 
 int get_serial_speed(int fd) {
 	struct termios mode;
-	
+
 	if (!tcgetattr(fd, &mode)) {
 		int i;
 		speed_t speed;
-		
+
 		speed = cfgetospeed(&mode);
 		for (i = 0; speed_map[i].value != 0; i++)
 			if (speed_map[i].speed == speed)
@@ -151,18 +151,18 @@ out:
 
 int emit_console_event(char *dev, int speed) {
 	char *args[] = { "initctl", "emit", "--no-wait", "serial-console-available", NULL, NULL, NULL };
-	
+
 	args[4] = dev;
 	if (speed)
 		asprintf(&args[5],"%d",speed);
 	execv("/sbin/initctl", args);
-	return 1;	
+	return 1;
 }
 
 int main(int argc, char **argv) {
 	char *device;
 	int speed;
-	
+
 	if (argc < 2) {
 		printf("usage: console_check <device>\n");
 		exit(1);

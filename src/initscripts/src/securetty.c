@@ -19,12 +19,12 @@ int open_and_lock_securetty() {
         int fd;
         struct flock lock;
         struct sigaction act, oldact;
-        
+
         lock.l_type = F_WRLCK;
         lock.l_whence = SEEK_SET;
         lock.l_start = 0;
         lock.l_len = 0;
-      
+
         fd = open("/etc/securetty", O_RDWR);
         if (fd == -1) {
                 syslog(LOG_ERR, "Couldn't open /etc/securetty: %s",strerror(errno));
@@ -51,7 +51,7 @@ int rewrite_securetty(char *terminal) {
         int fd;
         char *buf, *pos;
         struct stat sbuf;
-        
+
         fd = open_and_lock_securetty();
         if (fd == -1)
                 return 1;
