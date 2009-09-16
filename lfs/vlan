@@ -33,9 +33,21 @@ DIR_APP    = $(DIR_SRC)/$(PKG_NAME)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Networking/Tools
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = http://www.candelatech.com/~greear/vlan.html
+LICENSE    = GPLv2+
+SHORT_DESC = Linux 802.1q VLAN configuration utility.
+
+define LONG_DESC
+	The vconfig program configures and adjusts 802.1q VLAN parameters.
+endef
 
 ###############################################################################
 # Top-level Rules
