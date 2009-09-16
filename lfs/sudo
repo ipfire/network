@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = sudo
 PKG_VER    = 1.7.2p1
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,29 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/System
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       = pam vim
+
+URL        = http://bridge.sourceforge.net/
+LICENSE    = BSD
+SHORT_DESC = Allows restricted root access for specified users.
+
+define LONG_DESC
+	Sudo (superuser do) allows a system administrator to give certain \
+	users (or groups of users) the ability to run some (or all) commands \
+	as root while logging all commands and arguments. Sudo operates on a \
+	per-command basis.  It is not a replacement for the shell.  Features \
+	include: the ability to restrict what commands a user may run on a \
+	per-host basis, copious logging of each command (providing a clear \
+	audit trail of who did what), a configurable timeout of the sudo \
+	command, and the ability to use the same configuration file (sudoers) \
+	on many different machines.
+endef
 
 ###############################################################################
 # Top-level Rules
