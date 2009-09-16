@@ -33,9 +33,23 @@ DIR_APP    = $(DIR_SRC)/$(PKG_NAME)-4.13
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/Publishing
 CORE       = no
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = http://www.gnu.org/software/texinfo/
+LICENSE    = GPLv3
+SHORT_DESC = Tools needed to create Texinfo format documentation files.
+
+define LONG_DESC
+	Texinfo is a documentation system that can produce both online \
+	information and printed output from a single source file. The GNU \
+	Project uses the Texinfo file format for most of its documentation.
+endef
 
 ###############################################################################
 # Top-level Rules
