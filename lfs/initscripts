@@ -78,6 +78,11 @@ $(objects):
 
 $(OBJECT): $(objects)
 	@$(PREBUILD)
+	cd $(DIR_APP)/src && make clean
+
+	cd $(DIR_APP)/src && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP)/src && make install
+
 	install -d -m 755 /etc/init
 	install -d -m 755 /etc/sysconfig
 
@@ -92,4 +97,5 @@ $(OBJECT): $(objects)
 
 	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/sysctl.conf /etc
 
+	cd $(DIR_APP)/src && make clean
 	@$(POSTBUILD)

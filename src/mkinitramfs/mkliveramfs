@@ -218,7 +218,7 @@ if [ "${type}" = "download" ]; then
 fi
 
 if [ "$type" = "download" ]; then
-	curloptions="${curloptions} --connect-timeout 30 --progress-bar --output ${thingtomount}"
+	curloptions="${curloptions} --connect-timeout 30 --output ${thingtomount}"
 	#curloptions="${curloptions} --write-out=\"Fetched %{url_effective} in %{time_total}s (%{speed_download} bytes/s).\""
 
 	vecho "Running donwload..."
