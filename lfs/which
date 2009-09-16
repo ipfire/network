@@ -33,10 +33,22 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/System
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       = readline
 
+URL        = http://www.xs4all.nl/~carlo17/which/
+LICENSE    = GPLv3
+SHORT_DESC = Displays where a particular program in your path is located.
+
+define LONG_DESC
+	The which command shows the full pathname of a specified program, if \
+	the specified program is in your PATH.
+endef
 ###############################################################################
 # Top-level Rules
 ###############################################################################
