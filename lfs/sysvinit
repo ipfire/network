@@ -33,9 +33,22 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Base
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = https://alioth.debian.org/projects/pkg-sysvinit/
+LICENSE    = GPLv2+
+SHORT_DESC = Programs which control basic system processes.
+
+define LONG_DESC
+	The sysvinit package contains a group of processes that control \
+	the very basic functions of your system.
+endef
 
 CFLAGS    += -D_GNU_SOURCE
 
