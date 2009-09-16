@@ -370,6 +370,7 @@ ipfire_build() {
 
 	ipfire_make python-werkzeug
 	ipfire_make python-flup
+	ipfire_make python-tornado
 	ipfire_make pyfire
 	ipfire_make network
 	ipfire_make firewall
