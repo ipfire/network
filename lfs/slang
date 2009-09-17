@@ -26,19 +26,32 @@ include Config
 
 PKG_NAME   = slang
 PKG_VER    = 2.1.4
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
 DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
-BUILD_DEPS =
-DEPS       = pcre
-
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       = pcre
+
+URL        = http://www.jedsoft.org/slang/
+LICENSE    = GPLv2+
+SHORT_DESC = Shared library for the S-Lang extension language.
+
+define LONG_DESC
+	S-Lang is an interpreted language and a programming library. \
+	The S-Lang language was designed so that it can be easily embedded \
+	into a program to provide the program with a powerful extension \
+	language.
+endef
 
 ###############################################################################
 # Top-level Rules

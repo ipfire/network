@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = linux
-PKG_VER    = 2.6.29.1
+PKG_VER    = 2.6.31
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -43,7 +43,7 @@ else
 endif
 EXTRA      = no
 DEBUG      = no
-BUILD_DEPS =
+BUILD_DEPS = xz
 DEPS       =
 
 URL        = http://www.kernel.org/
@@ -65,11 +65,10 @@ FULLVER= $(PKG_VER)$(LOCALVERSION)
 
 # Patches
 AUFS_PATCH     = aufs2-$(PKG_VER)-1.patch
-GRSEC_PATCH    = grsecurity-2.1.14-$(PKG_VER)-200903281534.patch
+GRSEC_PATCH    = grsecurity-2.1.14-$(PKG_VER)-200909121839.patch
 #OCF_PATCH      = ocf-linux-26-20080917.patch
 REISER4_PATCH  = reiser4-for-$(PKG_VER).patch
-ROUTES_PATCH   = routes-2.6.29-16.diff # Taken from http://www.ssi.bg/~ja/#routes
-SQUASHFS_PATCH = $(THISAPP)-squashfs3.4-1.patch
+ROUTES_PATCH   = routes-$(PKG_VER)-16.diff # Taken from http://www.ssi.bg/~ja/#routes
 
 ###############################################################################
 # Top-level Rules
@@ -130,7 +129,7 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(GRSEC_PATCH)
 	rm -f $(DIR_APP)/localversion-grsec
 
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disable-compat_vdso-1.patch
+	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disable-compat_vdso-1.patch
 	
 	cd $(DIR_APP) && sed -e "s/^HOSTCFLAGS.*=.*/& -fPIC/g" -i Makefile
 

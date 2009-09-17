@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = texinfo
 PKG_VER    = 4.13a
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,23 @@ DIR_APP    = $(DIR_SRC)/$(PKG_NAME)-4.13
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/Publishing
 CORE       = no
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = http://www.gnu.org/software/texinfo/
+LICENSE    = GPLv3
+SHORT_DESC = Tools needed to create Texinfo format documentation files.
+
+define LONG_DESC
+	Texinfo is a documentation system that can produce both online \
+	information and printed output from a single source file. The GNU \
+	Project uses the Texinfo file format for most of its documentation.
+endef
 
 ###############################################################################
 # Top-level Rules

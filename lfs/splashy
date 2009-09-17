@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = splashy
 PKG_VER    = 0.3.13
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,9 +34,23 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Boot
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = http://splashy.alioth.debian.org/
+LICENSE    = GPL
+SHORT_DESC = A program for a nice boot splash.
+
+define LONG_DESC
+	Splashy is a boot splash program that doesn't require patching \
+	the Linux kernel. It paints graphic images directly to framebuffers \
+	using libdirectfb. 
+endef
 
 define QUALITY_AGENT_WHITELIST_RPATH
 	/sbin/splashy

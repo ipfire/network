@@ -294,7 +294,7 @@ ifeq "$(STAGE)" "base"
 	mv -v /usr/lib/{libm,libnsl,libpthread,libresolv}.a /usr/lib/static/
 	mv -v /usr/lib/{librpcsvc,librt,libutil}.a /usr/lib/static/
 
-	rm -vf /lib/*_g.a
+	rm -vf {/usr,}/lib/*_g.a
 
 	# Locales
 	-mkdir -pv /usr/lib/locale

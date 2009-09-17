@@ -97,7 +97,7 @@ $(OBJECT): $(objects)
 			--prefix=/usr \
 			--without-omni
 
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 
 	chown -v root:root /usr/share/ghostscript/8.70/Resource/Font/*
