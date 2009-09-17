@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = squashfs-tools
 PKG_VER    = 4.0
+OKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = squashfs$(PKG_VER).tar.gz
@@ -33,9 +34,21 @@ DIR_APP    = $(DIR_SRC)/squashfs$(PKG_VER)/$(PKG_NAME)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = System/Filesystems
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = http://squashfs.sf.net/
+LICENSE    = GPLv2+
+SHORT_DESC = Utility for the creation of squashfs filesystems.
+
+define LONG_DESC
+	Squashfs is a highly compressed read-only filesystem for Linux.
+endef
 
 ###############################################################################
 # Top-level Rules

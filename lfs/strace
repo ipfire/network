@@ -26,6 +26,7 @@ include Config
 
 PKG_NAME   = strace
 PKG_VER    = 4.5.18
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.bz2
@@ -33,9 +34,25 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Development/Debuggers
 CORE       = no
 EXTRA      = yes
 DEBUG      = yes
+BUILD_DEPS =
+DEPS       = 
+
+URL        = http://sourceforge.net/projects/strace/
+LICENSE    = BSD
+SHORT_DESC = Tracks and displays system calls associated with a running process.
+
+define LONG_DESC
+	The strace program intercepts and records the system calls called and \
+	received by a running process.  Strace can print a record of each \
+	system call, its arguments and its return value. Strace is useful \
+	for diagnosing problems and debugging, as well as for instructional \
+	purposes.
+endef
 
 ###############################################################################
 # Top-level Rules
