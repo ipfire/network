@@ -117,5 +117,8 @@ $(OBJECT): $(objects)
 	# Logrotate
 	cp -vf $(DIR_SRC)/src/logrotate/$(PKG_NAME) /etc/logrotate.d/
 
+	# Initscript
+	cp -vf $(DIR_SRC)/src/initscripts/extras/freeradius.conf /etc/init/
+
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
