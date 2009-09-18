@@ -65,7 +65,8 @@ endef
 
 objects = $(DL_FILE) \
 	$(THISAPP)-open-args.patch \
-	$(THISAPP)-rpathFix.patch
+	$(THISAPP)-rpathFix.patch \
+	$(THISAPP)-automake-1.patch
 
 download: $(objects)
 
@@ -92,6 +93,7 @@ $(OBJECT): $(objects)
 
 	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-open-args.patch
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-rpathFix.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-automake-1.patch
 
 ifeq "$(STAGE)" "toolchain" 
 	cd $(DIR_APP)/gettext-tools && \
@@ -105,8 +107,6 @@ ifeq "$(STAGE)" "toolchain"
 endif
 
 ifeq "$(STAGE)" "base"
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)$(THISAPP)-automake-1.patch
-
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
