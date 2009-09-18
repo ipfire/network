@@ -203,10 +203,18 @@ function _exit() {
 		esac
 		shift
 	done
+
 	if [ "${reload}" = "1" ]; then
 		# Reloading network to apply changes immediately
 		vecho "Reloading network settings..."
 		cmd $0 reload
+		
+		# Reload firewall, too
+		firewall=$(which firewall 2>/dev/null)
+		if [ -n "${firewall}" ]; then
+			vecho "Reloading firewall..."
+			cmd ${firewall} reload
+		fi
 	fi
 
 	decho "Exiting with code ${code}."
@@ -244,7 +252,17 @@ function size() {
 }
 
 function port_show() {
-	local port=$(devicify $1)
+	local port
+	if [ $# -eq 0 ]; then
+		for port in /sys/class/net/*; do
+			port=${port##*/}
+			device_is_real ${port} || continue
+			port_show ${port}
+		done
+		return
+	fi
+
+	port=$(devicify $1)
 
 	echo    "##################################################"
 	echo    "#"
@@ -277,13 +295,33 @@ function port_show() {
 	echo "#"
 }
 
+function port_raw() {
+	local port
+	if [ $# -eq 0 ]; then
+		for port in /sys/class/net/*; do
+			port=${port##*/}
+			device_is_real ${port} || continue
+			port_raw ${port}
+		done
+		return
+	fi
+
+	port=$(devicify $1)
+
+	cat <<EOF
+[${port}]
+type=$(device_type ${port})
+mac=$(macify ${port})
+carrier=$(device_has_carrier ${port} && echo "1" || echo "0")
+up=$(device_is_up ${port} && echo "1" || echo "0")
+
+EOF
+}
+
 function port_add() {
 	local zone=${1}
 	local hook=${2}
 	shift 2
-
-	decho "Function: port_add"
-	decho "  Zone: ${zone} Hook: ${hook} $@"
 
 	if ! zone_exists ${zone}; then
 		error "Zone ${BOLD}${zone}${NORMAL} does not exist."
@@ -307,33 +345,28 @@ function port_add() {
 }
 
 function port_del() {
-	local port
-	local zone
+	local config
 	local hook
+	local uuid
 
-	zone=$1
-	port=$(devicify $2)
-	hook=${3-ethernet}
+	local zone=${1}
+	shift
 
-	shift 3
+	if is_uuid ${1}; then
+		uuid=${1}
+		config="${CONFIG_UUIDS}/${uuid}"
 
-	decho "Function: port_del"
-	decho "  Zone: ${zone} Port: ${port} Hook: ${hook}"
-	
-	if [ -x "/lib/network/hooks/${hook}" ]; then
-		cmd /lib/network/port ${port} down ## XXX How do we identify only that one hook?
-		cmd /lib/network/hooks/${hook} --port=${port} --zone=${zone} remove $@
-		RET=$?
-		if [ "$RET" -eq "0" ]; then
-			vecho "Successfully removed port ${BOLD}${port}${NORMAL} (${hook} $@) from ${BOLD}${zone}${NORMAL}."
+		if [ -e "${config}" ]; then
+			hook=$(config_get_hook ${config})
 		else
-			error "Hook ${BOLD}${hook}${NORMAL} exited with $RET."
-			return $RET
+			error "Given config file does not exist: ${config}."
+			return 1
 		fi
-	else
-		error "Hook ${BOLD}${hook}${NORMAL} does not exist or is not executeable."
-		return 1
 	fi
+
+	hook_run --config=${config} pre-down
+	hook_run --config=${config} post-down
+	hook_run --config=${config} rem
 }
 
 function zone_discover() {
@@ -382,6 +415,24 @@ function zone_show() {
 	hooks_run_zones status ${CONFIG_ZONES}/${zone} --zone=${zone}
 	echo    "#"
 
+}
+
+function zone_raw() {
+	local zone
+	if [ $# -eq 0 ]; then
+		for zone in $(zone_list); do
+			zone_raw ${zone##*/}
+		done
+		return
+	fi
+
+	zone=${1}
+
+cat <<EOF
+[${zone}]
+up=$(zone_is_up ${zone} && echo "1" || echo "0")
+
+EOF
 }
 
 function zone_add() {
@@ -449,9 +500,7 @@ while [ "$#" -gt 0 ]; do
 		hook|hooks)
 			case "$1" in
 				list)
-					for i in ${HOOKS_DIR}/*; do
-						hook_exists ${i##*/} && echo ${i}
-					done
+					hook_list
 					_exit $?
 					;;
 				*)
@@ -486,6 +535,10 @@ while [ "$#" -gt 0 ]; do
 					;;
 				show)
 					port_show $@
+					_exit $?
+					;;
+				_raw)
+					port_raw $@
 					_exit $?
 					;;
 			esac
@@ -537,16 +590,18 @@ while [ "$#" -gt 0 ]; do
 					zone=$1; shift
 					zone_run --zone=${zone} ${arg} $@
 					;;
+				_raw)
+					zone_raw $@
+					_exit $?
+					;;
 			esac
 			;;
 		show)
-			case "${1}" in
+			arg=${1}
+			shift
+			case "${arg}" in
 				ports)
-					for port in /sys/class/net/*; do
-						port=${port##*/}
-						device_is_real ${port} || continue
-						port_show ${port}
-					done
+					port_show $@
 					_exit 0
 					;;
 			esac

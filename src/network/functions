@@ -53,6 +53,20 @@ function is_mac() {
 	[[ $1 =~ ^[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]\:[0-9a-f][0-9a-f]$ ]]
 }
 
+function is_uuid() {
+	local string=${1}
+	
+	# Length must be 37 characters
+	if [ ${#string} -eq 36 ] \
+		&& [ "${string:8:1}" = "-" ] \
+		&& [ "${string:13:1}" = "-" ] \
+		&& [ "${string:18:1}" = "-" ] \
+		&& [ "${string:23:1}" = "-" ]; then
+		return ${EXIT_OK}
+	fi
+	return ${EXIT_ERROR}
+}
+
 function get_device_by_mac() {
 	local mac=${1}
 	local device
@@ -195,10 +209,15 @@ function device_is_ppp() {
 	[ "${1:0:3}" = "ppp" ]
 }
 
+function device_is_loopback() {
+	local device=$(devicify ${1})
+	[ "${device}" = "lo" ]
+}
+
 function device_is_real() {
 	local device=${1}
 
-	[ "${device}" = "lo" ] && \
+	device_is_loopback ${device} && \
 		return ${EXIT_ERROR}
 
 	device_is_bonding ${device} &&  \
@@ -214,6 +233,32 @@ function device_is_real() {
 		return ${EXIT_ERROR}
 
 	return ${EXIT_OK}
+}
+
+function device_type() {
+	local device=$(devicify ${1})
+
+	if device_is_vlan ${device}; then
+		echo "vlan"
+
+	elif device_is_bonding ${device}; then
+		echo "bonding"
+
+	elif device_is_bridge ${device}; then
+		echo "bridge"
+
+	elif device_is_ppp ${device}; then
+		echo "ppp"
+
+	elif device_is_loopback ${device}; then
+		echo "loopback"
+
+	elif device_is_real ${device}; then
+		echo "real"
+
+	else
+		echo "unknown"
+	fi
 }
 
 function device_has_vlans() {
