@@ -135,7 +135,7 @@ define DO_PACKAGE
 			touch $@_no_rootfile; \
 			exit 0; \
 		fi; \
-		NAME=$(LFS_FILE) \
+		NAME=$(NAME) \
 		SNAME=$(SNAME) \
 		VERSION=$(VERSION) \
 		KVER=$(KVER) \
@@ -151,7 +151,7 @@ define DO_PACKAGE
 		PKG_GROUP="$(GROUP)" \
 		PKG_LICENSE="$(LICENSE)" \
 		PKG_MAINTAINER="$(MAINTAINER)" \
-		PKG_NAME="$(PKG_NAME)" \
+		PKG_NAME="$(LFS_FILE)" \
 		PKG_VER="$(PKG_VER)" \
 		PKG_REL="$(PKG_REL)" \
 		PKG_SHORT="$(value SHORT_DESC)" \
