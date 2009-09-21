@@ -147,7 +147,7 @@ $(OBJECT): $(objects)
 	-mkdir -m700 /etc/pki/CA
 	-mkdir -m700 /etc/pki/CA/private
 
-	install -m 0644 $(DIR_SRC)/config/ssl/openssl.cnf /etc/pki/tls
+	install -m 0644 $(DIR_SOURCE)/$(PKG_NAME)/openssl.cnf /etc/pki/tls
 
 	@rm -rf $(DIR_APP) /etc/pki/tls/man
 	@$(POSTBUILD)
