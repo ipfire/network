@@ -108,7 +108,7 @@ $(OBJECT): $(objects)
 
 	# Install config
 	-mkdir -pv /etc/$(PKG_NAME)
-	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/$(PKG_NAME).{conf,user_list} /etc/$(PKG_NAME)
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/$(PKG_NAME).{conf,user_list} /etc/$(PKG_NAME)
 	cp -vf $(DIR_CONFIG)/pam.d/$(PKG_NAME) /etc/pam.d/
 
 	@rm -rf $(DIR_APP)
