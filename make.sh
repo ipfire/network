@@ -356,7 +356,6 @@ ipfire_build() {
 	ipfire_make noip
 	ipfire_make lighttpd
 	ipfire_make webinterface
-	ipfire_make collectd
 	ipfire_make logrotate
 	#ipfire_make logwatch
 	ipfire_make dvdrtools
