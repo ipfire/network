@@ -19,3 +19,20 @@
 #                                                                             #
 ###############################################################################
 
+function zones_red_add() {
+	# $1 = device
+
+	zones_global_add $1
+	zones_policy_red $1
+
+}
+
+function zones_policy_red() {
+	local device
+	local name
+
+	device=$1
+	name=$(uppercase "$device")
+
+	: # TODO
+}

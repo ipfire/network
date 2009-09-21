@@ -35,7 +35,7 @@ function zones_policy_blue() {
 	name=$(uppercase "$device")
 
 	# Accept dhcp traffic
-	macro DHCP -A ZONE_${name}_POLICY -i ${device} -j ACCEPT
+	#macro DHCP -A ZONE_${name}_POLICY -i ${device} -j ACCEPT
 
 	# Mac filter
 	: # TODO

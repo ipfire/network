@@ -103,11 +103,9 @@ function _start() {
 	done
 
 	iptables_commit
-	touch /var/lock/subsys/firewall
 }
 
 function _stop() {
 	iptables_flush
 	iptables_commit
-	rm -f /var/lock/subsys/firewall
 }
