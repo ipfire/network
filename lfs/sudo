@@ -99,7 +99,7 @@ $(OBJECT): $(objects)
 			--with-logfac=auth
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
-	cp -vf $(DIR_CONF)/$(PKG_NAME)/sudoers /etc/sudoers
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/sudoers /etc/sudoers
 	sed 's@/su@/sudo@g' /etc/pam.d/su > /etc/pam.d/sudo
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
