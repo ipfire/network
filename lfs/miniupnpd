@@ -91,6 +91,6 @@ $(OBJECT): $(objects)
 
 	cd $(DIR_APP) && cp -vf $(PKG_NAME) /usr/sbin/
 	cd $(DIR_APP) && $(INSTALL_CONFIG) \
-		< $(DIR_CONFIG)/$(PKG_NAME)/$(PKG_NAME).conf > /etc/$(PKG_NAME).conf
+		< $(DIR_SOURCE)/$(PKG_NAME)/$(PKG_NAME).conf > /etc/$(PKG_NAME).conf
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
