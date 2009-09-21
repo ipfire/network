@@ -98,10 +98,9 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make install
 
 	-mkdir -pv /etc/$(PKG_NAME)
-	cp -vf $(DIR_CONF)/$(PKG_NAME)/$(PKG_NAME).conf \
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/$(PKG_NAME).conf \
 		/etc/$(PKG_NAME)/$(PKG_NAME).conf
-	## Should be in $(DIR_SOURCE)/$(PKG_NAME) at some time
-	install -v -m 755 $(DIR_CONF)/$(PKG_NAME)/ids-block \
+	install -v -m 755 $(DIR_SOURCE)/$(PKG_NAME)/ids-block \
 		/usr/sbin/ids-block
 
 	$(INSTALL_INITSCRIPT)
