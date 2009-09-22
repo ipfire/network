@@ -98,6 +98,6 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && make INSTALL=install install
 	rm -vf /sbin/insmod.static
 	-mkdir -pv /etc/modprobe.d
-	cp -av $(DIR_CONF)/modprobe.d/* /etc/modprobe.d/
+	cp -av $(DIR_SOURCE)/$(PKG_NAME)/modprobe.d/* /etc/modprobe.d/
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
