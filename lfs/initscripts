@@ -95,7 +95,7 @@ $(OBJECT): $(objects)
 	done
 	chmod -v 755 /etc/sysconfig/rc.local
 
-	cp -vf $(DIR_CONFIG)/$(PKG_NAME)/sysctl.conf /etc
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/etc/sysctl.conf /etc
 
 	cd $(DIR_APP)/src && make clean
 	@$(POSTBUILD)
