@@ -112,7 +112,7 @@ $(OBJECT): $(objects)
 	rm -rf /usr/lib/freeradius/*.la /usr/lib/freeradius/rlm_perl-$(PKG_VER).so
 
 	# PAM
-	cp -vf $(DIR_CONFIG)/pam.d/$(PKG_NAME) /etc/pam.d/
+	cp -vf $(DIR_SOURCE)/pam.d/$(PKG_NAME) /etc/pam.d/
 
 	# Logrotate
 	cp -vf $(DIR_SRC)/src/logrotate/$(PKG_NAME) /etc/logrotate.d/

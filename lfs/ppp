@@ -136,7 +136,7 @@ $(OBJECT): $(objects)
 	ln -svf secrets /etc/ppp/pap-secrets
 	ln -svf secrets /etc/ppp/chap-secrets
 
-	cp -vf $(DIR_CONFIG)/pam.d/$(PKG_NAME) /etc/pam.d/
+	cp -vf $(DIR_SOURCE)/pam.d/$(PKG_NAME) /etc/pam.d/
 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)

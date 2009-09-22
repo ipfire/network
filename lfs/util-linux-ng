@@ -130,7 +130,7 @@ $(OBJECT): $(objects)
 		/usr/share/man/man*/{fsck,mkfs}.{bfs,minix}*
 
 	# PAM
-	cp -vf $(DIR_CONFIG)/pam.d/login /etc/pam.d/
+	cp -vf $(DIR_SOURCE)/pam.d/login /etc/pam.d/
 
 	chmod -v -s /bin/mount
 	setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep /bin/mount

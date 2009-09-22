@@ -132,7 +132,7 @@ ifeq "$(STAGE)" "base"
 	cp -vf $(DIR_SOURCE)/profile.d/dircolors.sh /etc/profile.d
 
 	# PAM
-	cp -vf $(DIR_CONFIG)/pam.d/su{,-l} /etc/pam.d
+	cp -vf $(DIR_SOURCE)/pam.d/su{,-l} /etc/pam.d
 endif
 
 	@rm -rf $(DIR_APP)
