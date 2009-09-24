@@ -68,7 +68,7 @@ check_toolchain() {
 	check_common "GNU CC"		"3.0.1"		"gcc --version | head -n1"
 	check_common "GNU C++"		"3.0.1"		"g++ --version | head -n1"
 	check_common "GNU libc"		"2.2.5"		"/lib/libc.so.6 | head -n1 | cut -d\" \" -f1-7"
-	check_common "GNU libc static"	"2.2.5"		"ls /lib/libc.a"
+	check_common "GNU libc static"	"2.2.5"		"test -e /lib/libc.a"
 	check_common "GNU Grep"		"2.5"		"grep --version | head -n1"
 	check_common "GNU zip"		"1.2.4"		"gzip --version | head -n1"
 	check_common "Linux 2.6"	"2.6.x"		"uname -r" "Linux: "
