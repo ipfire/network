@@ -52,7 +52,7 @@ toolchain_build() {
 	icecc_disable
 
 	toolchain_make stage1
-	toolchain_make ccache
+	toolchain_make ccache		PASS=1
 	toolchain_make binutils		PASS=1
 	toolchain_make gcc		PASS=1
 	toolchain_make linux-headers
@@ -75,6 +75,7 @@ toolchain_build() {
 	toolchain_make icecc
 	icecc_enable
 	icecc_use toolchain		# Use the fresh gcc
+	toolchain_make ccache		PASS=2
 	toolchain_make file
 	toolchain_make findutils
 	toolchain_make gawk
