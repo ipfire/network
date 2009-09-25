@@ -257,7 +257,7 @@ ipfire_build() {
 	ipfire_make bridge-utils
 	ipfire_make vlan
 	ipfire_make bind
-	ipfire_make whois
+	ipfire_make jwhois
 	ipfire_make avahi
 	ipfire_make libssh2
 	ipfire_make libdnet

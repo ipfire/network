@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,8 +24,9 @@
 
 include Config
 
-PKG_NAME   = whois
-PKG_VER    = 4.7.26
+PKG_NAME   = jwhois
+PKG_VER    = 4.0
+PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 DL_FILE    = $(THISAPP).tar.gz
@@ -33,15 +34,38 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
+MAINTAINER =
+GROUP      = Applications/Internet
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
+BUILD_DEPS =
+DEPS       =
+
+URL        = http://www.gnu.org/software/jwhois/
+LICENSE    = GPLv3
+SHORT_DESC = Internet whois/nicname client.
+
+define LONG_DESC
+	A whois client that accepts both traditional and finger-style queries.
+endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-conf.patch \
+	$(THISAPP)-conf_update.patch \
+	$(THISAPP)-conf_update2.patch \
+	$(THISAPP)-conf_update3.patch \
+	$(THISAPP)-conf_update4.patch \
+	$(THISAPP)-connect.patch \
+	$(THISAPP)-dotster.patch \
+	$(THISAPP)-enum.patch \
+	$(THISAPP)-fclose.patch \
+	$(THISAPP)-gi.patch \
+	$(THISAPP)-ipv6match.patch	
 
 download: $(objects)
 
@@ -65,7 +89,34 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+
+	# This patch fixes an IPv4 connection problem.	
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-connect.patch
+
+	# This patch fixes IPv6-matching.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-ipv6match.patch
+	
+	# This patch adds support for enum domains to jwhois.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-enum.patch
+
+	# This patch adds a fclose.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fclose.patch
+		
+	# These patches are modifying domains or whois servers inside the jwhois config file.
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-conf.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-gi.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-conf_update.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-conf_update2.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-dotster.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-conf_update3.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-conf_update4.patch
+	
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--sysconfdir=/etc
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make prefix=/usr install
+	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
