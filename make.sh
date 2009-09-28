@@ -264,6 +264,7 @@ ipfire_build() {
 	ipfire_make rstp
 	ipfire_make ebtables
 	ipfire_make openlldp
+	ipfire_make radvd
 	
 	### Building some general stuff
 	#   STAGE 2
