@@ -223,6 +223,11 @@ ipfire_build() {
 	ipfire_make upstart
 	ipfire_make initscripts
 	ipfire_make openssl
+	ipfire_make pth
+	ipfire_make libassuan
+	ipfire_make libgpg-error
+	ipfire_make libgcrypt
+	ipfire_make gnutls
 	ipfire_make perl-xml-parser
 	ipfire_make intltool
 	ipfire_make python
@@ -269,11 +274,6 @@ ipfire_build() {
 	
 	### Building some general stuff
 	#   STAGE 2
-	ipfire_make pth
-	ipfire_make libassuan
-	ipfire_make libgpg-error
-	ipfire_make libgcrypt
-	ipfire_make gnutls
 	ipfire_make libksba
 	ipfire_make slang
 	ipfire_make newt
