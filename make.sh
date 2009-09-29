@@ -265,6 +265,7 @@ ipfire_build() {
 	ipfire_make ebtables
 	ipfire_make openlldp
 	ipfire_make radvd
+	ipfire_make aiccu
 	
 	### Building some general stuff
 	#   STAGE 2
