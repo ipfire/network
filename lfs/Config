@@ -246,12 +246,6 @@ define POSTBUILD
 		perl /tmp/perl.pl < $(OBJECT)_diff \
 		| sed -e "s@$(KVER)@KVER@g" -e "s@$(IFS_TARGET)@IFS_TARGET@g" > $(OBJECT); \
 		rm -f $(OBJECT)_rootfile; \
-		if [ "$$ROOTFILE" != "" ]; then \
-			if ! cmp -s $(OBJECT) $$ROOTFILE; then \
-				touch $(OBJECT)_changed; \
-				if ! grep -q "^+" $(OBJECT); then cp -f $(OBJECT) $$ROOTFILE; fi; \
-			fi; \
-		fi; \
 	else \
 		touch $(OBJECT); \
 	fi
