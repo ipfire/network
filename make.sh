@@ -395,8 +395,6 @@ misc_build() {
 
 	ipfire_make stage4
 
-	#ipfire_make miniupnpd
-
 	### Console tools
 	#
 	ipfire_make mc
