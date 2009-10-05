@@ -443,6 +443,7 @@ misc_build() {
 	ipfire_make portmap
 	ipfire_make nfs-utils
 	ipfire_make freeradius
+	ipfire_make hostapd
 
 	### Debugging
 	#
