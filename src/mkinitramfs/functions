@@ -694,6 +694,7 @@ if [ "${WITH_NET}" = "1" ]; then
 
 	install arping curl dhclient ip ping sha1sum /etc/nsswitch.conf \
 		/usr/lib/libnsl.so /usr/lib/libnss_{dns,files}.so
+	touch etc/hosts
 	mkdir -p $TMPDIR/var/lib/dhclient 2>/dev/null
 
 	cat > sbin/dhclient-script <<'EOF'
