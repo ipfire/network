@@ -24,8 +24,8 @@
 
 include Config
 
-PKG_NAME   = hostapd
-PKG_VER    = 0.6.9
+PKG_NAME   = libnl
+PKG_VER    = 1.1
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -35,29 +35,30 @@ DIR_APP    = $(DIR_SRC)/$(THISAPP)
 OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
 
 MAINTAINER =
-GROUP      = Networking/Tools
+GROUP      = Development/Libraries
 CORE       = yes
 EXTRA      = no
 DEBUG      = no
-BUILD_DEPS = libnl
-DEPS       = 
+BUILD_DEPS =
+DEPS       =
 
-URL        = http://hostap.epitest.fi/hostapd/
-LICENSE    = GPLv2+
-SHORT_DESC = User space daemon to create Wifi Access points.
+URL        = http://people.suug.ch/~tgr/libnl/
+LICENSE    = LGPLv2
+SHORT_DESC = Convenience library for kernel netlink sockets.
 
 define LONG_DESC
-	Hostapd is a user space daemon for access point and authentication \
-	servers. It implements IEEE 802.11 access point management, IEEE \
-	802.1X/WPA/WPA2/EAP Authenticators, RADIUS client, EAP server, and \
-	RADIUS authentication server.
+	This package contains a convenience library to simplify using the \
+	Linux kernel's netlink sockets interface for network manipulation.
 endef
 
 ###############################################################################
 # Top-level Rules
 ###############################################################################
 
-objects = $(DL_FILE)
+objects = $(DL_FILE) \
+	$(THISAPP)-permissions.patch \
+	$(THISAPP)-include-limits-h.patch \
+	$(THISAPP)-no-extern-inline.patch
 
 download: $(objects)
 
@@ -81,9 +82,16 @@ $(objects):
 $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP)/hostapd && cp $(DIR_SRC)/src/hostapd/config ./.config
-	cd $(DIR_APP)/hostapd && sed -e "s@/usr/local@/usr@g" -i Makefile
-	cd $(DIR_APP)/hostapd && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP)/hostapd && make install
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-permissions.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-include-limits-h.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-no-extern-inline.patch
+
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
