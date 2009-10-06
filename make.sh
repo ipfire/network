@@ -272,6 +272,7 @@ ipfire_build() {
 	ipfire_make radvd
 	ipfire_make aiccu
 	ipfire_make libnl
+	ipfire_make iw
 	
 	### Building some general stuff
 	#   STAGE 2
