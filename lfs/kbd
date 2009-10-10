@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = kbd
-PKG_VER    = 1.15
+PKG_VER    = 1.15.1
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
@@ -88,6 +88,8 @@ $(OBJECT): $(objects)
 	# Adding our own fonts
 	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/kbd-latsun-fonts.tar.bz2
 	cd $(DIR_APP) && $(EXTRACTOR) $(DIR_DL)/kbd-latarcyrheb-16-fixed.tar.bz2
+
+	cd $(DIR_APP) && autoreconf --force --install
 
 	cd $(DIR_APP) && sed -i "s/ifdef OPTIONAL_PROGS/ifeq (\$$(OPTIONAL_PROGS),yes)/" man/Makefile.in
 	cd $(DIR_APP) && \
