@@ -56,7 +56,10 @@ endef
 ###############################################################################
 
 objects = $(DL_FILE) \
-	$(THISAPP)-fix-labels.patch
+	$(THISAPP)-fix-labels.patch \
+	$(THISAPP)-build-everything.patch \
+	$(THISAPP)-valgrind.patch
+
 
 download: $(objects)
 
@@ -81,7 +84,9 @@ $(OBJECT): $(objects)
 	@$(PREBUILD)
 	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix-labels.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-build-everything.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-valgrind.patch
 	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make bindir=/sbin install
+	cd $(DIR_APP) && make bindir=/sbin mandir=/usr/share install 
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
