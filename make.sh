@@ -173,6 +173,7 @@ base_build() {
 	ipfire_make grub
 	ipfire_make gawk
 	ipfire_make glib2
+	ipfire_make vala
 	ipfire_make grep
 	ipfire_make groff
 	ipfire_make gzip
@@ -294,6 +295,14 @@ ipfire_build() {
 	ipfire_make libpng
 	ipfire_make libtiff
 	ipfire_make libart
+	ipfire_make libsoup
+	ipfire_make gssdp
+	ipfire_make gupnp
+#	ipfire_make gupnp-tools
+	ipfire_make gupnp-av
+	ipfire_make gupnp-igd
+#	ipfire_make gconf
+#	ipfire_make gupnp-media-server
 	ipfire_make freetype
 	ipfire_make fontconfig
 	ipfire_make pixman
@@ -407,6 +416,7 @@ misc_build() {
 	ipfire_make htop
 	ipfire_make nano
 	ipfire_make joe
+	ipfire_make powertop
 
 	### Servers
 	#
