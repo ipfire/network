@@ -1,0 +1,94 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include ../../Config
+
+PKG_NAME       = binutils
+PKG_VER        = 2.19.1
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.gnu.org/software/binutils/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = The GNU Binutils are a collection of binary tools.
+
+define PKG_DESCRIPTION
+	The GNU Binary Utilities, or binutils, is a collection of programming \
+	tools for the manipulation of object code in various object file formats.
+endef
+
+PKG_BUILD_DEPS = glibc
+PKG_DEPS      += zlib
+
+PKG_OBJECTS   += $(THISAPP).tar.bz2
+
+PKG_PATCHES   += $(THISAPP)-ld_makefile.patch
+PKG_PATCHES   += $(THISAPP)-pt_pax-1.patch
+PKG_PATCHES   += $(THISAPP)-lazy-1.patch
+PKG_PATCHES   += $(THISAPP)-asprintf_fix.patch
+
+include ../../Rules
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_PREPARE): $(OBJECTS)
+	@$(PRE_PREPARE)
+	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(THISAPP).tar.bz2
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pt_pax-1.patch
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-asprintf_fix.patch
+	
+	-mkdir -pv $(DIR_SRC)/binutils-build
+
+	@$(POST_PREPARE)
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_SRC)/binutils-build && \
+		CC="gcc -specs=$$(dirname $$(gcc --print-libgcc-file-name))/myspecs -B/usr/lib/ -B/usr/bin/" \
+		../$(THISAPP)/configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--enable-shared \
+			--disable-nls \
+			--disable-werror \
+			--disable-static
+
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr $(PARALLELISMFLAGS)
+	
+	@$(POST_BUILD)
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install DESTDIR=$(BUILDROOT)
+
+	cp -fv ../$(THISAPP)/include/libiberty.h $(BUILDROOT)/usr/include
+	rm -vf /usr/lib/libiberty.a $(BUILDROOT)/usr/lib/lib{bfd,opcodes}.la
+
+	@$(POST_INSTALL)

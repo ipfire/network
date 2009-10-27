@@ -1,0 +1,82 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include ../../Config
+
+PKG_NAME       = gettext
+PKG_VER        = 0.17
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Base
+PKG_URL        = http://www.gnu.org/software/gettext/
+PKG_LICENSE    = GPLv3 LGPL2+
+PKG_SUMMARY    = GNU libraries and utilities for producing multi-lingual messages.
+
+define PKG_DESCRIPTION
+	The GNU gettext package provides a set of tools and documentation for \
+	producing multi-lingual messages in programs. Tools include a set of \
+	conventions about how programs should be written to support message \
+	catalogs, a directory and file naming organization for the message \
+	catalogs, a runtime library which supports the retrieval of translated \
+	messages, and stand-alone programs for handling the translatable and \
+	the already translated strings. Gettext provides an easy to use \
+	library and tools for creating, using, and modifying natural language \
+	catalogs and is a powerful and simple method for internationalizing \
+	programs.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PATCHES   += $(THISAPP)-open-args-1.patch
+PKG_PATCHES   += $(THISAPP)-rpathFix.patch
+PKG_PATCHES   += $(THISAPP)-automake-1.patch
+
+include ../../Rules
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--disable-static
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	rm -vf $(BUILDROOT)/usr/lib/lib{asprintf,gettext{lib,po,src}}.la
+
+	@$(POST_INSTALL)

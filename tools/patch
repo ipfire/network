@@ -1,0 +1,12 @@
+#!/bin/bash
+
+for patch in $@; do
+	echo "Applying file ${patch}..."
+
+	patch -Np1 -i ${patch}
+	ret=$?
+
+	if [ ${ret} -ne 0 ]; then
+		exit ${ret}
+	fi
+done

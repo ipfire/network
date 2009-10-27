@@ -1,0 +1,84 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include ../../Config
+
+PKG_NAME       = gzip
+PKG_VER        = 1.3.13
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Compression
+PKG_URL        = http://www.gzip.org/
+PKG_LICENSE    = GPLv2
+PKG_SUMMARY    = The GNU data compression program.
+
+define PKG_DESCRIPTION
+	The gzip package contains the popular GNU gzip data compression \
+	program. Gzipped files have a .gz extension.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+# This patch modifies 'znew' so we don't use temporary files:
+PKG_PATCHES   += $(THISAPP)-openbsd-owl-tmp.patch
+
+# Fix CVE 2006-4337
+# (http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2006-4337) and
+# CVE 2006-4338 (http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2006-4338),
+# against malformed gzip files:
+PKG_PATCHES   += $(THISAPP)-cve-2006-4337_len.patch
+PKG_PATCHES   += $(THISAPP)-cve-2006-4338.patch
+
+include ../../Rules
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	# NO_ASM is for textrels.
+	cd $(DIR_APP) && \
+		DEFS=NO_ASM \
+		CPPFLAGS="-DHAVE_LSTAT" \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--bindir=/bin
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	mv -v $(BUILDROOT)/bin/{gzexe,uncompress,zcmp,zdiff,zegrep} $(BUILDROOT)/usr/bin
+	mv -v $(BUILDROOT)/bin/{zfgrep,zforce,zgrep,zless,zmore,znew} $(BUILDROOT)/usr/bin
+
+	@$(POST_INSTALL)

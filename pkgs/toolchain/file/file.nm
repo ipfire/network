@@ -1,0 +1,23 @@
+
+include ../../core/file/file.nm
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR) \
+			--disable-static
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && make install
+
+	@$(POST_INSTALL)

@@ -1,0 +1,69 @@
+
+PKG_TOOLCHAIN_DEPS += binutils glibc
+
+include ../gcc-static/gcc-static.nm
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	# Enable hardening by default:
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-espf-1.patch
+
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-branch-startfiles-1.patch
+
+	# This patch fixes a conflict between libiberty's asprintf() and Glibc's, when
+	# -D_FORTIFY_SOURCE=2 is used:
+	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-asprintf_fix.patch
+
+	cd $(DIR_APP) && sed 's@\./fixinc\.sh@-c true@' -i gcc/Makefile.in
+	cd $(DIR_APP) && sed 's/^XCFLAGS =$$/& -fomit-frame-pointer/' -i gcc/Makefile.in
+	cd $(DIR_APP) && \
+		for file in $$(find gcc/config -name linux64.h -o -name linux.h); do \
+			cp -uv $$file{,.orig}; \
+			sed -e 's@/lib\(64\)\?\(32\)\?/ld@$(TOOLS_DIR)&@g' \
+				-e 's@/usr@$(TOOLS_DIR)@g' $$file.orig > $$file; \
+			echo -e "\n#undef STANDARD_INCLUDE_DIR\n#define STANDARD_INCLUDE_DIR 0" >> $$file; \
+			touch $$file.orig; \
+		done
+
+ifeq "$(MACHINE)" "x86_64"
+	# Remove multilib options and searchpath (/lib... /usr/lib...)
+	cd $(DIR_APP) && echo "" > gcc/config/i386/t-linux64
+	## Enable -fPIC by default (why i have to do this again ???)
+	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
+		-i gcc/config/i386/x86-64.h
+endif
+
+	# We need to do another bootstrap, so that everything in $(TOOLS_DIR) is hardened.
+	cd $(DIR_SRC)/gcc-build && \
+		../$(THISAPP)/configure \
+			$(CONFIGURE_ARCH) \
+			--target=$(TARGET) \
+			$(CONFIG_CPU) \
+			--prefix=$(TOOLS_DIR) \
+			--with-local-prefix=$(TOOLS_DIR) \
+			--libexecdir=$(TOOLS_DIR)/lib \
+			--enable-espf \
+			--enable-clocale=gnu \
+			--enable-shared \
+			--enable-threads=posix \
+			--enable-__cxa_atexit \
+			--enable-languages=c,c++ \
+			--disable-libstdcxx-pch \
+			--disable-bootstrap \
+			--disable-werror \
+			--disable-libssp \
+			--disable-nls \
+			--disable-static \
+			$(CONFIGURE_ARGS)
+
+	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_SRC)/gcc-build && make install
+
+	@$(POST_INSTALL)

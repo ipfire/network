@@ -1,0 +1,350 @@
+
+PKG_DIR=${BASEDIR}/pkgs
+
+function listmatch() {
+	local arg=${1}
+	shift
+	
+	local value
+	for value in $@; do
+		if [ "${arg}" == "${value}" ]; then
+			return 0
+		fi
+	done
+	return 1
+}
+
+function is_package() {
+	local package=$(find_package ${1})
+
+	if listmatch ${package} $(package_list); then
+		return 0
+	else
+		log ERROR "Package ${package} is not known."
+		return 1
+	fi
+}
+
+function find_package() {
+	local package=${1}
+	#log DEBUG "Searching for package \"${package}\"."
+
+	if [ -e "${PKG_DIR}/${package}" ]; then
+		echo "${package}"
+		return 0
+	fi
+
+	local i
+	for i in $(package_list); do
+		if [ "${i##*/}" = "${package}" ]; then
+			echo "${i}"
+			return 0
+		fi
+	done
+	return 1
+}
+
+function package_repos() {
+	local repo
+	
+	for repo in ${PKG_DIR}/*; do
+		if [ ! -d "${repo}" ]; then
+			continue
+		fi
+		
+		if [ "${TOOLCHAIN}" = "1" ]; then
+			if [ "${repo##*/}" != "toolchain" ]; then
+				continue
+			fi
+		else
+			if [ "${repo##*/}" = "toolchain" ]; then
+				continue
+			fi
+		fi
+		echo "${repo##*/}"
+	done
+}
+
+function package_list() {
+	local package
+	local repo
+	
+	for repo in $(package_repos); do
+		for package in ${PKG_DIR}/${repo}/*; do
+			if [ ! -d "${package}" ]; then
+				continue
+			fi
+
+			echo "${package#${PKG_DIR}/}"
+		done
+	done
+}
+
+function package_profile() {
+	if [ "${1}" = "--wiki" ]; then
+		echo "TODO: WIKI OUTPUT"
+	else
+		# XXX to be formatted
+		local package_name=$(find_package ${1})
+		printf  "# ${BOLD}%-12s${NORMAL}: ${CLR_BOLD_GRN}%s${NORMAL}\n" "Name" "${package_name}"
+		printf  "# ${BOLD}%-12s${NORMAL}: %s\n" "Version" "$(package_version ${package_name})"
+		printf  "# ${BOLD}%-12s${NORMAL}: %s\n" "Release" "$(package_release ${package_name})"
+		printf  "# ${BOLD}%-12s${NORMAL}: %s\n" "Group" "$(package_group ${package_name})"
+		echo    "#"
+		format $(package_summary ${package_name})
+		echo    "#"
+		echo -e "# ${BOLD}Description${NORMAL} :"
+		format $(package_description ${package_name})
+		echo    "#"
+		printf  "# ${BOLD}%-12s${NORMAL}: %s\n" "Maintainer" "$(package_maintainer ${package_name})"
+		printf  "# ${BOLD}%-12s${NORMAL}: %s\n" "License" "$(package_license ${package_name})"
+		echo    "#"
+	fi
+}
+
+function package_info() {
+	local p=$(find_package ${1})
+
+	log DEBUG "Fetching package information from ${PKG_DIR}/${p}..."
+
+	is_package ${p} || return 1
+
+	CHROOT=0 naoki_make ${p} --without-chroot info | grep -v "^make:"
+}
+
+function package_get() {
+	local package=$(find_package ${1})
+	local item=${2}
+
+	package_info ${package} | \
+		grep "^${item}" | \
+		awk -F= '{ print $NF }' | \
+		tr -d '"'
+}
+
+function package_name() {
+	package_get ${1} PKG_NAME
+}
+
+function package_version() {
+	package_get ${1} PKG_VER
+}
+
+function package_release() {
+	package_get ${1} PKG_REL
+}
+
+function package_description() {
+	package_get ${1} PKG_DESCRIPTION
+}
+
+function package_summary() {
+	package_get ${1} PKG_SUMMARY
+}
+
+function package_runtime_dependencies() {
+	local package
+	for package in $(package_get ${1} PKG_DEPENDENCIES); do
+		find_package ${package}
+	done
+}
+
+function package_build_dependencies() {
+	local package
+	for package in $(package_get ${1} PKG_BUILD_DEPENDENCIES); do
+		find_package ${package}
+	done
+}
+
+function package_toolchain_dependencies() {
+	local package
+	for package in $(package_get ${1} PKG_TOOLCHAIN_DEPS); do
+		find_package ${package}
+	done
+}
+
+function package_dependencies() {
+	if [ "${TOOLCHAIN}" = "1" ]; then
+		package_toolchain_dependencies $@
+	else
+		package_runtime_dependencies $@
+		package_build_dependencies $@
+	fi
+}
+
+function package_packages() {
+	package_get ${1} PKG_PACKAGES
+}
+
+function package_maintainer() {
+	package_get ${1} PKG_MAINTAINER
+}
+
+function package_group() {
+	package_get ${1} PKG_GROUP
+}
+
+function package_license() {
+	package_get ${1} PKG_LICENSE
+}
+
+function package_extract_dependencies() {
+	local package=$(find_package ${1})
+	local to_extract="${PACKAGES_TO_EXTRACT}"
+	
+	local dep
+	for dep in $(dependencies_resolve ${PACKAGES_TO_EXTRACT} ${package}); do
+		echo ${dep}
+	done
+}
+
+function package_is_built() {
+	local package=$(find_package ${1})
+
+	local file
+	for file in package_packages ${package}; do
+		if [ ! -e "${file}" ]; then
+			return 1
+		fi
+	done
+	return 0
+}
+
+function dependencies_resolve() {
+	local dependencies
+	local package
+	local ret
+
+	for package in $@; do
+		log DEBUG "Resolving dependencies for ${package}..."
+
+		dependencies="$(package_build_dependencies ${package})"
+		dependencies="${dependencies} $(package_dependencies ${package})"
+
+		if [ "${dependencies}" != " " ]; then
+			log DEBUG "    Got: ${dependencies}"
+		fi
+
+		ret="${ret} ${dependencies} $(dependencies_resolve ${dependencies})"
+	done
+	echo ${ret}
+}
+
+function package_sort() {
+	local pkg
+	for pkg in $@; do
+		echo "${pkg}"
+	done | sort -u | tr '\n' ' '
+}
+
+function __random() {
+	local date=$(date "+%N")
+	while [ "${date:0:1}" = "0" ]; do
+		if [ "${#date}" = "0" ]; then
+			echo "0"
+			return
+		fi
+		date=${date:1}
+	done
+	echo $(( ${date} % 2 ))
+}
+
+function package_random() {
+	local package
+	local ret
+	
+	for package in $@; do
+		if [ "$(__random)" = "0" ]; then
+			ret="${ret} ${package}"
+		else
+			ret="${package} ${ret}"
+		fi
+	done
+	if [ "$(__random)" = "0" ]; then
+		ret=$(package_random ${ret})
+	fi
+	echo ${ret}
+}
+
+function package_tree() {
+	local package
+	local package2
+	local packages
+	local deps
+	
+	log INFO "Making package tree..."
+
+	ret[0]=$@
+	local i=0
+	while true; do
+		packages=${ret[i]}
+		deps=
+		for package in ${packages}; do
+			deps="${deps} $(package_dependencies ${package})"
+		done
+		deps=$(package_sort ${deps})
+		if [ -n "${deps}" ]; then
+			ret[$(( ${i} + 1 ))]=${deps}
+		else
+			break
+		fi
+		i=$(( ${i} + 1 ))
+	done
+
+	local drop
+	local j
+	i=0
+	while [ ${i} -lt ${#ret[@]} ]; do
+		for package in ${ret[i]}; do
+			drop=0
+			j=$(( ${#ret[@]} - 1 ))
+			while [ ${j} -gt ${i} ]; do
+				for package2 in ${ret[j]}; do
+					if [ "${package}" == "${package2}" ]; then
+						drop=1
+						break
+					fi
+				done
+				if [ "${drop}" = "1" ]; then
+					break
+				fi
+				j=$(( ${j} - 1 ))
+			done
+			if [ "${drop}" = "1" ]; then
+				packages=
+				for package2 in ${ret[i]}; do
+					if [ "${package}" != "${package2}" ]; then
+						packages="${packages} ${package2}"
+					fi
+				done
+				ret[${i}]=$(package_sort ${packages})
+			fi
+		done
+		i=$(( ${i} + 1 ))
+	done
+
+	i=$(( ${#ret[@]} - 1 ))
+	while [ ${i} -ge 0 ]; do
+		log INFO "  ${i}: ${ret[i]}"
+		echo "$(package_random ${ret[i]})"
+		i=$(( ${i} - 1 ))
+	done
+}
+
+function require_toolchain() {
+	local package
+	for package in ${PACKAGES_TO_EXTRACT}; do
+		package=$(find_package ${package})
+		if ! package_is_built ${package}; then
+			return 0
+		fi
+	done
+	return 1
+}
+
+function package_id() {
+	local p=$(find_package ${1})
+	local hash=$(sha1sum <<<${p})
+
+	echo ${hash:0:6}
+}

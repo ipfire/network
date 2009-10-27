@@ -1,0 +1,77 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+THISAPP    = $(PKG_NAME)-$(PKG_VER)
+
+DIR_APP = $(DIR_SRC)/$(THISAPP)
+DIR_DL  = $(DIR_SRC)/cache/tarballs
+DIR_PATCHES = $(DIR_DL)/../patches
+DIR_SRC = $(ROOT)/usr/src
+DIR_TMP = /tmp
+DIR_SOURCE = $(CURDIR)
+DIR_PACKAGES = /usr/src/packages
+
+BUILD_HOST ?= $(shell cat /proc/sys/kernel/hostname)
+
+export DIR_DL DIR_PATCHES DIR_TMP
+VPATH = $(DIR_DL):$(DIR_PATCHES)
+
+PKG_OBJECTS = $(PKG_TARBALL)
+OBJECTS = $(PKG_OBJECTS) $(PKG_PATCHES)
+
+PKG_NAME_REAL = $(notdir $(CURDIR))
+PKG_PACKAGES = default devel
+PKG_PACKAGES_FILES = $(foreach package,$(PKG_PACKAGES),$(call DO_PACKAGE_FILENAME,$(package)))
+
+DO_PACKAGE_FILENAME = $(subst --,-,$(PKG_NAME_REAL)-$(subst default,,$(1))-$(PKG_VER)-$(DISTRO_SNAME)$(DISTRO_EPOCH)-$(PKG_REL).ipk)
+
+TC_PACKAGES = binutils gcc glibc
+PKG_TOOLCHAIN_DEPS ?= $(TC_PACKAGES)
+PKG_BUILD_DEPS ?= $(TC_PACKAGES)
+
+ifeq "$(TOOLCHAIN)" "1"
+	DO_EXTRACT = bash /build/ipfire-3.x/src/scripts/extractor
+	DO_PATCHES = cd $(DIR_APP) && /build/ipfire-3.x/tools/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
+else
+	DO_EXTRACT = bash /usr/src/src/scripts/extractor
+	DO_PATCHES = cd $(DIR_APP) && /usr/src/tools/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
+endif
+DO_LOAD = python /build/ipfire-3.x/tools/downloader http://source.ipfire.org/source-3.x/$@
+
+define PKG_FILES_devel
+	/usr/include
+	*/lib/*.so
+endef
+
+CONFIGURE_ARCH = --build=$(TARGET) --host=$(TARGET)
+
+ifeq "$(TARGET_MACHINE)" "x86_64"
+	LINKER = /lib64/ld-linux-x86-64.so.2
+else
+	LINKER = /lib/ld-linux.so.2
+endif
+
+export CFLAGS CXXFLAGS BUILD_HOST
+
+export PKG_NAME PKG_VER PKG_REL PKG_MAINTAINER PKG_GROUP PKG_URL PKG_LICENSE
+export PKG_SUMMARY PKG_DESCRIPTION=$(strip $(PKG_DESCRIPTION))
+export PKG_DEPS PKG_BUILD_DEPS
+
+export CONTROL_PREIN CONTROL_PREUN CONTROL_POSTIN CONTROL_POSTUN

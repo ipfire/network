@@ -1,0 +1,24 @@
+
+include ../../core/gettext/gettext.nm
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP)/gettext-tools && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR) \
+			--disable-shared
+
+	cd $(DIR_APP)/gettext-tools && make -C gnulib-lib
+	cd $(DIR_APP)/gettext-tools && make -C src msgfmt
+
+	@$(POST_BUILD)
+
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP)/gettext-tools && cp -v src/msgfmt $(TOOLS_DIR)/bin
+
+	@$(POST_INSTALL)

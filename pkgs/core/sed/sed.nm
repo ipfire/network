@@ -1,8 +1,7 @@
-#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -18,86 +17,50 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #                                                                             #
 ###############################################################################
-#
 
-NAME="IPFire"                       # Software name
-SNAME="ipfire"                      # Short name
-VERSION="3.0-prealpha2"             # Version number
-SLOGAN="Gluttony"                   # Software slogan
+###############################################################################
+# Definitions
+###############################################################################
 
-BASEDIR=/ipfire-3.x
+include ../../Config
 
-. ${BASEDIR}/tools/ui-functions
+PKG_NAME       = sed
+PKG_VER        = 4.1.5
+PKG_REL        = 0
 
-NAOKI=${BASEDIR}/tools/naoki
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Text
+PKG_URL        = http://sed.sourceforge.net/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = A GNU stream text editor.
 
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		--debug|-d)
-			DEBUG=1
-			log DEBUG "Debugging mode enabled by command line."
-			;;
-		*)
-			action=${1}
-			shift
-			break
-			;;
-	esac
-	shift
-done
+define PKG_DESCRIPTION
+	The sed (Stream EDitor) editor is a stream or batch (non-interactive) \
+	editor.  Sed takes text as input, performs an operation or set of \
+	operations on the text and outputs the modified text. The operations \
+	that sed performs (substitutions, deletions, insertions, etc.) can be \
+	specified in a script file or from the command line.
+endef
 
-function package() {
-	local action=${1}
-	shift
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-	case "${action}" in
-		dependencies|deps)
-			echo -e "${BOLD}Build dependencies:${NORMAL} $(package_build_dependencies $@)"
-			echo -e "${BOLD}Dependencies:${NORMAL}       $(package_dependencies $@)"
-			;;
-		find)
-			find_package $@
-			;;
-		list)
-			${NAOKI} --toolchain list
-			;;
-		profile|info)
-			${NAOKI} profile $@
-			;;
-		_info)
-			package_info $(find_package $@)
-			;;
-	esac
-}
+include ../../Rules
 
-function listmatch() {
-	local arg=${1}
-	shift
-	
-	local value
-	for value in $@; do
-		if [ "${arg}" == "${value}" ]; then
-			return 0
-		fi
-	done
-	return 1
-}
+###############################################################################
+# Installation Details
+###############################################################################
 
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
 
-case "${action}" in
-	package|pkg)
-		package $@
-		;;
-	toolchain)
-		TOOLCHAIN=1
-		${NAOKI} --toolchain tree
-		;;
-	toolchain_build)
-		for i in $($0 toolchain); do
-			${NAOKI} --toolchain toolchain ${i}
-		done
-		;;
-	tree)
-		${NAOKI} tree
-		;;
-esac
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--bindir=/bin \
+			--enable-html \
+			--without-included-regex
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)

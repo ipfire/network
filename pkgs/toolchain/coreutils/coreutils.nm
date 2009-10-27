@@ -1,0 +1,28 @@
+
+PKG_TOOLCHAIN_DEPS += acl attr ncurses
+
+include ../../core/coreutils/coreutils.nm
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && \
+		gl_cv_func_printf_directive_n=no \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR) \
+			--enable-install-program=hostname
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && make install
+
+	cd $(DIR_APP) && cp -v src/su $(TOOLS_DIR)/bin/su-tools
+
+	@$(POST_INSTALL)

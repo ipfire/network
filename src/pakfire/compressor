@@ -22,88 +22,154 @@
 PACKAGE_VERSION="0"
 TAR_OPTIONS="--posix --acls --no-recursion --sparse"
 
-function cleanup() {
-	echo " Cleaning up..."
-	for i in $ARCHIEVE $CONTROL $FILES $INFO $TMP_DIR; do
-		rm -rf ${i}
+decho() {
+	echo "$@" >&2
+}
+
+function isDir() {
+	[ -d "${1}" ]
+}
+
+function isFile() {
+	[ -f "${1}" ]
+}
+
+function add() {
+	local file=${1}
+
+	if isDir ${file}; then
+		addDir $@
+		return $?
+
+	elif isFile ${file}; then
+		addFile $@
+		return $?
+	fi
+
+	return 1
+}
+
+function addDir() {
+	local dir=${1}
+	local file
+
+	#decho "Adding dir ${dir}..."
+
+	local has_children=0
+
+	for file in $(find ${dir} -maxdepth 1); do
+		[ "${file}" = "${dir}" ] && continue
+
+		add ${file}
+
+		has_children=1
+	done
+	
+	if [ "${has_children}" = "0" ]; then
+		echo "${dir}" >> ${manifest}
+	fi
+}
+
+function addFile() {
+	local file=${1}
+	
+	#decho "Adding file ${file}..."
+	
+	echo "${file}" >> ${manifest}
+}
+
+function create_manifest() {
+	decho "Creating manifest..."
+	addDir ${root}
+
+	apply_regexes
+	
+	local file
+	local files=$(<${manifest})
+	for file in ${files}; do
+		echo "${file#${root}/}"
+	done > ${manifest}
+}
+
+function apply_regexes() {
+	if [ -z "${regexes}" ]; then
+		return
+	fi
+
+	local file
+	local filelist
+	local files=$(<${manifest})
+	local regex
+
+	for regex in $(<${regexes}); do
+		[ "${regex:0:1}" != "/" ] && regex="/${regex}"
+		filelist=$(find ${root}${regex})
+		for file in ${files}; do
+			grep "${file}" <<<"${filelist}"
+		done
+	done > ${manifest}
+}
+
+function remove_files() {
+	local file
+	for file in $(<${manifest}); do
+		rm -f ${root}${file} 2>/dev/null
 	done
 }
 
+regexes=
+root=
+target=
+
 while [ $# -gt 0 ]; do
-	case "$1" in
-		--rootfile=*)
-			rootfile=${1#--rootfile=}
-			if [ ! -e "${rootfile}" ]; then
-				echo "Rootfile \"${rootfile}\" does not exist." >&2
-				exit 1
-			fi
-			ROOTFILES="$ROOTFILES ${rootfile}"
+	case "${1}" in
+		--regexes=*)
+			regexes=${1#--regexes=}
 			;;
-		*.ipk)
-			if [ -z "$PKG_TARGET" ]; then
-				PKG_TARGET=$1
-			fi
+		--root=*)
+			root=${1#--root=}
 			;;
 		*)
-			echo "Unrecognized option: ${1}" >&2
-			exit 1
-			;;		
+			if [ -z "${target}" ]; then
+				target=${1}
+			else
+				echo "Unrecognized option: ${1}" >&2
+				exit 2
+			fi
+			;;
 	esac
 	shift
 done
 
-if [ -z "$TARGET" ]; then
-	echo "TARGET is not set. Cannot continue." >&2
+echo "Preparing to do ${target##*/}..."
+
+archieve=$(mktemp)
+control=$(mktemp)
+info=$(mktemp)
+manifest=$(mktemp)
+
+tmp=$(mktemp -d)
+
+create_manifest
+
+echo "Copying files..."
+cd ${root} && tar ${TAR_OPTIONS} --create --xz --file=${archieve} --files-from=${manifest}
+
+if [ $? -ne 0 ]; then
+	echo "Error." >&2
 	exit 1
 fi
 
-echo "Packaging $PKG_TARGET..."
+remove_files
 
-ARCHIEVE=$(mktemp)
-CONTROL=$(mktemp)
-FILES=$(mktemp)
-INFO=$(mktemp)
-TMP_DIR=$(mktemp -d)
-
-echo " Collecting files..."
-for rootfile in $ROOTFILES; do
-	grep -v "^#" ${rootfile} >> ${FILES}
-done
-
-sed -e "s/KVER/${KVER}/g" \
-	-e "s/IFS_TARGET/${IFS_TARGET}/g" \
-	-i ${FILES}
-
-(cd / && tar --create ${TAR_OPTIONS} --files-from=${FILES} | tar --extract -C ${TMP_DIR})
-if [ "$?" != "0" ]; then
-	echo -e "When copying the files, an error occoured." >&2
-	cleanup
-	exit 1
-fi
-
-echo " Running quality agent hooks..."
-for hook in $(dirname $0)/compressor.d/*; do
-	[ -x "${hook}" ] || continue
-	${hook} $TMP_DIR
-	if [ "$?" != "0" ]; then
-		cleanup
-		exit 1
-	fi
-done
-
-cd $TMP_DIR
-
-echo " Writing data.img..."
-cd ${TMP_DIR} && tar --create --xz --file=${ARCHIEVE} .
-
-echo " Writing meta-data..."
-cat <<EOF >$INFO
-### $NAME package
+echo "Writing meta-data..."
+cat <<EOF >${info}
+### $PKG_NAME package
 
 PACKAGE_TARGET="$TARGET"
 PACKAGE_VERSION="$PACKAGE_VERSION"
 
-BUILD_HOST="$(cat /proc/sys/kernel/hostname)"
+BUILD_HOST="${BUILD_HOST}"
 BUILD_DATE="$(date -u)"
 
 # Version info
@@ -115,20 +181,20 @@ PKG_GROUP="$PKG_GROUP"
 PKG_MAINTAINER="$PKG_MAINTAINER"
 PKG_LICENSE="$PKG_LICENSE"
 
-PKG_SUMMARY="$PKG_SHORT"
-PKG_DESCRIPTION="$PKG_LONG"
+PKG_SUMMARY="$PKG_SUMMARY"
+PKG_DESCRIPTION="$PKG_DESCRIPTION"
 
 # Dependency info
 PKG_DEPS="$PKG_DEPS"
 PKG_BUILD_DEPS="$PKG_BUILD_DEPS"
 
-PKG_DATA_SHA1="$(sha1sum $ARCHIEVE | awk '{ print $1 }')"
+PKG_DATA_SHA1="$(sha1sum ${archieve} | awk '{ print $1 }')"
 
 ###
 EOF
 
-echo " Writing control file..."
-cat <<EOF >$CONTROL
+echo "Writing control file..."
+cat <<EOF >${control}
 #!/bin/sh
 
 function prein() {
@@ -150,15 +216,10 @@ $CONTROL_POSTUN
 ###
 EOF
 
-rm -rf $TMP_DIR/*
+cat ${archieve} > ${tmp}/data.img
+cat ${control}  > ${tmp}/control
+cat ${info}     > ${tmp}/info
 
-cat $ARCHIEVE > $TMP_DIR/data.img
-cat $CONTROL  > $TMP_DIR/control
-cat $INFO     > $TMP_DIR/info
+(cd ${tmp} && find . | cpio -o -H newc --quiet > ${archieve})
 
-echo " Packaging archive..."
-find . | cpio -o -H newc --quiet > $ARCHIEVE
-
-cat $ARCHIEVE > $PKG_TARGET
-
-cleanup
+cat ${archieve} > ${target}

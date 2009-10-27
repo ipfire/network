@@ -1,0 +1,38 @@
+
+include ../../core/perl/perl.nm
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	-mkdir -pv $(DIR_SRC)/perl-build
+
+	# -Dlibc, locincpth, loclibpth, glibpth, and usrinc, are equivilent to the LFS
+	# Perl libc patch.
+
+	# ./Configure is used instead of ./configure.gnu because it supports builds
+	# from an object directory. -Dmksymlinks is also used, to support read-only
+	# sources. -d -e are added to accept all defaults, otherwise ./Configure will
+	# be interactive.
+	cd $(DIR_SRC)/perl-build && \
+		$(DIR_APP)/Configure \
+			-Dcc=$(TARGET)-gcc \
+			-Dprefix=$(TOOLS_DIR) \
+			-Dlibc=$(shell ls $(TOOLS_DIR)/lib/libc-*.so) \
+			-Ulocincpth \
+			-Uloclibpth \
+			-Dglibpth="$(TOOLS_DIR)/lib" \
+			-Dusrinc="$(TOOLS_DIR)/include" \
+			-Dmksymlinks \
+			-d -e
+
+	cd $(DIR_SRC)/perl-build && make #$(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_SRC)/perl-build && make LNS="cp" install
+
+	@$(POST_INSTALL)

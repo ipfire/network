@@ -1,0 +1,17 @@
+
+include ../../core/pax-utils/pax-utils.nm
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && make scanelf CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && install -m 755 -v scanelf $(TOOLS_DIR)/bin/scanelf
+
+	@$(POST_INSTALL)

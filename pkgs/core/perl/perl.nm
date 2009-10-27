@@ -1,0 +1,92 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include ../../Config
+
+PKG_NAME       = perl
+PKG_VER        = 5.10.0
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Languages
+PKG_URL        = http://www.perl.org/
+PKG_LICENSE    = GPL+ or Artistic and GPLv2+ or Artistic
+PKG_SUMMARY    = Practical Extraction and Report Language.
+
+PKG_DEPS      += zlib
+
+define PKG_DESCRIPTION
+	Perl is a high-level programming language with roots in C, sed, awk \
+	and shell scripting. Perl is good at handling processes and files, \
+	and is especially good at handling text. Perl's hallmarks are \
+	practicality and efficiency. While it is used to do a lot of \
+	different things, Perl's most common applications are system \
+	administration utilities and web programming. A large proportion of \
+	the CGI scripts on the web are written in Perl.  You need the perl \
+	package installed on your system so that your system can handle Perl \
+	scripts.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PATCHES   += $(THISAPP)-page-1.patch
+PKG_PATCHES   += $(THISAPP)-security_fix-1.patch
+
+define QUALITY_AGENT_WHITELIST_RPATH
+	/usr/lib/perl5/*/auto/DB_File/DB_File.so \
+	/usr/lib/perl5/*/auto/Time/HiRes/HiRes.so \
+	/usr/lib/perl5/*/auto/Compress/Raw/Zlib/Zlib.so
+endef
+
+include ../../Rules
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_PREPARE): $(OBJECTS)
+	@$(PRE_PREPARE)
+	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
+
+	$(DO_PATCHES)
+
+	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
+
+	@$(POST_PREPARE)
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && sed -i -e "s|BUILD_ZLIB\s*= True|BUILD_ZLIB = False|" \
+							-e "s|INCLUDE\s*= ./zlib-src|INCLUDE = /usr/include|" \
+							-e "s|LIB\s*= ./zlib-src|LIB = /usr/lib|" \
+							ext/Compress/Raw/Zlib/config.in
+
+	cd $(DIR_APP) && ./configure.gnu --prefix=/usr \
+		-Dman1dir=/usr/share/man/man1 -Dman3dir=/usr/share/man/man3 \
+		-Dpager="/usr/bin/less -isR"
+
+	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)

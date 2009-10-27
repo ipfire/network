@@ -1,0 +1,314 @@
+#!/bin/bash
+
+. ${BASEDIR}/tools/ui-functions
+. ${BASEDIR}/tools/package-functions
+
+function exithandler() {
+	local mount
+	local mounts
+
+	log DEBUG "Unmounting everything in ${BUILD_DIR}..."
+	while true; do
+		mounts=$(mount | grep "${BUILD_DIR}")
+		if [ -z "${mounts}" ]; then
+			log DEBUG "  Everything is unmounted."
+			break
+		fi
+
+		while read mount; do
+			umount $(awk '{ print $3 }' <<<${mount})
+		done <<<"${mounts}"
+	done
+
+	if [ "${ERROR}" != "1" ]; then
+		[ -d "${BUILD_DIR}" ] && rm -rf ${BUILD_DIR}
+	fi
+
+	log DEBUG "Shut down naoki instance with pid $$."
+	log DEBUG "----------"
+}
+trap exithandler EXIT
+
+function debug() {
+	[ "${DEBUG}" = "1" ]
+}
+
+function force() {
+	[ "${FORCE}" = "1" ]
+}
+
+function naoki_lock() {
+	local lockfile="${BUILD_DIR}/.lock"
+
+	case "${1}" in
+		1)
+			touch ${lockfile}
+			;;
+		0)
+			rm -f ${lockfile}
+			;;
+		*)
+			if [ -e "${lockfile}" ]; then
+				return 0
+			else
+				return 1
+			fi
+			;;
+	esac
+}
+
+function naoki_prepare() {
+	local p=$(find_package ${1})
+	shift
+
+	#local pkg_dependencies=$(dependencies_resolve ${p})
+	#msg "  Resolving dependencies: ${pkg_dependencies-None}"
+	#local dep
+	#for dep in ${pkg_dependencies}; do
+	#	if ! package_is_built ${dep}; then
+	#		msg "Dependencies for ${p} are missing. Cannot prepare."
+	#		exit 4
+	#	fi
+	#done
+
+	msg "Preparing environment ${BUILD_DIR}..."
+
+	mkdir -p \
+		${BUILD_DIR} \
+		${BUILD_DIR}/{root,tmp} \
+		${BUILD_DIR}/{dev,proc,sys} \
+		${BUILD_DIR}/{,usr/}{bin,lib,sbin} \
+		${BUILD_DIR}/usr/src \
+		${BUILD_DIR}/${BUILD_ROOT} \
+		${BUILD_DIR}/${TOOLS_DIR}
+
+	local i
+	for i in cache ccache pkgs src tools ${PACKAGES_DIR##*/}; do
+		mkdir -p ${BASEDIR}/${i} ${BUILD_DIR}/usr/src/${i} 2>/dev/null
+		mount --bind ${BASEDIR}/${i} ${BUILD_DIR}/usr/src/${i}
+	done
+	mount --bind ${TOOLS_DIR} ${BUILD_DIR}/${TOOLS_DIR}/
+	
+	# Mounting kernel fs
+	for i in dev proc sys; do
+		mount --bind /${i} ${BUILD_DIR}/${i}
+	done
+
+	#naoki_make ${p} --without-chroot download
+
+	# Extract needed packages
+
+	for i in /bin/bash /bin/sh; do
+		if [ -e "${BUILD_DIR}${i}" ]; then
+			continue
+		fi
+		log DEBUG "Creating symlink: ${BUILD_DIR}${i} --> ${TOOLS_DIR}${i}"
+		ln -sf ${TOOLS_DIR}${i} ${BUILD_DIR}${i}
+	done
+
+	naoki_make ${p} prepare $@
+	return $?
+}
+
+function naoki_cleanup() {
+	local p=$(find_package ${1})
+
+	log INFO "Cleaning up environment ${BUILD_DIR}..."
+
+	if naoki_lock; then
+		error "Cannot remove locked ${BUILD_DIR}..."
+		return 1
+	fi
+
+	#rm -rf ${BUILD_DIR}
+}
+
+function naoki_cmd() {
+	local package
+	local chroot_cmd
+	local cmd
+	local with_chroot=1
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--without-chroot)
+				with_chroot=0
+				;;
+			*)
+				if [ -z "${package}" ]; then
+					package=$(find_package ${1})
+				else
+					cmd="${cmd} ${1}"
+				fi
+				;;
+		esac
+		shift
+	done
+	cmd=${cmd:1}
+
+	is_package ${package} || return 1
+
+	log DEBUG "Running command \"${cmd}\" - chroot=${with_chroot}."
+	
+	local path="/sbin:/usr/sbin:/bin:/usr/bin"
+	if [ "${TOOLCHAIN}" = "1" ] || [ ! -e "${BUILD_DIR}/usr/bin/env" ]; then
+		path="${TOOLS_DIR}/sbin:${TOOLS_DIR}/bin:${path}"
+	fi
+	log DEBUG "  PATH : ${path}"
+	
+	local ps1="\u:\w\$ "
+
+	if [ "${with_chroot}" = "1" ]; then
+		chroot_cmd="chroot ${BUILD_DIR}"
+		ps1="${CLR_NORM_RED}chroot${NORMAL}: \w\$ "
+
+		touch ${BUILD_DIR}/.chroot
+	fi
+
+	local ret
+	PATH=${path} \
+	${chroot_cmd} \
+		env -i \
+			HOME="/root" \
+			TERM="${TERM}" \
+			PS1="${ps1}" \
+			PATH="${path}" \
+			\
+			DISTRO_NAME="${DISTRO_NAME}" \
+			DISTRO_SNAME="${DISTRO_SNAME}" \
+			DISTRO_VER="${DISTRO_VER}" \
+			DISTRO_EPOCH="${DISTRO_EPOCH}" \
+			DISTRO_SLOGAN="${DISTRO_SLOGAN}" \
+			\
+			ROOT=$([ "${TOOLCHAIN}" = "1" ] && \
+				echo "${BUILD_DIR}") \
+			CHROOT="${CHROOT}" \
+			TOOLS_DIR="${TOOLS_DIR}" \
+			TOOLCHAIN="${TOOLCHAIN}" \
+			BUILDROOT="${BUILD_ROOT}" \
+			\
+			CFLAGS="${CFLAGS}" \
+			CXXFLAGS="${CXXFLAGS}" \
+			TARGET="${TARGET}" \
+			TARGET_MACHINE="${MACHINE}" \
+			PARALLELISMFLAGS="${PARALLELISMFLAGS}" \
+			\
+			${cmd}
+
+	ret=$?
+	log DEBUG "  Exit code: ${ret}"
+
+	return ${ret}
+}
+
+function naoki_make() {
+	local p=$(find_package ${1})
+	shift
+
+	local cmd="make --no-print-directory -C"
+	if [ "${CHROOT}" = "0" ] || [ "${TOOLCHAIN}" = "1" ]; then
+		cmd="${cmd} ${PKG_DIR}/${p}"
+	else
+		cmd="${cmd} /usr/src/pkgs/${p}"
+	fi
+	cmd="${cmd} -f ${p##*/}.nm"
+
+	naoki_cmd ${p} "${cmd}" $@ 2>&1 | __erase_log
+	return ${PIPESTATUS[0]}
+}
+
+function __erase_log() {
+	local line
+	while read -a line; do
+		grep -q "commands for target" <<<"${line[*]}" && continue
+		echo -e "${line[*]}"
+	done
+}
+
+function naoki_build() {
+	local p=$(find_package ${1})
+	shift
+
+	local ret
+	msg "Going on to build package \"${p}\"."
+
+	naoki_prepare ${p} $@
+	ret=$?
+
+	if [  "${ret}" != "0" ]; then
+		error "Prepare command failed."
+		exit ${ret}
+	fi
+
+	naoki_make ${p} build $@
+	ret=$?
+
+	if [  "${ret}" != "0" ]; then
+		error "Build command failed."
+		exit ${ret}
+	fi
+	
+	naoki_make ${p} install $@
+	ret=$?
+
+	if [  "${ret}" != "0" ]; then
+		error "Install command failed."
+		exit ${ret}
+	fi
+
+	naoki_make ${p} package $@
+	ret=$?
+
+	if [  "${ret}" != "0" ]; then
+		error "Package command failed."
+		exit ${ret}
+	fi
+}
+
+function naoki_build_tree() {
+	local packages
+	local p
+
+	package_tree $@ | \
+		while read packages; do
+			for p in ${packages}; do
+				naoki_build ${p}
+			done
+		done
+}
+
+function naoki_shell() {
+	local p=$(find_package ${1})
+	shift
+
+	naoki_prepare ${p}
+
+	# A little help message
+	echo
+	echo -e " ${CLR_NORM_RED}Chroot environment${NORMAL}"
+	echo
+	echo    "  This is starting a chrooted environment where you can natively"
+	echo    "  access the build system. When you leave the shell all files will"
+	echo    "  be lost."
+	echo
+	echo    "  Source of ${PKG_NAME} is extracted to /usr/src."
+	echo
+	echo -e "  ${BOLD}Exit with Ctrl+D.${NORMAL}"
+	echo
+
+	naoki_cmd ${p} "bash --login"
+	local ret=$?
+	
+	echo
+	echo    "Exit code: ${ret}"
+	echo
+}
+
+function naoki_toolchain() {
+	TOOLCHAIN=1
+
+	local p=$(find_package ${1})
+	shift
+
+	naoki_build ${p} --without-chroot $@
+}

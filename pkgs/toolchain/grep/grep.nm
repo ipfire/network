@@ -1,0 +1,16 @@
+
+include ../../core/grep/grep.nm
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR) \
+			--disable-perl-regexp \
+			--without-included-regex
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)

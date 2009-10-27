@@ -1,0 +1,54 @@
+
+PKG_TOOLCHAIN_DEPS += binutils-static kernel-headers
+
+include ../../core/gcc/gcc.nm
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+	
+	## Enable -fPIC by default
+	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
+		-i gcc/config/i386/linux.h
+	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
+		-i gcc/config/i386/x86-64.h
+
+	# libssp has no use with new versions of Glibc. Glibc completely replaces all 
+	# functions in libssp, linking to libssp will cause conflicts with libc, so 
+	# libssp is a waste of space... so --disable-libssp. 
+
+	set
+
+	cd $(DIR_SRC)/gcc-build && \
+		CC="gcc -B/usr/bin/" \
+		../$(THISAPP)/configure \
+			$(CONFIGURE_ARCH) \
+			--target=$(TARGET) \
+			$(CONFIG_CPU) \
+			--prefix=$(TOOLS_DIR) \
+			--with-local-prefix=$(TOOLS_DIR) \
+			--libexecdir=$(TOOLS_DIR)/lib \
+			--enable-languages=c \
+			--enable-shared \
+			--disable-nls \
+			--disable-libssp \
+			--disable-werror \
+			--disable-static \
+			$(CONFIGURE_ARGS)
+
+	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_SRC)/gcc-build && make install
+
+	ln -fvs gcc $(TOOLS_DIR)/bin/cc
+
+	$(TARGET)-gcc -dumpspecs | sed \
+		-e 's@$(LINKER)@$(TOOLS_DIR)&@g' \
+		> $$(dirname $$($(TARGET)-gcc -print-libgcc-file-name))/specs
+
+	@$(POST_INSTALL)

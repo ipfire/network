@@ -1,0 +1,79 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include ../../Config
+
+PKG_NAME       = xz
+PKG_VER        = 4.999.8beta
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Compression
+PKG_URL        = http://tukaani.org/xz/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = LZMA Utils.
+
+define PKG_DESCRIPTION
+	LZMA provides very high compression ratio and fast decompression. The \
+	core of the LZMA utils is Igor Pavlov's LZMA SDK containing the actual \
+	LZMA encoder/decoder. LZMA utils add a few scripts which provide \
+	gzip-like command line interface and a couple of other LZMA related \
+	tools.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+define QUALITY_AGENT_WHITELIST_RPATH
+	/usr/bin/xz \
+	/usr/bin/lzmadec \
+	/usr/bin/xzdec
+endef
+
+include ../../Rules
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--disable-static
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	rm -vf $(BUILDROOT)/usr/lib/liblzma.la
+
+	@$(POST_INSTALL)

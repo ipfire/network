@@ -1,0 +1,76 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include ../../Config
+
+PKG_NAME       = attr
+PKG_VER        = 2.4.43
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://oss.sgi.com/projects/xfs/
+PKG_LICENSE    = GPLv2+ LGPLv2+
+PKG_SUMMARY    = Tools for extended attribute support.
+
+define PKG_DESCRIPTION
+	A set of tools for manipulating extended attributes on filesystem \
+	objects.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+include ../../Rules
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--bindir=/bin \
+			--enable-shared
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	install -v -m0755 $(DIR_APP)/libattr/.libs/libattr.so.1.1.0 $(BUILDROOT)/lib
+	ln -vsf libattr.so.1.1.0 $(BUILDROOT)/lib/libattr.so.1
+	ln -vsf ../../lib/libattr.so.1 $(BUILDROOT)/usr/lib/libattr.so
+	install -v -d $(BUILDROOT)/usr/include/attr
+	cp -vf $(DIR_APP)/include/{attributes.h,error_context.h,libattr.h,xattr.h} \
+		$(BUILDROOT)/usr/include/attr/
+
+	@$(POST_INSTALL)

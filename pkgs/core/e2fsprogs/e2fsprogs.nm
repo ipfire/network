@@ -1,0 +1,107 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include ../../Config
+
+PKG_NAME       = e2fsprogs
+PKG_VER        = 1.41.8
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://e2fsprogs.sourceforge.net/
+PKG_LICENSE    = GPLv2
+PKG_SUMMARY    = Utilities for managing the extended (ext2/ext3/ext4) filesystems.
+
+define PKG_DESCRIPTION
+	The e2fsprogs package contains a number of utilities for creating, \
+	checking, modifying, and correcting any inconsistencies in second \
+	and third extended (ext2/ext3) filesystems.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+include ../../Rules
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_PREPARE): $(OBJECTS)
+	@$(PRE_PREPARE)
+	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
+
+	$(DO_PATCHES)
+
+	-mkdir $(DIR_APP)/build
+
+	# Fix DT_TEXTREL in e2fsprogs libraries. --disable-shared and
+	# --with-pic are not options in E2fsprogs:
+	cd $(DIR_APP) && \
+		find lib/ -name Makefile.in -exec sed -i "s/\$$(ALL_CFLAGS)/& -fPIC/" {} \;
+
+	# At run time libblkid looks for the BLKID_DEBUG environment variable to
+	# enable debbugging, with getenv(3). Some suid-root programs use libblkid,
+	# such as mount(1). e2fsprogs includes a safe_getenv() function, which calls
+	# __secure_getenv() from libc. __secure_getenv will restrict some environment
+	# variables if the user is suid or sgid. So, this command replaces getenv()
+	# with safe_getenv():
+	cd $(DIR_APP) && sed \
+		-e "s/getenv(\"BLKID_DEBUG\")/safe_getenv(\"BLKID_DEBUG\")/" \
+		-i lib/blkid/cache.c
+
+	@$(POST_PREPARE)
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP)/build && \
+		LDFLAGS=-lblkid \
+		../configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--with-root-prefix="" \
+			--enable-elf-shlibs \
+			--disable-libblkid \
+			--disable-fsck \
+			--disable-uuidd \
+			--disable-libuuid
+
+	cd $(DIR_APP)/build && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP)/build && make install DESTDIR=$(BUILDROOT)
+	cd $(DIR_APP)/build && make install-libs DESTDIR=$(BUILDROOT)
+
+	ln -svf ../../lib/libcom_err.so.2 $(BUILDROOT)/usr/lib/libcom_err.so
+	ln -svf ../../lib/libe2p.so.2 $(BUILDROOT)/usr/lib/libe2p.so
+	ln -svf ../../lib/libext2fs.so.2 $(BUILDROOT)/usr/lib/libext2fs.so
+	ln -svf ../../lib/libss.so.2 $(BUILDROOT)/usr/lib/libss.so
+	ln -svf ../../lib/libuuid.so.1 $(BUILDROOT)/usr/lib/libuuid.so
+
+	@$(POST_INSTALL)

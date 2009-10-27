@@ -1,4 +1,3 @@
-#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
@@ -18,86 +17,61 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #                                                                             #
 ###############################################################################
-#
 
-NAME="IPFire"                       # Software name
-SNAME="ipfire"                      # Short name
-VERSION="3.0-prealpha2"             # Version number
-SLOGAN="Gluttony"                   # Software slogan
+###############################################################################
+# Definitions
+###############################################################################
 
-BASEDIR=/ipfire-3.x
+include ../../Config
 
-. ${BASEDIR}/tools/ui-functions
+PKG_NAME       = zlib
+PKG_VER        = 1.2.3
+PKG_REL        = 0
 
-NAOKI=${BASEDIR}/tools/naoki
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.gzip.org/zlib/
+PKG_LICENSE    = zlib
+PKG_SUMMARY    = The zlib compression and decompression library.
 
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		--debug|-d)
-			DEBUG=1
-			log DEBUG "Debugging mode enabled by command line."
-			;;
-		*)
-			action=${1}
-			shift
-			break
-			;;
-	esac
-	shift
-done
+define PKG_DESCRIPTION
+	Zlib is a general-purpose, patent-free, lossless data compression \
+	library which is used by many different programs.
+endef
 
-function package() {
-	local action=${1}
-	shift
+PKG_BUILD_DEPS = glibc
 
-	case "${action}" in
-		dependencies|deps)
-			echo -e "${BOLD}Build dependencies:${NORMAL} $(package_build_dependencies $@)"
-			echo -e "${BOLD}Dependencies:${NORMAL}       $(package_dependencies $@)"
-			;;
-		find)
-			find_package $@
-			;;
-		list)
-			${NAOKI} --toolchain list
-			;;
-		profile|info)
-			${NAOKI} profile $@
-			;;
-		_info)
-			package_info $(find_package $@)
-			;;
-	esac
-}
+PKG_TARBALL    = $(THISAPP)-autotools-1.tar.gz
 
-function listmatch() {
-	local arg=${1}
-	shift
-	
-	local value
-	for value in $@; do
-		if [ "${arg}" == "${value}" ]; then
-			return 0
-		fi
-	done
-	return 1
-}
+CFLAGS        += -fPIC -DPIC
 
+include ../../Rules
 
-case "${action}" in
-	package|pkg)
-		package $@
-		;;
-	toolchain)
-		TOOLCHAIN=1
-		${NAOKI} --toolchain tree
-		;;
-	toolchain_build)
-		for i in $($0 toolchain); do
-			${NAOKI} --toolchain toolchain ${i}
-		done
-		;;
-	tree)
-		${NAOKI} tree
-		;;
-esac
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && \
+		ac_cv_func_working_mktime=yes \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--libdir=/lib \
+			--disable-static
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+	-mkdir -pv $(BUILDROOT)/usr/{include,lib}
+	cd $(DIR_APP) && cp -pfv zconf.h zlib.h $(BUILDROOT)/usr/include
+	rm -vf $(BUILDROOT)/lib/libz.{la,so}
+	ln -sfv ../../lib/libz.so.$(PKG_VER) $(BUILDROOT)/usr/lib/libz.so
+
+	@$(POST_INSTALL)

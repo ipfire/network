@@ -1,0 +1,36 @@
+
+include ../../core/bash/bash.nm
+
+$(STAGE_PREPARE): $(OBJECTS)
+	@$(PRE_PREPARE)
+	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
+
+	#$(DO_PATCHES) Do not apply patches at toolchain because
+	# this will require an autoreconf that is only possible
+	# with the latest version of autoconf (which CentOS hasn't got)
+
+	@$(POST_PREPARE)
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && \
+		ac_cv_func_working_mktime=yes \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=$(TOOLS_DIR) \
+			--without-bash-malloc
+
+	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && make install
+
+	ln -svf bash $(TOOLS_DIR)/bin/sh
+
+	@$(POST_INSTALL)

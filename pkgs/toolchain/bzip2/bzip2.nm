@@ -1,0 +1,17 @@
+
+include ../../core/bzip2/bzip2.nm
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
+
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && make PREFIX=$(TOOLS_DIR) install
+
+	@$(POST_INSTALL)

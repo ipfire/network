@@ -1,0 +1,56 @@
+#!/bin/bash
+
+DEBUG=1 ## XXX currently always on
+
+DISTRO_NAME=IPFire
+DISTRO_SNAME=ipfire
+DISTRO_EPOCH=3
+DISTRO_VERSION=${DISTRO_EPOCH}.0-prealpha2
+DISTRO_SLOGAN="Gluttony"
+
+# Machine's infotmation
+HOSTNAME=$(</proc/sys/kernel/hostname)
+MACHINE=$(uname -m)
+
+BASEDIR=/ipfire-3.x
+
+
+BUILD_DIR="${BASEDIR}/naoki_$$"
+BUILD_ROOT="/buildroot.$$"
+LOG_DIR=${BASEDIR}/logs
+TOOLS_DIR=/tools_${MACHINE}
+PACKAGES_DIR=${BASEDIR}/packages
+
+ARCH=i686
+
+PACKAGES_TO_EXTRACT="coreutils filesystem perl util-linux-ng"
+
+PACKAGES_PARALLELISM=2
+PARALLELISMFLAGS=-j5
+
+CFLAGS="-fomit-frame-pointer -pipe"
+case "${ARCH}" in
+	i?86)
+		CFLAGS="-O2 -march=${ARCH} ${CFLAGS}"
+		CXXFLAGS="${CFLAGS}"
+		TARGET="${ARCH}-pc-linux-gnu"
+		;;
+esac
+
+# Read in .config
+
+if [ -e "${BASEDIR}/.config" ]; then
+	log DEBUG "Loading .config..."
+	source ${BASEDIR}/.config
+fi
+
+log INFO "Machine information:"
+log INFO "    Hostname     : ${HOSTNAME}"
+log INFO "    Architecture : ${MACHINE}"
+
+log INFO "Target information:"
+log INFO "    Architecture : ${ARCH}"
+log INFO "    CFLAGS       : ${CFLAGS}"
+log INFO "    CXXFLAGS     : ${CXXFLAGS}"
+log INFO "    TARGET       : ${TARGET}"
+log INFO "    Parallelism  : ${PARALLELISMFLAGS}"

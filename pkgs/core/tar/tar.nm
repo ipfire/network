@@ -1,0 +1,78 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include ../../Config
+
+PKG_NAME       = tar
+PKG_VER        = 1.22
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Packaging
+PKG_URL        = http://www.gnu.org/software/tar/
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = A GNU file archiving program.
+
+PKG_DEPS      += acl attr
+
+define PKG_DESCRIPTION
+	The GNU tar program saves many files together in one archive \
+	and can restore individual files (or all of the files) from  \
+	that archive. Tar can also be used to add supplemental files \
+	to an archive and to update or list files in the archive. Tar \
+	includes multivolume support,automatic archive \
+	compression/decompression, the ability to perform remote archives, \
+	and the ability to perform incremental and full backups.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+# Fix extracting sparse files to a filesystem like vfat, when ftruncate
+# may fail to grow the size of a file
+PKG_PATCHES   += $(THISAPP)-vfatTruncate.patch
+
+# Add support for ACLs in the tarballs.
+PKG_PATCHES   += $(THISAPP)-xattrs-1.patch
+PKG_PATCHES   += $(THISAPP)-xattrs-conf-1.patch
+
+include ../../Rules
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && \
+		CC="$(TARGET)-gcc -std=gnu99 -fgnu89-inline" \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--bindir=/bin \
+			--libexecdir=/usr/sbin
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
