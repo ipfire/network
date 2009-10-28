@@ -89,6 +89,8 @@ function create_manifest() {
 	for file in ${files}; do
 		echo "${file#${root}/}"
 	done > ${manifest}
+
+	cat ${manifest}
 }
 
 function apply_regexes() {
@@ -103,7 +105,7 @@ function apply_regexes() {
 
 	for regex in $(<${regexes}); do
 		[ "${regex:0:1}" != "/" ] && regex="/${regex}"
-		filelist=$(find ${root}${regex})
+		filelist=$(find ${root}${regex} 2>/dev/null)
 		for file in ${files}; do
 			grep "${file}" <<<"${filelist}"
 		done

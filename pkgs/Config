@@ -18,6 +18,10 @@
 #                                                                             #
 ###############################################################################
 
+ifeq "$(CHROOT)" "1"
+	BASEDIR = /usr/src
+endif
+
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 
 DIR_APP = $(DIR_SRC)/$(THISAPP)
@@ -27,6 +31,7 @@ DIR_SRC = $(ROOT)/usr/src
 DIR_TMP = /tmp
 DIR_SOURCE = $(CURDIR)
 DIR_PACKAGES = /usr/src/packages
+DIR_TOOLS = $(BASEDIR)/tools
 
 BUILD_HOST ?= $(shell cat /proc/sys/kernel/hostname)
 
@@ -42,18 +47,13 @@ PKG_PACKAGES_FILES = $(foreach package,$(PKG_PACKAGES),$(call DO_PACKAGE_FILENAM
 
 DO_PACKAGE_FILENAME = $(subst --,-,$(PKG_NAME_REAL)-$(subst default,,$(1))-$(PKG_VER)-$(DISTRO_SNAME)$(DISTRO_EPOCH)-$(PKG_REL).ipk)
 
-TC_PACKAGES = binutils gcc glibc
+TC_PACKAGES = binutils gcc glibc make
 PKG_TOOLCHAIN_DEPS ?= $(TC_PACKAGES)
 PKG_BUILD_DEPS ?= $(TC_PACKAGES)
 
-ifeq "$(TOOLCHAIN)" "1"
-	DO_EXTRACT = bash /build/ipfire-3.x/src/scripts/extractor
-	DO_PATCHES = cd $(DIR_APP) && /build/ipfire-3.x/tools/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
-else
-	DO_EXTRACT = bash /usr/src/src/scripts/extractor
-	DO_PATCHES = cd $(DIR_APP) && /usr/src/tools/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
-endif
-DO_LOAD = python /build/ipfire-3.x/tools/downloader http://source.ipfire.org/source-3.x/$@
+DO_EXTRACT = $(DIR_TOOLS)/extractor
+DO_LOAD    = $(DIR_TOOLS)/downloader http://source.ipfire.org/source-3.x/$@
+DO_PATCHES = cd $(DIR_APP) && $(DIR_TOOLS)/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
 
 define PKG_FILES_devel
 	/usr/include

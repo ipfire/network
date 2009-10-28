@@ -98,7 +98,7 @@ function naoki_prepare() {
 
 	# Extract needed packages
 
-	for i in /bin/bash /bin/sh; do
+	for i in /bin/bash /bin/pwd /bin/sh; do
 		if [ -e "${BUILD_DIR}${i}" ]; then
 			continue
 		fi
@@ -176,13 +176,14 @@ function naoki_cmd() {
 			\
 			DISTRO_NAME="${DISTRO_NAME}" \
 			DISTRO_SNAME="${DISTRO_SNAME}" \
-			DISTRO_VER="${DISTRO_VER}" \
+			DISTRO_VERSION="${DISTRO_VERSION}" \
 			DISTRO_EPOCH="${DISTRO_EPOCH}" \
 			DISTRO_SLOGAN="${DISTRO_SLOGAN}" \
 			\
+			BASEDIR="${BASEDIR}" \
 			ROOT=$([ "${TOOLCHAIN}" = "1" ] && \
 				echo "${BUILD_DIR}") \
-			CHROOT="${CHROOT}" \
+			CHROOT="${with_chroot}" \
 			TOOLS_DIR="${TOOLS_DIR}" \
 			TOOLCHAIN="${TOOLCHAIN}" \
 			BUILDROOT="${BUILD_ROOT}" \

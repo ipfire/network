@@ -84,14 +84,14 @@ $(STAGE_PACKAGE_TARGETS): $(STAGE_INSTALL)
 		--root=$(BUILDROOT) $(if $(PKG_FILES_$@), --regexes=$(DIR_TMP)/filelist_$@)
 
 $(STAGE_PREPARE): $(OBJECTS)
-	$(PRE_PREPARE)
+	@$(PRE_PREPARE)
 ifneq "$(PKG_TARBALL)" ""
 	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
 endif
 
 	$(DO_PATCHES)
 
-	$(POST_PREPARE)
+	@$(POST_PREPARE)
 
 $(STAGE_BUILD): $(STAGE_PREPARE)
 	$(PRE_BUILD)
@@ -108,6 +108,6 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 $(STAGE_INSTALL): $(STAGE_BUILD)
 	@$(PRE_INSTALL)
 
-	cd $(DIR_APP) && make install
+	cd $(DIR_APP) && make install $(if $(TOOLCHAIN),,DESTDIR=$(BUILDROOT))
 
 	@$(POST_INSTALL)
