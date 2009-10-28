@@ -41,6 +41,7 @@ define PKG_DESCRIPTION
 	to conform to the IEEE POSIX P1003.2/ISO 9945.2 Shell and Tools standard.
 endef
 
+PKG_BUILD_DEPS+= bison
 PKG_DEPS      += readline
 
 PKG_TARBALL    = $(THISAPP).tar.gz
@@ -99,13 +100,13 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 $(STAGE_INSTALL): $(STAGE_BUILD)
 	@$(PRE_INSTALL)
 
+	-mkdir -pv $(BUILDROOT)/{bin,etc/profile.d}
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
 	# Bash startup files
 	cp -avf $(DIR_SOURCE)/bash/{bashrc,profile,shells} $(BUILDROOT)/etc
 
 	# /etc/profile.d
-	-mkdir -pv $(BUILDROOT)/etc/profile.d
 	cp -vf $(DIR_SOURCE)/profile.d/* $(BUILDROOT)/etc/profile.d
 
 	@$(POST_INSTALL)

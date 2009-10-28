@@ -77,6 +77,7 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	cd $(DIR_APP) && make PREFIX=$(BUILDROOT)/usr install
 
+	-mkdir -pv $(BUILDROOT)/{bin,lib}
 	cd $(DIR_APP) && cp -v bzip2-shared $(BUILDROOT)/bin/bzip2
 	cd $(DIR_APP) && cp -av libbz2.so* $(BUILDROOT)/lib
 	ln -sfv ../../lib/libbz2.so.1.0 $(BUILDROOT)/usr/lib/libbz2.so

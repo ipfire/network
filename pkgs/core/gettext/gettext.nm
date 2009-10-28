@@ -47,6 +47,8 @@ define PKG_DESCRIPTION
 	programs.
 endef
 
+PKG_DEPS      += libxml2
+
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 PKG_PATCHES   += $(THISAPP)-open-args-1.patch

@@ -46,6 +46,8 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 #PKG_PATCHES   += $(THISAPP)-uname_PIC-1.patch
 PKG_PATCHES   += $(THISAPP)-i18n-1.patch
 
+PKG_BUILD_DEPS+= autoconf automake
+
 CFLAGS        += -D_GNU_SOURCE=1 -fno-strict-aliasing
 
 include ../../Rules
@@ -53,6 +55,16 @@ include ../../Rules
 ###############################################################################
 # Installation Details
 ###############################################################################
+
+$(STAGE_PREPARE): $(OBJECTS)
+	@$(PRE_PREPARE)
+	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
+
+	$(DO_PATCHES)
+
+	cd $(DIR_APP) && autoreconf --force
+
+	@$(POST_PREPARE)
 
 $(STAGE_BUILD): $(STAGE_PREPARE)
 	@$(PRE_BUILD)
@@ -76,6 +88,7 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
+	-mkdir -pv $(BUILDROOT)/{bin,etc/{pam,profile}.d}
 	mv -v $(BUILDROOT)/usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo} $(BUILDROOT)/bin
 	mv -v $(BUILDROOT)/usr/bin/{false,hostname,ln,ls,mkdir,mknod,mv,pwd,readlink,rm} $(BUILDROOT)/bin
 	mv -v $(BUILDROOT)/usr/bin/{rmdir,stty,sync,touch,true,uname} $(BUILDROOT)/bin
@@ -86,10 +99,9 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	# Dump /etc/dircolors.
 	dircolors -p > $(BUILDROOT)/etc/dircolors
-	-mkdir -pv $(BUILDROOT)/etc/profile.d
 	cp -vf $(DIR_SOURCE)/profile.d/dircolors.sh $(BUILDROOT)/etc/profile.d
 
 	# PAM
-	cp -vf $(DIR_SOURCE)/pam.d/su{,-l} /etc/pam.d
+	cp -vf $(DIR_SOURCE)/pam.d/su{,-l} $(BUILDROOT)/etc/pam.d
 
 	@$(POST_INSTALL)

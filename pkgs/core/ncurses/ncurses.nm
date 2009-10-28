@@ -72,6 +72,7 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
+	-mkdir -pv $(BUILDROOT)/lib
 	mv -v $(BUILDROOT)/usr/lib/libncursesw.so.5* $(BUILDROOT)/lib
 	ln -sfv ../../lib/libncursesw.so.5 $(BUILDROOT)/usr/lib/libncursesw.so
 	for lib in curses ncurses form panel menu; do \

@@ -78,6 +78,7 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
+	-mkdir -pv $(BUILDROOT)/usr/bin
 	mv -v $(BUILDROOT)/bin/{gzexe,uncompress,zcmp,zdiff,zegrep} $(BUILDROOT)/usr/bin
 	mv -v $(BUILDROOT)/bin/{zfgrep,zforce,zgrep,zless,zmore,znew} $(BUILDROOT)/usr/bin
 

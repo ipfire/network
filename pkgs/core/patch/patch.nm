@@ -51,3 +51,14 @@ PKG_PATCHES   += $(THISAPP)-mkstemp-1.patch
 PKG_PATCHES   += $(THISAPP)-fixes-1.patch
 
 include ../../Rules
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_INSTALL): $(STAGE_BUILD)
+	@$(PRE_INSTALL)
+
+	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr
+
+	@$(POST_INSTALL)
