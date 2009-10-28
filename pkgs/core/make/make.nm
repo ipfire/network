@@ -43,6 +43,8 @@ define PKG_DESCRIPTION
 	makefile.
 endef
 
+PKG_BUILD_DEPS:= $(filter-out make,$(PKG_BUILD_DEPS))
+
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
 include ../../Rules
