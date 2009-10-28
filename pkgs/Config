@@ -42,7 +42,7 @@ PKG_OBJECTS = $(PKG_TARBALL)
 OBJECTS = $(PKG_OBJECTS) $(PKG_PATCHES)
 
 PKG_NAME_REAL = $(notdir $(CURDIR))
-PKG_PACKAGES = default devel
+PKG_PACKAGES = default
 PKG_PACKAGES_FILES = $(foreach package,$(PKG_PACKAGES),$(call DO_PACKAGE_FILENAME,$(package)))
 
 DO_PACKAGE_FILENAME = $(subst --,-,$(PKG_NAME_REAL)-$(subst default,,$(1))-$(PKG_VER)-$(DISTRO_SNAME)$(DISTRO_EPOCH)-$(PKG_REL).ipk)
