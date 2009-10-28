@@ -145,21 +145,27 @@ function package_summary() {
 function package_runtime_dependencies() {
 	local package
 	for package in $(package_get ${1} PKG_DEPENDENCIES); do
-		find_package ${package}
+		package=$(find_package ${package})
+		echo "${package}"
+		log DEBUG "  Got runtime dep: ${package}"
 	done
 }
 
 function package_build_dependencies() {
 	local package
 	for package in $(package_get ${1} PKG_BUILD_DEPENDENCIES); do
-		find_package ${package}
+		package=$(find_package ${package})
+		echo "${package}"
+		log DEBUG "  Got build dep: ${package}"
 	done
 }
 
 function package_toolchain_dependencies() {
 	local package
 	for package in $(package_get ${1} PKG_TOOLCHAIN_DEPS); do
-		find_package ${package}
+		package=$(find_package ${package})
+		echo "${package}"
+		log DEBUG "  Got toolchain dep: ${package}"
 	done
 }
 
