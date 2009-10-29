@@ -25,7 +25,7 @@
 include Config
 
 PKG_NAME   = LVM2
-PKG_VER    = 2.02.44
+PKG_VER    = 2.02.54
 PKG_REL    = 0
 
 THISAPP    = $(PKG_NAME).$(PKG_VER)
@@ -91,7 +91,8 @@ $(OBJECT): $(objects)
 			--sbindir=/sbin \
 			--exec-prefix=/ \
 			--libdir=/lib \
-			--disable-static
+			--disable-static \
+			--enable-pkgconfig
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 	cd $(DIR_APP) && make install
 	@rm -rf $(DIR_APP)
