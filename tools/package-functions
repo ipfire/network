@@ -17,7 +17,7 @@ function listmatch() {
 function is_package() {
 	local package=$(find_package ${1})
 
-	if listmatch ${package} $(package_list); then
+	if [ -e "${PKG_DIR}/${package}/${package##*/}.nm" ]; then
 		return 0
 	else
 		log ERROR "Package ${package} is not known."
@@ -75,7 +75,12 @@ function package_list() {
 				continue
 			fi
 
-			echo "${package#${PKG_DIR}/}"
+			package=${package#${PKG_DIR}/}
+
+			# Skip if package does not fullfill our criteria
+			is_package ${package} || continue
+
+			echo "${package}"
 		done
 	done
 }
