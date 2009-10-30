@@ -416,7 +416,6 @@ misc_build() {
 	ipfire_make htop
 	ipfire_make nano
 	ipfire_make joe
-	ipfire_make powertop
 
 	### Servers
 	#
