@@ -1,5 +1,4 @@
-
-PKG_DIR=${BASEDIR}/pkgs
+#!/bin/bash
 
 function listmatch() {
 	local arg=${1}
@@ -17,7 +16,7 @@ function listmatch() {
 function is_package() {
 	local package=$(find_package ${1})
 
-	if [ -e "${PKG_DIR}/${package}/${package##*/}.nm" ]; then
+	if [ -e "${DIR_PKGS}/${package}/${package##*/}.nm" ]; then
 		return 0
 	else
 		log ERROR "Package ${package} is not known."
@@ -29,7 +28,7 @@ function find_package() {
 	local package=${1}
 	#log DEBUG "Searching for package \"${package}\"."
 
-	if [ -e "${PKG_DIR}/${package}" ]; then
+	if [ -e "${DIR_PKGS}/${package}" ]; then
 		echo "${package}"
 		return 0
 	fi
@@ -47,7 +46,7 @@ function find_package() {
 function package_repos() {
 	local repo
 	
-	for repo in ${PKG_DIR}/*; do
+	for repo in ${DIR_PKGS}/*; do
 		if [ ! -d "${repo}" ]; then
 			continue
 		fi
@@ -70,12 +69,12 @@ function package_list() {
 	local repo
 	
 	for repo in $(package_repos); do
-		for package in ${PKG_DIR}/${repo}/*; do
+		for package in ${DIR_PKGS}/${repo}/*; do
 			if [ ! -d "${package}" ]; then
 				continue
 			fi
 
-			package=${package#${PKG_DIR}/}
+			package=${package#${DIR_PKGS}/}
 
 			# Skip if package does not fullfill our criteria
 			is_package ${package} || continue
@@ -110,11 +109,17 @@ function package_profile() {
 function package_info() {
 	local p=$(find_package ${1})
 
-	log DEBUG "Fetching package information from ${PKG_DIR}/${p}..."
+	log DEBUG "Fetching package information from ${DIR_PKGS}/${p}..."
+	
+	echo "gothere: ${p}" > .test
 
 	is_package ${p} || return 1
 
-	CHROOT=0 naoki_make ${p} --without-chroot info | grep -v "^make:"
+	if [ "${NAOKI_INCLUDE}" = "1" ]; then
+		CHROOT=0 naoki_make ${p} --without-chroot info | grep -v "^make:"
+	else
+		${NAOKI} info ${p}
+	fi
 }
 
 function package_get() {

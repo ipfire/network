@@ -1,0 +1,21 @@
+
+
+BASEDIR=/ipfire-3.x
+
+DEBUG=1 ## XXX currently always on
+
+DISTRO_NAME=IPFire
+DISTRO_SNAME=ipfire
+DISTRO_EPOCH=3
+DISTRO_VERSION=${DISTRO_EPOCH}.0-prealpha2
+DISTRO_SLOGAN="Gluttony"
+
+# Machine's infotmation
+HOSTNAME=$(</proc/sys/kernel/hostname)
+MACHINE=$(uname -m)
+
+NAOKI=${BASEDIR}/tools/naoki
+
+DIR_LOGS=${BASEDIR}/logs
+DIR_PACKAGES=${BASEDIR}/packages
+DIR_PKGS=${BASEDIR}/pkgs

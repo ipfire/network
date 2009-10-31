@@ -1,25 +1,8 @@
 #!/bin/bash
 
-DEBUG=1 ## XXX currently always on
-
-DISTRO_NAME=IPFire
-DISTRO_SNAME=ipfire
-DISTRO_EPOCH=3
-DISTRO_VERSION=${DISTRO_EPOCH}.0-prealpha2
-DISTRO_SLOGAN="Gluttony"
-
-# Machine's infotmation
-HOSTNAME=$(</proc/sys/kernel/hostname)
-MACHINE=$(uname -m)
-
-BASEDIR=/ipfire-3.x
-
-
 BUILD_DIR="${BASEDIR}/naoki_$$"
 BUILD_ROOT="/buildroot.$$"
-LOG_DIR=${BASEDIR}/logs
 TOOLS_DIR=/tools_${MACHINE}
-PACKAGES_DIR=${BASEDIR}/packages
 
 ARCH=i686
 
@@ -36,13 +19,6 @@ case "${ARCH}" in
 		TARGET="${ARCH}-pc-linux-gnu"
 		;;
 esac
-
-# Read in .config
-
-if [ -e "${BASEDIR}/.config" ]; then
-	log DEBUG "Loading .config..."
-	source ${BASEDIR}/.config
-fi
 
 log INFO "Machine information:"
 log INFO "    Hostname     : ${HOSTNAME}"

@@ -1,7 +1,6 @@
 #!/bin/bash
 
-. ${BASEDIR}/tools/ui-functions
-. ${BASEDIR}/tools/package-functions
+LOGFILE=${BASEDIR}/naoki.log
 
 function exithandler() {
 	local mount
@@ -208,7 +207,7 @@ function naoki_make() {
 
 	local cmd="make --no-print-directory -C"
 	if [ "${CHROOT}" = "0" ] || [ "${TOOLCHAIN}" = "1" ]; then
-		cmd="${cmd} ${PKG_DIR}/${p}"
+		cmd="${cmd} ${DIR_PKGS}/${p}"
 	else
 		cmd="${cmd} /usr/src/pkgs/${p}"
 	fi

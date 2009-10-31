@@ -20,22 +20,19 @@
 ###############################################################################
 #
 
-NAME="IPFire"                       # Software name
-SNAME="ipfire"                      # Short name
-VERSION="3.0-prealpha2"             # Version number
-SLOGAN="Gluttony"                   # Software slogan
-
 BASEDIR=/ipfire-3.x
 
-. ${BASEDIR}/tools/ui-functions
-
-NAOKI=${BASEDIR}/tools/naoki
+. ${BASEDIR}/tools/common-include
 
 while [ $# -gt 0 ]; do
 	case "${1}" in
 		--debug|-d)
 			DEBUG=1
 			log DEBUG "Debugging mode enabled by command line."
+			;;
+		--toolchain)
+			TOOLCHAIN=1
+			log DEBUG "Toolchain mode enabled by command line."
 			;;
 		*)
 			action=${1}
@@ -46,23 +43,25 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
+export DEBUG TOOLCHAIN
+
 function package() {
 	local action=${1}
 	shift
 
 	case "${action}" in
 		dependencies|deps)
-			echo -e "${BOLD}Build dependencies:${NORMAL} $(package_build_dependencies $@)"
-			echo -e "${BOLD}Dependencies:${NORMAL}       $(package_dependencies $@)"
+			echo -e "${BOLD}Build dependencies:${NORMAL} $(package_build_dependencies $@ | tr '\n' ' ')"
+			echo -e "${BOLD}Dependencies:${NORMAL}       $(package_runtime_dependencies $@ | tr '\n' ' ')"
 			;;
 		find)
 			find_package $@
 			;;
 		list)
-			${NAOKI} --toolchain list
+			package_list
 			;;
 		profile|info)
-			${NAOKI} profile $@
+			package_profile $(find_package $@)
 			;;
 		_info)
 			package_info $(find_package $@)
@@ -70,23 +69,9 @@ function package() {
 	esac
 }
 
-function listmatch() {
-	local arg=${1}
-	shift
-	
-	local value
-	for value in $@; do
-		if [ "${arg}" == "${value}" ]; then
-			return 0
-		fi
-	done
-	return 1
-}
-
-
 case "${action}" in
 	package|pkg)
-		package $@
+		package $@e
 		;;
 	toolchain)
 		TOOLCHAIN=1
