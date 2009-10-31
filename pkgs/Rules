@@ -45,6 +45,12 @@ define POST_INSTALL
 	echo "#####################################################################"
 	echo "# $(PKG_NAME) - Install finished"
 	echo "#####################################################################"
+
+	$(DO_QUALITY_AGENT)
+
+	# Dump filelist
+	cd $(BUILDROOT) && find -ls
+
 	touch $(STAGE_INSTALL)
 endef
 

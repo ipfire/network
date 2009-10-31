@@ -25,7 +25,7 @@ endif
 THISAPP    = $(PKG_NAME)-$(PKG_VER)
 
 DIR_APP = $(DIR_SRC)/$(THISAPP)
-DIR_DL  = $(DIR_SRC)/cache/tarballs
+DIR_DL  = $(BASEDIR)/cache/tarballs
 DIR_PATCHES = $(DIR_DL)/../patches
 DIR_SRC = $(ROOT)/usr/src
 DIR_TMP = /tmp
@@ -54,6 +54,7 @@ PKG_BUILD_DEPS ?= $(TC_PACKAGES)
 DO_EXTRACT = $(DIR_TOOLS)/extractor
 DO_LOAD    = $(DIR_TOOLS)/downloader http://source.ipfire.org/source-3.x/$@
 DO_PATCHES = cd $(DIR_APP) && $(DIR_TOOLS)/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
+DO_QUALITY_AGENT = $(DIR_TOOLS)/quality-agent
 
 define PKG_FILES_devel
 	/usr/include

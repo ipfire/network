@@ -82,7 +82,7 @@ function naoki_prepare() {
 		${BUILD_DIR}/${TOOLS_DIR}
 
 	local i
-	for i in cache ccache pkgs src tools ${PACKAGES_DIR##*/}; do
+	for i in cache ccache pkgs src tools ${DIR_PACKAGES##*/}; do
 		mkdir -p ${BASEDIR}/${i} ${BUILD_DIR}/usr/src/${i} 2>/dev/null
 		mount --bind ${BASEDIR}/${i} ${BUILD_DIR}/usr/src/${i}
 	done
@@ -219,9 +219,11 @@ function naoki_make() {
 
 function __erase_log() {
 	local line
-	while read -a line; do
-		grep -q "commands for target" <<<"${line[*]}" && continue
-		echo -e "${line[*]}"
+
+	local IFS='\n'
+	while read line; do
+		grep -q "commands for target" <<<"${line}" && continue
+		echo -e "${line}"
 	done
 }
 
@@ -231,6 +233,14 @@ function naoki_build() {
 
 	local ret
 	msg "Going on to build package \"${p}\"."
+	
+	CHROOT=0 naoki_make ${p} --without-chroot download $@
+	ret=$?
+	
+	if [  "${ret}" != "0" ]; then
+		error "Download command failed."
+		exit ${ret}
+	fi
 
 	naoki_prepare ${p} $@
 	ret=$?
