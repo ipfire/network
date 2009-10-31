@@ -1,0 +1,80 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include ../../Config
+
+PKG_NAME       = cpio
+PKG_VER        = 2.10
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Packaging
+PKG_URL        = http://www.gnu.org/software/cpio/
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = A GNU archiving program.
+
+PKG_BUILD_DEPS+= autoconf
+
+define PKG_DESCRIPTION
+	GNU cpio copies files into or out of a cpio or tar archive. Archives \
+	are files which contain a collection of other files plus information \
+	about them, such as their file name, owner, timestamps, and access \
+	permissions. The archive can be another file on the disk, a magnetic \
+	tape, or a pipe.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+include ../../Rules
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+$(STAGE_PREPARE): $(OBJECTS)
+	$(PRE_PREPARE)
+ifneq "$(PKG_TARBALL)" ""
+	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
+endif
+
+	$(DO_PATCHES)
+
+	cd $(DIR_APP) && autoreconf --force
+
+	$(POST_PREPARE)
+
+$(STAGE_BUILD): $(STAGE_PREPARE)
+	@$(PRE_BUILD)
+
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH)\
+			--prefix=/usr \
+			--bindir=/bin \
+			--libexecdir=/tmp \
+			--with-rmt=/usr/sbin/rmt
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	@$(POST_BUILD)
