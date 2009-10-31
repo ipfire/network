@@ -139,8 +139,6 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	cd $(DIR_SRC)/gcc-build && make install DESTDIR=$(BUILDROOT)
 
-	rm -vf $(BUILDROOT)/usr/lib/lib{ffi,gomp,mudflap{,th},stdc++,supc++}.la
-
 	ln -sfv ../usr/bin/cpp $(BUILDROOT)/lib
 	ln -sfv gcc $(BUILDROOT)/usr/bin/cc
 

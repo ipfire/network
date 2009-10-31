@@ -71,7 +71,7 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 	-mkdir -pv $(BUILDROOT)/usr/{include,lib}
 	cd $(DIR_APP) && cp -pfv zconf.h zlib.h $(BUILDROOT)/usr/include
-	rm -vf $(BUILDROOT)/lib/libz.{la,so}
+	rm -vf $(BUILDROOT)/lib/libz.so
 	ln -sfv ../../lib/libz.so.$(PKG_VER) $(BUILDROOT)/usr/lib/libz.so
 
 	@$(POST_INSTALL)

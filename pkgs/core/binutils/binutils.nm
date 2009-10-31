@@ -88,7 +88,6 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install DESTDIR=$(BUILDROOT)
 
-	cp -fv ../$(THISAPP)/include/libiberty.h $(BUILDROOT)/usr/include
-	rm -vf /usr/lib/libiberty.a $(BUILDROOT)/usr/lib/lib{bfd,opcodes}.la
+	cp -fv $(DIR_APP)/include/libiberty.h $(BUILDROOT)/usr/include
 
 	@$(POST_INSTALL)

@@ -179,8 +179,6 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 	# canary value changes at run-time. This is not as good as /dev/urandom, but
 	# it's better than nothing and has very good performance.
 
-	if [ ! -e /bin/pwd ]; then ln -sfn $(TOOLS_DIR)/bin/pwd /bin/pwd; fi
-
 	cd $(DIR_APP) && sed 's/-nostdlib/& -fno-stack-protector/g' -i.orig configure
 
 	cd $(DIR_APP) && sed -i 's|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(LINKER) -o|' \
@@ -228,27 +226,16 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	cd $(DIR_SRC)/glibc-build && make install install_root=$(BUILDROOT)
 
-	install -vd $(BUILDROOT)/usr/lib/static/
-	mv -v $(BUILDROOT)/usr/lib/{libbsd-compat,libg,libieee,libmcheck}.a $(BUILDROOT)/usr/lib/static/
-	mv -v $(BUILDROOT)/usr/lib/{libBrokenLocale,libanl,libcrypt}.a $(BUILDROOT)/usr/lib/static/
-	mv -v $(BUILDROOT)/usr/lib/{libm,libnsl,libpthread,libresolv}.a $(BUILDROOT)/usr/lib/static/
-	mv -v $(BUILDROOT)/usr/lib/{librpcsvc,librt,libutil}.a $(BUILDROOT)/usr/lib/static/
-
-	rm -vf $(BUILDROOT){/usr,}/lib/*_g.a
-
 	# Locales
 	-mkdir -pv $(BUILDROOT)/usr/lib/locale
 	# This would install all locales that are supported, but we do only
 	# install a minimal set of them
 	cd $(DIR_SRC)/glibc-build && make localedata/install-locales install_root=$(BUILDROOT)
 
-
 	# Timezone
 	cp -v --remove-destination $(BUILDROOT)/usr/share/zoneinfo/GMT $(BUILDROOT)/etc/localtime
 
 	# Configuration
 	cp -vf $(DIR_SOURCE)/{ld.so.conf,nsswitch.conf} $(BUILDROOT)/etc
-
-	if [ -h /bin/pwd ]; then rm -f /bin/pwd; fi
 
 	@$(POST_INSTALL)

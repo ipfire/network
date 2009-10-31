@@ -70,12 +70,3 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 
 	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
-	rm -vf $(BUILDROOT)/usr/lib/liblzma.la
-
-	@$(POST_INSTALL)
