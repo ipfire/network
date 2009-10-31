@@ -60,15 +60,7 @@ function naoki_prepare() {
 	local p=$(find_package ${1})
 	shift
 
-	#local pkg_dependencies=$(dependencies_resolve ${p})
-	#msg "  Resolving dependencies: ${pkg_dependencies-None}"
-	#local dep
-	#for dep in ${pkg_dependencies}; do
-	#	if ! package_is_built ${dep}; then
-	#		msg "Dependencies for ${p} are missing. Cannot prepare."
-	#		exit 4
-	#	fi
-	#done
+
 
 	msg "Preparing environment ${BUILD_DIR}..."
 
@@ -93,9 +85,23 @@ function naoki_prepare() {
 		mount --bind /${i} ${BUILD_DIR}/${i}
 	done
 
-	#naoki_make ${p} --without-chroot download
+	CHROOT=0 naoki_make ${p} --without-chroot download
 
 	# Extract needed packages
+	local pkg_dependencies=$(dependencies_resolve ${p} | tr "\n" " ")
+	msg "  Resolving dependencies: ${pkg_dependencies-None}"
+	local dep
+	for dep in ${pkg_dependencies}; do
+		if ! package_is_built ${dep}; then
+			msg "Dependencies for ${p} are missing. Cannot prepare."
+			return 4
+		fi
+	done
+
+	for dep in ${pkg_dependencies}; do
+		msg "Decompressing ${dep}..."
+		package_decompress ${dep}
+	done
 
 	for i in /bin/bash /bin/pwd /bin/sh; do
 		if [ -e "${BUILD_DIR}${i}" ]; then
@@ -233,14 +239,6 @@ function naoki_build() {
 
 	local ret
 	msg "Going on to build package \"${p}\"."
-	
-	CHROOT=0 naoki_make ${p} --without-chroot download $@
-	ret=$?
-	
-	if [  "${ret}" != "0" ]; then
-		error "Download command failed."
-		exit ${ret}
-	fi
 
 	naoki_prepare ${p} $@
 	ret=$?

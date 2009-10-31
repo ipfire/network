@@ -57,8 +57,18 @@ function package() {
 		find)
 			find_package $@
 			;;
+		is_built)
+			if package_is_built $(find_package $@); then
+				echo "Package is built."
+			else
+				echo "Package is NOT built."
+			fi
+			;;
 		list)
 			package_list
+			;;
+		packages)
+			package_packages $(find_package $@)
 			;;
 		profile|info)
 			package_profile $(find_package $@)
@@ -71,7 +81,7 @@ function package() {
 
 case "${action}" in
 	package|pkg)
-		package $@e
+		package $@
 		;;
 	toolchain)
 		TOOLCHAIN=1

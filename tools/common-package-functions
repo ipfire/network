@@ -189,7 +189,7 @@ function package_dependencies() {
 }
 
 function package_packages() {
-	package_get ${1} PKG_PACKAGES
+	package_get ${1} PKG_PACKAGES_FILES
 }
 
 function package_maintainer() {
@@ -218,8 +218,8 @@ function package_is_built() {
 	local package=$(find_package ${1})
 
 	local file
-	for file in package_packages ${package}; do
-		if [ ! -e "${file}" ]; then
+	for file in $(package_packages ${package}); do
+		if [ ! -e "${DIR_PACKAGES}/${file}" ]; then
 			return 1
 		fi
 	done
@@ -243,7 +243,11 @@ function dependencies_resolve() {
 
 		ret="${ret} ${dependencies} $(dependencies_resolve ${dependencies})"
 	done
-	echo ${ret}
+	
+	# Sort and unique the package list
+	for package in ${ret}; do
+		echo "${package}"
+	done | sort -u
 }
 
 function package_sort() {
@@ -363,4 +367,16 @@ function package_id() {
 	local hash=$(sha1sum <<<${p})
 
 	echo ${hash:0:6}
+}
+
+function package_decompress() {
+	local file
+	local pkg
+	for pkg in $@; do
+		for file in $(package_packages ${pkg}); do
+			PATH=${TOOLS_DIR}/sbin:${TOOLS_DIR}/bin:${PATH} \
+				${BASEDIR}/src/pakfire/decompressor --root=${BUILD_DIR} \
+					${DIR_PACKAGES}/${file}
+		done
+	done
 }
