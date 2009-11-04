@@ -95,5 +95,6 @@ $(OBJECT): $(objects)
 
 	cp -fv $(DIR_SRC)/$(THISAPP)/conf/cupsd.conf /etc/cups/
 
+	$(INSTALL_INITSCRIPT)
 	@rm -rf $(DIR_APP)
 	@$(POSTBUILD)
