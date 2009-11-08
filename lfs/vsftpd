@@ -57,10 +57,10 @@ endef
 
 objects = $(DL_FILE) \
 	$(THISAPP)-libs-3.patch \
-	$(THISAPP)-pam_hostname.patch \
+	$(THISAPP)-pam_hostname-1.patch \
 	$(THISAPP)-build_ssl.patch \
 	$(THISAPP)-close-std-fds.patch \
-	$(THISAPP)-configuration.patch
+	$(THISAPP)-configuration-1.patch
 
 download: $(objects)
 
@@ -92,13 +92,13 @@ $(OBJECT): $(objects)
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-libs-3.patch
 
 	# This patch adds the pam_hostname feature to vsftpd.
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pam_hostname.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pam_hostname-1.patch
 
 	# This patch modifies the close of running standalone vsftpd.
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-close-std-fds.patch
 	
 	# This patch modifies the default configuration file.
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-configuration.patch
+	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-configuration-1.patch
 
 	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
 	
