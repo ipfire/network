@@ -154,6 +154,14 @@ check_cpu() {
 }
 
 check_supported_target() {
+	
+	if [ "$1" == "x86_64" ]; then
+		if [ "$(uname -m)" != "x86_64" ]; then
+			echo "Your system hasn't got the right architecture to build target $1." >&2
+			return 1
+		fi
+	fi
+
 	local FLAGS
 	if [ "$1" = "via-c7" ]; then
 		FLAGS="sse sse2 pni"
@@ -162,7 +170,7 @@ check_supported_target() {
 	elif [ "$1" = "atom" ]; then
 		FLAGS="mmx sse sse2 pni ssse3"
 	elif [ "$1" = "core2duo" ]; then
-		FLAGS="sse2"
+		FLAGS="sse2 pni ssse3"
 	fi
 	for j in $FLAGS; do
 		if ! check_cpu $j; then
