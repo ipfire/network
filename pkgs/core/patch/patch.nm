@@ -56,9 +56,6 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr
-
-	@$(POST_INSTALL)
+endef

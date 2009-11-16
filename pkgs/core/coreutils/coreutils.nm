@@ -56,19 +56,11 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_PREPARE): $(OBJECTS)
-	@$(PRE_PREPARE)
-	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
-
-	$(DO_PATCHES)
-
+define STAGE_PRAPRE_CMDS
 	cd $(DIR_APP) && autoreconf --force
+endef
 
-	@$(POST_PREPARE)
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && \
 		gl_cv_func_printf_directive_n=no \
 		./configure \
@@ -80,12 +72,9 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
 		CPPFLAGS="-DUSE_PAM" su_LDFLAGS="-pie -lpam -lpam_misc"
+endef
 
-	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
 	-mkdir -pv $(BUILDROOT)/{bin,etc/{pam,profile}.d}
@@ -103,5 +92,4 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	# PAM
 	cp -vf $(DIR_SOURCE)/pam.d/su{,-l} $(BUILDROOT)/etc/pam.d
-
-	@$(POST_INSTALL)
+endef

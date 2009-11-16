@@ -50,9 +50,7 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
@@ -62,5 +60,4 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--without-included-regex
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-
-	@$(POST_BUILD)
+endef

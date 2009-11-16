@@ -1,9 +1,7 @@
 
 include ../../core/perl/perl.nm
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	-mkdir -pv $(DIR_SRC)/perl-build
 
 	# -Dlibc, locincpth, loclibpth, glibpth, and usrinc, are equivilent to the LFS
@@ -26,13 +24,8 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			-d -e
 
 	cd $(DIR_SRC)/perl-build && make #$(PARALLELISMFLAGS)
+endef
 
-	@$(POST_BUILD)
-
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_SRC)/perl-build && make LNS="cp" install
-
-	@$(POST_INSTALL)
+endef

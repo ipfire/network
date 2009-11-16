@@ -64,26 +64,17 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_PREPARE): $(OBJECTS)
-	@$(PRE_PREPARE)
-	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
-
-	$(DO_PATCHES)
-	
+define STAGE_PREPARE_CMDS
 	# Bash uses the RTLD_LAZY option when loading libraries. We want to use
 	# RTLD_NOW (it is defined from <dlfcn.h>:
 	cd $(DIR_APP) && sed -e "s/filename, RTLD_LAZY/filename, RTLD_NOW/" \
 		-i builtins/enable.def
 
-	@$(POST_PREPARE)
-
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-	
 	cd $(DIR_APP) && sed -i "s|htmldir = @htmldir@|htmldir = /usr/share/doc/$(THISAPP)|" \
 		Makefile.in
+endef
 
+define STAGE_BUILD
 	cd $(DIR_APP) && \
 		ac_cv_func_working_mktime=yes \
 		./configure \
@@ -94,12 +85,9 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--with-installed-readline
 
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
-	
-	@$(POST_BUILD)
+endef
 
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	-mkdir -pv $(BUILDROOT)/{bin,etc/profile.d}
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
@@ -108,5 +96,4 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	# /etc/profile.d
 	cp -vf $(DIR_SOURCE)/profile.d/* $(BUILDROOT)/etc/profile.d
-
-	@$(POST_INSTALL)
+endef

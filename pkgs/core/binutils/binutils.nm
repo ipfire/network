@@ -42,11 +42,11 @@ endef
 PKG_BUILD_DEPS = glibc
 PKG_DEPS      += zlib
 
-PKG_OBJECTS   += $(THISAPP).tar.bz2
+PKG_TARBALL   += $(THISAPP).tar.bz2
 
 PKG_PATCHES   += $(THISAPP)-ld_makefile.patch
 PKG_PATCHES   += $(THISAPP)-pt_pax-1.patch
-PKG_PATCHES   += $(THISAPP)-lazy-1.patch
+#PKG_PATCHES   += $(THISAPP)-lazy-1.patch
 PKG_PATCHES   += $(THISAPP)-asprintf_fix.patch
 
 include ../../Rules
@@ -55,20 +55,11 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_PREPARE): $(OBJECTS)
-	@$(PRE_PREPARE)
-	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(THISAPP).tar.bz2
-
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-pt_pax-1.patch
-	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-asprintf_fix.patch
-	
+define STAGE_PREPARE_CMDS
 	-mkdir -pv $(DIR_SRC)/binutils-build
+endef
 
-	@$(POST_PREPARE)
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_SRC)/binutils-build && \
 		CC="gcc -specs=$$(dirname $$(gcc --print-libgcc-file-name))/myspecs -B/usr/lib/ -B/usr/bin/" \
 		../$(THISAPP)/configure \
@@ -80,14 +71,10 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--disable-static
 
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr $(PARALLELISMFLAGS)
-	
-	@$(POST_BUILD)
+endef
 
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install DESTDIR=$(BUILDROOT)
 
 	cp -fv $(DIR_APP)/include/libiberty.h $(BUILDROOT)/usr/include
-
-	@$(POST_INSTALL)
+endef

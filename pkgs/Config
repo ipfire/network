@@ -32,10 +32,10 @@ DIR_TMP = /tmp
 DIR_SOURCE = $(CURDIR)
 DIR_PACKAGES = /usr/src/packages
 DIR_TOOLS = $(BASEDIR)/tools
+DIR_LOGS = $(BASEDIR)/logs
 
 BUILD_HOST ?= $(shell cat /proc/sys/kernel/hostname)
 
-export DIR_DL DIR_PATCHES DIR_TMP
 VPATH = $(DIR_DL):$(DIR_PATCHES)
 
 PKG_OBJECTS = $(PKG_TARBALL)
@@ -47,12 +47,11 @@ PKG_PACKAGES_FILES = $(foreach package,$(PKG_PACKAGES),$(call DO_PACKAGE_FILENAM
 
 DO_PACKAGE_FILENAME = $(subst --,-,$(PKG_NAME_REAL)-$(subst default,,$(1))-$(PKG_VER)-$(DISTRO_SNAME)$(DISTRO_EPOCH)-$(PKG_REL).ipk)
 
-TC_PACKAGES = binutils gcc glibc make
+TC_PACKAGES = binutils gcc glibc make libtool
 PKG_TOOLCHAIN_DEPS ?= $(TC_PACKAGES)
 PKG_BUILD_DEPS ?= $(TC_PACKAGES)
 
 DO_EXTRACT = $(DIR_TOOLS)/extractor
-DO_LOAD    = $(DIR_TOOLS)/downloader http://source.ipfire.org/source-3.x/$@
 DO_PATCHES = cd $(DIR_APP) && $(DIR_TOOLS)/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
 DO_QUALITY_AGENT = $(DIR_TOOLS)/quality-agent
 
@@ -76,3 +75,65 @@ export PKG_SUMMARY PKG_DESCRIPTION=$(strip $(PKG_DESCRIPTION))
 export PKG_DEPS PKG_BUILD_DEPS
 
 export CONTROL_PREIN CONTROL_PREUN CONTROL_POSTIN CONTROL_POSTUN
+
+define DO_PREPARE
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Preparation started"
+	@echo "#####################################################################"
+
+	$(STAGE_PREPARE)
+
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Preparation finished"
+	@echo "#####################################################################"
+endef
+
+define DO_BUILD
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Build started"
+	@echo "#####################################################################"
+
+	$(STAGE_BUILD)
+
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Build finished"
+	@echo "#####################################################################"
+endef
+
+define DO_INSTALL
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Install started"
+	@echo "#####################################################################"
+
+	$(STAGE_INSTALL)
+
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Install finished"
+	@echo "#####################################################################"
+
+	$(DO_QUALITY_AGENT)
+
+	@echo "# Filelist dump"
+	@cd $(BUILDROOT) && find -ls
+endef
+
+define STAGE_PREPARE
+	$(if $(PKG_TARBALL),cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL))
+
+	$(if $(PKG_PATCHES),$(DO_PATCHES))
+
+	$(STAGE_PREPARE_CMDS)
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install $(if $(TOOLCHAIN),,DESTDIR=$(BUILDROOT))
+endef

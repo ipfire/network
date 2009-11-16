@@ -57,9 +57,7 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	# NO_ASM is for textrels.
 	cd $(DIR_APP) && \
 		DEFS=NO_ASM \
@@ -70,16 +68,12 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--bindir=/bin
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
 
-	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
 	-mkdir -pv $(BUILDROOT)/usr/bin
 	mv -v $(BUILDROOT)/bin/{gzexe,uncompress,zcmp,zdiff,zegrep} $(BUILDROOT)/usr/bin
 	mv -v $(BUILDROOT)/bin/{zfgrep,zforce,zgrep,zless,zmore,znew} $(BUILDROOT)/usr/bin
-
-	@$(POST_INSTALL)
+endef

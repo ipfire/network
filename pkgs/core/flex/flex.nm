@@ -56,9 +56,7 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
@@ -66,15 +64,12 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--disable-static
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
 
-	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 	echo "#!/bin/sh"			>  $(BUILDROOT)/usr/bin/lex
 	echo "exec /usr/bin/flex -l \"$$@\""	>> $(BUILDROOT)/usr/bin/lex
 	chmod 755 $(BUILDROOT)/usr/bin/lex
+endef
 
-	@$(POST_INSTALL)

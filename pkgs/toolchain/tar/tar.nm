@@ -1,15 +1,13 @@
 
 include ../../core/tar/tar.nm
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	# Normally the 'rmt' programs goes in sbin/.
 	cd $(DIR_APP) && LDFLAGS="-z muldefs" \
 		./configure \
 			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR) \
 			--libexecdir=$(TOOLS_DIR)/bin
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 
-	@$(POST_BUILD)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef

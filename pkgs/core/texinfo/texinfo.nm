@@ -53,9 +53,7 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && \
 		LDFLAGS="-lncursesw" \
 		./configure \
@@ -63,5 +61,4 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--prefix=/usr
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-
-	@$(POST_BUILD)
+endef

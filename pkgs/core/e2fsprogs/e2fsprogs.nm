@@ -52,12 +52,7 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_PREPARE): $(OBJECTS)
-	@$(PRE_PREPARE)
-	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
-
-	$(DO_PATCHES)
-
+define STAGE_PREPARE
 	-mkdir $(DIR_APP)/build
 
 	# Fix DT_TEXTREL in e2fsprogs libraries. --disable-shared and
@@ -74,12 +69,9 @@ $(STAGE_PREPARE): $(OBJECTS)
 	cd $(DIR_APP) && sed \
 		-e "s/getenv(\"BLKID_DEBUG\")/safe_getenv(\"BLKID_DEBUG\")/" \
 		-i lib/blkid/cache.c
+endef
 
-	@$(POST_PREPARE)
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP)/build && \
 		LDFLAGS=-lblkid \
 		../configure \
@@ -93,12 +85,9 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--disable-libuuid
 
 	cd $(DIR_APP)/build && make $(PARALLELISMFLAGS)
+endef
 
-	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP)/build && make install DESTDIR=$(BUILDROOT)
 	cd $(DIR_APP)/build && make install-libs DESTDIR=$(BUILDROOT)
 
@@ -107,5 +96,4 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 	ln -svf ../../lib/libext2fs.so.2 $(BUILDROOT)/usr/lib/libext2fs.so
 	ln -svf ../../lib/libss.so.2 $(BUILDROOT)/usr/lib/libss.so
 	ln -svf ../../lib/libuuid.so.1 $(BUILDROOT)/usr/lib/libuuid.so
-
-	@$(POST_INSTALL)
+endef

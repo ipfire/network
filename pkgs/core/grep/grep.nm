@@ -48,9 +48,7 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	# --without-included-regex makes Grep use libc for regex. This gets rid of
 	# some compiler warnings, and I can't imagine why it's unsafe.
 
@@ -62,5 +60,4 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--without-included-regex
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-
-	@$(POST_BUILD)
+endef

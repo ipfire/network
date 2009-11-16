@@ -53,30 +53,19 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_PREPARE): $(OBJECTS)
-	@$(PRE_PREPARE)
-	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
-
-	$(DO_PATCHES)
-
+define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i 's@\(ln -s -f \)\$$(PREFIX)/bin/@\1@' Makefile
 	cd $(DIR_APP) && sed -e "s/$$(CC) -shared/& $(CFLAGS)/" -i Makefile-libbz2_so
+endef
 
-	@$(POST_PREPARE)
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
-	cd $(DIR_APP) && make -f Makefile-libbz2_so
+define STAGE_BUILD
+	cd $(DIR_APP) && make -f Makefile-libbz2_so $(PARALLELISMFLAGS)
 
 	cd $(DIR_APP) && make clean
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
 
-	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP) && make PREFIX=$(BUILDROOT)/usr install
 
 	-mkdir -pv $(BUILDROOT)/{bin,lib}
@@ -87,5 +76,4 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 	ln -sfv bzip2 $(BUILDROOT)/bin/bunzip2
 	ln -sfv bzip2 $(BUILDROOT)/bin/bzcat
 	rm -vf $(BUILDROOT)/usr/lib/libbz2.a
-
-	@$(POST_INSTALL)
+endef

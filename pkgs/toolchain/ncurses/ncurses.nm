@@ -1,9 +1,7 @@
 
 include ../../core/ncurses/ncurses.nm
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
@@ -19,17 +17,12 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--disable-static
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	
-	@$(POST_BUILD)
+endef
 
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP) && make install
 	for lib in curses ncurses form panel menu; do \
 		rm -vf $(TOOLS_DIR)/lib/lib$${lib}.so ; \
 		echo "INPUT(-l$${lib}w)" >$(TOOLS_DIR)/lib/lib$${lib}.so ; \
 	done
-	
-	@$(POST_INSTALL)
+endef

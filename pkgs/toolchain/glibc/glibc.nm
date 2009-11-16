@@ -3,9 +3,7 @@ PKG_TOOLCHAIN_DEPS += binutils-static gcc-static kernel-headers
 
 include ../../core/glibc/glibc.nm
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	# Glibc uses a hard coded path for /etc/ld.so.preload. To keep Glibc from
 	# preloading libraries from the host machine perform the following command:
 	cd $(DIR_APP) && sed -e "s@/etc/ld.so.preload@$(TOOLS_DIR)@" -i elf/rtld.c
@@ -44,16 +42,11 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 	echo "CXXFLAGS = $(CXXFLAGS)" >> $(DIR_SRC)/glibc-build/configparms
 	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS) \
 		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)"
+endef
 
-	@$(POST_BUILD)
-
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	-mkdir -v $(TOOLS_DIR)/etc
 	touch $(TOOLS_DIR)/etc/ld.so.conf
 
 	cd $(DIR_SRC)/glibc-build && make install
-
-	@$(POST_INSTALL)
+endef

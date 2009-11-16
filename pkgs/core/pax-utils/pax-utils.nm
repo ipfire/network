@@ -48,9 +48,6 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" USE_CAP=yes $(PARALLELISMFLAGS)
-
-	@$(POST_BUILD)
+endef

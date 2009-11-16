@@ -1,9 +1,7 @@
 
 include ../../core/attr/attr.nm
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
 			$(CONFIGURE_ARCH) \
@@ -11,13 +9,9 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--enable-shared
 
 	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC" #$(PARALLELISMFLAGS)
+endef
 
-	@$(POST_BUILD)
-
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP) && make install
 
 	install -v -m0755 $(DIR_APP)/libattr/.libs/libattr.so.1.1.0 $(TOOLS_DIR)/lib
@@ -26,5 +20,4 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 	install -v -d $(TOOLS_DIR)/include/attr
 	cp -vf $(DIR_APP)/include/{attributes.h,error_context.h,libattr.h,xattr.h} \
 		$(TOOLS_DIR)/include/attr/
-
-	@$(POST_INSTALL)
+endef

@@ -48,19 +48,3 @@ PKG_BUILD_DEPS:= $(filter-out make,$(PKG_BUILD_DEPS))
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
 include ../../Rules
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-
-	@$(POST_BUILD)

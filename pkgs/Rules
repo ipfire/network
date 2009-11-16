@@ -3,117 +3,43 @@
 include $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))/gmsl
 
 STAGE_PACKAGE_TARGETS = $(call reverse,$(PKG_PACKAGES))
-
-STAGE_PREPARE = $(ROOT)/.prepared
-STAGE_BUILD   = $(ROOT)/.built
-STAGE_INSTALL = $(ROOT)/.installed
-STAGE_PACKAGE = $(STAGE_PACKAGE_TARGETS)
-
-define PRE_PREPARE
-	echo "#####################################################################"
-	echo "# $(PKG_NAME) - Preparation started"
-	echo "#####################################################################"
-endef
-
-define POST_PREPARE
-	echo "#####################################################################"
-	echo "# $(PKG_NAME) - Preparation finished"
-	echo "#####################################################################"
-	touch $(STAGE_PREPARE)
-endef
-
-define PRE_BUILD
-	echo "#####################################################################"
-	echo "# $(PKG_NAME) - Build started"
-	echo "#####################################################################"
-endef
-
-define POST_BUILD
-	echo "#####################################################################"
-	echo "# $(PKG_NAME) - Build finished"
-	echo "#####################################################################"
-	touch $(STAGE_BUILD)
-endef
-
-define PRE_INSTALL
-	echo "#####################################################################"
-	echo "# $(PKG_NAME) - Install started"
-	echo "#####################################################################"
-endef
-
-define POST_INSTALL
-	echo "#####################################################################"
-	echo "# $(PKG_NAME) - Install finished"
-	echo "#####################################################################"
-
-	$(DO_QUALITY_AGENT)
-
-	# Dump filelist
-	cd $(BUILDROOT) && find -ls
-
-	touch $(STAGE_INSTALL)
-endef
-
-.PHONY: prepare build install package
-prepare: $(STAGE_PREPARE)
-build  : $(STAGE_BUILD)
-install: $(STAGE_INSTALL)
-package: $(STAGE_PACKAGE)
-
-download: $(OBJECTS)
+STAGE_DONE = $(ROOT)/.done
 
 info:
 	@echo "PKG_BUILD_DEPENDENCIES=\"$(PKG_BUILD_DEPS)\""
 	@echo "PKG_DEPENDENCIES=\"$(PKG_DEPS)\""
-	@echo "PKG_DESCRIPTION=\"$(value PKG_DESCRIPTION)\""
-	@echo "PKG_FILES=\"$(objects)\""
+	@echo "PKG_DESCRIPTION=\"$(strip $(PKG_DESCRIPTION))\""
 	@echo "PKG_GROUP=\"$(PKG_GROUP)\""
 	@echo "PKG_LICENSE=\"$(PKG_LICENSE)\""
 	@echo "PKG_MAINTAINER=\"$(PKG_MAINTAINER)\""
 	@echo "PKG_NAME=\"$(PKG_NAME_REAL)\""
+	@echo "PKG_OBJECTS=\"$(strip $(PKG_OBJECTS))\""
 	@echo "PKG_PACKAGES=\"$(PKG_PACKAGES)\""
 	@echo "PKG_PACKAGES_FILES=\"$(PKG_PACKAGES_FILES)\""
 	@echo "PKG_VER=\"$(PKG_VER)\""
 	@echo "PKG_REL=\"$(PKG_REL)\""
-	@echo "PKG_SUMMARY=\"$(PKG_SUMMARY)\""
+	@echo "PKG_SUMMARY=\"$(strip $(PKG_SUMMARY))\""
 	@echo "PKG_URL=\"$(PKG_URL)\""
 ifeq "$(TOOLCHAIN)" "1"
 	@echo "PKG_TOOLCHAIN_DEPS=\"$(PKG_TOOLCHAIN_DEPS)\""
 endif
 
 $(OBJECTS):
-	$(DO_LOAD)
+	@echo "Object file \"$@\" is required." >&2
+	@exit 1
 
-$(STAGE_PACKAGE_TARGETS): $(STAGE_INSTALL)
+$(STAGE_PACKAGE_TARGETS): $(STAGE_DONE)
 	@echo "$(strip $(PKG_FILES_$@))" > $(DIR_TMP)/filelist_$@
 	@/usr/src/src/pakfire/compressor $(DIR_PACKAGES)/$(call DO_PACKAGE_FILENAME,$@) \
 		--root=$(BUILDROOT) $(if $(PKG_FILES_$@), --regexes=$(DIR_TMP)/filelist_$@)
 
-$(STAGE_PREPARE): $(OBJECTS)
-	@$(PRE_PREPARE)
-ifneq "$(PKG_TARBALL)" ""
-	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
-endif
+package: $(STAGE_PACKAGE_TARGETS)
 
-	$(DO_PATCHES)
+shell: $(OBJECTS)
+	$(if $(STAGE_PREPARE),$(DO_PREPARE))
 
-	@$(POST_PREPARE)
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	$(PRE_BUILD)
-
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-
-	$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
-	cd $(DIR_APP) && make install $(if $(TOOLCHAIN),,DESTDIR=$(BUILDROOT))
-
-	@$(POST_INSTALL)
+$(STAGE_DONE): $(OBJECTS)
+	$(if $(STAGE_PREPARE),$(DO_PREPARE))
+	$(if $(STAGE_BUILD),$(DO_BUILD))
+	$(if $(STAGE_INSTALL),$(DO_INSTALL))
+	@touch $@

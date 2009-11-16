@@ -19,8 +19,8 @@ function exithandler() {
 		done <<<"${mounts}"
 	done
 
-	if [ "${ERROR}" != "1" ]; then
-		[ -d "${BUILD_DIR}" ] && rm -rf ${BUILD_DIR}
+	if [ ! -e "${BUILD_DIR}/.failed" ]; then
+		rm -rf ${BUILD_DIR}
 	fi
 
 	log DEBUG "Shut down naoki instance with pid $$."
@@ -60,13 +60,11 @@ function naoki_prepare() {
 	local p=$(find_package ${1})
 	shift
 
-
-
 	msg "Preparing environment ${BUILD_DIR}..."
 
 	mkdir -p \
 		${BUILD_DIR} \
-		${BUILD_DIR}/{root,tmp} \
+		${BUILD_DIR}/{boot,root,tmp} \
 		${BUILD_DIR}/{dev,proc,sys} \
 		${BUILD_DIR}/{,usr/}{bin,lib,sbin} \
 		${BUILD_DIR}/usr/src \
@@ -85,18 +83,38 @@ function naoki_prepare() {
 		mount --bind /${i} ${BUILD_DIR}/${i}
 	done
 
-	CHROOT=0 naoki_make ${p} --without-chroot download
+	local object
+	local to_download
+	for object in $(package_objects ${p}); do
+		if [ -e "${DIR_TARBALLS}/${object}" ] || \
+			[ -e "${DIR_PATCHES}/${object}" ]; then
+			continue
+		fi
+		to_download="${to_download} ${object}"
+	done
+	if [ -n "${to_download}" ]; then
+		log DEBUG "Going to get file(s): ${to_download}"
+		${DOWNLOADER} --tarballs="${DIR_TARBALLS}" \
+			--patches="${DIR_PATCHES}" ${to_download}
+		if [ "$?" != "0" ]; then
+			return 1
+		fi
+	fi
 
 	# Extract needed packages
-	local pkg_dependencies=$(dependencies_resolve ${p} | tr "\n" " ")
+	local pkg_dependencies=$(package_dependencies_for_build ${p})
 	msg "  Resolving dependencies: ${pkg_dependencies-None}"
 	local dep
+	local missing
 	for dep in ${pkg_dependencies}; do
 		if ! package_is_built ${dep}; then
-			msg "Dependencies for ${p} are missing. Cannot prepare."
-			return 4
+			missing="${missing} ${dep}"
 		fi
 	done
+	if [ -n "${missing}" ]; then
+		msg "Dependencies for ${p} are missing: ${missing}"
+		return 4
+	fi
 
 	for dep in ${pkg_dependencies}; do
 		msg "Decompressing ${dep}..."
@@ -111,8 +129,7 @@ function naoki_prepare() {
 		ln -sf ${TOOLS_DIR}${i} ${BUILD_DIR}${i}
 	done
 
-	naoki_make ${p} prepare $@
-	return $?
+	return 0
 }
 
 function naoki_cleanup() {
@@ -219,18 +236,8 @@ function naoki_make() {
 	fi
 	cmd="${cmd} -f ${p##*/}.nm"
 
-	naoki_cmd ${p} "${cmd}" $@ 2>&1 | __erase_log
+	naoki_cmd ${p} "${cmd}" $@
 	return ${PIPESTATUS[0]}
-}
-
-function __erase_log() {
-	local line
-
-	local IFS='\n'
-	while read line; do
-		grep -q "commands for target" <<<"${line}" && continue
-		echo -e "${line}"
-	done
 }
 
 function naoki_build() {
@@ -248,27 +255,12 @@ function naoki_build() {
 		exit ${ret}
 	fi
 
-	naoki_make ${p} build $@
-	ret=$?
-
-	if [  "${ret}" != "0" ]; then
-		error "Build command failed."
-		exit ${ret}
-	fi
-	
-	naoki_make ${p} install $@
-	ret=$?
-
-	if [  "${ret}" != "0" ]; then
-		error "Install command failed."
-		exit ${ret}
-	fi
-
 	naoki_make ${p} package $@
 	ret=$?
 
 	if [  "${ret}" != "0" ]; then
-		error "Package command failed."
+		error "Package build failed."
+		touch ${BUILD_DIR}/.failed
 		exit ${ret}
 	fi
 }
@@ -290,6 +282,7 @@ function naoki_shell() {
 	shift
 
 	naoki_prepare ${p}
+	naoki_make ${p} shell
 
 	# A little help message
 	echo
@@ -306,7 +299,7 @@ function naoki_shell() {
 
 	naoki_cmd ${p} "bash --login"
 	local ret=$?
-	
+
 	echo
 	echo    "Exit code: ${ret}"
 	echo

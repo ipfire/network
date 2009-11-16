@@ -1,9 +1,7 @@
 
 include ../../core/e2fsprogs/e2fsprogs.nm
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP)/build && \
 		../configure \
 			$(CONFIGURE_ARCH) \
@@ -11,13 +9,8 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--enable-elf-shlibs
 
 	cd $(DIR_APP)/build && make $(PARALLELISMFLAGS)
+endef
 
-	@$(POST_BUILD)
-
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP)/build && make install-libs
-
-	@$(POST_INSTALL)
+endef

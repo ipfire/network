@@ -51,9 +51,7 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	# We need -D_GNU_SOURCE because this version of M4 has a bug in gnulib (or
 	# possibly autoconf) that doesn't recognise that we have asprintf() in libc.
 	cd $(DIR_APP) && \
@@ -64,5 +62,4 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--prefix=/usr
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-
-	@$(POST_BUILD)
+endef

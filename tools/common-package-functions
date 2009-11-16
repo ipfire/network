@@ -13,6 +13,18 @@ function listmatch() {
 	return 1
 }
 
+function listremove() {
+	local arg=${1}
+	shift
+
+	local value
+	for value in $@; do
+		if [ "${arg}" != "${value}" ]; then
+			echo "${value}"
+		fi
+	done | tr "\n" " "
+}
+
 function is_package() {
 	local package=$(find_package ${1})
 
@@ -153,12 +165,25 @@ function package_summary() {
 }
 
 function package_runtime_dependencies() {
+	local recursive=0
+	if [ "${1}" = "--recursive" ]; then
+		recursive=1
+		shift
+	fi
+
+	local ret
 	local package
 	for package in $(package_get ${1} PKG_DEPENDENCIES); do
 		package=$(find_package ${package})
-		echo "${package}"
+		ret="${ret} ${package}"
 		log DEBUG "  Got runtime dep: ${package}"
 	done
+
+	if [ "${recursive}" = "1" ]; then
+		package_recursive_dependencies package_runtime_dependencies ${ret}
+	else
+		echo ${ret}
+	fi
 }
 
 function package_build_dependencies() {
@@ -171,12 +196,25 @@ function package_build_dependencies() {
 }
 
 function package_toolchain_dependencies() {
+	local recursive=0
+	if [ "${1}" = "--recursive" ]; then
+		recursive=1
+		shift
+	fi
+
+	local ret
 	local package
 	for package in $(package_get ${1} PKG_TOOLCHAIN_DEPS); do
 		package=$(find_package ${package})
-		echo "${package}"
+		ret="${ret} ${package}"
 		log DEBUG "  Got toolchain dep: ${package}"
 	done
+
+	if [ "${recursive}" = "1" ]; then
+		package_recursive_dependencies package_toolchain_dependencies ${ret}
+	else
+		echo ${ret}
+	fi
 }
 
 function package_dependencies() {
@@ -186,6 +224,41 @@ function package_dependencies() {
 		package_runtime_dependencies $@
 		package_build_dependencies $@
 	fi
+}
+
+function package_recursive_dependencies() {
+	local func=${1}
+	shift
+
+	local to_check=$@
+	local checked
+	while true; do
+		if [ -z "${to_check}" ]; then
+			break
+		fi
+
+		local i
+		for i in ${to_check}; do
+			if ! listmatch ${i} ${to_check}; then
+				to_check="${to_check} $(${func} ${i})"
+			fi
+			checked="${checked} ${i}"
+			to_check="$(listremove ${i} ${to_check})"
+		done
+	done
+	echo ${checked}
+}
+
+function package_dependencies_for_build() {
+	local p=$(find_package ${1})
+
+	local i
+	local ret="$(package_dependencies ${p})"
+	for i in ${ret}; do
+		ret="${ret} $(package_runtime_dependencies --recursive ${i})"
+	done
+
+	echo ${ret}
 }
 
 function package_packages() {
@@ -204,15 +277,19 @@ function package_license() {
 	package_get ${1} PKG_LICENSE
 }
 
-function package_extract_dependencies() {
-	local package=$(find_package ${1})
-	local to_extract="${PACKAGES_TO_EXTRACT}"
-	
-	local dep
-	for dep in $(dependencies_resolve ${PACKAGES_TO_EXTRACT} ${package}); do
-		echo ${dep}
-	done
+function package_objects() {
+	package_get ${1} PKG_OBJECTS
 }
+
+#function package_extract_dependencies() {
+#	local package=$(find_package ${1})
+#	local to_extract="${PACKAGES_TO_EXTRACT}"
+#	
+#	local dep
+#	for dep in $(dependencies_resolve ${PACKAGES_TO_EXTRACT} ${package}); do
+#		echo ${dep}
+#	done
+#}
 
 function package_is_built() {
 	local package=$(find_package ${1})
@@ -226,29 +303,32 @@ function package_is_built() {
 	return 0
 }
 
-function dependencies_resolve() {
-	local dependencies
-	local package
-	local ret
-
-	for package in $@; do
-		log DEBUG "Resolving dependencies for ${package}..."
-
-		dependencies="$(package_build_dependencies ${package})"
-		dependencies="${dependencies} $(package_dependencies ${package})"
-
-		if [ "${dependencies}" != " " ]; then
-			log DEBUG "    Got: ${dependencies}"
-		fi
-
-		ret="${ret} ${dependencies} $(dependencies_resolve ${dependencies})"
-	done
-	
-	# Sort and unique the package list
-	for package in ${ret}; do
-		echo "${package}"
-	done | sort -u
-}
+#function dependencies_resolve() {
+#	local dependencies
+#	local package
+#	local ret
+#
+#	for package in $@; do
+#		log DEBUG "Resolving dependencies for ${package}..."
+#
+#		dependencies=$(package_dependencies ${package})
+#
+#		if [ -n "${dependencies}" ]; then
+#			log DEBUG "  Got: ${dependencies}"
+#
+#			for dep in ${dependencies}; do
+#				if ! listmatch ${dep} ${ret}; then
+#					ret="${ret} ${dep} $(dependencies_resolve ${dep})"
+#				fi
+#			done
+#		fi
+#	done
+#
+#	# Sort and unique the package list
+#	for package in ${ret}; do
+#		echo "${package}"
+#	done | sort -u
+#}
 
 function package_sort() {
 	local pkg

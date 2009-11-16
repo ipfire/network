@@ -51,9 +51,7 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && \
 		ac_cv_func_working_mktime=yes \
 		./configure \
@@ -62,16 +60,12 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--libdir=/lib \
 			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
 
-	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 	-mkdir -pv $(BUILDROOT)/usr/{include,lib}
 	cd $(DIR_APP) && cp -pfv zconf.h zlib.h $(BUILDROOT)/usr/include
 	rm -vf $(BUILDROOT)/lib/libz.so
 	ln -sfv ../../lib/libz.so.$(PKG_VER) $(BUILDROOT)/usr/lib/libz.so
-
-	@$(POST_INSTALL)
+endef

@@ -3,9 +3,7 @@ PKG_TOOLCHAIN_DEPS += binutils glibc
 
 include ../gcc-static/gcc-static.nm
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	# Enable hardening by default:
 	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-espf-1.patch
 
@@ -58,12 +56,8 @@ endif
 			$(CONFIGURE_ARGS)
 
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
+endef
 
-	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_SRC)/gcc-build && make install
-
-	@$(POST_INSTALL)
+endef

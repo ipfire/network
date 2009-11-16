@@ -53,28 +53,16 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_PREPARE): $(OBJECTS)
-	@$(PRE_PREPARE)
-	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
-
-	$(DO_PATCHES)
-
+define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -e "s@<stdlib.h>@&\n#include <asm/types.h>@g" \
 		-i progs/capsh.c
 	cd $(DIR_APP) && sed 's/--static//' -i.orig progs/Makefile
+endef
 
-	@$(POST_PREPARE)
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CC="gcc $(CFLAGS)"
+endef
 
-	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) lib=/lib
-
-	@$(POST_INSTALL)
+endef

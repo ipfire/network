@@ -15,7 +15,11 @@ HOSTNAME=$(</proc/sys/kernel/hostname)
 MACHINE=$(uname -m)
 
 NAOKI=${BASEDIR}/tools/naoki
+DOWNLOADER=${BASEDIR}/tools/downloader
 
+DIR_CACHE=${BASEDIR}/cache
 DIR_LOGS=${BASEDIR}/logs
 DIR_PACKAGES=${BASEDIR}/packages
+DIR_PATCHES=${DIR_CACHE}/patches
 DIR_PKGS=${BASEDIR}/pkgs
+DIR_TARBALLS=${DIR_CACHE}/tarballs

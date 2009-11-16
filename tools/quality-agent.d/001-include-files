@@ -1,0 +1,12 @@
+#!/bin/bash
+
+. $(dirname ${0})/qa-include
+
+# Fix include files
+echo "${0##*/}: Fix include files"
+
+if [ ! -d "${BUILDROOT}/usr/include" ]; then
+	exit 0
+fi
+
+chown -R root:root ${BUILDROOT}/usr/include

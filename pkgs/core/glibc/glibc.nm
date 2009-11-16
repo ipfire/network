@@ -133,9 +133,8 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_PREPARE): $(OBJECTS)
-	@@$(PRE_PREPARE)
-	@rm -rf $(DIR_APP) $(DIR_SRC)/glibc-build && cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(firstword $(PKG_OBJECTS))
+define STAGE_PREPARE
+	@cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(firstword $(PKG_OBJECTS))
 	@mkdir $(DIR_SRC)/glibc-build
 
 	# In the vi_VN.TCVN locale, bash enters an infinite loop at startup. It is
@@ -165,12 +164,9 @@ $(STAGE_PREPARE): $(OBJECTS)
 
 	cat $(DIR_SOURCE)/$(THISAPP)-stack_chk_fail.c \
 		> $(DIR_APP)/debug/stack_chk_fail.c
+endef
 
-	@$(POST_PREPARE)
-
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
+define STAGE_BUILD
 	# --enable-stackguard-randomization could be added here, but this is primarily
 	# for attacks by local users, and we shouldn't have those in the rebooted
 	# system. Adding this will empty the /dev/random entropy pool (via
@@ -218,12 +214,9 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 	echo "CXXFLAGS = $(CXXFLAGS)" >> $(DIR_SRC)/glibc-build/configparms
 	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS) \
 		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)"
+endef
 
-	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_SRC)/glibc-build && make install install_root=$(BUILDROOT)
 
 	# Locales
@@ -237,5 +230,4 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 
 	# Configuration
 	cp -vf $(DIR_SOURCE)/{ld.so.conf,nsswitch.conf} $(BUILDROOT)/etc
-
-	@$(POST_INSTALL)
+endef

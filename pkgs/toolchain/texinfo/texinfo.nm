@@ -3,9 +3,7 @@ PKG_TOOLCHAIN_DEPS += $(TC_PACKAGES) ncurses
 
 include ../../core/texinfo/texinfo.nm
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && \
 		LDFLAGS="-lncursesw" \
 		./configure \
@@ -13,5 +11,4 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 			--prefix=$(TOOLS_DIR)
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-
-	@$(POST_BUILD)
+endef

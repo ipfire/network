@@ -48,9 +48,7 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && \
 		ac_cv_func_working_mktime=yes \
 		./configure \
@@ -62,5 +60,4 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 	cd $(DIR_APP) && echo "#define HAVE_LC_MESSAGES 1" >> config.h
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-
-	@$(POST_BUILD)
+endef

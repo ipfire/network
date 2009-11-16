@@ -1,19 +1,15 @@
 
 include ../../core/kernel/kernel.nm
 
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-	
+STAGE_PREPARE_CMDS =
+
+define STAGE_BUILD
 	cd $(DIR_APP) && make mrproper
 	cd $(DIR_APP) && make ARCH=x86 headers_check
+endef
 
-	@$(POST_BUILD)
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-	
+define STAGE_INSTALL
 	cd $(DIR_APP) && make ARCH=x86 INSTALL_HDR_PATH=dest headers_install
 	-mkdir -pv $(BUILDROOT)/usr/include
 	cd $(DIR_APP) && cp -rv dest/include/* $(BUILDROOT)/usr/include
-
-	@$(POST_INSTALL)
+endef

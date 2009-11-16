@@ -3,10 +3,7 @@ PKG_TOOLCHAIN_DEPS = # Depend on nothing
 
 include ../../core/kernel-headers/kernel-headers.nm
 
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-	
+define STAGE_INSTALL
 	cd $(DIR_APP) && make ARCH=x86 INSTALL_HDR_PATH=dest headers_install
 	cd $(DIR_APP) && cp -rv dest/include/* $(TOOLS_DIR)/include
-
-	@$(POST_INSTALL)
+endef

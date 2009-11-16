@@ -65,19 +65,11 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_PREPARE): $(OBJECTS)
-	@$(PRE_PREPARE)
-	cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL)
-
-	$(DO_PATCHES)
-
+define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
+endef
 
-	@$(POST_PREPARE)
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && sed -i -e "s|BUILD_ZLIB\s*= True|BUILD_ZLIB = False|" \
 							-e "s|INCLUDE\s*= ./zlib-src|INCLUDE = /usr/include|" \
 							-e "s|LIB\s*= ./zlib-src|LIB = /usr/lib|" \
@@ -88,5 +80,4 @@ $(STAGE_BUILD): $(STAGE_PREPARE)
 		-Dpager="/usr/bin/less -isR"
 
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
-
-	@$(POST_BUILD)
+endef

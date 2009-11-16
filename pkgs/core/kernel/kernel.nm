@@ -70,9 +70,9 @@ PKG_PATCHES   += $(REISER4_PATCH)
 ROUTES_PATCH   = routes-$(PKG_VER)-16.diff 
 PKG_PATCHES   += $(ROUTES_PATCH)
 
-PKG_OBJECTS   += $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.bz2
 
-PKG_PATCHES   += $(THISAPP)-disable-compat_vdso-1.patch
+#PKG_PATCHES   += $(THISAPP)-disable-compat_vdso-1.patch
 
 include ../../Rules
 
@@ -80,66 +80,48 @@ include ../../Rules
 # Installation Details
 ###############################################################################
 
-$(STAGE_PREPARE): $(OBJECTS)
-	@$(PRE_PREPARE)
-	rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(firstword $(PKG_OBJECTS))
-
+define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && echo "$(LOCALVERSION)" > localversion-ipfire
-
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(AUFS_PATCH)
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(OCF_PATCH)
-	#cd $(DIR_APP) && echo "source \"crypto/ocf/Kconfig\"" >> crypto/Kconfig
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(REISER4_PATCH)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(ROUTES_PATCH)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(GRSEC_PATCH)
 	rm -f $(DIR_APP)/localversion-grsec
 
-	#cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-disable-compat_vdso-1.patch
-	
 	cd $(DIR_APP) && sed -e "s/^HOSTCFLAGS.*=.*/& -fPIC/g" -i Makefile
 
-	@$(POST_PREPARE)
+	#cd $(DIR_APP) && echo "source \"crypto/ocf/Kconfig\"" >> crypto/Kconfig
+	
+	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(DISTRO_SNAME)_logo.ppm \
+		drivers/video/logo/logo_linux_clut224.ppm
+endef
 
-
-$(STAGE_BUILD): $(STAGE_PREPARE)
-	@$(PRE_BUILD)
-
+define STAGE_BUILD
 	cd $(DIR_APP) && make mrproper
 
 	# Select right optimization for the linux kernel.
 	if [ "$(TARGET)" == "i486" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 			-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
-			< $(DIR_SOURCE)/kernel/kernel.config > $(DIR_APP)/.config; \
+			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
 	elif [ "$(TARGET)" == "i586" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 			-e "s/^# CONFIG_M586TSC is not set/CONFIG_M586TSC=y/" \
-			< $(DIR_SOURCE)/kernel/kernel.config > $(DIR_APP)/.config; \
+			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
 	elif [ "$(TARGET)" == "via-c7" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 			-e "s/^# CONFIG_MVIAC7 is not set/CONFIG_MVIAC7=y/" \
-			< $(DIR_SOURCE)/kernel/kernel.config > $(DIR_APP)/.config; \
+			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
 	elif [ "$(TARGET)" == "via-c3" ]; then \
 		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
 			-e "s/^# CONFIG_MVIAC3_2 is not set/CONFIG_MVIAC3_2=y/" \
-			< $(DIR_SOURCE)/kernel/kernel.config > $(DIR_APP)/.config; \
+			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
 	else \
-		cp -f $(DIR_SOURCE)/kernel/kernel.config $(DIR_APP)/.config; \
+		cp -f $(DIR_SOURCE)/config $(DIR_APP)/.config; \
 	fi
 
 	cd $(DIR_APP) && yes "" | make oldconfig
-
-	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/kernel/$(SNAME)_logo.ppm \
-		drivers/video/logo/logo_linux_clut224.ppm
 	
 	cd $(DIR_APP) && make CC="gcc -nopie" $(PARALLELISMFLAGS)
+endef
 
-	@$(POST_BUILD)
-
-
-$(STAGE_INSTALL): $(STAGE_BUILD)
-	@$(PRE_INSTALL)
-
+define STAGE_INSTALL
 	cd $(DIR_APP) && make modules_install
 	
 	cd $(DIR_APP) && cp -v arch/x86/boot/bzImage /boot/$(SNAME)kernel-$(FULLVER)
@@ -155,5 +137,4 @@ $(STAGE_INSTALL): $(STAGE_BUILD)
 	ln -svf $(DIR_SRC)/$(PKG_NAME)-$(FULLVER) /lib/modules/$(KVER)/build
 	ln -svf $(DIR_SRC)/$(PKG_NAME)-$(FULLVER) /lib/modules/$(KVER)/source
 	-mkdir -pv /lib/modules/$(KVER)/extra
-
-	@$(POST_INSTALL)
+endef
