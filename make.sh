@@ -356,6 +356,7 @@ ipfire_build() {
 	ipfire_make parted
 	ipfire_make hal
 	ipfire_make hal-info
+	ipfire_make gobject-introspection
 	ipfire_make udev
 
 	### Building some important tools
