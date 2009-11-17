@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = m4
 PKG_VER        = 1.4.11
@@ -44,8 +44,6 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

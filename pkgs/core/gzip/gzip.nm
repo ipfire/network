@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = gzip
 PKG_VER        = 1.3.13
@@ -50,8 +50,6 @@ PKG_PATCHES   += $(THISAPP)-openbsd-owl-tmp.patch
 # against malformed gzip files:
 PKG_PATCHES   += $(THISAPP)-cve-2006-4337_len.patch
 PKG_PATCHES   += $(THISAPP)-cve-2006-4338.patch
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = make
 PKG_VER        = 3.81
@@ -46,5 +46,3 @@ endef
 PKG_BUILD_DEPS:= $(filter-out make,$(PKG_BUILD_DEPS))
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
-
-include ../../Rules

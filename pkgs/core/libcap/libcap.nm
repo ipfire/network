@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = libcap
 PKG_VER        = 2.16
@@ -46,8 +46,6 @@ PKG_DEPS      += attr pam
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
 PKG_PATCHES   += $(THISAPP)-headerfix.patch
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

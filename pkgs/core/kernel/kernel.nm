@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = linux
 PKG_VER        = 2.6.31.1
@@ -73,8 +73,6 @@ PKG_PATCHES   += $(ROUTES_PATCH)
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
 #PKG_PATCHES   += $(THISAPP)-disable-compat_vdso-1.patch
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

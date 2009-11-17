@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = e2fsprogs
 PKG_VER        = 1.41.8
@@ -45,8 +45,6 @@ endef
 PKG_BUILD_DEPS+= pkg-config
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

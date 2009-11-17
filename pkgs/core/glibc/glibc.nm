@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = glibc
 PKG_VER        = 2.10.1
@@ -126,8 +126,6 @@ PKG_PATCHES   += $(THISAPP)-arc4random.patch
 PKG_PATCHES   += $(THISAPP)-hardened-configure-picdefault.patch
 PKG_PATCHES   += $(THISAPP)-hardened-inittls-nosysenter.patch
 PKG_PATCHES   += $(THISAPP)-hardened-pie.patch
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = bzip2
 PKG_VER        = 1.0.5
@@ -46,8 +46,6 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 PKG_PATCHES   += $(THISAPP)-install_docs-1.patch
 
 CFLAGS        += -fPIC -D_FILE_OFFSET_BITS=64
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

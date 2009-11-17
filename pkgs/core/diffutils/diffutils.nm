@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = diffutils
 PKG_VER        = 2.8.1
@@ -45,5 +45,3 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 PKG_PATCHES   += $(THISAPP)-i18n-1.patch
 PKG_PATCHES   += $(THISAPP)-hardened_tmp-1.patch
-
-include ../../Rules

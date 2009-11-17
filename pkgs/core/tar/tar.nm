@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = tar
 PKG_VER        = 1.22
@@ -55,8 +55,6 @@ PKG_PATCHES   += $(THISAPP)-vfatTruncate.patch
 # Add support for ACLs in the tarballs.
 PKG_PATCHES   += $(THISAPP)-xattrs-1.patch
 PKG_PATCHES   += $(THISAPP)-xattrs-conf-1.patch
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

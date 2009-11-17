@@ -178,10 +178,12 @@ function naoki_cmd() {
 	fi
 	log DEBUG "  PATH : ${path}"
 	
+	local pkgroot=${DIR_PKGS}
 	local ps1="\u:\w\$ "
 
 	if [ "${with_chroot}" = "1" ]; then
 		chroot_cmd="chroot ${BUILD_DIR}"
+		pkgroot="/usr/src/pkgs"
 		ps1="${CLR_NORM_RED}chroot${NORMAL}: \w\$ "
 
 		touch ${BUILD_DIR}/.chroot
@@ -209,6 +211,7 @@ function naoki_cmd() {
 			TOOLS_DIR="${TOOLS_DIR}" \
 			TOOLCHAIN="${TOOLCHAIN}" \
 			BUILDROOT="${BUILD_ROOT}" \
+			PKGROOT="${pkgroot}" \
 			\
 			CFLAGS="${CFLAGS}" \
 			CXXFLAGS="${CXXFLAGS}" \

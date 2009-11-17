@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = gcc
 PKG_VER        = 4.4.1
@@ -64,8 +64,6 @@ PKG_OBJECTS   += mpfr-$(MPFR).tar.bz2
 PKG_PATCHES   += $(THISAPP)-espf-1.patch \
 	$(THISAPP)-branch-startfiles-1.patch \
 	$(THISAPP)-asprintf_fix.patch
-
-include ../../Rules
 
 export CPP = $(TOOLS_DIR)/bin/cpp
 

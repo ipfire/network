@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = xz
 PKG_VER        = 4.999.8beta
@@ -51,8 +51,6 @@ define QUALITY_AGENT_WHITELIST_RPATH
 	/usr/bin/lzmadec \
 	/usr/bin/xzdec
 endef
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

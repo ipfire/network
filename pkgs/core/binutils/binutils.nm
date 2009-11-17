@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = binutils
 PKG_VER        = 2.19.1
@@ -48,8 +48,6 @@ PKG_PATCHES   += $(THISAPP)-ld_makefile.patch
 PKG_PATCHES   += $(THISAPP)-pt_pax-1.patch
 #PKG_PATCHES   += $(THISAPP)-lazy-1.patch
 PKG_PATCHES   += $(THISAPP)-asprintf_fix.patch
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

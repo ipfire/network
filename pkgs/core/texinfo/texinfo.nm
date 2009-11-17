@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = texinfo
 PKG_VER        = 4.13a
@@ -44,10 +44,7 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-
 DIR_APP        = $(DIR_SRC)/$(PKG_NAME)-4.13
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

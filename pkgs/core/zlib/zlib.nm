@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = zlib
 PKG_VER        = 1.2.3
@@ -44,8 +44,6 @@ PKG_BUILD_DEPS = glibc
 PKG_TARBALL    = $(THISAPP)-autotools-1.tar.gz
 
 CFLAGS        += -fPIC -DPIC
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

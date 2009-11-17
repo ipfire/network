@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = gettext
 PKG_VER        = 0.17
@@ -56,8 +56,6 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 PKG_PATCHES   += $(THISAPP)-open-args-1.patch
 PKG_PATCHES   += $(THISAPP)-rpathFix.patch
 PKG_PATCHES   += $(THISAPP)-automake-1.patch
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

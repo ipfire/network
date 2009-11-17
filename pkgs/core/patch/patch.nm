@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = patch
 PKG_VER        = 2.5.9
@@ -49,8 +49,6 @@ PKG_PATCHES   += $(THISAPP)-mkstemp-1.patch
 
 # Some fixes:
 PKG_PATCHES   += $(THISAPP)-fixes-1.patch
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

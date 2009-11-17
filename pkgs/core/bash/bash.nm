@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = bash
 PKG_VER        = 4.0
@@ -57,8 +57,6 @@ PKG_PATCHES   += $(THISAPP)-fixes-4.patch
 
 PKG_PATCHES   += $(THISAPP)-paths-1.patch
 PKG_PATCHES   += $(THISAPP)-profile-1.patch
-
-include ../../Rules
 
 ###############################################################################
 # Installation Details

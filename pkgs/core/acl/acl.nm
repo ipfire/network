@@ -22,7 +22,7 @@
 # Definitions
 ###############################################################################
 
-include ../../Config
+include $(PKGROOT)/Include
 
 PKG_NAME       = acl
 PKG_VER        = 2.2.47
@@ -52,10 +52,6 @@ PKG_PATCHES   += $(THISAPP)-segfault.patch
 #PKG_PATCHES   += $(THISAPP)-walk.patch
 PKG_PATCHES   += $(THISAPP)-exitcode.patch
 
-include ../../Rules
-
-###############################################################################
-# Installation Details
 ###############################################################################
 
 define STAGE_BUILD
