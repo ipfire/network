@@ -8,6 +8,9 @@ for file in $(find ${BUILDROOT} -name "*.a" -or -name "*.la"); do
 	
 	# Don't remove libc_nonshared.a. It is used by gcc/ld.
 	[ "${file##*/}" = "libc_nonshared.a" ] && continue
+	[ "${file##*/}" = "libpthread_nonshared.a" ] && continue
+	[ "${file##*/}" = "libgcc.a" ] && continue
+	[ "${file##*/}" = "libgcc_eh.a" ] && continue
 	
 	echo "  Removing: ${file}"
 	rm -f ${file} || exit $?
