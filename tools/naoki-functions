@@ -64,12 +64,17 @@ function naoki_prepare() {
 
 	mkdir -p \
 		${BUILD_DIR} \
-		${BUILD_DIR}/{boot,root,tmp} \
+		${BUILD_DIR}/{boot,etc,root,tmp} \
 		${BUILD_DIR}/{dev,proc,sys} \
 		${BUILD_DIR}/{,usr/}{bin,lib,sbin} \
 		${BUILD_DIR}/usr/src \
 		${BUILD_DIR}/${BUILD_ROOT} \
 		${BUILD_DIR}/${TOOLS_DIR}
+
+	touch ${BUILD_DIR}/etc/{fstab,mtab}
+
+	# Configure dns resolving
+	cp -f /etc/resolv.conf /etc/hosts ${BUILD_DIR}/etc/
 
 	local i
 	for i in cache ccache pkgs src tools ${DIR_PACKAGES##*/}; do
@@ -79,6 +84,7 @@ function naoki_prepare() {
 	mount --bind ${TOOLS_DIR} ${BUILD_DIR}/${TOOLS_DIR}/
 	
 	# Mounting kernel fs
+	## Maybe, it is not the best way to mount-bind the whole dev...
 	for i in dev proc sys; do
 		mount --bind /${i} ${BUILD_DIR}/${i}
 	done
