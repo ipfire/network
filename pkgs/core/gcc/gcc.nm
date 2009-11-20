@@ -125,6 +125,7 @@ endef
 define STAGE_INSTALL
 	cd $(DIR_SRC)/gcc-build && make install DESTDIR=$(BUILDROOT)
 
-	ln -sfv ../usr/bin/cpp $(BUILDROOT)/lib
+	-mkdir -pv $(BUILDROOT)/lib
+	ln -sfv ../usr/bin/cpp $(BUILDROOT)/lib/cpp
 	ln -sfv gcc $(BUILDROOT)/usr/bin/cc
 endef
