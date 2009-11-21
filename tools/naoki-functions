@@ -179,8 +179,11 @@ function naoki_cmd() {
 	log DEBUG "Running command \"${cmd}\" - chroot=${with_chroot}."
 	
 	local path="/sbin:/usr/sbin:/bin:/usr/bin"
-	if [ "${TOOLCHAIN}" = "1" ] || [ ! -e "${BUILD_DIR}/usr/bin/env" ]; then
-		path="${TOOLS_DIR}/sbin:${TOOLS_DIR}/bin:${path}"
+	local toolchain_path="${TOOLS_DIR}/sbin:${TOOLS_DIR}/bin"
+	if [ "${TOOLCHAIN}" = "1" ]; then
+		path="${toolchain_path}:${path}"
+	else
+		path="${path}:${toolchain_path}"
 	fi
 	log DEBUG "  PATH : ${path}"
 	
