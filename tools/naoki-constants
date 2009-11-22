@@ -1,15 +1,18 @@
 #!/bin/bash
 
-BUILD_DIR="${BASEDIR}/naoki_$$"
+BUILD_DIR="${BASEDIR}/build/naoki_$(date +"%d%m-%H%M").$$.${MACHINE}"
 BUILD_ROOT="/buildroot.$$"
 TOOLS_DIR=/tools_${MACHINE}
+TOOLS_DIR_REAL=${BASEDIR}/build/tools_${MACHINE}
 
 ARCH=i686
 
-PACKAGES_TO_EXTRACT="coreutils filesystem perl util-linux-ng"
+PACKAGES_MANDATORY="bash bzip2 coreutils cpio diffutils findutils gawk gcc grep"
+PACKAGES_MANDATORY="${PACKAGES_MANDATORY} gzip make patch sed tar util-linux-ng"
+PACKAGES_MANDATORY="${PACKAGES_MANDATORY} which"
 
 PACKAGES_PARALLELISM=2
-PARALLELISMFLAGS=-j1
+PARALLELISMFLAGS=-j5
 
 CFLAGS="-fomit-frame-pointer -pipe"
 case "${ARCH}" in
