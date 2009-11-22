@@ -62,78 +62,75 @@ function naoki_prepare() {
 
 	msg "Preparing environment ${BUILD_DIR}..."
 
-	mkdir -p \
-		${BUILD_DIR} \
-		${BUILD_DIR}/{boot,etc,root,tmp} \
-		${BUILD_DIR}/{dev,proc,sys} \
-		${BUILD_DIR}/{,usr/}{bin,lib,sbin} \
-		${BUILD_DIR}/usr/src \
-		${BUILD_DIR}/${BUILD_ROOT} \
-		${BUILD_DIR}/${TOOLS_DIR}
+	# Download package's object files
+	package_download ${p}
+	[ $? -ne 0 ] && return 1
 
-	touch ${BUILD_DIR}/etc/{fstab,mtab}
+	mkdir -p ${BUILD_DIR}/usr/src
 
-	# Configure dns resolving
-	cp -f /etc/resolv.conf /etc/hosts ${BUILD_DIR}/etc/
+	if [ "${TOOLCHAIN}" = "1" ]; then
+		# Symlinking /tools_xxx
+		if [ ! -h "${TOOLS_DIR}" ]; then
+			ln -fs ${TOOLS_DIR_REAL} ${TOOLS_DIR}
+		fi
 
-	local i
-	for i in cache ccache pkgs src tools ${DIR_PACKAGES##*/}; do
-		mkdir -p ${BASEDIR}/${i} ${BUILD_DIR}/usr/src/${i} 2>/dev/null
-		mount --bind ${BASEDIR}/${i} ${BUILD_DIR}/usr/src/${i}
-	done
-	mount --bind ${TOOLS_DIR} ${BUILD_DIR}/${TOOLS_DIR}/
+	else
+		mkdir -p \
+			${BUILD_DIR}/{boot,etc,root,tmp} \
+			${BUILD_DIR}/{dev,proc,sys} \
+			${BUILD_DIR}/{,usr/}{bin,lib,sbin} \
+			${BUILD_DIR}/${BUILD_ROOT} \
+			${BUILD_DIR}/${TOOLS_DIR}
 	
-	# Mounting kernel fs
-	## Maybe, it is not the best way to mount-bind the whole dev...
-	for i in dev proc sys; do
-		mount --bind /${i} ${BUILD_DIR}/${i}
-	done
-
-	local object
-	local to_download
-	for object in $(package_objects ${p}); do
-		if [ -e "${DIR_TARBALLS}/${object}" ] || \
-			[ -e "${DIR_PATCHES}/${object}" ]; then
-			continue
-		fi
-		to_download="${to_download} ${object}"
-	done
-	if [ -n "${to_download}" ]; then
-		log DEBUG "Going to get file(s): ${to_download}"
-		${DOWNLOADER} --tarballs="${DIR_TARBALLS}" \
-			--patches="${DIR_PATCHES}" ${to_download}
-		if [ "$?" != "0" ]; then
-			return 1
-		fi
+		touch ${BUILD_DIR}/etc/{fstab,mtab}
+	
+		# Configure dns resolving
+		cp -f /etc/resolv.conf /etc/hosts ${BUILD_DIR}/etc/
+	
+		local i
+		for i in cache ccache pkgs src tools ${DIR_PACKAGES##*/}; do
+			mkdir -p ${BASEDIR}/${i} ${BUILD_DIR}/usr/src/${i} 2>/dev/null
+			mount --bind ${BASEDIR}/${i} ${BUILD_DIR}/usr/src/${i}
+		done
+		mount --bind ${TOOLS_DIR_REAL} ${BUILD_DIR}/${TOOLS_DIR}/
+	
+		# Mounting kernel fs
+		## Maybe, it is not the best way to mount-bind the whole dev...
+		for i in dev proc sys; do
+			mount --bind /${i} ${BUILD_DIR}/${i}
+		done
+	
+		# Extract needed packages
+		#local pkg_dependencies=$(package_dependencies_for_build ${p})
+		#msg "  Resolving dependencies: ${pkg_dependencies-None}"
+		#local dep
+		#local missing
+		#for dep in ${pkg_dependencies}; do
+		#	if ! package_is_built ${dep}; then
+		#		missing="${missing} ${dep}"
+		#	fi
+		#done
+		#if [ -n "${missing}" ]; then
+		#	msg "Dependencies for ${p} are missing: ${missing}"
+		#	return 4
+		#fi
+	
+		#for dep in ${pkg_dependencies}; do
+		#	msg "Decompressing ${dep}..."
+		#	package_decompress ${dep}
+		#done
+	
+		for i in /bin/bash /bin/echo /bin/pwd /bin/sh; do
+			if [ -e "${BUILD_DIR}${i}" ]; then
+				continue
+			fi
+			if [ ! -e "${TOOLS_DIR}${i}" ]; then
+				log WARNING "Cannot create symlink ${i}: ${TOOLS_DIR}${i} - No such file or directory."
+			fi
+			log DEBUG "Creating symlink: ${BUILD_DIR}${i} --> ${TOOLS_DIR}${i}"
+			ln -sf ${TOOLS_DIR}${i} ${BUILD_DIR}${i}
+		done
 	fi
-
-	# Extract needed packages
-	local pkg_dependencies=$(package_dependencies_for_build ${p})
-	msg "  Resolving dependencies: ${pkg_dependencies-None}"
-	local dep
-	local missing
-	for dep in ${pkg_dependencies}; do
-		if ! package_is_built ${dep}; then
-			missing="${missing} ${dep}"
-		fi
-	done
-	if [ -n "${missing}" ]; then
-		msg "Dependencies for ${p} are missing: ${missing}"
-		return 4
-	fi
-
-	for dep in ${pkg_dependencies}; do
-		msg "Decompressing ${dep}..."
-		package_decompress ${dep}
-	done
-
-	for i in /bin/bash /bin/pwd /bin/sh; do
-		if [ -e "${BUILD_DIR}${i}" ]; then
-			continue
-		fi
-		log DEBUG "Creating symlink: ${BUILD_DIR}${i} --> ${TOOLS_DIR}${i}"
-		ln -sf ${TOOLS_DIR}${i} ${BUILD_DIR}${i}
-	done
 
 	return 0
 }
