@@ -101,6 +101,7 @@ $(OBJECT): $(objects)
 			--with-libdir-name=/lib \
 			--libexecdir=/lib/udev \
 			--with-rootlibdir=/lib \
+			--enable-introspection \
 			--disable-rpath
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
