@@ -114,7 +114,12 @@ case "${ACTION}" in
 		;;
 
 	list)
-		package_list
+		for package in $(package_list); do
+			printf "%-30s %-15s %1s\n" \
+				"${package}" \
+				"$(package_version ${package})-$(package_release ${package})" \
+				$(package_is_built ${package} && echo "Y" || echo "N")
+		done
 		;;
 	
 	tree)
