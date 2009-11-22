@@ -75,7 +75,7 @@ function find_packages() {
 	local p
 	for p in $@; do
 		find_package ${p}
-	done
+	done | tr "\n" " "
 }
 
 function package_repos() {
@@ -194,7 +194,7 @@ function __deps() {
 	local recursive=${2}
 	local package=$(find_package ${3})
 
-	local deps=$(package_get ${package} ${info})
+	local deps=$(find_packages $(package_get ${package} ${info}))
 
 	if [ "${recursive}" = "1" ]; then
 		local dep
@@ -203,15 +203,15 @@ function __deps() {
 			size=${#deps}
 
 			for dep in ${deps}; do
-				deps="${deps} $(package_get ${dep} ${info})"
+				deps="${deps} $(package_get ${dep} ${info}) $(package_runtime_dependencies ${dep})"
 			done
 
-			deps=$(listsort ${deps})
+			deps=$(find_packages $(listsort ${deps}))
 
 			[ ${#deps} -eq ${size} ] && break
 		done
 	fi
-	echo $(find_packages ${deps})
+	echo $(find_packages $(listsort ${deps}))
 }
 
 function package_runtime_dependencies() {
@@ -240,25 +240,20 @@ function package_toolchain_dependencies_recursive() {
 
 function package_dependencies() {
 	if [ "${TOOLCHAIN}" = "1" ]; then
-		log DEBUG "Determining toolchain dependencies of: $@"
 		package_toolchain_dependencies $@
 	else
-		log INFO "Determining dependencies of: $@"
 		package_runtime_dependencies $@
 		package_build_dependencies $@
 	fi
 }
 
-function package_dependencies_for_build() {
-	local p=$(find_package ${1})
-
-	local i
-	local ret="$(package_dependencies ${p})"
-	for i in ${ret}; do
-		ret="${ret} $(package_runtime_dependencies --recursive ${i})"
-	done
-
-	echo ${ret}
+function package_dependencies_recursive() {
+	if [ "${TOOLCHAIN}" = "1" ]; then
+		package_toolchain_dependencies_recursive $@
+	else
+		listsort $(package_runtime_dependencies_recursive $@) \
+			$(package_build_dependencies_recursive $@)
+	fi
 }
 
 function package_packages() {
@@ -280,16 +275,6 @@ function package_license() {
 function package_objects() {
 	package_get ${1} PKG_OBJECTS
 }
-
-#function package_extract_dependencies() {
-#	local package=$(find_package ${1})
-#	local to_extract="${PACKAGES_TO_EXTRACT}"
-#	
-#	local dep
-#	for dep in $(dependencies_resolve ${PACKAGES_TO_EXTRACT} ${package}); do
-#		echo ${dep}
-#	done
-#}
 
 function package_is_built() {
 	local package=$(find_package ${1})
@@ -439,6 +424,10 @@ function package_mandatory() {
 	local packages=$(find_packages ${PACKAGES_MANDATORY})
 
 	for package in ${packages}; do
+		if package_is_built ${package}; then
+			log DEBUG "Mandatory package \"${package}\" has not been built, yet."
+			continue
+		fi
 		echo "${package} $(package_runtime_dependencies_recursive ${package})"
 	done #| tr " " "\n" | sort -u
 }
@@ -464,4 +453,3 @@ function package_download() {
 		fi
 	fi
 }
-

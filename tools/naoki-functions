@@ -99,27 +99,27 @@ function naoki_prepare() {
 		for i in dev proc sys; do
 			mount --bind /${i} ${BUILD_DIR}/${i}
 		done
-	
+
 		# Extract needed packages
-		#local pkg_dependencies=$(package_dependencies_for_build ${p})
-		#msg "  Resolving dependencies: ${pkg_dependencies-None}"
-		#local dep
-		#local missing
-		#for dep in ${pkg_dependencies}; do
-		#	if ! package_is_built ${dep}; then
-		#		missing="${missing} ${dep}"
-		#	fi
-		#done
-		#if [ -n "${missing}" ]; then
-		#	msg "Dependencies for ${p} are missing: ${missing}"
-		#	return 4
-		#fi
-	
-		#for dep in ${pkg_dependencies}; do
-		#	msg "Decompressing ${dep}..."
-		#	package_decompress ${dep}
-		#done
-	
+		local pkg_dependencies=$(package_dependencies_recursive ${p})
+		msg "  Resolving recursive dependencies: ${pkg_dependencies-None}"
+		local dep
+		local missing
+		for dep in ${pkg_dependencies}; do
+			if ! package_is_built ${dep}; then
+				missing="${missing} ${dep}"
+			fi
+		done
+		if [ -n "${missing}" ]; then
+			msg "Dependencies for ${p} are missing: ${missing}"
+			return 4
+		fi
+
+		for dep in $(listsort ${pkg_dependencies} $(package_mandatory)); do
+			msg "Decompressing ${dep}..."
+			package_decompress ${dep}
+		done
+
 		for i in /bin/bash /bin/echo /bin/pwd /bin/sh; do
 			if [ -e "${BUILD_DIR}${i}" ]; then
 				continue

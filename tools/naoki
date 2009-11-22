@@ -97,8 +97,13 @@ case "${ACTION}" in
 		fi
 		;;
 
-	deps)
-		dependencies_resolve ${PKG_NAME}
+	dependencies|deps)
+		package_toolchain_dependencies ${PKG_NAME}
+		package_toolchain_dependencies_recursive ${PKG_NAME}
+		package_runtime_dependencies ${PKG_NAME}
+		package_runtime_dependencies_recursive ${PKG_NAME}
+		package_build_dependencies ${PKG_NAME}
+		package_build_dependencies_recursive ${PKG_NAME}
 		;;
 
 	profile)
