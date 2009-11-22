@@ -58,6 +58,8 @@ define PKG_FILES_devel
 	*/lib/*.so
 endef
 
+PKG_BUILD_DEPS += glibc gcc
+
 CONFIGURE_ARCH = --build=$(TARGET) --host=$(TARGET)
 
 ifeq "$(TARGET_MACHINE)" "x86_64"

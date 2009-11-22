@@ -39,7 +39,8 @@ define PKG_DESCRIPTION
 	You'll need this package in order to compile C code.
 endef
 
-PKG_BUILD_DEPS = binutils glibc kernel-headers
+PKG_BUILD_DEPS =
+PKG_DEPS      += binutils glibc kernel-headers
 
 CFLAGS         = -D__USE_XOPEN2K8 -pipe
 CXXFLAGS       =
@@ -64,8 +65,6 @@ PKG_OBJECTS   += mpfr-$(MPFR).tar.bz2
 PKG_PATCHES   += $(THISAPP)-espf-1.patch \
 	$(THISAPP)-branch-startfiles-1.patch \
 	$(THISAPP)-asprintf_fix.patch
-
-export CPP = $(TOOLS_DIR)/bin/cpp
 
 ###############################################################################
 # Installation Details

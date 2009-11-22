@@ -50,8 +50,8 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 # Installation Details
 ###############################################################################
 
-define STAGE_PREPARE
-	-mkdir $(DIR_APP)/build
+define STAGE_PREPARE_CMDS
+	-mkdir -pv $(DIR_APP)/build
 
 	# Fix DT_TEXTREL in e2fsprogs libraries. --disable-shared and
 	# --with-pic are not options in E2fsprogs:
