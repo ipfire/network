@@ -1,4 +1,6 @@
 
+PKG_TOOLCHAIN_DEPS += glibc
+
 include ../../core/zlib/zlib.nm
 
 define STAGE_BUILD
@@ -14,6 +16,6 @@ define STAGE_BUILD
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
 
-define STAGE_BUILD
+define STAGE_INSTALL
 	cd $(DIR_APP) && make install
 endef

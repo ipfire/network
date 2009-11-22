@@ -4,15 +4,6 @@ PKG_TOOLCHAIN_DEPS += binutils glibc
 include ../gcc-static/gcc-static.nm
 
 define STAGE_BUILD
-	# Enable hardening by default:
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-espf-1.patch
-
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-branch-startfiles-1.patch
-
-	# This patch fixes a conflict between libiberty's asprintf() and Glibc's, when
-	# -D_FORTIFY_SOURCE=2 is used:
-	cd $(DIR_APP) && patch -Np0 -i $(DIR_PATCHES)/$(THISAPP)-asprintf_fix.patch
-
 	cd $(DIR_APP) && sed 's@\./fixinc\.sh@-c true@' -i gcc/Makefile.in
 	cd $(DIR_APP) && sed 's/^XCFLAGS =$$/& -fomit-frame-pointer/' -i gcc/Makefile.in
 	cd $(DIR_APP) && \
@@ -24,13 +15,13 @@ define STAGE_BUILD
 			touch $$file.orig; \
 		done
 
-ifeq "$(MACHINE)" "x86_64"
-	# Remove multilib options and searchpath (/lib... /usr/lib...)
-	cd $(DIR_APP) && echo "" > gcc/config/i386/t-linux64
-	## Enable -fPIC by default (why i have to do this again ???)
-	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
-		-i gcc/config/i386/x86-64.h
-endif
+#ifeq "$(MACHINE)" "x86_64"
+#	# Remove multilib options and searchpath (/lib... /usr/lib...)
+#	cd $(DIR_APP) && echo "" > gcc/config/i386/t-linux64
+#	## Enable -fPIC by default (why i have to do this again ???)
+#	cd $(DIR_APP) && sed 's/^\(#define CC1_SPEC.*\)\("\)$$/\1 %{fno-pic|fpic|fPIC:;:-fPIC}\2/' \
+#		-i gcc/config/i386/x86-64.h
+#endif
 
 	# We need to do another bootstrap, so that everything in $(TOOLS_DIR) is hardened.
 	cd $(DIR_SRC)/gcc-build && \
