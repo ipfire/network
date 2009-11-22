@@ -25,6 +25,13 @@ function listremove() {
 	done | tr "\n" " "
 }
 
+function listsort() {
+	local value
+	for value in $@; do
+		echo "${value}"
+	done | sort -u | tr "\n" " "
+}
+
 function is_package() {
 	local package=$(find_package ${1})
 
@@ -37,22 +44,38 @@ function is_package() {
 }
 
 function find_package() {
-	local package=${1}
-	#log DEBUG "Searching for package \"${package}\"."
-
-	if [ -e "${DIR_PKGS}/${package}" ]; then
-		echo "${package}"
-		return 0
-	fi
-
+	local package
 	local i
-	for i in $(package_list); do
-		if [ "${i##*/}" = "${package}" ]; then
-			echo "${i}"
-			return 0
+	local found
+
+	for package in $@; do
+		#log DEBUG "Searching for package \"${package}\"."
+	
+		if [ -e "${DIR_PKGS}/${package}" ]; then
+			echo "${package}"
+			continue
 		fi
+	
+		found=0
+		for i in $(package_list); do
+			if [ "${i##*/}" = "${package}" ]; then
+				echo "${i}"
+				found=1
+				break
+			fi
+		done
+		[ "${found}" = "1" ] && continue
+
+		return 1
 	done
-	return 1
+	return 0
+}
+
+function find_packages() {
+	local p
+	for p in $@; do
+		find_package ${p}
+	done
 }
 
 function package_repos() {
@@ -76,6 +99,8 @@ function package_repos() {
 	done
 }
 
+## Needs to be cached...
+#  Causes massive speed impact
 function package_list() {
 	local package
 	local repo
@@ -164,89 +189,64 @@ function package_summary() {
 	package_get ${1} PKG_SUMMARY
 }
 
-function package_runtime_dependencies() {
-	local recursive=0
-	if [ "${1}" = "--recursive" ]; then
-		recursive=1
-		shift
-	fi
+function __deps() {
+	local info=${1}
+	local recursive=${2}
+	local package=$(find_package ${3})
 
-	local ret
-	local package
-	for package in $(package_get ${1} PKG_DEPENDENCIES); do
-		package=$(find_package ${package})
-		ret="${ret} ${package}"
-		log DEBUG "  Got runtime dep: ${package}"
-	done
+	local deps=$(package_get ${package} ${info})
 
 	if [ "${recursive}" = "1" ]; then
-		package_recursive_dependencies package_runtime_dependencies ${ret}
-	else
-		echo ${ret}
+		local dep
+		local size
+		while true; do
+			size=${#deps}
+
+			for dep in ${deps}; do
+				deps="${deps} $(package_get ${dep} ${info})"
+			done
+
+			deps=$(listsort ${deps})
+
+			[ ${#deps} -eq ${size} ] && break
+		done
 	fi
+	echo $(find_packages ${deps})
+}
+
+function package_runtime_dependencies() {
+	__deps PKG_DEPENDENCIES 0 $@
+}
+
+function package_runtime_dependencies_recursive() {
+	__deps PKG_DEPENDENCIES 1 $@
 }
 
 function package_build_dependencies() {
-	local package
-	for package in $(package_get ${1} PKG_BUILD_DEPENDENCIES); do
-		package=$(find_package ${package})
-		echo "${package}"
-		log DEBUG "  Got build dep: ${package}"
-	done
+	__deps PKG_BUILD_DEPENDENCIES 0 $@
+}
+
+function package_build_dependencies_recursive() {
+	__deps PKG_BUILD_DEPENDENCIES 1 $@
 }
 
 function package_toolchain_dependencies() {
-	local recursive=0
-	if [ "${1}" = "--recursive" ]; then
-		recursive=1
-		shift
-	fi
+	__deps PKG_TOOLCHAIN_DEPENDENCIES 0 $@
+}
 
-	local ret
-	local package
-	for package in $(package_get ${1} PKG_TOOLCHAIN_DEPS); do
-		package=$(find_package ${package})
-		ret="${ret} ${package}"
-		log DEBUG "  Got toolchain dep: ${package}"
-	done
-
-	if [ "${recursive}" = "1" ]; then
-		package_recursive_dependencies package_toolchain_dependencies ${ret}
-	else
-		echo ${ret}
-	fi
+function package_toolchain_dependencies_recursive() {
+	__deps PKG_TOOLCHAIN_DEPENDENCIES 1 $@
 }
 
 function package_dependencies() {
 	if [ "${TOOLCHAIN}" = "1" ]; then
+		log DEBUG "Determining toolchain dependencies of: $@"
 		package_toolchain_dependencies $@
 	else
+		log INFO "Determining dependencies of: $@"
 		package_runtime_dependencies $@
 		package_build_dependencies $@
 	fi
-}
-
-function package_recursive_dependencies() {
-	local func=${1}
-	shift
-
-	local to_check=$@
-	local checked
-	while true; do
-		if [ -z "${to_check}" ]; then
-			break
-		fi
-
-		local i
-		for i in ${to_check}; do
-			if ! listmatch ${i} ${to_check}; then
-				to_check="${to_check} $(${func} ${i})"
-			fi
-			checked="${checked} ${i}"
-			to_check="$(listremove ${i} ${to_check})"
-		done
-	done
-	echo ${checked}
 }
 
 function package_dependencies_for_build() {
@@ -302,33 +302,6 @@ function package_is_built() {
 	done
 	return 0
 }
-
-#function dependencies_resolve() {
-#	local dependencies
-#	local package
-#	local ret
-#
-#	for package in $@; do
-#		log DEBUG "Resolving dependencies for ${package}..."
-#
-#		dependencies=$(package_dependencies ${package})
-#
-#		if [ -n "${dependencies}" ]; then
-#			log DEBUG "  Got: ${dependencies}"
-#
-#			for dep in ${dependencies}; do
-#				if ! listmatch ${dep} ${ret}; then
-#					ret="${ret} ${dep} $(dependencies_resolve ${dep})"
-#				fi
-#			done
-#		fi
-#	done
-#
-#	# Sort and unique the package list
-#	for package in ${ret}; do
-#		echo "${package}"
-#	done | sort -u
-#}
 
 function package_sort() {
 	local pkg
@@ -460,3 +433,35 @@ function package_decompress() {
 		done
 	done
 }
+
+function package_mandatory() {
+	local package
+	local packages=$(find_packages ${PACKAGES_MANDATORY})
+
+	for package in ${packages}; do
+		echo "${package} $(package_runtime_dependencies_recursive ${package})"
+	done #| tr " " "\n" | sort -u
+}
+
+function package_download() {
+	local package=$(find_package ${1})
+
+	local object
+	local to_download
+	for object in $(package_objects ${package}); do
+		if [ -e "${DIR_TARBALLS}/${object}" ] || \
+			[ -e "${DIR_PATCHES}/${object}" ]; then
+			continue
+		fi
+		to_download="${to_download} ${object}"
+	done
+	if [ -n "${to_download}" ]; then
+		log DEBUG "Going to get file(s): ${to_download}"
+		${DOWNLOADER} --tarballs="${DIR_TARBALLS}" \
+			--patches="${DIR_PATCHES}" ${to_download}
+		if [ "$?" != "0" ]; then
+			return 1
+		fi
+	fi
+}
+
