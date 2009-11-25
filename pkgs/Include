@@ -18,6 +18,8 @@
 #                                                                             #
 ###############################################################################
 
+.SECONDEXPANSION:
+
 include $(PKGROOT)/gmsl
 
 ifeq "$(CHROOT)" "1"
@@ -44,16 +46,19 @@ PKG_OBJECTS = $(PKG_TARBALL)
 OBJECTS = $(PKG_OBJECTS) $(PKG_PATCHES)
 
 PKG_NAME_REAL = $(notdir $(CURDIR))
-PKG_PACKAGES = default
+PKG_PACKAGES = $(PKG_NAME_REAL)
 PKG_PACKAGES_FILES = $(foreach package,$(PKG_PACKAGES),$(call DO_PACKAGE_FILENAME,$(package)))
 
-DO_PACKAGE_FILENAME = $(subst --,-,$(PKG_NAME_REAL)-$(subst default,,$(1))-$(PKG_VER)-$(DISTRO_SNAME)$(DISTRO_EPOCH)-$(PKG_REL).ipk)
+DO_PACKAGE_FILENAME = $(1)$(PKG_SUFFIX)
+PKG_SUFFIX = -$(PKG_VER)-$(DISTRO_SNAME)$(DISTRO_EPOCH)-$(PKG_REL).ipk
 
 DO_EXTRACT = $(DIR_TOOLS)/extractor
 DO_PATCHES = cd $(DIR_APP) && $(DIR_TOOLS)/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
 DO_QUALITY_AGENT = $(DIR_TOOLS)/quality-agent
 
-define PKG_FILES_devel
+PKG_DESCRIPTION_$(PKG_NAME_REAL)-devel = Development files of $(THISAPP).
+
+define PKG_FILES_$(PKG_NAME_REAL)-devel
 	/usr/include
 	*/lib/*.so
 endef
@@ -68,7 +73,7 @@ else
 	LINKER = /lib/ld-linux.so.2
 endif
 
-STAGE_PACKAGE_TARGETS = $(call reverse,$(PKG_PACKAGES))
+STAGE_PACKAGE_TARGETS = $(call reverse,$(PKG_PACKAGES_FILES))
 STAGE_DONE = $(ROOT)/.done
 
 export CFLAGS CXXFLAGS BUILD_HOST
@@ -161,19 +166,21 @@ info:
 	@echo "PKG_SUMMARY=\"$(strip $(PKG_SUMMARY))\""
 	@echo "PKG_URL=\"$(PKG_URL)\""
 ifeq "$(TOOLCHAIN)" "1"
-	@echo "PKG_TOOLCHAIN_DEPS=\"$(PKG_TOOLCHAIN_DEPS)\""
+	@echo "PKG_TOOLCHAIN_DEPENDENCIES=\"$(PKG_TOOLCHAIN_DEPS)\""
 endif
 
 $(OBJECTS):
 	@echo "Object file \"$@\" is required." >&2
 	@exit 1
 
-$(STAGE_PACKAGE_TARGETS): $(STAGE_DONE)
-	@echo "$(strip $(PKG_FILES_$@))" > $(DIR_TMP)/filelist_$@
-	@/usr/src/src/pakfire/compressor $(DIR_PACKAGES)/$(call DO_PACKAGE_FILENAME,$@) \
-		--root=$(BUILDROOT) $(if $(PKG_FILES_$@), --regexes=$(DIR_TMP)/filelist_$@)
+%.ipk: $(STAGE_DONE)
+	@echo "$(strip $(PKG_FILES_$(patsubst %$(PKG_SUFFIX),%,$@)))" \
+		> $(DIR_TMP)/filelist_$(patsubst %$(PKG_SUFFIX),%,$@)
+	@/usr/src/src/pakfire/compressor $(DIR_PACKAGES)/$@ \
+		--root=$(BUILDROOT) $(if $(PKG_FILES_$(patsubst %$(PKG_SUFFIX),%,$@)), \
+		--regexes=$(DIR_TMP)/filelist_$(patsubst %$(PKG_SUFFIX),%,$@))
 
-package: $(if $(TOOLCHAIN),$(STAGE_DONE),$(STAGE_PACKAGE_TARGETS))
+package: $(if $(TOOLCHAIN),$(STAGE_DONE),$$(STAGE_PACKAGE_TARGETS))
 
 shell: $(OBJECTS)
 	$(if $(STAGE_PREPARE),$(DO_PREPARE))
