@@ -150,6 +150,7 @@ define STAGE_INSTALL
 	cd $(DIR_APP) && make install $(if $(TOOLCHAIN),,DESTDIR=$(BUILDROOT))
 endef
 
+.PHONY: info
 info:
 	@echo "PKG_BUILD_DEPENDENCIES=\"$(PKG_BUILD_DEPS)\""
 	@echo "PKG_DEPENDENCIES=\"$(PKG_DEPS)\""
@@ -180,8 +181,10 @@ $(OBJECTS):
 		--root=$(BUILDROOT) $(if $(PKG_FILES_$(patsubst %$(PKG_SUFFIX),%,$@)), \
 		--regexes=$(DIR_TMP)/filelist_$(patsubst %$(PKG_SUFFIX),%,$@))
 
+.PHONY: package
 package: $(if $(TOOLCHAIN),$(STAGE_DONE),$$(STAGE_PACKAGE_TARGETS))
 
+.PHONY: shell
 shell: $(OBJECTS)
 	$(if $(STAGE_PREPARE),$(DO_PREPARE))
 
