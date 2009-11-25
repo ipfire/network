@@ -237,7 +237,7 @@ function naoki_make() {
 	local p=$(find_package ${1})
 	shift
 
-	local cmd="make --no-print-directory -C"
+	local cmd="make --no-builtin-rules --no-print-directory -C"
 	if [ "${CHROOT}" = "0" ] || [ "${TOOLCHAIN}" = "1" ]; then
 		cmd="${cmd} ${DIR_PKGS}/${p}"
 	else
