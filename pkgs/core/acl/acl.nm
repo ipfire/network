@@ -41,6 +41,7 @@ define PKG_DESCRIPTION
 	manipulating access control lists.
 endef
 
+PKG_BUILD_DEPS+= gettext
 PKG_DEPS      += attr
 
 PKG_TARBALL    = $(THISAPP).tar.gz
@@ -68,10 +69,10 @@ endef
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
+	-mkdir -pv $(BUILDROOT)/{,usr/}lib $(BUILDROOT)/usr/include/{acl,sys}
 	install -v -m0755 $(DIR_APP)/libacl/.libs/libacl.so.1.1.0 $(BUILDROOT)/lib
 	ln -vsf libacl.so.1.1.0 $(BUILDROOT)/lib/libacl.so.1
 	ln -vsf ../../lib/libacl.so.1 $(BUILDROOT)/usr/lib/libacl.so
-	-mkdir -pv $(BUILDROOT)/usr/include/{acl,sys}
 	cp -vf $(DIR_APP)/include/libacl.h $(BUILDROOT)/usr/include/acl/
 	cp -vf $(DIR_APP)/include/acl.h $(BUILDROOT)/usr/include/sys/
 endef
