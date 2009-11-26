@@ -119,7 +119,6 @@ function naoki_prepare() {
 		fi
 
 		for dep in $(listsort ${pkg_dependencies} $(package_mandatory)); do
-			msg "Decompressing ${dep}..."
 			package_decompress ${dep}
 		done
 
