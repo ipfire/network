@@ -411,6 +411,10 @@ function package_decompress() {
 	local file
 	local pkg
 	for pkg in $@; do
+		if ! package_is_built ${pkg}; then
+			log WARNING "Cannot extract package \"${pkg}\". It has not been built, yet."
+			continue
+		fi
 		for file in $(package_packages ${pkg}); do
 			PATH=${TOOLS_DIR}/sbin:${TOOLS_DIR}/bin:${PATH} \
 				${BASEDIR}/src/pakfire/decompressor --root=${BUILD_DIR} \
