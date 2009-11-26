@@ -88,9 +88,12 @@ function naoki_prepare() {
 		cp -f /etc/resolv.conf /etc/hosts ${BUILD_DIR}/etc/
 	
 		local i
-		for i in cache ccache pkgs src tools ${DIR_PACKAGES##*/}; do
-			mkdir -p ${BASEDIR}/${i} ${BUILD_DIR}/usr/src/${i} 2>/dev/null
-			mount --bind ${BASEDIR}/${i} ${BUILD_DIR}/usr/src/${i}
+		for i in cache ccache pkgs src tools ${DIR_PACKAGES}; do
+			if [ "${i:0:1}" != "/" ]; then
+				i="${BASEDIR}/${i}"
+			fi
+			mkdir -p ${i} ${BUILD_DIR}/usr/src/${i##*/} 2>/dev/null
+			mount --bind ${i} ${BUILD_DIR}/usr/src/${i##*/}
 		done
 		mount --bind ${TOOLS_DIR_REAL} ${BUILD_DIR}/${TOOLS_DIR}/
 	
