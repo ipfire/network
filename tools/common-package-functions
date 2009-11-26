@@ -424,7 +424,7 @@ function package_mandatory() {
 	local packages=$(find_packages ${PACKAGES_MANDATORY})
 
 	for package in ${packages}; do
-		if package_is_built ${package}; then
+		if ! package_is_built ${package}; then
 			log DEBUG "Mandatory package \"${package}\" has not been built, yet."
 			continue
 		fi
