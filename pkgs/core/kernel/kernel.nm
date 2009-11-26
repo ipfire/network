@@ -120,19 +120,14 @@ define STAGE_BUILD
 endef
 
 define STAGE_INSTALL
-	cd $(DIR_APP) && make modules_install
-	
-	cd $(DIR_APP) && cp -v arch/x86/boot/bzImage /boot/$(SNAME)kernel-$(FULLVER)
-	cd $(DIR_APP) && cp -v System.map /boot/System.map-$(FULLVER)
-	
-	ln -svf $(SNAME)kernel-$(FULLVER) /boot/$(SNAME)kernel
-	ln -svf System.map-$(FULLVER) /boot/System.map
+	cd $(DIR_APP) && make modules_install INSTALL_MOD_PATH=$(BUILDROOT)
 
-	# keep the source code in $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
-	cp -fal $(DIR_APP) $(DIR_SRC)/$(PKG_NAME)-$(FULLVER)
+	-mkdir -pv $(BUILDROOT)/boot
+	cd $(DIR_APP) && cp -v arch/x86/boot/bzImage $(BUILDROOT)/boot/$(DISTRO_SNAME)kernel-$(FULLVER)
+	cd $(DIR_APP) && cp -v System.map $(BUILDROOT)/boot/System.map-$(FULLVER)
+	
+	ln -svf $(SNAME)kernel-$(FULLVER) $(BUILDROOT)/boot/$(DISTRO_SNAME)kernel
+	ln -svf System.map-$(FULLVER) $(BUILDROOT)/boot/System.map
 
-	rm -vf /lib/modules/$(KVER)/{build,source}
-	ln -svf $(DIR_SRC)/$(PKG_NAME)-$(FULLVER) /lib/modules/$(KVER)/build
-	ln -svf $(DIR_SRC)/$(PKG_NAME)-$(FULLVER) /lib/modules/$(KVER)/source
-	-mkdir -pv /lib/modules/$(KVER)/extra
+	-mkdir -pv $(BUILDROOT)/lib/modules/$(KVER)/extra
 endef
