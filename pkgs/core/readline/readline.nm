@@ -1,0 +1,74 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = readline
+PKG_VER        = 6.0
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = ftp://ftp.gnu.org/gnu/readline/
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = A library for editing typed command lines.
+
+PKG_DEPS      += ncurses
+
+define PKG_DESCRIPTION
+	The Readline library provides a set of functions that allow users to \
+	edit command lines. Both Emacs and vi editing modes are available. \
+	The Readline library includes additional functions for maintaining a \
+	list of previously-entered command lines for recalling or editing \
+	those lines, and for performing csh-like history expansion on \
+	previous commands.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PATCHES   += $(THISAPP)-shlib-1.patch
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--libdir=/lib \
+			--disable-static
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) SHLIB_LIBS=-lncurses
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	rm -fv $(BUILDROOT)/lib/lib{readline,history}.so
+	ln -sfv ../../lib/libreadline.so.6 $(BUILDROOT)/usr/lib/libreadline.so
+	ln -sfv ../../lib/libhistory.so.6 $(BUILDROOT)/usr/lib/libhistory.so
+endef
