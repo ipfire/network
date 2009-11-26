@@ -184,6 +184,12 @@ function naoki_cmd() {
 	else
 		path="${path}:${toolchain_path}"
 	fi
+
+	# ccache
+	if [ -x "${BUILD_DIR}/usr/bin/ccache" ]; then
+		path="/usr/ccache/bin:${path}"
+	fi
+
 	log DEBUG "  PATH : ${path}"
 	
 	local pkgroot=${DIR_PKGS}
@@ -226,6 +232,10 @@ function naoki_cmd() {
 			TARGET="${TARGET}" \
 			TARGET_MACHINE="${MACHINE}" \
 			PARALLELISMFLAGS="${PARALLELISMFLAGS}" \
+			\
+			CCACHE_DIR=$([ "${TOOLCHAIN}" = "1" ] && \
+				echo "${BASEDIR}/ccache" || \
+				echo "/usr/src/ccache") \
 			\
 			${cmd}
 
