@@ -63,6 +63,7 @@ endef
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
+	-mkdir -pv $(BUILDROOT)/bin
 	mv -v $(BUILDROOT)/usr/bin/find $(BUILDROOT)/bin
 
 	sed -i -e 's/find:=$${BINDIR}/find:=\/bin/' $(BUILDROOT)/usr/bin/updatedb
