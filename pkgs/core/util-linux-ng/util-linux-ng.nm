@@ -1,0 +1,109 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = util-linux-ng
+PKG_VER        = 2.16.1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Base
+PKG_URL        = ftp://ftp.kernel.org/pub/linux/utils/util-linux-ng
+PKG_LICENSE    = GPLv2 and GPLv2+ and BSD with advertising and Public Domain
+PKG_SUMMARY    = A collection of basic system utilities.
+
+PKG_BUILD_DEPS+= libcap
+PKG_DEPS      += ncurses pam zlib
+
+define PKG_DESCRIPTION
+	The util-linux-ng package contains a large variety of low-level system \
+	utilities that are necessary for a Linux system to function. Among \
+	others, Util-linux contains the fdisk configuration tool and the login \
+	program.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CFLAGS        += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
+		-i $$(grep -rl '/etc/adjtime' .)
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--bindir=/bin \
+			--sbindir=/sbin \
+			--disable-wall \
+			--enable-arch \
+			--enable-kill \
+			--enable-login-utils \
+			--enable-partx \
+			--enable-write \
+			--disable-makeinstall-chown \
+			--disable-static
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	# Build nologin
+	cd $(DIR_APP) && gcc $(CFLAGS) -o nologin $(DIR_SOURCE)/nologin.c
+
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/sbin \
+		$(BUILDROOT)/var/lib/hwclock \
+		$(BUILDROOT)/usr/share/man/man8 \
+		$(BUILDROOT)/var/log
+
+	install -m 755 $(DIR_APP)/nologin $(BUILDROOT)/sbin
+	install -m 644 $(DIR_SOURCE)/nologin.8 $(BUILDROOT)/usr/share/man/man8/
+
+	touch $(BUILDROOT)/var/log/lastlog
+
+	# Remove deprecated commands
+	rm -fv $(BUILDROOT)/{sbin,usr/share/man/man*}/{fsck,mkfs}.{bfs,minix}*
+
+	# PAM
+	-mkdir -pv $(BUILDROOT)/etc/pam.d
+	cp -vf $(DIR_SOURCE)/pam.d/login $(BUILDROOT)/etc/pam.d
+
+	# Set capabilities
+	chmod -v -s $(BUILDROOT)/bin/mount
+	setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep $(BUILDROOT)/bin/mount
+	chmod -v -s $(BUILDROOT)/bin/umount
+	setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep $(BUILDROOT)/bin/umount
+endef
+
