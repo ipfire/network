@@ -69,7 +69,8 @@ function naoki_prepare() {
 	mkdir -p ${BUILD_DIR}/usr/src
 
 	if [ "${TOOLCHAIN}" = "1" ]; then
-		# Symlinking /tools_xxx
+		# Creating /tools_xxx
+		mkdir ${TOOLS_DIR_REAL} 2>/dev/null
 		if [ ! -h "${TOOLS_DIR}" ]; then
 			ln -fs ${TOOLS_DIR_REAL} ${TOOLS_DIR}
 		fi
