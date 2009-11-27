@@ -53,7 +53,7 @@ define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
 	mkdir -pv $(BUILDROOT)/usr/ccache/bin
-	for i in gcc g++ cc; do \
+	for i in gcc g++ cc c++; do \
 		ln -svf ../../bin/ccache $(BUILDROOT)/usr/ccache/bin/$${i}; \
 		ln -svf ../../bin/ccache $(BUILDROOT)/usr/ccache/bin/$(TARGET)-$${i}; \
 	done
