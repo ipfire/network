@@ -3,14 +3,8 @@
 function listmatch() {
 	local arg=${1}
 	shift
-	
-	local value
-	for value in $@; do
-		if [ "${arg}" == "${value}" ]; then
-			return 0
-		fi
-	done
-	return 1
+
+	grep -q "<${arg}>" <<<$@
 }
 
 function listremove() {
@@ -44,31 +38,23 @@ function is_package() {
 }
 
 function find_package() {
-	local package
+	local package=${1}
 	local i
-	local found
 
-	for package in $@; do
-		#log DEBUG "Searching for package \"${package}\"."
-	
-		if [ -e "${DIR_PKGS}/${package}" ]; then
-			echo "${package}"
-			continue
+	#log DEBUG "Searching for package \"${package}\"."
+
+	if [ -e "${DIR_PKGS}/${package}" ]; then
+		echo "${package}"
+		return 0
+	fi
+
+	for i in $(package_list); do
+		if [ "${i##*/}" = "${package}" ]; then
+			echo "${i}"
+			return 0
 		fi
-	
-		found=0
-		for i in $(package_list); do
-			if [ "${i##*/}" = "${package}" ]; then
-				echo "${i}"
-				found=1
-				break
-			fi
-		done
-		[ "${found}" = "1" ] && continue
-
-		return 1
 	done
-	return 0
+	return 1
 }
 
 function find_packages() {
@@ -101,7 +87,7 @@ function package_repos() {
 
 ## Needs to be cached...
 #  Causes massive speed impact
-function package_list() {
+function __package_list() {
 	local package
 	local repo
 	
@@ -119,6 +105,15 @@ function package_list() {
 			echo "${package}"
 		done
 	done
+}
+
+function package_list() {
+	if [ -z "${__PACKAGE_LIST}" ]; then
+		log CACHE "Building packages_list."
+		export __PACKAGE_LIST=$(__package_list)
+	fi
+
+	echo "${__PACKAGE_LIST}"
 }
 
 function package_profile() {

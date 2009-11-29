@@ -71,7 +71,7 @@ function log() {
 	local facility=${1}
 	shift
 	
-	if [ "${facility}" == "DEBUG" ] && [ "${DEBUG}" != "1" ]; then
+	if [ "${facility}" == "DEBUG" -a "${DEBUG}" != "1" ]; then
 		return 0
 	fi
 
