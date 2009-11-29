@@ -40,13 +40,10 @@ define PKG_DESCRIPTION
 endef
 
 PKG_BUILD_DEPS =
-PKG_DEPS      += binutils glibc kernel-headers
+PKG_DEPS      += binutils glibc gmp kernel-headers mpfr
 
 CFLAGS         = -D__USE_XOPEN2K8 -pipe
 CXXFLAGS       =
-
-GMP            = 4.3.1
-MPFR           = 2.4.1
 
 ifeq "$(MACHINE)" "i586"
 	CONFIGURE_ARGS = --disable-decimal-float
@@ -59,8 +56,6 @@ else
 endif
 
 PKG_TARBALL   += $(THISAPP).tar.bz2
-PKG_OBJECTS   += gmp-$(GMP).tar.bz2
-PKG_OBJECTS   += mpfr-$(MPFR).tar.bz2
 
 PKG_PATCHES   += $(THISAPP)-espf-1.patch \
 	$(THISAPP)-branch-startfiles-1.patch \
@@ -72,14 +67,6 @@ PKG_PATCHES   += $(THISAPP)-espf-1.patch \
 
 define STAGE_PREPARE_CMDS
 	-mkdir -v $(DIR_SRC)/gcc-build
-
-	# First, unpack gmp and mpfr.
-	# We use the build-"magic" of the gcc build system that we compile libgmp and
-	# libmpfr right (with -fPIC and so on).
-	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/gmp-$(GMP).tar.bz2
-	cd $(DIR_APP) && ln -svf gmp-* gmp
-	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/mpfr-$(MPFR).tar.bz2
-	cd $(DIR_APP) && ln -svf mpfr-* mpfr
 
 	# Remove unneeded features that will save some compile time
 	rm -rf $(DIR_APP)/lib{gfortran,java,objc} \
