@@ -1,0 +1,71 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = pcre
+PKG_VER        = 7.9
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.pcre.org/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = Perl-compatible regular expression library.
+
+PKG_DEPS      += bzip2 readline zlib
+
+define PKG_DESCRIPTION
+	Perl-compatible regular expression library. PCRE has its own native \
+	API, but a set of "wrapper" functions that are based on the POSIX \
+	API are also supplied in the library libpcreposix.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--docdir=/usr/share/doc/pcre-$(PKG_VER) \
+			--enable-utf8 \
+			--enable-pcregrep-libz \
+			--enable-pcregrep-libbz2 \
+			--enable-unicode-properties
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/{,usr/}lib
+	mv -v $(BUILDROOT)/usr/lib/libpcre.so.* $(BUILDROOT)/lib/
+	ln -v -sf ../../lib/libpcre.so.0 $(BUILDROOT)/usr/lib/libpcre.so
+endef
