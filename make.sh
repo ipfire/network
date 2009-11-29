@@ -95,4 +95,19 @@ case "${action}" in
 	tree)
 		${NAOKI} tree
 		;;
+	random)
+		pkgs=$(package_list)
+		while true; do
+			if [ -z "${pkgs}" ]; then
+				break
+			fi
+
+			pkgs=$(package_random ${pkgs})
+			pkg=$(awk '{print $NF }' <<<${pkgs})
+
+			${NAOKI} build ${pkg}
+
+			pkgs=$(listremove ${pkg} ${pkgs})
+		done
+		;;
 esac
