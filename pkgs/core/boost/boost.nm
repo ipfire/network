@@ -1,0 +1,105 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = boost
+PKG_VER        = 1.39.0
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.boost.org/
+PKG_LICENSE    = Boost
+PKG_SUMMARY    = The Boost C++ Libraries.
+
+PKG_DEPS      += python
+
+define PKG_DESCRIPTION
+	Boost provides free peer-reviewed portable C++ source libraries. The \
+	emphasis is on libraries which work well with the C++ Standard \
+	Library, in the hopes of establishing "existing practice" for \
+	extensions and providing reference implementations so that the Boost \
+	libraries are suitable for eventual standardization. (Some of the \
+	libraries have already been proposed for inclusion in the C++ \
+	Standards Committee's upcoming C++ Standard Library Technical Report.)
+endef
+
+PKG_TARBALL    = $(PKG_NAME)_$(subst .,_,$(PKG_VER)).tar.bz2
+
+PKG_PATCHES   += $(THISAPP)-version-override.patch
+PKG_PATCHES   += $(THISAPP)-unneccessary_iostreams.patch
+PKG_PATCHES   += $(THISAPP)-function_template.patch
+PKG_PATCHES   += $(THISAPP)-fs_gcc44.patch
+
+export BOOST_ROOT=$(DIR_APP)
+BUILD_FLAGS    = -d2 --layout=system variant=release threading=single,multi \
+					debug-symbols=on link=shared runtime-link=shared
+SONAMEVERSION  = 5
+
+CFLAGS        += -fno-strict-aliasing
+
+PARALLELISMFLAGS := -j3
+
+DIR_APP        = $(DIR_SRC)/$(PKG_NAME)_$(subst .,_,$(PKG_VER))
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE_CMDS
+	# Let bjam use our own cflags
+	cd $(DIR_APP) && sed -e "s/-O3/$(CFLAGS)/g" -i tools/build/v2/tools/gcc.jam
+endef
+
+define STAGE_BUILD
+	# build jam
+	cd $(DIR_APP)/tools/jam/src && ./build.sh
+
+	# build libs
+	cd $(DIR_APP) && ./bootstrap.sh \
+		--with-toolset=gcc \
+		--with-icu
+
+	cd $(DIR_APP) && \
+		./bjam $(BUILD_FLAGS) $(PARALLELISMFLAGS) stage
+endef
+
+define STAGE_INSTALL
+	# install libs
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	cd $(DIR_APP) && for i in $$(find stage -type f -name "*.so"); do \
+		install -v -p -m 755 $$i $(BUILDROOT)/usr/lib/$$(basename $$i).$(PKG_VER); \
+		ln -svf $$(basename $$i).$(PKG_VER) $(BUILDROOT)/usr/lib/$$(basename $$i).$(SONAMEVERSION); \
+		ln -svf $$(basename $$i).$(SONAMEVERSION) $(BUILDROOT)/usr/lib/$$(basename $$i); \
+	done
+
+	# install includes
+	-mkdir -pv $(BUILDROOT)/usr/include
+	cd $(DIR_APP) && find boost -type d | while read a; do \
+		mkdir -pv $(BUILDROOT)/usr/include/$$a; \
+		find $$a -mindepth 1 -maxdepth 1 -type f | \
+			xargs -r install -v -m 644 -p -t $(BUILDROOT)/usr/include/$$a; \
+	done
+endef
