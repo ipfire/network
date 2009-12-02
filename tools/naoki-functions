@@ -87,7 +87,10 @@ function naoki_prepare() {
 	
 		# Configure dns resolving
 		cp -f /etc/resolv.conf /etc/hosts ${BUILD_DIR}/etc/
-	
+
+		grep ^root /etc/passwd > ${BUILD_DIR}/etc/passwd
+		grep ^root /etc/group > ${BUILD_DIR}/etc/group
+
 		local i
 		for i in cache ccache pkgs src tools ${DIR_PACKAGES}; do
 			if [ "${i:0:1}" != "/" ]; then
