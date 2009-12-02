@@ -44,23 +44,15 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
+CONFIGURE_OPTIONS += --docdir=/usr/share/doc/pcre-$(PKG_VER) \
+	--enable-utf8 \
+	--enable-pcregrep-libz \
+	--enable-pcregrep-libbz2 \
+	--enable-unicode-properties
+
 ###############################################################################
 # Installation Details
 ###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr \
-			--docdir=/usr/share/doc/pcre-$(PKG_VER) \
-			--enable-utf8 \
-			--enable-pcregrep-libz \
-			--enable-pcregrep-libbz2 \
-			--enable-unicode-properties
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)

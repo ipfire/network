@@ -47,19 +47,11 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
+CONFIGURE_OPTIONS += --with-pcre=system
+
 ###############################################################################
 # Installation Details
 ###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr \
-			--with-pcre=system
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)

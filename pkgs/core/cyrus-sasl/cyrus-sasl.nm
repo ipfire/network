@@ -46,21 +46,13 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 PKG_PATCHES   += $(THISAPP)-bad-elif.patch
 
+CONFIGURE_OPTIONS += --sysconfdir=/etc \
+	--with-dbpath=/var/lib/sasl/sasldb2 \
+	--with-saslauthd=/var/run/saslauthd
+
 ###############################################################################
 # Installation Details
 ###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr \
-			--sysconfdir=/etc \
-			--with-dbpath=/var/lib/sasl/sasldb2 \
-			--with-saslauthd=/var/run/saslauthd
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
