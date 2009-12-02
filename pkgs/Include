@@ -66,6 +66,7 @@ endef
 PKG_BUILD_DEPS += glibc gcc
 
 CONFIGURE_ARCH = --build=$(TARGET) --host=$(TARGET)
+CONFIGURE_OPTIONS = $(CONFIGURE_ARCH) --prefix=/usr
 
 ifeq "$(TARGET_MACHINE)" "x86_64"
 	LINKER = /lib64/ld-linux-x86-64.so.2
@@ -140,8 +141,7 @@ endef
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr
+			$(CONFIGURE_OPTIONS)
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
