@@ -1,0 +1,69 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = kbd
+PKG_VER        = 1.15.1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Base
+PKG_URL        = http://ftp.altlinux.org/pub/people/legion/kbd
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Tools for configuring the console (keyboard, virtual terminals, etc.).
+
+define PKG_DESCRIPTION
+	The kbd package contains tools for managing a Linux \
+	system's console's behavior, including the keyboard, the screen \
+	fonts, the virtual terminals and font files.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_OBJECTS   += kbd-latarcyrheb-16-fixed.tar.bz2
+PKG_OBJECTS   += kbd-latsun-fonts.tar.bz2
+
+PKG_PATCHES   += $(THISAPP)-backspace-1.patch
+
+CONFIGURE_OPTIONS += --datadir=/lib/kbd
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE_CMDS
+	# Adding our own fonts
+	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/kbd-latsun-fonts.tar.bz2
+	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/kbd-latarcyrheb-16-fixed.tar.bz2
+
+	cd $(DIR_APP) && autoreconf --force --install
+	cd $(DIR_APP) && sed -i "s/ifdef OPTIONAL_PROGS/ifeq (\$$(OPTIONAL_PROGS),yes)/" man/Makefile.in
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/bin
+	mv -v $(BUILDROOT)/usr/bin/{kbd_mode,loadkeys,openvt,setfont} $(BUILDROOT)/bin
+endef
