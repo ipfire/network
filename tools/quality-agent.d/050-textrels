@@ -1,0 +1,20 @@
+#!/bin/bash
+
+. $(dirname ${0})/qa-include
+
+# TEXTREL's are baaaaaaaad
+echo "${0##*/}: Searching for bad TEXTRELs"
+
+files=$(scanelf -qyRF '%t %p' ${BUILDROOT} 2>/dev/null | awk '{ print $NF }')
+if [ -n "${files}" ]; then
+	echo "  QA Notice: The following files contain runtime text relocations"
+	echo "   Text relocations force the dynamic linker to perform extra"
+	echo "   work at startup, waste system resources, and may pose a security"
+	echo "   risk. On some architectures, the code may not even function"
+	echo "   properly, if at all."
+	echo "${files}"
+
+	exit 1
+fi
+
+exit 0

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+. $(dirname ${0})/qa-include
+
+# If the pyc and pyo files are the same, we can hardlink them
+echo "${0##*/}: Hard-linking python bytecode files"
+
+for py in $(find ${BUILDROOT} -type f -name "*.py"); do
+	if [ -e "${py}c" ] && [ -e "${py}o" ]; then
+		if cmp -s "${py}c" "${py}o"; then
+			ln -f "${py}c" "${py}o"
+		fi
+	fi
+done
+
+exit 0

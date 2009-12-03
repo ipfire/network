@@ -1,0 +1,20 @@
+#!/bin/bash
+
+. $(dirname ${0})/qa-include
+
+# Strip debugging symbols
+echo "${0##*/}: Strip debugging symbols"
+for f in $(find ${BUILDROOT} -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \)); do
+	if (file $f | grep -q ' shared object,'); then
+		strip --strip-debug "$f" || :
+	fi
+done
+
+echo "${0##*/}: Strip unneeded symbols"
+for f in $(find ${BUILDROOT} -type f); do
+	if (file $f | grep -q ' shared object,'); then
+		strip --strip-unneeded "$f" || :
+	fi
+done
+
+exit 0
