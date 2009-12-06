@@ -62,6 +62,11 @@ define STAGE_BUILD
 			--disable-static
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+
+	cd $(DIR_APP) && $(CC) $(CFLAGS) -Wl,-soname,libfl.so.2 -o libfl.so.$(PKG_VER) \
+		buf.o ccl.o dfa.o ecs.o filter.o gen.o main.o misc.o nfa.o options.o \
+		parse.o regex.o scanflags.o scan.o scanopt.o skel.o sym.o tables.o \
+		tables_shared.o tblcmp.o yylex.o -lm
 endef
 
 define STAGE_INSTALL
@@ -69,5 +74,9 @@ define STAGE_INSTALL
 	echo "#!/bin/sh"			>  $(BUILDROOT)/usr/bin/lex
 	echo "exec /usr/bin/flex -l \"$$@\""	>> $(BUILDROOT)/usr/bin/lex
 	chmod 755 $(BUILDROOT)/usr/bin/lex
-endef
 
+	-mkdir -pv $(BUILDROOT){,/usr}/lib
+	install -m 755 $(DIR_APP)/libfl.so.$(PKG_VER) $(BUILDROOT)/lib/libfl.so.$(PKG_VER)
+	ln -svf libfl.so.$(PKG_VER) $(BUILDROOT)/lib/libfl.so.2
+	ln -svf ../../lib/libfl.so.2 $(BUILDROOT)/usr/lib/libfl.so
+endef
