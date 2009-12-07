@@ -1,0 +1,64 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = man-db
+PKG_VER        = 2.5.6
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Documentation
+PKG_URL        = http://bzr.savannah.gnu.org/r/man-db/
+PKG_LICENSE    = GPL
+PKG_SUMMARY    = man-db is an on-line manual database.
+
+PKG_DEPS      += db groff
+
+define PKG_DESCRIPTION
+	man-db is an implementation of the standard Unix documentation \
+	system accessed using the man command. It uses a Berkeley DB database \
+	in place of the traditional flat-text whatis databases. man-db is \
+	used by several popular GNU/Linux distributions.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+	--libexecdir=/usr/lib \
+	--sysconfdir=/etc \
+	--disable-setuid \
+	--with-browser=/usr/bin/lynx \
+	--with-col=/usr/bin/col \
+	--with-vgrind=/usr/bin/vgrind \
+	--with-grap=/usr/bin/grap
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -i -e '\%\t/usr/man%d' -e '\%\t/usr/local/man%d' \
+		src/man_db.conf.in
+endef
