@@ -60,8 +60,10 @@ function package() {
 		is_built)
 			if package_is_built $(find_package $@); then
 				echo "Package is built."
+				return 0
 			else
 				echo "Package is NOT built."
+				return 1
 			fi
 			;;
 		list)
@@ -80,6 +82,16 @@ function package() {
 }
 
 case "${action}" in
+	all)
+		for pkg in $(${NAOKI} tree); do
+			echo "${pkg}:"
+			package is_built ${pkg} && continue
+			${NAOKI} build ${pkg} || break
+		done
+		;;
+	build)
+		${NAOKI} build $@
+		;;
 	package|pkg)
 		package $@
 		;;
