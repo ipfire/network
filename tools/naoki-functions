@@ -69,7 +69,11 @@ function naoki_prepare() {
 	mkdir -p ${BUILD_DIR}/usr/src
 
 	if [ "${TOOLCHAIN}" = "1" ]; then
-		# Creating /tools_xxx
+		## Creating /tools_xxx
+		# if dir points to wrong direction, we will remove it.
+		if [ "$(readlink ${TOOLS_DIR})" != "${TOOLS_DIR_REAL}" ]; then
+			rm -f ${TOOLS_DIR}
+		fi
 		mkdir ${TOOLS_DIR_REAL} 2>/dev/null
 		if [ ! -h "${TOOLS_DIR}" ]; then
 			ln -fs ${TOOLS_DIR_REAL} ${TOOLS_DIR}
