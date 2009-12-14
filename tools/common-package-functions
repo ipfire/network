@@ -90,7 +90,7 @@ function package_repos() {
 function __package_list() {
 	local package
 	local repo
-	
+
 	for repo in $(package_repos); do
 		for package in ${DIR_PKGS}/${repo}/*; do
 			if [ ! -d "${package}" ]; then
@@ -142,13 +142,11 @@ function package_info() {
 	local p=$(find_package ${1})
 
 	log DEBUG "Fetching package information from ${DIR_PKGS}/${p}..."
-	
-	echo "gothere: ${p}" > .test
 
 	is_package ${p} || return 1
 
 	if [ "${NAOKI_INCLUDE}" = "1" ]; then
-		CHROOT=0 naoki_make ${p} --without-chroot info | grep -v "^make:"
+		CHROOT=0 naoki_make ${p} --without-chroot info
 	else
 		${NAOKI} info ${p}
 	fi
@@ -157,7 +155,7 @@ function package_info() {
 function package_cache_update() {
 	local p=$(find_package ${1})
 
-	fingerprint=$(__package_cache_get "${p}" "FINGERPRINT")
+	local fingerprint=$(__package_cache_get "${p}" "FINGERPRINT")
 	if [ -n "${fingerprint}" ]; then
 		if [ "$(package_fingerprint ${p})" = "${fingerprint}" ]; then
 			return
@@ -168,7 +166,8 @@ function package_cache_update() {
 
 	local line object data
 
-	cat ${PACKAGES_CACHE} | grep -v "^${1}.${2}" > ${PACKAGES_CACHE}
+	local cache_data=$(<${PACKAGES_CACHE})
+	grep -v "^${1}.${2}" <<<"${cache_data}" > ${PACKAGES_CACHE}
 
 	package_info ${p} | \
 		while read line; do
@@ -191,12 +190,11 @@ function __package_cache_get() {
 
 function package_get() {
 	local p=$(find_package ${1})
-	local object=${2}
 
 	# Check if cache data is up2date
 	package_cache_update ${p}
 
-	__package_cache_get "${p}" "${object}"
+	__package_cache_get "${p}" "${2}"
 }
 
 
@@ -464,7 +462,7 @@ function package_mandatory() {
 			continue
 		fi
 		echo "${package} $(package_runtime_dependencies_recursive ${package})"
-	done #| tr " " "\n" | sort -u
+	done
 }
 
 function package_download() {
