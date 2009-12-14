@@ -41,7 +41,7 @@ define PKG_DESCRIPTION
 	to conform to the IEEE POSIX P1003.2/ISO 9945.2 Shell and Tools standard.
 endef
 
-PKG_BUILD_DEPS+= bison m4
+PKG_BUILD_DEPS+= autoconf automake bison
 PKG_DEPS      += readline
 
 PKG_TARBALL    = $(THISAPP).tar.gz
