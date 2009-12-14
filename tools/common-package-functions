@@ -154,15 +154,51 @@ function package_info() {
 	fi
 }
 
-function package_get() {
-	local package=$(find_package ${1})
-	local item=${2}
+function package_cache_update() {
+	local p=$(find_package ${1})
 
-	package_info ${package} | \
-		grep "^${item}" | \
-		awk -F= '{ print $NF }' | \
-		tr -d '"'
+	fingerprint=$(__package_cache_get "${p}" "FINGERPRINT")
+	if [ -n "${fingerprint}" ]; then
+		if [ "$(package_fingerprint ${p})" = "${fingerprint}" ]; then
+			return
+		fi
+	fi
+
+	log DEBUG "Cache information of ${p} needs update."
+
+	local line object data
+
+	cat ${PACKAGES_CACHE} | grep -v "^${1}.${2}" > ${PACKAGES_CACHE}
+
+	package_info ${p} | \
+		while read line; do
+			object=${line%%=*}
+			data=${line##*=}
+
+			__package_cache_set "${p}" "${object}" "$(tr -d '"' <<<${data})"
+		done
+	__package_cache_set "${p}" "FINGERPRINT" "$(package_fingerprint ${p})"
 }
+
+function __package_cache_set() {
+	echo -e "${1}\t${2}\t${3}" >> ${PACKAGES_CACHE}
+}
+
+function __package_cache_get() {
+	local output=$(grep -e "^${1}.${2}" ${PACKAGES_CACHE})
+	echo "${output:$(( ${#1} + ${#2} + 2))}"
+}
+
+function package_get() {
+	local p=$(find_package ${1})
+	local object=${2}
+
+	# Check if cache data is up2date
+	package_cache_update ${p}
+
+	__package_cache_get "${p}" "${object}"
+}
+
 
 function package_name() {
 	package_get ${1} PKG_NAME
@@ -451,4 +487,10 @@ function package_download() {
 			return 1
 		fi
 	fi
+}
+
+function package_fingerprint() {
+	local p=$(find_package ${1})
+	# time of modification in seconds since Epoch
+	stat --printf="%Y" ${DIR_PKGS}/${p}/${p##*/}.nm
 }
