@@ -254,7 +254,7 @@ function naoki_cmd() {
 }
 
 function naoki_make() {
-	local p=$(find_package ${1})
+	local p=${1}
 	shift
 
 	local cmd="make --no-print-directory -C"

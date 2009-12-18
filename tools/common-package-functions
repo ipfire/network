@@ -27,7 +27,7 @@ function listsort() {
 }
 
 function is_package() {
-	local package=$(find_package ${1})
+	local package=${1}
 
 	if [ -e "${DIR_PKGS}/${package}/${package##*/}.nm" ]; then
 		return 0
@@ -121,7 +121,7 @@ function package_profile() {
 		echo "TODO: WIKI OUTPUT"
 	else
 		# XXX to be formatted
-		local package_name=$(find_package ${1})
+		local package_name=${1}
 		printf  "# ${BOLD}%-12s${NORMAL}: ${CLR_BOLD_GRN}%s${NORMAL}\n" "Name" "${package_name}"
 		printf  "# ${BOLD}%-12s${NORMAL}: %s\n" "Version" "$(package_version ${package_name})"
 		printf  "# ${BOLD}%-12s${NORMAL}: %s\n" "Release" "$(package_release ${package_name})"
@@ -139,7 +139,7 @@ function package_profile() {
 }
 
 function package_info() {
-	local p=$(find_package ${1})
+	local p=${1}
 
 	log DEBUG "Fetching package information from ${DIR_PKGS}/${p}..."
 
@@ -153,7 +153,7 @@ function package_info() {
 }
 
 function package_cache_update() {
-	local p=$(find_package ${1})
+	local p=${1}
 
 	local fingerprint=$(__package_cache_get "${p}" "FINGERPRINT")
 	if [ -n "${fingerprint}" ]; then
@@ -184,12 +184,11 @@ function __package_cache_set() {
 }
 
 function __package_cache_get() {
-	local output=$(grep -e "^${1}.${2}" ${PACKAGES_CACHE})
-	echo "${output:$(( ${#1} + ${#2} + 2))}"
+	grep -e "^${1}.${2}" ${PACKAGES_CACHE} | cut -c $(( ${#1} + ${#2} + 3 ))-
 }
 
 function package_get() {
-	local p=$(find_package ${1})
+	local p=${1}
 
 	# Check if cache data is up2date
 	package_cache_update ${p}
@@ -221,7 +220,7 @@ function package_summary() {
 function __deps() {
 	local info=${1}
 	local recursive=${2}
-	local package=$(find_package ${3})
+	local package=${3}
 
 	local deps=$(find_packages $(package_get ${package} ${info}))
 
@@ -235,12 +234,12 @@ function __deps() {
 				deps="${deps} $(package_get ${dep} ${info}) $(package_runtime_dependencies ${dep})"
 			done
 
-			deps=$(find_packages $(listsort ${deps}))
+			deps=$(listsort ${deps})
 
 			[ ${#deps} -eq ${size} ] && break
 		done
 	fi
-	echo $(find_packages $(listsort ${deps}))
+	echo $(listsort ${deps})
 }
 
 function package_runtime_dependencies() {
@@ -306,7 +305,7 @@ function package_objects() {
 }
 
 function package_is_built() {
-	local package=$(find_package ${1})
+	local package=${1}
 
 	local file
 	for file in $(package_packages ${package}); do
@@ -404,7 +403,7 @@ function package_tree() {
 						packages="${packages} ${package2}"
 					fi
 				done
-				ret[${i}]=$(package_sort ${packages})
+				ret[${i}]=$(listsort ${packages})
 			fi
 		done
 		i=$(( ${i} + 1 ))
@@ -421,7 +420,7 @@ function package_tree() {
 function require_toolchain() {
 	local package
 	for package in ${PACKAGES_TO_EXTRACT}; do
-		package=$(find_package ${package})
+		package=${package}
 		if ! package_is_built ${package}; then
 			return 0
 		fi
@@ -430,7 +429,7 @@ function require_toolchain() {
 }
 
 function package_id() {
-	local p=$(find_package ${1})
+	local p=${1}
 	local hash=$(sha1sum <<<${p})
 
 	echo ${hash:0:6}
@@ -466,7 +465,7 @@ function package_mandatory() {
 }
 
 function package_download() {
-	local package=$(find_package ${1})
+	local package=${1}
 
 	local object
 	local to_download
@@ -488,7 +487,7 @@ function package_download() {
 }
 
 function package_fingerprint() {
-	local p=$(find_package ${1})
+	local p=${1}
 	# time of modification in seconds since Epoch
 	stat --printf="%Y" ${DIR_PKGS}/${p}/${p##*/}.nm
 }
