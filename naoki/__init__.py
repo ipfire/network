@@ -93,7 +93,7 @@ class Naoki(object):
 				print "%s" % pkg
 		
 		elif action == "list-groups":
-			print "\n".join(naoki.package.groups())
+			print "\n".join(package.groups())
 
 		elif action == "rebuild":
 			self.build()
