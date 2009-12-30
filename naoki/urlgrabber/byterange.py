@@ -272,8 +272,6 @@ class FTPRangeHandler(urllib2.FTPHandler):
         host, port = splitport(host)
         if port is None:
             port = ftplib.FTP_PORT
-        else:
-            port = int(port)
 
         # username/password handling
         user, host = splituser(host)
