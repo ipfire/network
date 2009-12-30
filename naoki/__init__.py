@@ -15,6 +15,9 @@ import util
 
 from constants import *
 
+# fix for python 2.4 logging module bug:
+logging.raiseExceptions = 0
+
 class Naoki(object):
 	packages = []
 
