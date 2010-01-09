@@ -6,7 +6,6 @@ include ../../core/attr/attr.nm
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR) \
 			--enable-shared
 

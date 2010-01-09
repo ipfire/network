@@ -11,6 +11,7 @@ CONFIGDIR = os.path.join(BASEDIR, "config")
 LOGDIR = os.path.join(BASEDIR, "logs")
 PKGSDIR = os.path.join(BASEDIR, "pkgs")
 PACKAGESDIR = os.path.join(BUILDDIR, "packages")
+TOOLCHAINSDIR = os.path.join(BUILDDIR, "toolchains")
 TOOLSDIR = os.path.join(BASEDIR, "tools")
 
 TARBALLDIR = os.path.join(CACHEDIR, "tarballs")
@@ -18,10 +19,9 @@ PATCHESDIR = os.path.join(CACHEDIR, "patches")
 
 CONFIGFILE = os.path.join(CONFIGDIR, "naoki.conf")
 
-TOOLCHAIN_TARBALL = os.path.join(BUILDDIR, "tools_i686.tar.gz")
-
 class Config(object):
 	_items = {
+		"toolchain" : False,
 		"mandatory_packages" : [
 			"core/bash",
 			"core/gcc",
@@ -77,6 +77,9 @@ class Config(object):
 	@property
 	def environment(self):
 		return {
+			"TERM"           : os.environ["TERM"],
+			"PS1"            : os.environ.get("PS1", "\u:\w\$ "),
+			#
 			"DISTRO_NAME"    : self["distro_name"],
 			"DISTRO_SNAME"   : self["distro_sname"],
 			"DISTRO_EPOCH"   : self["distro_epoch"],

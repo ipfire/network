@@ -6,8 +6,11 @@ include ../../core/make/make.nm
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR)
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
 endef

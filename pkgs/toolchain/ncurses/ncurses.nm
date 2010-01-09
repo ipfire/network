@@ -6,17 +6,13 @@ include ../../core/ncurses/ncurses.nm
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR) \
 			--with-shared \
 			--without-debug \
 			--without-ada \
 			--enable-overwrite \
 			--enable-widec \
-			--without-cxx-binding \
-			--enable-symlinks \
-			--disable-root-environ \
-			--disable-static
+			--enable-symlinks
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef

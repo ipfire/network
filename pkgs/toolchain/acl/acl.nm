@@ -6,7 +6,6 @@ include ../../core/acl/acl.nm
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR)
 
 	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC" #$(PARALLELISMFLAGS)

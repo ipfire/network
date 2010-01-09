@@ -114,6 +114,18 @@ define DO_BUILD
 	@echo "#####################################################################"
 endef
 
+define DO_TEST
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Test started"
+	@echo "#####################################################################"
+
+	$(STAGE_TEST)
+
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Test finished"
+	@echo "#####################################################################"
+endef
+
 define DO_INSTALL
 	@echo "#####################################################################"
 	@echo "# $(PKG_NAME) - Install started"
@@ -136,6 +148,7 @@ define STAGE_PREPARE
 	$(if $(PKG_PATCHES),$(DO_PATCHES))
 
 	$(STAGE_PREPARE_CMDS)
+	$(STAGE_PREPARE_CMDS2)
 endef
 
 define STAGE_BUILD
@@ -167,9 +180,7 @@ info:
 	@echo "PKG_REL=\"$(PKG_REL)\""
 	@echo "PKG_SUMMARY=\"$(strip $(PKG_SUMMARY))\""
 	@echo "PKG_URL=\"$(PKG_URL)\""
-ifeq "$(TOOLCHAIN)" "1"
 	@echo "PKG_TOOLCHAIN_DEPENDENCIES=\"$(PKG_TOOLCHAIN_DEPS)\""
-endif
 
 $(OBJECTS):
 	@echo "Object file \"$@\" is required." >&2
@@ -192,5 +203,6 @@ shell: $(OBJECTS)
 $(STAGE_DONE): $(OBJECTS)
 	$(if $(STAGE_PREPARE),$(DO_PREPARE))
 	$(if $(STAGE_BUILD),$(DO_BUILD))
+	$(if $(STAGE_TEST),$(DO_TEST))
 	$(if $(STAGE_INSTALL),$(DO_INSTALL))
 	@touch $@

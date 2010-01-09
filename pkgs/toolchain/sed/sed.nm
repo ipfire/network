@@ -6,9 +6,12 @@ include ../../core/sed/sed.nm
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR) \
 			--without-included-regex
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
 endef

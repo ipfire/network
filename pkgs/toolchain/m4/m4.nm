@@ -8,8 +8,12 @@ define STAGE_BUILD
 		CPPFLAGS="-D_GNU_SOURCE" \
 		gl_cv_func_printf_directive_n=no \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR)
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
+
+# fails
+#define STAGE_TEST
+#	cd $(DIR_APP) && make check
+#endef

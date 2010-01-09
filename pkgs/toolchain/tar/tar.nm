@@ -1,15 +1,17 @@
 
-PKG_TOOLCHAIN_DEPS += gcc glibc
+PKG_TOOLCHAIN_DEPS += acl attr gcc glibc
 
 include ../../core/tar/tar.nm
 
 define STAGE_BUILD
-	# Normally the 'rmt' programs goes in sbin/.
-	cd $(DIR_APP) && LDFLAGS="-z muldefs" \
+	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=$(TOOLS_DIR) \
-			--libexecdir=$(TOOLS_DIR)/bin
+			--prefix=$(TOOLS_DIR)
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
+
+# fails
+#define STAGE_TEST
+#	cd $(DIR_APP) && make check
+#endef

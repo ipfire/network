@@ -1,7 +1,21 @@
 
-PKG_TOOLCHAIN_DEPS += binutils-static kernel-headers
+PKG_TOOLCHAIN_DEPS += binutils-static
 
 include ../../core/gcc/gcc.nm
+
+GMP  = gmp-4.3.1
+MPFR = mpfr-2.4.1
+
+PKG_OBJECTS += $(GMP).tar.bz2 $(MPFR).tar.bz2
+
+define STAGE_PREPARE_CMDS
+	-mkdir -pv $(DIR_SRC)/gcc-build
+
+	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/$(GMP).tar.bz2
+	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/$(MPFR).tar.bz2
+	cd $(DIR_APP) && ln -svf $(GMP) gmp
+	cd $(DIR_APP) && ln -svf $(MPFR) mpfr
+endef
 
 define STAGE_BUILD
 	## Enable -fPIC by default
@@ -12,23 +26,22 @@ define STAGE_BUILD
 
 	# libssp has no use with new versions of Glibc. Glibc completely replaces all 
 	# functions in libssp, linking to libssp will cause conflicts with libc, so 
-	# libssp is a waste of space... so --disable-libssp. 
+	# libssp is a waste of space... so --disable-libssp.
 
 	cd $(DIR_SRC)/gcc-build && \
-		CC="gcc -B/usr/bin/" \
 		../$(THISAPP)/configure \
-			$(CONFIGURE_ARCH) \
 			--target=$(TARGET) \
 			$(CONFIG_CPU) \
 			--prefix=$(TOOLS_DIR) \
-			--with-local-prefix=$(TOOLS_DIR) \
-			--libexecdir=$(TOOLS_DIR)/lib \
-			--enable-languages=c \
-			--enable-shared \
-			--disable-nls \
+			--disable-decimal-float \
+			--disable-libgomp \
+			--disable-libmudflap \
 			--disable-libssp \
-			--disable-werror \
-			--disable-static \
+			--enable-languages=c \
+			--disable-threads \
+			--disable-multilib \
+			--disable-shared \
+			--disable-nls \
 			$(CONFIGURE_ARGS)
 
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
@@ -37,9 +50,5 @@ endef
 define STAGE_INSTALL
 	cd $(DIR_SRC)/gcc-build && make install
 
-	ln -fvs gcc $(TOOLS_DIR)/bin/cc
-
-	$(TARGET)-gcc -dumpspecs | sed \
-		-e 's@$(LINKER)@$(TOOLS_DIR)&@g' \
-		> $$(dirname $$($(TARGET)-gcc -print-libgcc-file-name))/specs
+	ln -svf libgcc.a $$($(TARGET)-gcc -print-libgcc-file-name | sed -e "s/libgcc/&_eh/")
 endef

@@ -1,21 +1,19 @@
 
-PKG_TOOLCHAIN_DEPS += kernel-headers
+PKG_TOOLCHAIN_DEPS = # No deps
 
 include ../../core/binutils/binutils.nm
 
 define STAGE_BUILD
 	cd $(DIR_SRC)/binutils-build && \
-		CC="gcc -B/usr/bin/" \
 		../$(THISAPP)/configure \
-			$(CONFIGURE_ARCH) \
 			--target=$(TARGET) \
 			--prefix=$(TOOLS_DIR) \
 			--disable-nls \
 			--disable-werror
 
-	cd $(DIR_SRC)/binutils-build && make tooldir=$(TOOLS_DIR) $(PARALLELISMFLAGS)
+	cd $(DIR_SRC)/binutils-build && make $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
-	cd $(DIR_SRC)/binutils-build && make tooldir=$(TOOLS_DIR) install
+	cd $(DIR_SRC)/binutils-build && make install
 endef

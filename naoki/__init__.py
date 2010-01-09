@@ -30,6 +30,7 @@ class Naoki(object):
 		self.log = logging.getLogger()
 
 		self.config = config
+		self.config["toolchain"] = self.options.toolchain
 		self.setup_logging()
 		
 		self.log.info("Started naoki on %s" % time.strftime("%a, %d %b %Y %H:%M:%S"))
@@ -95,11 +96,19 @@ class Naoki(object):
 		elif action == "list-groups":
 			print "\n".join(package.groups())
 
+		elif action == "list-tree":
+			for a in package.deptree(package.list()):
+				print a
+
 		elif action == "rebuild":
+			if not self.packages:
+				self.packages = package.list()
 			self.build()
+
 
 	def build(self):
 		requeue = []
+		self.packages = package.depsort(self.packages)
 		while True:
 			if not self.packages:
 				return
@@ -108,7 +117,15 @@ class Naoki(object):
 			build = Build(self.packages.pop(0))
 			
 			if build.package.isBuilt:
+				if self.options.toolchain:
+					self.log.info("Skipping already built package %s..." % build.package.name)
+					continue
 				self.log.warn("Package is already built. Will overwrite.")
+			
+			#if not build.package.canBuild:
+			#	self.log.warn("Cannot build package %s. Requeueing. %s" % (build.package.name, build.package.toolchain_deps))
+			#	self.packages.append(build.package)
+			#	continue
 
 			self.log.info("Building %s..." % build.package.name)
 			build.build()
@@ -123,8 +140,9 @@ class Build(object):
 	def init(self):
 		self.environment.init()
 
-		self.extractAll()
-	
+		if not self.package.toolchain:
+			self.extractAll()
+
 	def extractAll(self):
 		packages = self.package.deps + self.package.build_deps
 		for pkg in config["mandatory_packages"]:
@@ -140,10 +158,5 @@ class Build(object):
 	def build(self):
 		self.package.download()
 		self.init()
-		self.make("package")
+		self.environment.make("package")
 
-	def make(self, target):
-		file = self.package.filename.replace(BASEDIR, "/usr/src")
-		cmd = "make --no-print-directory -C %s -f %s %s" % (os.path.dirname(file),
-			file, target,)
-		self.environment.doChroot(cmd)

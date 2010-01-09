@@ -7,6 +7,10 @@ import naoki
 
 op = OptionParser()
 
+# toolchain mode
+op.add_option("--toolchain", action="store_const", const=1,
+				dest="toolchain", default=0, help="toolchain mode")
+
 # verbosity
 op.add_option("-v", "--verbose", action="store_const", const=2,
 				dest="verbose", default=1, help="verbose build")

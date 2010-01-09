@@ -4,44 +4,22 @@ PKG_TOOLCHAIN_DEPS += binutils-static gcc-static kernel-headers
 include ../../core/glibc/glibc.nm
 
 define STAGE_BUILD
-	# Glibc uses a hard coded path for /etc/ld.so.preload. To keep Glibc from
-	# preloading libraries from the host machine perform the following command:
-	cd $(DIR_APP) && sed -e "s@/etc/ld.so.preload@$(TOOLS_DIR)@" -i elf/rtld.c
-
 	cd $(DIR_SRC)/glibc-build && \
 		CFLAGS= \
 		CXXFLAGS= \
+		libc_cv_c_cleanup=yes \
+		libc_cv_forced_unwind=yes \
 		../$(THISAPP)/configure \
-			$(CONFIGURE_ARCH) \
+			--host=$(TARGET) \
+			--build=$$(../$(THISAPP)/scripts/config.guess) \
 			--prefix=$(TOOLS_DIR) \
 			--libexecdir=$(TOOLS_DIR)/lib/$(PKG_NAME) \
 			--with-headers=$(TOOLS_DIR)/include \
-			--with-binutils=$(TOOLS_DIR)/bin \
 			--disable-profile \
 			--enable-add-ons \
-			--enable-kernel=$(OPTIMIZED_KERNEL) \
-			--without-selinux \
-			--without-gd \
-			--enable-bind-now \
-			--enable-stackguard-randomization
+			--enable-kernel=$(OPTIMIZED_KERNEL)
 
-	# Our GCC is already passing -fPIC, and that's all we want for the libraries.
-	# LDFLAGS.so is appended to so we don't build shared libraries with
-	# DT_TEXTREL (and to tell us if something goes wrong). For now we only build
-	# the libraries, not the programs:
-	echo "build-programs=no" \
-		>> $(DIR_SRC)/glibc-build/configparms
-
-	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS) \
-		CFLAGS="-O2 -DPIC -fno-stack-protector -U_FORTIFY_SOURCE" \
-		CXXFLAGS="-O2 -DPIC -fno-stack-protector -U_FORTIFY_SOURCE"
-
-	# Then build the programs with hardening, so everything possible in
-	# $(TOOLS_DIR) is hardened:
-	echo "CFLAGS   = $(CFLAGS)"   >  $(DIR_SRC)/glibc-build/configparms
-	echo "CXXFLAGS = $(CXXFLAGS)" >> $(DIR_SRC)/glibc-build/configparms
-	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS) \
-		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)"
+	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
@@ -49,4 +27,9 @@ define STAGE_INSTALL
 	touch $(TOOLS_DIR)/etc/ld.so.conf
 
 	cd $(DIR_SRC)/glibc-build && make install
+
+	$(TARGET)-gcc -dumpspecs | \
+		sed -e "s@/lib\(64\)\?/ld@$(TOOLS_DIR)&@g" \
+			-e "/^\*cpp:$$/{n;s,$$, -isystem $(TOOLS_DIR)/include,}" > \
+		$$(dirname $$($(TARGET)-gcc -print-libgcc-file-name))/specs
 endef

@@ -7,12 +7,12 @@ define STAGE_BUILD
 	cd $(DIR_APP) && \
 		ac_cv_func_working_mktime=yes \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=$(TOOLS_DIR) \
 			--libexecdir=$(TOOLS_DIR)/lib
 
-	cd $(DIR_APP) && echo "#define HAVE_LANGINFO_CODESET 1" >> config.h
-	cd $(DIR_APP) && echo "#define HAVE_LC_MESSAGES 1" >> config.h
-
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
 endef

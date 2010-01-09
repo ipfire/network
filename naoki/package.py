@@ -16,8 +16,15 @@ def list():
 	for dir in os.listdir(PKGSDIR):
 		if not os.path.isdir(os.path.join(PKGSDIR, dir)):
 			continue
-		if dir == "toolchain":
-			continue #XXX
+
+		# If we work in toolchain mode we don't return the other
+		# packages and if we are not, we don't return the toolchain packages.
+		if config["toolchain"]:
+			if dir != "toolchain":
+				continue
+		else:
+			if dir == "toolchain":
+				continue
 
 		for package in os.listdir(os.path.join(PKGSDIR, dir)):
 			package = os.path.join(dir, package)
@@ -27,12 +34,15 @@ def list():
 	return pkgs
 
 def find(s):
+	if not s:
+		return
+
 	p = Package(s)
 	if p in list():
 		return p
 
 	for package in list():
-		if package.name.endswith("%s" % s):
+		if os.path.basename(package.name) == s:
 			return package
 
 def groups():
@@ -101,6 +111,34 @@ def depsolve(packages, recursive=False):
 
 		deps.sort()
 		return deps
+
+def deptree(packages):
+	ret = [packages]
+
+	while True:
+		next = []
+		stage = ret[-1][:]
+		for package in stage[:]:
+			for dep in package.getAllDeps(recursive=False):
+				if dep in ret[-1]:
+					stage.remove(package)
+					next.append(package)
+					break
+		
+		ret[-1] = sorted(stage)
+		if next:
+			ret.append(sorted(next))
+			continue
+
+		break
+
+	return ret
+
+def depsort(packages):
+	ret = [] 
+	for l1 in deptree(packages):
+		ret.extend(l1)
+	return ret
 
 class Package(object):
 	info_str = """\
@@ -240,12 +278,31 @@ Patches     :
 				deps.append(package)
 		return depsolve(deps, recursive)
 
+	def getAllDeps(self, recursive=True):
+		if self.toolchain:
+			return depsolve(self.toolchain_deps, recursive)
+
+		return depsolve(self.deps + self.build_deps, recursive)
+
 	@property
 	def build_deps(self):
 		deps = []
 		for package in self.fetch("PKG_BUILD_DEPENDENCIES").split(" "):
-			deps.append(find(package))
+			package = find(package)
+			if package:
+				deps.append(package)
 		
+		deps.sort()
+		return deps
+
+	@property
+	def toolchain_deps(self):
+		deps = []
+		for package in self.fetch("PKG_TOOLCHAIN_DEPENDENCIES").split(" "):
+			package = find(package)
+			if package:
+				deps.append(package)
+
 		deps.sort()
 		return deps
 
@@ -290,6 +347,9 @@ Patches     :
 
 	@property
 	def isBuilt(self):
+		if self.toolchain:
+			return os.path.exists(self.toolchain_file)
+
 		for item in self.package_files:
 			if not os.path.exists(os.path.join(PACKAGESDIR, item)):
 				return False
@@ -297,6 +357,12 @@ Patches     :
 
 	@property
 	def canBuild(self):
+		if self.toolchain:
+			for dep in self.toolchain_deps:
+				if not dep.isBuilt:
+					return False
+			return True
+
 		deps = self.deps + self.build_deps
 		for dep in deps:
 			if not dep.isBuilt:
@@ -312,3 +378,13 @@ Patches     :
 		getLog().debug("Extracting %s..." % self.name)
 		util.do("%s --root=%s %s" % (os.path.join(TOOLSDIR, "decompressor"),
 			dest, " ".join(files)), shell=True)
+
+	@property
+	def toolchain(self):
+		if self.name.startswith("toolchain"):
+			return True
+		return False
+
+	@property
+	def toolchain_file(self):
+		return os.path.join(TOOLCHAINSDIR, "tools_i686", "built", self.id)
