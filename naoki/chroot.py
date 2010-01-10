@@ -100,7 +100,7 @@ class Environment(object):
 		self._setupDev()
 		self._setupUsers()
 		self._setupToolchain()
-	
+
 	def clean(self):
 		util.rm(self.chrootPath())
 
