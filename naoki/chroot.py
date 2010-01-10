@@ -243,15 +243,28 @@ class Environment(object):
 
 	def _setupToolchain(self):
 		symlinks = (
-			"bin/bash",
-			"bin/sh",
-			"bin/pwd",
+			("bin/bash", "bin/bash"),
+			("bin/cat", "bin/cat"),
+			("bin/echo", "bin/echo"),
+			("bin/stty", "bin/stty"),
+			("bin/pwd", "bin/pwd"),
+			("bin/sh", "bin/sh"),
+			#
+			("bin/perl", "usr/bin/perl"),
+			#
+			("lib/libgcc_s.so", "usr/lib/libgcc_s.so"),
+			("lib/libgcc_s.so.1", "usr/lib/libgcc_s.so.1"),
+			("lib/libstdc++.so", "usr/lib/libstdc++.so"),
+			("lib/libstdc++.so.6", "usr/lib/libstdc++.so.6"),
 		)
-		for symlink in symlinks:
-			if os.path.exists(self.chrootPath(symlink)):
+		for src, dst in symlinks:
+			if os.path.exists(self.chrootPath(dst)):
 				continue
-			self.log.debug("Creating symlink /%s" % symlink)
-			os.symlink("/tools_i686/%s" % symlink, self.chrootPath(symlink))
+			dir = os.path.dirname(self.chrootPath(dst))
+			if not os.path.exists(dir):
+				util.mkdir(dir)
+			self.log.debug("Creating symlink /%s" % dst)
+			os.symlink("/tools_i686/%s" % src, self.chrootPath(dst))
 
 	def _mountall(self):
 		"""mount 'normal' fs like /dev/ /proc/ /sys"""
