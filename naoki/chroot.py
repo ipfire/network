@@ -109,7 +109,7 @@ class Environment(object):
 		if not self.toolchain:
 			file = "/usr/src%s" % file[len(BASEDIR):]
 
-		return self.doChroot("make --no-print-directory -C %s -f %s %s" % \
+		return self.doChroot("make -C %s -f %s %s" % \
 			(os.path.dirname(file), file, target), shell=True)
 
 	def doChroot(self, command, shell=True, *args, **kwargs):
