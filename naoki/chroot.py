@@ -61,6 +61,9 @@ class Environment(object):
 	def _init(self):
 		self._setupLogging()
 
+		if os.path.exists(self.chrootPath()):
+			self.clean()
+
 		# create dirs
 		self.log.debug("Creating directories...")
 		dirs = (
@@ -99,8 +102,8 @@ class Environment(object):
 		self._setupToolchain()
 	
 	def clean(self):
-		pass
-	
+		util.rm(self.chrootPath())
+
 	def make(self, target):
 		file = self.package.filename
 		if not self.toolchain:
