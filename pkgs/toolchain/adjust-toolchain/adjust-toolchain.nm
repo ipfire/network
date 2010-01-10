@@ -1,0 +1,89 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = adjust-toolchain
+PKG_VER        = 0
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      =
+PKG_URL        =
+PKG_LICENSE    =
+PKG_SUMMARY    =
+
+define PKG_DESCRIPTION
+	Adjusts the toolchain settings.
+endef
+
+PKG_TOOLCHAIN_DEPS = acl attr bash binutils bzip2 coreutils cpio diffutils \
+	file findutils flex gawk gcc gettext glibc grep gzip kernel-headers m4 \
+	make ncurses patch pax-utils perl sed tar texinfo xz
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	mv -v $(TOOLS_DIR)/bin/{ld,ld-old}
+	mv -v $(TOOLS_DIR)/bin/{ld-new,ld}
+
+	gcc -dumpspecs | sed -e "s@$(TOOLS_DIR)@@g" \
+		-e "/\*startfile_prefix_spec:/{n;s@.*@/usr/lib/ @}" \
+		-e '/\*cpp:/{n;s@$$@ -isystem /usr/include@}' > \
+			$$(dirname $$(gcc --print-libgcc-file-name))/specs
+endef
+
+define STAGE_TEST
+	-mkdir -pv /tmp/$(PKG_NAME)
+	
+	# It is imperative at this point to ensure that the basic functions
+	# (compiling and linking) of the adjusted toolchain are working as expected.
+	# To do this, perform the following sanity checks:
+	cd /tmp/$(PKG_NAME) && echo "main(){}" > dummy.c
+	cd /tmp/$(PKG_NAME) && cc dummy.c -v -Wl,--verbose &> dummy.log
+	cd /tmp/$(PKG_NAME) && readelf -l a.out | \
+		grep "Requesting program interpreter: /lib/ld-linux.*.so.2"
+
+	# Now make sure that we're setup to use the correct startfiles:
+	cd /tmp/$(PKG_NAME) && grep -o '/usr/lib.*/crt[1in].*succeeded' dummy.log
+	
+	# Verify that the compiler is searching for the correct header files: 
+	cd /tmp/$(PKG_NAME) && grep -B1 '^ /usr/include' dummy.log
+
+	# Next, verify that the new linker is being used with the correct search paths:
+	cd /tmp/$(PKG_NAME) && grep 'SEARCH.*/usr/lib' dummy.log |sed 's|; |\n|g'
+
+	# Next make sure that we're using the correct libc:
+	cd /tmp/$(PKG_NAME) && grep "/lib.*/libc.so.6 " dummy.log
+
+	# Lastly, make sure GCC is using the correct dynamic linker:
+	cd /tmp/$(PKG_NAME) && \
+		grep "found ld-linux.*so.2 at /lib/ld-linux.*so.2" dummy.log
+
+	rm -rvf /tmp/$(PKG_NAME)
+endef
+
+STAGE_INSTALL =
