@@ -55,12 +55,16 @@ PKG_PATCHES   += $(THISAPP)-asprintf_fix.patch
 
 define STAGE_PREPARE_CMDS
 	-mkdir -pv $(DIR_SRC)/binutils-build
+
+	# Suppress the installation of an outdated standards.info file as a newer
+	# one is installed later on in the Autoconf instructions:
+	cd $(DIR_APP) && rm -fv etc/standards.info
+	cd $(DIR_APP) && sed -e '/^INFO/s/standards.info //' -i etc/Makefile.in
 endef
 
 define STAGE_BUILD
 	cd $(DIR_SRC)/binutils-build && \
 		../$(THISAPP)/configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-shared \
 			--disable-nls \
@@ -68,6 +72,12 @@ define STAGE_BUILD
 			--disable-static
 
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	# Apply a sed substitution to prevent a testsuite error:
+	cd $(DIR_APP) && sed -i 's/getline/get_line/' libiberty/testsuite/test-demangle.c
+	cd $(DIR_SRC)/binutils-build && make check
 endef
 
 define STAGE_INSTALL
