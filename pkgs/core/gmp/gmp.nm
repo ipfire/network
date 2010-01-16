@@ -62,11 +62,22 @@ define STAGE_BUILD
 	cd $(DIR_APP) && \
 		ABI=$(ABI) \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-cxx \
 			--enable-mpbsd \
 			--disable-static
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/usr/share/doc/$(THISAPP)
+	cd $(DIR_APP) && cp -vf doc/{isa_abi_headache,configuration} doc/*.html \
+         $(BUILDROOT)/usr/share/doc/$(THISAPP)
 endef
