@@ -55,11 +55,14 @@ define STAGE_BUILD
 	cd $(DIR_APP) && \
 		ac_cv_func_working_mktime=yes \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--libdir=/lib \
 			--disable-static
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
 endef
 
 define STAGE_INSTALL
