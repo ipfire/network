@@ -62,10 +62,22 @@ define STAGE_BUILD
 	cd $(DIR_APP) && \
 		mpfr_cv_working_tls=yes \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-thread-safe \
 			--disable-static
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	cd $(DIR_APP) && make html
+	-mkdir -pv $(BUILDROOT)/usr/share/doc/$(THISAPP)
+	cd $(DIR_APP) && find . -name \*.html -type f -exec cp \
+		-v \{} $(BUILDROOT)/usr/share/doc/$(THISAPP) \;
 endef
