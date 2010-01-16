@@ -162,6 +162,10 @@ define STAGE_PREPARE
 
 	cat $(DIR_SOURCE)/$(THISAPP)-stack_chk_fail.c \
 		> $(DIR_APP)/debug/stack_chk_fail.c
+
+	cd $(DIR_APP) && \
+		sed -e "s|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(shell readelf -l /bin/sh | sed -n 's@.*interpret.*$(TOOLS_DIR)\(.*\)]$$@\1@p') -o|" \
+		-i scripts/test-installation.pl
 endef
 
 define STAGE_BUILD
@@ -174,9 +178,6 @@ define STAGE_BUILD
 	# it's better than nothing and has very good performance.
 
 	cd $(DIR_APP) && sed 's/-nostdlib/& -fno-stack-protector/g' -i.orig configure
-
-	cd $(DIR_APP) && sed -i 's|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(LINKER) -o|' \
-		scripts/test-installation.pl
 
 	cd $(DIR_SRC)/glibc-build && \
 		CFLAGS= \
@@ -224,8 +225,7 @@ define STAGE_INSTALL
 
 	# Locales
 	-mkdir -pv $(BUILDROOT)/usr/lib/locale
-	# This would install all locales that are supported, but we do only
-	# install a minimal set of them
+	# This would install all locales that are supported
 	cd $(DIR_SRC)/glibc-build && make localedata/install-locales install_root=$(BUILDROOT)
 
 	# Timezone
