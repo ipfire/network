@@ -77,6 +77,7 @@ class Config(object):
 	@property
 	def environment(self):
 		return {
+			"HOME"           : os.environ.get("HOME", "/root"),
 			"TERM"           : os.environ["TERM"],
 			"PS1"            : os.environ.get("PS1", "\u:\w\$ "),
 			#
