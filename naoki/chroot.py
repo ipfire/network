@@ -9,6 +9,7 @@ import stat
 import package
 import util
 from constants import *
+from exception import *
 from logger import getLog
 
 class Environment(object):
