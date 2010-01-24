@@ -34,7 +34,7 @@ PKG_URL        = http://www.gnu.org/software/cpio/
 PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = A GNU archiving program.
 
-PKG_BUILD_DEPS+= autoconf
+PKG_BUILD_DEPS+= autoconf automake
 
 define PKG_DESCRIPTION
 	GNU cpio copies files into or out of a cpio or tar archive. Archives \
@@ -57,7 +57,6 @@ endef
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH)\
 			--prefix=/usr \
 			--bindir=/bin \
 			--libexecdir=/tmp \
