@@ -63,9 +63,8 @@ PKG_PATCHES   += $(THISAPP)-xattrs-conf-1.patch
 
 define STAGE_BUILD
 	cd $(DIR_APP) && \
-		CC="$(TARGET)-gcc -std=gnu99 -fgnu89-inline" \
+		CC="gcc -std=gnu99 -fgnu89-inline" \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--bindir=/bin \
 			--libexecdir=/usr/sbin
