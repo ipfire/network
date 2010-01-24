@@ -58,7 +58,7 @@ endif
 PKG_TARBALL   += $(THISAPP).tar.bz2
 
 PKG_PATCHES   += $(THISAPP)-espf-1.patch \
-	$(THISAPP)-branch-startfiles-1.patch \
+#	$(THISAPP)-branch-startfiles-1.patch \
 	$(THISAPP)-asprintf_fix.patch
 
 ###############################################################################
@@ -72,6 +72,11 @@ define STAGE_PREPARE_CMDS
 	rm -rf $(DIR_APP)/lib{gfortran,java,objc} \
 		$(DIR_APP)/gcc/{fortran,java,objc,objcp}
 
+	# Apply a sed substitution that will suppress the installation of
+	# libiberty.a. The version of libiberty.a provided by Binutils will be used
+	# instead:
+	cd $(DIR_APP) && sed -i 's/install_to_$$(INSTALL_DEST) //' libiberty/Makefile.in
+
 	# Branding gcc
 	cd $(DIR_APP) && sed -e "s:PKGVERSION:\"(GCC for $(DISTRO_NAME)-$(DISTRO_VERSION)) \":" \
 		-i gcc/version.c
@@ -79,17 +84,21 @@ define STAGE_PREPARE_CMDS
 	# Libgomp uses -Werror regardless of --disable-werror, and this will cause a
 	# build failure when -D_FORTIFY_SOURCE=2 causes build time warnings:
 	cd $(DIR_APP) && sed -e "s/-Werror//" -i libgomp/configure
-
-	cd $(DIR_APP) && sed -i 's/install_to_$$(INSTALL_DEST) //' libiberty/Makefile.in
-	cd $(DIR_APP) && sed -i 's/^XCFLAGS =$$/& -fomit-frame-pointer/' gcc/Makefile.in
+	
+	# Apply the following sed to force the build to use the -fomit-frame-pointer
+	# compiler flag in order to ensure consistent compiler builds:
+	cd $(DIR_APP) && sed -i 's/^T_CFLAGS =$$/& -fomit-frame-pointer/' gcc/Makefile.in
+	
+	# The fixincludes script is known to occasionally erroneously attempt to
+	# "fix" the system headers installed so far. As the headers up to this point
+	# are known to not require fixing, issue the following command to prevent
+	# the fixincludes script from running:
 	cd $(DIR_APP) && sed -i 's@\./fixinc\.sh@-c true@' gcc/Makefile.in
 endef
 
 define STAGE_BUILD
 	cd $(DIR_SRC)/gcc-build && \
 		../$(THISAPP)/configure \
-			$(CONFIGURE_ARCH) \
-			--target=$(TARGET) \
 			$(CONFIG_CPU) \
 			--prefix=/usr \
 			--libexecdir=/usr/lib \
@@ -107,6 +116,12 @@ define STAGE_BUILD
 
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
 endef
+
+# Requires dejagnu
+#define STAGE_TEST
+#	cd $(DIR_SRC)/gcc-build && make -k check
+#	cd $(DIR_APP) && ./contrib/test_summary
+#endef
 
 define STAGE_INSTALL
 	cd $(DIR_SRC)/gcc-build && make install DESTDIR=$(BUILDROOT)
