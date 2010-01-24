@@ -65,8 +65,7 @@ endef
 
 PKG_BUILD_DEPS += glibc gcc
 
-CONFIGURE_ARCH = --build=$(TARGET) --host=$(TARGET)
-CONFIGURE_OPTIONS = $(CONFIGURE_ARCH) --prefix=/usr
+CONFIGURE_OPTIONS = --prefix=/usr
 
 ifeq "$(TARGET_MACHINE)" "x86_64"
 	LINKER = /lib64/ld-linux-x86-64.so.2
@@ -75,7 +74,11 @@ else
 endif
 
 STAGE_PACKAGE_TARGETS = $(call reverse,$(PKG_PACKAGES_FILES))
-STAGE_DONE = $(ROOT)/.done
+ifeq "$(TOOLCHAIN)" "1"
+	STAGE_DONE = $(ROOT)/$(PKG_NAME_REAL)
+else
+	STAGE_DONE = $(ROOT)/.done
+endif
 
 export CFLAGS CXXFLAGS BUILD_HOST
 

@@ -11,10 +11,10 @@ CONFIGDIR = os.path.join(BASEDIR, "config")
 LOGDIR = os.path.join(BASEDIR, "logs")
 PKGSDIR = os.path.join(BASEDIR, "pkgs")
 PACKAGESDIR = os.path.join(BUILDDIR, "packages")
-TOOLCHAINSDIR = os.path.join(BUILDDIR, "toolchains")
 TOOLSDIR = os.path.join(BASEDIR, "tools")
 
 TARBALLDIR = os.path.join(CACHEDIR, "tarballs")
+TOOLCHAINSDIR = os.path.join(CACHEDIR, "toolchains")
 PATCHESDIR = os.path.join(CACHEDIR, "patches")
 
 CONFIGFILE = os.path.join(CONFIGDIR, "naoki.conf")
@@ -23,14 +23,14 @@ class Config(object):
 	_items = {
 		"toolchain" : False,
 		"mandatory_packages" : [
-			"core/bash",
 			"core/gcc",
 			"core/glibc",
 			"core/make",
 		],
 		#
 		# Cleanup settings
-		"cleanup_after_fail" : True,
+		"cleanup_on_failure" : False,
+		"cleanup_on_success" : True,
 		#
 		# Distro items
 		"distro_name"     : "unknown",
@@ -86,6 +86,9 @@ class Config(object):
 			"DISTRO_EPOCH"   : self["distro_epoch"],
 			"DISTRO_VERSION" : self["distro_version"],
 			"DISTRO_SLOGAN"  : self["distro_slogan"],
+			#
+			"CFLAGS"         : "-O2 -fomit-frame-pointer",
+			"PARALLELISMFLAGS" : "-j6",
 		}
 
 # Create a globally useable instance of the configuration

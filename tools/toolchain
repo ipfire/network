@@ -1,0 +1,63 @@
+#!/bin/sh
+
+case "${1}" in
+	adjust)
+		TARGET_PATH=${2}
+		TOOLS_DIR="${TARGET_PATH}/tools_i686"
+
+		#if [ -z "${TOOLS_DIR}" ]; then
+		#	echo "$0: TOOLS_DIR not set." >&2
+		#	exit 1
+		#fi
+		
+		# If glibc is not compiled yet...
+		if [ -e "${TARGET_PATH}/lib/libc.so.6" ]; then
+			# Adjust linker
+			mv -f ${TOOLS_DIR}/bin/ld{-new,}
+			ln -sf ../../bin/ld \
+				${TOOLS_DIR}/$(${TOOLS_DIR}/bin/gcc -dumpmachine)/bin/ld
+
+			# Adjust spec file
+			SPECS=$(dirname $(${TOOLS_DIR}/bin/gcc --print-libgcc-file-name))/specs
+			rm -f ${SPECS}
+
+			${TOOLS_DIR}/bin/gcc -dumpspecs | sed -e 's@/tools_i686@@g' \
+			    -e '/\*startfile_prefix_spec:/{n;s@.*@/usr/lib/ @}' \
+			    -e '/\*cpp:/{n;s@$@ -isystem /usr/include@}' > ${SPECS}
+		fi
+
+		for i in bin/bash bin/cat bin/echo bin/stty bin/pwd bin/sh; do
+			if [ -e "${TARGET_PATH}/${i}" ]; then
+				continue
+			fi
+			mkdir -p $(dirname ${TARGET_PATH}/${i}) 2>/dev/null
+			ln -sf ../$(basename ${TOOLS_DIR})/${i} ${TARGET_PATH}/${i}
+		done
+
+		for i in libgcc_s.so{,.1} libstdc++.so{,.6}; do
+			if [ -e "${TARGET_PATH}/usr/lib/${i}" ]; then
+				continue
+			fi
+			mkdir -p ${TARGET_PATH}/usr/lib 2>/dev/null
+			ln -sf ../../$(basename ${TOOLS_DIR})/lib/${i} ${TARGET_PATH}/usr/lib/${i}
+		done
+		;;
+
+	compress)
+		TARGET=${2}
+		COMPRESS_PATH=${3}
+
+		# TODO: stripping/remove unneeded files
+		rm -rf ${COMPRESS_PATH}/{info,man,share/{doc,info,locale,man}}
+
+		cd ${COMPRESS_PATH} && tar --posix -cfz ${TARGET} *
+		;;
+
+	extract)
+		ARCHIVE=${2}
+		TARGET_PATH=${3}
+
+		tar xfz ${ARCHIVE} -C ${TARGET_PATH}
+		;;
+
+esac

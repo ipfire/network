@@ -6,6 +6,7 @@ import os
 import random
 import stat
 
+import package
 import util
 from constants import *
 from logger import getLog
@@ -15,34 +16,27 @@ class Environment(object):
 		self.package = package
 		self.config = config
 
-		# Indication if we run in toolchain mode
-		self.toolchain = self.package.toolchain
+		self.toolchain = Toolchain()
 
 		# mount/umount
-		self.umountCmds = []
-		self.mountCmds = []
-		
-		if not self.toolchain:
-			self.umountCmds.extend([
-				"umount -n %s" % self.chrootPath("tools_i686"),
-				"umount -n %s" % self.chrootPath("proc"),
-				"umount -n %s" % self.chrootPath("sys"),
-				"umount -n %s" % self.chrootPath("usr", "src", "cache"),
-				"umount -n %s" % self.chrootPath("usr", "src", "packages"),
-				"umount -n %s" % self.chrootPath("usr", "src", "pkgs"),
-				"umount -n %s" % self.chrootPath("usr", "src", "src"),
-				"umount -n %s" % self.chrootPath("usr", "src", "tools"),
-			])
-			self.mountCmds.extend([
-				"mount -n --bind %s/tools_i686 %s" % (TOOLCHAINSDIR, self.chrootPath("tools_i686")),
-				"mount -n -t proc naoki_chroot_proc %s" % self.chrootPath("proc"),
-				"mount -n -t sysfs naoki_chroot_sysfs %s" % self.chrootPath("sys"),
-				"mount -n --bind %s %s" % (os.path.join(CACHEDIR), self.chrootPath("usr", "src", "cache")),
-				"mount -n --bind %s %s" % (os.path.join(PACKAGESDIR), self.chrootPath("usr", "src", "packages")),
-				"mount -n --bind %s %s" % (os.path.join(PKGSDIR), self.chrootPath("usr", "src", "pkgs")),
-				"mount -n --bind %s %s" % (os.path.join(BASEDIR, "src"), self.chrootPath("usr", "src", "src")),
-				"mount -n --bind %s %s" % (os.path.join(TOOLSDIR), self.chrootPath("usr", "src", "tools")),
-			])
+		self.umountCmds = [
+			"umount -n %s" % self.chrootPath("proc"),
+			"umount -n %s" % self.chrootPath("sys"),
+			"umount -n %s" % self.chrootPath("usr", "src", "cache"),
+			"umount -n %s" % self.chrootPath("usr", "src", "packages"),
+			"umount -n %s" % self.chrootPath("usr", "src", "pkgs"),
+			"umount -n %s" % self.chrootPath("usr", "src", "src"),
+			"umount -n %s" % self.chrootPath("usr", "src", "tools"),
+		]
+		self.mountCmds = [
+			"mount -n -t proc naoki_chroot_proc %s" % self.chrootPath("proc"),
+			"mount -n -t sysfs naoki_chroot_sysfs %s" % self.chrootPath("sys"),
+			"mount -n --bind %s %s" % (os.path.join(CACHEDIR), self.chrootPath("usr", "src", "cache")),
+			"mount -n --bind %s %s" % (os.path.join(PACKAGESDIR), self.chrootPath("usr", "src", "packages")),
+			"mount -n --bind %s %s" % (os.path.join(PKGSDIR), self.chrootPath("usr", "src", "pkgs")),
+			"mount -n --bind %s %s" % (os.path.join(BASEDIR, "src"), self.chrootPath("usr", "src", "src")),
+			"mount -n --bind %s %s" % (os.path.join(TOOLSDIR), self.chrootPath("usr", "src", "tools")),
+		]
 
 		self.buildroot = "buildroot.%d" % random.randint(0, 1024)
 		self.log = None
@@ -61,11 +55,12 @@ class Environment(object):
 	def _init(self):
 		self._setupLogging()
 
+		self.log.info("Setting up environment %s..." % self.chrootPath())
+
 		if os.path.exists(self.chrootPath()):
 			self.clean()
 
 		# create dirs
-		self.log.debug("Creating directories...")
 		dirs = (
 			CACHEDIR,
 			PACKAGESDIR,
@@ -89,7 +84,6 @@ class Environment(object):
 			util.mkdir(item)
 
 		# touch files
-		self.log.debug("Touching files...")
 		files = (
 			"etc/fstab",
 			"etc/mtab",
@@ -99,15 +93,18 @@ class Environment(object):
 
 		self._setupDev()
 		self._setupUsers()
-		self._setupToolchain()
+
+		self.toolchain.extract(self.chrootPath())
+
+		self.extractAll()
+
+		self.toolchain.adjust(self.chrootPath())
 
 	def clean(self):
 		util.rm(self.chrootPath())
 
 	def make(self, target):
-		file = self.package.filename
-		if not self.toolchain:
-			file = "/usr/src%s" % file[len(BASEDIR):]
+		file = "/usr/src%s" % self.package.filename[len(BASEDIR):]
 
 		return self.doChroot("make -C %s -f %s %s" % \
 			(os.path.dirname(file), file, target), shell=True)
@@ -124,28 +121,17 @@ class Environment(object):
 				"TOOLS_DIR"      : "/tools_i686",
 				"TARGET"         : "i686-ipfire-linux-gnu",
 				"TARGET_MACHINE" : "i686",
+				"PATH"           : "/sbin:/bin:/usr/sbin:/usr/bin:/tools_i686/sbin:/tools_i686/bin",
+				"BUILDROOT"      : "/%s" % self.buildroot,
+				"CHROOT"         : "1",
 			})
-			if self.toolchain:
-				env.update({
-					"PATH"           : "/tools_i686/sbin:/tools_i686/bin:%s" % os.environ["PATH"],
-					"TOOLCHAIN"      : "1",
-					"PKGROOT"        : PKGSDIR,
-					"ROOT"           : self.chrootPath(),
-					"BASEDIR"        : BASEDIR,
-				})
-			else:
-				env.update({
-					"PATH"           : "/sbin:/bin:/usr/sbin:/usr/bin:/tools_i686/sbin:/tools_i686/bin",
-					"BUILDROOT"      : "/%s" % self.buildroot,
-					"CHROOT"         : "1",
-				})
 
 			if kwargs.has_key("env"):
 				env.update(kwargs.pop("env"))
 
 			self._mountall()
 			
-			if not self.toolchain and not kwargs.has_key("chrootPath"):
+			if not kwargs.has_key("chrootPath"):
 				kwargs["chrootPath"] = self.chrootPath()
 
 			ret = util.do(command,
@@ -156,12 +142,8 @@ class Environment(object):
 		
 		return ret
 
-	do = doChroot
-
 	def chrootPath(self, *args):
 		return os.path.join(BUILDDIR, "environments", self.package.id, *args)
-
-	path = chrootPath
 
 	def _setupLogging(self):
 		logfile = os.path.join(LOGDIR, self.package.id, "build.log")
@@ -174,9 +156,6 @@ class Environment(object):
 		self.log.addHandler(fh)
 
 	def _setupDev(self):
-		if self.toolchain:
-			return
-
 		# files in /dev
 		util.rm(self.chrootPath("dev"))
 		util.mkdir(self.chrootPath("dev", "pts"))
@@ -218,9 +197,6 @@ class Environment(object):
 				self.mountCmds.append(devMntCmd)
 
 	def _setupUsers(self):
-		if self.toolchain:
-			return
-
 		## XXX Could be done better
 		self.log.debug("Creating users")
 		f = open("/etc/passwd")
@@ -241,31 +217,6 @@ class Environment(object):
 				break
 		f.close()
 
-	def _setupToolchain(self):
-		symlinks = (
-			("bin/bash", "bin/bash"),
-			("bin/cat", "bin/cat"),
-			("bin/echo", "bin/echo"),
-			("bin/stty", "bin/stty"),
-			("bin/pwd", "bin/pwd"),
-			("bin/sh", "bin/sh"),
-			#
-			("bin/perl", "usr/bin/perl"),
-			#
-			("lib/libgcc_s.so", "usr/lib/libgcc_s.so"),
-			("lib/libgcc_s.so.1", "usr/lib/libgcc_s.so.1"),
-			("lib/libstdc++.so", "usr/lib/libstdc++.so"),
-			("lib/libstdc++.so.6", "usr/lib/libstdc++.so.6"),
-		)
-		for src, dst in symlinks:
-			if os.path.exists(self.chrootPath(dst)):
-				continue
-			dir = os.path.dirname(self.chrootPath(dst))
-			if not os.path.exists(dir):
-				util.mkdir(dir)
-			self.log.debug("Creating symlink /%s" % dst)
-			os.symlink("/tools_i686/%s" % src, self.chrootPath(dst))
-
 	def _mountall(self):
 		"""mount 'normal' fs like /dev/ /proc/ /sys"""
 		for cmd in self.mountCmds:
@@ -275,3 +226,109 @@ class Environment(object):
 		"""umount all mounted chroot fs."""
 		for cmd in self.umountCmds:
 			util.do(cmd, raiseExc=0, shell=True)
+
+	def extractAll(self):
+		packages = self.package.deps + self.package.build_deps
+		for pkg in config["mandatory_packages"]:
+			pkg = package.find(pkg)
+			if not pkg in packages:
+				packages.append(pkg)
+
+		packages = package.depsolve(packages, recursive=True)
+
+		for pkg in packages:
+			pkg.extract(self.chrootPath())
+
+	def build(self):
+		self.package.download()
+		self.init()
+
+		try:
+			self.make("package")
+		except Error:
+			if config["cleanup_on_failure"]:
+				self.clean()
+			raise
+
+		if config["cleanup_on_success"]:
+			self.clean()
+
+
+class Toolchain(object):
+	def __init__(self):
+		util.mkdir(TOOLCHAINSDIR)
+
+		# Create a filename object
+		self.filename = "toolchain-i686.%s.tar.gz" % config["toolchain_version"]
+
+		# Store the path including the filename
+		self.path = os.path.join(TOOLCHAINSDIR, self.filename)
+
+		self.build_dir = os.path.join(BUILDDIR, "toolchains",
+			"tools_i686.%s" % config["toolchain_version"])
+
+		self.log = getLog()
+
+	@property
+	def exists(self):
+		return os.path.exists(self.path)
+
+	def download(self):
+		self.log.info("Downloading toolchain...")
+		pass
+
+	def cmd(self, args=[]):
+		cmd = "%s" % os.path.join(TOOLSDIR, "toolchain")
+		if args:
+			cmd += " "
+			cmd += " ".join(args)
+		util.do(cmd, cwd=self.build_dir, shell=True,
+			env={ "TOOLS_DIR" : self.build_dir })
+
+	# TODO:
+	#	- logging
+	def make(self, pkg, target):
+		env = config.environment.copy()
+		env.update({
+			"BASEDIR"        : BASEDIR,
+			"PATH"           : "/tools_i686/sbin:/tools_i686/bin:%s" % os.environ["PATH"],
+			"PKGROOT"        : PKGSDIR,
+			"ROOT"           : self.build_dir,
+			"TARGET"         : "i686-ipfire-linux-gnu",
+			"TARGET_MACHINE" : "i686",
+			"TOOLCHAIN"      : "1",
+			"TOOLS_DIR"      : "/tools_i686",
+		})
+
+		command = "make -C %s -f %s %s" % \
+			(os.path.dirname(pkg.filename), pkg.filename, target)
+
+		return util.do(command, shell=True, env=env)
+
+	def build_package(self, pkg):
+		self.log.debug("Building %s..." % pkg.name)
+
+		source_dir = os.path.join(self.build_dir, "usr/src")
+
+		util.rm(source_dir)
+		util.mkdir(source_dir)
+
+		return self.make(pkg, "package")
+
+	def compress(self):
+		self.cmd(["compress", self.path, self.build_dir])
+
+	def extract(self, path):
+		self.cmd(["extract", self.path, os.path.join(path, "tools_i686")])
+
+	def adjust(self, path):
+		self.cmd(["adjust", path])
+
+	def build(self):
+		self.log.info("Building toolchain...")
+		packages = package.depsort(package.list(toolchain=True))
+		for pkg in packages:
+			if pkg.isBuilt:
+				continue
+			self.build_package(pkg)
+		self.compress()

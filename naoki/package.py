@@ -11,7 +11,10 @@ import util
 from constants import *
 from logger import getLog
 
-def list():
+def list(toolchain=None):
+	if not toolchain:
+		toolchain = config["toolchain"]
+
 	pkgs = []
 	for dir in os.listdir(PKGSDIR):
 		if not os.path.isdir(os.path.join(PKGSDIR, dir)):
@@ -19,7 +22,7 @@ def list():
 
 		# If we work in toolchain mode we don't return the other
 		# packages and if we are not, we don't return the toolchain packages.
-		if config["toolchain"]:
+		if toolchain:
 			if dir != "toolchain":
 				continue
 		else:

@@ -10,7 +10,6 @@ define STAGE_BUILD
 		RANLIB=$(TARGET)-ranlib \
 		../$(THISAPP)/configure \
 			$(CONFIGURE_ARCH) \
-			--target=$(TARGET) \
 			--prefix=$(TOOLS_DIR) \
 			--with-lib-path=$(TOOLS_DIR)/lib \
 			--disable-nls \

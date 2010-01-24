@@ -32,7 +32,9 @@ class Naoki(object):
 		self.config = config
 		self.config["toolchain"] = self.options.toolchain
 		self.setup_logging()
-		
+
+		self.toolchain = chroot.Toolchain()
+
 		self.log.info("Started naoki on %s" % time.strftime("%a, %d %b %Y %H:%M:%S"))
 		
 		# dump configuration to log
@@ -101,62 +103,42 @@ class Naoki(object):
 				print a
 
 		elif action == "rebuild":
+			force = True
 			if not self.packages:
 				self.packages = package.list()
-			self.build()
+				force = False
+			self.build(force=force)
 
 
-	def build(self):
+	def build(self, force=False):
+		if config["toolchain"]:
+			self.toolchain.build()
+			return
+
+		if not self.toolchain.exists:
+			self.log.error("You need to build or download a toolchain first.")
+			return
+
 		requeue = []
 		self.packages = package.depsort(self.packages)
-		while True:
-			if not self.packages:
-				return
-
+		while self.packages:
 			# Get first package that is to be done
-			build = Build(self.packages.pop(0))
+			build = chroot.Environment(self.packages.pop(0))
 			
 			if build.package.isBuilt:
-				if self.options.toolchain:
+				if not force:
 					self.log.info("Skipping already built package %s..." % build.package.name)
 					continue
 				self.log.warn("Package is already built. Will overwrite.")
 			
-			#if not build.package.canBuild:
-			#	self.log.warn("Cannot build package %s. Requeueing. %s" % (build.package.name, build.package.toolchain_deps))
-			#	self.packages.append(build.package)
-			#	continue
+			if not build.package.canBuild:
+				self.log.warn("Cannot build package %s." % build.package.name)
+				if not self.packages:
+					self.log.error("Blah")
+					return
+				self.log.warn("Requeueing. %s" % (build.package.name, build.package.toolchain_deps))
+				self.packages.append(build.package)
+				continue
 
 			self.log.info("Building %s..." % build.package.name)
 			build.build()
-
-
-class Build(object):
-	def __init__(self, package):
-		self.package = package
-
-		self.environment = chroot.Environment(self.package)
-
-	def init(self):
-		self.environment.init()
-
-		if not self.package.toolchain:
-			self.extractAll()
-
-	def extractAll(self):
-		packages = self.package.deps + self.package.build_deps
-		for pkg in config["mandatory_packages"]:
-			pkg = package.find(pkg)
-			if not pkg in packages:
-				packages.append(pkg)
-
-		packages = package.depsolve(packages, recursive=True)
-
-		for pkg in packages:
-			pkg.extract(self.environment.chrootPath())
-
-	def build(self):
-		self.package.download()
-		self.init()
-		self.environment.make("package")
-
