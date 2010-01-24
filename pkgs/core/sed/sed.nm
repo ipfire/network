@@ -51,11 +51,13 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--bindir=/bin \
-			--enable-html \
 			--without-included-regex
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
 endef
