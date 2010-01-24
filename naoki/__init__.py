@@ -60,7 +60,7 @@ class Naoki(object):
 			logging.getLogger("naoki").propagate = 1
 
 		fh = logging.handlers.RotatingFileHandler(self.config["log_file"],
-			maxBytes=1073741824, backupCount=6)
+			maxBytes=10*1024**2, backupCount=6)
 		fh.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
 		fh.setLevel(logging.NOTSET)
 		self.log.addHandler(fh)
