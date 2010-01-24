@@ -1,0 +1,86 @@
+
+###############################################################################
+#
+# Function definitions of the naoki build system
+#
+###############################################################################
+
+include $(PKGROOT)/gmsl
+
+define DO_FILELIST
+	@echo "# Filelist dump"
+	@cd $(BUILDROOT) && find -ls
+endef
+
+define DO_PREPARE
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Preparation started"
+	@echo "#####################################################################"
+
+	$(STAGE_PREPARE)
+
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Preparation finished"
+	@echo "#####################################################################"
+endef
+
+define DO_BUILD
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Build started"
+	@echo "#####################################################################"
+
+	$(STAGE_BUILD)
+
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Build finished"
+	@echo "#####################################################################"
+endef
+
+define DO_TEST
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Test started"
+	@echo "#####################################################################"
+
+	$(STAGE_TEST)
+
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Test finished"
+	@echo "#####################################################################"
+endef
+
+define DO_INSTALL
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Install started"
+	@echo "#####################################################################"
+
+	$(STAGE_INSTALL)
+
+	@echo "#####################################################################"
+	@echo "# $(PKG_NAME) - Install finished"
+	@echo "#####################################################################"
+
+	$(if $(TOOLCHAIN),,$(DO_QUALITY_AGENT))
+
+	$(if $(TOOLCHAIN),,$(DO_FILELIST))
+endef
+
+define STAGE_PREPARE
+	$(if $(PKG_TARBALL),cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL))
+
+	$(if $(PKG_PATCHES),$(DO_PATCHES))
+
+	$(STAGE_PREPARE_CMDS)
+	$(STAGE_PREPARE_CMDS2)
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_OPTIONS)
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install $(if $(TOOLCHAIN),,DESTDIR=$(BUILDROOT))
+endef
