@@ -72,9 +72,7 @@ endef
 
 define STAGE_BUILD
 	cd $(DIR_APP)/build && \
-		LDFLAGS=-lblkid \
 		../configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--with-root-prefix="" \
 			--enable-elf-shlibs \
@@ -84,6 +82,10 @@ define STAGE_BUILD
 			--disable-libuuid
 
 	cd $(DIR_APP)/build && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP)/build && make check
 endef
 
 define STAGE_INSTALL
