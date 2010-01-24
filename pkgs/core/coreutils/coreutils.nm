@@ -62,7 +62,6 @@ define STAGE_BUILD
 	cd $(DIR_APP) && \
 		gl_cv_func_printf_directive_n=no \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-largefile \
 			--enable-install-program=arch,hostname,su \

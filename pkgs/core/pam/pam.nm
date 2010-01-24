@@ -54,7 +54,6 @@ PKG_PATCHES   += $(THISAPP)-no-yywrap-1.patch
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--libdir=/lib \
 			--sbindir=/lib/security \
             --enable-securedir=/lib/security \

@@ -58,7 +58,6 @@ PKG_PATCHES   += $(THISAPP)-exitcode.patch
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--bindir=/bin \
 			--disable-static

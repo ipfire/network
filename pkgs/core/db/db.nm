@@ -51,7 +51,6 @@ define STAGE_BUILD
 	cd $(DIR_APP)/build_unix && \
 		CC=gcc \
 		../dist/configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--enable-compat185 \
 			--enable-cxx \

@@ -80,7 +80,6 @@ define STAGE_BUILD
 	cd $(DIR_APP) && \
 		grub_cv_prog_objcopy_absolute=yes \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)

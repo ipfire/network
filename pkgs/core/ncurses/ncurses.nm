@@ -52,7 +52,6 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--with-shared \
 			--without-debug \

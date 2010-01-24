@@ -56,7 +56,6 @@ PKG_PATCHES   += $(THISAPP)-shlib-1.patch
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
-			$(CONFIGURE_ARCH) \
 			--prefix=/usr \
 			--libdir=/lib \
 			--disable-static
