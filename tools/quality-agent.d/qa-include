@@ -1,5 +1,9 @@
 #!/bin/bash
 
+function log() {
+	printf "%-22s: %s\n" "${0##*/}" "$@"
+}
+
 if [ -z "${BUILDROOT}" ]; then
 	echo "${0##*/}: ERROR: BUILDROOT is not set." >&2
 	exit 1
