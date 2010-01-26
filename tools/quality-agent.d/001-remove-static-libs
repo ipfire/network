@@ -3,7 +3,7 @@
 . $(dirname ${0})/qa-include
 
 # Remove unwanted files
-echo "${0##*/}: Removing unwanted files: *.a *.la"
+log "Removing unwanted files: *.a *.la"
 for file in $(find ${BUILDROOT} -name "*.a" -or -name "*.la"); do
 	
 	# Don't remove libc_nonshared.a. It is used by gcc/ld.
@@ -13,7 +13,7 @@ for file in $(find ${BUILDROOT} -name "*.a" -or -name "*.la"); do
 	[ "${file##*/}" = "libgcc_eh.a" ] && continue
 	[ "${file##*/}" = "libfl_pic.a" ] && continue
 	
-	echo "  Removing: ${file}"
+	log "  Removing: ${file}"
 	rm -f ${file} || exit $?
 done
 
