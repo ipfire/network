@@ -50,7 +50,7 @@ case "${1}" in
 		# TODO: stripping/remove unneeded files
 		rm -rf ${COMPRESS_PATH}/{info,man,share/{doc,info,locale,man}}
 
-		cd ${COMPRESS_PATH} && tar --posix -cfz ${TARGET} *
+		cd ${COMPRESS_PATH} && tar --posix -czf ${TARGET} *
 		;;
 
 	extract)
