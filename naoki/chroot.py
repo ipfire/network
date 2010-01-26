@@ -256,6 +256,8 @@ class Environment(object):
 
 
 class Toolchain(object):
+	arch = "i686"
+
 	def __init__(self):
 		util.mkdir(TOOLCHAINSDIR)
 
@@ -314,6 +316,8 @@ class Toolchain(object):
 		util.rm(source_dir)
 		util.mkdir(source_dir)
 
+		self.checkLink()
+
 		return self.make(pkg, "package")
 
 	def compress(self):
@@ -327,9 +331,25 @@ class Toolchain(object):
 
 	def build(self):
 		self.log.info("Building toolchain...")
+
 		packages = package.depsort(package.list(toolchain=True))
 		for pkg in packages:
 			if pkg.isBuilt:
 				continue
 			self.build_package(pkg)
 		self.compress()
+
+	def checkLink(self):
+		link = "/tools_%s" % self.arch
+		destination = os.path.abspath(self.build_dir)
+
+		if not os.path.islink(link):
+			# File is not a link. Remove it...
+			util.rm(link)
+
+		else:
+			# If link points to correct destination we break up
+			if os.path.abspath(os.readlink(link)) == destination:
+				return
+
+		os.symlink(destination, link)
