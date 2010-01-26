@@ -1,0 +1,18 @@
+#!/bin/bash
+
+. $(dirname ${0})/qa-include
+
+log "Check for binaries in /bin or /sbin that link to /usr/..."
+
+for file in ${BUILDROOT}/{,s}bin/*; do
+	[ -f "${file}" ] || continue
+	log "  ${file}"
+	libs=$(ldd ${file})
+	if grep -q /usr/lib <<<${libs}; then
+		log "ERROR: ${file} links to libs in /usr/lib..."
+		log "  ${libs}"
+		exit 1
+	fi
+done
+
+exit 0
