@@ -4,7 +4,7 @@
 
 # Remove documentation files
 log "Removing documentation files..."
-for dir in ${BUILDROOT}/usr/share/{doc,info}; do
+for dir in ${BUILDROOT}/usr/{,share}/{doc,info}; do
 	if [ -d "${dir}" ]; then
 		log "  Removing: ${dir}"
 		rm -rf ${dir} || exit $?
