@@ -4,6 +4,7 @@ include ../gcc-static/gcc-static.nm
 PKG_TOOLCHAIN_DEPS += binutils glibc
 
 PKG_PATCHES    = $(THISAPP)-branch-startfiles-1.patch
+PKG_PATCHES   += $(THISAPP)-espf-1.patch
 
 define STAGE_PREPARE_CMDS2
 	cd $(DIR_APP) && sed \
