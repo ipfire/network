@@ -53,7 +53,8 @@ define STAGE_BUILD
 		./configure \
 			--prefix=/usr \
 			--bindir=/bin \
-			--without-included-regex
+			--without-included-regex \
+			--mandir=/usr/share/man
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
