@@ -34,6 +34,8 @@ PKG_URL        = http://www.gnu.org/software/patch/patch.html
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Utility for modifying/upgrading files.
 
+PKG_BUILD_DEPS+= autoconf
+
 define PKG_DESCRIPTION
 	The patch program applies diff files to originals. The diff \
 	command is used to compare an original to a changed file.\
@@ -53,6 +55,10 @@ PKG_PATCHES   += $(THISAPP)-fixes-1.patch
 ###############################################################################
 # Installation Details
 ###############################################################################
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && autoreconf --force
+endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr
