@@ -83,4 +83,6 @@ endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install $(if $(TOOLCHAIN),,DESTDIR=$(BUILDROOT))
+
+	$(STAGE_INSTALL_CMDS)
 endef
