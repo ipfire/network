@@ -54,3 +54,13 @@ define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i '/stdlib/a #include <string.h>' lib/number.c
 	cd $(DIR_APP) && sed -i 's/program.*save/static &/' bc/load.c
 endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--disable-static \
+			--mandir=/usr/share/man
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
