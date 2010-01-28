@@ -58,7 +58,8 @@ define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
 			--prefix=/usr \
-			--disable-static
+			--disable-static \
+			--mandir=/usr/share/man
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
