@@ -60,7 +60,8 @@ define STAGE_BUILD
 		./configure \
 			--prefix=/usr \
 			--bindir=/bin \
-			--disable-static
+			--disable-static \
+			--mandir=/usr/share/man
 
 	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC" #$(PARALLELISMFLAGS)
 endef
