@@ -1,0 +1,68 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = Python
+PKG_VER        = 2.6.2
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Languages
+PKG_URL        = http://www.python.org
+PKG_LICENSE    = Python
+PKG_SUMMARY    = An interpreted, interactive, object-oriented programming language.
+
+PKG_DEPS      += bzip2 db gmp ncurses openssl pkg-config readline tar zlib
+
+define PKG_DESCRIPTION
+	Python is an interpreted, interactive, object-oriented programming \
+	language often compared to Tcl, Perl, Scheme or Java. Python includes \
+	modules, classes, exceptions, very high level dynamic data types and \
+	dynamic typing. Python supports interfaces to many system calls and \
+	libraries, as well as to various windowing systems.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		OPT="$(CFLAGS)" \
+		./configure \
+			--prefix=/usr \
+			--enable-ipv6 \
+			--disable-static
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	rm -rf $(BUILDROOT)/usr/lib/python*/test/
+endef

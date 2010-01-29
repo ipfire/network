@@ -1,0 +1,98 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = bash
+PKG_VER        = 4.0
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Tools
+PKG_URL        = http://www.gnu.org/software/bash/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Bash is short for born again shell.
+
+define PKG_DESCRIPTION
+	Bash is the shell, or command language interpreter, that will appear in \
+	the GNU operating system. Bash is an sh-compatible shell that incorporates \
+	useful features from the Korn shell (ksh) and C shell (csh). It is intended \
+	to conform to the IEEE POSIX P1003.2/ISO 9945.2 Shell and Tools standard.
+endef
+
+PKG_BUILD_DEPS+= autoconf automake bison
+PKG_DEPS      += readline
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+# This patch modifies Bash to use /dev/urandom (settable with
+# --with-randomdev=) for $RANDOM, instead of getpid() and gettimeofday().
+# The test is "( echo $RANDOM; ( echo $RANDOM ); ( echo $RANDOM ) )":
+PKG_PATCHES   += $(THISAPP)-rng.patch
+
+# This patch fixes various reportded issures. It is the latest posted
+# patch from linuxfromscratch.org.
+PKG_PATCHES   += $(THISAPP)-fixes-4.patch
+
+PKG_PATCHES   += $(THISAPP)-paths-1.patch
+PKG_PATCHES   += $(THISAPP)-profile-1.patch
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE_CMDS
+	# Bash uses the RTLD_LAZY option when loading libraries. We want to use
+	# RTLD_NOW (it is defined from <dlfcn.h>:
+	cd $(DIR_APP) && sed -e "s/filename, RTLD_LAZY/filename, RTLD_NOW/" \
+		-i builtins/enable.def
+
+	cd $(DIR_APP) && sed -i "s|htmldir = @htmldir@|htmldir = /usr/share/doc/$(THISAPP)|" \
+		Makefile.in
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		ac_cv_func_working_mktime=yes \
+		./configure \
+			--prefix=/usr \
+			--bindir=/bin \
+			--without-bash-malloc \
+			--with-installed-readline
+
+	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	-mkdir -pv $(BUILDROOT)/{bin,etc/profile.d}
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	# Bash startup files
+	cp -avf $(DIR_SOURCE)/{bashrc,profile,shells} $(BUILDROOT)/etc
+
+	# /etc/profile.d
+	cp -vf $(DIR_SOURCE)/profile.d/* $(BUILDROOT)/etc/profile.d
+
+	ln -svf bash $(BUILDROOT)/bin/sh
+endef

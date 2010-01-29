@@ -1,0 +1,48 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = make
+PKG_VER        = 3.81
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.gnu.org/software/make/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = A GNU tool which simplifies the build process for users.
+
+define PKG_DESCRIPTION
+	A GNU tool for controlling the generation of executables and other \
+	non-source files of a program from the program's source files. Make \
+	allows users to build and install packages without any significant \
+	knowledge about the details of the build process. The details about \
+	how the program should be built are provided for make in the program's \
+	makefile.
+endef
+
+PKG_BUILD_DEPS:= $(filter-out make,$(PKG_BUILD_DEPS))
+
+PKG_TARBALL    = $(THISAPP).tar.bz2

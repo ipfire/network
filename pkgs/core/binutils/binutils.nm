@@ -1,0 +1,88 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = binutils
+PKG_VER        = 2.19.1
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.gnu.org/software/binutils/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = The GNU Binutils are a collection of binary tools.
+
+define PKG_DESCRIPTION
+	The GNU Binary Utilities, or binutils, is a collection of programming \
+	tools for the manipulation of object code in various object file formats.
+endef
+
+PKG_BUILD_DEPS = glibc
+PKG_DEPS      += zlib
+
+PKG_TARBALL   += $(THISAPP).tar.bz2
+
+PKG_PATCHES   += $(THISAPP)-ld_makefile.patch
+PKG_PATCHES   += $(THISAPP)-pt_pax-1.patch
+#PKG_PATCHES   += $(THISAPP)-lazy-1.patch
+PKG_PATCHES   += $(THISAPP)-asprintf_fix.patch
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE_CMDS
+	-mkdir -pv $(DIR_SRC)/binutils-build
+
+	# Suppress the installation of an outdated standards.info file as a newer
+	# one is installed later on in the Autoconf instructions:
+	cd $(DIR_APP) && rm -fv etc/standards.info
+	cd $(DIR_APP) && sed -e '/^INFO/s/standards.info //' -i etc/Makefile.in
+endef
+
+define STAGE_BUILD
+	cd $(DIR_SRC)/binutils-build && \
+		../$(THISAPP)/configure \
+			--prefix=/usr \
+			--mandir=/usr/share/man \
+			--enable-shared \
+			--disable-nls \
+			--disable-werror \
+			--disable-static
+
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	# Apply a sed substitution to prevent a testsuite error:
+	cd $(DIR_APP) && sed -i 's/getline/get_line/' libiberty/testsuite/test-demangle.c
+	cd $(DIR_SRC)/binutils-build && make check
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install DESTDIR=$(BUILDROOT)
+
+	cp -fv $(DIR_APP)/include/libiberty.h $(BUILDROOT)/usr/include
+endef

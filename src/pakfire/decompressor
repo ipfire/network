@@ -55,6 +55,6 @@ FILES=$(for i in $FILES; do echo $i; done | sort -u)
 
 for file in $FILES; do
 	echo "Extracting $file..."
-	cpio --extract --quiet --to-stdout data.img < $file | \
+	cpio --extract --quiet -H newc --to-stdout data.img < $file | \
 		tar --extract --xz -C ${ROOT}
 done

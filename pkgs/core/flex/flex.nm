@@ -1,0 +1,73 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = flex
+PKG_VER        = 2.5.35
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://flex.sourceforge.net/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = A tool for creating scanners (text pattern recognizers).
+
+PKG_DEPS      += m4
+
+define PKG_DESCRIPTION
+	The flex program generates scanners. Scanners are programs which can \
+	recognize lexical patterns in text. Flex takes pairs of regular \
+	expressions and C code as input and generates a C source file as \
+	output.  The output file is compiled and linked with a library to \
+	produce an executable.  The executable searches through its input for \
+	occurrences of the regular expressions. When a match is found, it \
+	executes the corresponding C code. Flex was designed to work with \
+	both Yacc and Bison, and is used by many programs as part of their \
+	build process.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--disable-static \
+			--mandir=/usr/share/man
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+	echo "#!/bin/sh"			>  $(BUILDROOT)/usr/bin/lex
+	echo "exec /usr/bin/flex -l \"$$@\""	>> $(BUILDROOT)/usr/bin/lex
+	chmod 755 $(BUILDROOT)/usr/bin/lex
+endef
+

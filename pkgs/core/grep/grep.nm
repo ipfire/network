@@ -1,0 +1,60 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = grep
+PKG_VER        = 2.5.4
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Text
+PKG_URL        = http://www.gnu.org/software/grep/
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = A pattern matching utilities.
+
+define PKG_DESCRIPTION
+	The GNU versions of commonly used grep utilities. Grep searches through \
+	textual input for lines which contain a match to a specified pattern and then \
+	prints the matching lines. GNU's grep utilities include grep, egrep and fgrep.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	# --without-included-regex makes Grep use libc for regex. This gets rid of
+	# some compiler warnings, and I can't imagine why it's unsafe.
+
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--bindir=/bin \
+			--without-included-regex
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef

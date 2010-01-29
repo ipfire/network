@@ -1,0 +1,67 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = glib
+PKG_VER        = 2.22.2
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.gtk.org
+PKG_LICENSE    = LGPLv2+
+PKG_SUMMARY    = A library of handy utility functions.
+
+PKG_BUILD_DEPS+= pkg-config
+PKG_DEPS      += pcre
+
+define PKG_DESCRIPTION
+	GLib is the low-level core library that forms the basis \
+	for projects such as GTK+ and GNOME. It provides data structure \
+	handling for C, portability wrappers, and interfaces for such runtime \
+	functionality as an event loop, threads, dynamic loading, and an \
+	object system.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += --with-pcre=system
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+	
+	cd $(DIR_APP) && ./mkinstalldirs $(BUILDROOT)/lib
+	cd $(BUILDROOT)/usr/lib && for name in glib gobject gmodule gthread gio; do \
+		mv -v lib$${name}-2.0.so.* ../../lib; \
+		ln -svf ../../lib/lib$${name}-2.0.so.*.* lib$${name}-2.0.so; \
+	done
+
+	-mkdir -pv $(BUILDROOT)/etc/profile.d/
+	cp -vf $(DIR_SOURCE)/glib2-locale.sh $(BUILDROOT)/etc/profile.d/
+endef

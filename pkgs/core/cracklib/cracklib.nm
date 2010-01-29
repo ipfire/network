@@ -1,0 +1,88 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = cracklib
+PKG_VER        = 2.8.12
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Security/Password
+PKG_URL        = http://sourceforge.net/projects/cracklib/
+PKG_LICENSE    = GPLv2
+PKG_SUMMARY    = A password-checking library.
+
+PKG_DEPS      += python
+
+define PKG_DESCRIPTION
+	CrackLib tests passwords to determine whether they match certain \
+	security-oriented characteristics, with the purpose of stopping users \
+	from choosing passwords that are easy to guess. CrackLib performs \
+	several tests on passwords: it tries to generate words from a username \
+	and gecos entry and checks those words against the password; it checks \
+	for simplistic patterns in passwords; and it checks for the password \
+	in a dictionary.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_OBJECTS   += cracklib-words-20080507.gz
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--with-default-dict=/lib/cracklib/pw_dict \
+			--with-python \
+			--disable-static
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/{,usr/}lib
+	mv -v $(BUILDROOT)/usr/lib/libcrack.so.2* $(BUILDROOT)/lib
+	ln -vsf ../../lib/libcrack.so.2.8.0 $(BUILDROOT)/usr/lib/libcrack.so
+
+	-mkdir -pv $(BUILDROOT)/usr/share/dict
+	install -v -m644 -D $(DIR_DL)/cracklib-words-20080507.gz \
+		$(BUILDROOT)/usr/share/dict/cracklib-words.gz
+	gunzip -v $(BUILDROOT)/usr/share/dict/cracklib-words.gz
+	ln -v -s cracklib-words $(BUILDROOT)/usr/share/dict/words
+	echo -ne "$(DISTRO_NAME)\n$(DISTRO_SNAME)\n" >> \
+		$(BUILDROOT)/usr/share/dict/cracklib-extra-words
+
+	-mkdir -pv $(BUILDROOT)/lib/cracklib
+	cd $(DIR_APP) && util/cracklib-format \
+			$(BUILDROOT)/usr/share/dict/cracklib-words \
+			$(BUILDROOT)/usr/share/dict/cracklib-extra-words | \
+		util/cracklib-packer \
+			$(BUILDROOT)/lib/cracklib/pw_dict
+endef

@@ -1,0 +1,60 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = ccache
+PKG_VER        = 2.4
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Compilers
+PKG_URL        = http://ccache.samba.org/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = C/C++ compiler cache.
+
+define PKG_DESCRIPTION
+	ccache is a compiler cache.  It acts as a caching pre-processor to \
+	C/C++ compilers, using the -E compiler switch and a hash to detect \
+	when a compilation can be satisfied from cache.  This often results in \
+	a 5 to 10 times speedup in common compilations.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PATCHES   += $(THISAPP).patch
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	mkdir -pv $(BUILDROOT)/usr/ccache/bin
+	for i in gcc g++ cc c++; do \
+		ln -svf ../../bin/ccache $(BUILDROOT)/usr/ccache/bin/$${i}; \
+		ln -svf ../../bin/ccache $(BUILDROOT)/usr/ccache/bin/$(TARGET)-$${i}; \
+	done
+endef

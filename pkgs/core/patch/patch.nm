@@ -1,0 +1,65 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = patch
+PKG_VER        = 2.5.9
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.gnu.org/software/patch/patch.html
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Utility for modifying/upgrading files.
+
+PKG_BUILD_DEPS+= autoconf
+
+define PKG_DESCRIPTION
+	The patch program applies diff files to originals. The diff \
+	command is used to compare an original to a changed file.\
+	 Diff lists the changes made to the file. A person who has \
+	the original file can then use the patch command with the \
+	diff file to add the changes to their original file.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+# Get rid of mktemp(3):
+PKG_PATCHES   += $(THISAPP)-mkstemp-1.patch
+
+# Some fixes:
+PKG_PATCHES   += $(THISAPP)-fixes-1.patch
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && autoreconf --force
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr
+endef

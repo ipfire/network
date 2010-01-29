@@ -1,0 +1,83 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = mpfr
+PKG_VER        = 2.4.1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.mpfr.org/
+PKG_LICENSE    = LGPLv2+ and GPLv2+ and GFDL
+PKG_SUMMARY    = A C library for multiple-precision floating-point computations.
+
+PKG_BUILD_DEPS:= $(filter-out gcc,$(PKG_BUILD_DEPS))
+PKG_DEPS      += gmp
+
+define PKG_DESCRIPTION
+	The MPFR library is a C library for multiple-precision floating-point \
+	computations with "correct rounding". The MPFR is efficient and \
+	also has a well-defined semantics. It copies the good ideas from the \
+	ANSI/IEEE-754 standard for double-precision floating-point arithmetic \
+	(53-bit mantissa). MPFR is based on the GMP multiple-precision \
+	library.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+ifeq "$(MACHINE)" "x86_64"
+	ABI = 64
+else
+	ABI = 32
+endif
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		mpfr_cv_working_tls=yes \
+		./configure \
+			--prefix=/usr \
+			--enable-thread-safe \
+			--disable-static
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	cd $(DIR_APP) && make html
+	-mkdir -pv $(BUILDROOT)/usr/share/doc/$(THISAPP)
+	cd $(DIR_APP) && find . -name \*.html -type f -exec cp \
+		-v \{} $(BUILDROOT)/usr/share/doc/$(THISAPP) \;
+endef

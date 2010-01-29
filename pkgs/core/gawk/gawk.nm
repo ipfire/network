@@ -1,0 +1,60 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = gawk
+PKG_VER        = 3.1.7
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Tools
+PKG_URL        = http://www.gnu.org/software/gawk/gawk.html
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = The GNU version of the awk text processing utility.
+
+define PKG_DESCRIPTION
+	The gawk package contains the GNU version of awk, a text processing \
+	utility. Awk interprets a special-purpose programming language to do \
+	quick and easy text pattern matching and reformatting jobs.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		ac_cv_func_working_mktime=yes \
+		./configure \
+			--prefix=/usr \
+			--libexecdir=/usr/lib
+
+	cd $(DIR_APP) && echo "#define HAVE_LANGINFO_CODESET 1" >> config.h
+	cd $(DIR_APP) && echo "#define HAVE_LC_MESSAGES 1" >> config.h
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef

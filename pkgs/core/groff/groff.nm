@@ -1,0 +1,90 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = groff
+PKG_VER        = 1.18.1.4
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Text
+PKG_URL        = http://groff.ffii.org/
+PKG_LICENSE    = GPLv2 and GFDL
+PKG_SUMMARY    = A document formatting system.
+
+PKG_BUILD_DEPS+= bison
+
+define PKG_DESCRIPTION
+	Groff is a document formatting system. Groff takes standard text and \
+	formatting commands as input and produces formatted output. The \
+	created documents can be shown on a display or printed on a printer. \
+	Groff's formatting commands allow you to specify font type and size, \
+	bold type, italic type, the number and size of columns on a page, and \
+	more.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PATCHES   += $(THISAPP)-debian_fixes-1.patch
+
+export PAGE=A4
+CONFIGURE_OPTIONS += --enable-multibyte
+PARALLELISMFLAGS =
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -i \
+		-e 's/2010/002D/' \
+		-e 's/2212/002D/' \
+		-e 's/2018/0060/' \
+		-e 's/2019/0027/' font/devutf8/R.proto
+endef
+
+define STAGE_INSTALL
+	-mkdir -pv $(BUILDROOT)/usr/{bin,include,sbin,share/man}
+	cd $(DIR_APP) && make install \
+		manroot=$(BUILDROOT)/usr/share/man \
+		bindir=$(BUILDROOT)/usr/bin \
+		mandir=$(BUILDROOT)/usr/share/man \
+		prefix=$(BUILDROOT)/usr \
+		exec_prefix=$(BUILDROOT)/usr \
+		sbindir=$(BUILDROOT)/usr/sbin \
+		sysconfdir=$(BUILDROOT)/etc \
+		datadir=$(BUILDROOT)/usr/share \
+		infodir=$(BUILDROOT)/usr/share/info \
+		sysconfdir=$(BUILDROOT)/etc \
+		includedir=$(BUILDROOT)/usr/include \
+		libdir=$(BUILDROOT)/usr/lib \
+		libexecdir=$(BUILDROOT)/usr/libexec \
+		localstatedir=$(BUILDROOT)/var \
+		sharedstatedir=$(BUILDROOT)/usr/com \
+		infodir=$(BUILDROOT)/usr/share/info
+
+	ln -svf eqn $(BUILDROOT)/usr/bin/geqn
+	ln -svf tbl $(BUILDROOT)/usr/bin/gtbl
+endef

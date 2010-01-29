@@ -1,0 +1,236 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = glibc
+PKG_VER        = 2.10.1
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = System/Base
+PKG_URL        = http://sources.redhat.com/glibc/
+PKG_LICENSE    = GPLv2+ LGPLv2+
+PKG_SUMMARY    = The GNU libc libraries.
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+define PKG_DESCRIPTION
+	The glibc package contains standard libraries which are used by \
+	multiple programs on the system. In order to save disk space and \
+	memory, as well as to make upgrading easier, common system code is \
+	kept in one place and shared between programs. This particular package \
+	contains the most important sets of shared libraries: the standard C \
+	library and the standard math library. Without these two libraries, a \
+	Linux system will not function.
+endef
+
+PKG_BUILD_DEPS = # Has got no dependencies
+
+CFLAGS         = -O2 -fomit-frame-pointer -pipe -DPIC -fno-strict-aliasing \
+					-mno-tls-direct-seg-refs -D_FORTIFY_SOURCE=2 \
+					-fstack-protector-all
+CXXFLAGS       = $(CFLAGS)
+
+OPTIMIZED_KERNEL = 2.6.18
+
+PKG_OBJECTS   += $(THISAPP).tar.bz2
+
+# Support for PT_PaX markings:
+PKG_PATCHES   += $(THISAPP)-pt_pax-1.patch
+
+# This patch adds the strlcpy and strlcat functions and manual pages to Glibc.
+# A paper written about these functions is available here:
+# http://www.courtesan.com/todd/papers/strlcpy.html. The Glibc project has
+# refused to add these functions, and that mail tread starts here:
+# http://sources.redhat.com/ml/libc-alpha/2000-08/msg00052.html. Linus Torvalds
+# has added a similar function to the Linux kernel, and that mail thread is
+# here: http://lwn.net/Articles/33814/. The strlcpy() and strlcat() functions
+# are replacements for strncpy() and strncat(). The controversy of these
+# functions is that strlcpy() and strlcat() copy the source data to the
+# destination buffer until the destination is full, and discards the rest of
+# the data if there is any. This means that these functions will never
+# overflow. The basis for the Glibc team's refusal to add these functions is
+# that they silently hide programing errors, and they have a higher performance
+# hit than strncpy() and strncat(). These functions should not be needed in a
+# perfect world, but were invented to deal with the real world. Many packages
+# will use these functions if they are found, such as Perl and many BLFS
+# packages. These functions do reduce buffer overflows, and so they are
+# recommended. After installing this patch no other effort is needed to use it.
+# Packages will use autotools to detect whether they are available or not:
+PKG_PATCHES   += $(THISAPP)-strlcpy_strlcat-1.patch
+
+# The asprintf(3) and vasprintf(3) functions are GNU extentions, not defined
+# by C or Posix standards. In Glibc these functions leave (char **strp) undefined
+# after an error. This patch resets (char **strp) to NULL after an error, for
+# sanity.
+PKG_PATCHES   += $(THISAPP)-asprintf_reset2null-1.patch
+
+# This patch adds the issetugid() function, which is a front-end to the
+# __libc_enable_secure() dynamic linker private function. This function
+# reports whether the program is running with matching real and effective
+# ID's, or not, to determine whether the program is running with set-uid or
+# set-gid privileges. Many packages will search for issetugid() and use it if
+# found, such as Ncurses. This is safer than allowing each program to
+# determine privileges itself because it is tested at a lower level which is
+# not manipulatable by the user. Apply this patch with the following command:
+PKG_PATCHES   += $(THISAPP)-issetugid-1.patch
+
+# The next patch modifies the localedef program so it does not use GCC
+# Trampoline code (http://gcc.gnu.org/onlinedocs/gccint/Trampolines.html),
+# which relies on an executable stack to run. Without this patch the localedef
+# program will be killed if it is run on a kernel with PaX memory protection.
+# See http://pax.grsecurity.net/docs/pageexec.txt and
+# http://pax.grsecurity.net/docs/segmexec.txt for more information:
+PKG_PATCHES   += $(THISAPP)-localedef_trampoline-1.patch
+
+# This patch resticts the environment, particularly with setuid programs:
+#PKG_PATCHES   += $(THISAPP)-sanitize_env.patch
+
+# The patch modifies __gen_tempname(), used by the mk*temp()/tmpnam() family
+# of functions, to use /dev/urandom instead of hp-timing, gettimeofday(), or
+# getpid():
+PKG_PATCHES   += $(THISAPP)-mktemp_urandom.patch
+
+# The res_randomid() function is a pseudo-random number generator, using
+# getpid() for entropy. See: http://www.openbsd.org/advisories/res_random.txt
+# for the vulnerability. This patch uses /dev/urandom instead:
+PKG_PATCHES   += $(THISAPP)-res_randomid.patch
+
+# This patch does a check on the buffer size of res_* functions:
+PKG_PATCHES   += $(THISAPP)-resolv_response_length.patch
+
+PKG_PATCHES   += $(THISAPP)-undefine-__i686.patch
+PKG_PATCHES   += $(THISAPP)-arc4random.patch
+PKG_PATCHES   += $(THISAPP)-hardened-configure-picdefault.patch
+PKG_PATCHES   += $(THISAPP)-hardened-inittls-nosysenter.patch
+PKG_PATCHES   += $(THISAPP)-hardened-pie.patch
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE
+	@cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(firstword $(PKG_OBJECTS))
+	@mkdir $(DIR_SRC)/glibc-build
+
+	# In the vi_VN.TCVN locale, bash enters an infinite loop at startup. It is
+	# unknown whether this is a bash bug or a Glibc problem. Disable
+	# installation of this locale in order to avoid the problem.
+	cd $(DIR_APP) && sed -i '/vi_VN.TCVN/d' localedata/SUPPORTED
+
+	# The ldd shell script contains Bash-specific syntax. Change its default
+	# program interpreter to /bin/bash in case another /bin/sh is installed.
+	cd $(DIR_APP) && sed -i 's|@BASH@|/bin/bash|' elf/ldd.bash.in
+
+	$(DO_PATCHES)
+
+	# We don't install pt_chown(1) on the final system, so why install it to
+	# $(TOOLS_DIR):
+	cd $(DIR_APP) && sed -e "/^install.*pt_chown/d" -i login/Makefile
+
+	# ldconfig is statically linked, so don't build it PIC:
+	cd $(DIR_APP) && sed "s/CFLAGS-ldconfig.c =/& -fno-PIC -fno-PIE/" \
+		-i elf/Makefile
+
+	# Build nscd with -fstack-protector-all, instead of -fstack-protector:
+	cd $(DIR_APP) && sed -e "s/fstack-protector/&-all/" -i nscd/Makefile
+
+	# We don't need to set -march=i?86 in confparams because GCC was built with
+	# --with-arch=i?86.
+
+	cat $(DIR_SOURCE)/$(THISAPP)-stack_chk_fail.c \
+		> $(DIR_APP)/debug/stack_chk_fail.c
+
+	cd $(DIR_APP) && \
+		sed -e "s|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(shell readelf -l /bin/sh | sed -n 's@.*interpret.*$(TOOLS_DIR)\(.*\)]$$@\1@p') -o|" \
+		-i scripts/test-installation.pl
+endef
+
+define STAGE_BUILD
+	# --enable-stackguard-randomization could be added here, but this is primarily
+	# for attacks by local users, and we shouldn't have those in the rebooted
+	# system. Adding this will empty the /dev/random entropy pool (via
+	# /dev/urandom), unless the system is running a Random Number Gathering Daemon
+	# (rngd). This version of Glibc uses high precision timing with SSP, so the
+	# canary value changes at run-time. This is not as good as /dev/urandom, but
+	# it's better than nothing and has very good performance.
+
+	cd $(DIR_APP) && sed 's/-nostdlib/& -fno-stack-protector/g' -i.orig configure
+
+	cd $(DIR_SRC)/glibc-build && \
+		CFLAGS= \
+		CXXFLAGS= \
+		../$(THISAPP)/configure \
+			--prefix=/usr \
+			--libexecdir=/usr/lib/glibc \
+			--disable-profile \
+			--enable-add-ons \
+			--enable-kernel=$(OPTIMIZED_KERNEL) \
+			--without-selinux \
+			--disable-werror \
+			--enable-bind-now \
+			--enable-stackguard-randomization \
+			--with-stack-protector=all \
+			--enable-omitfp
+
+	# Our GCC is already passing -fPIC, and that's all we want for the libraries.
+	# LDFLAGS.so is appended to so we don't build shared libraries with
+	# DT_TEXTREL (and to tell us if something goes wrong). For now we only build
+	# the libraries, not the programs:
+	echo "build-programs=no" \
+		>> $(DIR_SRC)/glibc-build/configparms
+
+	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS) \
+		CFLAGS="-O2 -DPIC -fno-stack-protector -U_FORTIFY_SOURCE" \
+		CXXFLAGS="-O2 -DPIC -fno-stack-protector -U_FORTIFY_SOURCE"
+
+	# Then build the programs with hardening, so everything possible in
+	# $(TOOLS_DIR) is hardened:
+	echo "CFLAGS   = $(CFLAGS)"   >  $(DIR_SRC)/glibc-build/configparms
+	echo "CXXFLAGS = $(CXXFLAGS)" >> $(DIR_SRC)/glibc-build/configparms
+	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS) \
+		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)"
+endef
+
+#define STAGE_TEST
+#	cd $(DIR_SRC)/glibc-build && cp -vf ../$(THISAPP)/iconvdata/gconv-modules iconvdata
+#	cd $(DIR_SRC)/glibc-build && make -k check 2>&1 | tee glibc-check-log
+#	cd $(DIR_SRC)/glibc-build && grep Error glibc-check-log
+#endef
+
+define STAGE_INSTALL
+	cd $(DIR_SRC)/glibc-build && make install install_root=$(BUILDROOT)
+
+	# Locales
+	-mkdir -pv $(BUILDROOT)/usr/lib/locale
+	# This would install all locales that are supported
+	cd $(DIR_SRC)/glibc-build && make localedata/install-locales install_root=$(BUILDROOT)
+
+	# Timezone
+	cp -v --remove-destination $(BUILDROOT)/usr/share/zoneinfo/GMT $(BUILDROOT)/etc/localtime
+
+	# Configuration
+	cp -vf $(DIR_SOURCE)/{ld.so.conf,nsswitch.conf} $(BUILDROOT)/etc
+endef

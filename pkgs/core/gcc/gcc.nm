@@ -1,0 +1,133 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = gcc
+PKG_VER        = 4.4.1
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = Development/Compilers
+PKG_URL        = http://gcc.gnu.org/
+PKG_LICENSE    = GPLv3+ and GPLv2+ with exceptions
+PKG_SUMMARY    = Various compilers (C, C++, Objective-C, Java, ...).
+
+define PKG_DESCRIPTION
+	The gcc package contains the GNU Compiler Collection. \
+	You'll need this package in order to compile C code.
+endef
+
+PKG_BUILD_DEPS =
+PKG_DEPS      += binutils glibc gmp kernel-headers mpfr
+
+CFLAGS         = -D__USE_XOPEN2K8 -pipe
+CXXFLAGS       =
+
+ifeq "$(MACHINE)" "i586"
+	CONFIGURE_ARGS = --disable-decimal-float
+endif
+
+ifeq "$(MACHINE)" "x86_64"
+	CONFIGURE_ARGS = --without-cloog --without-ppl --disable-multilib
+else
+	CONFIG_CPU = --with-cpu=$(TARGET_MACHINE) --with-arch=$(TARGET_MACHINE)
+endif
+
+PKG_TARBALL   += $(THISAPP).tar.bz2
+
+PKG_PATCHES   += $(THISAPP)-espf-1.patch \
+#	$(THISAPP)-branch-startfiles-1.patch \
+	$(THISAPP)-asprintf_fix.patch
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE_CMDS
+	-mkdir -v $(DIR_SRC)/gcc-build
+
+	# Remove unneeded features that will save some compile time
+	rm -rf $(DIR_APP)/lib{gfortran,java,objc} \
+		$(DIR_APP)/gcc/{fortran,java,objc,objcp}
+
+	# Apply a sed substitution that will suppress the installation of
+	# libiberty.a. The version of libiberty.a provided by Binutils will be used
+	# instead:
+	cd $(DIR_APP) && sed -i 's/install_to_$$(INSTALL_DEST) //' libiberty/Makefile.in
+
+	# Branding gcc
+	cd $(DIR_APP) && sed -e "s:PKGVERSION:\"(GCC for $(DISTRO_NAME)-$(DISTRO_VERSION)) \":" \
+		-i gcc/version.c
+
+	# Libgomp uses -Werror regardless of --disable-werror, and this will cause a
+	# build failure when -D_FORTIFY_SOURCE=2 causes build time warnings:
+	cd $(DIR_APP) && sed -e "s/-Werror//" -i libgomp/configure
+	
+	# Apply the following sed to force the build to use the -fomit-frame-pointer
+	# compiler flag in order to ensure consistent compiler builds:
+	cd $(DIR_APP) && sed -i 's/^T_CFLAGS =$$/& -fomit-frame-pointer/' gcc/Makefile.in
+	
+	# The fixincludes script is known to occasionally erroneously attempt to
+	# "fix" the system headers installed so far. As the headers up to this point
+	# are known to not require fixing, issue the following command to prevent
+	# the fixincludes script from running:
+	cd $(DIR_APP) && sed -i 's@\./fixinc\.sh@-c true@' gcc/Makefile.in
+endef
+
+define STAGE_BUILD
+	cd $(DIR_SRC)/gcc-build && \
+		../$(THISAPP)/configure \
+			$(CONFIG_CPU) \
+			--prefix=/usr \
+			--libexecdir=/usr/lib \
+			--mandir=/usr/share/man \
+			--enable-espf \
+			--enable-shared \
+			--enable-threads=posix \
+			--enable-__cxa_atexit \
+			--enable-clocale=gnu \
+			--enable-languages=c,c++ \
+			--disable-bootstrap \
+			--disable-werror \
+			--disable-libssp \
+			--disable-static \
+			$(CONFIGURE_ARGS)
+
+	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
+endef
+
+# Requires dejagnu
+#define STAGE_TEST
+#	cd $(DIR_SRC)/gcc-build && make -k check
+#	cd $(DIR_APP) && ./contrib/test_summary
+#endef
+
+define STAGE_INSTALL
+	cd $(DIR_SRC)/gcc-build && make install DESTDIR=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/lib
+	ln -sfv ../usr/bin/cpp $(BUILDROOT)/lib/cpp
+	ln -sfv gcc $(BUILDROOT)/usr/bin/cc
+endef

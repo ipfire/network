@@ -1,0 +1,134 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = linux
+PKG_VER        = 2.6.31.1
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = System/Kernels
+PKG_URL        = http://www.kernel.org/
+PKG_LICENSE    = GPLv2
+PKG_SUMMARY    = The Linux kernel.
+
+define PKG_DESCRIPTION
+	The kernel package contains the Linux kernel (vmlinuz), the core of any \
+	Linux operating system. The kernel handles the basic functions \
+	of the operating system: memory allocation, process allocation, device \
+	input and output, etc.
+endef
+
+PKG_BUILD_DEPS+=
+PKG_DEPS      +=
+
+CFLAGS     =
+CXXFLAGS   =
+
+LOCALVERSION = -ipfire1
+FULLVER= $(PKG_VER)$(LOCALVERSION)
+
+# Another Union FS
+AUFS_PATCH     = aufs2-$(PKG_VER)-1.patch
+PKG_PATCHES   += $(AUFS_PATCH)
+
+# Grsecurity
+GRSEC_PATCH    = grsecurity-2.1.14-$(PKG_VER)-200910012153.patch
+PKG_PATCHES   += $(GRSEC_PATCH)
+
+# OCF
+#OCF_PATCH      = ocf-linux-26-20080917.patch
+PKG_PATCHES   += $(OCF_PATCH)
+
+# Reiser4 Filesystem
+REISER4_PATCH  = reiser4-for-$(PKG_VER).patch
+PKG_PATCHES   += $(REISER4_PATCH)
+
+# Routing improvements taken from http://www.ssi.bg/~ja/#routes
+ROUTES_PATCH   = routes-$(PKG_VER)-16.diff 
+PKG_PATCHES   += $(ROUTES_PATCH)
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+#PKG_PATCHES   += $(THISAPP)-disable-compat_vdso-1.patch
+PKG_PATCHES   += linux-$(PKG_VER)-scsi.h-fix-1.patch
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && echo "$(LOCALVERSION)" > localversion-ipfire
+	rm -f $(DIR_APP)/localversion-grsec
+
+	cd $(DIR_APP) && sed -e "s/^HOSTCFLAGS.*=.*/& -fPIC/g" -i Makefile
+
+	#cd $(DIR_APP) && echo "source \"crypto/ocf/Kconfig\"" >> crypto/Kconfig
+	
+	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(DISTRO_SNAME)_logo.ppm \
+		drivers/video/logo/logo_linux_clut224.ppm
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make mrproper
+
+	# Select right optimization for the linux kernel.
+	if [ "$(TARGET)" == "i486" ]; then \
+		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+			-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
+			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
+	elif [ "$(TARGET)" == "i586" ]; then \
+		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+			-e "s/^# CONFIG_M586TSC is not set/CONFIG_M586TSC=y/" \
+			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
+	elif [ "$(TARGET)" == "via-c7" ]; then \
+		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+			-e "s/^# CONFIG_MVIAC7 is not set/CONFIG_MVIAC7=y/" \
+			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
+	elif [ "$(TARGET)" == "via-c3" ]; then \
+		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
+			-e "s/^# CONFIG_MVIAC3_2 is not set/CONFIG_MVIAC3_2=y/" \
+			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
+	else \
+		cp -f $(DIR_SOURCE)/config $(DIR_APP)/.config; \
+	fi
+
+	cd $(DIR_APP) && yes "" | make oldconfig
+	
+	cd $(DIR_APP) && make CC="gcc -nopie" $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make modules_install INSTALL_MOD_PATH=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/boot
+	cd $(DIR_APP) && cp -v arch/x86/boot/bzImage $(BUILDROOT)/boot/$(DISTRO_SNAME)kernel-$(FULLVER)
+	cd $(DIR_APP) && cp -v System.map $(BUILDROOT)/boot/System.map-$(FULLVER)
+	
+	ln -svf $(SNAME)kernel-$(FULLVER) $(BUILDROOT)/boot/$(DISTRO_SNAME)kernel
+	ln -svf System.map-$(FULLVER) $(BUILDROOT)/boot/System.map
+
+	-mkdir -pv $(BUILDROOT)/lib/modules/$(KVER)/extra
+endef

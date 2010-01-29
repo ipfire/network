@@ -1,0 +1,78 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = acl
+PKG_VER        = 2.2.47
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://oss.sgi.com/projects/xfs/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Access control list utilities.
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+define PKG_DESCRIPTION
+	This package contains the getfacl and setfacl utilities needed for \
+	manipulating access control lists.
+endef
+
+PKG_BUILD_DEPS+= gettext libtool
+PKG_DEPS      += attr
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_PATCHES   += $(THISAPP)-build-1.patch
+#PKG_PATCHES   += $(THISAPP)-nfs4.patch # Doesn't work in toolchain
+PKG_PATCHES   += $(THISAPP)-params.patch
+PKG_PATCHES   += $(THISAPP)-path_max.patch
+PKG_PATCHES   += $(THISAPP)-segfault.patch
+#PKG_PATCHES   += $(THISAPP)-walk.patch
+PKG_PATCHES   += $(THISAPP)-exitcode.patch
+
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--bindir=/bin \
+			--disable-static \
+			--mandir=/usr/share/man
+
+	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC" #$(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/{,usr/}lib $(BUILDROOT)/usr/include/{acl,sys}
+	install -v -m0755 $(DIR_APP)/libacl/.libs/libacl.so.1.1.0 $(BUILDROOT)/lib
+	ln -vsf libacl.so.1.1.0 $(BUILDROOT)/lib/libacl.so.1
+	ln -vsf ../../lib/libacl.so.1 $(BUILDROOT)/usr/lib/libacl.so
+	cp -vf $(DIR_APP)/include/libacl.h $(BUILDROOT)/usr/include/acl/
+	cp -vf $(DIR_APP)/include/acl.h $(BUILDROOT)/usr/include/sys/
+endef

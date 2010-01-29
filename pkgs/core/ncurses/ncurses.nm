@@ -1,0 +1,80 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = ncurses
+PKG_VER        = 5.7
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Base
+PKG_URL        = http://invisible-island.net/ncurses/ncurses.html
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = Ncurses support utilities.
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+define PKG_DESCRIPTION
+	The curses library routines are a terminal-independent method of \
+	updating character screens with reasonable optimization. The ncurses \
+	(new curses) library is a freely distributable replacement for the \
+	discontinued 4.4 BSD classic curses library.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--with-shared \
+			--without-debug \
+			--enable-widec \
+			--disable-static \
+			--enable-symlinks \
+			--disable-root-environ
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/lib
+	mv -v $(BUILDROOT)/usr/lib/libncursesw.so.5* $(BUILDROOT)/lib
+	ln -sfv ../../lib/libncursesw.so.5 $(BUILDROOT)/usr/lib/libncursesw.so
+	for lib in curses ncurses form panel menu; do \
+		rm -vf $(BUILDROOT)/usr/lib/lib$${lib}.so ; \
+		echo "INPUT(-l$${lib}w)" >$(BUILDROOT)/usr/lib/lib$${lib}.so ; \
+	done
+
+	rm -vf $(BUILDROOT)/usr/lib/libcursesw.so
+	echo "INPUT(-lncursesw)" >$(BUILDROOT)/usr/lib/libcursesw.so
+	ln -sfv libncurses.so $(BUILDROOT)/usr/lib/libcurses.so
+endef
