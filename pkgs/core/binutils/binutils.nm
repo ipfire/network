@@ -66,6 +66,7 @@ define STAGE_BUILD
 	cd $(DIR_SRC)/binutils-build && \
 		../$(THISAPP)/configure \
 			--prefix=/usr \
+			--mandir=/usr/share/man \
 			--enable-shared \
 			--disable-nls \
 			--disable-werror \
