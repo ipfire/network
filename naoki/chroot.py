@@ -351,5 +351,7 @@ class Toolchain(object):
 			# If link points to correct destination we break up
 			if os.path.abspath(os.readlink(link)) == destination:
 				return
+			os.unlink(link)
+
 
 		os.symlink(destination, link)
