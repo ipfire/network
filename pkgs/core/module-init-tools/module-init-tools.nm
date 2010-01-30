@@ -62,7 +62,6 @@ define STAGE_PREPARE_CMDS
 endef
 
 define STAGE_INSTALL_CMDS
-	rm -vf $(BUILDROOT)/sbin/insmod.static
 	-mkdir -pv $(BUILDROOT)/etc/modprobe.d
 	cp -av $(DIR_SOURCE)/modprobe.d/* $(BUILDROOT)/etc/modprobe.d/
 endef
