@@ -24,6 +24,7 @@ class Environment(object):
 			"umount -n %s" % self.chrootPath("proc"),
 			"umount -n %s" % self.chrootPath("sys"),
 			"umount -n %s" % self.chrootPath("usr", "src", "cache"),
+			"umount -n %s" % self.chrootPath("usr", "src", "ccache"),
 			"umount -n %s" % self.chrootPath("usr", "src", "packages"),
 			"umount -n %s" % self.chrootPath("usr", "src", "pkgs"),
 			"umount -n %s" % self.chrootPath("usr", "src", "src"),
@@ -33,6 +34,7 @@ class Environment(object):
 			"mount -n -t proc naoki_chroot_proc %s" % self.chrootPath("proc"),
 			"mount -n -t sysfs naoki_chroot_sysfs %s" % self.chrootPath("sys"),
 			"mount -n --bind %s %s" % (os.path.join(CACHEDIR), self.chrootPath("usr", "src", "cache")),
+			"mount -n --bind %s %s" % (os.path.join(CCACHEDIR), self.chrootPath("usr", "src", "ccache")),
 			"mount -n --bind %s %s" % (os.path.join(PACKAGESDIR), self.chrootPath("usr", "src", "packages")),
 			"mount -n --bind %s %s" % (os.path.join(PKGSDIR), self.chrootPath("usr", "src", "pkgs")),
 			"mount -n --bind %s %s" % (os.path.join(BASEDIR, "src"), self.chrootPath("usr", "src", "src")),
@@ -75,6 +77,7 @@ class Environment(object):
 			self.chrootPath("tmp"),
 			self.chrootPath("tools_i686"),
 			self.chrootPath("usr/src/cache"),
+			self.chrootPath("usr/src/ccache"),
 			self.chrootPath("usr/src/packages"),
 			self.chrootPath("usr/src/pkgs"),
 			self.chrootPath("usr/src/src"),
@@ -126,6 +129,12 @@ class Environment(object):
 				"BUILDROOT"      : "/%s" % self.buildroot,
 				"CHROOT"         : "1",
 			})
+
+			if os.path.exists(self.chrootPath("usr", "ccache")):
+				env.update({
+					"PATH" : "/usr/ccache/bin:%s" % env["PATH"],
+					"CCACHE_DIR" : "/usr/src/ccache",
+				})
 
 			if kwargs.has_key("env"):
 				env.update(kwargs.pop("env"))
