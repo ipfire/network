@@ -1,0 +1,56 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = procps
+PKG_VER        = 3.2.8
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/System
+PKG_URL        = http://procps.sourceforge.net/
+PKG_LICENSE    = GPLv2+ and LGPLv2+
+PKG_SUMMARY    = System and process monitoring utilities.
+
+PKG_DEPS      += ncurses
+
+define PKG_DESCRIPTION
+	The procps package contains a set of system utilities that provide \
+	system information. Procps includes ps, free, skill, pkill, pgrep, \
+	snice, tload, top, uptime, vmstat, w, watch and pdwx.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PATCHES   += $(THISAPP)-watch_unicode-2.patch
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make SHARED=1 CFLAGS="$(CFLAGS)" \
+		W_SHOWFROM=-DW_SHOWFROM $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL_CMDS
+	chmod -R 755 $(BUILDROOT)/{bin,lib,sbin}
+endef
