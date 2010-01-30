@@ -46,7 +46,8 @@ define STAGE_BUILD
 endef
 
 define STAGE_INSTALL
-	cd $(DIR_APP) && make SHARED=yes PREFIX=/usr install DESTDIR=$(BUILDROOT)
+	cd $(DIR_APP) && make SHARED=yes PREFIX=/usr install DESTDIR=$(BUILDROOT) \
+		MANDIR=/usr/share/man
 
 	-mkdir -pv $(BUILDROOT)/usr/include/pci
 	install -v -m 644 $(DIR_APP)/lib/*.h $(BUILDROOT)/usr/include/pci
