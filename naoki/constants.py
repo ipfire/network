@@ -7,6 +7,7 @@ BASEDIR = os.getcwd()
 
 BUILDDIR = os.path.join(BASEDIR, "build")
 CACHEDIR = os.path.join(BASEDIR, "cache")
+CCACHEDIR = os.path.join(BASEDIR, "ccache")
 CONFIGDIR = os.path.join(BASEDIR, "config")
 LOGDIR = os.path.join(BASEDIR, "logs")
 PKGSDIR = os.path.join(BASEDIR, "pkgs")
@@ -23,6 +24,7 @@ class Config(object):
 	_items = {
 		"toolchain" : False,
 		"mandatory_packages" : [
+			"core/ccache",
 			"core/gcc",
 			"core/glibc",
 			"core/make",
