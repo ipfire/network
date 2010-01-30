@@ -74,4 +74,7 @@ define STAGE_INSTALL
 	ln -sfv bzip2 $(BUILDROOT)/bin/bunzip2
 	ln -sfv bzip2 $(BUILDROOT)/bin/bzcat
 	rm -vf $(BUILDROOT)/usr/lib/libbz2.a
+
+	-mkdir -pv $(BUIDLROOT)/usr/share
+	mv -vf $(BUILDROOT)/usr/man $(BUILDROOT)/usr/share/
 endef
