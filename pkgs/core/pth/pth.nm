@@ -35,7 +35,6 @@ PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = GNU Pth - The GNU Portable Threads.
 
 PKG_BUILD_DEPS+= libtool
-PKG_DEPS      +=
 
 define PKG_DESCRIPTION
 	The Pth package contains a very portable POSIX/ANSI-C based library for \
@@ -46,7 +45,7 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-PARALLELISMFLAGS =
+PARALLELISMFLAGS = # No parallel build
 
 ###############################################################################
 # Installation Details
@@ -57,8 +56,4 @@ CONFIGURE_OPTIONS += \
 
 define STAGE_TEST
 	cd $(DIR_APP) && make check
-endef
-
-
-define STAGE_INSTALL_CMDS
 endef
