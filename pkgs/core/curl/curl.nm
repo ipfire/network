@@ -58,12 +58,15 @@ CONFIGURE_OPTIONS += \
 	--with-nss \
 	--enable-ldaps \
 	--enable-ipv6
-	
-	# Remove bogus rpath
-	cd $(DIR_APP) && sed -i \
-		-e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
-		-e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
+#define STAGE_PREPARE_CMDS
+#	# Remove bogus rpath
+#	cd $(DIR_APP) && sed -i \
+#		-e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
+#		-e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+#endef
+
+# Doesn't work
 #define STAGE_TEST
 #	cd $(DIR_APP) && make check
 #endef
