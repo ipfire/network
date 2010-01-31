@@ -34,8 +34,8 @@ PKG_URL        = http://www.curl.haxx.se/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = A utility for getting files from remote servers (FTP, HTTP, and others).
 
-PKG_BUILD_DEPS+= libssh2 openssl openldap openssh
-PKG_DEPS      += libssh2 openssl openldap openssh
+PKG_BUILD_DEPS+= pkg-config
+PKG_DEPS      += libidn openldap libssh2 openssh openssl zlib
 
 define PKG_DESCRIPTION
 	cURL is a tool for getting files from HTTP, FTP, FILE, LDAP, LDAPS, \
