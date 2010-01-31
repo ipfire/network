@@ -48,6 +48,7 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 ###############################################################################
 # Installation Details
 ###############################################################################
+
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc/ssh \
 	--datadir=/usr/share/sshd \
@@ -55,11 +56,11 @@ CONFIGURE_OPTIONS += \
 	--with-md5-passwords \
 	--with-privsep-path=/var/lib/sshd \
 	--with-pam
-	
+
 define STAGE_INSTALL_CMDS
-#	sed 's@d/login@d/sshd@g' /etc/pam.d/login > /etc/pam.d/sshd
-#	chmod 644 /etc/pam.d/sshd	
-#
-#	@$(INSTALL_INITSCRIPT)
-#	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/sshd_config /etc/ssh/sshd_config
+	-mkdir -pv $(BUILDROOT)/etc/pam.d
+	cp -vf $(DIR_SOURCE)/sshd.pam $(BUILDROOT)/etc/pam.d/sshd
+
+	-mkdir -pv $(BUILDROOT)/etc/ssh
+	cp -vf $(DIR_SOURCE)/sshd_config $(BUILDROOT)/etc/ssh/sshd_config
 endef
