@@ -1,0 +1,66 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = openssh
+PKG_VER        = 5.3p1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Application/Internet
+PKG_URL        = http://www.openssh.com/portable.html
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = An open source implementation of SSH protocol versions 1 and 2.
+
+PKG_DEPS      += openssl pam
+
+define PKG_DESCRIPTION
+	SH (Secure SHell) is a program for logging into and executing \
+	commands on a remote machine. SSH is intended to replace rlogin and \
+	rsh, and to provide secure encrypted communications between two \
+	untrusted hosts over an insecure network.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc/ssh \
+	--datadir=/usr/share/sshd \
+	--libexecdir=/usr/lib/openssh \
+	--with-md5-passwords \
+	--with-privsep-path=/var/lib/sshd \
+	--with-pam
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/etc/pam.d
+	cp -vf $(DIR_SOURCE)/sshd.pam $(BUILDROOT)/etc/pam.d/sshd
+
+	-mkdir -pv $(BUILDROOT)/etc/ssh
+	cp -vf $(DIR_SOURCE)/sshd_config $(BUILDROOT)/etc/ssh/sshd_config
+endef

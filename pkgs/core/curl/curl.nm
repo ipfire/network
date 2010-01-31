@@ -1,0 +1,72 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = curl
+PKG_VER        = 7.19.7
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Application/Internet
+PKG_URL        = http://www.curl.haxx.se/
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = A utility for getting files from remote servers (FTP, HTTP, and others).
+
+PKG_BUILD_DEPS+= pkg-config
+PKG_DEPS      += libidn openldap libssh2 openssh openssl zlib
+
+define PKG_DESCRIPTION
+	cURL is a tool for getting files from HTTP, FTP, FILE, LDAP, LDAPS, \
+	DICT, TELNET and TFTP servers, using any of the supported protocols. \
+	cURL is designed to work without user interaction or any kind of \
+	interactivity. cURL offers many useful capabilities, like proxy support, \
+	user authentication, FTP upload, HTTP post, and file transfer resume.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+###############################################################################
+# Installation Details
+###############################################################################
+CONFIGURE_OPTIONS += \
+	--disable-static \
+	--with-ca-bundle=/etc/pki/tls/certs/ca-bundle.crt \
+	--with-libidn \
+	--with-libssh2 \
+	--with-nss \
+	--enable-ldaps \
+	--enable-ipv6
+
+#define STAGE_PREPARE_CMDS
+#	# Remove bogus rpath
+#	cd $(DIR_APP) && sed -i \
+#		-e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
+#		-e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+#endef
+
+# Doesn't work
+#define STAGE_TEST
+#	cd $(DIR_APP) && make check
+#endef

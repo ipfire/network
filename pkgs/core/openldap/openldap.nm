@@ -1,0 +1,92 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = openldap
+PKG_VER        = 2.4.21
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Daemons
+PKG_URL        = http://www.openldap.org/
+PKG_LICENSE    = OpenLDAP
+PKG_SUMMARY    = LDAP support libraries.
+
+PKG_BUILD_DEPS+= libtool groff
+PKG_DEPS      += db cyrus-sasl openssl pth
+
+define PKG_DESCRIPTION
+	OpenLDAP is an open source suite of LDAP (Lightweight Directory Access \
+	Protocol) applications and development tools. LDAP is a set of \
+	protocols for accessing directory services over the Internet, similar \
+	to the way DNS information is propagated over the Internet. The \
+	openldap package contains configuration files, libraries, and \
+	documentation for OpenLDAP.
+endef
+
+PKG_TARBALL    = $(THISAPP).tgz
+
+PKG_PATCHES   += $(THISAPP)-disable_sys_err.patch
+
+###############################################################################
+# Installation Details
+###############################################################################
+CONFIGURE_OPTIONS += \
+	--libexecdir=/usr/lib \
+	--sysconfdir=/etc \
+	--localstatedir=/var \
+	--with-threads=posix \
+	--disable-debug \
+	--disable-perl \
+	--enable-dynamic \
+	--enable-crypt \
+	--enable-modules \
+	--enable-rlookups \
+	--enable-backends=mod \
+	--enable-overlays=mod \
+	--enable-sql=no \
+	--enable-ndb=no \
+	--disable-static
+
+# Doens't seem to work in chroot.
+#define STAGE_TEST
+#	cd $(DIR_APP) && make check
+#endef
+
+define STAGE_INSTALL_CMDS
+	mv -v $(BUILDROOT)/usr/lib/slapd $(BUILDROOT)/usr/sbin/slapd
+	rm -rvf $(BUILDROOT)/var/openldap-data
+
+	for LINK in lber ldap ldap_r; do \
+		chmod -v 0755 $(BUILDROOT)/usr/lib/$$(readlink $(BUILDROOT)/usr/lib/lib$${LINK}.so); \
+	done
+
+	# Install configuration
+	-mkdir -pv $(BUILDROOT)/etc/$(PKG_NAME)
+	cp -vf $(DIR_SOURCE)/slapd.conf $(BUILDROOT)/etc/$(PKG_NAME)/slapd.conf
+
+	-mkdir -pv $(BUILDROOT)/var/lib/ldap
+	chmod 700 -Rv $(BUILDROOT)/var/lib/ldap
+endef
