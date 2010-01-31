@@ -48,10 +48,10 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 ###############################################################################
 # Installation Details
 ###############################################################################
+
 CONFIGURE_OPTIONS += \
 	--disable-static
 
 define STAGE_TEST
 	cd $(DIR_APP) && make check
 endef
-
