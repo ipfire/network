@@ -49,26 +49,28 @@ endef
 PKG_TARBALL    = $(THISAPP).tgz
 
 PKG_PATCHES   += $(THISAPP)-disable_sys_err.patch
+
 ###############################################################################
 # Installation Details
 ###############################################################################
 CONFIGURE_OPTIONS += \
-		--libexecdir=/usr/lib \
-		--sysconfdir=/etc \
-		--localstatedir=/var \
-		--with-threads=posix \
-		--disable-debug \
-		--disable-perl \
-		--enable-dynamic \
-		--enable-crypt \
-		--enable-modules \
-		--enable-rlookups \
-		--enable-backends=mod \
-		--enable-overlays=mod \
-		--enable-sql=no \
-		--enable-ndb=no \
-		--disable-static
+	--libexecdir=/usr/lib \
+	--sysconfdir=/etc \
+	--localstatedir=/var \
+	--with-threads=posix \
+	--disable-debug \
+	--disable-perl \
+	--enable-dynamic \
+	--enable-crypt \
+	--enable-modules \
+	--enable-rlookups \
+	--enable-backends=mod \
+	--enable-overlays=mod \
+	--enable-sql=no \
+	--enable-ndb=no \
+	--disable-static
 
+# Doens't seem to work in chroot.
 #define STAGE_TEST
 #	cd $(DIR_APP) && make check
 #endef
