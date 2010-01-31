@@ -24,24 +24,24 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = libssh2
-PKG_VER        = 1.2.2
+PKG_NAME       = openssh
+PKG_VER        = 5.3p1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://www.libssh2.org/
-PKG_LICENSE    = BSD
-PKG_SUMMARY    = A library implementing the SSH2 protocol.
+PKG_GROUP      = Application/Internet
+PKG_URL        = http://www.openssh.com/portable.html
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = An open source implementation of SSH protocol versions 1 and 2.
 
-PKG_BUILD_DEPS+= openssl zlib
-PKG_DEPS      +=
+PKG_BUILD_DEPS+= openssl pam
+PKG_DEPS      += openssl pam
 
 define PKG_DESCRIPTION
-	libssh2 is a library implementing the SSH2 protocol as defined by \
-	Internet Drafts: SECSH-TRANS(22), SECSH-USERAUTH(25), \
-	SECSH-CONNECTION(23), SECSH-ARCH(20), SECSH-FILEXFER(06)*, \
-	SECSH-DHGEX(04), and SECSH-NUMBERS(10).
+	SH (Secure SHell) is a program for logging into and executing \
+	commands on a remote machine. SSH is intended to replace rlogin and \
+	rsh, and to provide secure encrypted communications between two \
+	untrusted hosts over an insecure network.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
@@ -50,9 +50,17 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 # Installation Details
 ###############################################################################
 CONFIGURE_OPTIONS += \
-	--disable-static
-
-define STAGE_TEST
-	cd $(DIR_APP) && make check
+	--sysconfdir=/etc/ssh \
+	--datadir=/usr/share/sshd \
+	--libexecdir=/usr/lib/openssh \
+	--with-md5-passwords \
+	--with-privsep-path=/var/lib/sshd \
+	--with-pam
+	
+define STAGE_INSTALL_CMDS
+#	sed 's@d/login@d/sshd@g' /etc/pam.d/login > /etc/pam.d/sshd
+#	chmod 644 /etc/pam.d/sshd	
+#
+#	@$(INSTALL_INITSCRIPT)
+#	cp -vf $(DIR_SOURCE)/$(PKG_NAME)/sshd_config /etc/ssh/sshd_config
 endef
-
