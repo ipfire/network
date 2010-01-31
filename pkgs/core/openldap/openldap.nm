@@ -76,19 +76,17 @@ CONFIGURE_OPTIONS += \
 #endef
 
 define STAGE_INSTALL_CMDS
-	mv -v $(BUILDROOT)/usr/lib/slapd /usr/sbin/slapd
-	rm -rvf /var/openldap-data /usr/lib/openldap/*.la
+	mv -v $(BUILDROOT)/usr/lib/slapd $(BUILDROOT)/usr/sbin/slapd
+	rm -rvf $(BUILDROOT)/var/openldap-data
 
 	for LINK in lber ldap ldap_r; do \
-		chmod -v 0755 /usr/lib/$$(readlink /usr/lib/lib$${LINK}.so); \
-		rm -vf /usr/lib/lib$${LINK}.la; \
+		chmod -v 0755 $(BUILDROOT)/usr/lib/$$(readlink $(BUILDROOT)/usr/lib/lib$${LINK}.so); \
 	done
 
 	# Install configuration
-	$(INSTALL_INITSCRIPT)
-#	$(INSTALL_CONFIG) $(DIR_SOURCE)/$(PKG_NAME)/slapd.conf \
-#		> /etc/$(PKG_NAME)/slapd.conf
+	-mkdir -pv $(BUILDROOT)/etc/$(PKG_NAME)
+	cp -vf $(DIR_SOURCE)/slapd.conf $(BUILDROOT)/etc/$(PKG_NAME)/slapd.conf
 
-	-mkdir -pv /var/lib/ldap
-	chmod 700 -Rv /var/lib/ldap
+	-mkdir -pv $(BUILDROOT)/var/lib/ldap
+	chmod 700 -Rv $(BUILDROOT)/var/lib/ldap
 endef
