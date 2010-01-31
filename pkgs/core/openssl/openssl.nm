@@ -67,16 +67,16 @@ endif
 ###############################################################################
 
 define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -i -e 's/-O3 -fomit-frame-pointer/$(CFLAGS)/' Configure
+	cd $(DIR_APP) && sed -e 's/-O3 -fomit-frame-pointer/$(CFLAGS)/' -i Configure
 
 	cd $(DIR_APP) && sed -e 's/__OpenBSD__/__linux__/' -e 's/arandom/urandom/' \
-				-i.orig crypto/rand/randfile.c
+				-i crypto/rand/randfile.c
 
-	cd $(DIR_APP) && sed 's/__OpenBSD__/__linux__/' -i.orig crypto/uid.c
+	cd $(DIR_APP) && sed 's/__OpenBSD__/__linux__/' -i crypto/uid.c
 	cd $(DIR_APP) && sed -e 's/__OpenBSD__/__linux__/' -i crypto/rand/rand_unix.c
 
 	cd $(DIR_APP) && find crypto/ -name Makefile -exec \
-		sed 's/^ASFLAGS=/&-Wa,--noexecstack /' -i.orig {} \;
+		sed 's/^ASFLAGS=/&-Wa,--noexecstack /' -i {} \;
 endef
 
 define STAGE_BUILD
@@ -105,6 +105,10 @@ define STAGE_BUILD
 
 	# Generate hashes for the included certs.
 	cd $(DIR_APP) && make rehash build-shared
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make test
 endef
 
 define STAGE_INSTALL
