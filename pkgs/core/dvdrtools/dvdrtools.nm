@@ -34,8 +34,6 @@ PKG_URL        = http://savannah.nongnu.org/projects/dvdrtools/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = A set of command line programs that allows to record media.
 
-PKG_DEPS      += 
-
 define PKG_DESCRIPTION
 	dvdrtools is a fork of cdrtools/cdrecord with support for writing to DVDs. \
 	While its primary purpose is writing data DVDs, it includes basic support \
@@ -44,17 +42,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 CONFIGURE_OPTIONS += \
 	--disable-static \
 	--mandir=/usr/share/man
 
 define STAGE_TEST
         cd $(DIR_APP) && make check
-endef
-
-define STAGE_INSTALL_CMDS
 endef
