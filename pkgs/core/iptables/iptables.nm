@@ -1,0 +1,84 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = iptables
+PKG_VER        = 1.4.5
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Networking/Tools
+PKG_URL        = http://www.netfilter.org/
+PKG_LICENSE    = GPL+
+PKG_SUMMARY    = Tools for managing Linux kernel packet filtering capabilities.
+
+#PKG_DEPS      += m4
+
+define PKG_DESCRIPTION
+	The iptables utility controls the network packet filtering code in the \
+	Linux kernel. If you need to set up firewalls and/or IP masquerading, \
+	you should install this package.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CFLAGS        += -fno-strict-aliasing
+
+CONFIGURE_OPTIONS += \
+	--bindir=/bin \
+	--sbindir=/sbin \
+	--libdir=/lib \
+	--libexecdir=/lib \
+	--sysconfdir=/etc \
+	--with-pkgconfigdir=/usr/lib/pkgconfig \
+	--mandir=/usr/share/man \
+	--with-kernel=/usr \
+	--with-kbuild=/usr \
+	--with-ksource=/usr \
+	--enable-devel \
+	--enable-libipq
+
+define STAGE_PREPARE_CMDS
+	# Make more space for target name on output.
+	cd $(DIR_APP) && sed -e "s/%-9s/%-18s/g" -i ip{,6}tables.c
+endef
+
+define STAGE_INSTALL_CMDS
+	# install ip*tables.h header files
+	-mkdir -pv $(BUILDROOT)/usr/include/{iptables,libiptc}
+	cd $(DIR_APP) && install -v -m 644 include/ip{,6}tables.h \
+		$(BUILDROOT)/usr/include
+	cd $(DIR_APP) && install -v -m 644 include/iptables/internal.h \
+		$(BUILDROOT)/usr/include/iptables/
+	cd $(DIR_APP) && install -v -m 644 include/libiptc/*.h \
+		$(BUILDROOT)/usr/include/libiptc
+
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	rm -vf $(BUILDROOT)/lib/libip{,4,6}tc.so $(BUILDROOT)/lib/libxtables.so
+	ln -svf ../../lib/libiptc.so.0 $(BUILDROOT)/usr/lib/libiptc.so
+	ln -svf ../../lib/libip4tc.so.0 $(BUILDROOT)/usr/lib/libip4tc.so
+	ln -svf ../../lib/libip6tc.so.0 $(BUILDROOT)/usr/lib/libip6tc.so
+	ln -svf ../../lib/libxtables.so.0 $(BUILDROOT)/usr/lib/libxtables.so
+endef

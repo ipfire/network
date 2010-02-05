@@ -1,0 +1,60 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = br2684ctl
+PKG_VER        = ipfire-1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Networking/Tools
+PKG_URL        = http://cvs.linux-atm.sourceforge.net/viewcvs.py/linux-atm/linux-atm/src/br2684/Attic/br2684ctl.8?rev=1.1.2.1&hideattic=0&only_with_tag=V2_5_0
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Utilities for configuring an ATM/ethernet bridge.
+
+PKG_DEPS      += linux-atm
+
+define PKG_DESCRIPTION
+	Utility for configuring RFC 2684 ATM/Ethernet bridging \
+	ATM bridging is a way to extend Ethernet over an ATM network and is \
+	mainly used for DSL connections. This package contains the user space \
+	utility needed to configure the kernel driver. \
+	This package is needed if you own an USB DSL modem and your connection \
+	uses one of these protocols: RFC 1483 bridged (RFC 2684 bridged), \
+	PPP over Ethernet (PPPoE).
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+DIR_APP        = $(DIR_SRC)/br2684ctl
+
+define STAGE_BUILD
+	cd $(DIR_APP) && gcc $(CFLAGS) -latm br2684ctl.c -o br2684ctl
+endef
+
+define STAGE_INSTALL
+	-mkdir -pv $(BUILDROOT)/usr/bin
+	cd $(DIR_APP) && install -v -m 755 br2684ctl $(BUILDROOT)/usr/bin/br2684ctl
+endef
