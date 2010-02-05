@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 
+from constants import *
 from exception import *
 from logger import getLog
 
@@ -24,19 +25,8 @@ CLONE_NEWNS = 0x00020000
 PER_LINUX32=0x0008
 PER_LINUX=0x0000
 personality_defs = {
-	'x86_64': PER_LINUX,
-	'ppc64': PER_LINUX,
-	'sparc64': PER_LINUX,
-	'i386': PER_LINUX32,
-	'i586': PER_LINUX32,
-	'i686': PER_LINUX32,
-	'ppc': PER_LINUX32,
-	'sparc': PER_LINUX32,
-	'sparcv9': PER_LINUX32,
-	'ia64' : PER_LINUX,
-	'alpha' : PER_LINUX,
-	's390' : PER_LINUX32,
-	's390x' : PER_LINUX,
+	'linux64': PER_LINUX,
+	'linux32': PER_LINUX32,
 }
 
 def touch(filename):
@@ -128,7 +118,7 @@ def condChdir(cwd):
         os.chdir(cwd)
 
 def condPersonality(per=None):
-    if per is None or per in ('noarch',):
+    if not per:
         return
     if personality_defs.get(per, None) is None:
         return

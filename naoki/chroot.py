@@ -15,6 +15,8 @@ from logger import getLog
 class Environment(object):
 	def __init__(self, package):
 		self.package = package
+
+		self.arch = arches.current
 		self.config = config
 
 		self.toolchain = Toolchain()
@@ -144,7 +146,7 @@ class Environment(object):
 			if not kwargs.has_key("chrootPath"):
 				kwargs["chrootPath"] = self.chrootPath()
 
-			ret = util.do(command,
+			ret = util.do(command, personality=self.arch["personality"],
 				shell=shell, env=env, logger=self.log, *args, **kwargs)
 
 		finally:
