@@ -1,0 +1,65 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = dhcp
+PKG_VER        = 4.1.1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Networking/Daemons
+PKG_URL        = http://isc.org/products/DHCP/
+PKG_LICENSE    = ISC
+PKG_SUMMARY    = Dynamic host configuration protocol software.
+
+define PKG_DESCRIPTION
+	DHCP (Dynamic Host Configuration Protocol) is a protocol which allows \
+	individual devices on an IP network to get their own network \
+	configuration information (IP address, subnetmask, broadcast address, \
+	etc.) from a DHCP server. The overall purpose of DHCP is to make it \
+	easier to administer a large network.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += --sysconfdir=/etc \
+	--with-srv-lease-file=/var/lib/dhcpd/dhcpd.leases \
+	--with-cli-lease-file=/var/lib/dhclient/dhclient.leases \
+	--with-srv-pid-file=/var/run/dhcpd.pid \
+	--with-cli-pid-file=/var/run/dhclient.pid \
+	--with-relay-pid-file=/var/run/dhcrelay.pid
+
+define STAGE_INSTALL_CMDS
+	rm -vf $(BUILDROOT)/etc/dhclient.conf
+
+	# Move the client to /sbin, create dirs
+	# and remove the default config.
+	-mkdir -pv $(BUILDROOT)/sbin
+	mv -v $(BUILDROOT)/usr/sbin/dhclient $(BUILDROOT)/sbin/dhclient
+
+	install -v -m 755 $(DIR_SOURCE)/dhclient-script \
+		$(BUILDROOT)/sbin/dhclient-script
+	-mkdir -pv $(BUILDROOT)/var/lib/dhclient
+endef
