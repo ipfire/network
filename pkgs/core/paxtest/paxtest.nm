@@ -1,0 +1,52 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = paxtest
+PKG_VER        = 0.9.7-pre4
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Security/Tools
+PKG_URL        = http://pax.grsecurity.org/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Utilities for testing PaX configuration.
+
+define PKG_DESCRIPTION
+	This package contains several files for checking the PaX configuration \
+	and checks if it all works correctly.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make -f Makefile.generic RUNDIR=/usr/lib/paxtest \
+		$(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make -f Makefile.generic install DESTDIR=$(BUILDROOT) \
+		RUNDIR=/usr/lib/paxtest BINDIR=/usr/bin
+endef
