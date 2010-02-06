@@ -34,8 +34,7 @@ PKG_URL        = http://www.gnu.org/software/screen
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = A screen manager that supports multiple logins on one terminal.
 
-PKG_BUILD_DEPS+= ncurses pam
-PKG_DEPS      += pam
+PKG_DEPS      += ncurses pam
 
 define PKG_DESCRIPTION
 	The screen utility allows you to have multiple logins on just one \
@@ -54,10 +53,16 @@ CONFIGURE_OPTIONS += \
 	--with-sys-screenrc=/etc/screenrc \
 	--mandir=/usr/share/man
 
-define STAGE_INSTALL_CMDS
+define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i -e "s%/usr/local/etc/screenrc%/etc/screenrc%" {etc,doc}/*
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install
-	cd $(DIR_APP) && install -m 644 etc/etcscreenrc /etc/screenrc
-	cp -vf $(DIR_SOURCE)/$(PKG_NAME) /etc/pam.d/
+endef
+
+define STAGE_INSTALL_CMDS
+	# Install screenrc
+	-mkdir -pv $(BUILDROOT)/etc
+	cp -vf $(DIR_SOURCE)/screenrc $(BUILDROOT)/etc/screenrc
+
+	# Install pam file
+	-mkdir -pv $(BUILDROOT)/etc/pam.d/
+	cp -vf $(DIR_SOURCE)/screen.pam $(BUILDROOT)/etc/pam.d/
 endef
