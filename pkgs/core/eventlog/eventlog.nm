@@ -47,7 +47,7 @@ CONFIGURE_OPTIONS += --libdir=/lib
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/usr/lib
 	rm -vf $(BUILDROOT)/lib/libevtlog.so
-	ln -svf ../../lib/libevtlog.so.0.* /usr/lib/libevtlog.so
+	ln -svf ../../lib/libevtlog.so.0 $(BUILDROOT)/usr/lib/libevtlog.so
 
 	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
 endef
