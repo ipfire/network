@@ -1,0 +1,68 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = syslog-ng
+PKG_VER        = 2.1.3
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Tools
+PKG_URL        = http://www.balabit.com/network-security/syslog-ng/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Syslog-ng is a daemon that handles the logging stuff.
+
+PKG_BUILD_DEPS+= eventlog glib2 pkg-config which
+PKG_DEPS      += eventlog
+
+define PKG_DESCRIPTION
+	The syslog-ng application can operate in server or agent mode, and - \
+	apart from UDP - supports the reliable TCP and the encrypted TLS protocols. \
+	That way syslog-ng can be used to create flexible and reliable logging \
+	infrastructure even in heterogeneous environments.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+###############################################################################
+# Installation Details
+###############################################################################
+CONFIGURE_OPTIONS += \
+	--sbindir=/sbin \
+	--libexecdir=/usr/lib \
+	--sysconfdir=/etc/syslog-ng \
+	--enable-dynamic-linking \
+	--disable-sql \
+	--disable-pcre \
+	--with-pidfile-dir=/var/run \
+	--disable-ssl \
+	--mandir=/usr/share/man
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/etc/syslog-ng
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME).conf $(BUILDROOT)/etc/$(PKG_NAME)/$(PKG_NAME).conf
+	-mkdir -pv $(BUILDROOT)/usr/sbin
+	install -v -m 755 $(DIR_SOURCE)/ids-block $(BUILDROOT)/usr/sbin/ids-block
+endef
