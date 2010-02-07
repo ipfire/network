@@ -1,0 +1,66 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = syslinux
+PKG_VER        = 3.84
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Boot
+PKG_URL        = http://syslinux.zytor.com/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Simple kernel loader which boots from a FAT filesystem.
+
+PKG_BUILD_DEPS+= nasm python
+
+define PKG_DESCRIPTION
+	SYSLINUX is a suite of bootloaders, currently supporting DOS FAT \
+	filesystems, Linux ext2/ext3 filesystems (EXTLINUX), PXE network boots \
+	(PXELINUX), or ISO 9660 CD-ROMs (ISOLINUX).  It also includes a tool, \
+	MEMDISK, which loads legacy operating systems from these media.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CFLAGS         = -Werror -Wno-unused -finline-limit=2000
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && make clean
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make installer $(PARALLELISMFLAGS) \
+		CC="gcc -std=gnu99 -fgnu89-inline -fno-pic -fno-pie -nopie"
+	cd $(DIR_APP) && make -C sample tidy
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install-all INSTALLROOT=$(BUILDROOT) \
+		CC="gcc -std=gnu99 -fgnu89-inline -fno-pic -fno-pie -nopie" \
+		MANDIR=/usr/share/man
+
+	rm -rvf $(BUILDROOT)/{boot,tftpboot}
+endef
