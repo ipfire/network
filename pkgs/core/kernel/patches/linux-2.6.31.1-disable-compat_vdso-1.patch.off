@@ -1,0 +1,74 @@
+From: Gordon Malm <gengor@gentoo.org>
+From: Kerin Millar <kerframil@gmail.com>
+
+COMPAT_VDSO is inappropriate for any modern Hardened Gentoo system. It
+conflicts with various parts of PaX, crashing the system if enabled
+while PaX's NOEXEC or UDEREF features are active. Moreover, it prevents
+a number of important PaX options from appearing in the configuration
+menu, including all PaX NOEXEC implementations. Unfortunately, the
+reason for the disappearance of these PaX configuration options is
+often far from obvious to inexperienced users.
+
+Therefore, we disable the COMPAT_VDSO menu entry entirely. However,
+COMPAT_VDSO operation can still be enabled via bootparam and sysctl
+interfaces. Consequently, we must also disable the ability to select
+COMPAT_VDSO operation at boot or runtime. Here we patch the kernel so
+that selecting COMPAT_VDSO operation at boot/runtime has no effect if
+conflicting PaX options are enabled, leaving VDSO_ENABLED operation
+intact.
+
+Closes bug: http://bugs.gentoo.org/show_bug.cgi?id=210138
+
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -1215,16 +1215,7 @@ config HOTPLUG_CPU
+ 
+ config COMPAT_VDSO
+ 	def_bool n
+-	prompt "Compat VDSO support"
+ 	depends on (X86_32 || IA32_EMULATION) && !PAX_NOEXEC
+-	help
+-	  Map the 32-bit VDSO to the predictable old-style address too.
+-	---help---
+-	  Say N here if you are running a sufficiently recent glibc
+-	  version (2.3.3 or later), to remove the high-mapped
+-	  VDSO mapping and to exclusively use the randomized VDSO.
+-
+-	  If unsure, say Y.
+ 
+ endmenu
+ 
+--- a/arch/x86/vdso/vdso32-setup.c
++++ b/arch/x86/vdso/vdso32-setup.c
+@@ -333,17 +333,21 @@ int arch_setup_additional_pages(struct l
+ 
+ 	map_compat_vdso(compat);
+ 
++#if !defined(CONFIG_PAX_NOEXEC) && !defined(CONFIG_PAX_MEMORY_UDEREF)
+ 	if (compat)
+ 		addr = VDSO_HIGH_BASE;
+ 	else {
++#endif
+ 		addr = get_unmapped_area(NULL, 0, PAGE_SIZE, 0, MAP_EXECUTABLE);
+ 		if (IS_ERR_VALUE(addr)) {
+ 			ret = addr;
+ 			goto up_fail;
+ 		}
++#if !defined(CONFIG_PAX_NOEXEC) && !defined(CONFIG_PAX_MEMORY_UDEREF)
+ 	}
+ 
+ 	if (compat_uses_vma || !compat) {
++#endif
+ 		/*
+ 		 * MAYWRITE to allow gdb to COW and set breakpoints
+ 		 *
+@@ -361,7 +365,9 @@ int arch_setup_additional_pages(struct l
+ 
+ 		if (ret)
+ 			goto up_fail;
++#if !defined(CONFIG_PAX_NOEXEC) && !defined(CONFIG_PAX_MEMORY_UDEREF)
+ 	}
++#endif
+ 
+ 	current->mm->context.vdso = addr;
+ 	current_thread_info()->sysenter_return =
