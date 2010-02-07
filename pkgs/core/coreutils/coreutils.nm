@@ -43,9 +43,6 @@ PKG_DEPS      += acl attr libcap ncurses pam shadow util-linux-ng
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-#PKG_PATCHES   += $(THISAPP)-uname_PIC-1.patch
-PKG_PATCHES   += $(THISAPP)-i18n-1.patch
-
 PKG_BUILD_DEPS+= autoconf automake
 
 CFLAGS        += -D_GNU_SOURCE=1 -fno-strict-aliasing
