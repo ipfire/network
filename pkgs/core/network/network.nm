@@ -1,0 +1,63 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = network
+PKG_VER        =
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = Networking/Tools
+PKG_URL        = http://www.ipfire.org/
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = The IPFire Networking Scripts.
+
+PKG_DEPS      += dhcp iproute2 ppp sqlite vlan
+
+define PKG_DESCRIPTION
+	This script installs the IPFire Networking Scripts.
+endef
+
+DIR_APP = $(DIR_SOURCE)/src
+
+PKG_TARBALL    =
+
+STAGE_PREPARE = # Do nothing
+STAGE_BUILD = # Do nothing
+
+define STAGE_INSTALL
+	-mkdir -pv $(BUILDROOT)/etc/ppp
+	-mkdir -pv $(BUILDROOT)/lib/network
+	-mkdir -pv $(BUILDROOT)/sbin
+	-mkdir -pv $(BUILDROOT)/var/log/network
+
+	install -m 755 -v $(DIR_APP)/network $(BUILDROOT)/sbin
+
+	cp -rfv $(DIR_APP)/{hooks,hook-header,functions*,zone} $(BUILDROOT)/lib/network/
+
+	install -m 755 -v $(DIR_APP)/ppp/ip-updown $(BUILDROOT)/etc/ppp
+	ln -svf ip-updown $(BUILDROOT)/etc/ppp/ip-up
+	ln -svf ip-updown $(BUILDROOT)/etc/ppp/ip-down
+endef
