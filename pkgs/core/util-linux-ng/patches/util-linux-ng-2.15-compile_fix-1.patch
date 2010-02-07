@@ -1,0 +1,19 @@
+Submitted By:            Matt Burgess <matthew_at_linuxfromscratch_dot_org>
+Date:                    2009-05-11
+Initial Package Version: 2.15
+Upstream Status:         From Upstream
+Origin:                  Upstream
+Description:             Fixes a compilation error triggered by
+                         'make -C mount mount'.
+
+diff -Naur util-linux-ng-2.15.orig/config/include-Makefile.am util-linux-ng-2.15/config/include-Makefile.am
+--- util-linux-ng-2.15.orig/config/include-Makefile.am	2009-03-25 12:20:16.000000000 +0000
++++ util-linux-ng-2.15/config/include-Makefile.am	2009-05-11 18:32:49.000000000 +0000
+@@ -17,6 +17,7 @@
+ # Paths to in-tree libraries (use ul_ prefix to avoid possible collisions)
+ #
+ ul_libblkid_srcdir = $(top_srcdir)/libs/blkid/src
++ul_libblkid_builddir = $(top_builddir)/libs/blkid/src
+ ul_libblkid_la = $(top_builddir)/libs/blkid/src/libblkid.la
+ 
+ $(ul_libblkid_la):
