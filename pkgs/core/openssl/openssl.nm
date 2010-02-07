@@ -45,10 +45,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-PKG_PATCHES   += $(THISAPP)-fix_manpages-1.patch
-PKG_PATCHES   += $(THISAPP)-enginesdir.patch
-PKG_PATCHES   += $(THISAPP)-no-rpath.patch
-
 ifneq "$(MACHINE)" "i686"
 	SSL_ARCH = no-asm 386 # 386 implies no-sse2
 endif
