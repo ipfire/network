@@ -1,0 +1,18 @@
+Submitted By: DJ Lucas <dj_AT_linuxfromscratch_DOT_org>
+Date: 2008-08-28
+Initial Package Version: 5.10.0
+Origin: Self
+Description: this patch removes the deprecated asm/page.h header.
+
+diff -Naur perl-5.10.0-orig/ext/IPC/SysV/SysV.xs perl-5.10.0/ext/IPC/SysV/SysV.xs
+--- perl-5.10.0-orig/ext/IPC/SysV/SysV.xs	2008-08-19 22:36:43.000000000 -0500
++++ perl-5.10.0/ext/IPC/SysV/SysV.xs	2007-12-18 04:47:07.000000000 -0600
+@@ -24,8 +24,6 @@
+ #      elif defined(HAS_GETPAGESIZE)
+ #          undef  SHMLBA /* not static: determined at boot time */
+ #          define SHMLBA getpagesize()
+-#      elif defined(__linux__)
+-#          include <asm/page.h>          
+ #      endif
+ #   endif
+ #endif

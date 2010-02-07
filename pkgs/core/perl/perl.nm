@@ -50,9 +50,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-PKG_PATCHES   += $(THISAPP)-page-1.patch
-PKG_PATCHES   += $(THISAPP)-security_fix-1.patch
-
 define QUALITY_AGENT_WHITELIST_RPATH
 	/usr/lib/perl5/*/auto/DB_File/DB_File.so \
 	/usr/lib/perl5/*/auto/Time/HiRes/HiRes.so \
