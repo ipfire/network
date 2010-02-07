@@ -1,0 +1,548 @@
+Submitted By: Matt Burgess (matthew at linuxfromscratch dot org)
+Date: 2007-05-05
+Initial Package Version: 5.6
+Upstream Status: From Upstream
+Origin: ftp://invisible-island.net/ncurses/5.6/ncurses-5.6-coverity.patch.gz
+Description: Fixes a number of issues found by the Coverity static code analysis
+             program.
+
+diff -Naur ncurses-5.6.orig/NEWS ncurses-5.6/NEWS
+--- ncurses-5.6.orig/NEWS	2006-12-17 20:36:26.000000000 +0000
++++ ncurses-5.6/NEWS	2007-05-05 08:11:08.000000000 +0000
+@@ -45,6 +45,36 @@
+ Changes through 1.9.9e did not credit all contributions;
+ it is not possible to add this information.
+ 
++20060407
++	> other fixes prompted by inspection for Coverity report:
++	+ modify ifdef's for c++ binding to use try/catch/throw statements
++	+ add a null-pointer check in tack/ansi.c request_cfss()
++	+ fix a memory leak in ncurses/base/wresize.c
++	+ corrected check for valid memu/meml capabilities in
++	  progs/dump_entry.c when handling V_HPUX case.
++	> fixes based on Coverity report:
++	+ remove dead code in test/bs.c
++	+ remove dead code in test/demo_defkey.c
++	+ remove an unused assignment in progs/infocmp.c
++	+ fix a limit check in tack/ansi.c tools_charset()
++	+ fix tack/ansi.c tools_status() to perform the VT320/VT420
++	  tests in request_cfss().  The function had exited too soon.
++	+ fix a memory leak in tic.c's make_namelist()
++	+ fix a couple of places in tack/output.c which did not check for EOF.
++	+ fix a loop-condition in test/bs.c
++	+ add index checks in lib_color.c for color palettes
++	+ add index checks in progs/dump_entry.c for version_filter() handling
++	  of V_BSD case.
++	+ fix a possible null-pointer dereference in copywin()
++	+ fix a possible null-pointer dereference in waddchnstr()
++	+ add a null-pointer check in _nc_expand_try()
++	+ add a null-pointer check in tic.c's make_namelist()
++	+ add a null-pointer check in _nc_expand_try()
++	+ add null-pointer checks in test/cardfile.c
++	+ fix a double-free in ncurses/tinfo/trim_sgr0.c
++	+ fix a double-free in ncurses/base/wresize.c
++	+ add try/catch block to c++/cursesmain.cc
++
+ 20061217 5.6 release for upload to ftp.gnu.org
+ 
+ 20061217 
+diff -Naur ncurses-5.6.orig/c++/cursesmain.cc ncurses-5.6/c++/cursesmain.cc
+--- ncurses-5.6.orig/c++/cursesmain.cc	2003-10-25 14:53:13.000000000 +0000
++++ ncurses-5.6/c++/cursesmain.cc	2007-05-05 08:11:08.000000000 +0000
+@@ -34,6 +34,13 @@
+ #include "internal.h"
+ #include "cursesapp.h"
+ 
++#if CPP_HAS_TRY_CATCH && HAVE_IOSTREAM
++#include <iostream>
++#else
++#undef CPP_HAS_TRY_CATCH
++#define CPP_HAS_TRY_CATCH 0
++#endif
++
+ MODULE_ID("$Id: cursesmain.cc,v 1.11 2003/10/25 14:53:13 tom Exp $")
+ 
+ #if HAVE_LOCALE_H
+@@ -58,8 +65,20 @@
+ 
+     A->handleArgs(argc,argv);
+     ::endwin();
++#if CPP_HAS_TRY_CATCH
++    try {
++      res = (*A)();
++      ::endwin();
++    }
++    catch(const NCursesException &e) {
++      ::endwin();
++      std::cerr << e.message << std::endl;
++      res = e.errorno;
++    }
++#else
+     res = (*A)();
+     ::endwin();
++#endif
+     return(res);
+   }
+ }
+diff -Naur ncurses-5.6.orig/c++/cursesp.h ncurses-5.6/c++/cursesp.h
+--- ncurses-5.6.orig/c++/cursesp.h	2005-08-13 18:09:21.000000000 +0000
++++ ncurses-5.6/c++/cursesp.h	2007-05-05 08:11:08.000000000 +0000
+@@ -83,7 +83,7 @@
+     return uptr->m_user;
+   }
+ 
+-  void OnError (int err) const THROWS((NCursesPanelException))
++  void OnError (int err) const THROWS(NCursesPanelException)
+   {
+     if (err==ERR)
+       THROW(new NCursesPanelException (this, err));
+diff -Naur ncurses-5.6.orig/c++/etip.h.in ncurses-5.6/c++/etip.h.in
+--- ncurses-5.6.orig/c++/etip.h.in	2005-08-06 19:55:57.000000000 +0000
++++ ncurses-5.6/c++/etip.h.in	2007-05-05 08:11:08.000000000 +0000
+@@ -342,23 +342,33 @@
+ inline void THROW(const NCursesException *e) {
+ #if defined(__GNUG__) && defined(__EXCEPTIONS)
+ #  if ((__GNUG__ <= 2) && (__GNUC_MINOR__ < 8))
+-      (*lib_error_handler)(e?e->classname():"",e?e->message:"");
++      (*lib_error_handler)(e ? e->classname() : "", e ? e->message : "");
+ #else
+-      throw *e;
++#define CPP_HAS_TRY_CATCH 1
+ #endif
+ #elif defined(__SUNPRO_CC)
+ #  if !defined(__SUNPRO_CC_COMPAT) || (__SUNPRO_CC_COMPAT < 5)
+   genericerror(1, ((e != 0) ? (char *)(e->message) : ""));
+ #else
+-  throw *e;
++#define CPP_HAS_TRY_CATCH 1
+ #endif
+ #else
+   if (e)
+     cerr << e->message << endl;
+   exit(0);
+ #endif
+-}
+ 
+-#define THROWS(s)
++#ifndef CPP_HAS_TRY_CATCH
++#define CPP_HAS_TRY_CATCH 0
++#define NCURSES_CPP_TRY		/* nothing */
++#define NCURSES_CPP_CATCH(e)	if (false)
++#define THROWS(s)		/* nothing */
++#elif CPP_HAS_TRY_CATCH
++  throw *e;
++#define NCURSES_CPP_TRY		try
++#define NCURSES_CPP_CATCH(e)	catch(e)
++#define THROWS(s)		throw(s)
++#endif
++}
+ 
+ #endif /* NCURSES_ETIP_H_incl */
+diff -Naur ncurses-5.6.orig/configure ncurses-5.6/configure
+--- ncurses-5.6.orig/configure	2006-12-17 16:33:38.000000000 +0000
++++ ncurses-5.6/configure	2007-05-05 08:11:08.000000000 +0000
+@@ -13865,7 +13865,7 @@
+ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+ ac_main_return=return
+ 
+-for ac_header in typeinfo
++for ac_header in iostream typeinfo
+ do
+ as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ echo "$as_me:13871: checking for $ac_header" >&5
+diff -Naur ncurses-5.6.orig/configure.in ncurses-5.6/configure.in
+--- ncurses-5.6.orig/configure.in	2006-12-17 01:26:06.000000000 +0000
++++ ncurses-5.6/configure.in	2007-05-05 08:11:08.000000000 +0000
+@@ -1200,7 +1200,7 @@
+ 		;;
+ 	esac
+ 
+-	AC_CHECK_HEADERS(typeinfo)
++	AC_CHECK_HEADERS(iostream typeinfo)
+ 
+ 	CF_BOOL_DECL
+ 	CF_BOOL_SIZE
+diff -Naur ncurses-5.6.orig/include/ncurses_defs ncurses-5.6/include/ncurses_defs
+--- ncurses-5.6.orig/include/ncurses_defs	2006-08-05 19:27:02.000000000 +0000
++++ ncurses-5.6/include/ncurses_defs	2007-05-05 08:11:08.000000000 +0000
+@@ -68,6 +68,7 @@
+ HAVE_GPP_BUILTIN_H
+ HAVE_GXX_BUILTIN_H
+ HAVE_HAS_KEY
++HAVE_IOSTREAM
+ HAVE_ISASCII
+ HAVE_ISSETUGID
+ HAVE_LANGINFO_CODESET
+diff -Naur ncurses-5.6.orig/ncurses/base/lib_addstr.c ncurses-5.6/ncurses/base/lib_addstr.c
+--- ncurses-5.6.orig/ncurses/base/lib_addstr.c	2006-05-27 19:22:19.000000000 +0000
++++ ncurses-5.6/ncurses/base/lib_addstr.c	2007-05-05 08:11:08.000000000 +0000
+@@ -80,8 +80,7 @@
+ NCURSES_EXPORT(int)
+ waddchnstr(WINDOW *win, const chtype *astr, int n)
+ {
+-    NCURSES_SIZE_T y = win->_cury;
+-    NCURSES_SIZE_T x = win->_curx;
++    NCURSES_SIZE_T y, x;
+     int code = OK;
+     int i;
+     struct ldat *line;
+@@ -91,6 +90,8 @@
+     if (!win)
+ 	returnCode(ERR);
+ 
++    y = win->_cury;
++    x = win->_curx;
+     if (n < 0) {
+ 	const chtype *str;
+ 	n = 0;
+diff -Naur ncurses-5.6.orig/ncurses/base/lib_color.c ncurses-5.6/ncurses/base/lib_color.c
+--- ncurses-5.6.orig/ncurses/base/lib_color.c	2006-11-26 01:33:16.000000000 +0000
++++ ncurses-5.6/ncurses/base/lib_color.c	2007-05-05 08:11:08.000000000 +0000
+@@ -56,7 +56,10 @@
+ 
+ #define TYPE_CALLOC(type,elts) typeCalloc(type, (unsigned)(elts))
+ 
++#define MAX_PALETTE	8
++
+ #define OkColorHi(n)	(((n) < COLORS) && ((n) < max_colors))
++#define InPalette(n)	((n) >= 0 && (n) < MAX_PALETTE)
+ 
+ /*
+  * Given a RGB range of 0..1000, we'll normally set the individual values
+@@ -162,10 +165,10 @@
+ 
+     tp = (hue_lightness_saturation) ? hls_palette : cga_palette;
+     for (n = 0; n < COLORS; n++) {
+-	if (n < 8) {
++	if (InPalette(n)) {
+ 	    SP->_color_table[n] = tp[n];
+ 	} else {
+-	    SP->_color_table[n] = tp[n % 8];
++	    SP->_color_table[n] = tp[n % MAX_PALETTE];
+ 	    if (hue_lightness_saturation) {
+ 		SP->_color_table[n].green = 100;
+ 	    } else {
+@@ -365,7 +368,7 @@
+     if (GET_SCREEN_PAIR(SP) == pair)
+ 	SET_SCREEN_PAIR(SP, (chtype) (~0));	/* force attribute update */
+ 
+-    if (initialize_pair) {
++    if (initialize_pair && InPalette(f) && InPalette(b)) {
+ 	const color_t *tp = hue_lightness_saturation ? hls_palette : cga_palette;
+ 
+ 	T(("initializing pair: pair = %d, fg=(%d,%d,%d), bg=(%d,%d,%d)",
+diff -Naur ncurses-5.6.orig/ncurses/base/lib_overlay.c ncurses-5.6/ncurses/base/lib_overlay.c
+--- ncurses-5.6.orig/ncurses/base/lib_overlay.c	2006-10-14 20:43:31.000000000 +0000
++++ ncurses-5.6/ncurses/base/lib_overlay.c	2007-05-05 08:11:08.000000000 +0000
+@@ -139,8 +139,8 @@
+ {
+     int sx, sy, dx, dy;
+     bool touched;
+-    attr_t bk = AttrOf(dst->_nc_bkgd);
+-    attr_t mask = ~(attr_t) ((bk & A_COLOR) ? A_COLOR : 0);
++    attr_t bk;
++    attr_t mask;
+ 
+     T((T_CALLED("copywin(%p, %p, %d, %d, %d, %d, %d, %d, %d)"),
+        src, dst, sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol, over));
+@@ -148,6 +148,9 @@
+     if (!src || !dst)
+ 	returnCode(ERR);
+ 
++    bk = AttrOf(dst->_nc_bkgd);
++    mask = ~(attr_t) ((bk & A_COLOR) ? A_COLOR : 0);
++
+     /* make sure rectangle exists in source */
+     if ((sminrow + dmaxrow - dminrow) > (src->_maxy + 1) ||
+ 	(smincol + dmaxcol - dmincol) > (src->_maxx + 1)) {
+diff -Naur ncurses-5.6.orig/ncurses/base/tries.c ncurses-5.6/ncurses/base/tries.c
+--- ncurses-5.6.orig/ncurses/base/tries.c	2005-11-26 20:09:18.000000000 +0000
++++ ncurses-5.6/ncurses/base/tries.c	2007-05-05 08:11:08.000000000 +0000
+@@ -68,7 +68,7 @@
+ 	}
+     }
+     if (result != 0) {
+-	if ((result[len] = ptr->ch) == 0)
++	if (ptr != 0 && (result[len] = ptr->ch) == 0)
+ 	    *((unsigned char *) (result + len)) = 128;
+ #ifdef TRACE
+ 	if (len == 0 && _nc_tracing != 0)
+diff -Naur ncurses-5.6.orig/ncurses/base/wresize.c ncurses-5.6/ncurses/base/wresize.c
+--- ncurses-5.6.orig/ncurses/base/wresize.c	2006-10-14 20:43:31.000000000 +0000
++++ ncurses-5.6/ncurses/base/wresize.c	2007-05-05 08:11:08.000000000 +0000
+@@ -38,7 +38,7 @@
+ cleanup_lines(struct ldat *data, int length)
+ {
+     while (--length >= 0)
+-	free(data->text);
++	free(data[length].text);
+     free(data);
+     return ERR;
+ }
+diff -Naur ncurses-5.6.orig/ncurses/tinfo/trim_sgr0.c ncurses-5.6/ncurses/tinfo/trim_sgr0.c
+--- ncurses-5.6.orig/ncurses/tinfo/trim_sgr0.c	2006-12-02 19:37:57.000000000 +0000
++++ ncurses-5.6/ncurses/tinfo/trim_sgr0.c	2007-05-05 08:11:08.000000000 +0000
+@@ -247,9 +247,7 @@
+ 	if (!rewrite_sgr(on, enter_alt_charset_mode)
+ 	    || !rewrite_sgr(off, exit_alt_charset_mode)
+ 	    || !rewrite_sgr(end, exit_alt_charset_mode)) {
+-	    FreeIfNeeded(on);
+ 	    FreeIfNeeded(off);
+-	    FreeIfNeeded(end);
+ 	} else if (similar_sgr(off, end)
+ 		   && !similar_sgr(off, on)) {
+ 	    TR(TRACE_DATABASE, ("adjusting sgr(9:off) : %s", _nc_visbuf(off)));
+@@ -315,8 +313,8 @@
+ 	     */
+ 	    free(off);
+ 	}
+-	free(end);
+-	free(on);
++	FreeIfNeeded(end);
++	FreeIfNeeded(on);
+     } else {
+ 	/*
+ 	 * Possibly some applications are confused if sgr0 contains rmacs,
+diff -Naur ncurses-5.6.orig/progs/dump_entry.c ncurses-5.6/progs/dump_entry.c
+--- ncurses-5.6.orig/progs/dump_entry.c	2006-09-30 20:18:15.000000000 +0000
++++ ncurses-5.6/progs/dump_entry.c	2007-05-05 08:11:08.000000000 +0000
+@@ -352,14 +352,17 @@
+ 	}
+ 	break;
+ 
++#define is_termcap(type) (idx < (int) sizeof(type##_from_termcap) && \
++			  type##_from_termcap[idx])
++
+     case V_BSD:		/* BSD */
+ 	switch (type) {
+ 	case BOOLEAN:
+-	    return bool_from_termcap[idx];
++	    return is_termcap(bool);
+ 	case NUMBER:
+-	    return num_from_termcap[idx];
++	    return is_termcap(num);
+ 	case STRING:
+-	    return str_from_termcap[idx];
++	    return is_termcap(str);
+ 	}
+ 	break;
+     }
+@@ -788,11 +791,11 @@
+      * Much more work should be done on this to support dumping termcaps.
+      */
+     if (tversion == V_HPUX) {
+-	if (memory_lock) {
++	if (VALID_STRING(memory_lock)) {
+ 	    (void) sprintf(buffer, "meml=%s", memory_lock);
+ 	    WRAP_CONCAT;
+ 	}
+-	if (memory_unlock) {
++	if (VALID_STRING(memory_unlock)) {
+ 	    (void) sprintf(buffer, "memu=%s", memory_unlock);
+ 	    WRAP_CONCAT;
+ 	}
+diff -Naur ncurses-5.6.orig/progs/infocmp.c ncurses-5.6/progs/infocmp.c
+--- ncurses-5.6.orig/progs/infocmp.c	2006-08-19 21:20:37.000000000 +0000
++++ ncurses-5.6/progs/infocmp.c	2007-05-05 08:11:08.000000000 +0000
+@@ -1083,7 +1083,6 @@
+ 	    }
+ 	    *tp++ = '"';
+ 	    *tp = '\0';
+-	    size += (strlen(term->Strings[n]) + 1);
+ 	    (void) printf("static char %-20s[] = %s;\n",
+ 			  string_variable(ExtStrname(term, n, strnames)), buf);
+ 	}
+diff -Naur ncurses-5.6.orig/progs/tic.c ncurses-5.6/progs/tic.c
+--- ncurses-5.6.orig/progs/tic.c	2006-12-02 22:13:17.000000000 +0000
++++ ncurses-5.6/progs/tic.c	2007-05-05 08:11:08.000000000 +0000
+@@ -353,11 +353,24 @@
+     return fp;
+ }
+ 
++#if NO_LEAKS
++static void
++free_namelist(char **src)
++{
++    if (src != 0) {
++	int n;
++	for (n = 0; src[n] != 0; ++n)
++	    free (src[n]);
++	free (src);
++    }
++}
++#endif
++
+ /* Parse the "-e" option-value into a list of names */
+-static const char **
++static char **
+ make_namelist(char *src)
+ {
+-    const char **dst = 0;
++    char **dst = 0;
+ 
+     char *s, *base;
+     unsigned pass, n, nn;
+@@ -374,11 +387,13 @@
+ 		if ((s = stripped(buffer)) != 0) {
+ 		    if (dst != 0)
+ 			dst[nn] = s;
++		    else
++			free(s);
+ 		    nn++;
+ 		}
+ 	    }
+ 	    if (pass == 1) {
+-		dst = typeCalloc(const char *, nn + 1);
++		dst = typeCalloc(char *, nn + 1);
+ 		rewind(fp);
+ 	    }
+ 	}
+@@ -401,10 +416,10 @@
+ 		    break;
+ 	    }
+ 	    if (pass == 1)
+-		dst = typeCalloc(const char *, nn + 1);
++		dst = typeCalloc(char *, nn + 1);
+ 	}
+     }
+-    if (showsummary) {
++    if (showsummary && (dst != 0)) {
+ 	fprintf(log_fp, "Entries that will be compiled:\n");
+ 	for (n = 0; dst[n] != 0; n++)
+ 	    fprintf(log_fp, "%u:%s\n", n + 1, dst[n]);
+@@ -413,7 +428,7 @@
+ }
+ 
+ static bool
+-matches(const char **needle, const char *haystack)
++matches(char **needle, const char *haystack)
+ /* does entry in needle list match |-separated field in haystack? */
+ {
+     bool code = FALSE;
+@@ -468,7 +483,7 @@
+     bool limited = TRUE;
+     char *tversion = (char *) NULL;
+     const char *source_file = "terminfo";
+-    const char **namelst = 0;
++    char **namelst = 0;
+     char *outdir = (char *) NULL;
+     bool check_only = FALSE;
+     bool suppress_untranslatable = FALSE;
+@@ -784,6 +799,9 @@
+ 	else
+ 	    fprintf(log_fp, "No entries written\n");
+     }
++#if NO_LEAKS
++    free_namelist(namelst);
++#endif
+     cleanup();
+     ExitProgram(EXIT_SUCCESS);
+ }
+diff -Naur ncurses-5.6.orig/tack/ansi.c ncurses-5.6/tack/ansi.c
+--- ncurses-5.6.orig/tack/ansi.c	2005-09-17 19:49:16.000000000 +0000
++++ ncurses-5.6/tack/ansi.c	2007-05-05 08:11:08.000000000 +0000
+@@ -309,6 +309,8 @@
+ 	put_crlf();
+ 	for (i = 0; rqss[i].text; i++) {
+ 		ptext(rqss[i].text);
++		if (rqss[i].expect == 0)
++			continue;
+ 		j = strlen(rqss[i].text) + strlen(rqss[i].expect);
+ 		putchp(' ');
+ 		for (j++; j < 40; j++)
+@@ -600,10 +602,11 @@
+ 		i = read_reports();
+ 		if (i != 'r' && i != 'R') {
+ 			*ch = i;
+-			return;
++			break;
+ 		}
+ 	} while (i);
+ 
++	/* VT320, VT420, etc. */
+ 	if (terminal_class >= 63) {
+ 		do {
+ 			i = request_cfss();
+@@ -841,7 +844,7 @@
+ 			bank[j] = ch;
+ 			if (ch < ' ' || ch > '/')
+ 				break;
+-			if (j + 1 >= (int) sizeof(bank))
++			if (j + 2 >= (int) sizeof(bank))
+ 				break;
+ 		}
+ 		if (j == 1)
+diff -Naur ncurses-5.6.orig/tack/output.c ncurses-5.6/tack/output.c
+--- ncurses-5.6.orig/tack/output.c	2006-11-26 00:16:49.000000000 +0000
++++ ncurses-5.6/tack/output.c	2007-05-05 08:11:08.000000000 +0000
+@@ -740,7 +740,9 @@
+ 			/* ignore control S, but tell me about it */
+ 			while (ch == 023 || ch == 021) {
+ 				ch = getchp(STRIP_PARITY);
+-				if (i < (int) sizeof(cc))
++				if (ch == EOF)
++				    break;
++				if (i + 1 < (int) sizeof(cc))
+ 					cc[++i] = ch;
+ 			}
+ 			put_str("\nThe terminal sent a ^S -");
+@@ -778,7 +780,7 @@
+ 
+ 	for (i = 0; i < length - 1; ) {
+ 		ch = getchp(STRIP_PARITY);
+-		if (ch == '\r' || ch == '\n') {
++		if (ch == '\r' || ch == '\n' || ch == EOF) {
+ 			break;
+ 		}
+ 		if (ch == '\b' || ch == 127) {
+diff -Naur ncurses-5.6.orig/test/bs.c ncurses-5.6/test/bs.c
+--- ncurses-5.6.orig/test/bs.c	2006-05-20 15:38:52.000000000 +0000
++++ ncurses-5.6/test/bs.c	2007-05-05 08:11:08.000000000 +0000
+@@ -459,7 +459,7 @@
+ 	do {
+ 	    c = getch();
+ 	} while
+-	    (!strchr("hjklrR", c) || c == FF);
++	    (!(strchr("hjklrR", c) || c == FF));
+ 
+ 	if (c == FF) {
+ 	    (void) clearok(stdscr, TRUE);
+diff -Naur ncurses-5.6.orig/test/cardfile.c ncurses-5.6/test/cardfile.c
+--- ncurses-5.6.orig/test/cardfile.c	2006-12-10 00:30:09.000000000 +0000
++++ ncurses-5.6/test/cardfile.c	2007-05-05 08:11:08.000000000 +0000
+@@ -136,13 +136,15 @@
+ 	if ((offset = strlen(card->content)) != 0) {
+ 	    total += 1 + offset;
+ 	    card->content = (char *) realloc(card->content, total + 1);
+-	    strcpy(card->content + offset++, " ");
++	    if (card->content)
++		strcpy(card->content + offset++, " ");
+ 	} else {
+ 	    if (card->content != 0)
+ 		free(card->content);
+ 	    card->content = (char *) malloc(total + 1);
+ 	}
+-	strcpy(card->content + offset, content);
++	if (card->content)
++	    strcpy(card->content + offset, content);
+     }
+ }
+ 
+diff -Naur ncurses-5.6.orig/test/demo_defkey.c ncurses-5.6/test/demo_defkey.c
+--- ncurses-5.6.orig/test/demo_defkey.c	2006-04-01 19:08:03.000000000 +0000
++++ ncurses-5.6/test/demo_defkey.c	2007-05-05 08:11:08.000000000 +0000
+@@ -143,13 +143,12 @@
+ 		code_name);
+     }
+     log_last_line(win);
++
+     if (vis_string != 0) {
+ 	free(vis_string);
+ 	vis_string = 0;
+     }
+ 
+-    if (vis_string != 0)
+-	free(vis_string);
+     vis_string = visible(new_string);
+     if ((rc = key_defined(new_string)) > 0) {
+ 	wprintw(win, "%s was bound to %s\n", vis_string, keyname(rc));
