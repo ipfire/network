@@ -42,6 +42,8 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
+CFLAGS        += -fno-stack-protector
+
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install INSTALLROOT=$(BUILDROOT)
 endef
