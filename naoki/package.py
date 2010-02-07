@@ -62,8 +62,7 @@ def download(file, type):
 		return
 
 	dirs = {
-		"object" : TARBALLDIR,
-		"patch"  : PATCHESDIR,
+		"tarball" : TARBALLDIR,
 	}
 	filepath = os.path.join(dirs[type], file)
 	if os.path.exists(filepath):
@@ -209,9 +208,7 @@ Patches     :
 
 	def download(self):
 		for object in self.objects:
-			download(object, type="object")
-		for patch in self.patches:
-			download(patch, type="patch")
+			download(object, type="tarball")
 
 	@property
 	def fingerprint(self):
