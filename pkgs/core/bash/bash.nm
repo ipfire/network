@@ -46,17 +46,14 @@ PKG_DEPS      += readline
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-# This patch modifies Bash to use /dev/urandom (settable with
-# --with-randomdev=) for $RANDOM, instead of getpid() and gettimeofday().
-# The test is "( echo $RANDOM; ( echo $RANDOM ); ( echo $RANDOM ) )":
-PKG_PATCHES   += $(THISAPP)-rng.patch
+# $(THISAPP)-rng.patch
+#	This patch modifies Bash to use /dev/urandom (settable with
+#	--with-randomdev=) for $RANDOM, instead of getpid() and gettimeofday().
+#	The test is "( echo $RANDOM; ( echo $RANDOM ); ( echo $RANDOM ) )": 
 
-# This patch fixes various reportded issures. It is the latest posted
-# patch from linuxfromscratch.org.
-PKG_PATCHES   += $(THISAPP)-fixes-4.patch
-
-PKG_PATCHES   += $(THISAPP)-paths-1.patch
-PKG_PATCHES   += $(THISAPP)-profile-1.patch
+# $(THISAPP)-fixes-4.patch
+#	This patch fixes various reportded issures. It is the latest posted
+#	patch from linuxfromscratch.org.
 
 ###############################################################################
 # Installation Details
