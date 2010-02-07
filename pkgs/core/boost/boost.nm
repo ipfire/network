@@ -48,11 +48,6 @@ endef
 
 PKG_TARBALL    = $(PKG_NAME)_$(subst .,_,$(PKG_VER)).tar.bz2
 
-PKG_PATCHES   += $(THISAPP)-version-override.patch
-PKG_PATCHES   += $(THISAPP)-unneccessary_iostreams.patch
-PKG_PATCHES   += $(THISAPP)-function_template.patch
-PKG_PATCHES   += $(THISAPP)-fs_gcc44.patch
-
 export BOOST_ROOT=$(DIR_APP)
 BUILD_FLAGS    = -d2 --layout=system variant=release threading=single,multi \
 					debug-symbols=on link=shared runtime-link=shared
