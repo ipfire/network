@@ -1,0 +1,3278 @@
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_get_who.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,103 @@
++/*
++ *  NFSv4 ACL Code
++ *  Read the who value from the ace and return its type and optionally
++ *  its value.
++ *
++ *  Ace is a reference to the ace to extract the who value from.
++ *  Type is a reference where the value of the whotype will be stored.
++ *  Who is a double reference that should either be passed as NULL
++ *  (and thus no who string will be returned) or as a pointer to a
++ *  char* where the who string will be allocated. This string must be
++ *  freed by the caller.
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "libacl_nfs4.h"
++
++int acl_nfs4_get_who(struct nfs4_ace* ace, int* type, char** who)
++{
++	int itype;
++	char* iwho = NULL;
++	int wholen;
++
++	if(ace == NULL || ace->who == NULL)
++		goto inval_failed;
++
++	itype = acl_nfs4_get_whotype(ace->who);
++
++	if(type != NULL) {
++		*type = itype;
++	}
++
++
++	if(who == NULL)
++		return 0;
++
++	switch(itype)
++	{
++		case NFS4_ACL_WHO_NAMED:
++			iwho = ace->who;
++			break;
++		case NFS4_ACL_WHO_OWNER:
++			iwho = NFS4_ACL_WHO_OWNER_STRING;
++			break;
++		case NFS4_ACL_WHO_GROUP:
++			iwho = NFS4_ACL_WHO_GROUP_STRING;
++			break;
++		case NFS4_ACL_WHO_EVERYONE:
++			iwho = NFS4_ACL_WHO_EVERYONE_STRING;
++			break;
++		default:
++			goto inval_failed;
++	}
++
++	wholen = strlen(iwho);
++	if(wholen < 0)
++		goto inval_failed;
++
++	(*who) = (char *) malloc(sizeof(char) * (wholen + 1));
++	if((*who) == NULL) {
++		errno = ENOMEM;
++		goto failed;
++	}
++
++	strcpy((*who), iwho);
++
++	return 0;
++
++inval_failed:
++	errno = EINVAL;
++
++failed:
++	return -1;
++}
++
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_add_ace.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,83 @@
++/*
++ *  NFSv4 ACL Code
++ *  Add an ace to the acl
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Marius Aamodt Eriksen <marius@umich.edu>
++ *  J. Bruce Fields <bfields@umich.edu>
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *  Jeff Sedlak <jsedlak@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "libacl_nfs4.h"
++
++int
++acl_nfs4_add_ace(struct nfs4_acl *acl, u32 type, u32 flag, u32 access_mask,
++		int whotype, char* who)
++{
++	struct nfs4_ace *ace;
++	int result;
++
++	if(acl == NULL)
++	{
++		errno = EINVAL;
++		return -1;
++	}
++
++	if ((ace = malloc(sizeof(*ace))) == NULL)
++	{
++		errno = ENOMEM;
++		return -1;
++	}
++
++	ace->type = type;
++	ace->flag = flag;
++
++	if( type == NFS4_ACE_ACCESS_DENIED_ACE_TYPE )
++		access_mask = access_mask & ~(NFS4_ACE_MASK_IGNORE);
++
++
++	/* Castrate delete_child if we aren't a directory */
++	if (!acl->is_directory)
++		access_mask &= ~NFS4_ACE_DELETE_CHILD;
++
++
++	ace->access_mask = access_mask & NFS4_ACE_MASK_ALL;
++
++	result = acl_nfs4_set_who(ace, whotype, who);
++	if(result < 0)
++		return -1;
++
++	TAILQ_INSERT_TAIL(&acl->ace_head, ace, l_ace);
++	acl->naces++;
++
++	return 0;
++}
++
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_get_whotype.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,60 @@
++/*
++ *  NFSv4 ACL Code
++ *  Get the whotype of the who string passed
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Marius Aamodt Eriksen <marius@umich.edu>
++ *  J. Bruce Fields <bfields@umich.edu>
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *  Jeff Sedlak <jsedlak@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "libacl_nfs4.h"
++
++inline int
++acl_nfs4_get_whotype(char *p)
++{
++	if(0 == strcmp(p, NFS4_ACL_WHO_OWNER_STRING) &&
++			strlen(p) == strlen(NFS4_ACL_WHO_OWNER_STRING)) {
++		return NFS4_ACL_WHO_OWNER;
++	}
++	if(0 == strcmp(p, NFS4_ACL_WHO_GROUP_STRING) &&
++			strlen(p) == strlen(NFS4_ACL_WHO_GROUP_STRING)) {
++		return NFS4_ACL_WHO_GROUP;
++	}
++	if(0 == strcmp(p, NFS4_ACL_WHO_EVERYONE_STRING) &&
++			strlen(p) == strlen(NFS4_ACL_WHO_EVERYONE_STRING)) {
++		return NFS4_ACL_WHO_EVERYONE;
++	}
++
++	return NFS4_ACL_WHO_NAMED;
++}
++
++
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_free.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,61 @@
++/*
++ *  Copyright (c) 2004 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Marius Aamodt Eriksen <marius@umich.edu>
++ *  J. Bruce Fields <bfields@umich.edu>
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *  Jeff Sedlak <jsedlak@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions, the following disclaimer, and
++ *     any and all other licensing or copyright notices included in
++ *     any files in this distribution.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++#include "libacl_nfs4.h"
++
++void
++acl_nfs4_free(struct nfs4_acl *acl)
++{
++	struct nfs4_ace *ace;
++
++	if (!acl)
++		return;
++
++	while (!TAILQ_IS_EMPTY(acl->ace_head)) {
++		ace = (acl)->ace_head.tqh_first;
++
++		TAILQ_REMOVE( &(acl->ace_head), ace, l_ace);
++		free(ace->who);
++		free(ace);
++	}
++
++	free(acl);
++
++	return;
++}
++
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_n4tp_acl_trans.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,439 @@
++/*
++ *  NFSv4 ACL Code
++ *  Convert NFSv4 ACL to a POSIX ACL
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <acl/libacl.h>
++#include <nfsidmap.h>
++#include "libacl_nfs4.h"
++
++
++/*
++ * While processing the NFSv4 ACE, this maintains bitmasks representing
++ * which permission bits have been allowed and which denied to a given
++ * entity: */
++struct posix_ace_state {
++	u_int32_t allow;
++	u_int32_t deny;
++};
++
++struct posix_user_ace_state {
++	uid_t uid;
++	struct posix_ace_state perms;
++};
++
++struct posix_ace_state_array {
++	int n;
++	struct posix_user_ace_state aces[];
++};
++
++/*
++ * While processing the NFSv4 ACE, this maintains the partial permissions
++ * calculated so far: */
++
++struct posix_acl_state {
++	struct posix_ace_state owner;
++	struct posix_ace_state group;
++	struct posix_ace_state other;
++	struct posix_ace_state everyone;
++	struct posix_ace_state mask; /* Deny unused in this case */
++	struct posix_ace_state_array *users;
++	struct posix_ace_state_array *groups;
++};
++
++static int
++init_state(struct posix_acl_state *state, int cnt)
++{
++	int alloc;
++
++	memset(state, 0, sizeof(struct posix_acl_state));
++	/*
++	 * In the worst case, each individual acl could be for a distinct
++	 * named user or group, but we don't know which, so we allocate
++	 * enough space for either:
++	 */
++	alloc = sizeof(struct posix_ace_state_array)
++		+ cnt*sizeof(struct posix_user_ace_state);
++	state->users = calloc(1, alloc);
++	if (!state->users)
++		return -ENOMEM;
++	state->groups = calloc(1, alloc);
++	if (!state->groups) {
++		free(state->users);
++		return -ENOMEM;
++	}
++	return 0;
++}
++
++static void
++free_state(struct posix_acl_state *state) {
++	free(state->users);
++	free(state->groups);
++}
++
++static inline void add_to_mask(struct posix_acl_state *state, struct posix_ace_state *astate)
++{
++	state->mask.allow |= astate->allow;
++}
++
++/*
++ * We only map from NFSv4 to POSIX ACLs when getting ACLs, when we err on the
++ * side of permissiveness (so as not to make the file appear more secure than
++ * it really is), so the mode bit mapping below is optimistic.
++ */
++static void
++set_mode_from_nfs4(acl_entry_t pace, u_int32_t perm, int is_dir)
++{
++	u32 write_mode = NFS4_WRITE_MODE;
++	acl_permset_t perms;
++
++	acl_get_permset(pace, &perms);
++	acl_clear_perms(perms);
++	if (is_dir)
++		write_mode |= NFS4_ACE_DELETE_CHILD;
++	if (perm & NFS4_READ_MODE)
++		acl_add_perm(perms, ACL_READ);
++	if (perm & write_mode)
++		acl_add_perm(perms, ACL_WRITE);
++	if (perm & NFS4_EXECUTE_MODE)
++		acl_add_perm(perms, ACL_EXECUTE);
++	acl_set_permset(pace, perms);
++}
++
++/* XXX: add a "check allow" that can warn on e.g. allows of WRITE_ACL
++ * to non-owner? */
++
++/* XXX: replace error returns by errno sets all over.  Ugh. */
++
++static acl_t
++posix_state_to_acl(struct posix_acl_state *state, int is_dir)
++{
++	acl_entry_t pace;
++	acl_t pacl;
++	int nace;
++	int i, error = 0;
++
++	if (state->users->n || state->groups->n)
++		nace = 4 + state->users->n + state->groups->n;
++	else
++		nace = 3;
++	pacl = acl_init(nace);
++	if (!pacl)
++		return NULL;
++
++	error = acl_create_entry(&pacl, &pace);
++	if (error)
++		goto out_err;
++	acl_set_tag_type(pace, ACL_USER_OBJ);
++	set_mode_from_nfs4(pace, state->owner.allow, is_dir);
++
++	for (i=0; i < state->users->n; i++) {
++		error = acl_create_entry(&pacl, &pace);
++		if (error)
++			goto out_err;
++		acl_set_tag_type(pace, ACL_USER);
++		set_mode_from_nfs4(pace, state->users->aces[i].perms.allow,
++					is_dir);
++		acl_set_qualifier(pace, &state->users->aces[i].uid);
++		add_to_mask(state, &state->users->aces[i].perms);
++	}
++
++	error = acl_create_entry(&pacl, &pace);
++	if (error)
++		goto out_err;
++	acl_set_tag_type(pace, ACL_GROUP_OBJ);
++	set_mode_from_nfs4(pace, state->group.allow, is_dir);
++	add_to_mask(state, &state->group);
++
++	for (i=0; i < state->groups->n; i++) {
++		error = acl_create_entry(&pacl, &pace);
++		if (error)
++			goto out_err;
++		acl_set_tag_type(pace, ACL_GROUP);
++		set_mode_from_nfs4(pace, state->groups->aces[i].perms.allow,
++					is_dir);
++		acl_set_qualifier(pace, &state->groups->aces[i].uid);
++		add_to_mask(state, &state->groups->aces[i].perms);
++	}
++
++	if (nace > 3) {
++		error = acl_create_entry(&pacl, &pace);
++		if (error)
++			goto out_err;
++		acl_set_tag_type(pace, ACL_MASK);
++		set_mode_from_nfs4(pace, state->mask.allow, is_dir);
++	}
++
++	error = acl_create_entry(&pacl, &pace);
++	if (error)
++		goto out_err;
++	acl_set_tag_type(pace, ACL_OTHER);
++	set_mode_from_nfs4(pace, state->other.allow, is_dir);
++
++	return pacl;
++out_err:
++	acl_free(pacl);
++	return NULL;
++}
++
++static inline void allow_bits(struct posix_ace_state *astate, u32 mask)
++{
++	/* Allow all bits in the mask not already denied: */
++	astate->allow |= mask & ~astate->deny;
++}
++
++static inline void deny_bits(struct posix_ace_state *astate, u32 mask)
++{
++	/* Deny all bits in the mask not already allowed: */
++	astate->deny |= mask & ~astate->allow;
++}
++
++static int find_uid(struct posix_acl_state *state, struct posix_ace_state_array *a, uid_t uid)
++{
++	int i;
++
++	for (i = 0; i < a->n; i++)
++		if (a->aces[i].uid == uid)
++			return i;
++	/* Not found: */
++	a->n++;
++	a->aces[i].uid = uid;
++	a->aces[i].perms.allow = state->everyone.allow;
++	a->aces[i].perms.deny  = state->everyone.deny;
++
++	return i;
++}
++
++static void deny_bits_array(struct posix_ace_state_array *a, u32 mask)
++{
++	int i;
++
++	for (i=0; i < a->n; i++)
++		deny_bits(&a->aces[i].perms, mask);
++}
++
++static void allow_bits_array(struct posix_ace_state_array *a, u32 mask)
++{
++	int i;
++
++	for (i=0; i < a->n; i++)
++		allow_bits(&a->aces[i].perms, mask);
++}
++
++static acl_tag_t acl_n4tp_get_whotype(struct nfs4_ace *ace)
++{
++	int nfs4type;
++	int result;
++
++	result = acl_nfs4_get_who(ace, &nfs4type, NULL);
++	if (result < 0)
++		return -1;
++
++	switch (nfs4type) {
++		case NFS4_ACL_WHO_NAMED:
++			return (ace->flag & NFS4_ACE_IDENTIFIER_GROUP ?
++					ACL_GROUP : ACL_USER);
++		case NFS4_ACL_WHO_OWNER:
++			return ACL_USER_OBJ;
++		case NFS4_ACL_WHO_GROUP:
++			return ACL_GROUP_OBJ;
++		case NFS4_ACL_WHO_EVERYONE:
++			return ACL_OTHER;
++	}
++	errno = EINVAL;
++	return -1;
++}
++
++static int process_one_v4_ace(struct posix_acl_state *state,
++				struct nfs4_ace *ace)
++{
++	u32 mask = ace->access_mask;
++	uid_t id;
++	int i;
++
++	if (nfs4_init_name_mapping(NULL))
++		return -1;
++
++	switch (acl_n4tp_get_whotype(ace)) {
++	case ACL_USER_OBJ:
++		if (ace->type == NFS4_ACE_ACCESS_ALLOWED_ACE_TYPE) {
++			allow_bits(&state->owner, mask);
++		} else {
++			deny_bits(&state->owner, mask);
++		}
++		break;
++	case ACL_USER:
++		if (nfs4_name_to_uid(ace->who, &id))
++			return -1;
++		i = find_uid(state, state->users, id);
++		if (ace->type == NFS4_ACE_ACCESS_ALLOWED_ACE_TYPE) {
++			allow_bits(&state->users->aces[i].perms, mask);
++			mask = state->users->aces[i].perms.allow;
++			allow_bits(&state->owner, mask);
++		} else {
++			deny_bits(&state->users->aces[i].perms, mask);
++		}
++		break;
++	case ACL_GROUP_OBJ:
++		if (ace->type == NFS4_ACE_ACCESS_ALLOWED_ACE_TYPE) {
++			allow_bits(&state->group, mask);
++			mask = state->group.allow;
++			allow_bits(&state->owner, mask);
++			allow_bits(&state->everyone, mask);
++			allow_bits_array(state->users, mask);
++			allow_bits_array(state->groups, mask);
++		} else {
++			deny_bits(&state->group, mask);
++		}
++		break;
++	case ACL_GROUP:
++		if (nfs4_name_to_gid(ace->who, &id))
++			return -1;
++		i = find_uid(state, state->groups, id);
++		if (ace->type == NFS4_ACE_ACCESS_ALLOWED_ACE_TYPE) {
++			allow_bits(&state->groups->aces[i].perms, mask);
++			mask = state->groups->aces[i].perms.allow;
++			allow_bits(&state->owner, mask);
++			allow_bits(&state->group, mask);
++			allow_bits(&state->everyone, mask);
++			allow_bits_array(state->users, mask);
++			allow_bits_array(state->groups, mask);
++		} else {
++			deny_bits(&state->groups->aces[i].perms, mask);
++		}
++		break;
++	case ACL_OTHER:
++		if (ace->type == NFS4_ACE_ACCESS_ALLOWED_ACE_TYPE) {
++			allow_bits(&state->owner, mask);
++			allow_bits(&state->group, mask);
++			allow_bits(&state->other, mask);
++			allow_bits(&state->everyone, mask);
++			allow_bits_array(state->users, mask);
++			allow_bits_array(state->groups, mask);
++		} else {
++			deny_bits(&state->owner, mask);
++			deny_bits(&state->group, mask);
++			deny_bits(&state->other, mask);
++			deny_bits(&state->everyone, mask);
++			deny_bits_array(state->users, mask);
++			deny_bits_array(state->groups, mask);
++		}
++	}
++	return 0;
++}
++
++#define FILE_OR_DIR_INHERIT (NFS4_ACE_FILE_INHERIT_ACE \
++				| NFS4_ACE_DIRECTORY_INHERIT_ACE)
++
++/* Strip or keep inheritance aces depending on type of posix acl requested */
++static void acl_nfs4_check_inheritance(struct nfs4_acl *acl, u32 iflags)
++{
++	struct nfs4_ace * cur_ace;
++	struct nfs4_ace * temp_ace;
++
++	cur_ace = acl->ace_head.tqh_first;
++
++	while (cur_ace) {
++		/* get the next ace now in case we free the current ace */
++		temp_ace = cur_ace;
++		cur_ace = cur_ace->l_ace.tqe_next;
++
++		if (iflags & NFS4_ACL_REQUEST_DEFAULT) {
++			if (!(temp_ace->flag & FILE_OR_DIR_INHERIT))
++				acl_nfs4_remove_ace(acl, temp_ace);
++		} else {
++			if (temp_ace->flag & NFS4_ACE_INHERIT_ONLY_ACE)
++				acl_nfs4_remove_ace(acl, temp_ace);
++		}
++	}
++}
++
++acl_t acl_n4tp_acl_trans(struct nfs4_acl * nacl_p, acl_type_t ptype)
++{
++	struct posix_acl_state state;
++	acl_t pacl;
++	struct nfs4_acl * temp_acl;
++	struct nfs4_ace * cur_ace;
++	int ret;
++	u32 iflags = NFS4_ACL_NOFLAGS;
++
++	if (ptype == ACL_TYPE_DEFAULT) {
++		if (nacl_p->is_directory)
++			iflags |= NFS4_ACL_REQUEST_DEFAULT;
++		else {
++			errno = EINVAL;
++			return NULL;
++		}
++	}
++
++	/* Copy so we can delete bits without borking the original */
++	temp_acl = acl_nfs4_copy_acl(nacl_p);
++	if (temp_acl == NULL)
++		return NULL;
++
++	acl_nfs4_check_inheritance(temp_acl, iflags);
++
++	if (ptype == ACL_TYPE_DEFAULT && temp_acl->naces == 0) {
++		acl_nfs4_free(temp_acl);
++		return acl_init(0);
++	}
++
++	ret = init_state(&state, temp_acl->naces);
++	if (ret)
++		goto free_failed;
++
++	cur_ace = temp_acl->ace_head.tqh_first;
++	while (cur_ace) {
++		if (process_one_v4_ace(&state, cur_ace)) {
++			free_state(&state);
++			goto free_failed;
++		}
++		cur_ace = cur_ace->l_ace.tqe_next;
++	}
++
++	acl_nfs4_free(temp_acl);
++
++	pacl = posix_state_to_acl(&state, nacl_p->is_directory);
++
++	free_state(&state);
++
++	ret = acl_valid(pacl);
++	if (ret < 0)
++		goto free_failed;
++
++	return pacl;
++
++free_failed:
++	acl_nfs4_free(temp_acl);
++	return NULL;
++}
+--- acl-2.2.39/libacl/acl_set_fd.c.orig	2006-06-20 02:51:25.000000000 -0400
++++ acl-2.2.39/libacl/acl_set_fd.c	2007-08-22 12:02:13.000000000 -0400
+@@ -24,6 +24,11 @@
+ #include "libacl.h"
+ #include "__acl_to_xattr.h"
+ 
++#ifdef USE_NFSV4_TRANS
++ #include "libacl_nfs4.h"
++ #include <nfsidmap.h>
++#endif
++
+ #include "byteorder.h"
+ #include "acl_ea.h"
+ 
+@@ -37,10 +42,42 @@ acl_set_fd(int fd, acl_t acl)
+ 	const char *name = ACL_EA_ACCESS;
+ 	size_t size;
+ 	int error;
++#ifdef USE_NFSV4_TRANS
++	int retval;
++	struct nfs4_acl * nacl;
++#endif
+ 
+ 	if (!acl_obj_p)
+ 		return -1;
++
++#ifdef USE_NFSV4_TRANS
++	retval = fgetxattr(fd, ACL_NFS4_XATTR, NULL, 0);
++
++	if(retval == -1 && (errno == ENOATTR || errno == EOPNOTSUPP)) {
++		ext_acl_p = __acl_to_xattr(acl_obj_p, &size);
++	} else {
++		char domain[NFS4_MAX_DOMAIN_LEN];
++		nfs4_init_name_mapping(NULL);
++		error = nfs4_get_default_domain(NULL, domain, sizeof(domain));
++		if (error)
++			return -1;
++		nacl = acl_nfs4_new(0);
++		if (acl == NULL) {
++			errno = ENOMEM;
++			return -1;
++		}
++		error = acl_ptn4_acl_trans(acl, nacl, ACL_TYPE_ACCESS, 0, domain);
++		if (error)
++			return -1;
++
++		size = acl_nfs4_xattr_pack(nacl, &ext_acl_p);
++		name = ACL_NFS4_XATTR;
++		acl_nfs4_free(nacl);
++	}
++#else
+ 	ext_acl_p = __acl_to_xattr(acl_obj_p, &size);
++#endif
++
+ 	if (!ext_acl_p)
+ 		return -1;
+ 	error = fsetxattr(fd, name, (char *)ext_acl_p, size, 0);
+--- acl-2.2.39/libacl/Makefile.orig	2006-06-20 02:51:25.000000000 -0400
++++ acl-2.2.39/libacl/Makefile	2007-08-22 12:02:13.000000000 -0400
+@@ -8,19 +8,35 @@ LTLDFLAGS += -Wl,--version-script,$(TOPD
+ include $(TOPDIR)/include/builddefs
+ 
+ LTLIBRARY = libacl.la
+-LTLIBS = -lattr $(LIBMISC)
++LTLIBS = -lattr -lnfsidmap $(LIBMISC)
+ LTDEPENDENCIES = $(LIBMISC)
+-LT_CURRENT = 2
++LT_CURRENT = 3
+ LT_REVISION = 0
+-LT_AGE = 1
++LT_AGE = 2
++
++CFILES = $(POSIX_CFILES) $(LIBACL_CFILES) $(LIBACL_NFS4_CFILES) \
++	$(INTERNAL_CFILES) perm_copy_fd.c perm_copy_file.c
+ 
+-CFILES = $(POSIX_CFILES) $(LIBACL_CFILES) $(INTERNAL_CFILES) \
+-	 perm_copy_fd.c perm_copy_file.c
+ HFILES = libobj.h libacl.h byteorder.h __acl_from_xattr.h __acl_to_xattr.h \
+-	 perm_copy.h
++	 perm_copy.h $(LIBACL_NFS4_HFILES)
+ 
+ LCFLAGS = -include perm_copy.h
+ 
++LIBACL_NFS4_CFILES = \
++	acl_nfs4_get_who.c \
++	acl_n4tp_acl_trans.c       acl_nfs4_get_whotype.c \
++	acl_nfs4_new.c \
++	acl_nfs4_add_ace.c         acl_nfs4_remove_ace.c \
++	acl_nfs4_add_pair.c \
++	acl_nfs4_copy_acl.c        acl_nfs4_set_who.c \
++	acl_nfs4_free.c            acl_nfs4_xattr_load.c \
++	acl_nfs4_xattr_pack.c      acl_nfs4_xattr_size.c \
++	acl_ptn4_acl_trans.c \
++	acl_ptn4_get_mask.c        __posix_acl_from_nfs4_xattr.c \
++
++
++LIBACL_NFS4_HFILES = ../include/libacl_nfs4.h ../include/nfs4.h
++
+ POSIX_CFILES = \
+ 	acl_add_perm.c acl_calc_mask.c acl_clear_perms.c acl_copy_entry.c \
+ 	acl_copy_ext.c acl_copy_int.c acl_create_entry.c acl_delete_def_file.c \
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_remove_ace.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,48 @@
++/*
++ *  NFSv4 ACL Code
++ *  Remove an ace from an NFS4 ACL
++ *
++ *  Copyright (c) 2004 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions, the following disclaimer, and
++ *     any and all other licensing or copyright notices included in
++ *     any files in this distribution.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++#include "libacl_nfs4.h"
++
++void acl_nfs4_remove_ace(struct nfs4_acl * acl, struct nfs4_ace * ace)
++{
++	TAILQ_REMOVE(&acl->ace_head, ace, l_ace);
++	free(ace->who);
++	free(ace);
++	acl->naces--;
++}
++
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_set_who.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,92 @@
++/*
++ *  NFSv4 ACL Code
++ *  Write the who entry in the nfs4 ace. Who is a user supplied buffer
++ *  containing a named who entry (null terminated string) if type is
++ *  set to NFS4_ACL_WHO_NAMED. Otherwise, the who buffer is not used.
++ *  The user supplied who buffer must be freed by the caller.
++ *
++ *  This code allocates the who buffer used in the ace. This must be freed
++ *  upon ace removal by the ace_remove or acl_free.
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "libacl_nfs4.h"
++
++int acl_nfs4_set_who(struct nfs4_ace* ace, int type, char* who)
++{
++	char* iwho = NULL;
++	int wholen;
++
++	if(ace == NULL)
++		goto inval_failed;
++
++	switch(type)
++	{
++		case NFS4_ACL_WHO_NAMED:
++			if(who == NULL)
++				goto inval_failed;
++			iwho = who;
++			break;
++		case NFS4_ACL_WHO_OWNER:
++			iwho = NFS4_ACL_WHO_OWNER_STRING;
++			break;
++		case NFS4_ACL_WHO_GROUP:
++			iwho = NFS4_ACL_WHO_GROUP_STRING;
++			break;
++		case NFS4_ACL_WHO_EVERYONE:
++			iwho = NFS4_ACL_WHO_EVERYONE_STRING;
++			break;
++		default:
++			goto inval_failed;
++	}
++
++	wholen = strlen(iwho);
++	if(wholen < 1)
++		goto inval_failed;
++
++	ace->who = (char *) malloc(sizeof(char) * (wholen + 1));
++	if(ace->who == NULL) {
++		errno = ENOMEM;
++		goto failed;
++	}
++
++	strcpy(ace->who, iwho);
++
++	return 0;
++
++inval_failed:
++	errno = EINVAL;
++
++failed:
++	return -1;
++}
++
+--- acl-2.2.39/libacl/acl_set_file.c.orig	2006-06-20 02:51:25.000000000 -0400
++++ acl-2.2.39/libacl/acl_set_file.c	2007-08-22 12:02:13.000000000 -0400
+@@ -26,9 +26,38 @@
+ #include "libacl.h"
+ #include "__acl_to_xattr.h"
+ 
++#ifdef USE_NFSV4_TRANS
++ #include "libacl_nfs4.h"
++ #include <nfsidmap.h>
++#endif
++
+ #include "byteorder.h"
+ #include "acl_ea.h"
+ 
++#ifdef USE_NFSV4_TRANS
++static struct nfs4_acl *get_nfs4_acl(const char *path_p, int is_dir)
++{
++	struct nfs4_acl * acl = NULL;
++	ssize_t ret;
++	char *buf;
++
++	ret = getxattr(path_p, ACL_NFS4_XATTR, NULL, 0);
++	if (ret < 0)
++		return NULL;
++	buf = malloc(ret);
++	if (buf == NULL)
++		return NULL;
++	ret = getxattr(path_p, ACL_NFS4_XATTR, buf, ret);
++	if (ret < 0)
++		goto out_free;
++	acl = acl_nfs4_xattr_load(buf, ret, is_dir);
++
++out_free:
++	free(buf);
++	return acl;
++}
++
++#endif
+ 
+ /* 23.4.22 */
+ int
+@@ -39,9 +68,15 @@ acl_set_file(const char *path_p, acl_typ
+ 	const char *name;
+ 	size_t size;
+ 	int error;
++	struct stat st;
++#ifdef USE_NFSV4_TRANS
++	struct nfs4_acl * nacl;
++	int is_dir = NFS4_ACL_ISFILE;
++#endif
+ 
+ 	if (!acl_obj_p)
+ 		return -1;
++
+ 	switch (type) {
+ 		case ACL_TYPE_ACCESS:
+ 			name = ACL_EA_ACCESS;
+@@ -54,8 +89,41 @@ acl_set_file(const char *path_p, acl_typ
+ 			return -1;
+ 	}
+ 
++
++#ifdef USE_NFSV4_TRANS
++	if (stat(path_p, &st) != 0)
++		return -1;
++	if (S_ISDIR(st.st_mode))
++		is_dir = NFS4_ACL_ISDIR;
++	if (type == ACL_TYPE_DEFAULT && !is_dir) {
++		errno = EACCES;
++		return -1;
++	}
++	nacl = get_nfs4_acl(path_p, is_dir);
++	if (nacl == NULL && (errno == ENOATTR || errno == EOPNOTSUPP))
++		ext_acl_p = __acl_to_xattr(acl_obj_p, &size);
++	else {
++		char domain[NFS4_MAX_DOMAIN_LEN];
++
++		nfs4_init_name_mapping(NULL);
++		error = nfs4_get_default_domain(NULL, domain, sizeof(domain));
++		if (error) {
++			acl_nfs4_free(nacl);
++			return -1;
++		}
++		error = acl_ptn4_acl_trans(acl, nacl, type, is_dir, domain);
++		if (error) {
++			acl_nfs4_free(nacl);
++			return -1;
++		}
++
++		size = acl_nfs4_xattr_pack(nacl, &ext_acl_p);
++		name = ACL_NFS4_XATTR;
++		acl_nfs4_free(nacl);
++	}
++#else
++
+ 	if (type == ACL_TYPE_DEFAULT) {
+-		struct stat st;
+ 
+ 		if (stat(path_p, &st) != 0)
+ 			return -1;
+@@ -68,6 +136,8 @@ acl_set_file(const char *path_p, acl_typ
+ 	}
+ 
+ 	ext_acl_p = __acl_to_xattr(acl_obj_p, &size);
++#endif
++
+ 	if (!ext_acl_p)
+ 		return -1;
+ 	error = setxattr(path_p, name, (char *)ext_acl_p, size, 0);
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/__posix_acl_from_nfs4_xattr.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,60 @@
++/*
++ *  NFSv4 ACL Code
++ *  Convert NFSv4 xattr values to a posix ACL
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <acl/libacl.h>
++#include "libacl_nfs4.h"
++
++/* xattr_v is a char buffer filled with the nfsv4 xattr value.
++ * xattr_size should be the byte count of the length of the xattr_v
++ * data size. xattr_v may be larger than <xattr_size> bytes, but only
++ * the first <xattr_size> bytes will be read. <type> is the posix acl
++ * type requested. Currently either default, or access */
++
++acl_t __posix_acl_from_nfs4_xattr(char* xattr_v,
++		int xattr_size, acl_type_t ptype, u32 is_dir)
++{
++	struct nfs4_acl *	nfsacl = NULL;
++	acl_t pacl;
++
++	nfsacl = acl_nfs4_xattr_load(xattr_v, xattr_size, is_dir);
++	if(nfsacl == NULL) {
++		return NULL;
++	}
++
++	pacl = acl_n4tp_acl_trans(nfsacl, ptype);
++
++	return pacl;
++}
++
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_xattr_load.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,191 @@
++/*
++ *  NFSv4 ACL Code
++ *  Convert NFSv4 xattr values to a posix ACL
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++
++#include <acl/libacl.h>
++#include <netinet/in.h>
++#include "libacl_nfs4.h"
++
++
++struct nfs4_acl * acl_nfs4_xattr_load(
++		char *	xattr_v,
++		int		xattr_size,
++		u32		is_dir)
++{
++	struct nfs4_acl *	nacl_p;
++	char* bufp = xattr_v;
++	int bufs = xattr_size;
++	u32 ace_n;
++	u32	wholen;
++	char* who;
++	int d_ptr;
++	u32 num_aces;
++
++	u32 type, flag, access_mask;
++
++	if(xattr_size < sizeof(u32)) {
++		errno = EINVAL;
++		return NULL;
++	}
++
++	if((nacl_p = acl_nfs4_new(is_dir)) == NULL) {
++		errno = ENOMEM;
++		return NULL;
++	}
++
++	/* Grab the number of aces in the acl */
++	num_aces = (u32)ntohl(*((u32*)(bufp)));
++
++#ifdef LIBACL_NFS4_DEBUG
++	printf(" Got number of aces: %d\n", nacl_p->naces);
++#endif
++
++
++	d_ptr = sizeof(u32);
++	bufp += d_ptr;
++	bufs -= d_ptr;
++
++	for(ace_n = 0; num_aces > ace_n ; ace_n++)
++	{
++#ifdef LIBACL_NFS4_DEBUG
++		printf(" Getting Ace #%d of %d\n", ace_n, num_aces);
++#endif
++		/* Get the acl type */
++		if(bufs <= 0) {
++			errno = EINVAL;
++			goto bad_xattr_val;
++		}
++
++		type = (u32)ntohl(*((u32*)bufp));
++#ifdef LIBACL_NFS4_DEBUG
++		printf("  Type: %x\n", type);
++#endif
++
++		d_ptr = sizeof(u32);
++		bufp += d_ptr;
++		bufs -= d_ptr;
++
++		/* Get the acl flag */
++		if(bufs <= 0) {
++			errno = EINVAL;
++			goto bad_xattr_val;
++		}
++
++		flag = (u32)ntohl(*((u32*)bufp));
++#ifdef LIBACL_NFS4_DEBUG
++		printf("  Flag: %x\n", flag);
++#endif
++
++		bufp += d_ptr;
++		bufs -= d_ptr;
++
++		/* Get the access mask */
++
++		if(bufs <= 0) {
++			errno = EINVAL;
++			goto bad_xattr_val;
++		}
++
++		access_mask = (u32)ntohl(*((u32*)bufp));
++#ifdef LIBACL_NFS4_DEBUG
++		printf("  Access Mask: %x\n", access_mask);
++#endif
++
++		bufp += d_ptr;
++		bufs -= d_ptr;
++
++		/* Get the who string length*/
++		if(bufs <= 0) {
++			errno = EINVAL;
++			goto bad_xattr_val;
++		}
++
++		wholen = (u32)ntohl(*((u32*)bufp));
++#ifdef LIBACL_NFS4_DEBUG
++		printf("  Wholen: %d\n", wholen);
++#endif
++
++		bufp += d_ptr;
++		bufs -= d_ptr;
++
++		/* Get the who string */
++		if(bufs <= 0) {
++			errno = EINVAL;
++			goto bad_xattr_val;
++		}
++
++		who = (char *) malloc((wholen+1) * sizeof(char));
++		if(who == NULL)
++		{
++			errno = ENOMEM;
++			goto bad_xattr_val;
++		}
++
++		memcpy(who, bufp, wholen);
++
++		who[wholen] = '\0';
++
++#ifdef LIBACL_NFS4_DEBUG
++		printf("  Who: %s\n", who);
++#endif
++
++		d_ptr = ((wholen / sizeof(u32))*sizeof(u32));
++		if(wholen % sizeof(u32) != 0)
++			d_ptr += sizeof(u32);
++
++		bufp += d_ptr;
++		bufs -= d_ptr;
++
++		/* Make sure we aren't outside our domain */
++		if(bufs < 0) {
++			free(who);
++			goto bad_xattr_val;
++		}
++
++		if(acl_nfs4_add_ace(nacl_p, type, flag, access_mask, acl_nfs4_get_whotype(who), who) < 0) {
++			free(who);
++			goto bad_xattr_val;
++		}
++
++		free(who);
++	}
++
++	return nacl_p;
++
++bad_xattr_val:
++	/* We bailed for some reason */
++	acl_nfs4_free(nacl_p);
++	return NULL;
++}
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_xattr_pack.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,148 @@
++/*
++ *  NFSv4 ACL Code
++ *  Pack an NFS4 ACL into an XDR encoded buffer.
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <libacl_nfs4.h>
++#include <netinet/in.h>
++
++int acl_nfs4_xattr_pack(struct nfs4_acl * acl, char** bufp)
++{
++	struct nfs4_ace * ace;
++	int buflen;
++	int rbuflen;
++	int num_aces;
++	int ace_num;
++	int wholen;
++	int result;
++	char* p;
++	char* who;
++
++	if(acl == NULL || bufp == NULL)
++	{
++		errno = EINVAL;
++		goto failed;
++	}
++
++	buflen = acl_nfs4_xattr_size(acl);
++	if(buflen < 0)
++	{
++		goto failed;
++	}
++
++	*bufp = (char*) malloc(buflen);
++	if(*bufp == NULL) {
++		errno = ENOMEM;
++		goto failed;
++	}
++
++	p = *bufp;
++
++	num_aces = acl->naces;
++
++	*((u32*)p) = htonl(num_aces);
++
++	rbuflen = sizeof(u32);
++	p += sizeof(u32);
++
++	ace = acl->ace_head.tqh_first;
++	ace_num = 1;
++
++	while(1)
++	{
++		if(ace == NULL)
++		{
++			if(ace_num > num_aces) {
++				break;
++			} else {
++				errno = ENODATA;
++				goto failed;
++			}
++		}
++
++		*((u32*)p) = htonl(ace->type);
++		p += sizeof(u32);
++		rbuflen += sizeof(u32);
++
++		*((u32*)p) = htonl(ace->flag);
++		p += sizeof(u32);
++		rbuflen += sizeof(u32);
++
++		*((u32*)p) = htonl(ace->access_mask);
++		p += sizeof(u32);
++		rbuflen += sizeof(u32);
++
++		result = acl_nfs4_get_who(ace, NULL, &who);
++		if(result < 0) {
++			goto free_failed;
++		}
++
++		wholen = strlen(who);
++		*((u32*)p) = htonl(wholen);
++		rbuflen += sizeof(u32);
++
++		p += sizeof(u32);
++
++		memcpy(p, who, wholen);
++		free(who);
++
++		p += (wholen / NFS4_XDR_MOD) * NFS4_XDR_MOD;
++		if(wholen % NFS4_XDR_MOD) {
++			p += NFS4_XDR_MOD;
++		}
++
++		rbuflen += (wholen / NFS4_XDR_MOD) * NFS4_XDR_MOD;
++		if(wholen % NFS4_XDR_MOD) {
++			rbuflen += NFS4_XDR_MOD;
++		}
++
++		ace = ace->l_ace.tqe_next;
++		ace_num++;
++	}
++
++	if (buflen != rbuflen)
++	{
++		goto free_failed;
++	}
++	return buflen;
++
++free_failed:
++	free(*bufp);
++	*bufp = NULL;
++
++failed:
++	return -1;
++}
++
++
++
+--- acl-2.2.39/libacl/acl_extended_file.c.orig	2006-06-20 02:51:25.000000000 -0400
++++ acl-2.2.39/libacl/acl_extended_file.c	2007-08-22 12:02:13.000000000 -0400
+@@ -22,6 +22,7 @@
+ #include <unistd.h>
+ #include <attr/xattr.h>
+ #include "libacl.h"
++#include "libacl_nfs4.h"
+ 
+ #include "byteorder.h"
+ #include "acl_ea.h"
+@@ -33,6 +34,34 @@ acl_extended_file(const char *path_p)
+ 	int base_size = sizeof(acl_ea_header) + 3 * sizeof(acl_ea_entry);
+ 	int retval;
+ 
++	/* XXX: Ugh: what's the easiest way to do this, taking
++	 * into account default acl's, and that length alone won't do this?
++	 * Also I'm a little uncomfortable with the amount of #ifdef
++	 * NFS4 stuff that's going on.  We need a cleaner separation. */
++#ifdef USE_NFSV4_TRANS
++	retval = getxattr(path_p, ACL_NFS4_XATTR, NULL, 0);
++	if (retval < 0 && errno != ENOATTR && errno != EOPNOTSUPP)
++		return -1;
++	if (retval >= 0) {
++		struct nfs4_acl *nfsacl;
++		char *ext_acl_p = alloca(retval);
++		if (!ext_acl_p)
++			return -1;
++
++		retval = getxattr(path_p, ACL_NFS4_XATTR, ext_acl_p, retval);
++		if (retval == -1)
++			return -1;
++
++		nfsacl = acl_nfs4_xattr_load(ext_acl_p, retval, NFS4_ACL_ISFILE);
++		if (nfsacl) {
++			int count = nfsacl->naces;
++			acl_nfs4_free(nfsacl);
++			return count > 6;
++		}
++		return 0;
++	}
++#endif
++
+ 	retval = getxattr(path_p, ACL_EA_ACCESS, NULL, 0);
+ 	if (retval < 0 && errno != ENOATTR && errno != ENODATA)
+ 		return -1;
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_ptn4_acl_trans.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,509 @@
++/*
++ *  NFSv4 ACL Code
++ *  Convert a posix ACL to an NFSv4 ACL
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *  J. Bruce Fields <bfields@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <acl/libacl.h>
++#include <nfsidmap.h>
++#include "libacl_nfs4.h"
++
++
++#define FILE_OR_DIR_INHERIT (NFS4_ACE_FILE_INHERIT_ACE \
++		| NFS4_ACE_DIRECTORY_INHERIT_ACE)
++#define NFS4_INHERITANCE_FLAGS (FILE_OR_DIR_INHERIT | NFS4_ACE_INHERIT_ONLY_ACE)
++
++/* Plan:
++ * 1: if setting default, remove all purely inherited aces, and replace
++ *    all dual-use aces by purely effective aces
++ * 2: if setting effective, remove all purely effective aces, and replace
++ *    all dual-use aces by purely inherited ones
++ */
++static void purge_aces(struct nfs4_acl *nacl, acl_type_t type)
++{
++	struct nfs4_ace *p, *next;
++
++	for (p = nacl->ace_head.tqh_first; p != NULL; p = next) {
++		next = p->l_ace.tqe_next;
++
++		if (!(p->flag & FILE_OR_DIR_INHERIT)) {
++			/* purely effective */
++			if (type == ACL_TYPE_ACCESS)
++				acl_nfs4_remove_ace(nacl, p);
++		} else if (p->flag & NFS4_ACE_INHERIT_ONLY_ACE) {
++			/* purely inherited */
++			if (type == ACL_TYPE_DEFAULT)
++				acl_nfs4_remove_ace(nacl, p);
++		} else {
++			/* both effective and inherited */
++			if (type == ACL_TYPE_DEFAULT) {
++				/* Change to purely effective */
++				p->flag &= ~NFS4_INHERITANCE_FLAGS;
++			} else { /* ACL_TYPE_ACCESS */
++				/* Change to purely inherited */
++				p->flag |= NFS4_INHERITANCE_FLAGS;
++			}
++		}
++
++	}
++}
++ 
++int
++acl_ptn4_acl_trans(acl_t pacl, struct nfs4_acl *acl, acl_type_t type, u32 is_dir, char *nfs_domain)
++{
++	int eflag;
++	u32 mask, mask_mask = 0;
++	int num_aces;
++	int result, result2;
++	u32 iflags = NFS4_ACL_NOFLAGS;
++	int allocated = 0;
++
++	acl_entry_t pace_p;
++	acl_tag_t ace_type;
++	acl_permset_t perms;
++
++	char who_buf_static[NFS4_ACL_WHO_BUFFER_LEN_GUESS];
++	char *who_buf = NULL;
++	int who_buflen;
++	int who_buflen_static = NFS4_ACL_WHO_BUFFER_LEN_GUESS;
++	uid_t * uid_p;
++	gid_t * gid_p;
++
++	eflag = 0;
++
++	if (type == ACL_TYPE_DEFAULT) {
++		eflag = NFS4_INHERITANCE_FLAGS;
++		iflags |= NFS4_ACL_REQUEST_DEFAULT;
++	}
++
++	purge_aces(acl, type);
++
++	if (is_dir & NFS4_ACL_ISDIR)
++		iflags |= NFS4_ACL_ISDIR;
++
++
++	if (pacl == NULL || (acl_valid(pacl) < 0 || acl_entries(pacl) == 0)) {
++		errno = EINVAL;
++		goto out;
++	}
++
++	/* Start Conversion */
++
++	/* 3 aces minimum (mode bits) */
++	num_aces = acl_entries(pacl);
++	if (num_aces < 3) {
++		errno = EINVAL;
++		goto out;
++	}
++
++	/* Get the mask entry */
++
++	result = acl_get_entry(pacl, ACL_FIRST_ENTRY, &pace_p);
++	if (result < 0)
++		goto out;
++
++	while (result > 0 && mask_mask == 0) {
++		result = acl_get_tag_type(pace_p, &ace_type);
++		if (result < 0)
++			goto out;
++
++		if (ace_type == ACL_MASK) {
++			result = acl_get_permset(pace_p, &perms);
++			if(result < 0)
++				goto out;
++
++			result = acl_ptn4_get_mask(&mask_mask, perms, iflags);
++			if(result < 0)
++				goto out;
++
++			mask_mask = ~mask_mask;
++		}
++
++		result = acl_get_entry(pacl, ACL_NEXT_ENTRY, &pace_p);
++		if (result < 0)
++			goto out;
++	}
++
++	/* Get the file owner entry */
++	result = acl_get_entry(pacl, ACL_FIRST_ENTRY, &pace_p);
++	if (result < 0)
++		goto out;
++
++	result = acl_get_tag_type(pace_p, &ace_type);
++	if (result < 0)
++		goto out;
++
++	if (ace_type != ACL_USER_OBJ) {
++		errno = EINVAL;
++		goto out;
++	}
++
++	result = acl_get_permset(pace_p, &perms);
++	if (result < 0)
++		goto out;
++
++	result = acl_ptn4_get_mask(&mask, perms, iflags | NFS4_ACL_OWNER);
++	if (result < 0)
++		goto out;
++
++	result = acl_nfs4_add_pair(acl, eflag, mask, NFS4_ACL_WHO_OWNER, NULL);
++
++	if (result < 0)
++		goto out;
++
++	result = acl_get_entry(pacl, ACL_NEXT_ENTRY, &pace_p);
++	if (result < 0)
++		goto out;
++
++	result2 = acl_get_tag_type(pace_p, &ace_type);
++	if (result2 < 0)
++		goto out;
++
++	while (ace_type == ACL_USER && result > 0) {
++		result = acl_get_permset(pace_p, &perms);
++		if (result < 0)
++			goto out;
++
++		result = acl_ptn4_get_mask(&mask, perms, iflags);
++		if (result < 0)
++			goto out;
++
++		uid_p = acl_get_qualifier(pace_p);
++
++		who_buf = who_buf_static;
++		who_buflen = who_buflen_static;
++
++		result = nfs4_init_name_mapping(NULL);
++		result = nfs4_uid_to_name(*uid_p, nfs_domain, who_buf, who_buflen);
++
++
++		while (result == -ENOBUFS) {
++			if (who_buf != who_buf_static)
++				free(who_buf);
++
++			/* Increase the size by a full buflen unit */
++			who_buflen += who_buflen_static;
++			who_buf = malloc(who_buflen);
++
++			if (who_buf == NULL) {
++				result = -ENOMEM;
++				break;
++			}
++
++			result = nfs4_init_name_mapping(NULL);
++			result = nfs4_uid_to_name(*uid_p, nfs_domain, who_buf, who_buflen);
++
++		}
++		acl_free(uid_p);
++		if (result < 0) {
++			errno = -result;
++			goto out;
++		}
++
++		if (who_buf == NULL)
++			goto out;
++
++		result = acl_nfs4_add_ace(acl, NFS4_ACE_ACCESS_DENIED_ACE_TYPE,
++				eflag,  mask_mask, NFS4_ACL_WHO_NAMED, who_buf);
++		if (result < 0) {
++			if(who_buf != who_buf_static)
++				free(who_buf);
++			goto out;
++		}
++
++		result = acl_nfs4_add_pair(acl, eflag, mask, NFS4_ACL_WHO_NAMED,
++				who_buf);
++		if (who_buf != who_buf_static)
++			free(who_buf);
++		if (result < 0)
++			goto out;
++
++		result = acl_get_entry(pacl, ACL_NEXT_ENTRY, &pace_p);
++		if (result <= 0)
++			goto out;
++
++		result2 = acl_get_tag_type(pace_p, &ace_type);
++		if (result2 < 0)
++			goto out;
++
++	}
++
++	/* In the case of groups, we apply allow ACEs first, then deny ACEs,
++	 * since a user can be in more than one group.  */
++
++	/* allow ACEs */
++
++	if (num_aces > 3) {
++		result2 = acl_get_tag_type(pace_p, &ace_type);
++		if (result2 < 0)
++			goto out;
++
++		if (ace_type != ACL_GROUP_OBJ) {
++			errno = EINVAL;
++			goto out;
++		}
++
++		result = acl_nfs4_add_ace(acl, NFS4_ACE_ACCESS_DENIED_ACE_TYPE,
++				NFS4_ACE_IDENTIFIER_GROUP | eflag, mask_mask,
++				NFS4_ACL_WHO_GROUP, NULL);
++
++		if (result < 0)
++			goto out;
++	}
++
++	result = acl_get_permset(pace_p, &perms);
++	if (result < 0)
++		goto out;
++
++	result = acl_ptn4_get_mask(&mask, perms, iflags);
++	if (result < 0)
++		goto out;
++
++	result = acl_nfs4_add_ace(acl, NFS4_ACE_ACCESS_ALLOWED_ACE_TYPE,
++			NFS4_ACE_IDENTIFIER_GROUP | eflag, mask, NFS4_ACL_WHO_GROUP, NULL);
++
++	if (result < 0)
++		goto out;
++
++	result = acl_get_entry(pacl, ACL_NEXT_ENTRY, &pace_p);
++	if (result <= 0)
++		goto out;
++
++	result2 = acl_get_tag_type(pace_p, &ace_type);
++	if (result2 < 0)
++		goto out;
++
++	while (ace_type == ACL_GROUP && result > 0) {
++		result = acl_get_permset(pace_p, &perms);
++		if (result < 0)
++			goto out;
++
++		result = acl_ptn4_get_mask(&mask, perms, iflags);
++		if (result < 0)
++			goto out;
++
++		gid_p = acl_get_qualifier(pace_p);
++
++		who_buf = who_buf_static;
++		who_buflen = who_buflen_static;
++
++		result = nfs4_gid_to_name(*gid_p, nfs_domain, who_buf, who_buflen);
++
++
++		while (result == -ENOBUFS) {
++			if (who_buf != who_buf_static)
++				free(who_buf);
++
++			/* Increase the size by a full buflen unit */
++			who_buflen += who_buflen_static;
++			who_buf = malloc(who_buflen);
++
++			if (who_buf == NULL) {
++				result = -ENOMEM;
++				break;
++			}
++
++			result = nfs4_gid_to_name(*gid_p, nfs_domain, who_buf, who_buflen);
++		}
++
++		acl_free(gid_p);
++
++		if (result < 0) {
++			errno = -result;
++			goto out;
++		}
++
++		if (who_buf == NULL)
++			goto out;
++
++		result = acl_nfs4_add_ace(acl, NFS4_ACE_ACCESS_DENIED_ACE_TYPE,
++				NFS4_ACE_IDENTIFIER_GROUP | eflag, mask_mask,
++				NFS4_ACL_WHO_NAMED, who_buf);
++		if (result < 0) {
++			if(who_buf != who_buf_static)
++				free(who_buf);
++			goto out;
++		}
++
++		result = acl_nfs4_add_ace(acl, NFS4_ACE_ACCESS_ALLOWED_ACE_TYPE,
++		    	NFS4_ACE_IDENTIFIER_GROUP | eflag, mask,
++				NFS4_ACL_WHO_NAMED, who_buf);
++
++		if (who_buf != who_buf_static)
++			free(who_buf);
++
++		if (result < 0)
++			goto out;
++		result = acl_get_entry(pacl, ACL_NEXT_ENTRY, &pace_p);
++		if (result <= 0)
++			goto out;
++
++		result2 = acl_get_tag_type(pace_p, &ace_type);
++		if (result2 < 0)
++			goto out;
++	}
++
++	/* deny ACEs */
++
++	result = acl_get_entry(pacl, ACL_FIRST_ENTRY, &pace_p);
++	if (result <= 0)
++		goto out;
++
++	result2 = acl_get_tag_type(pace_p, &ace_type);
++	if (result2 < 0)
++		goto out;
++
++	while (ace_type != ACL_GROUP_OBJ && result > 0) {
++		result = acl_get_entry(pacl, ACL_NEXT_ENTRY, &pace_p);
++		if(result <= 0)
++			goto out;
++
++		result2 = acl_get_tag_type(pace_p, &ace_type);
++		if(result2 < 0)
++			goto out;
++	}
++
++	result = acl_get_permset(pace_p, &perms);
++	if (result < 0)
++		goto out;
++
++	result = acl_ptn4_get_mask(&mask, perms, iflags);
++	if (result < 0)
++		goto out;
++
++	result = acl_nfs4_add_ace(acl, NFS4_ACE_ACCESS_DENIED_ACE_TYPE,
++			NFS4_ACE_IDENTIFIER_GROUP | eflag, ~mask, NFS4_ACL_WHO_GROUP,
++			NULL);
++
++	if (result < 0)
++		goto out;
++
++	result = acl_get_entry(pacl, ACL_NEXT_ENTRY, &pace_p);
++	if (result <= 0)
++		goto out;
++
++	result2 = acl_get_tag_type(pace_p, &ace_type);
++	if (result2 < 0)
++		goto out;
++
++	while (ace_type == ACL_GROUP && result > 0) {
++		result = acl_get_permset(pace_p, &perms);
++		if (result < 0)
++			goto out;
++
++		result = acl_ptn4_get_mask(&mask, perms, iflags);
++		if (result < 0)
++			goto out;
++
++		gid_p = acl_get_qualifier(pace_p);
++
++		who_buf = who_buf_static;
++		who_buflen = who_buflen_static;
++
++		result = nfs4_gid_to_name(*gid_p, nfs_domain, who_buf, who_buflen);
++
++
++		while (result == -ENOBUFS) {
++			if (who_buf != who_buf_static)
++				free(who_buf);
++
++			/* Increase the size by a full buflen unit */
++			who_buflen += who_buflen_static;
++			who_buf = malloc(who_buflen);
++
++			if (who_buf == NULL) {
++				result = -ENOMEM;
++				break;
++			}
++
++			result = nfs4_gid_to_name(*gid_p, nfs_domain, who_buf, who_buflen);
++		}
++
++		acl_free(gid_p);
++
++		if (result < 0) {
++			errno = -result;
++			goto out;
++		}
++
++		if (who_buf == NULL)
++			goto out;
++
++		result = acl_nfs4_add_ace(acl, NFS4_ACE_ACCESS_DENIED_ACE_TYPE,
++		    		NFS4_ACE_IDENTIFIER_GROUP | eflag, ~mask,
++					NFS4_ACL_WHO_NAMED, who_buf);
++		if (who_buf != who_buf_static)
++			free(who_buf);
++		if (result < 0)
++			goto out;
++
++		result = acl_get_entry(pacl, ACL_NEXT_ENTRY, &pace_p);
++		if (result <= 0)
++			goto out;
++
++		result2 = acl_get_tag_type(pace_p, &ace_type);
++		if (result2 < 0)
++			goto out;
++	}
++
++	if (ace_type == ACL_MASK) {
++		result = acl_get_entry(pacl, ACL_NEXT_ENTRY, &pace_p);
++		if (result <= 0)
++			goto out;
++
++		result2 = acl_get_tag_type(pace_p, &ace_type);
++		if (result2 < 0)
++			goto out;
++	}
++
++	if (ace_type != ACL_OTHER) {
++		errno = EINVAL;
++		goto out;
++	}
++
++	result = acl_get_permset(pace_p, &perms);
++	if (result < 0)
++		goto out;
++
++	result = acl_ptn4_get_mask(&mask, perms, iflags);
++	if (result < 0)
++		goto out;
++
++	result = acl_nfs4_add_pair(acl, eflag, mask, NFS4_ACL_WHO_EVERYONE, NULL);
++
++	return result;
++out:
++	if (allocated)
++		acl_nfs4_free(acl);
++	return -1;
++}
+--- acl-2.2.39/libacl/acl_get_fd.c.orig	2006-06-20 02:51:25.000000000 -0400
++++ acl-2.2.39/libacl/acl_get_fd.c	2007-08-22 12:02:13.000000000 -0400
+@@ -28,6 +28,10 @@
+ #include "libacl.h"
+ #include "__acl_from_xattr.h"
+ 
++#ifdef USE_NFSV4_TRANS
++ #include "libacl_nfs4.h"
++#endif
++
+ #include "byteorder.h"
+ #include "acl_ea.h"
+ 
+@@ -38,31 +42,59 @@ acl_get_fd(int fd)
+ {
+ 	const size_t size_guess = acl_ea_size(16);
+ 	char *ext_acl_p = alloca(size_guess);
++	char *name = ACL_EA_ACCESS;
+ 	int retval;
++	int nfsv4acls;
+ 
+ 	if (!ext_acl_p)
+ 		return NULL;
+-	retval = fgetxattr(fd, ACL_EA_ACCESS, ext_acl_p, size_guess);
++
++#ifdef USE_NFSV4_TRANS
++	retval = fgetxattr(fd, ACL_NFS4_XATTR, ext_acl_p, size_guess);
++	if(retval == -1 && (errno == ENOATTR || errno == EOPNOTSUPP)) {
++		nfsv4acls = ACL_NFS4_NOT_USED;
++		retval = fgetxattr(fd, name, ext_acl_p, size_guess);
++	} else {
++		nfsv4acls = ACL_NFS4_USED;
++		name = ACL_NFS4_XATTR;
++	}
++#else
++	retval = fgetxattr(fd, name, ext_acl_p, size_guess);
++#endif
++
+ 	if (retval == -1 && errno == ERANGE) {
+-		retval = fgetxattr(fd, ACL_EA_ACCESS, NULL, 0);
++		retval = fgetxattr(fd, name, NULL, 0);
+ 		if (retval > 0) {
+ 			ext_acl_p = alloca(retval);
+ 			if (!ext_acl_p)
+ 				return NULL;
+-			retval = fgetxattr(fd, ACL_EA_ACCESS, ext_acl_p,retval);
++			retval = fgetxattr(fd, name, ext_acl_p, retval);
+ 		}
+ 	}
+ 	if (retval > 0) {
+-		acl_t acl = __acl_from_xattr(ext_acl_p, retval);
+-		return acl;
++#ifdef USE_NFSV4_TRANS
++		if(nfsv4acls == ACL_NFS4_USED) {
++			acl_t acl = __posix_acl_from_nfs4_xattr(ext_acl_p, retval,
++					ACL_TYPE_ACCESS, NFS4_ACL_ISFILE);
++
++			return acl;
++		}
++		else
++#endif
++		{
++			acl_t acl = __acl_from_xattr(ext_acl_p, retval);
++			return acl;
++		}
+ 	} else if (retval == 0 || errno == ENOATTR || errno == ENODATA) {
+ 		struct stat st;
+ 
+-		if (fstat(fd, &st) == 0)
+-			return acl_from_mode(st.st_mode);
+-		else
++		if (fstat(fd, &st) != 0) {
+ 			return NULL;
+-	} else
++		}
++
++		return acl_from_mode(st.st_mode);
++	} else {
+ 		return NULL;
++	}
+ }
+ 
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_xattr_size.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,91 @@
++/*
++ *  NFSv4 ACL Code
++ *  Return the expected xattr XDR encoded size of the nfs acl. Used for
++ *  figuring the size of the xattr buffer.
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <libacl_nfs4.h>
++
++int acl_nfs4_xattr_size(struct nfs4_acl * acl)
++{
++	int size = 0;
++	struct nfs4_ace * ace;
++	int ace_num;
++	int num_aces;
++
++	if(acl == NULL) {
++		errno = EINVAL;
++		goto failed;
++	}
++
++	/* Space for number of aces */
++	size += sizeof(u32);
++
++	ace = acl->ace_head.tqh_first;
++	ace_num = 1;
++
++	num_aces = acl->naces;
++
++	while(1)
++	{
++		if(ace == NULL) {
++			if(ace_num > num_aces) {
++				break;
++			} else {
++				errno = ENODATA;
++				goto failed;
++			}
++		}
++
++		/* space for type, flag, and mask */
++		size += (3 * sizeof(u32));
++
++		/* space for strlen */
++		size += sizeof(u32);
++
++		/* space for the who string... xdr encoded */
++		size += (strlen(ace->who) / NFS4_XDR_MOD) * NFS4_XDR_MOD * sizeof(char);
++		if(strlen(ace->who) % NFS4_XDR_MOD) {
++			size += NFS4_XDR_MOD;
++		}
++
++		ace = ace->l_ace.tqe_next;
++		ace_num++;
++	}
++
++	return size;
++
++failed:
++	return -1;
++}
++
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_ptn4_get_mask.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,81 @@
++/*
++ *  NFSv4 ACL Code
++ *  Translate POSIX permissions to an NFSv4 mask
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <acl/libacl.h>
++#include <libacl_nfs4.h>
++
++int acl_ptn4_get_mask(u32* mask, acl_permset_t perms, int iflags)
++{
++	int result;
++
++	*mask = NFS4_ANYONE_MODE;
++
++	if (perms == NULL) {
++		errno = EINVAL;
++		goto failed;
++	}
++
++	if (iflags & NFS4_ACL_OWNER)
++		*mask |= NFS4_OWNER_MODE;
++
++	result = acl_get_perm(perms, ACL_READ);
++	if (result < 0)
++		goto failed;
++	else if(result == 1)
++		*mask |= NFS4_READ_MODE;
++
++	result = acl_get_perm(perms, ACL_WRITE);
++	if (result < 0)
++		goto failed;
++	else if (result == 1) {
++		*mask |= NFS4_WRITE_MODE;
++		if (iflags & NFS4_ACL_ISDIR)
++			*mask |= NFS4_ACE_DELETE_CHILD;
++	}
++
++	result = acl_get_perm(perms, ACL_EXECUTE);
++	if (result < 0)
++		goto failed;
++	else if (result == 1)
++		*mask |= NFS4_EXECUTE_MODE;
++
++	return 0;
++
++failed:
++	return -1;
++}
++
++
++
+--- acl-2.2.39/libacl/acl_get_file.c.orig	2006-06-20 02:51:25.000000000 -0400
++++ acl-2.2.39/libacl/acl_get_file.c	2007-08-22 12:02:13.000000000 -0400
+@@ -28,6 +28,10 @@
+ #include "libacl.h"
+ #include "__acl_from_xattr.h"
+ 
++#ifdef USE_NFSV4_TRANS
++ #include "libacl_nfs4.h"
++#endif
++
+ #include "byteorder.h"
+ #include "acl_ea.h"
+ 
+@@ -40,6 +44,8 @@ acl_get_file(const char *path_p, acl_typ
+ 	char *ext_acl_p = alloca(size_guess);
+ 	const char *name;
+ 	int retval;
++	int nfsv4acls;
++	int iflags;
+ 
+ 	switch(type) {
+ 		case ACL_TYPE_ACCESS:
+@@ -55,8 +61,20 @@ acl_get_file(const char *path_p, acl_typ
+ 
+ 	if (!ext_acl_p)
+ 		return NULL;
++#ifdef USE_NFSV4_TRANS
++	retval = getxattr(path_p, ACL_NFS4_XATTR, ext_acl_p, size_guess);
++	if((retval == -1) && (errno == ENOATTR || errno == EOPNOTSUPP)) {
++		nfsv4acls = ACL_NFS4_NOT_USED;
++		retval = getxattr(path_p, name, ext_acl_p, size_guess);
++	} else {
++		nfsv4acls = ACL_NFS4_USED;
++		name = ACL_NFS4_XATTR;
++	}
++#else
+ 	retval = getxattr(path_p, name, ext_acl_p, size_guess);
+-	if (retval == -1 && errno == ERANGE) {
++#endif
++
++	if ((retval == -1) && (errno == ERANGE)) {
+ 		retval = getxattr(path_p, name, NULL, 0);
+ 		if (retval > 0) {
+ 			ext_acl_p = alloca(retval);
+@@ -66,9 +84,29 @@ acl_get_file(const char *path_p, acl_typ
+ 		}
+ 	}
+ 	if (retval > 0) {
+-		acl_t acl = __acl_from_xattr(ext_acl_p, retval);
+-		return acl;
+-	} else if (retval == 0 || errno == ENOATTR || errno == ENODATA) {
++#ifdef USE_NFSV4_TRANS
++		if(nfsv4acls == ACL_NFS4_USED) {
++			struct stat st;
++
++			iflags = NFS4_ACL_ISFILE;
++
++			if (stat(path_p, &st) != 0)
++				return NULL;
++
++			if (S_ISDIR(st.st_mode))
++				iflags = NFS4_ACL_ISDIR;
++
++			acl_t acl = __posix_acl_from_nfs4_xattr(ext_acl_p, retval, type,
++					iflags);
++			return acl;
++		}
++		else
++#endif
++		{
++			acl_t acl = __acl_from_xattr(ext_acl_p, retval);
++			return acl;
++		}
++	} else if ((retval == 0) || (errno == ENOATTR) || (errno == ENODATA)) {
+ 		struct stat st;
+ 
+ 		if (stat(path_p, &st) != 0)
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/libacl_nfs4.h	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,97 @@
++#include <sys/types.h>
++#include <pwd.h>
++#include <grp.h>
++#include <sys/acl.h>
++#include <stdlib.h>
++#include <sys/queue.h>
++#include <nfs4.h>
++#include <sys/errno.h>
++#include <string.h>
++
++/* mode bit translations: */
++#define NFS4_READ_MODE NFS4_ACE_READ_DATA
++#define NFS4_WRITE_MODE (NFS4_ACE_WRITE_DATA | NFS4_ACE_APPEND_DATA)
++#define NFS4_EXECUTE_MODE NFS4_ACE_EXECUTE
++#define NFS4_ANYONE_MODE (NFS4_ACE_READ_ATTRIBUTES | NFS4_ACE_READ_ACL | \
++		NFS4_ACE_SYNCHRONIZE)
++#define NFS4_OWNER_MODE (NFS4_ACE_WRITE_ATTRIBUTES | NFS4_ACE_WRITE_ACL)
++
++#define NFS4_ACE_MASK_IGNORE (NFS4_ACE_DELETE | NFS4_ACE_WRITE_OWNER \
++		| NFS4_ACE_READ_NAMED_ATTRS | NFS4_ACE_WRITE_NAMED_ATTRS)
++/* XXX not sure about the following.  Note that e.g. DELETE_CHILD is wrong in
++ * general (should only be ignored on files). */
++#define MASK_EQUAL(mask1, mask2) \
++	(((mask1) & NFS4_ACE_MASK_ALL & ~NFS4_ACE_MASK_IGNORE & \
++	  					~NFS4_ACE_DELETE_CHILD) \
++	 == ((mask2) & NFS4_ACE_MASK_ALL & ~NFS4_ACE_MASK_IGNORE & \
++		 				~NFS4_ACE_DELETE_CHILD))
++
++/* Maximum length of the ace->who attribute */
++#define NFS4_ACL_WHO_LENGTH_MAX		2048
++#define NFS4_ACL_WHO_BUFFER_LEN_GUESS	255
++
++/* NFS4 acl xattr name */
++#define ACL_NFS4_XATTR "system.nfs4_acl"
++
++/* Macro for finding empty tailqs */
++#define TAILQ_IS_EMPTY(head) (head.tqh_first == NULL)
++
++/* Flags to pass certain properties around */
++#define NFS4_ACL_NOFLAGS			0x00
++#define NFS4_ACL_ISFILE				0x00
++#define NFS4_ACL_ISDIR				0x01
++#define NFS4_ACL_OWNER				0x02
++#define NFS4_ACL_REQUEST_DEFAULT	0x04
++#define NFS4_ACL_RAW				0x01
++
++#define NFS4_XDR_MOD				4
++
++typedef u_int32_t u32;
++
++enum {	ACL_NFS4_NOT_USED = 0,
++		ACL_NFS4_USED
++};
++
++struct ace_container {
++	struct nfs4_ace *ace;
++	TAILQ_ENTRY(ace_container) l_ace;
++};
++
++TAILQ_HEAD(ace_container_list_head, ace_container);
++
++/**** Public functions ****/
++
++/** Manipulation functions **/
++extern int				acl_nfs4_add_ace(struct nfs4_acl *, u32, u32, u32, int, char*);
++extern int				acl_nfs4_add_pair(struct nfs4_acl *, int, u32, int, char*);
++extern void				acl_nfs4_free(struct nfs4_acl *);
++extern struct nfs4_acl *acl_nfs4_new(u32);
++extern int				acl_nfs4_set_who(struct nfs4_ace*, int, char*);
++extern struct nfs4_acl *acl_nfs4_copy_acl(struct nfs4_acl *);
++extern struct nfs4_acl *acl_nfs4_xattr_load(char *, int, u32);
++extern int				acl_nfs4_xattr_pack(struct nfs4_acl *, char**);
++extern int				acl_nfs4_xattr_size(struct nfs4_acl *);
++extern void				acl_nfs4_remove_ace(struct nfs4_acl * acl, struct nfs4_ace * ace);
++
++/** Conversion functions **/
++
++/* nfs4 -> posix */
++extern acl_t		acl_n4tp_acl_trans(struct nfs4_acl *, acl_type_t);
++
++/* posix -> nfs4 */
++extern int				acl_ptn4_get_mask(u32* mask, acl_permset_t perms,
++								int iflags);
++extern int acl_ptn4_acl_trans(acl_t, struct nfs4_acl *, acl_type_t, u32, char*);
++
++
++/** Access Functions **/
++extern inline int	acl_nfs4_get_whotype(char*);
++extern int			acl_nfs4_get_who(struct nfs4_ace*, int*, char**);
++
++/**** Private(?) functions ****/
++acl_t		__posix_acl_from_nfs4_xattr(char*, int, acl_type_t, u32);
++
++/* These will change */
++char * nfs4_get_who_from_uid(uid_t);
++char * nfs4_get_who_from_gid(gid_t);
++/* End change */
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_new.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,58 @@
++/*
++ *  Common NFSv4 ACL handling code.
++ *  Create a new NFSv4 ACL
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Marius Aamodt Eriksen <marius@umich.edu>
++ *  J. Bruce Fields <bfields@umich.edu>
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *  Jeff Sedlak <jsedlak@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++
++
++#include "libacl_nfs4.h"
++
++struct nfs4_acl *
++acl_nfs4_new(u32 is_dir)
++{
++	struct nfs4_acl *acl;
++
++	if ((acl = malloc(sizeof(*acl))) == NULL)
++		return NULL;
++
++	acl->naces = 0;
++	acl->is_directory = is_dir;
++
++	TAILQ_INIT(&acl->ace_head);
++
++	return acl;
++}
++
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_copy_acl.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,85 @@
++/*
++ *  NFSv4 ACL Code
++ *  Deep copy an NFS4 ACL
++ *
++ *  Copyright (c) 2002, 2003 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "libacl_nfs4.h"
++
++struct nfs4_acl * acl_nfs4_copy_acl(struct nfs4_acl * nacl)
++{
++	struct nfs4_acl * new_acl;
++	struct nfs4_ace * ace;
++	u32 nace;
++	u32 num_aces;
++	int result;
++
++	if(nacl == NULL) {
++		errno = EINVAL;
++		goto failed;
++	}
++
++	num_aces = nacl->naces;
++
++	new_acl = acl_nfs4_new(nacl->is_directory);
++	if(new_acl == NULL)
++		goto failed;
++
++	ace = nacl->ace_head.tqh_first;
++	nace = 1;
++
++	while(1)
++	{
++		if(ace == NULL) {
++			if(nace > num_aces)
++				break;
++			else
++				goto free_failed;
++		}
++
++		result = acl_nfs4_add_ace(new_acl, ace->type, ace->flag,
++				ace->access_mask, acl_nfs4_get_whotype(ace->who), ace->who);
++		if(result < 0)
++			goto free_failed;
++
++		ace = ace->l_ace.tqe_next;
++		nace++;
++	}
++
++	return new_acl;
++
++free_failed:
++	acl_nfs4_free(new_acl);
++
++failed:
++	return NULL;
++}
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/libacl/acl_nfs4_add_pair.c	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,60 @@
++/*
++ *  Add a pair of aces to the acl. The ace masks are complements of each other
++ *  This keeps us from walking off the end of the acl
++ *
++ *  Copyright (c) 2004 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Marius Aamodt Eriksen <marius@umich.edu>
++ *  J. Bruce Fields <bfields@umich.edu>
++ *  Nathaniel Gallaher <ngallahe@umich.edu>
++ *  Jeff Sedlak <jsedlak@umich.edu>
++ *
++ *  Redistribution and use in source and binary forms, with or without
++ *  modification, are permitted provided that the following conditions
++ *  are met:
++ *
++ *  1. Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions, the following disclaimer, and
++ *     any and all other licensing or copyright notices included in
++ *     any files in this distribution.
++ *  2. Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in the
++ *     documentation and/or other materials provided with the distribution.
++ *  3. Neither the name of the University nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++
++#include "libacl_nfs4.h"
++
++int
++acl_nfs4_add_pair(struct nfs4_acl *acl, int eflag, u32 mask, int ownertype,
++		char* owner)
++{
++	int error;
++
++	error = acl_nfs4_add_ace(acl, NFS4_ACE_ACCESS_ALLOWED_ACE_TYPE,
++				 eflag, mask, ownertype, owner);
++	if (error < 0)
++		return error;
++	error = acl_nfs4_add_ace(acl, NFS4_ACE_ACCESS_DENIED_ACE_TYPE,
++				eflag, ~mask, ownertype, owner);
++	return error;
++}
++
++
+--- acl-2.2.39/exports.orig	2006-06-20 02:51:25.000000000 -0400
++++ acl-2.2.39/exports	2007-08-22 12:02:13.000000000 -0400
+@@ -67,3 +67,33 @@ ACL_1.1 {
+ 	perm_copy_fd;
+ 	perm_copy_file;
+ } ACL_1.0;
++
++ACL_1.2 {
++	global:
++	acl_nfs4_add_ace;
++	acl_nfs4_add_pair;
++	acl_nfs4_free;
++	acl_nfs4_new;
++	acl_nfs4_set_dir;
++	acl_nfs4_set_who;
++	acl_nfs4_copy_acl;
++	acl_nfs4_xattr_load;
++	acl_nfs4_xattr_pack;
++	acl_nfs4_xattr_size;
++	acl_nfs4_remove_ace;
++
++	acl_n4tp_acl_trans;
++
++	acl_ptn4_get_mask;
++	acl_ptn4_acl_trans;
++
++	acl_nfs4_get_whotype;
++	acl_nfs4_get_who;
++	acl_nfs4_entries;
++
++	local:
++	__posix_acl_from_nfs4_xattr;
++	nfs4_get_who_from_uid;
++	nfs4_get_who_from_gid;
++
++} ACL_1.1;
+--- acl-2.2.39/include/builddefs.in.orig	2007-08-22 11:59:37.000000000 -0400
++++ acl-2.2.39/include/builddefs.in	2007-08-22 12:02:13.000000000 -0400
+@@ -65,7 +65,7 @@ endif
+ 
+ GCFLAGS = $(OPTIMIZER) $(DEBUG) -funsigned-char -fno-strict-aliasing -Wall \
+ 	  -DVERSION=\"$(PKG_VERSION)\" -DLOCALEDIR=\"$(PKG_LOCALE_DIR)\"  \
+-	  -DPACKAGE=\"$(PKG_NAME)\" -I$(TOPDIR)/include
++	  -DPACKAGE=\"$(PKG_NAME)\" -I$(TOPDIR)/include -DUSE_NFSV4_TRANS
+ 
+ # Global, Platform, Local CFLAGS
+ CFLAGS += $(GCFLAGS) $(PCFLAGS) $(LCFLAGS)
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/include/nfs4.h	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,397 @@
++/*
++ *  NFSv4 protocol definitions.
++ *
++ *  Copyright (c) 2002 The Regents of the University of Michigan.
++ *  All rights reserved.
++ *
++ *  Kendrick Smith <kmsmith@umich.edu>
++ *  Andy Adamson   <andros@umich.edu>
++ */
++
++#include<sys/types.h>
++#include<sys/queue.h>
++
++#ifndef _LINUX_NFS4_H
++#define _LINUX_NFS4_H
++
++#define NFS4_VERIFIER_SIZE	8
++#define NFS4_FHSIZE		128
++#define NFS4_MAXNAMLEN		NAME_MAX
++
++#define NFS4_ACCESS_READ        0x0001
++#define NFS4_ACCESS_LOOKUP      0x0002
++#define NFS4_ACCESS_MODIFY      0x0004
++#define NFS4_ACCESS_EXTEND      0x0008
++#define NFS4_ACCESS_DELETE      0x0010
++#define NFS4_ACCESS_EXECUTE     0x0020
++
++#define NFS4_FH_PERISTENT		0x0000
++#define NFS4_FH_NOEXPIRE_WITH_OPEN	0x0001
++#define NFS4_FH_VOLATILE_ANY		0x0002
++#define NFS4_FH_VOL_MIGRATION		0x0004
++#define NFS4_FH_VOL_RENAME		0x0008
++
++#define NFS4_OPEN_RESULT_CONFIRM 0x0002
++
++#define NFS4_SHARE_ACCESS_READ	0x0001
++#define NFS4_SHARE_ACCESS_WRITE	0x0002
++#define NFS4_SHARE_ACCESS_BOTH	0x0003
++#define NFS4_SHARE_DENY_READ	0x0001
++#define NFS4_SHARE_DENY_WRITE	0x0002
++#define NFS4_SHARE_DENY_BOTH	0x0003
++
++#define NFS4_SET_TO_SERVER_TIME	0
++#define NFS4_SET_TO_CLIENT_TIME	1
++
++#define NFS4_ACE_ACCESS_ALLOWED_ACE_TYPE 0
++#define NFS4_ACE_ACCESS_DENIED_ACE_TYPE  1
++#define NFS4_ACE_SYSTEM_AUDIT_ACE_TYPE   2
++#define NFS4_ACE_SYSTEM_ALARM_ACE_TYPE   3
++
++#define ACL4_SUPPORT_ALLOW_ACL 0x01
++#define ACL4_SUPPORT_DENY_ACL  0x02
++#define ACL4_SUPPORT_AUDIT_ACL 0x04
++#define ACL4_SUPPORT_ALARM_ACL 0x08
++
++#define NFS4_ACE_FILE_INHERIT_ACE             0x00000001
++#define NFS4_ACE_DIRECTORY_INHERIT_ACE        0x00000002
++#define NFS4_ACE_NO_PROPAGATE_INHERIT_ACE     0x00000004
++#define NFS4_ACE_INHERIT_ONLY_ACE             0x00000008
++#define NFS4_ACE_SUCCESSFUL_ACCESS_ACE_FLAG   0x00000010
++#define NFS4_ACE_FAILED_ACCESS_ACE_FLAG       0x00000020
++#define NFS4_ACE_IDENTIFIER_GROUP             0x00000040
++#define NFS4_ACE_OWNER                        0x00000080
++#define NFS4_ACE_GROUP                        0x00000100
++#define NFS4_ACE_EVERYONE                     0x00000200
++
++#define NFS4_ACE_READ_DATA                    0x00000001
++#define NFS4_ACE_LIST_DIRECTORY               0x00000001
++#define NFS4_ACE_WRITE_DATA                   0x00000002
++#define NFS4_ACE_ADD_FILE                     0x00000002
++#define NFS4_ACE_APPEND_DATA                  0x00000004
++#define NFS4_ACE_ADD_SUBDIRECTORY             0x00000004
++#define NFS4_ACE_READ_NAMED_ATTRS             0x00000008
++#define NFS4_ACE_WRITE_NAMED_ATTRS            0x00000010
++#define NFS4_ACE_EXECUTE                      0x00000020
++#define NFS4_ACE_DELETE_CHILD                 0x00000040
++#define NFS4_ACE_READ_ATTRIBUTES              0x00000080
++#define NFS4_ACE_WRITE_ATTRIBUTES             0x00000100
++#define NFS4_ACE_DELETE                       0x00010000
++#define NFS4_ACE_READ_ACL                     0x00020000
++#define NFS4_ACE_WRITE_ACL                    0x00040000
++#define NFS4_ACE_WRITE_OWNER                  0x00080000
++#define NFS4_ACE_SYNCHRONIZE                  0x00100000
++#define NFS4_ACE_GENERIC_READ                 0x00120081
++#define NFS4_ACE_GENERIC_WRITE                0x00160106
++#define NFS4_ACE_GENERIC_EXECUTE              0x001200A0
++#define NFS4_ACE_MASK_ALL                     0x001F01FF
++
++enum nfs4_acl_whotype {
++	NFS4_ACL_WHO_NAMED = 0,
++	NFS4_ACL_WHO_OWNER,
++	NFS4_ACL_WHO_GROUP,
++	NFS4_ACL_WHO_EVERYONE,
++};
++
++#define NFS4_ACL_WHO_OWNER_STRING		"OWNER@"
++#define NFS4_ACL_WHO_GROUP_STRING		"GROUP@"
++#define NFS4_ACL_WHO_EVERYONE_STRING	"EVERYONE@"
++
++struct nfs4_ace {
++	u_int32_t	type;
++	u_int32_t	flag;
++	u_int32_t	access_mask;
++	char*	who;
++	TAILQ_ENTRY(nfs4_ace) l_ace;
++};
++
++TAILQ_HEAD(ace_list_head, nfs4_ace);
++
++struct nfs4_acl {
++	u_int32_t		naces;
++	u_int32_t		is_directory;
++	struct ace_list_head	ace_head;
++};
++
++typedef struct { char data[NFS4_VERIFIER_SIZE]; } nfs4_verifier;
++typedef struct { char data[16]; } nfs4_stateid;
++
++enum nfs_opnum4 {
++	OP_ACCESS = 3,
++	OP_CLOSE = 4,
++	OP_COMMIT = 5,
++	OP_CREATE = 6,
++	OP_DELEGPURGE = 7,
++	OP_DELEGRETURN = 8,
++	OP_GETATTR = 9,
++	OP_GETFH = 10,
++	OP_LINK = 11,
++	OP_LOCK = 12,
++	OP_LOCKT = 13,
++	OP_LOCKU = 14,
++	OP_LOOKUP = 15,
++	OP_LOOKUPP = 16,
++	OP_NVERIFY = 17,
++	OP_OPEN = 18,
++	OP_OPENATTR = 19,
++	OP_OPEN_CONFIRM = 20,
++	OP_OPEN_DOWNGRADE = 21,
++	OP_PUTFH = 22,
++	OP_PUTPUBFH = 23,
++	OP_PUTROOTFH = 24,
++	OP_READ = 25,
++	OP_READDIR = 26,
++	OP_READLINK = 27,
++	OP_REMOVE = 28,
++	OP_RENAME = 29,
++	OP_RENEW = 30,
++	OP_RESTOREFH = 31,
++	OP_SAVEFH = 32,
++	OP_SECINFO = 33,
++	OP_SETATTR = 34,
++	OP_SETCLIENTID = 35,
++	OP_SETCLIENTID_CONFIRM = 36,
++	OP_VERIFY = 37,
++	OP_WRITE = 38,
++	OP_RELEASE_LOCKOWNER = 39,
++	OP_ILLEGAL = 10044,
++};
++
++enum nfsstat4 {
++	NFS4_OK = 0,
++	NFS4ERR_PERM = 1,
++	NFS4ERR_NOENT = 2,
++	NFS4ERR_IO = 5,
++	NFS4ERR_NXIO = 6,
++	NFS4ERR_ACCESS = 13,
++	NFS4ERR_EXIST = 17,
++	NFS4ERR_XDEV = 18,
++	/* Unused/reserved 19 */
++	NFS4ERR_NOTDIR = 20,
++	NFS4ERR_ISDIR = 21,
++	NFS4ERR_INVAL = 22,
++	NFS4ERR_FBIG = 27,
++	NFS4ERR_NOSPC = 28,
++	NFS4ERR_ROFS = 30,
++	NFS4ERR_MLINK = 31,
++	NFS4ERR_NAMETOOLONG = 63,
++	NFS4ERR_NOTEMPTY = 66,
++	NFS4ERR_DQUOT = 69,
++	NFS4ERR_STALE = 70,
++	NFS4ERR_BADHANDLE = 10001,
++	NFS4ERR_BAD_COOKIE = 10003,
++	NFS4ERR_NOTSUPP = 10004,
++	NFS4ERR_TOOSMALL = 10005,
++	NFS4ERR_SERVERFAULT = 10006,
++	NFS4ERR_BADTYPE = 10007,
++	NFS4ERR_DELAY = 10008,
++	NFS4ERR_SAME = 10009,
++	NFS4ERR_DENIED = 10010,
++	NFS4ERR_EXPIRED = 10011,
++	NFS4ERR_LOCKED = 10012,
++	NFS4ERR_GRACE = 10013,
++	NFS4ERR_FHEXPIRED = 10014,
++	NFS4ERR_SHARE_DENIED = 10015,
++	NFS4ERR_WRONGSEC = 10016,
++	NFS4ERR_CLID_INUSE = 10017,
++	NFS4ERR_RESOURCE = 10018,
++	NFS4ERR_MOVED = 10019,
++	NFS4ERR_NOFILEHANDLE = 10020,
++	NFS4ERR_MINOR_VERS_MISMATCH = 10021,
++	NFS4ERR_STALE_CLIENTID = 10022,
++	NFS4ERR_STALE_STATEID = 10023,
++	NFS4ERR_OLD_STATEID = 10024,
++	NFS4ERR_BAD_STATEID = 10025,
++	NFS4ERR_BAD_SEQID = 10026,
++	NFS4ERR_NOT_SAME = 10027,
++	NFS4ERR_LOCK_RANGE = 10028,
++	NFS4ERR_SYMLINK = 10029,
++	NFS4ERR_RESTOREFH = 10030,
++	NFS4ERR_LEASE_MOVED = 10031,
++	NFS4ERR_ATTRNOTSUPP = 10032,
++	NFS4ERR_NO_GRACE = 10033,
++	NFS4ERR_RECLAIM_BAD = 10034,
++	NFS4ERR_RECLAIM_CONFLICT = 10035,
++	NFS4ERR_BADXDR = 10036,
++	NFS4ERR_LOCKS_HELD = 10037,
++	NFS4ERR_OPENMODE = 10038,
++	NFS4ERR_BADOWNER = 10039,
++	NFS4ERR_BADCHAR = 10040,
++	NFS4ERR_BADNAME = 10041,
++	NFS4ERR_BAD_RANGE = 10042,
++	NFS4ERR_LOCK_NOTSUPP = 10043,
++	NFS4ERR_OP_ILLEGAL = 10044,
++	NFS4ERR_DEADLOCK = 10045,
++	NFS4ERR_FILE_OPEN = 10046,
++	NFS4ERR_ADMIN_REVOKED = 10047,
++	NFS4ERR_CB_PATH_DOWN = 10048
++};
++
++/*
++ * Note: NF4BAD is not actually part of the protocol; it is just used
++ * internally by nfsd.
++ */
++enum nfs_ftype4 {
++	NF4BAD		= 0,
++        NF4REG          = 1,    /* Regular File */
++        NF4DIR          = 2,    /* Directory */
++        NF4BLK          = 3,    /* Special File - block device */
++        NF4CHR          = 4,    /* Special File - character device */
++        NF4LNK          = 5,    /* Symbolic Link */
++        NF4SOCK         = 6,    /* Special File - socket */
++        NF4FIFO         = 7,    /* Special File - fifo */
++        NF4ATTRDIR      = 8,    /* Attribute Directory */
++        NF4NAMEDATTR    = 9     /* Named Attribute */
++};
++
++enum open_claim_type4 {
++	NFS4_OPEN_CLAIM_NULL = 0,
++	NFS4_OPEN_CLAIM_PREVIOUS = 1,
++	NFS4_OPEN_CLAIM_DELEGATE_CUR = 2,
++	NFS4_OPEN_CLAIM_DELEGATE_PREV = 3
++};
++
++enum opentype4 {
++	NFS4_OPEN_NOCREATE = 0,
++	NFS4_OPEN_CREATE = 1
++};
++
++enum createmode4 {
++	NFS4_CREATE_UNCHECKED = 0,
++	NFS4_CREATE_GUARDED = 1,
++	NFS4_CREATE_EXCLUSIVE = 2
++};
++
++enum limit_by4 {
++	NFS4_LIMIT_SIZE = 1,
++	NFS4_LIMIT_BLOCKS = 2
++};
++
++enum open_delegation_type4 {
++	NFS4_OPEN_DELEGATE_NONE = 0,
++	NFS4_OPEN_DELEGATE_READ = 1,
++	NFS4_OPEN_DELEGATE_WRITE = 2
++};
++
++enum lock_type4 {
++	NFS4_UNLOCK_LT = 0,
++	NFS4_READ_LT = 1,
++	NFS4_WRITE_LT = 2,
++	NFS4_READW_LT = 3,
++	NFS4_WRITEW_LT = 4
++};
++
++
++/* Mandatory Attributes */
++#define FATTR4_WORD0_SUPPORTED_ATTRS    (1UL << 0)
++#define FATTR4_WORD0_TYPE               (1UL << 1)
++#define FATTR4_WORD0_FH_EXPIRE_TYPE     (1UL << 2)
++#define FATTR4_WORD0_CHANGE             (1UL << 3)
++#define FATTR4_WORD0_SIZE               (1UL << 4)
++#define FATTR4_WORD0_LINK_SUPPORT       (1UL << 5)
++#define FATTR4_WORD0_SYMLINK_SUPPORT    (1UL << 6)
++#define FATTR4_WORD0_NAMED_ATTR         (1UL << 7)
++#define FATTR4_WORD0_FSID               (1UL << 8)
++#define FATTR4_WORD0_UNIQUE_HANDLES     (1UL << 9)
++#define FATTR4_WORD0_LEASE_TIME         (1UL << 10)
++#define FATTR4_WORD0_RDATTR_ERROR       (1UL << 11)
++
++/* Recommended Attributes */
++#define FATTR4_WORD0_ACL                (1UL << 12)
++#define FATTR4_WORD0_ACLSUPPORT         (1UL << 13)
++#define FATTR4_WORD0_ARCHIVE            (1UL << 14)
++#define FATTR4_WORD0_CANSETTIME         (1UL << 15)
++#define FATTR4_WORD0_CASE_INSENSITIVE   (1UL << 16)
++#define FATTR4_WORD0_CASE_PRESERVING    (1UL << 17)
++#define FATTR4_WORD0_CHOWN_RESTRICTED   (1UL << 18)
++#define FATTR4_WORD0_FILEHANDLE         (1UL << 19)
++#define FATTR4_WORD0_FILEID             (1UL << 20)
++#define FATTR4_WORD0_FILES_AVAIL        (1UL << 21)
++#define FATTR4_WORD0_FILES_FREE         (1UL << 22)
++#define FATTR4_WORD0_FILES_TOTAL        (1UL << 23)
++#define FATTR4_WORD0_FS_LOCATIONS       (1UL << 24)
++#define FATTR4_WORD0_HIDDEN             (1UL << 25)
++#define FATTR4_WORD0_HOMOGENEOUS        (1UL << 26)
++#define FATTR4_WORD0_MAXFILESIZE        (1UL << 27)
++#define FATTR4_WORD0_MAXLINK            (1UL << 28)
++#define FATTR4_WORD0_MAXNAME            (1UL << 29)
++#define FATTR4_WORD0_MAXREAD            (1UL << 30)
++#define FATTR4_WORD0_MAXWRITE           (1UL << 31)
++#define FATTR4_WORD1_MIMETYPE           (1UL << 0)
++#define FATTR4_WORD1_MODE               (1UL << 1)
++#define FATTR4_WORD1_NO_TRUNC           (1UL << 2)
++#define FATTR4_WORD1_NUMLINKS           (1UL << 3)
++#define FATTR4_WORD1_OWNER              (1UL << 4)
++#define FATTR4_WORD1_OWNER_GROUP        (1UL << 5)
++#define FATTR4_WORD1_QUOTA_HARD         (1UL << 6)
++#define FATTR4_WORD1_QUOTA_SOFT         (1UL << 7)
++#define FATTR4_WORD1_QUOTA_USED         (1UL << 8)
++#define FATTR4_WORD1_RAWDEV             (1UL << 9)
++#define FATTR4_WORD1_SPACE_AVAIL        (1UL << 10)
++#define FATTR4_WORD1_SPACE_FREE         (1UL << 11)
++#define FATTR4_WORD1_SPACE_TOTAL        (1UL << 12)
++#define FATTR4_WORD1_SPACE_USED         (1UL << 13)
++#define FATTR4_WORD1_SYSTEM             (1UL << 14)
++#define FATTR4_WORD1_TIME_ACCESS        (1UL << 15)
++#define FATTR4_WORD1_TIME_ACCESS_SET    (1UL << 16)
++#define FATTR4_WORD1_TIME_BACKUP        (1UL << 17)
++#define FATTR4_WORD1_TIME_CREATE        (1UL << 18)
++#define FATTR4_WORD1_TIME_DELTA         (1UL << 19)
++#define FATTR4_WORD1_TIME_METADATA      (1UL << 20)
++#define FATTR4_WORD1_TIME_MODIFY        (1UL << 21)
++#define FATTR4_WORD1_TIME_MODIFY_SET    (1UL << 22)
++#define FATTR4_WORD1_MOUNTED_ON_FILEID  (1UL << 23)
++
++#define NFSPROC4_NULL 0
++#define NFSPROC4_COMPOUND 1
++#define NFS4_MINOR_VERSION 0
++#define NFS4_DEBUG 1
++
++#ifdef __KERNEL__
++
++/* Index of predefined Linux client operations */
++
++enum {
++	NFSPROC4_CLNT_NULL = 0,		/* Unused */
++	NFSPROC4_CLNT_READ,
++	NFSPROC4_CLNT_WRITE,
++	NFSPROC4_CLNT_COMMIT,
++	NFSPROC4_CLNT_OPEN,
++	NFSPROC4_CLNT_OPEN_CONFIRM,
++	NFSPROC4_CLNT_OPEN_RECLAIM,
++	NFSPROC4_CLNT_OPEN_DOWNGRADE,
++	NFSPROC4_CLNT_CLOSE,
++	NFSPROC4_CLNT_SETATTR,
++	NFSPROC4_CLNT_FSINFO,
++	NFSPROC4_CLNT_RENEW,
++	NFSPROC4_CLNT_SETCLIENTID,
++	NFSPROC4_CLNT_SETCLIENTID_CONFIRM,
++	NFSPROC4_CLNT_LOCK,
++	NFSPROC4_CLNT_LOCKT,
++	NFSPROC4_CLNT_LOCKU,
++	NFSPROC4_CLNT_ACCESS,
++	NFSPROC4_CLNT_GETATTR,
++	NFSPROC4_CLNT_LOOKUP,
++	NFSPROC4_CLNT_LOOKUP_ROOT,
++	NFSPROC4_CLNT_REMOVE,
++	NFSPROC4_CLNT_RENAME,
++	NFSPROC4_CLNT_LINK,
++	NFSPROC4_CLNT_CREATE,
++	NFSPROC4_CLNT_PATHCONF,
++	NFSPROC4_CLNT_STATFS,
++	NFSPROC4_CLNT_READLINK,
++	NFSPROC4_CLNT_READDIR,
++	NFSPROC4_CLNT_SERVER_CAPS,
++	NFSPROC4_CLNT_DELEGRETURN,
++	NFSPROC4_CLNT_GETACL,
++	NFSPROC4_CLNT_SETACL,
++};
++
++#endif
++#endif
++
++/*
++ * Local variables:
++ *  c-basic-offset: 8
++ * End:
++ */
+--- /dev/null	2007-08-22 11:21:03.626521839 -0400
++++ acl-2.2.39/include/libacl_nfs4.h	2007-08-22 12:02:13.000000000 -0400
+@@ -0,0 +1,97 @@
++#include <sys/types.h>
++#include <pwd.h>
++#include <grp.h>
++#include <sys/acl.h>
++#include <stdlib.h>
++#include <sys/queue.h>
++#include <nfs4.h>
++#include <sys/errno.h>
++#include <string.h>
++
++/* mode bit translations: */
++#define NFS4_READ_MODE NFS4_ACE_READ_DATA
++#define NFS4_WRITE_MODE (NFS4_ACE_WRITE_DATA | NFS4_ACE_APPEND_DATA)
++#define NFS4_EXECUTE_MODE NFS4_ACE_EXECUTE
++#define NFS4_ANYONE_MODE (NFS4_ACE_READ_ATTRIBUTES | NFS4_ACE_READ_ACL | \
++		NFS4_ACE_SYNCHRONIZE)
++#define NFS4_OWNER_MODE (NFS4_ACE_WRITE_ATTRIBUTES | NFS4_ACE_WRITE_ACL)
++
++#define NFS4_ACE_MASK_IGNORE (NFS4_ACE_DELETE | NFS4_ACE_WRITE_OWNER \
++		| NFS4_ACE_READ_NAMED_ATTRS | NFS4_ACE_WRITE_NAMED_ATTRS)
++/* XXX not sure about the following.  Note that e.g. DELETE_CHILD is wrong in
++ * general (should only be ignored on files). */
++#define MASK_EQUAL(mask1, mask2) \
++	(((mask1) & NFS4_ACE_MASK_ALL & ~NFS4_ACE_MASK_IGNORE & \
++	  					~NFS4_ACE_DELETE_CHILD) \
++	 == ((mask2) & NFS4_ACE_MASK_ALL & ~NFS4_ACE_MASK_IGNORE & \
++		 				~NFS4_ACE_DELETE_CHILD))
++
++/* Maximum length of the ace->who attribute */
++#define NFS4_ACL_WHO_LENGTH_MAX		2048
++#define NFS4_ACL_WHO_BUFFER_LEN_GUESS	255
++
++/* NFS4 acl xattr name */
++#define ACL_NFS4_XATTR "system.nfs4_acl"
++
++/* Macro for finding empty tailqs */
++#define TAILQ_IS_EMPTY(head) (head.tqh_first == NULL)
++
++/* Flags to pass certain properties around */
++#define NFS4_ACL_NOFLAGS			0x00
++#define NFS4_ACL_ISFILE				0x00
++#define NFS4_ACL_ISDIR				0x01
++#define NFS4_ACL_OWNER				0x02
++#define NFS4_ACL_REQUEST_DEFAULT	0x04
++#define NFS4_ACL_RAW				0x01
++
++#define NFS4_XDR_MOD				4
++
++typedef u_int32_t u32;
++
++enum {	ACL_NFS4_NOT_USED = 0,
++		ACL_NFS4_USED
++};
++
++struct ace_container {
++	struct nfs4_ace *ace;
++	TAILQ_ENTRY(ace_container) l_ace;
++};
++
++TAILQ_HEAD(ace_container_list_head, ace_container);
++
++/**** Public functions ****/
++
++/** Manipulation functions **/
++extern int				acl_nfs4_add_ace(struct nfs4_acl *, u32, u32, u32, int, char*);
++extern int				acl_nfs4_add_pair(struct nfs4_acl *, int, u32, int, char*);
++extern void				acl_nfs4_free(struct nfs4_acl *);
++extern struct nfs4_acl *acl_nfs4_new(u32);
++extern int				acl_nfs4_set_who(struct nfs4_ace*, int, char*);
++extern struct nfs4_acl *acl_nfs4_copy_acl(struct nfs4_acl *);
++extern struct nfs4_acl *acl_nfs4_xattr_load(char *, int, u32);
++extern int				acl_nfs4_xattr_pack(struct nfs4_acl *, char**);
++extern int				acl_nfs4_xattr_size(struct nfs4_acl *);
++extern void				acl_nfs4_remove_ace(struct nfs4_acl * acl, struct nfs4_ace * ace);
++
++/** Conversion functions **/
++
++/* nfs4 -> posix */
++extern acl_t		acl_n4tp_acl_trans(struct nfs4_acl *, acl_type_t);
++
++/* posix -> nfs4 */
++extern int				acl_ptn4_get_mask(u32* mask, acl_permset_t perms,
++								int iflags);
++extern int acl_ptn4_acl_trans(acl_t, struct nfs4_acl *, acl_type_t, u32, char*);
++
++
++/** Access Functions **/
++extern inline int	acl_nfs4_get_whotype(char*);
++extern int			acl_nfs4_get_who(struct nfs4_ace*, int*, char**);
++
++/**** Private(?) functions ****/
++acl_t		__posix_acl_from_nfs4_xattr(char*, int, acl_type_t, u32);
++
++/* These will change */
++char * nfs4_get_who_from_uid(uid_t);
++char * nfs4_get_who_from_gid(gid_t);
++/* End change */

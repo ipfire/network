@@ -1,0 +1,11 @@
+--- acl-2.2.45/setfacl/setfacl.c.segfault	2008-01-28 13:56:36.000000000 +0100
++++ acl-2.2.45/setfacl/setfacl.c	2008-01-28 13:58:08.000000000 +0100
+@@ -679,6 +679,8 @@ int main(int argc, char *argv[])
+ 		}
+ 	}
+ 	while (optind < argc) {
++		if(!seq)
++			goto synopsis;
+ 		if (seq_empty(seq))
+ 			goto synopsis;
+ 		saw_files = 1;
