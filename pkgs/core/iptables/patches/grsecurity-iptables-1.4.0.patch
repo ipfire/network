@@ -1,0 +1,80 @@
+diff -urNp iptables-1.3.5/extensions/Makefile iptables-1.3.5-new/extensions/Makefile
+--- iptables-1.3.5/extensions/Makefile	2006-02-01 07:14:31.000000000 -0500
++++ iptables-1.3.5-new/extensions/Makefile	2006-08-13 14:16:42.000000000 -0400
+@@ -5,7 +5,7 @@
+ # header files are present in the include/linux directory of this iptables
+ # package (HW)
+ #
+-PF_EXT_SLIB:=ah addrtype conntrack ecn icmp iprange owner policy realm recent tos ttl unclean CLUSTERIP DNAT ECN LOG MASQUERADE MIRROR NETMAP REDIRECT REJECT SAME SNAT TOS TTL ULOG
++PF_EXT_SLIB:=stealth ah addrtype conntrack ecn icmp iprange owner policy realm recent tos ttl unclean CLUSTERIP DNAT ECN LOG MASQUERADE MIRROR NETMAP REDIRECT REJECT SAME SNAT TOS TTL ULOG
+ PF6_EXT_SLIB:=ah dst eui64 frag hbh hl icmp6 ipv6header mh owner policy rt HL LOG REJECT
+ PFX_EXT_SLIB:=connbytes connmark connlimit comment dccp dscp esp hashlimit helper length limit mac mark multiport physdev pkttype quota sctp state statistic standard string tcp tcpmss time u32 udp CLASSIFY CONNMARK DSCP MARK NFLOG NFQUEUE NOTRACK TCPMSS TRACE
+
+diff -urNp iptables-1.3.5/extensions/libipt_stealth.c iptables-1.3.5-new/extensions/libipt_stealth.c
+--- iptables-1.3.5/extensions/libipt_stealth.c	1969-12-31 19:00:00.000000000 -0500
++++ iptables-1.3.5-new/extensions/libipt_stealth.c	2006-08-13 14:21:52.000000000 -0400
+@@ -0,0 +1,64 @@
++/* Shared library add-on to iptables to add stealth support.
++ * Copyright (C) 2006 Brad Spengler  <spender@grsecurity.net>
++ * This netfilter module is licensed under the GNU GPL.
++ */
++
++#include <stdio.h>
++#include <netdb.h>
++#include <stdlib.h>
++#include <getopt.h>
++#include <iptables.h>
++
++/* Function which prints out usage message. */
++static void
++help(void)
++{
++	printf("stealth v%s takes no options\n\n", IPTABLES_VERSION);
++}
++
++static struct option opts[] = {
++	{0}
++};
++
++/* Initialize the match. */
++static void
++init(struct ipt_entry_match *m, unsigned int *nfcache)
++{
++	*nfcache |= NFC_UNKNOWN;
++}
++
++static int
++parse(int c, char **argv, int invert, unsigned int *flags,
++	const struct ipt_entry *entry,
++	unsigned int *nfcache,
++	struct ipt_entry_match **match)
++{
++	return 0;
++}
++
++static void
++final_check(unsigned int flags)
++{
++	return;
++}
++
++static
++struct iptables_match stealth = {
++	.next		= NULL,
++	.name		= "stealth",
++	.version	= IPTABLES_VERSION,
++	.size		= IPT_ALIGN(0),
++	.userspacesize	= IPT_ALIGN(0),
++	.help		= &help,
++	.init		= &init,
++	.parse		= &parse, 
++	.final_check	= &final_check,
++	.print		= NULL,
++	.save		= NULL,
++	.extra_opts	= opts  
++};
++
++void _init(void)
++{
++	register_match(&stealth);
++}
