@@ -19,7 +19,7 @@ class Environment(object):
 		self.arch = arches.current
 		self.config = config
 
-		self.toolchain = Toolchain()
+		self.toolchain = Toolchain(self.arch["name"])
 
 		# mount/umount
 		self.umountCmds = [
@@ -50,11 +50,7 @@ class Environment(object):
 	def init(self):
 		if self.__initialized:
 			return
-		try:
-			self._init()
-		except (KeyboardInterrupt, Exception):
-			#self._callHooks('initfailed')
-			raise
+		self._init()
 		self.__initialized = True
 
 	def _init(self):
@@ -77,7 +73,7 @@ class Environment(object):
 			self.chrootPath("sbin"),
 			self.chrootPath("sys"),
 			self.chrootPath("tmp"),
-			self.chrootPath("tools_i686"),
+			self.chrootPath("tools_%s" % self.arch["name"]),
 			self.chrootPath("usr/src/cache"),
 			self.chrootPath("usr/src/ccache"),
 			self.chrootPath("usr/src/packages"),
@@ -124,10 +120,11 @@ class Environment(object):
 				"HOME"           : "/root",
 				"BASEDIR"        : "/usr/src",
 				"PKGROOT"        : "/usr/src/pkgs",
-				"TOOLS_DIR"      : "/tools_i686",
-				"TARGET"         : "i686-ipfire-linux-gnu",
-				"TARGET_MACHINE" : "i686",
-				"PATH"           : "/sbin:/bin:/usr/sbin:/usr/bin:/tools_i686/sbin:/tools_i686/bin",
+				"TOOLS_DIR"      : "/tools_%s" % self.arch["name"],
+				"TARGET"         : "%s-ipfire-linux-gnu" % self.arch["machine"],
+				"TARGET_MACHINE" : self.arch["machine"],
+				"PATH"           : "/sbin:/bin:/usr/sbin:/usr/bin:/tools_%(arch)s/sbin:/tools_%(arch)s/bin" \
+									 % { "arch" : self.arch["name"], },
 				"BUILDROOT"      : "/%s" % self.buildroot,
 				"CHROOT"         : "1",
 			})
@@ -267,19 +264,20 @@ class Environment(object):
 
 
 class Toolchain(object):
-	arch = "i686"
-
-	def __init__(self):
+	def __init__(self, arch):
 		util.mkdir(TOOLCHAINSDIR)
 
+		self.arch = arches[arch]
+
 		# Create a filename object
-		self.filename = "toolchain-i686.%s.tar.gz" % config["toolchain_version"]
+		self.filename = "toolchain-%s.%s.tar.gz" % \
+			(self.arch["name"], config["toolchain_version"],)
 
 		# Store the path including the filename
 		self.path = os.path.join(TOOLCHAINSDIR, self.filename)
 
 		self.build_dir = os.path.join(BUILDDIR, "toolchains",
-			"tools_i686.%s" % config["toolchain_version"])
+			"tools_%s.%s" % (self.arch["name"], config["toolchain_version"]))
 
 		self.log = getLog()
 
@@ -305,22 +303,26 @@ class Toolchain(object):
 		env = config.environment.copy()
 		env.update({
 			"BASEDIR"        : BASEDIR,
-			"PATH"           : "/tools_i686/sbin:/tools_i686/bin:%s" % os.environ["PATH"],
+			"PATH"           : "/tools_%(arch)s/sbin:/tools_%(arch)s/bin:%(path)s" % \
+								{ "arch" : self.arch["name"], "path" : os.environ["PATH"], },
 			"PKGROOT"        : PKGSDIR,
 			"ROOT"           : self.build_dir,
-			"TARGET"         : "i686-ipfire-linux-gnu",
-			"TARGET_MACHINE" : "i686",
+			"TARGET"         : "%s-ipfire-linux-gnu" % self.arch["machine"],
+			"TARGET_MACHINE" : self.arch["machine"],
 			"TOOLCHAIN"      : "1",
-			"TOOLS_DIR"      : "/tools_i686",
+			"TOOLS_DIR"      : "/tools_%s" % self.arch["name"],
+			
+			"CFLAGS"         : self.arch["cflags"],
+			"CXXFLAGS"       : self.arch["cxxflags"],
 		})
 
 		command = "make -C %s -f %s %s" % \
 			(os.path.dirname(pkg.filename), pkg.filename, target)
 
-		return util.do(command, shell=True, env=env)
+		return util.do(command, shell=True, env=env, personality=self.arch["personality"])
 
 	def build_package(self, pkg):
-		self.log.debug("Building %s..." % pkg.name)
+		self.log.info("Building %s..." % pkg.name)
 
 		source_dir = os.path.join(self.build_dir, "usr/src")
 
@@ -335,7 +337,7 @@ class Toolchain(object):
 		self.cmd(["compress", self.path, self.build_dir])
 
 	def extract(self, path):
-		self.cmd(["extract", self.path, os.path.join(path, "tools_i686")])
+		self.cmd(["extract", self.path, os.path.join(path, "tools_%s" % self.arch["name"])])
 
 	def adjust(self, path):
 		self.cmd(["adjust", path])
@@ -351,7 +353,7 @@ class Toolchain(object):
 		self.compress()
 
 	def checkLink(self):
-		link = "/tools_%s" % self.arch
+		link = "/tools_%s" % self.arch["name"]
 		destination = os.path.abspath(self.build_dir)
 
 		if not os.path.islink(link):

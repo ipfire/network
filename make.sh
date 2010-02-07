@@ -1,42 +1,78 @@
 #!/usr/bin/python
 
 import sys
-from optparse import OptionParser
+try:
+	import argparse
+except ImportError:
+	import naoki.argparse as argparse
 
 import naoki
 
-op = OptionParser()
+arches = naoki.arches
+config = naoki.config
 
-# toolchain mode
-op.add_option("--toolchain", action="store_const", const=1,
-				dest="toolchain", default=0, help="toolchain mode")
+# silence Python 2.6 buggy warnings about Exception.message
+if sys.version_info[:2] == (2, 6):
+	import warnings
+	warnings.filterwarnings(
+		action="ignore",
+		message="BaseException.message has been deprecated as of Python 2.6",
+		category=DeprecationWarning)
 
-# verbosity
-op.add_option("-v", "--verbose", action="store_const", const=2,
-				dest="verbose", default=1, help="verbose build")
-op.add_option("-q", "--quiet", action="store_const", const=0,
-				dest="verbose", help="quiet build")
+parser = argparse.ArgumentParser(
+	description = "Command to control the naoki buildsystem"
+)
 
-# modes (basic commands)
-op.add_option("--download", action="store_const", const="download",
-				dest="mode", help="download files")
-op.add_option("--build", "--rebuild", action="store_const",
-				const="rebuild", dest="mode", default='rebuild',
-				help="rebuild the specified packages")
-op.add_option("--info", action="store_const", const="info", dest="mode",
-				help="return some info about the specified packages")
-op.add_option("--list-packages", action="store_const", const="list-packages",
-				dest="mode", help="list all packages")
-op.add_option("--list-groups", action="store_const", const="list-groups",
-				dest="mode", help="list all groups")
-op.add_option("--list-tree", action="store_const", const="list-tree",
-				dest="mode", help="list the dependency tree")
+parser.add_argument("-q", "--quiet", action="store_true",
+	help="run in silent mode")
+parser.add_argument("-a", "--arch", default=arches.default["name"],
+	help="set architecture")
+parser.add_argument("--toolchain", action="store_true",
+	help="toolchain mode")
 
-n = naoki.Naoki(op)
-exitStatus = 0
+subparsers = parser.add_subparsers(help="sub-command help")
+
+parser_build = subparsers.add_parser("build", help="build command")
+parser_build.set_defaults(action="build")
+parser_build.add_argument("packages", nargs="+", help="packages...")
+
+parser_toolchain = subparsers.add_parser("toolchain", help="toolchain command")
+parser_toolchain.set_defaults(action="toolchain")
+
+subparsers_toolchain = parser_toolchain.add_subparsers(help="sub-command help")
+parser_toolchain_build = subparsers_toolchain.add_parser("build",
+	help="build toolchain")
+parser_toolchain_build.set_defaults(subaction="build")
+
+parser_package = subparsers.add_parser("package", help="package command")
+parser_package.set_defaults(action="package")
+
+subparsers_package = parser_package.add_subparsers(help="sub-command help")
+parser_package_tree = subparsers_package.add_parser("tree",
+	help="show package tree")
+parser_package_tree.set_defaults(subaction="tree")
+
+parser_package_list = subparsers_package.add_parser("list",
+	help="show package list")
+parser_package_list.set_defaults(subaction="list")
+
+# parse the command line
+args = parser.parse_args()
+
+# Are we in the toolchain mode?
+config["toolchain"] = args.toolchain
+
+# Set default arch
+arches.set(args.arch)
+
+kwargs = {}
+for key, val in args._get_kwargs():
+	kwargs[key] = val
 
 try:
-	n.action()
+	n = naoki.Naoki()
+	n(**kwargs)
+	exitStatus = 0
 
 except (SystemExit,):
 	raise

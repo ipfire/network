@@ -11,10 +11,7 @@ import util
 from constants import *
 from logger import getLog
 
-def list(toolchain=None):
-	if not toolchain:
-		toolchain = config["toolchain"]
-
+def list(toolchain=False):
 	pkgs = []
 	for dir in os.listdir(PKGSDIR):
 		if not os.path.isdir(os.path.join(PKGSDIR, dir)):
@@ -36,15 +33,15 @@ def list(toolchain=None):
 	pkgs.sort()
 	return pkgs
 
-def find(s):
+def find(s, toolchain=False):
 	if not s:
 		return
 
 	p = Package(s)
-	if p in list():
+	if p in list(toolchain):
 		return p
 
-	for package in list():
+	for package in list(toolchain):
 		if os.path.basename(package.name) == s:
 			return package
 
@@ -302,7 +299,7 @@ Patches     :
 	def toolchain_deps(self):
 		deps = []
 		for package in self.fetch("PKG_TOOLCHAIN_DEPENDENCIES").split(" "):
-			package = find(package)
+			package = find(package, toolchain=True)
 			if package:
 				deps.append(package)
 
