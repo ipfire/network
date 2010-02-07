@@ -42,12 +42,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-# Modification of the user and shell permissions
-PKG_PATCHES   += $(THISAPP)-ipfire.patch
-
-# Username check for umlauts
-PKG_PATCHES   += $(THISAPP)-goodname.patch
-
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
 	--enable-shadowgrp \
