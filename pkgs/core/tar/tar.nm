@@ -49,14 +49,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-# Fix extracting sparse files to a filesystem like vfat, when ftruncate
-# may fail to grow the size of a file
-PKG_PATCHES   += $(THISAPP)-vfatTruncate.patch
-
-# Add support for ACLs in the tarballs.
-PKG_PATCHES   += $(THISAPP)-xattrs-1.patch
-PKG_PATCHES   += $(THISAPP)-xattrs-conf-1.patch
-
 ###############################################################################
 # Installation Details
 ###############################################################################
