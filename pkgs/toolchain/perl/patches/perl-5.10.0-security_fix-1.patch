@@ -1,0 +1,22 @@
+Submitted by: DJ Lucas (dj AT linuxfromscratch DOT org)
+Date: 2008-08-28
+Initial Package Version: 5.10.0
+Upstream Status: Accepted
+Origin: rmtree.patch from upstream source
+    http://rt.cpan.org/Public/Bug/Display.html?id=36982
+
+--- perl-5.10.0-orig/lib/File/Path.pm
++++ perl-5.10.0/lib/File/Path.pm
+@@ -359,9 +359,9 @@ sub _rmtree {
+                 next ROOT_DIR;
+             }
+ 
+-            my $nperm = $perm & 07777 | 0600;
+-            if ($nperm != $perm and not chmod $nperm, $root) {
+-                if ($Force_Writeable) {
++            if ($Force_Writeable) {
++                my $nperm = $perm & 07777 | 0600;
++                if ($nperm != $perm and not chmod $nperm, $root) {
+                     _error($arg, "cannot make file writeable", $canon);
+                 }
+             }
