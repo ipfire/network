@@ -46,6 +46,19 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
+PKG_PATCHES    = $(THISAPP)-addrcache.patch
+PKG_PATCHES   += $(THISAPP)-arping-infiniband.patch
+PKG_PATCHES   += $(THISAPP)-arping_timeout.patch
+PKG_PATCHES   += $(THISAPP)-countermeasures.patch
+PKG_PATCHES   += $(THISAPP)-idn.patch
+PKG_PATCHES   += $(THISAPP)-open-max.patch
+PKG_PATCHES   += $(THISAPP)-ping-subint.patch
+PKG_PATCHES   += $(THISAPP)-ping_cleanup.patch
+PKG_PATCHES   += $(THISAPP)-rh.patch
+PKG_PATCHES   += $(THISAPP)-traffic_class.patch
+PKG_PATCHES   += $(THISAPP)-warnings.patch
+PKG_PATCHES   += $(THISAPP)-output.patch
+
 ###############################################################################
 # Installation Details
 ###############################################################################
