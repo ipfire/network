@@ -42,8 +42,7 @@ class Config(object):
 		"distro_slogan"   : "unknown",
 		#
 		# Downloads
-		"download_object_url" : "http://source.ipfire.org/source-3.x/%(file)s",
-		"download_patch_url"  : "http://source.ipfire.org/source-3.x/%(file)s",
+		"download_tarball_url" : "http://source.ipfire.org/source-3.x/%(file)s",
 		#
 		# Logging
 		"log_config_file" : os.path.join(CONFIGDIR, "logging.ini"),
