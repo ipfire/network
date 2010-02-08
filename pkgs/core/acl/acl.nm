@@ -45,13 +45,6 @@ PKG_BUILD_DEPS+= gettext libtool
 PKG_DEPS      += attr
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-PKG_PATCHES   += $(THISAPP)-build-1.patch
-#PKG_PATCHES   += $(THISAPP)-nfs4.patch # Doesn't work in toolchain
-PKG_PATCHES   += $(THISAPP)-params.patch
-PKG_PATCHES   += $(THISAPP)-path_max.patch
-PKG_PATCHES   += $(THISAPP)-segfault.patch
-#PKG_PATCHES   += $(THISAPP)-walk.patch
-PKG_PATCHES   += $(THISAPP)-exitcode.patch
 
 ###############################################################################
 

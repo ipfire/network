@@ -44,8 +44,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-PKG_PATCHES   += $(THISAPP)-watch_unicode-2.patch
-
 define STAGE_BUILD
 	cd $(DIR_APP) && make SHARED=1 CFLAGS="$(CFLAGS)" \
 		W_SHOWFROM=-DW_SHOWFROM $(PARALLELISMFLAGS)

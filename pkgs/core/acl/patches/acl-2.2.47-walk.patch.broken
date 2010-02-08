@@ -1,0 +1,235 @@
+--- acl-2.2.39/getfacl/getfacl.c.walk	2006-06-20 08:51:25.000000000 +0200
++++ acl-2.2.39/getfacl/getfacl.c	2007-03-21 10:52:07.000000000 +0100
+@@ -34,7 +34,6 @@
+ #include <dirent.h>
+ #include <libgen.h>
+ #include <getopt.h>
+-#include <ftw.h>
+ #include <locale.h>
+ #include "config.h"
+ #include "user_group.h"
+@@ -70,9 +69,9 @@
+ const char *progname;
+ const char *cmd_line_options;
+ 
+-int opt_recursive;  /* recurse into sub-directories? */
+-int opt_walk_logical;  /* always follow symbolic links */
+-int opt_walk_physical;  /* never follow symbolic links */
++int opt_recursive = 0;  /* recurse into sub-directories? */
++int opt_walk_logical = 0;  /* always follow symbolic links */
++int opt_walk_physical = 0;  /* never follow symbolic links */
+ int opt_print_acl = 0;
+ int opt_print_default_acl = 0;
+ int opt_strip_leading_slash = 1;
+@@ -562,71 +561,140 @@
+ 
+ 
+ static int __errors;
+-int __do_print(const char *file, const struct stat *stat,
+-               int flag, struct FTW *ftw)
++
++int walk_tree(const char *file)
+ {
+-	int saved_errno = errno;
++	static int level = 0;
++	static int link_count = 0;
++	DIR *dir;
++	struct dirent *entry;
++	struct stat buf;
++	char path[FILENAME_MAX];
++	char path2[FILENAME_MAX];
++	char path3[FILENAME_MAX];
++	char *dir_name;
++	size_t len;
++	ssize_t slen;
++	int res;
+ 
+ 	/* Process the target of a symbolic link, and traverse the link,
+            only if doing a logical walk, or if the symbolic link was
+            specified on the command line. Always skip symbolic links if
+            doing a physical walk. */
+ 
+-	if (S_ISLNK(stat->st_mode) &&
+-	    (opt_walk_physical || (ftw->level > 0 && !opt_walk_logical)))
++	len = strlen(file);
++	/* check for FILENAME_MAX */
++	if (len >= FILENAME_MAX) {
++		fprintf(stderr, "%s: %s: %s\n", progname, xquote(file),
++			strerror(ENAMETOOLONG));
++		__errors++;
+ 		return 0;
++	}
++	/* string ends with '/', remove it and restart */
++	if (len > 1 && file[len-1] == '/') {
++		strncpy(path, file, len);
++		path[len-1] = '\0'; /* overwrite slash */
++		return walk_tree(path);
++	}
+ 
+-	if (do_print(file, stat))
+-		__errors++;
++	if (level > 0 && !opt_recursive)
++		return 0;
+ 
+-	if (flag == FTW_DNR && opt_recursive) {
+-		/* Item is a directory which can't be read. */
+-		fprintf(stderr, "%s: %s: %s\n",
+-			progname, file, strerror(saved_errno));
++	if (lstat(file, &buf) != 0) {
++		fprintf(stderr, "%s: %s: %s\n", progname, xquote(file),
++			strerror(errno));
++		__errors++;
+ 		return 0;
+ 	}
+ 
+-	/* We also get here in non-recursive mode. In that case,
+-	   return something != 0 to abort nftw. */
++	if (S_ISLNK(buf.st_mode)) {
++		/* physical means: no links at all */
++		if (opt_walk_physical)
++			return 1;
++
++		/* logical: show information or walk if points to directory
++		 * also for symbolic link arguments on level 0 */
++		if (opt_walk_logical || level == 0) {
++			/* copy and append terminating '\0' */
++			strncpy(path2, file, len+1);
++
++			/* get directory name */
++			dir_name = dirname(path2);
++
++			/* get link target */
++			slen = readlink(file, path, FILENAME_MAX-1);
++			if (slen < 0) {
++				fprintf(stderr, "%s: %s: %s\n", progname,
++					xquote(file), strerror(errno));
++				__errors++;
++				return 0;
++			}
++			path[slen] = '\0';
+ 
+-	if (!opt_recursive)
+-		return 1;
++			if (slen == 0 || path[0] == '/') {
++				/* absolute:
++				 * copy and append terminating '\0' */
++				strncpy(path3, path, slen+1);
++			} else
++				/* relative */
++				snprintf(path3, FILENAME_MAX, "%s/%s",
++					 dir_name, path);
++			
++			if (lstat(path3, &buf) != 0) {
++				fprintf(stderr, "%s: %s: %s\n", progname,
++					xquote(path), strerror(errno));
++				__errors++;
++				return 0;
++			}
+ 
+-	return 0;
+-}
++			if ((S_ISDIR(buf.st_mode) && opt_recursive && 
++			     link_count < 1) || S_ISLNK(buf.st_mode)) {
++				/* walk directory or follow symlink on level
++				 * 0 */
++				link_count++;
++				res = walk_tree(path3);
++				link_count--;
++				if (res != 1)
++					return 0;
++			} else
++				if (do_print(path3, &buf))
++					__errors++;
+ 
+-char *resolve_symlinks(const char *file)
+-{
+-	static char buffer[4096];
+-	char *path = NULL;
+-	ssize_t len;
+-
+-	len = readlink(file, buffer, sizeof(buffer)-1);
+-	if (len < 0) {
+-		if (errno == EINVAL)	/* not a symlink, use given path */
+-			path = (char *)file;
+-	} else {
+-		buffer[len+1] = '\0';
+-		path = buffer;
++			return 1;
++		}
+ 	}
+-	return path;
+-}
+-
+-int walk_tree(const char *file)
+-{
+-	const char *p;
+ 
+-	__errors = 0;
+-	if ((p = resolve_symlinks(file)) == NULL) {
+-		fprintf(stderr, "%s: %s: %s\n", progname,
+-			xquote(file), strerror(errno));
+-		__errors++;
+-	} else if (nftw(p, __do_print, 0, opt_walk_logical? 0 : FTW_PHYS) < 0) {
+-		fprintf(stderr, "%s: %s: %s\n", progname, xquote(file),
+-			strerror(errno));
++	if (do_print(file, &buf))
+ 		__errors++;
++
++	/* it is a directory, walk */
++	if (S_ISDIR(buf.st_mode)) {
++		dir = opendir(file);
++		if (!dir) {
++			fprintf(stderr, "%s: %s: %s\n", progname,
++				xquote(file), strerror(errno));
++			__errors++;
++			return 0;
++		}
++
++		level++;
++		while ((entry = readdir(dir)) != NULL) {
++			if (! strcmp(entry->d_name, ".") || 
++			    ! strcmp(entry->d_name, ".."))
++				continue;
++
++			snprintf(path, FILENAME_MAX, "%s/%s", file,
++				 entry->d_name);
++
++			/* ignore result, walk every entry */
++			res = walk_tree(path);
++		}
++		level--;
++
++		closedir(dir);
+ 	}
+-	return __errors;
++
++	return 1;
+ }
+ 
+ int main(int argc, char *argv[])
+@@ -762,15 +830,22 @@
+ 				if (*line == '\0')
+ 					continue;
+ 
+-				had_errors += walk_tree(line);
++				/* ignore result of walk_tree, use __errors */
++				__errors = 0;
++				walk_tree(line);
++				had_errors += __errors;
+ 			}
+ 			if (!feof(stdin)) {
+ 				fprintf(stderr, _("%s: Standard input: %s\n"),
+ 				        progname, strerror(errno));
+ 				had_errors++;
+ 			}
+-		} else
+-			had_errors += walk_tree(argv[optind]);
++		} else {
++			/* ignore result of walk_tree, use __errors */
++			__errors = 0;
++			walk_tree(argv[optind]);
++			had_errors += __errors;
++		}
+ 		optind++;
+ 	} while (optind < argc);
+ 

@@ -1,0 +1,27 @@
+--- acl-2.2.45/setfacl/setfacl.c.old	2007-11-08 14:04:42.000000000 +0100
++++ acl-2.2.45/setfacl/setfacl.c	2007-11-08 14:05:43.000000000 +0100
+@@ -144,7 +144,7 @@ restore(
+ 		if (error < 0)
+ 			goto fail;
+ 		if (error == 0)
+-			return 0;
++			return status;
+ 
+ 		if (path_p == NULL) {
+ 			if (filename) {
+@@ -158,6 +158,7 @@ restore(
+ 						 "aborting\n"),
+ 					progname, backup_line);
+ 			}
++			status = 1;
+ 			goto getout;
+ 		}
+ 
+@@ -176,6 +177,7 @@ restore(
+ 			fprintf(stderr, _("%s: %s: %s in line %d\n"),
+ 			        progname, xquote(filename), strerror(errno),
+ 				line);
++			status = 1;
+ 			goto getout;
+ 		}
+ 

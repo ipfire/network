@@ -1,0 +1,162 @@
+Submitted By: Robert Connolly <robert at linuxfromscratch dot org> (ashes)
+Date: 2006-11-23
+Initial Package Version: 2.5.9
+Upstream Status: Submitted to bug-gnu-utils@gnu.org
+Origin: Radoslaw Krahl
+	http://www.linuxfromscratch.org/pipermail/hlfs-dev/2004-January/000290.html
+Description: This patch adds the use of mkstemp(3).
+
+diff -Naur patch-2.5.9.orig/config.hin patch-2.5.9/config.hin
+--- patch-2.5.9.orig/config.hin	2003-05-19 06:50:40.000000000 +0000
++++ patch-2.5.9/config.hin	2006-11-23 20:04:56.000000000 +0000
+@@ -161,6 +161,9 @@
+ /* Define to 1 if you have the `mkdir' function. */
+ #undef HAVE_MKDIR
+ 
++/* Define to 1 if you have the `mkstemp' function. */
++#undef HAVE_MKSTEMP
++
+ /* Define to 1 if you have the `mktemp' function. */
+ #undef HAVE_MKTEMP
+ 
+diff -Naur patch-2.5.9.orig/configure patch-2.5.9/configure
+--- patch-2.5.9.orig/configure	2003-05-19 06:50:21.000000000 +0000
++++ patch-2.5.9/configure	2006-11-23 20:04:58.000000000 +0000
+@@ -8839,8 +8839,9 @@
+ 
+ 
+ 
++
+ for ac_func in _doprintf geteuid getuid isascii memcmp mktemp \
+-  pathconf raise sigaction sigprocmask sigsetmask strerror
++  mkstemp pathconf raise sigaction sigprocmask sigsetmask strerror
+ do
+ as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ echo "$as_me:$LINENO: checking for $ac_func" >&5
+diff -Naur patch-2.5.9.orig/configure.ac patch-2.5.9/configure.ac
+--- patch-2.5.9.orig/configure.ac	2003-05-19 06:44:57.000000000 +0000
++++ patch-2.5.9/configure.ac	2006-11-23 20:01:11.000000000 +0000
+@@ -77,7 +77,7 @@
+ 
+ AC_CHECK_DECLS([free, getenv, malloc, mktemp])
+ AC_CHECK_FUNCS(_doprintf geteuid getuid isascii memcmp mktemp \
+-  pathconf raise sigaction sigprocmask sigsetmask strerror)
++  mkstemp pathconf raise sigaction sigprocmask sigsetmask strerror)
+ AC_REPLACE_FUNCS(mkdir strncasecmp)
+ AC_FUNC_FSEEKO
+ jm_FUNC_GLIBC_UNLOCKED_IO
+diff -Naur patch-2.5.9.orig/patch.c patch-2.5.9/patch.c
+--- patch-2.5.9.orig/patch.c	2003-05-20 13:55:03.000000000 +0000
++++ patch-2.5.9/patch.c	2006-11-23 20:07:59.000000000 +0000
+@@ -73,7 +73,9 @@
+ static void init_output (char const *, int, struct outstate *);
+ static void init_reject (void);
+ static void reinitialize_almost_everything (void);
++#if ! HAVE_MKSTEMP
+ static void remove_if_needed (char const *, int volatile *);
++#endif
+ static void usage (FILE *, int) __attribute__((noreturn));
+ 
+ static bool make_backups;
+@@ -1150,9 +1152,13 @@
+ static FILE *
+ create_output_file (char const *name, int open_flags)
+ {
++#if HAVE_MKSTEMP
++  FILE *f = fopen (name, binary_transput ? "wb" : "w");
++#else
+   int fd = create_file (name, O_WRONLY | binary_transput | open_flags,
+ 			instat.st_mode);
+   FILE *f = fdopen (fd, binary_transput ? "wb" : "w");
++#endif
+   if (! f)
+     pfatal ("Can't create file %s", quotearg (name));
+   return f;
+@@ -1311,14 +1317,35 @@
+ make_temp (char letter)
+ {
+   char *r;
+-#if HAVE_MKTEMP
++
++#if defined(HAVE_MKTEMP) || defined(HAVE_MKSTEMP)
+   char const *tmpdir = getenv ("TMPDIR");	/* Unix tradition */
+   if (!tmpdir) tmpdir = getenv ("TMP");		/* DOS tradition */
+   if (!tmpdir) tmpdir = getenv ("TEMP");	/* another DOS tradition */
+   if (!tmpdir) tmpdir = TMPDIR;
+   r = xmalloc (strlen (tmpdir) + 10);
+   sprintf (r, "%s/p%cXXXXXX", tmpdir, letter);
++#endif
+ 
++#if HAVE_MKSTEMP
++  int   tfd; /* temporary file descriptor */
++  mode_t old_umask;
++
++  /* man page for mkstemp says:
++     "The  old  behaviour  (creating a file with mode 0666) may be a security
++      risk, especially since other Unix flavours use 0600, and somebody might
++      overlook this detail when porting programs.
++      More  generally,  the  POSIX  specification does not say anything about
++      file modes, so the application should make sure its umask is set appro-
++      priately before calling mkstemp."
++     So we save old umask and set mode 0600 before calling mkstemp. */
++  old_umask = umask (0177);
++  tfd = mkstemp (r);
++  umask (old_umask);
++  if (tfd == -1)
++    pfatal ("mkstemp");
++
++#elif HAVE_MKTEMP
+   /* It is OK to use mktemp here, since the rest of the code always
+      opens temp files with O_EXCL.  It might be better to use mkstemp
+      to avoid some DoS problems, but simply substituting mkstemp for
+@@ -1349,6 +1376,7 @@
+   exit (2);
+ }
+ 
++#if ! HAVE_MKSTEMP
+ static void
+ remove_if_needed (char const *name, int volatile *needs_removal)
+ {
+@@ -1358,12 +1386,22 @@
+       *needs_removal = 0;
+     }
+ }
++#endif
+ 
+ static void
+ cleanup (void)
+ {
++#if HAVE_MKSTEMP
++  /* Remove files created by mkstemp. we don't want to end up with ziliards
++     temporary patch files in /tmp */
++  unlink (TMPINNAME);
++  unlink (TMPOUTNAME);
++  unlink (TMPPATNAME);
++  unlink (TMPREJNAME);
++#else
+   remove_if_needed (TMPINNAME, &TMPINNAME_needs_removal);
+   remove_if_needed (TMPOUTNAME, &TMPOUTNAME_needs_removal);
+   remove_if_needed (TMPPATNAME, &TMPPATNAME_needs_removal);
+   remove_if_needed (TMPREJNAME, &TMPREJNAME_needs_removal);
++#endif
+ }
+diff -Naur patch-2.5.9.orig/pch.c patch-2.5.9/pch.c
+--- patch-2.5.9.orig/pch.c	2003-05-20 14:03:17.000000000 +0000
++++ patch-2.5.9/pch.c	2006-11-23 19:57:48.000000000 +0000
+@@ -127,12 +127,16 @@
+ 	else
+ 	  {
+ 	    size_t charsread;
++#if HAVE_MKSTEMP
++	    pfp = fopen (TMPPATNAME, "w+b");
++#else
+ 	    int exclusive = TMPPATNAME_needs_removal ? 0 : O_EXCL;
+ 	    TMPPATNAME_needs_removal = 1;
+ 	    pfp = fdopen (create_file (TMPPATNAME,
+ 				       O_RDWR | O_BINARY | exclusive,
+ 				       (mode_t) 0),
+ 			  "w+b");
++#endif
+ 	    if (!pfp)
+ 	      pfatal ("Can't open stream for file %s", quotearg (TMPPATNAME));
+ 	    for (st.st_size = 0;

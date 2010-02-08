@@ -52,20 +52,3 @@ endef
 PKG_BUILD_DEPS+= autoconf automake
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-PKG_PATCHES   += $(THISAPP)-open-args-1.patch
-PKG_PATCHES   += $(THISAPP)-rpathFix.patch
-PKG_PATCHES   += $(THISAPP)-automake-1.patch
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--disable-static
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef

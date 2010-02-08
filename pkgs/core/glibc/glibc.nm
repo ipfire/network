@@ -57,75 +57,68 @@ OPTIMIZED_KERNEL = 2.6.18
 
 PKG_OBJECTS   += $(THISAPP).tar.bz2
 
-# Support for PT_PaX markings:
-PKG_PATCHES   += $(THISAPP)-pt_pax-1.patch
+# $(THISAPP)-pt_pax-1.patch - Support for PT_PaX markings.
 
-# This patch adds the strlcpy and strlcat functions and manual pages to Glibc.
-# A paper written about these functions is available here:
-# http://www.courtesan.com/todd/papers/strlcpy.html. The Glibc project has
-# refused to add these functions, and that mail tread starts here:
-# http://sources.redhat.com/ml/libc-alpha/2000-08/msg00052.html. Linus Torvalds
-# has added a similar function to the Linux kernel, and that mail thread is
-# here: http://lwn.net/Articles/33814/. The strlcpy() and strlcat() functions
-# are replacements for strncpy() and strncat(). The controversy of these
-# functions is that strlcpy() and strlcat() copy the source data to the
-# destination buffer until the destination is full, and discards the rest of
-# the data if there is any. This means that these functions will never
-# overflow. The basis for the Glibc team's refusal to add these functions is
-# that they silently hide programing errors, and they have a higher performance
-# hit than strncpy() and strncat(). These functions should not be needed in a
-# perfect world, but were invented to deal with the real world. Many packages
-# will use these functions if they are found, such as Perl and many BLFS
-# packages. These functions do reduce buffer overflows, and so they are
-# recommended. After installing this patch no other effort is needed to use it.
-# Packages will use autotools to detect whether they are available or not:
-PKG_PATCHES   += $(THISAPP)-strlcpy_strlcat-1.patch
+# $(THISAPP)-strlcpy_strlcat-1.patch
+#	This patch adds the strlcpy and strlcat functions and manual pages to Glibc.
+#	A paper written about these functions is available here:
+#	http://www.courtesan.com/todd/papers/strlcpy.html. The Glibc project has
+#	refused to add these functions, and that mail tread starts here:
+#	http://sources.redhat.com/ml/libc-alpha/2000-08/msg00052.html. Linus Torvalds
+#	has added a similar function to the Linux kernel, and that mail thread is
+#	here: http://lwn.net/Articles/33814/. The strlcpy() and strlcat() functions
+#	are replacements for strncpy() and strncat(). The controversy of these
+#	functions is that strlcpy() and strlcat() copy the source data to the
+#	destination buffer until the destination is full, and discards the rest of
+#	the data if there is any. This means that these functions will never
+#	overflow. The basis for the Glibc team's refusal to add these functions is
+#	that they silently hide programing errors, and they have a higher performance
+#	hit than strncpy() and strncat(). These functions should not be needed in a
+#	perfect world, but were invented to deal with the real world. Many packages
+#	will use these functions if they are found, such as Perl and many BLFS
+#	packages. These functions do reduce buffer overflows, and so they are
+#	recommended. After installing this patch no other effort is needed to use it.
+#	Packages will use autotools to detect whether they are available or not.
 
-# The asprintf(3) and vasprintf(3) functions are GNU extentions, not defined
-# by C or Posix standards. In Glibc these functions leave (char **strp) undefined
-# after an error. This patch resets (char **strp) to NULL after an error, for
-# sanity.
-PKG_PATCHES   += $(THISAPP)-asprintf_reset2null-1.patch
+# $(THISAPP)-asprintf_reset2null-1.patch
+#	The asprintf(3) and vasprintf(3) functions are GNU extentions, not defined
+#	by C or Posix standards. In Glibc these functions leave (char **strp) undefined
+#	after an error. This patch resets (char **strp) to NULL after an error, for
+#	sanity. 
 
-# This patch adds the issetugid() function, which is a front-end to the
-# __libc_enable_secure() dynamic linker private function. This function
-# reports whether the program is running with matching real and effective
-# ID's, or not, to determine whether the program is running with set-uid or
-# set-gid privileges. Many packages will search for issetugid() and use it if
-# found, such as Ncurses. This is safer than allowing each program to
-# determine privileges itself because it is tested at a lower level which is
-# not manipulatable by the user. Apply this patch with the following command:
-PKG_PATCHES   += $(THISAPP)-issetugid-1.patch
+# $(THISAPP)-issetugid-1.patch
+#	This patch adds the issetugid() function, which is a front-end to the
+#	__libc_enable_secure() dynamic linker private function. This function
+#	reports whether the program is running with matching real and effective
+#	ID's, or not, to determine whether the program is running with set-uid or
+#	set-gid privileges. Many packages will search for issetugid() and use it if
+#	found, such as Ncurses. This is safer than allowing each program to
+#	determine privileges itself because it is tested at a lower level which is
+#	not manipulatable by the user. Apply this patch with the following command: 
 
-# The next patch modifies the localedef program so it does not use GCC
-# Trampoline code (http://gcc.gnu.org/onlinedocs/gccint/Trampolines.html),
-# which relies on an executable stack to run. Without this patch the localedef
-# program will be killed if it is run on a kernel with PaX memory protection.
-# See http://pax.grsecurity.net/docs/pageexec.txt and
-# http://pax.grsecurity.net/docs/segmexec.txt for more information:
-PKG_PATCHES   += $(THISAPP)-localedef_trampoline-1.patch
+# $(THISAPP)-localedef_trampoline-1.patch
+#	The next patch modifies the localedef program so it does not use GCC
+#	Trampoline code (http://gcc.gnu.org/onlinedocs/gccint/Trampolines.html),
+#	which relies on an executable stack to run. Without this patch the localedef
+#	program will be killed if it is run on a kernel with PaX memory protection.
+#	See http://pax.grsecurity.net/docs/pageexec.txt and
+#	http://pax.grsecurity.net/docs/segmexec.txt for more information.
 
-# This patch resticts the environment, particularly with setuid programs:
-#PKG_PATCHES   += $(THISAPP)-sanitize_env.patch
+# $(THISAPP)-sanitize_env.patch
+#	This patch resticts the environment, particularly with setuid programs. 
 
-# The patch modifies __gen_tempname(), used by the mk*temp()/tmpnam() family
-# of functions, to use /dev/urandom instead of hp-timing, gettimeofday(), or
-# getpid():
-PKG_PATCHES   += $(THISAPP)-mktemp_urandom.patch
+# $(THISAPP)-mktemp_urandom.patch
+#	The patch modifies __gen_tempname(), used by the mk*temp()/tmpnam() family
+#	of functions, to use /dev/urandom instead of hp-timing, gettimeofday(), or
+#	getpid(): 
 
-# The res_randomid() function is a pseudo-random number generator, using
-# getpid() for entropy. See: http://www.openbsd.org/advisories/res_random.txt
-# for the vulnerability. This patch uses /dev/urandom instead:
-PKG_PATCHES   += $(THISAPP)-res_randomid.patch
+# $(THISAPP)-res_randomid.patch
+#	The res_randomid() function is a pseudo-random number generator, using
+#	getpid() for entropy. See: http://www.openbsd.org/advisories/res_random.txt
+#	for the vulnerability. This patch uses /dev/urandom instead.
 
-# This patch does a check on the buffer size of res_* functions:
-PKG_PATCHES   += $(THISAPP)-resolv_response_length.patch
-
-PKG_PATCHES   += $(THISAPP)-undefine-__i686.patch
-PKG_PATCHES   += $(THISAPP)-arc4random.patch
-PKG_PATCHES   += $(THISAPP)-hardened-configure-picdefault.patch
-PKG_PATCHES   += $(THISAPP)-hardened-inittls-nosysenter.patch
-PKG_PATCHES   += $(THISAPP)-hardened-pie.patch
+# $(THISAPP)-resolv_response_length.patch
+#	This patch does a check on the buffer size of res_* functions.
 
 ###############################################################################
 # Installation Details

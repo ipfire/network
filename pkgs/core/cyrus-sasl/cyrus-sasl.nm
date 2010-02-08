@@ -44,13 +44,12 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-PKG_PATCHES   += $(THISAPP)-bad-elif.patch
-
 CONFIGURE_OPTIONS += --sysconfdir=/etc \
 	--with-dbpath=/var/lib/sasl/sasldb2 \
 	--with-saslauthd=/var/run/saslauthd \
 	--mandir=/usr/share/man
 
+PARALLELISMFLAGS =
 ###############################################################################
 # Installation Details
 ###############################################################################

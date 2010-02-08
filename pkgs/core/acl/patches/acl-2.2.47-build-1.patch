@@ -1,0 +1,36 @@
+--- acl-2.2.39/include/builddefs.in.build	2006-06-20 02:51:25.000000000 -0400
++++ acl-2.2.39/include/builddefs.in	2006-07-05 12:34:05.000000000 -0400
+@@ -26,14 +26,14 @@
+ PKG_VERSION	= @pkg_version@
+ PKG_PLATFORM	= @pkg_platform@
+ PKG_DISTRIBUTION= @pkg_distribution@
+-PKG_BIN_DIR	= @bindir@
+-PKG_SBIN_DIR	= @sbindir@
+-PKG_LIB_DIR	= @libdir@@libdirsuffix@
+-PKG_DEVLIB_DIR	= @libexecdir@@libdirsuffix@
+-PKG_INC_DIR	= @includedir@
+-PKG_MAN_DIR	= @mandir@
+-PKG_DOC_DIR	= @datadir@/doc/@pkg_name@
+-PKG_LOCALE_DIR	= @datadir@/locale
++PKG_BIN_DIR	= $(DESTDIR)@bindir@
++PKG_SBIN_DIR	= $(DESTDIR)@sbindir@
++PKG_LIB_DIR	= $(DESTDIR)@libdir@@libdirsuffix@
++PKG_DEVLIB_DIR	= $(DESTDIR)@libexecdir@@libdirsuffix@
++PKG_INC_DIR	= $(DESTDIR)@includedir@
++PKG_MAN_DIR	= $(DESTDIR)@mandir@
++PKG_DOC_DIR	= $(DESTDIR)@datadir@/doc/@pkg_name@-@pkg_version@
++PKG_LOCALE_DIR	= $(DESTDIR)@datadir@/locale
+ 
+ CC		= @cc@
+ AWK		= @awk@
+--- acl-2.2.39/include/buildmacros.build	2006-07-05 12:32:07.000000000 -0400
++++ acl-2.2.39/include/buildmacros	2006-07-05 12:32:07.000000000 -0400
+@@ -26,7 +26,7 @@
+ 	  $(LFILES:.l=.o) \
+ 	  $(YFILES:%.y=%.tab.o)
+ 
+-INSTALL	= $(TOPDIR)/install-sh -o $(PKG_USER) -g $(PKG_GROUP)
++INSTALL	= $(TOPDIR)/install-sh
+ 
+ SHELL = /bin/sh
+ IMAGES_DIR = $(TOPDIR)/all-images

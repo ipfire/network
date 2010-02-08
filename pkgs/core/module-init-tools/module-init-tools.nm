@@ -47,8 +47,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-PKG_PATCHES   += $(THISAPP)-nostatic-1.patch
-
 CFLAGS        += -DCONFIG_NO_BACKWARDS_COMPAT=1
 
 export DOCBOOKTOMAN=true

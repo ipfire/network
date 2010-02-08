@@ -13,7 +13,7 @@ THISAPP    = $(PKG_NAME)-$(PKG_VER)
 
 DIR_APP = $(DIR_SRC)/$(THISAPP)
 DIR_DL  = $(BASEDIR)/cache/tarballs
-DIR_PATCHES = $(DIR_DL)/../patches
+DIR_PATCHES = $(DIR_SOURCE)/patches
 DIR_SRC = $(ROOT)/usr/src
 DIR_TMP = /tmp
 DIR_SOURCE = $(CURDIR)
@@ -23,10 +23,11 @@ DIR_LOGS = $(BASEDIR)/logs
 
 BUILD_HOST ?= $(shell cat /proc/sys/kernel/hostname)
 
-VPATH = $(DIR_DL):$(DIR_PATCHES)
+VPATH = $(DIR_DL)
 
 PKG_OBJECTS = $(PKG_TARBALL)
-OBJECTS = $(PKG_OBJECTS) $(PKG_PATCHES)
+PKG_PATCHES = $(foreach patch,$(wildcard $(DIR_SOURCE)/patches/*.patch),$(notdir $(patch)))
+OBJECTS = $(PKG_OBJECTS)
 
 PKG_NAME_REAL = $(notdir $(CURDIR))
 PKG_PACKAGES = $(PKG_NAME_REAL)

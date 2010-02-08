@@ -46,12 +46,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-# Get rid of mktemp(3):
-PKG_PATCHES   += $(THISAPP)-mkstemp-1.patch
-
-# Some fixes:
-PKG_PATCHES   += $(THISAPP)-fixes-1.patch
-
 ###############################################################################
 # Installation Details
 ###############################################################################

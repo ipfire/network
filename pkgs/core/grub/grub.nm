@@ -46,7 +46,8 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-PKG_PATCHES   += $(THISAPP)-disk_geometry-1.patch
+# Manual list patches because they need to be applied in speical order
+PKG_PATCHES    = $(THISAPP)-disk_geometry-1.patch
 PKG_PATCHES   += grub-0.95-graphics.patch
 PKG_PATCHES   += grub-0.91-splashimagehelp.patch
 PKG_PATCHES   += grub-0.93-graphics-bootterm.patch
