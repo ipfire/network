@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = upstart
-PKG_VER        = 0.6.3
+PKG_VER        = 0.6.5
 PKG_REL        = 0
 
 PKG_MAINTAINER = Stefan Schantl <stefan.schantl@ipfire.org>
@@ -35,7 +35,7 @@ PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = An event-driven init system.
 
 PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += dbus
+PKG_DEPS      += dbus libnih
 
 define PKG_DESCRIPTION
 	Upstart is an event-based replacement for the /sbin/init daemon \
@@ -44,7 +44,7 @@ define PKG_DESCRIPTION
 	system is running.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
 	--sbindir=/sbin \
