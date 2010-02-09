@@ -1,0 +1,54 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = libnfnetlink
+PKG_VER        = 1.0.0
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.netfilter.org/projects/libnfnetlink/downloads.html
+PKG_LICENSE    = GPL
+PKG_SUMMARY    = A low-level library for netfilter.
+
+define PKG_DESCRIPTION
+	libnfnetlink is a low-level userspace library for \
+	nfnetlink-based communication between the kernel-side netfilter \
+	and the user-space world. It is therefore the fundamental layer \
+	for all other nfnetlink-enabled user-space programs interfacing \
+	with the netfilter subsystem of the Linux kernel.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += \
+        --libdir=/lib
+
+define STAGE_INSTALL_CMDS
+        -mkdir -pv $(BUILDROOT)/usr/lib
+        mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
+endef
+
