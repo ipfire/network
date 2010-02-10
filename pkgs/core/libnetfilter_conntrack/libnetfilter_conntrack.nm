@@ -24,45 +24,32 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = upstart
-PKG_VER        = 0.6.5
+PKG_NAME       = libnetfilter_conntrack
+PKG_VER        = 0.0.100
 PKG_REL        = 0
 
-PKG_MAINTAINER = Stefan Schantl <stefan.schantl@ipfire.org>
-PKG_GROUP      = System/Base
-PKG_URL        = http://upstart.ubuntu.com/
-PKG_LICENSE    = GPLv2+
-PKG_SUMMARY    = An event-driven init system.
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.netfilter.org/projects/libnetfilter_conntrack/downloads.html
+PKG_LICENSE    = GPL
+PKG_SUMMARY    = libnetfilter_conntrack is a userspace library.
 
 PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += dbus libnih
+PKG_DEPS      += libnfnetlink
 
 define PKG_DESCRIPTION
-	Upstart is an event-based replacement for the /sbin/init daemon \
-	which handles starting of tasks and services during boot, \
-	stopping them during shutdown and supervising them while the \
-	system is running.
+	libnetfilter_conntrack is a library that allows user-space \
+	programs to interface the kernel connection tracking table of \
+	the netfilter subsystem in the Linux kernel.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_TARBALL    = $(THISAPP).tar.bz2
 
 CONFIGURE_OPTIONS += \
-	--sbindir=/sbin \
-	--sysconfdir=/etc \
-	--libdir=/lib
+        --libdir=/lib
 
 define STAGE_INSTALL_CMDS
-	# These binaries are for the compatiblity mode, so we don´t need them
-	rm -vf $(BUILDROOT)/sbin/poweroff
-	rm -vf $(BUILDROOT)/sbin/restart
-	rm -vf $(BUILDROOT)/sbin/runlevel
-	rm -vf $(BUILDROOT)/sbin/shutdown
-	rm -vf $(BUILDROOT)/sbin/telinit	
-
-	# These config files are for the compatiblity mode, so we don´t need them
-	rm -vf $(BUILDROOT)/etc/init/control-alt-delete.conf
-	rm -vf $(BUILDROOT)/etc/init/rc-sysinit.conf
-	rm -vf $(BUILDROOT)/etc/init/rc.conf
-	rm -vf $(BUILDROOT)/etc/init/rcS.conf
+        -mkdir -pv $(BUILDROOT)/usr/lib
+        mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
 endef
 
