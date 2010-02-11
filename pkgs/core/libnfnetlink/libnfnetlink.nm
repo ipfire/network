@@ -43,12 +43,3 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
-
-CONFIGURE_OPTIONS += \
-        --libdir=/lib
-
-define STAGE_INSTALL_CMDS
-        -mkdir -pv $(BUILDROOT)/usr/lib
-        mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
-endef
-
