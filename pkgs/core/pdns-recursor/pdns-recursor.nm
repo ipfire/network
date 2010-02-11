@@ -1,0 +1,49 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = pdns-recursor
+PKG_VER        = 3.1.7.1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Networking/DNS
+PKG_URL        = http://powerdns.com/
+PKG_LICENSE    = GPLv2
+PKG_SUMMARY    = A modern, advanced and high performance recursing nameserver.
+
+PKG_DEPS      += boost lua
+
+define PKG_DESCRIPTION
+	PowerDNS Recursor is a non authoritative/recursing DNS server. Use this \
+	package if you need a dns cache for your network.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+define STAGE_BUILD
+	cd $(DIR_APP) && LUA=1 LUA_CPPFLAGS_CONFIG= LUA_LIBS_CONFIG=-llua \
+		make OPTFLAGS="$(CFLAGS)" PROFILEFLAGS=-fprofile-use #$(PARALLELISMFLAGS)
+endef
