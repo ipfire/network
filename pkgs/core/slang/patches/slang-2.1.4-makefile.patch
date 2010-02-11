@@ -1,0 +1,111 @@
+diff -up slang-2.1.4/autoconf/Makefile.in.makefile slang-2.1.4/autoconf/Makefile.in
+--- slang-2.1.4/autoconf/Makefile.in.makefile	2008-09-06 06:29:27.000000000 +0200
++++ slang-2.1.4/autoconf/Makefile.in	2008-09-08 13:18:42.000000000 +0200
+@@ -32,8 +32,7 @@ help:
+ 	@echo "make check : Build the library and run the regression tests"
+ static: makefiles
+ 	cd src; $(MAKE) static
+-	cd slsh; $(MAKE) all
+-elf: makefiles
++elf: makefiles static
+ 	cd src; $(MAKE) elf
+ 	cd slsh; $(MAKE) all
+ 	cd modules; $(MAKE) all
+diff -up slang-2.1.4/modules/Makefile.in.makefile slang-2.1.4/modules/Makefile.in
+--- slang-2.1.4/modules/Makefile.in.makefile	2008-08-25 01:57:48.000000000 +0200
++++ slang-2.1.4/modules/Makefile.in	2008-09-08 13:18:42.000000000 +0200
+@@ -53,7 +53,7 @@ SOCKET_LIBS = @X_EXTRA_LIBS@
+ MODULE_INSTALL_DIR = @libdir@/slang/v@slang_major_version@/modules
+ INSTALL		= @INSTALL@
+ INSTALL_DATA	= @INSTALL_DATA@
+-INSTALL_MODULE	= @INSTALL_MODULE@
++INSTALL_MODULE	= @INSTALL@
+ MKINSDIR	= ../autoconf/mkinsdir.sh
+ SLSH_DIR	= $(prefix)/share/slsh
+ CMAPS_DIR	= $(SLSH_DIR)/cmaps
+@@ -67,7 +67,7 @@ DEST_SLSH_DIR	= $(DESTDIR)$(SLSH_DIR)
+ DEST_CMAPSDIR	= $(DESTDIR)$(CMAPS_DIR)
+ DEST_HELPDIR	= $(DESTDIR)$(HELP_DIR)
+ #---------------------------------------------------------------------------
+-RPATH = @RPATH@
++RPATH =
+ 
+ LIBS = $(LDFLAGS) $(RPATH) $(SLANG_LIB) $(DL_LIB) @M_LIB@
+ #LIBS = $(RPATH) $(DL_LIB) @M_LIB@
+diff -up slang-2.1.4/slsh/Makefile.in.makefile slang-2.1.4/slsh/Makefile.in
+--- slang-2.1.4/slsh/Makefile.in.makefile	2008-08-25 01:57:48.000000000 +0200
++++ slang-2.1.4/slsh/Makefile.in	2008-09-08 13:21:35.000000000 +0200
+@@ -15,7 +15,7 @@ SLANG_SRCINC	= -I@SRCDIR@
+ SLANG_SRCLIB	= -L@ELFDIR@
+ #---------------------------------------------------------------------------
+ OTHER_LIBS	= @TERMCAP@ @DYNAMIC_LINK_LIB@ @LIBS@ @M_LIB@
+-RPATH		= @RPATH@
++RPATH		=
+ #----------------------------------------------------------------------------
+ INSTALL		= @INSTALL@
+ INSTALL_DATA	= @INSTALL_DATA@
+@@ -64,7 +64,7 @@ DEST_SLSH_DOC_DIR= $(DESTDIR)$(SLSH_DOC_
+ #----------------------------------------------------------------------------
+ @SET_MAKE@
+ SHELL = /bin/sh
+-INST_LIBS = $(RPATH) $(SLANG_INST_LIB) $(DEST_LIB_DIR) -lslang $(READLINE_LIB) $(OTHER_LIBS)
++INST_LIBS = $(RPATH) $(DEST_LIB_DIR) $(SLANG_INST_LIB) -lslang $(READLINE_LIB) $(OTHER_LIBS)
+ DEFS = -DSLSH_CONF_DIR='"$(SLSH_CONF_DIR)"' -DSLSH_PATH='"$(SLSH_LIB_DIR)"' \
+  -DSLSH_CONF_DIR_ENV='$(SLSH_CONF_DIR_ENV)' -DSLSH_LIB_DIR_ENV='$(SLSH_LIB_DIR_ENV)' \
+  -DSLSH_PATH_ENV='$(SLSH_PATH_ENV)' 
+diff -up slang-2.1.4/src/Makefile.in.makefile slang-2.1.4/src/Makefile.in
+--- slang-2.1.4/src/Makefile.in.makefile	2008-09-06 06:16:22.000000000 +0200
++++ slang-2.1.4/src/Makefile.in	2008-09-08 13:18:42.000000000 +0200
+@@ -139,17 +139,21 @@ UPDATE_VERSION_SCRIPT = $(HOME)/bin/upda
+ # Rules
+ #---------------------------------------------------------------------------
+ all: static elf
+-static: $(OBJDIR) $(CONFIG_H) $(OBJDIR_NORMAL_LIB) $(OTHERSTUFF)
+-elf: $(ELFDIR) $(CONFIG_H) $(ELFDIR_ELF_LIB)
++static: $(OBJDIR)/stamp $(CONFIG_H) $(OBJDIR_NORMAL_LIB) $(OTHERSTUFF)
++elf: $(ELFDIR)/stamp $(CONFIG_H) $(ELFDIR_ELF_LIB)
+ 
+-$(OBJDIR_NORMAL_LIB): $(OBJDIR) $(CONFIG_H) $(OBJS)
++$(OBJS): $(OBJDIR)/stamp
++
++$(ELFOBJS): $(ELFDIR)/stamp
++
++$(OBJDIR_NORMAL_LIB): $(CONFIG_H) $(OBJS)
+ 	-$(RM) $(OBJDIR_NORMAL_LIB)
+ 	cd $(OBJDIR); $(AR_CR) $(NORMAL_LIB) $(OFILES)
+ 	$(RANLIB) $(OBJDIR_NORMAL_LIB)
+ 	@echo ""
+ 	@echo $(NORMAL_LIB) created in $(OBJDIR)
+ 
+-$(ELFDIR_ELF_LIB): $(ELFDIR) $(CONFIG_H) $(ELFOBJS) $(VERSION_SCRIPT)
++$(ELFDIR_ELF_LIB): $(CONFIG_H) $(ELFOBJS) $(VERSION_SCRIPT)
+ 	-$(RM) $(ELFDIR_ELF_LIB)
+ 	cd $(ELFDIR); $(ELF_LINK_CMD) -o $(ELFLIB_BUILD_NAME) $(OFILES) $(LDFLAGS) $(ELF_DEP_LIBS)
+ 	if [ $(ELFLIB_MAJOR) != $(ELFLIB_BUILD_NAME) ]; then \
+@@ -160,10 +164,12 @@ $(ELFDIR_ELF_LIB): $(ELFDIR) $(CONFIG_H)
+ 	@echo $(ELFLIB_BUILD_NAME) created in $(ELFDIR).
+ 	@echo The link $(ELFLIB) to $(ELFLIB_BUILD_NAME) was also created.
+ 	@echo ""
+-$(OBJDIR) :
++$(OBJDIR)/stamp :
+ 	-$(MKDIR) $(OBJDIR)
+-$(ELFDIR) :
++	touch $(OBJDIR)/stamp
++$(ELFDIR)/stamp :
+ 	-$(MKDIR) $(ELFDIR)
++	touch $(ELFDIR)/stamp
+ $(CONFIG_H) : sysconf.h
+ 	-$(CP) sysconf.h $(CONFIG_H)
+ 
+@@ -194,9 +200,9 @@ install-elf-and-links:
+ 	-$(RM) $(DEST_LIBDIR)/$(ELFLIB)
+ 	-$(RM) $(DEST_LIBDIR)/$(ELFLIB_MAJOR)
+ 	@echo installing $(ELFLIB_BUILD_NAME) in $(DEST_LIBDIR)
+-	$(INSTALL_DATA) $(ELFDIR_ELF_LIB) $(DEST_LIBDIR)/
++	$(INSTALL) $(ELFDIR_ELF_LIB) $(DEST_LIBDIR)/
+ 	-cd $(DEST_LIBDIR); $(LN) $(ELFLIB_BUILD_NAME) $(ELFLIB_MAJOR)
+-	-cd $(DEST_LIBDIR); $(LN) $(ELFLIB_BUILD_NAME) $(ELFLIB)
++	-cd $(DEST_LIBDIR); $(LN) $(ELFLIB_MAJOR) $(ELFLIB)
+ 	@echo ""
+ 	@echo $(ELFLIB_BUILD_NAME) created in $(DEST_LIBDIR).
+ 	@echo The links $(ELFLIB) and $(ELFLIB_MAJOR) to $(ELFLIB_BUILD_NAME) were also created.
