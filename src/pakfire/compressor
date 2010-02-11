@@ -31,7 +31,7 @@ function isDir() {
 }
 
 function isFile() {
-	[ -f "${1}" ]
+	[ -f "${1}" ] || [ -h "${1}" ]
 }
 
 function add() {
