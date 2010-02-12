@@ -1,0 +1,71 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = sudo
+PKG_VER        = 1.7.2p1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/System
+PKG_URL        =
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = Allows restricted root access for specified users.
+
+PKG_DEPS      += cyrus-sasl openldap pam vim
+
+define PKG_DESCRIPTION
+	Sudo (superuser do) allows a system administrator to give certain \
+	users (or groups of users) the ability to run some (or all) commands \
+	as root while logging all commands and arguments. Sudo operates on a \
+	per-command basis.  It is not a replacement for the shell.  Features \
+	include: the ability to restrict what commands a user may run on a \
+	per-host basis, copious logging of each command (providing a clear \
+	audit trail of who did what), a configurable timeout of the sudo \
+	command, and the ability to use the same configuration file (sudoers) \
+	on many different machines.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+	--with-logging=syslog \
+	--with-logfac=authpriv \
+	--with-pam \
+	--with-pam-login \
+	--with-editor=/usr/bin/vi \
+	--with-env-editor \
+	--with-ignore-dot \
+	--with-tty-tickets \
+	--with-ldap \
+	--with-passprompt="[sudo] password for %p: "
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/etc
+	cp -vf $(DIR_SOURCE)/sudoers $(BUILDROOT)/etc/sudoers
+
+	-mkdir -pv $(BUILDROOT)/etc/pam.d
+	cp -vf $(DIR_SOURCE)/sudo.pam $(BUILDROOT)/etc/pam.d/sudo
+endef
