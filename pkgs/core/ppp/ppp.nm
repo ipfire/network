@@ -1,0 +1,79 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = ppp
+PKG_VER        = 2.4.4
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Daemons
+PKG_URL        = ftp://ftp.samba.org/pub/ppp/
+PKG_LICENSE    = BSD and LGPLv2+ and GPLv2+ and Public Domain
+PKG_SUMMARY    = The PPP (Point-to-Point Protocol) daemon.
+
+PKG_DEPS      += libpcap linux-atm pam
+
+define PKG_DESCRIPTION
+	The ppp package contains the PPP (Point-to-Point Protocol) daemon and \
+	documentation for PPP support. The PPP protocol provides a method for \
+	transmitting datagrams over serial point-to-point links. PPP is \
+	usually used to dial in to an ISP or other organization over a modem \
+	and phone line.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/^LIBS =/LIBS=-lutil/" -i pppd/Makefile.linux
+
+	cd $(DIR_APP) && sed -e "s@^RUNDIR .*@RUNDIR = /var/run/ppp@" \
+		-e "s@^LOGDIR .*@LOGDIR = /var/log/ppp@" \
+		-i linux/Makefile.top
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr
+
+	cd $(DIR_APP) && make CC="gcc $(CFLAGS)" $(PARALLELISMFLAGS) \
+		HAVE_INET6=yes USE_PAM=y
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install INSTROOT=$(BUILDROOT)
+
+	rm -rfv $(BUILDROOT)/etc/ppp/plugins
+
+	-mkdir -pv $(BUILDROOT)/etc/ppp
+	touch $(BUILDROOT)/etc/ppp/secrets
+	chmod -v 600 $(BUILDROOT)/etc/ppp/secrets
+	ln -svf secrets $(BUILDROOT)/etc/ppp/pap-secrets
+	ln -svf secrets $(BUILDROOT)/etc/ppp/chap-secrets
+
+	-mkdir -pv $(BUILDROOT)/etc/pam.d/
+	cp -vf $(DIR_SOURCE)/ppp.pam $(BUILDROOT)/etc/pam.d/
+endef
