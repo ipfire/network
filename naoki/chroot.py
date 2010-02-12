@@ -212,21 +212,19 @@ class Environment(object):
 		## XXX Could be done better
 		self.log.debug("Creating users")
 		f = open("/etc/passwd")
+		g = open(self.chrootPath("etc", "passwd"), "w")
 		for line in f.readlines():
-			if line.startswith("root"):
-				g = open(self.chrootPath("etc", "passwd"), "w")
+			if line.startswith("root") or line.startswith("nobody"):
 				g.write("%s" % line)
-				g.close()
-				break
+		g.close()
 		f.close()
 
 		f = open("/etc/group")
+		g = open(self.chrootPath("etc", "group"), "w")
 		for line in f.readlines():
-			if line.startswith("root"):
-				g = open(self.chrootPath("etc", "group"), "w")
+			if line.startswith("root") or line.startswith("nobody"):
 				g.write("%s" % line)
-				g.close()
-				break
+		g.close()
 		f.close()
 
 	def _mountall(self):
