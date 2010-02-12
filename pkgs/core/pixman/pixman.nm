@@ -1,0 +1,54 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = pixman
+PKG_VER        = 0.15.18
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://xorg.freedesktop.org/archive/individual/lib/
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = Pixel manipulation library.
+
+PKG_BUILD_DEPS+= pkg-config
+
+define PKG_DESCRIPTION
+	Pixman is a pixel manipulation library for X and cairo.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+# XXX double check this later on
+ifeq "$(TARGET)" "via-c7"
+	CONFIGURE_OPTIONS += --enable-mmx #--enable-sse2
+else
+ifeq "$(TARGET)" "atom"
+	CONFIGURE_OPTIONS += --enable-mmx --enable-sse2
+else
+	CONFIGURE_OPTIONS += --disable-mmx --disable-sse2
+endif
+endif
