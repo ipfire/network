@@ -1,0 +1,69 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = strongswan
+PKG_VER        = 4.3.3
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Networking/VPN
+PKG_URL        = http://www.strongswan.org/
+PKG_LICENSE    = GPL
+PKG_SUMMARY    = IPsec and IKEv1 implementation for Linux 2.4 and 2.6 kernels.
+
+PKG_BUILD_DEPS+= bison flex gperf perl
+PKG_DEPS      += curl gcrypt gmp libcap openldap sqlite
+
+define PKG_DESCRIPTION
+	StrongSwan is a complete IPsec and IKEv1 implementation for \
+	Linux 2.4 and 2.6 kernels. It also fully supports the new IKEv2 \
+	protocol with Linux 2.6 kernels. It interoperates in both IKEv1 \
+	and IKEv2 mode with most other IPsec-based VPN products.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc \
+	--libexecdir=/usr/lib \
+	--with-user=nobody \
+	--with-group=nobody \
+	--enable-curl \
+	--enable-ldap \
+	--enable-sqlite \
+	--enable-gcrypt \
+	--enable-padlock \
+	--enable-cisco-quirks \
+	--with-capabilities=libcap
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && for i in $$(find . -name "*.[ch]"); do \
+		sed -e "s/getline/_&/g" -i $$i; done
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
