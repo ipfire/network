@@ -1,0 +1,65 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = rrdtool
+PKG_VER        = 1.3.1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Databases
+PKG_URL        = http://oss.oetiker.ch/rrdtool/
+PKG_LICENSE    = GPLv2+ with exceptions
+PKG_SUMMARY    = Round Robin Database Tool to store and display time-series data.
+
+PKG_BUILD_DEPS+= gettext groff libtool pkg-config
+PKG_DEPS      += cairo libxml2 pango python
+
+define PKG_DESCRIPTION
+	RRD is the Acronym for Round Robin Database. RRD is a system to \
+	store and display time-series data. It stores the data in a \
+	very compact way that will not expand over time, and it presents \
+	useful graphs by processing the data to enforce a certain data \
+	density.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+	--disable-rrdcgi \
+	--disable-perl \
+	--disable-tcl \
+	--disable-ruby \
+	--disable-static \
+	--enable-python \
+	--enable-latin2
+
+define STAGE_INSTALL_CMDS
+	# Remove unused files
+	rm -rvf $(BUILDROOT)/usr/share/rrdtool/examples
+
+	# Remove locale dir because no locales were installed
+	rm -rvf $(BUILDROOT)/usr/share/locale
+endef
