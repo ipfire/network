@@ -81,7 +81,8 @@ define STAGE_BUILD
 	cd $(DIR_APP) && \
 		grub_cv_prog_objcopy_absolute=yes \
 		./configure \
-			--prefix=/usr
+			--prefix=/usr \
+			--mandir=/usr/share/man
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
