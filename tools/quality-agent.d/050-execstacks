@@ -1,0 +1,33 @@
+#!/bin/bash
+
+. $(dirname ${0})/qa-include
+
+# Also, executable stacks only matter on linux...
+log "Searching for executeable stacks"
+
+command="scanelf -qyRF '%e %p' ${BUILDROOT} 2>/dev/null"
+
+for i in $QUALITY_AGENT_WHITELIST_EXECSTACK; do
+	if [ -n "$FILTER" ]; then
+		FILTER="$FILTER|$i"
+	else
+		FILTER="$i"
+	fi
+done
+
+if [ -n "$FILTER" ]; then
+	log "  Filter: $FILTER"
+	command="$command | grep -vE \"$FILTER\""
+fi
+
+files=$(${command})
+if [ -n "${files}" ]; then
+	log "  QA Notice: The following files contain executable stacks"
+	log "   Files with executable stacks will not work properly (or at all!)"
+	log "   on some architectures/operating systems."
+	log "${files}"
+
+	exit 1
+fi
+
+exit 0
