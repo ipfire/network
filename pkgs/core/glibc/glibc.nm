@@ -159,6 +159,10 @@ define STAGE_PREPARE
 	cd $(DIR_APP) && \
 		sed -e "s|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(shell readelf -l /bin/sh | sed -n 's@.*interpret.*$(TOOLS_DIR)\(.*\)]$$@\1@p') -o|" \
 		-i scripts/test-installation.pl
+
+	# Fix a very weird issue with rpath
+	cd $(DIR_APP) && sed -e "s/LDFLAGS-rpath-ORIGIN/LDFLAGS/g" \
+		-i iconvdata/Makefile
 endef
 
 define STAGE_BUILD
