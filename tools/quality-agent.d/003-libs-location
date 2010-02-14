@@ -1,0 +1,20 @@
+#!/bin/bash
+
+. $(dirname ${0})/qa-include
+
+# Check for libs that are missing in /usr/lib.
+
+log "Checking correct installation of libraries"
+
+failed=0
+for lib in $(find ${BUILDROOT}/lib -type f -name "lib*.so.*"); do
+	lib=${lib##*/}
+	lib=${lib%%.so*}
+
+	if [ ! -e "/usr/lib/${lib}.so" ]; then
+		failed=1
+		log "  /usr/lib/${lib}.so is missing"
+	fi
+done
+
+exit ${failed}
