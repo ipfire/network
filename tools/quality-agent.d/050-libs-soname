@@ -1,0 +1,31 @@
+#!/bin/bash
+
+. $(dirname ${0})/qa-include
+
+log "Searching bad libs that lack a SONAME"
+
+check_files=$(find ${BUILDROOT} -name lib*.so)
+
+command="scanelf -ByF '%S %p' $check_files | awk '$2 == "" { print }'"
+
+for i in $QUALITY_AGENT_WHITELIST_SONAME; do
+	if [ -n "$FILTER" ]; then
+		FILTER="$FILTER|$i"
+	else
+		FILTER="$i"
+	fi
+done
+
+if [ -n "$FILTER" ]; then
+	command="$command | grep -vE \"$FILTER\""
+fi
+
+files=$(${command})
+if [ -n "${files}" ]; then
+	log "  QA Notice: The following shared libraries lack a SONAME"
+	log "${files}"
+
+	exit 1
+fi
+
+exit 0

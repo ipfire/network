@@ -1,0 +1,18 @@
+#!/bin/bash
+
+. $(dirname ${0})/qa-include
+
+check_files=$(find ${BUILDROOT} -name lib*.so)
+
+log "Searching bad libs that lack the NEEDED attribute"
+
+if [ -n "$check_files" ]; then
+	f=$(scanelf -ByF '%n %p' $check_files | awk '$2 == "" { print }')
+	if [ -n "$f" ]; then
+		log "  QA Notice: The following shared libraries lack NEEDED entries"
+		log "${f}"
+		exit 1
+	fi
+fi
+
+exit 0
