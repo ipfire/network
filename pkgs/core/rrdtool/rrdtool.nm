@@ -56,6 +56,11 @@ CONFIGURE_OPTIONS += \
 	--enable-python \
 	--enable-latin2
 
+define STAGE_PREPARE_CMDS
+	# Remove rpath
+	cd $(DIR_APP) && sed -e "s/--rpath=.* &/\&/" -i bindings/Makefile.*
+endef
+
 define STAGE_INSTALL_CMDS
 	# Remove unused files
 	rm -rvf $(BUILDROOT)/usr/share/rrdtool/examples
