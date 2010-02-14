@@ -1,0 +1,34 @@
+#!/bin/bash
+
+. $(dirname ${0})/qa-include
+
+# Make sure we disallow insecure RUNPATH/RPATH's
+# Don't want paths that point to the tree where the package was built
+# (older, broken libtools would do this).  Also check for null paths
+# because the loader will search $PWD when it finds null paths.
+log "Searching for bad RPATH attributes"
+
+command="scanelf -qyRF '%r %p' ${BUILDROOT} 2>/dev/null"
+
+for i in $QUALITY_AGENT_WHITELIST_RPATH; do
+	if [ -n "$FILTER" ]; then
+		FILTER="$FILTER|$i"
+	else
+		FILTER="$i"
+	fi
+done
+
+if [ -n "$FILTER" ]; then
+	log "  Filter: $FILTER"
+	command="$command | grep -vE \"$FILTER\""
+fi
+
+files=$(${command})
+if [ -n "${files}" ]; then
+	log "  QA Notice: The following files contain insecure RUNPATH's"
+	log "${files}"
+
+	exit 1
+fi
+
+exit 0
