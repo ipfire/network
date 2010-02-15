@@ -1,0 +1,73 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = avahi
+PKG_VER        = 0.6.25
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Networking/Zeroconf
+PKG_URL        = http://avahi.org/
+PKG_LICENSE    = LGPLv2+
+PKG_SUMMARY    = Local network service discovery
+
+define PKG_DESCRIPTION
+	Avahi is a system which facilitates service discovery on \
+	a local network -- this means that you can plug your laptop or \
+	computer into a network and instantly be able to view other people who \
+	you can chat with, find printers to print to or find files being \
+	shared. This kind of technology is already found in MacOS X (branded \
+	'Rendezvous', 'Bonjour' and sometimes 'ZeroConf') and is very \
+	convenient
+endef
+
+PKG_BUILD_DEPS+= 
+PKG_DEPS      += dbus dbus-glib libdaemon python-dbus
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--bindir=/bin \
+			--disable-static \
+			--mandir=/usr/share/man \
+			--sysconfdir=/etc \
+			--with-distro=none \
+			--disable-gdbm \
+			--disable-qt3 \
+			--disable-qt4 \
+			--disable-gtk \
+			--disable-pygtk \
+			--disable-mono
+endef
+
+define STAGE_INSTALL
+	$(PYTHON_COMPILE)
+endef
