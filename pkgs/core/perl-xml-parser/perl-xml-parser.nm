@@ -1,0 +1,59 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = XML-Parser
+PKG_VER        = 2.34
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Libraries
+PKG_URL        = http://search.cpan.org/dist/XML-Parser/
+PKG_LICENSE    = GPL+ or Artistic
+PKG_SUMMARY    = Perl module for parsing XML files.
+
+define PKG_DESCRIPTION
+	This module provides ways to parse XML documents. It is built on \
+	top of XML::Parser::Expat, which is a lower level interface to \
+	James Clark's expat library.
+endef
+
+PKG_BUILD_DEPS+= expat
+PKG_DEPS      += perl
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && perl Makefile.PL
+endef
+
+define STAGE_INSTALL
+endef
+
+define QUALITY_AGENT_WHITELIST_RPATH
+        /usr/lib/perl5/site_perl/*/auto/XML/Parser/Expat/Expat.so
+endef
