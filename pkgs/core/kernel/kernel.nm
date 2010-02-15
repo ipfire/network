@@ -104,5 +104,7 @@ define STAGE_INSTALL
 	ln -svf $(SNAME)kernel-$(FULLVER) $(BUILDROOT)/boot/$(DISTRO_SNAME)kernel
 	ln -svf System.map-$(FULLVER) $(BUILDROOT)/boot/System.map
 
-	-mkdir -pv $(BUILDROOT)/lib/modules/$(KVER)/extra
+	-mkdir -pv $(BUILDROOT)/lib/modules/$(FULLVER)/extra
+
+	rm -vf $(BUILDROOT)/lib/modules/$(FULLVER)/{build,source}
 endef

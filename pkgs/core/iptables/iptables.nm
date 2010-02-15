@@ -80,5 +80,8 @@ define STAGE_INSTALL_CMDS
 	ln -svf ../../lib/libiptc.so.0 $(BUILDROOT)/usr/lib/libiptc.so
 	ln -svf ../../lib/libip4tc.so.0 $(BUILDROOT)/usr/lib/libip4tc.so
 	ln -svf ../../lib/libip6tc.so.0 $(BUILDROOT)/usr/lib/libip6tc.so
-	ln -svf ../../lib/libxtables.so.0 $(BUILDROOT)/usr/lib/libxtables.so
+	ln -svf ../../lib/libxtables.so.2 $(BUILDROOT)/usr/lib/libxtables.so
+
+	# Replace absolute symlink
+	ln -svf ../sbin/iptables-multi $(BUILDROOT)/bin/iptables-xml
 endef
