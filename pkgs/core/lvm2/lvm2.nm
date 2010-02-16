@@ -56,3 +56,10 @@ CONFIGURE_OPTIONS += \
 	--exec-prefix=/ \
 	--libdir=/lib \
 	--enable-pkgconfig
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	rm -vf $(BUILDROOT)/lib/libdevmapper.so
+	ln -svf libdevmapper.so.1.02 $(BUILDROOT)/lib/libdevmapper.so.1
+	ln -svf ../../lib/libdevmapper.so.1 $(BUILDROOT)/usr/lib/libdevmapper.so
+endef
