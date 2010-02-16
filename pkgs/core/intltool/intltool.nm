@@ -1,0 +1,57 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = intltool
+PKG_VER        = 0.40.5
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Localization/Tools
+PKG_URL        = http://www.gnome.org/
+PKG_LICENSE    = GPLv2 with exceptions
+PKG_SUMMARY    = Utility for internationalizing various kinds of data files.
+
+define PKG_DESCRIPTION
+	This tool automatically extracts translatable strings from oaf, glade, \
+	bonobo ui, nautilus theme, .desktop, and other data files and puts \
+	them in the po files.
+endef
+
+PKG_BUILD_DEPS+= expat gettext perl-xml-parser
+PKG_DEPS      += 
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--disable-static \
+			--mandir=/usr/share/man
+endef
+
