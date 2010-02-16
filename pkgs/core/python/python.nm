@@ -52,9 +52,6 @@ PKG_TARBALL    = $(THISAPP).tar.bz2
 ###############################################################################
 
 define STAGE_PREPARE_CMDS
-	# Remove own copy of expat and use system's expat
-	cd $(DIR_APP) && rm -rf Modules/expat
-
 	cd $(DIR_APP) && autoreconf
 endef
 
