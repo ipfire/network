@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = XML-Parser
-PKG_VER        = 2.34
+PKG_VER        = 2.36
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -40,8 +40,8 @@ define PKG_DESCRIPTION
 	James Clark's expat library.
 endef
 
-PKG_BUILD_DEPS+= expat
-PKG_DEPS      += perl
+PKG_BUILD_DEPS+= expat perl
+PKG_DEPS      += perl expat
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
@@ -51,9 +51,6 @@ define STAGE_BUILD
 	cd $(DIR_APP) && perl Makefile.PL
 endef
 
-define STAGE_INSTALL
-endef
-
 define QUALITY_AGENT_WHITELIST_RPATH
-        /usr/lib/perl5/site_perl/*/auto/XML/Parser/Expat/Expat.so
+	/usr/lib/perl5/site_perl/*/auto/XML/Parser/Expat/Expat.so
 endef
