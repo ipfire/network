@@ -61,4 +61,8 @@ endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) lib=/lib
+
+	rm -vf $(BUILDROOT)/lib/libcap.so
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	ln -svf ../../lib/libcap.so.2 $(BUILDROOT)/usr/lib/libcap.so
 endef
