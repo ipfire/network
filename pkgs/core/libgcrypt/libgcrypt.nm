@@ -50,5 +50,5 @@ CONFIGURE_OPTIONS += \
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/usr/lib
 	rm -vf $(BUILDROOT)/lib/libgcrypt.so
-	ln -sfv ../../lib/libgcrypt.so.11.5.2 $(BUILDROOT)/usr/lib/libgcrypt.so
+	ln -sfv ../../lib/libgcrypt.so.11 $(BUILDROOT)/usr/lib/libgcrypt.so
 endef

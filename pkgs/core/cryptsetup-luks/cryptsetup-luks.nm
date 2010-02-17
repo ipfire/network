@@ -54,5 +54,5 @@ define STAGE_INSTALL_CMDS
 	rm -rvf $(BUILDROOT)/lib/cryptsetup{,.la,.so}
 	-mkdir -pv $(BUILDROOT)/usr/lib
 	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
-	ln -svf ../../lib/libcryptsetup.so.1.0.0 $(BUILDROOT)/usr/lib/libcryptsetup.so
+	ln -svf ../../lib/libcryptsetup.so.1 $(BUILDROOT)/usr/lib/libcryptsetup.so
 endef

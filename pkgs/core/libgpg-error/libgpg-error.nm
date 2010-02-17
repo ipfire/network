@@ -43,10 +43,10 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
 CONFIGURE_OPTIONS += \
-	--libdir=/lib \
+	--libdir=/lib
 
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/usr/lib
 	rm -vf $(BUILDROOT)/lib/libgpg-error.so
-	ln -sfv ../../lib/libgpg-error.so.0.5.0 $(BUILDROOT)/usr/lib/libgpg-error.so
+	ln -sfv ../../lib/libgpg-error.so.0 $(BUILDROOT)/usr/lib/libgpg-error.so
 endef
