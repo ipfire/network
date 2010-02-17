@@ -24,45 +24,33 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = libcap
-PKG_VER        = 2.16
+PKG_NAME       = gdbm
+PKG_VER        = 1.8.3
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://ftp.kernel.org/pub/linux/libs/security/linux-privs/kernel-2.6/
-PKG_LICENSE    = LGPL2+
-PKG_SUMMARY    = Library for getting and setting POSIX.1e capabilities.
-
-PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.gnu.org/software/gdbm/
+PKG_LICENSE    = GPL
+PKG_SUMMARY    = The GDBM package contains the GNU Database Manager.
 
 define PKG_DESCRIPTION
-	libcap is a library for getting and setting POSIX.1e (formerly POSIX 6) \
-	draft 15 capabilities.
+	The GDBM package contains the GNU Database Manager. This is a disk file \
+	format database which stores key/data-pairs in single files. The actual \
+	data of any record being stored is indexed by a unique key, which can be \
+	retrieved in less time than if it was stored in a text file.
 endef
 
-PKG_DEPS      += attr pam
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
-
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_OPTIONS += --mandir=/usr/share/man
 
 define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e "s@<stdlib.h>@&\n#include <asm/types.h>@g" \
-		-i progs/capsh.c
-	cd $(DIR_APP) && sed 's/--static//' -i.orig progs/Makefile
-endef
-
-define STAGE_BUILD
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CC="gcc $(CFLAGS)"
+	cd $(DIR_APP) && sed -i Makefile.* \
+		-e "s/^BINOWN = .*/BINOWN = root/" \
+		-e "s/^BINGRP = .*/BINGRP = root/"
 endef
 
 define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) lib=/lib
-
-	rm -vf $(BUILDROOT)/lib/libcap.so
-	-mkdir -pv $(BUILDROOT)/usr/lib
-	ln -svf ../../lib/libcap.so.2 $(BUILDROOT)/usr/lib/libcap.so
+	cd $(DIR_APP) && make install install-compat INSTALL_ROOT=$(BUILDROOT)
 endef
