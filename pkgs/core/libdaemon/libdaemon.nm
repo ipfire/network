@@ -38,18 +38,8 @@ define PKG_DESCRIPTION
 	libdaemon is a lightweight C library which eases the writing of UNIX daemons.
 endef
 
-PKG_BUILD_DEPS+= 
-PKG_DEPS      += 
-
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--bindir=/bin \
-			--disable-static \
-			--mandir=/usr/share/man
-endef
+CONFIGURE_OPTIONS += \
+	--bindir=/bin \
+	--mandir=/usr/share/man
