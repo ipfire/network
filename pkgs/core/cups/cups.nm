@@ -1,0 +1,58 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = cups
+PKG_VER        = 1.4.2
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Printing
+PKG_URL        = http://cups.org/software.php
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = The common UNIX printing system.
+
+PKG_DEPS      += cyrus-sasl ghostscript libjpeg libtiff openldap
+
+define PKG_DESCRIPTION
+	CUPS is the standards-based, open source printing system developed \
+	by Apple Inc. for Mac OS® X and other UNIX®-like operating systems.
+endef
+
+PKG_TARBALL    = $(THISAPP)-source.tar.bz2
+
+CONFIGURE_OPTIONS += \
+		--sysconfdir=/etc \
+		--localstatedir=/var \
+		--disable-static
+
+define STAGE_INSTALL_CMDS
+	# Remove sysvinit scripts
+	rm -vfr $(BUILDROOT)/etc/init.d/cups $(BUILDROOT)/etc/rc*.d
+
+	-mkdir -pv $(BUILDROOT)/etc/cups
+	cp -vf $(DIR_APP)/conf/cupsd.conf $(BUILDROOT)/etc/cups/
+endef
+

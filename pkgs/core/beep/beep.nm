@@ -1,0 +1,58 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = beep
+PKG_VER        = 1.2.2
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/System
+PKG_URL        = http://www.johnath.com/beep/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Beep the PC speaker any number of ways.
+
+define PKG_DESCRIPTION
+	Beep allows the user to control the PC speaker with precision, \
+	allowing different sounds to indicate different events. While it \
+	can be run quite happily on the commandline, it's intended place \
+	of residence is within shell/perl scripts, notifying the user when \
+	something interesting occurs. Of course, it has no notion of \
+	what's interesting, but it's real good at that notifying part.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	-mkdir -pv $(BUILDROOT)/usr/bin
+	-mkdir -pv $(BUILDROOT)/usr/share/man/man1
+	cd $(DIR_APP) && install -m 0755 beep $(BUILDROOT)/usr/bin
+	cd $(DIR_APP) && cp beep.1.gz $(BUILDROOT)/usr/share/man/man1
+endef
+
