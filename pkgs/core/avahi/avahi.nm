@@ -24,46 +24,40 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = udev
-PKG_VER        = 151
+PKG_NAME       = avahi
+PKG_VER        = 0.6.25
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Base
-PKG_URL        = ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/
-PKG_LICENSE    = GPLv2+
-PKG_SUMMARY    = A userspace implementation of devfs.
-
-PKG_BUILD_DEPS+= gobject-introspection
-PKG_DEPS      += acl gperf libusb-compat pciutils usbutils util-linux-ng
+PKG_GROUP      = Networking/Zeroconf
+PKG_URL        = http://avahi.org/
+PKG_LICENSE    = LGPLv2+
+PKG_SUMMARY    = Local network service discovery
 
 define PKG_DESCRIPTION
-	The udev package contains an implementation of devfs in userspace using \
-	sysfs and netlink.
+	Avahi is a system which facilitates service discovery on \
+	a local network -- this means that you can plug your laptop or \
+	computer into a network and instantly be able to view other people who \
+	you can chat with, find printers to print to or find files being \
+	shared. This kind of technology is already found in MacOS X (branded \
+	'Rendezvous', 'Bonjour' and sometimes 'ZeroConf') and is very \
+	convenient
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_BUILD_DEPS+= gettext intltool pkg-config
+PKG_DEPS      += dbus dbus-glib libdaemon python python-dbus perl-xml-parser
+
+PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
-	--exec-prefix="" \
-	--sbindir=/sbin \
+	--bindir=/bin \
+	--mandir=/usr/share/man \
 	--sysconfdir=/etc \
-	--libexecdir=/lib/udev \
-	--with-rootlibdir=/lib \
-	--enable-introspection
-
-define STAGE_INSTALL_CMDS
-	# Install rules
-	-mkdir -pv $(BUILDROOT)/lib/udev/rules.d/
-	install -m644 -v $(DIR_SOURCE)/rules/*.rules $(BUILDROOT)/lib/udev/rules.d/
-
-	# Install pkg-config files correctly
-	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib
-
-	rm -vf $(BUILDROOT)/lib/lib{udev,gudev-1.0}.so
-	ln -svf ../../lib/libudev.so.0 $(BUILDROOT)/usr/lib/libudev.so
-	ln -svf ../../lib/libgudev-1.0.so.0 $(BUILDROOT)/usr/lib/libgudev-1.0.so
-
-	ln -svf ../../../../lib/udev/udev-acl \
-		$(BUILDROOT)/usr/lib/ConsoleKit/run-seat.d/udev-acl.ck
-endef
+	--localstatedir=/var \
+	--with-distro=none \
+	--disable-gdbm \
+	--disable-qt3 \
+	--disable-qt4 \
+	--disable-gtk \
+	--disable-pygtk \
+	--disable-mono

@@ -24,46 +24,36 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = udev
-PKG_VER        = 151
+PKG_NAME       = hdparm
+PKG_VER        = 9.27
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Base
-PKG_URL        = ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/
-PKG_LICENSE    = GPLv2+
-PKG_SUMMARY    = A userspace implementation of devfs.
-
-PKG_BUILD_DEPS+= gobject-introspection
-PKG_DEPS      += acl gperf libusb-compat pciutils usbutils util-linux-ng
+PKG_GROUP      = Applications/Hardware
+PKG_URL        = http://sourceforge.net/projects/hdparm/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = A utility for displaying and/or setting hard disk parameters.
 
 define PKG_DESCRIPTION
-	The udev package contains an implementation of devfs in userspace using \
-	sysfs and netlink.
+	Hdparm is a useful system utility for setting (E)IDE hard drive \
+	parameters. For example, hdparm can be used to tweak hard drive \
+	performance and to spin down hard drives for power conservation.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += \
-	--exec-prefix="" \
-	--sbindir=/sbin \
-	--sysconfdir=/etc \
-	--libexecdir=/lib/udev \
-	--with-rootlibdir=/lib \
-	--enable-introspection
+###############################################################################
+# Installation Details
+###############################################################################
 
-define STAGE_INSTALL_CMDS
-	# Install rules
-	-mkdir -pv $(BUILDROOT)/lib/udev/rules.d/
-	install -m644 -v $(DIR_SOURCE)/rules/*.rules $(BUILDROOT)/lib/udev/rules.d/
+define STAGE_BUILD
+	# fix sgio.c failur
+	cd $(DIR_APP) && mv sgio.c sgio.c.orig
+	cd $(DIR_APP) && grep -v "#include <scsi/scsi.h>" sgio.c.orig > sgio.c
+	cd $(DIR_APP) && sed -i -e "s/-O2/$(CFLAGS)/g" Makefile
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
 
-	# Install pkg-config files correctly
-	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib
-
-	rm -vf $(BUILDROOT)/lib/lib{udev,gudev-1.0}.so
-	ln -svf ../../lib/libudev.so.0 $(BUILDROOT)/usr/lib/libudev.so
-	ln -svf ../../lib/libgudev-1.0.so.0 $(BUILDROOT)/usr/lib/libgudev-1.0.so
-
-	ln -svf ../../../../lib/udev/udev-acl \
-		$(BUILDROOT)/usr/lib/ConsoleKit/run-seat.d/udev-acl.ck
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) binprefix=/usr
 endef

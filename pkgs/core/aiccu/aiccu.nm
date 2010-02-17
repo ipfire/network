@@ -24,46 +24,34 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = udev
-PKG_VER        = 151
+PKG_NAME       = aiccu
+PKG_VER        = 20070115
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Base
-PKG_URL        = ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/
-PKG_LICENSE    = GPLv2+
-PKG_SUMMARY    = A userspace implementation of devfs.
+PKG_GROUP      = System/Daemons
+PKG_URL        = http://www.sixxs.net/tools/aiccu/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = Automatic IPv6 Connectivity Client Utility for SixXS tunnels.
 
-PKG_BUILD_DEPS+= gobject-introspection
-PKG_DEPS      += acl gperf libusb-compat pciutils usbutils util-linux-ng
+PKG_DEPS      += gnutls
 
 define PKG_DESCRIPTION
-	The udev package contains an implementation of devfs in userspace using \
-	sysfs and netlink.
+	This client automatically gives one IPv6 connectivity without having \
+	to manually configure interfaces etc. One does need a SixXS account \
+	and at least a tunnel.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += \
-	--exec-prefix="" \
-	--sbindir=/sbin \
-	--sysconfdir=/etc \
-	--libexecdir=/lib/udev \
-	--with-rootlibdir=/lib \
-	--enable-introspection
+define STAGE_PREPARE_CMDS
+	mv /usr/src/$(PKG_NAME) /usr/src/$(PKG_NAME)-$(PKG_VER)
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) RPM_OPT_FLAGS="$(CFLAGS)"
+endef
 
 define STAGE_INSTALL_CMDS
-	# Install rules
-	-mkdir -pv $(BUILDROOT)/lib/udev/rules.d/
-	install -m644 -v $(DIR_SOURCE)/rules/*.rules $(BUILDROOT)/lib/udev/rules.d/
-
-	# Install pkg-config files correctly
-	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib
-
-	rm -vf $(BUILDROOT)/lib/lib{udev,gudev-1.0}.so
-	ln -svf ../../lib/libudev.so.0 $(BUILDROOT)/usr/lib/libudev.so
-	ln -svf ../../lib/libgudev-1.0.so.0 $(BUILDROOT)/usr/lib/libgudev-1.0.so
-
-	ln -svf ../../../../lib/udev/udev-acl \
-		$(BUILDROOT)/usr/lib/ConsoleKit/run-seat.d/udev-acl.ck
+	rm -rvf $(BUILDROOT)/{etc,usr/share}
 endef

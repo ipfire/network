@@ -24,46 +24,22 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = udev
-PKG_VER        = 151
+PKG_NAME       = libdaemon
+PKG_VER        = 0.13
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Base
-PKG_URL        = ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/
-PKG_LICENSE    = GPLv2+
-PKG_SUMMARY    = A userspace implementation of devfs.
-
-PKG_BUILD_DEPS+= gobject-introspection
-PKG_DEPS      += acl gperf libusb-compat pciutils usbutils util-linux-ng
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://0pointer.de/lennart/projects/libdaemon/
+PKG_LICENSE    = LGPLv2+
+PKG_SUMMARY    = Library for writing UNIX daemons.
 
 define PKG_DESCRIPTION
-	The udev package contains an implementation of devfs in userspace using \
-	sysfs and netlink.
+	libdaemon is a lightweight C library which eases the writing of UNIX daemons.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
-	--exec-prefix="" \
-	--sbindir=/sbin \
-	--sysconfdir=/etc \
-	--libexecdir=/lib/udev \
-	--with-rootlibdir=/lib \
-	--enable-introspection
-
-define STAGE_INSTALL_CMDS
-	# Install rules
-	-mkdir -pv $(BUILDROOT)/lib/udev/rules.d/
-	install -m644 -v $(DIR_SOURCE)/rules/*.rules $(BUILDROOT)/lib/udev/rules.d/
-
-	# Install pkg-config files correctly
-	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib
-
-	rm -vf $(BUILDROOT)/lib/lib{udev,gudev-1.0}.so
-	ln -svf ../../lib/libudev.so.0 $(BUILDROOT)/usr/lib/libudev.so
-	ln -svf ../../lib/libgudev-1.0.so.0 $(BUILDROOT)/usr/lib/libgudev-1.0.so
-
-	ln -svf ../../../../lib/udev/udev-acl \
-		$(BUILDROOT)/usr/lib/ConsoleKit/run-seat.d/udev-acl.ck
-endef
+	--bindir=/bin \
+	--mandir=/usr/share/man

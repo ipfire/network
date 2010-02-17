@@ -24,46 +24,35 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = udev
-PKG_VER        = 151
+PKG_NAME       = unzip
+PKG_VER        = 5.52
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Base
-PKG_URL        = ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/
-PKG_LICENSE    = GPLv2+
-PKG_SUMMARY    = A userspace implementation of devfs.
-
-PKG_BUILD_DEPS+= gobject-introspection
-PKG_DEPS      += acl gperf libusb-compat pciutils usbutils util-linux-ng
+PKG_GROUP      = Applications/Archiving
+PKG_URL        = ftp://ftp.info-zip.org/pub/infozip/src/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = A utility for unpacking zip files.
 
 define PKG_DESCRIPTION
-	The udev package contains an implementation of devfs in userspace using \
-	sysfs and netlink.
+	The unzip utility is used to list, test, or extract files from a zip \
+	archive. Zip archives are commonly found on MS-DOS systems. The zip \
+	utility, included in the zip package, creates zip archives. Zip and \
+	unzip are both compatible with archives created by PKWARE(R)'s PKZIP \
+	for MS-DOS, but the programs' options and default behaviors do differ \
+	in some respects.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(PKG_NAME)552.tgz 
 
-CONFIGURE_OPTIONS += \
-	--exec-prefix="" \
-	--sbindir=/sbin \
-	--sysconfdir=/etc \
-	--libexecdir=/lib/udev \
-	--with-rootlibdir=/lib \
-	--enable-introspection
+CFLAGS   += -D_LARGEFILE64_SOURCE
 
-define STAGE_INSTALL_CMDS
-	# Install rules
-	-mkdir -pv $(BUILDROOT)/lib/udev/rules.d/
-	install -m644 -v $(DIR_SOURCE)/rules/*.rules $(BUILDROOT)/lib/udev/rules.d/
+define STAGE_BUILD
+	cd $(DIR_APP) && ln -svf unix/Makefile Makefile
+	cd $(DIR_APP) && make generic CC="gcc $(CFLAGS)" LD=gcc $(PARALLELISMFLAGS)
+endef
 
-	# Install pkg-config files correctly
-	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib
-
-	rm -vf $(BUILDROOT)/lib/lib{udev,gudev-1.0}.so
-	ln -svf ../../lib/libudev.so.0 $(BUILDROOT)/usr/lib/libudev.so
-	ln -svf ../../lib/libgudev-1.0.so.0 $(BUILDROOT)/usr/lib/libgudev-1.0.so
-
-	ln -svf ../../../../lib/udev/udev-acl \
-		$(BUILDROOT)/usr/lib/ConsoleKit/run-seat.d/udev-acl.ck
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr \
+		MANDIR=/usr/share/man/man1 INSTALL="cp -p"
 endef

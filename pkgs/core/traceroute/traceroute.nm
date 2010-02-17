@@ -24,46 +24,42 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = udev
-PKG_VER        = 151
+PKG_NAME       = traceroute
+PKG_VER        = 2.0.12
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Base
-PKG_URL        = ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/
+PKG_GROUP      = Application/Internet
+PKG_URL        = http://traceroute.sourceforge.net
 PKG_LICENSE    = GPLv2+
-PKG_SUMMARY    = A userspace implementation of devfs.
-
-PKG_BUILD_DEPS+= gobject-introspection
-PKG_DEPS      += acl gperf libusb-compat pciutils usbutils util-linux-ng
+PKG_SUMMARY    = Traces the route taken by packets over an IPv4/IPv6 network.
 
 define PKG_DESCRIPTION
-	The udev package contains an implementation of devfs in userspace using \
-	sysfs and netlink.
+	The traceroute utility displays the route used by IP packets \
+	on their way to a specified network (or Internet) host. \
+	Traceroute displays the IP number and host name (if possible) \
+	of the machines along the route taken by the packets. \
+	Traceroute is used as a network debugging tool. If you're \
+	having network connectivity problems, traceroute will show you \
+	where the trouble is coming from along the route.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += \
-	--exec-prefix="" \
-	--sbindir=/sbin \
-	--sysconfdir=/etc \
-	--libexecdir=/lib/udev \
-	--with-rootlibdir=/lib \
-	--enable-introspection
+###############################################################################
+# Installation Details
+###############################################################################
 
-define STAGE_INSTALL_CMDS
-	# Install rules
-	-mkdir -pv $(BUILDROOT)/lib/udev/rules.d/
-	install -m644 -v $(DIR_SOURCE)/rules/*.rules $(BUILDROOT)/lib/udev/rules.d/
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && echo "CFLAGS += $(CFLAGS)" >> Make.defines
+endef
 
-	# Install pkg-config files correctly
-	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib
+define STAGE_BUILD
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
 
-	rm -vf $(BUILDROOT)/lib/lib{udev,gudev-1.0}.so
-	ln -svf ../../lib/libudev.so.0 $(BUILDROOT)/usr/lib/libudev.so
-	ln -svf ../../lib/libgudev-1.0.so.0 $(BUILDROOT)/usr/lib/libgudev-1.0.so
-
-	ln -svf ../../../../lib/udev/udev-acl \
-		$(BUILDROOT)/usr/lib/ConsoleKit/run-seat.d/udev-acl.ck
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr
+	chmod 755 $(BUILDROOT)/usr/bin/traceroute
+	ln -svf traceroute $(BUILDROOT)/usr/bin/traceroute6
 endef
