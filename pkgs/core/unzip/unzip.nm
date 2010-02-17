@@ -49,7 +49,7 @@ CFLAGS   += -D_LARGEFILE64_SOURCE
 
 define STAGE_BUILD
 	cd $(DIR_APP) && ln -svf unix/Makefile Makefile
-	cd $(DIR_APP) && make generic CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make generic CC="gcc $(CFLAGS)" LD=gcc $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
