@@ -1,0 +1,59 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = cryptsetup-luks
+PKG_VER        = 1.1.0
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://cryptsetup.googlecode.com/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = A utility for setting up encrypted filesystems.
+
+PKG_DEPS      += e2fsprogs libgcrypt libgpg-error lvm2 popt
+
+define PKG_DESCRIPTION
+	This package contains cryptsetup, a utility for setting up \
+	encrypted filesystems using Device Mapper and the dm-crypt target.
+endef
+
+PKG_TARBALL    = cryptsetup-$(PKG_VER).tar.bz2
+
+DIR_APP        = $(DIR_SRC)/cryptsetup-$(PKG_VER)
+
+CONFIGURE_OPTIONS += \
+		--sbindir=/sbin \
+		--libdir=/lib \
+		--disable-static
+
+define STAGE_INSTALL_CMDS
+	rm -rvf $(BUILDROOT)/lib/cryptsetup{,.la,.so}
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
+	ln -svf ../../lib/libcryptsetup.so.1.0.0 $(BUILDROOT)/usr/lib/libcryptsetup.so
+endef
+
