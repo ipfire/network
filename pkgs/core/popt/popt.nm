@@ -47,5 +47,6 @@ CONFIGURE_OPTIONS += \
 
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/usr/lib
+	rm -vf $(BUILDROOT)/lib/libpopt.so
 	ln -sfv ../../lib/libpopt.so.0.0.0 $(BUILDROOT)/usr/lib/libpopt.so
 endef
