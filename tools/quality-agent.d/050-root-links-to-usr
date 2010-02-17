@@ -4,7 +4,7 @@
 
 log "Check for binaries in /bin or /sbin that link to /usr/..."
 
-for file in ${BUILDROOT}/{,s}bin/*; do
+for file in ${BUILDROOT}/{bin,lib,sbin}/*; do
 	[ -f "${file}" ] || continue
 	log "  ${file}"
 	libs=$(ldd ${file})
