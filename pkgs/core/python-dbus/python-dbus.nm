@@ -34,22 +34,13 @@ PKG_URL        = http://www.freedesktop.org/software/dbus/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = Dbus Python Bindings.
 
+PKG_DEPS      += dbus-glib python
+
 define PKG_DESCRIPTION
 	D-Bus python bindings for use with python programs.
 endef
 
-PKG_BUILD_DEPS+= dbus-glib python
-PKG_DEPS      +=
-
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--disable-static \
-			--mandir=/usr/share/man
-endef
-
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man
