@@ -43,4 +43,12 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-CONFIGURE_OPTIONS += --enable-noexecstack
+CONFIGURE_OPTIONS += \
+	--libdir=/lib \
+	--enable-noexecstack \
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	rm -vf $(BUILDROOT)/lib/libgcrypt.so
+	ln -sfv ../../lib/libgcrypt.so.11.5.2 $(BUILDROOT)/usr/lib/libgcrypt.so
+endef
