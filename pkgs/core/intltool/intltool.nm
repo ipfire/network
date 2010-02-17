@@ -40,18 +40,9 @@ define PKG_DESCRIPTION
 	them in the po files.
 endef
 
-PKG_BUILD_DEPS+= expat gettext perl-xml-parser
-PKG_DEPS      += 
+PKG_DEPS      += expat gettext perl-xml-parser
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--disable-static \
-			--mandir=/usr/share/man
-endef
-
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man
