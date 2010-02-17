@@ -1,0 +1,62 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = hdparm
+PKG_VER        = 9.27
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Hardware
+PKG_URL        = http://sourceforge.net/projects/hdparm/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = A utility for displaying and/or setting hard disk parameters.
+
+PKG_DEPS      +=
+
+define PKG_DESCRIPTION
+	Hdparm is a useful system utility for setting (E)IDE hard drive \
+	parameters. For example, hdparm can be used to tweak hard drive \
+	performance and to spin down hard drives for power conservation.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	# fix sgio.c failur
+	cd $(DIR_APP) && mv sgio.c sgio.c.orig
+	cd $(DIR_APP) && grep -v "#include <scsi/scsi.h>" sgio.c.orig > sgio.c
+	cd $(DIR_APP) && sed -i -e "s/-O2/$(CFLAGS)/g" Makefile
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make binprefix=/usr/ install
+endef
+
