@@ -34,8 +34,6 @@ PKG_URL        = http://traceroute.sourceforge.net
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Traces the route taken by packets over an IPv4/IPv6 network.
 
-PKG_DEPS      += 
-
 define PKG_DESCRIPTION
 	The traceroute utility displays the route used by IP packets \
 	on their way to a specified network (or Internet) host. \
@@ -52,13 +50,16 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 # Installation Details
 ###############################################################################
 
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && echo "CFLAGS += $(CFLAGS)" >> Make.defines
+endef
+
 define STAGE_BUILD
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) LDFLAGS=""
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
-	cd $(DIR_APP) && make install prefix=/usr
-	chmod u-s /usr/bin/traceroute
-	ln -svf traceroute /usr/bin/traceroute6
+	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr
+	chmod 755 $(BUILDROOT)/usr/bin/traceroute
+	ln -svf traceroute $(BUILDROOT)/usr/bin/traceroute6
 endef
-
