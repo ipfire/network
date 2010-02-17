@@ -24,28 +24,36 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = popt
-PKG_VER        = 1.15
+PKG_NAME       = cryptsetup-luks
+PKG_VER        = 1.1.0
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://www.rpm5.org/
-PKG_LICENSE    = MIT
-PKG_SUMMARY    = C library for parsing command line parameters.
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://cryptsetup.googlecode.com/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = A utility for setting up encrypted filesystems.
+
+PKG_DEPS      += e2fsprogs libgcrypt libgpg-error lvm2 popt
 
 define PKG_DESCRIPTION
-	Popt is a C library for parsing command line parameters. Popt was \
-	heavily influenced by the getopt() and getopt_long() functions, but \
-	it improves on them by allowing more powerful argument expansion.
+	This package contains cryptsetup, a utility for setting up \
+	encrypted filesystems using Device Mapper and the dm-crypt target.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_TARBALL    = cryptsetup-$(PKG_VER).tar.bz2
+
+DIR_APP        = $(DIR_SRC)/cryptsetup-$(PKG_VER)
 
 CONFIGURE_OPTIONS += \
+		--sbindir=/sbin \
 		--libdir=/lib \
+		--disable-static
 
 define STAGE_INSTALL_CMDS
+	rm -rvf $(BUILDROOT)/lib/cryptsetup{,.la,.so}
 	-mkdir -pv $(BUILDROOT)/usr/lib
-	ln -sfv ../../lib/libpopt.so.0.0.0 $(BUILDROOT)/usr/lib/libpopt.so
+	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
+	ln -svf ../../lib/libcryptsetup.so.1.0.0 $(BUILDROOT)/usr/lib/libcryptsetup.so
 endef
+
