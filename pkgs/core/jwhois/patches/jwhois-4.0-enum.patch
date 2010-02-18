@@ -1,0 +1,43 @@
+diff -up jwhois-4.0/example/jwhois.conf.enum jwhois-4.0/example/jwhois.conf
+--- jwhois-4.0/example/jwhois.conf.enum	2009-01-27 13:39:48.000000000 +0100
++++ jwhois-4.0/example/jwhois.conf	2009-01-27 13:42:09.000000000 +0100
+@@ -17,6 +17,11 @@ whois-servers {
+ 	type = regex;
+ 
+ 	#
++	# Catch ENUM domains
++	#
++	"\\([0-9]\\.\\)+e164\\.arpa" = "struct enum-blocks";
++
++	#
+ 	# You can use the special value `struct' to redirect the query
+ 	# to another block which optionally can use another type of matching.
+ 	# Here we use it to have IPv4 numbers matched using CIDR blocks instead
+@@ -311,6 +316,15 @@ whois-servers {
+ }
+ 
+ #
++# enum-blocks
++#
++enum-blocks {
++	type = regex;
++
++	"\\.9\\.4\\.e164\\.arpa$" = "whois.enum.denic.de";
++}
++
++#
+ # cidr-blocks contains a list of all known CIDR blocks assigned to
+ # RIPE or APNIC. Default all queries to ARIN which has most other blocks.
+ #
+@@ -915,6 +929,11 @@ server-options {
+ 		query-format = "-C UTF-8 -T dn,ace $*";
+ 		answer-charset = "UTF-8";
+ 	}
++	"whois\\.enum\\.denic\\.de" {
++		whois-server = "whois.enum.denic.de";
++		query-format = "-C UTF-8 -T dn $*";
++		answer-charset = "UTF-8";
++	}
+ 	"whois\\.nic\\.ad\\.jp" {
+ 		query-format = "$*/e";
+ 	}

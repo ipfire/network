@@ -1,0 +1,90 @@
+--- jwhois-4.0/example/jwhois.conf		2009-02-27 22:20:48.000000000 +0100
++++ jwhois-4.0/example/jwhois.conf.rsc		2009-03-08 12:33:22.000000000 +0100
+@@ -178,7 +178,7 @@
+ 	"\\.dk$" = "whois.dk-hostmaster.dk";
+ 	"\\.dm$" = "whois.nic.dm";
+ 	"\\.do$" = "whois.nic.do";
+-	"\\.dz$" = "whois.ripe.net";
++	"\\.dz$" = "www.nic.dz";
+ 	"\\.ec$" = "www.nic.ec";
+ 	"\\.edu$" = "whois.educause.edu";
+ 	"\\.ee$" = "whois.eenet.ee";
+@@ -268,6 +268,7 @@
+ 	"\\.nu$" = "whois.nic.nu";
+ 	"\\.nz$" = "whois.srs.net.nz";
+ 	"\\.org$" = "whois.publicinterestregistry.net";
++	"\\.pa$" = "www.nic.pa";
+ 	"\\.pe$" = "kero.yachay.pe";
+ 	"\\.pk$" = "pknic.net.pk";
+ 	"\\.pl$" = "whois.dns.pl";
+@@ -296,6 +297,7 @@
+ 	"\\.st$" = "whois.nic.st";
+ 	"\\.su$" = "whois.ripn.net";
+ 	"\\.tc$" = "whois.adamsnames.tc";
++	"\\.tel$" = "whois.nic.tel";
+ 	"\\.tf$" = "whois.afnic.fr";
+ 	"\\.tg$" = "www.nic.tg";
+ 	"\\.th$" = "whois.thnic.net";
+@@ -321,7 +323,7 @@
+ 	"\\.fed\\.us$" = "whois.nic.gov";
+ 	"\\.us$" = "whois.nic.us";
+ 	"\\.com\\.uy$" = "dns.antel.net.uy";
+-	"\\.uy$" = "www.rau.edu.uy"; # is a whois server
++	"\\.uy$" = "whois.nic.org.uy";
+ 	"\\.co\\.uz$" = "whois.reg.uz";
+ 	"\\.com\\.uz$" = "whois.reg.uz";
+ 	"\\.uz$" = "whois.cctld.uz";
+@@ -335,7 +337,7 @@
+ 	"\\.wf$" = "whois.nic.wf";
+ 	"\\.ws$" = "whois.worldsite.ws";
+ 	"\\.yt$" = "whois.nic.yt";
+-	"\\.yu$" = "whois.ripe.net";
++	"\\.yu$" = "www.nic.yu";
+ 	"\\.ac\\.za$" = "whois.ac.za";
+ 	"\\.org\\.za$" = "rwhois.org.za 4321";
+ 	"\\.co\\.za$" = "whois.co.za";
+@@ -363,6 +365,7 @@
+ 	type = regex;
+ 
+ 	"\\.9\\.4\\.e164\\.arpa$" = "whois.enum.denic.de";
++	"\\.1\\.6\\.e164\\.arpa$" = "whois-check.enum.com.au";
+ }
+ 
+ #
+@@ -741,7 +744,7 @@
+ 	".*-NICAT$" = "whois.nic.at";
+ 	".*-CZ$" = "whois.nic.cz";
+ 	".*-NICIR$" = "whois.nic.ir";
+-	".*-UYNIC$" = "www.rau.edu.uy";
++	".*-UYNIC$" = "whois.nic.org.uy";
+ 	".*-ITNIC$" = "whois.nic.it";
+ 	".*-FRNIC$" = "whois.nic.fr";
+ 	".*-LACNIC$" = "whois.lacnic.net";
+@@ -1045,6 +1048,27 @@
+ 		http-action = "/do.php";
+ 		query-format = "chkDomain=${+3}&chkAvail=Check";
+ 	}
++
++	"www\\.nic\\.pa" {
++		http = "true";
++		http-method = "GET";
++		http-action = "/egh/whois.php";
++		form-element = "nombre_d";
++	}
++
++	"www\\.nic\\.dz" {
++		http = "true";
++		http-method = "POST";
++		http-action = "/index.php?option=com_content&task=view&id=37&Itemid=51";
++		form-element = "domain_name";
++	}
++
++	"www\\.nic\\.yu" {
++		http = "true";
++		http-method = "GET";
++		http-action = "/cgi-bin/checkavail.cgi";
++		form-element = "domain";
++	}
+ }
+ 
+ #

@@ -1,0 +1,168 @@
+--- jwhois-4.0/example/jwhois.conf		2009-08-16 17:59:06.000000000 +0200
++++ jwhois-4.0/example/jwhois.conf.rsc		2009-08-16 17:59:39.000000000 +0200
+@@ -121,6 +121,7 @@
+ 	"\\.ai$" = "whois.ai";
+ 	"\\.al$" = "www.ert.gov.al";
+ 	"\\.am$" = "whois.amnic.net";
++	"\\.edu\\.ar$" = "www.riu.edu.ar";
+ 	"\\.ar$" = "www.nic.ar";
+ 	"\\.arpa$" = "whois.iana.org";
+ 	"\\.as$" = "whois.nic.as";
+@@ -142,8 +143,9 @@
+ 	"\\.bm$" = "rwhois.ibl.bm 4321";
+ 	"\\.bo$" = "whois.nic.bo";
+ 	"\\.br$" = "whois.nic.br";
++	"\\.bs$" = "www.register.bs";
+ 	"\\.bv$" = "whois.ripe.net";
+-	"\\.by$" = "whois.ripe.net";
++	"\\.by$" = "www.domain.by";
+ 	"\\.bz$" = "whois.belizenic.bz";
+ 	"\\.co\\.ca$" = "whois.co.ca";
+ 	"\\.ca$" = "whois.cira.ca";
+@@ -176,7 +178,10 @@
+ 		whois-server = "whois.denic.de";
+ 		query-format = "-C UTF-8 -T dn,ace $*";
+ 	}
+-	"\\.dk$" = "whois.dk-hostmaster.dk";
++	"\\.dk$" {
++		whois-server = "whois.dk-hostmaster.dk";
++		query-format = "--show-handles $*";
++	}
+ 	"\\.dm$" = "whois.nic.dm";
+ 	"\\.do$" = "whois.nic.do";
+ 	"\\.dz$" = "www.nic.dz";
+@@ -257,13 +262,16 @@
+ 	"\\.mx$" = "whois.nic.mx";
+ 	"\\.my$" = "whois.domainregistry.my";
+ 	"\\.na$" = "whois.na-nic.com.na";
+-	"\\.name$" = "whois.nic.name";
++	"\\.name$" {
++		whois-server = "whois.nic.name";
++		query-format = "domain = $*";
++		}
+ 	"\\.net$" {
+ 		whois-server = "whois.verisign-grs.com";
+ 		query-format = "domain $*";
+ 	}
+ 	"\\.nf$" = "whois.cocca.cx";
+-	"\\.ng$" = "whois.rg.net";
++	"\\.ng$" = "whois.nic.net.ng";
+ 	"\\.nl$" = "whois.domain-registry.nl";
+ 	"\\.no$" = "whois.norid.no";
+ 	"\\.nu$" = "whois.nic.nu";
+@@ -276,6 +284,7 @@
+ 	"\\.pm$" = "whois.nic.pm";
+ 	"\\.pr$" = "whois.nic.pr";
+ 	"\\.pro$" = "whois.registrypro.pro";
++	"\\.ps$" = "www.nic.ps";
+ 	"\\.pt$" = "whois.dns.pt";
+ 	"\\.pw$" = "whois.nic.pw";
+ 	"\\.re$" = "whois.nic.re";
+@@ -287,17 +296,19 @@
+ 	"\\.sb$" = "whois.nic.sb";
+ 	"\\.sc$" = "whois2.afilias-grs.net";
+ 	"\\.se$" = "whois.iis.se";
+-	"\\.sg$" = "whois.nic.net.sg";
++	"\\.sg$" = "whois.sgnic.sg";
+ 	"\\.sh$" = "whois.nic.sh";
+ 	"\\.si$" = "whois.arnes.si";
+ 	"\\.sj$" = "whois.ripe.net";
+ 	"\\.sk$" = "whois.sk-nic.sk";
++	"\\.sl$" = "whois.nic.sl";
+ 	"\\.sm$" = "whois.ripe.net";
+ 	"\\.sn$" = "whois.nic.sn";
+ 	"\\.so$" = "whois.nic.so";
+ 	"\\.sr$" = "whois.register.sr";
+ 	"\\.st$" = "whois.nic.st";
+ 	"\\.su$" = "whois.ripn.net";
++	"\\.sv$" = "www.svnet.org.sv";
+ 	"\\.tc$" = "whois.adamsnames.tc";
+ 	"\\.tel$" = "whois.nic.tel";
+ 	"\\.tf$" = "whois.afnic.fr";
+@@ -345,6 +356,7 @@
+ 	"\\.co\\.za$" = "whois.co.za";
+ 	"\\.nom\\.za$" = "www.nom.za";
+ 	# "\\.za$" = "whois.frd.ac.za";
++	"\\.co\\.zw$" = "www.zispa.co.zw";
+ 
+ 	#
+ 	# Specify different port numbers to connect to by postfixing the IP
+@@ -782,6 +794,22 @@
+ 		whois-server = "whois.nic.coop";
+ 		query-format = "CONTACT $*";
+ 	}
++	".*CONTACT-NAME$" {
++		whois-server = "whois.nic.name";
++		query-format = "contact = $*";
++	}
++	".*REGISTRAR-NAME$" {
++		whois-server = "whois.nic.name";
++		query-format = "registrar = $*";
++	}
++	"^C[0-9]+-AERO$" {
++		whois-server = "whois.aero";
++		query-format = "CONTACT ID $*";
++	}
++	"^D[0-9]+-AERO$" {
++		whois-server = "whois.aero";
++		query-format = "DOMAIN ID $*";
++	}
+ }
+ 
+ #
+@@ -1089,6 +1117,55 @@
+ 		http-action = "/dom_det.php";
+ 		form-element = "domsrch";
+ 	}
++
++	"www\\.nic\\.ps" {
++		http = "true";
++		http-method = "GET";
++		http-action = "/whois/domain_whois.php";
++		form-element = "dname";
++	}
++
++	"www\\.svnet\\.org\\.sv" {
++		http = "true";
++		http-method = "POST";
++		http-action = "/registro/consultas/whois.php";
++		form-element = "subdominio";
++	}
++
++	"www\\.zispa\\.co\\.zw" {
++		http = "true";
++		http-method = "GET";
++		http-action = "/cgi-bin/search";
++		form-element = "domain";
++	}
++
++	"www\\.riu\\.edu\\.ar" {
++		http = "true";
++		http-method = "POST";
++		http-action = "/cgi-bin/verdom.pl.nuevo";
++		query-format = "username=${+3}";
++	}
++
++	"www\\.register\\.bs" {
++		http = "true";
++		http-method = "POST";
++		http-action = "/cgi-bin/search.pl";
++		form-element = "name";
++	}
++
++	"www\\.domain\\.by" {
++		http = "true";
++		http-method = "POST";
++		http-action = "/cgi-bin/registry.cgi";
++		query-format = "domain=${+2}&lang=e&mode=slquest";
++	}
++
++	"www\\.nic\\.ac" {
++		http = "true";
++		http-method = "GET";
++		http-action = "/cgi-bin/whois";
++		form-element = "textfield";
++	}
+ }
+ 
+ #
