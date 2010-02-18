@@ -1,0 +1,61 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = wireless_tools
+PKG_VER        = 29
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Networking/Wireless
+PKG_URL        = http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html
+PKG_LICENSE    = GPL+
+PKG_SUMMARY    = Wireless ethernet configuration tools.
+
+define PKG_DESCRIPTION
+	This package contain the Wireless tools, used to manipulate \
+	the Wireless Extensions. The Wireless Extension is an interface \
+	allowing you to set Wireless LAN specific parameters and get the \
+	specific stats for wireless networking equipment.
+endef
+
+THISAPP        = $(PKG_NAME).$(PKG_VER)
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) BUILD_SHARED=1 \
+		FORCE_WEXT_VERSION=16 OPT_FLAGS="$(CFLAGS)"
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install PREFIX=$(BUILDROOT)/usr \
+		INSTALL_DIR=$(BUILDROOT)/sbin INSTALL_LIB=$(BUILDROOT)/lib \
+		INSTALL_MAN=$(BUILDROOT)/usr/share/man
+
+	rm -vf $(BUILDROOT)/lib/libiw.{a,so}
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	ln -svf ../../lib/libiw.so.$(PKG_VER) $(BUILDROOT)/usr/lib/libiw.so
+endef
