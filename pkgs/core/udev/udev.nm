@@ -63,4 +63,7 @@ define STAGE_INSTALL_CMDS
 	rm -vf $(BUILDROOT)/lib/lib{udev,gudev-1.0}.so
 	ln -svf ../../lib/libudev.so.0 $(BUILDROOT)/usr/lib/libudev.so
 	ln -svf ../../lib/libgudev-1.0.so.0 $(BUILDROOT)/usr/lib/libgudev-1.0.so
+
+	ln -svf ../../../../lib/udev/udev-acl \
+		$(BUILDROOT)/usr/lib/ConsoleKit/run-seat.d/udev-acl.ck
 endef

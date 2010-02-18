@@ -22,71 +22,44 @@
 # Definitions
 ###############################################################################
 
-include Config
+include $(PKGROOT)/Include
 
-PKG_NAME   = btrfs-progs
-PKG_VER    = 0.19
-PKG_REL    = 0
+PKG_NAME       = traceroute
+PKG_VER        = 2.0.12
+PKG_REL        = 0
 
-THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.bz2
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+PKG_MAINTAINER =
+PKG_GROUP      = Application/Internet
+PKG_URL        = http://traceroute.sourceforge.net
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Traces the route taken by packets over an IPv4/IPv6 network.
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-
-MAINTAINER =
-GROUP      = System/Filesystems
-CORE       = yes
-EXTRA      = no
-DEBUG      = no
-BUILD_DEPS =
-DEPS       =
-
-URL        = http://btrfs.wiki.kernel.org/index.php/Main_Page
-LICENSE    = GPLv2
-SHORT_DESC = Userspace programs for btrfs.
-
-define LONG_DESC
-	The btrfs-progs package provides all the userpsace programs needed to create, \
-	check, modify and correct any inconsistencies in the btrfs filesystem.
+define PKG_DESCRIPTION
+	The traceroute utility displays the route used by IP packets \
+	on their way to a specified network (or Internet) host. \
+	Traceroute displays the IP number and host name (if possible) \
+	of the machines along the route taken by the packets. \
+	Traceroute is used as a network debugging tool. If you're \
+	having network connectivity problems, traceroute will show you \
+	where the trouble is coming from along the route.
 endef
 
-###############################################################################
-# Top-level Rules
-###############################################################################
-
-objects = $(DL_FILE) \
-	$(THISAPP)-fix-labels.patch \
-	$(THISAPP)-build-everything.patch \
-	$(THISAPP)-valgrind.patch
-
-
-download: $(objects)
-
-info:
-	$(DO_PKG_INFO)
-
-install: $(OBJECT)
-
-packages: $(PACKAGES)
-
-$(PACKAGES): $(OBJECT)
-	@$(DO_PACKAGE)
-
-$(objects):
-	@$(LOAD)
+PKG_TARBALL    = $(THISAPP).tar.gz
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT): $(objects)
-	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-fix-labels.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-build-everything.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-valgrind.patch
-	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make bindir=/sbin mandir=/usr/share install 
-	@rm -rf $(DIR_APP)
-	@$(POSTBUILD)
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && echo "CFLAGS += $(CFLAGS)" >> Make.defines
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr
+	chmod 755 $(BUILDROOT)/usr/bin/traceroute
+	ln -svf traceroute $(BUILDROOT)/usr/bin/traceroute6
+endef

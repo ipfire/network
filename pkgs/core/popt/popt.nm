@@ -41,3 +41,12 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+		--libdir=/lib \
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	rm -vf $(BUILDROOT)/lib/libpopt.so
+	ln -sfv ../../lib/libpopt.so.0.0.0 $(BUILDROOT)/usr/lib/libpopt.so
+endef

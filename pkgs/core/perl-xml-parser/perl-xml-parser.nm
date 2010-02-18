@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -22,70 +22,34 @@
 # Definitions
 ###############################################################################
 
-include Config
+include $(PKGROOT)/Include
 
-PKG_NAME   = XML-Parser
-PKG_VER    = 2.34
-PKG_REL    = 0
+PKG_NAME       = XML-Parser
+PKG_VER        = 2.36
+PKG_REL        = 0
 
-THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Libraries
+PKG_URL        = http://search.cpan.org/dist/XML-Parser/
+PKG_LICENSE    = GPL+ or Artistic
+PKG_SUMMARY    = Perl module for parsing XML files.
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+PKG_DEPS      += expat perl
 
-MAINTAINER =
-GROUP      = Development/Libraries
-CORE       = yes
-EXTRA      = no
-DEBUG      = no
-BUILD_DEPS =
-DEPS       = perl
-
-LICENSE    = GPL+ or Artistic
-URL        = http://search.cpan.org/dist/XML-Parser/
-SHORT_DESC = Perl module for parsing XML files.
-
-define LONG_DESC
+define PKG_DESCRIPTION
 	This module provides ways to parse XML documents. It is built on \
 	top of XML::Parser::Expat, which is a lower level interface to \
 	James Clark's expat library.
 endef
 
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+# XXX has to be removed
 define QUALITY_AGENT_WHITELIST_RPATH
 	/usr/lib/perl5/site_perl/*/auto/XML/Parser/Expat/Expat.so
 endef
 
-###############################################################################
-# Top-level Rules
-###############################################################################
-
-objects = $(DL_FILE)
-
-download: $(objects)
-
-info:
-	$(DO_PKG_INFO)
-
-install: $(OBJECT)
-
-packages: $(PACKAGES)
-
-$(PACKAGES): $(OBJECT)
-	@$(DO_PACKAGE)
-
-$(objects):
-	@$(LOAD)
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-$(OBJECT): $(objects)
-	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
+define STAGE_BUILD
 	cd $(DIR_APP) && perl Makefile.PL
-	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install
-	@rm -rf $(DIR_APP)
-	@$(POSTBUILD)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef

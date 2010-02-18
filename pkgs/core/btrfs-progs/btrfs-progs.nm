@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -22,68 +22,35 @@
 # Definitions
 ###############################################################################
 
-include Config
+include $(PKGROOT)/Include
 
-PKG_NAME   = beep
-PKG_VER    = 1.2.2
-PKG_REL    = 0
+PKG_NAME       = btrfs-progs
+PKG_VER        = 0.19
+PKG_REL        = 0
 
-THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+PKG_MAINTAINER =
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://btrfs.wiki.kernel.org/index.php/Main_Page
+PKG_LICENSE    = GPLv2
+PKG_SUMMARY    = Userspace programs for btrfs.
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+PKG_BUILD_DEPS+= util-linux-ng
 
-MAINTAINER =
-GROUP      = Applications/System
-CORE       = yes
-EXTRA      = no
-DEBUG      = no
-BUILD_DEPS =
-DEPS       =
-
-URL        = http://www.johnath.com/beep/
-LICENSE    = GPLv2+
-SHORT_DESC = Beep the PC speaker any number of ways.
-
-define LONG_DESC
-	Beep allows the user to control the PC speaker with precision, \
-	allowing different sounds to indicate different events. While it \
-	can be run quite happily on the commandline, it's intended place \
-	of residence is within shell/perl scripts, notifying the user when \
-	something interesting occurs. Of course, it has no notion of \
-	what's interesting, but it's real good at that notifying part.
+define PKG_DESCRIPTION
+	The btrfs-progs package provides all the userpsace programs needed to create, \
+	check, modify and correct any inconsistencies in the btrfs filesystem.
 endef
 
-###############################################################################
-# Top-level Rules
-###############################################################################
-
-objects = $(DL_FILE)
-
-download: $(objects)
-
-info:
-	$(DO_PKG_INFO)
-
-install: $(OBJECT)
-
-packages: $(PACKAGES)
-
-$(PACKAGES): $(OBJECT)
-	@$(DO_PACKAGE)
-
-$(objects):
-	@$(LOAD)
+PKG_TARBALL    = $(THISAPP).tar.bz2
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT): $(objects)
-	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && install -m 0755 beep /usr/bin
-	@rm -rf $(DIR_APP)
-	@$(POSTBUILD)
+define STAGE_BUILD
+	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make bindir=$(BUILDROOT)/sbin mandir=$(BUILDROOT)/usr/share install
+endef

@@ -24,45 +24,34 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = libcap
-PKG_VER        = 2.16
+PKG_NAME       = aiccu
+PKG_VER        = 20070115
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://ftp.kernel.org/pub/linux/libs/security/linux-privs/kernel-2.6/
-PKG_LICENSE    = LGPL2+
-PKG_SUMMARY    = Library for getting and setting POSIX.1e capabilities.
+PKG_GROUP      = System/Daemons
+PKG_URL        = http://www.sixxs.net/tools/aiccu/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = Automatic IPv6 Connectivity Client Utility for SixXS tunnels.
 
-PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+PKG_DEPS      += gnutls
 
 define PKG_DESCRIPTION
-	libcap is a library for getting and setting POSIX.1e (formerly POSIX 6) \
-	draft 15 capabilities.
+	This client automatically gives one IPv6 connectivity without having \
+	to manually configure interfaces etc. One does need a SixXS account \
+	and at least a tunnel.
 endef
 
-PKG_DEPS      += attr pam
-
-PKG_TARBALL    = $(THISAPP).tar.bz2
-
-###############################################################################
-# Installation Details
-###############################################################################
+PKG_TARBALL    = $(THISAPP).tar.gz
 
 define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e "s@<stdlib.h>@&\n#include <asm/types.h>@g" \
-		-i progs/capsh.c
-	cd $(DIR_APP) && sed 's/--static//' -i.orig progs/Makefile
+	mv /usr/src/$(PKG_NAME) /usr/src/$(PKG_NAME)-$(PKG_VER)
 endef
 
 define STAGE_BUILD
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CC="gcc $(CFLAGS)"
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) RPM_OPT_FLAGS="$(CFLAGS)"
 endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) lib=/lib
-
-	rm -vf $(BUILDROOT)/lib/libcap.so
-	-mkdir -pv $(BUILDROOT)/usr/lib
-	ln -svf ../../lib/libcap.so.2 $(BUILDROOT)/usr/lib/libcap.so
+define STAGE_INSTALL_CMDS
+	rm -rvf $(BUILDROOT)/{etc,usr/share}
 endef

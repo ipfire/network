@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -22,71 +22,38 @@
 # Definitions
 ###############################################################################
 
-include Config
+include $(PKGROOT)/Include
 
-PKG_NAME   = traceroute
-PKG_VER    = 2.0.12
-PKG_REL    = 0
+PKG_NAME       = hdparm
+PKG_VER        = 9.27
+PKG_REL        = 0
 
-THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Hardware
+PKG_URL        = http://sourceforge.net/projects/hdparm/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = A utility for displaying and/or setting hard disk parameters.
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-
-MAINTAINER =
-GROUP      = Applications/Internet
-CORE       = yes
-EXTRA      = yes
-DEBUG      = no
-BUILD_DEPS =
-DEPS       =
-
-URL        = http://traceroute.sourceforge.net/
-LICENSE    = GPLv2+
-SHORT_DESC = Traces the route taken by packets over an IPv4/IPv6 network.
-
-define LONG_DESC
-	The traceroute utility displays the route used by IP packets \
-	on their way to a specified network (or Internet) host. \
-	Traceroute displays the IP number and host name (if possible) \
-	of the machines along the route taken by the packets. \
-	Traceroute is used as a network debugging tool. If you're \
-	having network connectivity problems, traceroute will show you \
-	where the trouble is coming from along the route.
+define PKG_DESCRIPTION
+	Hdparm is a useful system utility for setting (E)IDE hard drive \
+	parameters. For example, hdparm can be used to tweak hard drive \
+	performance and to spin down hard drives for power conservation.
 endef
 
-###############################################################################
-# Top-level Rules
-###############################################################################
-
-objects = $(DL_FILE)
-
-download: $(objects)
-
-info:
-	$(DO_PKG_INFO)
-
-install: $(OBJECT)
-
-packages: $(PACKAGES)
-
-$(PACKAGES): $(OBJECT)
-	@$(DO_PACKAGE)
-
-$(objects):
-	@$(LOAD)
+PKG_TARBALL    = $(THISAPP).tar.gz
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT): $(objects)
-	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CFLAGS="$(CFLAGS)" LDFLAGS=""
-	cd $(DIR_APP) && make install prefix=/usr
-	chmod u-s /usr/bin/traceroute
-	ln -svf traceroute /usr/bin/traceroute6
-	@rm -rf $(DIR_APP)
-	@$(POSTBUILD)
+define STAGE_BUILD
+	# fix sgio.c failur
+	cd $(DIR_APP) && mv sgio.c sgio.c.orig
+	cd $(DIR_APP) && grep -v "#include <scsi/scsi.h>" sgio.c.orig > sgio.c
+	cd $(DIR_APP) && sed -i -e "s/-O2/$(CFLAGS)/g" Makefile
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) binprefix=/usr
+endef
