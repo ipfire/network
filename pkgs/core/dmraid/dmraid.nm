@@ -1,0 +1,66 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = dmraid
+PKG_VER        = 1.0.0.rc15
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://people.redhat.com/heinzm/sw/dmraid
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Device-mapper RAID tool and library.
+
+PKG_DEPS      += lvm2
+
+define PKG_DESCRIPTION
+	DMRAID supports RAID device discovery, RAID set activation, creation, \
+	removal, rebuild and display of properties for ATARAID/DDF1 metadata on \
+	Linux >= 2.4 using device-mapper.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+DIR_APP        = $(DIR_SRC)/$(PKG_NAME)/$(PKG_VER)
+PARALLELISMFLAGS =
+
+CONFIGURE_OPTIONS += \
+	--sbindir=/sbin \
+	--libdir=/lib \
+	--disable-static \
+	--disable-static_link
+
+define STAGE_BUILD_CMDS
+	cd $(DIR_APP) && make -C lib libdmraid.so
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) sbindir=$(BUILDROOT)/sbin
+	-mkdir -pv $(BUILDROOT)/{,usr}/lib
+	cd $(DIR_APP) && install -v -m 755 lib/libdmraid.so \
+		$(BUILDROOT)/lib/libdmraid.so.$(PKG_VER)
+	ln -svf ../../lib/libdmraid.so.$(PKG_VER) $(BUILDROOT)/usr/lib/libdmraid.so
+endef
