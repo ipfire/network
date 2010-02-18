@@ -24,31 +24,49 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = expat
-PKG_VER        = 2.0.1
+PKG_NAME       = openvpn
+PKG_VER        = 2.1_rc20
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://www.libexpat.org/
-PKG_LICENSE    = MIT
-PKG_SUMMARY    = An XML parser library.
+PKG_GROUP      = Networking/VPN
+PKG_URL        = http://openvpn.net/
+PKG_LICENSE    = GPLv2
+PKG_SUMMARY    = A full-featured SSL VPN solution.
+
+PKG_DEPS      += iproute2 lzo openssl pam
 
 define PKG_DESCRIPTION
-	This is expat, the C library for parsing XML, written by James Clark. Expat \
-	is a stream oriented XML parser. This means that you register handlers with \
-	the parser prior to starting the parse. These handlers are called when the \
-	parser discovers the associated structures in the document being parsed. A \
-	start tag is an example of the kind of structures for which you may \
-	register handlers.
+	OpenVPN is a robust and highly flexible tunneling application that uses all \
+	of the encryption, authentication, and certification features of the \
+	OpenSSL library to securely tunnel IP networks over a single UDP or TCP \
+	port. It can use the Marcus Franz Xaver Johannes Oberhumer's LZO library \
+	for compression.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += --libdir=/lib --mandir=/usr/share
+PLUGINS        = auth-pam down-root
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=/usr \
+			--enable-pthread \
+			--enable-password-save \
+			--enable-iproute2
+
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && for plugin in $(PLUGINS); do \
+		make -C plugin/$$plugin; \
+	done
+endef
 
 define STAGE_INSTALL_CMDS
-	rm -vf $(BUILDROOT)/lib/libexpat.so
-	-mkdir -pv $(BUILDROOT)/usr/lib
-	ln -svf ../../lib/libexpat.so.1 $(BUILDROOT)/usr/lib/libexpat.so
+	mkdir -pv $(BUILDROOT)/usr/lib/$(PKG_NAME)/plugin/lib
+	cd $(DIR_APP) && for plugin in $(PLUGINS); do \
+		install -m 0755 plugin/$$plugin/openvpn-$$plugin.so \
+			$(BUILDROOT)/usr/lib/$(PKG_NAME)/plugin/lib/openvpn-$$plugin.so; \
+	 done
+	-mkdir -pv $(BUILDROOT)/var/run/$(PKG_NAME)
 endef

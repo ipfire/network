@@ -1,0 +1,13 @@
+diff -up jwhois-4.0/example/jwhois.conf_old jwhois-4.0/example/jwhois.conf
+--- jwhois-4.0/example/jwhois.conf_old	2009-04-23 16:16:41.000000000 +0200
++++ jwhois-4.0/example/jwhois.conf	2009-04-23 16:18:15.000000000 +0200
+@@ -1069,6 +1069,9 @@ server-options {
+ 		http-action = "/cgi-bin/checkavail.cgi";
+ 		form-element = "domain";
+ 	}
++	"whois\\.dotster\\.com" {
++		answer-charset = "UTF-8";
++	}
+ }
+ 
+ #

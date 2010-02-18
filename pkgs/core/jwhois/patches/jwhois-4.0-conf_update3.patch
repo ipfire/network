@@ -1,0 +1,61 @@
+--- jwhois-4.0/example/jwhois.conf		2009-05-03 13:15:33.000000000 +0200
++++ jwhois-4.0/example/jwhois.conf.rsc		2009-05-03 13:17:52.000000000 +0200
+@@ -119,7 +119,7 @@
+ 	"\\.af$" = "whois.cocca.cx";
+ 	"\\.ag$" = "whois.nic.ag";
+ 	"\\.ai$" = "whois.ai";
+-	"\\.al$" = "whois.ripe.net";
++	"\\.al$" = "www.ert.gov.al";
+ 	"\\.am$" = "whois.amnic.net";
+ 	"\\.ar$" = "www.nic.ar";
+ 	"\\.arpa$" = "whois.iana.org";
+@@ -168,6 +168,7 @@
+ 		query-format = "domain $*";
+ 	}
+ 	"\\.coop$" = "whois.nic.coop";
++	"\\.cu$" = "www.nic.cu";
+ 	"\\.cx$" = "whois.nic.cx";
+ 	"\\.cy$" = "whois.ripe.net";
+ 	"\\.cz$" = "whois.nic.cz";
+@@ -254,7 +255,7 @@
+ 	"\\.museum$" = "whois.museum";
+ 	"\\.mw$" = "www.tarsus.net";
+ 	"\\.mx$" = "whois.nic.mx";
+-	"\\.my$" = "whois.mynic.net.my";
++	"\\.my$" = "whois.domainregistry.my";
+ 	"\\.na$" = "whois.na-nic.com.na";
+ 	"\\.name$" = "whois.nic.name";
+ 	"\\.net$" {
+@@ -293,6 +294,7 @@
+ 	"\\.sk$" = "whois.sk-nic.sk";
+ 	"\\.sm$" = "whois.ripe.net";
+ 	"\\.sn$" = "whois.nic.sn";
++	"\\.so$" = "whois.nic.so";
+ 	"\\.sr$" = "whois.register.sr";
+ 	"\\.st$" = "whois.nic.st";
+ 	"\\.su$" = "whois.ripn.net";
+@@ -1069,9 +1071,24 @@
+ 		http-action = "/cgi-bin/checkavail.cgi";
+ 		form-element = "domain";
+ 	}
++
+ 	"whois\\.dotster\\.com" {
+ 		answer-charset = "UTF-8";
+ 	}
++
++	"www\\.ert\\.gov\\.al" {
++		http = "true";
++		http-method = "POST";
++		http-action = "/ert_eng/domain_res.html";
++		query-format = "Domain=${+2}";
++	}
++
++	"www\\.nic\\.cu" {
++		http = "true";
++		http-method = "GET";
++		http-action = "/dom_det.php";
++		form-element = "domsrch";
++	}
+ }
+ 
+ #

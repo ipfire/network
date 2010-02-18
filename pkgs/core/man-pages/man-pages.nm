@@ -24,31 +24,23 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = expat
-PKG_VER        = 2.0.1
+PKG_NAME       = man-pages
+PKG_VER        = 3.23
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://www.libexpat.org/
-PKG_LICENSE    = MIT
-PKG_SUMMARY    = An XML parser library.
+PKG_GROUP      = Documentation
+PKG_URL        = http://www.kernel.org/pub/linux/docs/manpages/
+PKG_LICENSE    = GPLv2+ and GPL+ and BSD and MIT and Copyright only and IEEE
+PKG_SUMMARY    = Man (manual) pages from the Linux Documentation Project.
+
+PKG_DEPS      += man-db
 
 define PKG_DESCRIPTION
-	This is expat, the C library for parsing XML, written by James Clark. Expat \
-	is a stream oriented XML parser. This means that you register handlers with \
-	the parser prior to starting the parse. These handlers are called when the \
-	parser discovers the associated structures in the document being parsed. A \
-	start tag is an example of the kind of structures for which you may \
-	register handlers.
+	A large collection of man pages (documentation) from the Linux \
+	Documentation Project (LDP).
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += --libdir=/lib --mandir=/usr/share
-
-define STAGE_INSTALL_CMDS
-	rm -vf $(BUILDROOT)/lib/libexpat.so
-	-mkdir -pv $(BUILDROOT)/usr/lib
-	ln -svf ../../lib/libexpat.so.1 $(BUILDROOT)/usr/lib/libexpat.so
-endef
+STAGE_BUILD = # Do nothing
