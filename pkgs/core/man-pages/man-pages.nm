@@ -1,0 +1,46 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = man-pages
+PKG_VER        = 3.23
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Documentation
+PKG_URL        = http://www.kernel.org/pub/linux/docs/manpages/
+PKG_LICENSE    = GPLv2+ and GPL+ and BSD and MIT and Copyright only and IEEE
+PKG_SUMMARY    = Man (manual) pages from the Linux Documentation Project.
+
+PKG_DEPS      += man-db
+
+define PKG_DESCRIPTION
+	A large collection of man pages (documentation) from the Linux \
+	Documentation Project (LDP).
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+STAGE_BUILD = # Do nothing
