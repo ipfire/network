@@ -44,30 +44,20 @@ define PKG_DESCRIPTION
 	convenient
 endef
 
-PKG_BUILD_DEPS+= perl intltool gettext perl-xml-parser pkg-config libdaemon python python-dbus dbus dbus-glib
-PKG_DEPS      += dbus dbus-glib libdaemon python-dbus
+PKG_BUILD_DEPS+= gettext intltool pkg-config
+PKG_DEPS      += dbus dbus-glib libdaemon python python-dbus perl-xml-parser
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--bindir=/bin \
-			--disable-static \
-			--mandir=/usr/share/man \
-			--sysconfdir=/etc \
-			--with-distro=none \
-			--disable-gdbm \
-			--disable-qt3 \
-			--disable-qt4 \
-			--disable-gtk \
-			--disable-pygtk \
-			--disable-mono
-endef
-
-define STAGE_INSTALL
-	$(PYTHON_COMPILE)
-endef
+CONFIGURE_OPTIONS += \
+	--bindir=/bin \
+	--mandir=/usr/share/man \
+	--sysconfdir=/etc \
+	--localstatedir=/var \
+	--with-distro=none \
+	--disable-gdbm \
+	--disable-qt3 \
+	--disable-qt4 \
+	--disable-gtk \
+	--disable-pygtk \
+	--disable-mono

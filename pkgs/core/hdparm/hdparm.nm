@@ -34,8 +34,6 @@ PKG_URL        = http://sourceforge.net/projects/hdparm/
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = A utility for displaying and/or setting hard disk parameters.
 
-PKG_DEPS      +=
-
 define PKG_DESCRIPTION
 	Hdparm is a useful system utility for setting (E)IDE hard drive \
 	parameters. For example, hdparm can be used to tweak hard drive \
@@ -57,6 +55,5 @@ define STAGE_BUILD
 endef
 
 define STAGE_INSTALL
-	cd $(DIR_APP) && make binprefix=/usr/ install
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) binprefix=/usr
 endef
-

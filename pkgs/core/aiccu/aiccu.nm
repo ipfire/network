@@ -44,10 +44,14 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-define STAGE_BUILD
+define STAGE_PREPARE_CMDS
 	mv /usr/src/$(PKG_NAME) /usr/src/$(PKG_NAME)-$(PKG_VER)
 endef
 
+define STAGE_BUILD
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) RPM_OPT_FLAGS="$(CFLAGS)"
+endef
+
 define STAGE_INSTALL_CMDS
-	rm -vf $(BUILDROOT)/etc/init.d/aiccu
+	rm -rvf $(BUILDROOT)/{etc,usr/share}
 endef

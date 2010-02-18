@@ -34,23 +34,22 @@ PKG_URL        = http://search.cpan.org/dist/XML-Parser/
 PKG_LICENSE    = GPL+ or Artistic
 PKG_SUMMARY    = Perl module for parsing XML files.
 
+PKG_DEPS      += expat perl
+
 define PKG_DESCRIPTION
 	This module provides ways to parse XML documents. It is built on \
 	top of XML::Parser::Expat, which is a lower level interface to \
 	James Clark's expat library.
 endef
 
-PKG_BUILD_DEPS+= expat perl
-PKG_DEPS      += perl expat
-
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
+# XXX has to be removed
+define QUALITY_AGENT_WHITELIST_RPATH
+	/usr/lib/perl5/site_perl/*/auto/XML/Parser/Expat/Expat.so
+endef
 
 define STAGE_BUILD
 	cd $(DIR_APP) && perl Makefile.PL
-endef
-
-define QUALITY_AGENT_WHITELIST_RPATH
-	/usr/lib/perl5/site_perl/*/auto/XML/Parser/Expat/Expat.so
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef

@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -22,72 +22,35 @@
 # Definitions
 ###############################################################################
 
-include Config
+include $(PKGROOT)/Include
 
-PKG_NAME   = unzip
-PKG_VER    = 5.52
-PKG_REL    = 0
+PKG_NAME       = btrfs-progs
+PKG_VER        = 0.19
+PKG_REL        = 0
 
-THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(PKG_NAME)$(subst .,,$(PKG_VER)).tgz
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+PKG_MAINTAINER =
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://btrfs.wiki.kernel.org/index.php/Main_Page
+PKG_LICENSE    = GPLv2
+PKG_SUMMARY    = Userspace programs for btrfs.
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+PKG_BUILD_DEPS+= util-linux-ng
 
-MAINTAINER =
-GROUP      = Applications/Archiving
-CORE       = yes
-EXTRA      = no
-DEBUG      = no
-BUILD_DEPS =
-DEPS       =
-
-URL        = ftp://ftp.info-zip.org/pub/infozip/src/
-LICENSE    = BSD
-SHORT_DESC = A utility for unpacking zip files.
-
-define LONG_DESC
-	The unzip utility is used to list, test, or extract files from a zip \
-	archive. Zip archives are commonly found on MS-DOS systems. The zip \
-	utility, included in the zip package, creates zip archives. Zip and \
-	unzip are both compatible with archives created by PKWARE(R)'s PKZIP \
-	for MS-DOS, but the programs' options and default behaviors do differ \
-	in some respects.
+define PKG_DESCRIPTION
+	The btrfs-progs package provides all the userpsace programs needed to create, \
+	check, modify and correct any inconsistencies in the btrfs filesystem.
 endef
 
-CFLAGS   += -D_LARGEFILE64_SOURCE
-
-###############################################################################
-# Top-level Rules
-###############################################################################
-
-objects = $(DL_FILE)
-
-download: $(objects)
-
-info:
-	$(DO_PKG_INFO)
-
-install: $(OBJECT)
-
-packages: $(PACKAGES)
-
-$(PACKAGES): $(OBJECT)
-	@$(DO_PACKAGE)
-
-$(objects):
-	@$(LOAD)
+PKG_TARBALL    = $(THISAPP).tar.bz2
 
 ###############################################################################
 # Installation Details
 ###############################################################################
 
-$(OBJECT): $(objects)
-	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && ln -svf unix/Makefile Makefile
-	cd $(DIR_APP) && make linux_noasm LF2="" CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install prefix=/usr MANDIR=/usr/share/man/man1 \
-		INSTALL="cp -p" LF2=""
-	@rm -rf $(DIR_APP)
-	@$(POSTBUILD)
+define STAGE_BUILD
+	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make bindir=$(BUILDROOT)/sbin mandir=$(BUILDROOT)/usr/share install
+endef

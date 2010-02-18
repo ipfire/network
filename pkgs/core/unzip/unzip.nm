@@ -34,8 +34,6 @@ PKG_URL        = ftp://ftp.info-zip.org/pub/infozip/src/
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = A utility for unpacking zip files.
 
-PKG_DEPS      +=
-
 define PKG_DESCRIPTION
 	The unzip utility is used to list, test, or extract files from a zip \
 	archive. Zip archives are commonly found on MS-DOS systems. The zip \
@@ -47,18 +45,14 @@ endef
 
 PKG_TARBALL    = $(PKG_NAME)552.tgz 
 
-###############################################################################
-# Installation Details
-###############################################################################
 CFLAGS   += -D_LARGEFILE64_SOURCE
 
 define STAGE_BUILD
 	cd $(DIR_APP) && ln -svf unix/Makefile Makefile
-	cd $(DIR_APP) && make generic CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make generic CC="gcc $(CFLAGS)" LD=gcc $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
-	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr MANDIR=/usr/share/man/man1 \
-		INSTALL="cp -p"
+	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr \
+		MANDIR=/usr/share/man/man1 INSTALL="cp -p"
 endef
-
