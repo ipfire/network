@@ -45,4 +45,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += --mandir=/usr/share
+CONFIGURE_OPTIONS += --libdir=/lib --mandir=/usr/share
+
+define STAGE_INSTALL_CMDS
+	rm -vf $(BUILDROOT)/lib/libexpat.so
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	ln -svf ../../lib/libexpat.so.1 $(BUILDROOT)/usr/lib/libexpat.so
+endef
