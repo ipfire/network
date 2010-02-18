@@ -1,0 +1,57 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = ntp
+PKG_VER        = 4.2.4p7
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Daemons
+PKG_URL        = http://www.ntp.org/
+PKG_LICENSE    = MIT, BSD and GPLv2
+PKG_SUMMARY    = The NTP daemon and utilities.
+
+PKG_DEPS      += openssl readline
+
+define PKG_DESCRIPTION
+	The Network Time Protocol (NTP) is used to synchronize a computer's \
+	time with another reference time source. This package includes ntpd \
+	and utilities used to query and configure the ntpd daemon.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CFLAGS        += -DMOD_NANO
+
+CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc \
+	--mandir=/usr/share/man \
+	--with-binsubdir=sbin
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/etc
+	cp -vf $(DIR_SOURCE)/ntp.conf $(BUILDROOT)/etc/ntp.conf
+endef
