@@ -1,0 +1,24 @@
+--- mdadm-3.0-devel2/mdopen.c.warn	2009-02-12 09:13:54.000000000 -0500
++++ mdadm-3.0-devel2/mdopen.c	2009-02-12 09:34:15.000000000 -0500
+@@ -88,8 +88,9 @@ void make_parts(char *dev, int cnt)
+ 			if (chmod(name, stb2.st_mode & 07777))
+ 				perror("chmod");
+ 		} else {
+-			snprintf(sym, 10000, "%s%s%d", orig, odig?"p":"", i);
+-			symlink(sym, name);
++			snprintf(sym, 1024, "%s%s%d", orig, odig?"p":"", i);
++			if (symlink(sym, name))
++				perror("symlink");
+ 		}
+ 		stat(name, &stb2);
+ 		add_dev(name, &stb2, 0, NULL);
+@@ -357,7 +358,8 @@ int create_mddev(char *dev, char *name, 
+ 					strcpy(chosen, devname);
+ 				}
+ 			} else
+-				symlink(devname, chosen);
++				if (symlink(devname, chosen))
++					perror("symlink");
+ 			if (use_mdp && strcmp(chosen, devname) != 0)
+ 				make_parts(chosen, parts);
+ 		}
