@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -22,74 +22,44 @@
 # Definitions
 ###############################################################################
 
-include Config
+include $(PKGROOT)/Include
 
-PKG_NAME   = adjust-toolchain
-PKG_VER    =
-PKG_REL    = -1
+PKG_NAME       = mdadm
+PKG_VER        = 3.0-devel2
+PKG_REL        = 0
 
-THISAPP    = $(PKG_NAME)
+PKG_MAINTAINER =
+PKG_GROUP      = System/Base
+PKG_URL        = http://www.kernel.org/pub/linux/utils/raid/mdadm/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = The mdadm program controls Linux md devices (software RAID arrays).
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+PKG_BUILD_DEPS+= groff
 
-MAINTAINER =
-GROUP      =
-CORE       = no
-EXTRA      = no
-DEBUG      = no
-BUILD_DEPS =
-DEPS       =
-
-URL        =
-LICENSE    =
-SHORT_DESC = This script does some tweaks on the build system.
-
-define LONG_DESC
-	This script does some tweaks on the build system.
+define PKG_DESCRIPTION
+	The mdadm program is used to create, manage, and monitor Linux MD (software \
+	RAID) devices.  As such, it provides similar functionality to the raidtools \
+	package.  However, mdadm is a single program, and it can perform \
+	almost all functions without a configuration file, though a configuration \
+	file can be used to help with some common tasks.
 endef
 
-###############################################################################
-# Top-level Rules
-###############################################################################
+PKG_TARBALL    = $(THISAPP).tar.bz2
 
-objects = 
+CFLAGS        += -fno-strict-aliasing
 
-download: $(objects)
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/^INSTALL = .*/INSTALL = install/" -i Makefile
+endef
 
-info:
-	$(DO_PKG_INFO)
+define STAGE_BUILD
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CXFLAGS="$(CFLAGS)" \
+		SYSCONFDIR="/etc" MDASSEMBLE_AUTO=1
+endef
 
-install: $(OBJECT)
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install BINDIR=/sbin DESTDIR=$(BUILDROOT)
 
-packages: $(PACKAGES)
-
-$(PACKAGES): $(OBJECT)
-	@$(DO_PACKAGE)
-
-$(objects):
-	@$(LOAD)
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-$(OBJECT): $(objects)
-	@$(PREBUILD)
-
-ifeq "$(STAGE)" "toolchain"
-	$(IFS_TARGET)-gcc -dumpspecs | sed \
-		-e 's@$(LINKER)@$(TOOLS_DIR)&@g' \
-		> $$(dirname $$($(IFS_TARGET)-gcc -print-libgcc-file-name))/specs
-endif
-
-ifeq "$(STAGE)" "base"
-	cp -fv $(TOOLS_DIR)/bin/{ld-new,ld}
-
-	gcc -dumpspecs | sed \
-		-e "/^\*link:$$/{n;s,$$, -L/usr/lib,}" \
-		-e 's@$(TOOLS_DIR)$(LINKER)@$(LINKER)@g' \
-		-e '/^\*cpp:$$/{n;s,$$, -isystem /usr/include,}' \
-		> $$(dirname $$(gcc --print-libgcc-file-name))/myspecs
-endif
-
-	@$(POSTBUILD)
+	-mkdir -pv $(BUILDROOT)/var/run/mdadm
+	chmod 700 $(BUILDROOT)/var/run/mdadm
+endef

@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -22,76 +22,31 @@
 # Definitions
 ###############################################################################
 
-include Config
+include $(PKGROOT)/Include
 
-PKG_NAME   = libnl
-PKG_VER    = 1.1
-PKG_REL    = 0
+PKG_NAME       = libnl
+PKG_VER        = 1.1
+PKG_REL        = 0
 
-THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Libraries
+PKG_URL        = http://people.suug.ch/~tgr/libnl/
+PKG_LICENSE    = LGPLv2
+PKG_SUMMARY    = Convenience library for kernel netlink sockets.
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
-
-MAINTAINER =
-GROUP      = Development/Libraries
-CORE       = yes
-EXTRA      = no
-DEBUG      = no
-BUILD_DEPS =
-DEPS       =
-
-URL        = http://people.suug.ch/~tgr/libnl/
-LICENSE    = LGPLv2
-SHORT_DESC = Convenience library for kernel netlink sockets.
-
-define LONG_DESC
+define PKG_DESCRIPTION
 	This package contains a convenience library to simplify using the \
 	Linux kernel's netlink sockets interface for network manipulation.
 endef
 
-###############################################################################
-# Top-level Rules
-###############################################################################
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-objects = $(DL_FILE) \
-	$(THISAPP)-permissions.patch \
-	$(THISAPP)-include-limits-h.patch \
-	$(THISAPP)-no-extern-inline.patch
+CONFIGURE_OPTIONS += --libdir=/lib
 
-download: $(objects)
+define STAGE_INSTALL_CMDS
+	rm -vf $(BUILDROOT)/lib/libnl.so
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	ln -svf ../../lib/libnl.so.1 $(BUILDROOT)/usr/lib/libnl.so
 
-info:
-	$(DO_PKG_INFO)
-
-install: $(OBJECT)
-
-packages: $(PACKAGES)
-
-$(PACKAGES): $(OBJECT)
-	@$(DO_PACKAGE)
-
-$(objects):
-	@$(LOAD)
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-$(OBJECT): $(objects)
-	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-permissions.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-include-limits-h.patch
-	cd $(DIR_APP) && patch -Np1 -i $(DIR_PATCHES)/$(THISAPP)-no-extern-inline.patch
-
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install
-	@rm -rf $(DIR_APP)
-	@$(POSTBUILD)
+	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/pkgconfig
+endef

@@ -79,6 +79,7 @@ define STAGE_BUILD
 			$(CONFIGURE_OPTIONS)
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	$(STAGE_BUILD_CMDS)
 endef
 
 define STAGE_INSTALL

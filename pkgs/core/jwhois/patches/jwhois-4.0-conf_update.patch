@@ -1,0 +1,482 @@
+diff -up jwhois-4.0/example/jwhois.conf.conf_update jwhois-4.0/example/jwhois.conf
+--- jwhois-4.0/example/jwhois.conf.conf_update	2009-02-27 10:17:01.000000000 +0100
++++ jwhois-4.0/example/jwhois.conf	2009-02-27 10:57:26.000000000 +0100
+@@ -32,6 +32,7 @@ whois-servers {
+ 	"^CORE-[0-9]+$" = "struct handles";
+ 	"^CO[CH]O-[0-9]+$" = "struct handles";
+ 	".*-[A-Z]+$" = "struct handles";
++	".*-6BONE$" = "struct handles";
+ 
+ 	#
+ 	# Catch AS numbers
+@@ -86,6 +87,7 @@ whois-servers {
+ 	# Pseudo-ccTLDs must be listed above gTLDs
+ 	#
+  	"\\.ae\\.org$" = "whois.centralnic.net";
++	"\\.ar\\.com$" = "whois.centralnic.com";
+ 	"\\.br\\.com$" = "whois.centralnic.net";
+ 	"\\.cn\\.com$" = "whois.centralnic.net";
+ 	"\\.de\\.com$" = "whois.centralnic.net";
+@@ -108,17 +110,21 @@ whois-servers {
+ 	"\\.uy\\.com$" = "whois.centralnic.net";
+ 	"\\.web\\.com$" = "whois.centralnic.net";
+ 	"\\.za\\.com$" = "whois.centralnic.net";
++	"\\.za\\.net$" = "whois.za.net";
++        "\\.za\\.org$" = "whois.za.org";
+ 
+ 	"\\.ac$" = "whois.nic.ac";
+-	"\\.ae$" = "whois.uaenic.ae";
++	"\\.ae$" = "whois.aeda.net.ae";
+ 	"\\.aero$" = "whois.aero";
+-	"\\.af$" = "whois.nic.af";
++	"\\.af$" = "whois.cocca.cx";
+ 	"\\.ag$" = "whois.nic.ag";
+-	"\\.ai$" = "whois.offshore.ai";
++	"\\.ai$" = "whois.ai";
+ 	"\\.al$" = "whois.ripe.net";
+ 	"\\.am$" = "whois.amnic.net";
+ 	"\\.ar$" = "www.nic.ar";
++	"\\.arpa$" = "whois.iana.org";
+ 	"\\.as$" = "whois.nic.as";
++	"\\.asia$" = "whois.nic.asia";
+ 	"\\.at$" = "whois.nic.at";
+ 	"\\.asn\\.au$" = "whois.ausregistry.net.au";
+ 	"\\.com\\.au$" = "whois.ausregistry.net.au";
+@@ -130,25 +136,33 @@ whois-servers {
+ 	"\\.ba$" = "whois.ripe.net";
+ 	"\\.be$" = "whois.dns.be";
+ 	"\\.bg$" = "whois.register.bg";
+-	"\\.bi$" = "www.nic.bi";
+-	"\\.biz$" = "whois.neulevel.biz";
++	"\\.bi$" = "whois.nic.bi";
++	"\\.biz$" = "whois.biz";
+ 	"\\.bj$" = "whois.nic.bj";
+ 	"\\.bm$" = "rwhois.ibl.bm 4321";
++	"\\.bo$" = "whois.nic.bo";
+ 	"\\.br$" = "whois.nic.br";
+ 	"\\.bv$" = "whois.ripe.net";
+ 	"\\.by$" = "whois.ripe.net";
+ 	"\\.bz$" = "whois.belizenic.bz";
++	"\\.co\\.ca$" = "whois.co.ca";
+ 	"\\.ca$" = "whois.cira.ca";
+ 	"\\.cat$" = "whois.cat";
+-	"\\.cc$" = "whois.nic.cc";
++	"\\.cc$" {
++		whois-server = "ccwhois.verisign-grs.com";
++		query-format = "domain $*";
++	}
+ 	"\\.cd$" = "whois.nic.cd";
+ 	"\\.cg$" = "www.nic.cg";
+ 	"\\.ch$" = "whois.nic.ch";
+ 	"\\.ci$" = "whois.nic.ci";
+ 	"\\.ck$" = "whois.nic.ck";
+ 	"\\.cl$" = "whois.nic.cl";
++	"\\.co\\.cm$" = "whois.netcom.cm";
++	"\\.com\\.cm$" = "whois.netcom.cm";
++	"\\.net\\.cm$" = "whois.netcom.cm";
+ 	"\\.edu\\.cn$" = "whois.edu.cn";
+-	"\\.cn$" = "whois.cnnic.net.cn";
++	"\\.cn$" = "whois.cnnic.cn";
+ 	"\\.com$" {
+ 		whois-server = "whois.verisign-grs.com";
+ 		query-format = "domain $*";
+@@ -166,7 +180,7 @@ whois-servers {
+ 	"\\.do$" = "whois.nic.do";
+ 	"\\.dz$" = "whois.ripe.net";
+ 	"\\.ec$" = "www.nic.ec";
+-	"\\.edu$" = "whois.educause.net";
++	"\\.edu$" = "whois.educause.edu";
+ 	"\\.ee$" = "whois.eenet.ee";
+ 	"\\.eg$" = "whois.ripe.net";
+ 	"\\.es$" = "www.nic.es";
+@@ -176,17 +190,20 @@ whois-servers {
+ 	"\\.fm$" = "www.dot.fm";
+ 	"\\.fo$" = "whois.ripe.net";
+ 	"\\.fr$" = "whois.nic.fr";
++	"\\.gd$" = "whois.adamsnames.com";
+ 	"\\.gi$" = "whois2.afilias-grs.net";
+ 	"\\.gov$" = "whois.nic.gov";
+-	"\\.gg$" = "whois.isles.net";
++	"\\.gg$" = "whois.gg";
+ 	"\\.gm$" = "whois.ripe.net";
+ 	"\\.gp$" = "whois.nic.gp";
+ 	"\\.gr$" = "whois.ripe.net";
+-	"\\.gs$" = "203.119.12.22";
++	"\\.gs$" = "whois.nic.gs";
+ 	"\\.gt$" = "www.gt";
+-	"\\.hk$" = "whois.hkdnr.net.hk";
++	"\\.hk$" = "whois.hkirc.hk";
+ 	"\\.hm$" = "whois.registry.hm";
++	"\\.hn$" = "whois2.afilias-grs.net";
+ 	"\\.hr$" = "www.dns.hr";
++	"\\.ht$" = "whois.nic.ht";
+ 	"\\.hu$" = "whois.nic.hu";
+ 	"\\.id$" = "whois.idnic.net.id";
+ 	"\\.ie$" = "whois.domainregistry.ie";
+@@ -200,29 +217,39 @@ whois-servers {
+ 	"\\.is$" = "whois.isnic.is";
+ 	"\\.it$" = "whois.nic.it";
+ 	"\\.je$" = "whois.isles.net";
++	"\\.jobs$" {
++                whois-server = "jobswhois.verisign-grs.com";
++                query-format = "domain $*";
++	}
+ 	"\\.jp$" {
+ 		whois-server = "whois.jprs.jp";
+ 		query-format = "$* /e";
+ 	}
++	"\\.ke$" = "whois.kenic.or.ke";
++	"\\.kp$" = "whois.kcce.kp";
+ 	"\\.kg$" = "whois.domain.kg";
+-	"\\.ki$" = "whois.nic.ki";
++	"\\.ki$" = "whois.cocca.cx";
+ 	"\\.kr$" = "whois.krnic.net";
+ 	"\\.kz$" = "whois.nic.kz";
+ 	"\\.la$" = "whois.nic.la";
+ 	"\\.lb$" = "cgi.aub.edu.lb";
++	"\\.lc$" = "whois2.afilias-grs.net";
+ 	"\\.li$" = "whois.nic.li";
+ 	"\\.lk$" = "whois.nic.lk";
+ 	"\\.lt$" = "whois.domreg.lt";
+ 	"\\.lu$" = "whois.dns.lu";
+ 	"\\.lv$" = "whois.nic.lv";
+ 	"\\.ly$" = "whois.nic.ly";
+-	"\\.ma$" = "whois.ripe.net";
++	"\\.ma$" = "whois.iam.net.ma";
++	"\\.md$" = "whois.nic.md";
++	"\\.me$" = "whois.nic.me";
+ 	"\\.mil$" = "whois.nic.mil";
+ 	"\\.mk$" = "whois.ripe.net";
+ 	"\\.mm$" = "whois.nic.mm";
++	"\\.mn$" = "whois2.afilias-grs.net";
+ 	"\\.mobi$" = "whois.dotmobiregistry.net";
+-	"\\.ms$" = "whois.adamsnames.tc";
+-	"\\.mt$" = "www.um.edu.mt";
++	"\\.ms$" = "whois.nic.ms";
++	"\\.mt$" = "whois.nic.org.mt";
+ 	"\\.mu$" = "whois.nic.mu";
+ 	"\\.museum$" = "whois.museum";
+ 	"\\.mw$" = "www.tarsus.net";
+@@ -234,31 +261,37 @@ whois-servers {
+ 		whois-server = "whois.verisign-grs.com";
+ 		query-format = "domain $*";
+ 	}
++	"\\.nf$" = "whois.cocca.cx";
+ 	"\\.ng$" = "whois.rg.net";
+ 	"\\.nl$" = "whois.domain-registry.nl";
+ 	"\\.no$" = "whois.norid.no";
+ 	"\\.nu$" = "whois.nic.nu";
+ 	"\\.nz$" = "whois.srs.net.nz";
+ 	"\\.org$" = "whois.publicinterestregistry.net";
+-	"\\.pe$" = "whois.nic.pe";
++	"\\.pe$" = "kero.yachay.pe";
+ 	"\\.pk$" = "pknic.net.pk";
+ 	"\\.pl$" = "whois.dns.pl";
+ 	"\\.pm$" = "whois.nic.pm";
++	"\\.pr$" = "whois.nic.pr";
+ 	"\\.pro$" = "whois.registrypro.pro";
+ 	"\\.pt$" = "whois.dns.pt";
+ 	"\\.pw$" = "whois.nic.pw";
+ 	"\\.re$" = "whois.nic.re";
+ 	"\\.ro$" = "whois.rotld.ro";
++	"\\.edu\.ru$" = "whois.informika.ru";
+ 	"\\.ru$" = "whois.ripn.net";
+ 	"\\.rw$" = "www.nic.rw";
+ 	"\\.sa$" = "saudinic.net.sa";
++	"\\.sb$" = "whois.nic.sb";
++	"\\.sc$" = "whois2.afilias-grs.net";
+ 	"\\.se$" = "whois.iis.se";
+ 	"\\.sg$" = "whois.nic.net.sg";
+ 	"\\.sh$" = "whois.nic.sh";
+ 	"\\.si$" = "whois.arnes.si";
+ 	"\\.sj$" = "whois.ripe.net";
+-	"\\.sk$" = "whois.ripe.net";
++	"\\.sk$" = "whois.sk-nic.sk";
+ 	"\\.sm$" = "whois.ripe.net";
++	"\\.sn$" = "whois.nic.sn";
+ 	"\\.sr$" = "whois.register.sr";
+ 	"\\.st$" = "whois.nic.st";
+ 	"\\.su$" = "whois.ripn.net";
+@@ -273,8 +306,12 @@ whois-servers {
+ 	"\\.tn$" = "whois.ripe.net";
+ 	"\\.to$" = "whois.tonic.to";
+ 	"\\.tr$" = "whois.nic.tr";
++	"\\.travel$" = "whois.nic.travel";
+ 	"\\.tt$" = "www.nic.tt";
+-	"\\.tv$" = "whois.nic.tv";
++	"\\.tv$" {
++		whois-server = "tvwhois.verisign-grs.com";
++		query-format = "domain $*";
++        }
+ 	"\\.tw$" = "whois.twnic.net";
+ 	"\\.ua$" = "whois.com.ua";
+ 	"\\.ug$" = "whois.co.ug";
+@@ -285,8 +322,11 @@ whois-servers {
+ 	"\\.us$" = "whois.nic.us";
+ 	"\\.com\\.uy$" = "dns.antel.net.uy";
+ 	"\\.uy$" = "www.rau.edu.uy"; # is a whois server
+-	"\\.uz$" = "www.noc.uz";
++	"\\.co\\.uz$" = "whois.reg.uz";
++	"\\.com\\.uz$" = "whois.reg.uz";
++	"\\.uz$" = "whois.cctld.uz";
+ 	"\\.va$" = "whois.ripe.net";
++	"\\.vc$" = "whois2.afilias-grs.net";
+ 	"\\.ve$" = "whois.nic.ve";
+ 	"\\.vi$" = "www.nic.vi";
+ 	"\\.vg$" = "whois.adamsnames.tc";
+@@ -299,6 +339,7 @@ whois-servers {
+ 	"\\.ac\\.za$" = "whois.ac.za";
+ 	"\\.org\\.za$" = "rwhois.org.za 4321";
+ 	"\\.co\\.za$" = "whois.co.za";
++	"\\.nom\\.za$" = "www.nom.za";
+ 	# "\\.za$" = "whois.frd.ac.za";
+ 
+ 	#
+@@ -594,7 +635,7 @@ cidr-blocks {
+ cidr6-blocks {
+ 	type = cidr6;
+ 
+-	"2001:0000::/23" = "whois.iana.org";
++	"2001:0000::/23" = "whois.iana.org"; # correct, but nothing usable is returned
+ 	"2001:0200::/23" = "whois.apnic.net";
+ 	"2001:0400::/23" = "whois.arin.net";
+ 	"2001:0600::/23" = "whois.ripe.net";
+@@ -611,6 +652,7 @@ cidr6-blocks {
+ 	"2001:2000::/20" = "whois.ripe.net";
+ 	"2001:3000::/21" = "whois.ripe.net";
+ 	"2001:3800::/22" = "whois.ripe.net";
++	"2001:3C00::/22" = "whois.arin.net"; # not correct, but shows better information
+ 	"2001:4000::/23" = "whois.ripe.net";
+ 	"2001:4200::/23" = "whois.afrinic.net";
+ 	"2001:4400::/23" = "whois.apnic.net";
+@@ -623,6 +665,8 @@ cidr6-blocks {
+ 	"2001:A000::/20" = "whois.apnic.net";
+ 	"2001:B000::/20" = "whois.apnic.net";
+ 
++	"2002:0000::/16" = "whois.arin.net"; # not correct, but shows better information
++
+ 	"2003:0000::/18" = "whois.ripe.net";
+ 
+ 	"2400:0000::/12" = "whois.apnic.net";
+@@ -636,6 +680,34 @@ cidr6-blocks {
+ 	"2C00:0000::/12" = "whois.afrinic.net";
+ 
+ 	#
++	# IPv6 blocks by carriers used for SixXS;
++	# see e.g. http://www.sixxs.net/pops/
++	#
++	"2001:0610::/32" = "whois.sixxs.net";
++	"2001:06A0::/32" = "whois.sixxs.net";
++	"2001:06A8::/32" = "whois.sixxs.net";
++	"2001:06F8::/32" = "whois.sixxs.net";
++	"2001:0770::/32" = "whois.sixxs.net";
++	"2001:07B8::/32" = "whois.sixxs.net";
++	"2001:0808::/32" = "whois.sixxs.net";
++	"2001:0838::/32" = "whois.sixxs.net";
++	"2001:0960::/32" = "whois.sixxs.net";
++	"2001:0A60::/32" = "whois.sixxs.net";
++	"2001:0AD0::/32" = "whois.sixxs.net";
++	"2001:0B18::/32" = "whois.sixxs.net";
++	"2001:1418::/32" = "whois.sixxs.net";
++	"2001:14B8::/32" = "whois.sixxs.net";
++	"2001:15C0::/32" = "whois.sixxs.net";
++	"2001:16D8::/32" = "whois.sixxs.net";
++	"2001:1938::/32" = "whois.sixxs.net";
++	"2001:4830::/32" = "whois.sixxs.net";
++	"2001:4978::/32" = "whois.sixxs.net";
++	"2001:41E0::/32" = "whois.sixxs.net";
++	"2001:4428::/32" = "whois.sixxs.net";
++	"2A01:0198::/32" = "whois.sixxs.net";
++	"2A01:0348::/32" = "whois.sixxs.net";
++
++	#
+ 	# Experimental IPv6 network 6bone (RFC2471)
+ 	# Phaseout at Jun, 6 2006 (RFC3701)
+ 	#
+@@ -678,6 +750,33 @@ handles {
+ 		whois-server = "saudinic.net.sa";
+ 		query-format = "PERSON $*";
+ 	}
++	".*-SIXXS$" = "whois.sixxs.net";
++	".*-6BONE$" = "whois.6bone.net";
++	".*-IRNIC$" = "whois.nic.ir";
++	".*-RIPN$" = "whois.ripn.net";
++	".*-AFRINIC$" = "whois.afrinic.net";
++	"^C[0-9]+-LRMS$" {
++		whois-server = "whois.afilias.info";
++		query-format = "CONTACT ID $*";
++	}
++	"^D[0-9]+-LRMS$" {
++		whois-server = "whois.afilias.info";
++		query-format = "DOMAIN ID $*";
++	}
++	"^H[0-9]+-LRMS$" {
++		whois-server = "whois.afilias.info";
++		query-format = "HOST ID $*";
++	}
++	"^R[0-9]+-LRMS$" {
++		whois-server = "whois.afilias.info";
++		query-format = "REGISTRAR ID $*";
++	}
++	".*-KENIC$" = "whois.kenic.or.ke";
++	".*-UANIC$" = "whois.com.ua";
++	".*-COOP$" {
++		whois-server = "whois.nic.coop";
++		query-format = "CONTACT $*";
++	}
+ }
+ 
+ #
+@@ -685,11 +784,6 @@ handles {
+ # each host. 
+ #
+ server-options {
+-	"rwhois\\.nic\\.ve" {
+-		rwhois = true;
+-		rwhois-display = "dump";
+-		rwhois-limit = 10;
+-	}
+ 	"rwhois\\.exodus\\.net" {
+ 		rwhois = true;
+ 	}
+@@ -761,13 +855,6 @@ server-options {
+ 		form-element = "name";
+ 	}
+ 
+-	"www\\.um\\.edu\\.mt" {
+-		http = "true";
+-		http-method = "GET";
+-		http-action = "/cgi-bin/nic/whois";
+-		form-element = "domain";
+-	}
+-
+ 	"www\\.gt" {
+ 		http = "true";
+ 		http-method = "GET";
+@@ -784,13 +871,6 @@ server-options {
+ 		query-format = "Upit=${+2}"; # All but last domain segment
+ 	}
+ 
+-	"whois\\.offshore\\.ai" {
+-		http = "true";
+-		http-method = "POST";
+-		http-action = "/cgi-bin/whois.pl";
+-		form-element = "domain-name";
+-	}
+-
+ 	"www\\.io\\.io" {
+ 		http = "true";
+ 		http-method = "GET";
+@@ -820,11 +900,12 @@ server-options {
+ 		form-element = "query";
+ 	}
+ 
+-	"www\\.nic\\.bi" {
+-		http = "true";
+-		http-method = "POST";
+-		http-action = "/cgi-bin/whoisbi.pl"; # Formatting problems in Lynx
+-		form-element = "DOMAINWHOIS";
++	"whois\\.nic\\.bi" {
++		http = "true"; # I can't connect on port 43
++		http-method = "GET";
++		http-action = "/register/whois.hei";
++		form-element = "query";
++		form-extra = "type=domain";
+ 	}
+ 
+ 	"www\\.nic\\.cg" {
+@@ -855,13 +936,6 @@ server-options {
+ 		form-element = "name";
+ 	}
+ 
+-	"www\\.noc\\.uz" {
+-		http = "true";
+-		http-method = "POST";
+-		http-action = "/whois.php4";
+-		form-element = "dname";
+-	}
+-
+ 	"www\\.nic\\.vi" {
+ 		http = "true";
+ 		http-method = "POST";
+@@ -885,9 +959,9 @@ server-options {
+ 
+ 	"www\\.nic\\.tg" {
+ 		http = "true";
+-		http-method = "GET";
+-		http-action = "/moteur/info_dom.php";
+-		form-element = "domaine";
++		http-method = "POST";
++		http-action = "/nictg/indexplus.php?pg=verifdom&op=whois";
++		query-format = "tosearch=${+2}&typedom=.tg";
+ 	}
+ 
+ 	"cgi\\.aub\\.edu\\.lb" {
+@@ -917,38 +991,60 @@ server-options {
+ 		form-element = "nombre";
+ 	}
+ 
+-	"www\\.denic\\.de" {
+-		http = "true";
+-		http-method = "POST";
+-		http-action = "/en/whois/data.jsp";
+-		form-element = "domainname";
+-		form-extra = "service=WhoisData&lang=en&submit=Accept";
+-	}
+ 	"whois\\.denic\\.de" {
+ 		whois-server = "whois.denic.de";
+ 		query-format = "-C UTF-8 -T dn,ace $*";
+ 		answer-charset = "UTF-8";
+ 	}
++
+ 	"whois\\.enum\\.denic\\.de" {
+ 		whois-server = "whois.enum.denic.de";
+ 		query-format = "-C UTF-8 -T dn $*";
+ 		answer-charset = "UTF-8";
+ 	}
++
+ 	"whois\\.nic\\.ad\\.jp" {
+ 		query-format = "$*/e";
+ 	}
++
+ 	"whois\\.nic\\.ch" {
+ 		answer-charset = "UTF-8";
+ 	}
++
+ 	"whois\\.nic\\.li" {
+ 		answer-charset = "UTF-8";
+ 	}
++
+ 	"whois\\.centralnic\\.*" {
+                 whois-redirect = ".*Whois Server: \\(.*\\)";
+         }
++
+ 	".*\\.verisign-grs\\.com" {
+ 		whois-redirect = ".*Whois Server: \\(.*\\)";
+ 	}
++
++	"whois\\.sixxs\\.net" {
++		whois-redirect = ".*ReferralServer: whois:\/\/\\(.*\\)";
++        }
++
++	"whois2\\.afilias-grs\\.net" {
++		whois-redirect = "Whois Server:\\(.*\\)";
++	}
++
++	"whois\\.registrar\\.telekom\\.de" {
++		query-format = "full $*";
++	}
++
++	"whois\\.rrpproxy\\.net" {
++		answer-charset = "UTF-8";
++	}
++
++	"www\\.nom\\.za" {
++		http = "true";
++		http-method = "POST";
++		http-action = "/do.php";
++		query-format = "chkDomain=${+3}&chkAvail=Check";
++	}
+ }
+ 
+ #
