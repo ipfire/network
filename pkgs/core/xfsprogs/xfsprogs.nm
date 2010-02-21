@@ -1,0 +1,68 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = xfsprogs
+PKG_VER        = 3.1.1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://oss.sgi.com/projects/xfs/
+PKG_LICENSE    = GPL+ and LGPLv2+
+PKG_SUMMARY    = Utilities for managing the XFS filesystem
+
+PKG_BUILD_DEPS+= libtool gettext e2fsprogs readline acl acl-devel
+PKG_DEPS      += readline
+
+define PKG_DESCRIPTION
+	A set of commands to use the XFS filesystem, including mkfs.xfs.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && ./configure \
+			--prefix=/usr \
+			--mandir=/usr/share/man \
+			--bindir=/sbin \
+			--sbindir=/sbin \
+			--libdir=/lib \
+			--libexecdir=/usr/lib \
+			--enable-readline=yes
+	cd $(DIR_APP) && make DEBUG=-DNDEBUG
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install install-dev install-qa DIST_ROOT=$(BUILDROOT)
+	chmod -v 755 $(BUILDROOT)/lib/libhandle.so*
+	rm -vf $(BUILDROOT)/lib/libhandle.so
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	ln -svf ../../lib/libhandle.so.1 $(BUILDROOT)/usr/lib/libhandle.so
+endef
