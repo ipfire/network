@@ -47,5 +47,5 @@ define STAGE_BUILD
 endef
 
 define STAGE_INSTALL	
-	cd $(DIR_APP) && python setup.py install -O1 --skip-build
+	cd $(DIR_APP) && python setup.py install -O1 --skip-build --root=$(BUILDROOT)
 endef
