@@ -134,7 +134,7 @@ def do(command, shell=False, chrootPath=None, cwd=None, timeout=0, raiseExc=True
 	preexec = ChildPreExec(personality, chrootPath, cwd)
 
 	if config["nice_level"]:
-		command = "nice -n %d %s" % (config["nice_level"], command)
+		command = "nice -n %s %s" % (config["nice_level"], command)
 
 	try:
 		child = None
