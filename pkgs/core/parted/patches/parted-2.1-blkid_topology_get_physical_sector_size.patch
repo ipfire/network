@@ -1,0 +1,30 @@
+From 503c54ef274a923dcac337361936062b37a0ac1a Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Mon, 11 Jan 2010 11:46:36 +0100
+Subject: [PATCH parted 1/3] linux: use blkid_topology_get_physical_sector_size
+
+The official 2.17 release of util-linux-ng, has added a function to
+get the physical sector size, use that instead of getting the
+minimum io size.
+* libparted/arch/linux.c(_device_set_sector_size): use
+blkid_topology_get_physical_sector_size.
+---
+ libparted/arch/linux.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/libparted/arch/linux.c b/libparted/arch/linux.c
+index aefe788..bf33059 100644
+--- a/libparted/arch/linux.c
++++ b/libparted/arch/linux.c
+@@ -668,7 +668,7 @@ _device_set_sector_size (PedDevice* dev)
+                         dev->path, strerror (errno), PED_SECTOR_SIZE_DEFAULT);
+         } else {
+                 dev->phys_sector_size =
+-                        blkid_topology_get_minimum_io_size(
++                        blkid_topology_get_physical_sector_size(
+                                 arch_specific->topology);
+         }
+ #endif
+-- 
+1.6.5.2
+

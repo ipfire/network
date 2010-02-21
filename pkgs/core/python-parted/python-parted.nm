@@ -24,23 +24,22 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = parted
-PKG_VER        = 2.1
+PKG_NAME       = pyparted
+PKG_VER        = 3.0
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Applications/System
-PKG_URL        = http://www.gnu.org/software/parted
-PKG_LICENSE    = GPLv3+
-PKG_SUMMARY    = The GNU disk partition manipulation program.
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://fedorahosted.org/pyparted
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Python module for GNU parted.
 
-PKG_DEPS      += lvm2 readline util-linux-ng
+PKG_BUILD_DEPS+= pkgconfig
+PKG_DEPS      += parted python python-decorator
 
 define PKG_DESCRIPTION
-	The GNU Parted program allows you to create, destroy, resize, move, \
-	and copy hard disk partitions. Parted can be used for creating space \
-	for new operating systems, reorganizing disk usage, and copying data \
-	to new hard disks.
+	Python module for the parted library. It is used for manipulating \
+	partition tables.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz

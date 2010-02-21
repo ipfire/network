@@ -24,23 +24,32 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = parted
-PKG_VER        = 2.1
+PKG_NAME       = decorator
+PKG_VER        = 3.1.2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Applications/System
-PKG_URL        = http://www.gnu.org/software/parted
-PKG_LICENSE    = GPLv3+
-PKG_SUMMARY    = The GNU disk partition manipulation program.
+PKG_GROUP      = Development/Languages 
+PKG_URL        = http://www.phyast.pitt.edu/~micheles/python/documentation.html 
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = Module to simplify usage of decorators.
 
-PKG_DEPS      += lvm2 readline util-linux-ng
+PKG_DEPS      += python
 
 define PKG_DESCRIPTION
-	The GNU Parted program allows you to create, destroy, resize, move, \
-	and copy hard disk partitions. Parted can be used for creating space \
-	for new operating systems, reorganizing disk usage, and copying data \
-	to new hard disks.
+	The aim of the decorator module is to simplify the usage of decorators \
+	for the average programmer, and to popularize decorators usage giving \
+	examples of useful decorators, such as memoize, tracing, \
+	redirecting_stdout, locked, etc. The core of this module is a \
+	decorator factory called decorator. 
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+define STAGE_BUILD
+	cd $(DIR_APP) && python setup.py build
+endef
+
+define STAGE_INSTALL	
+	cd $(DIR_APP) && python setup.py install --skip-build --root=$(BUILDROOT)
+endef

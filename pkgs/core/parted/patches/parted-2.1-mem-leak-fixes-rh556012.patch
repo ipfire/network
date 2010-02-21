@@ -1,0 +1,158 @@
+From 358c9846a014247605d8da47b6917cac1344de00 Mon Sep 17 00:00:00 2001
+From: Jim Meyering <meyering@redhat.com>
+Date: Fri, 15 Jan 2010 20:14:38 +0100
+Subject: [PATCH] dos: don't leak a constraint upon partition-add failure
+
+* libparted/labels/dos.c (read_table): Free constraint upon failure.
+---
+ libparted/labels/dos.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/libparted/labels/dos.c b/libparted/labels/dos.c
+index 6b8d6cb..339acf4 100644
+--- a/libparted/labels/dos.c
++++ b/libparted/labels/dos.c
+@@ -873,7 +873,6 @@ read_table (PedDisk* disk, PedSector sector, int is_extended_table)
+ 	PedPartition*		part;
+ 	PedPartitionType	type;
+ 	PedSector		lba_offset;
+-	PedConstraint*		constraint_exact;
+ 
+ 	PED_ASSERT (disk != NULL, return 0);
+ 	PED_ASSERT (disk->dev != NULL, return 0);
+@@ -944,10 +943,12 @@ read_table (PedDisk* disk, PedSector sector, int is_extended_table)
+ 		if (type != PED_PARTITION_EXTENDED)
+ 			part->fs_type = ped_file_system_probe (&part->geom);
+ 
+-		constraint_exact = ped_constraint_exact (&part->geom);
+-		if (!ped_disk_add_partition (disk, part, constraint_exact))
+-			goto error;
++		PedConstraint *constraint_exact
++		  = ped_constraint_exact (&part->geom);
++		bool ok = ped_disk_add_partition (disk, part, constraint_exact);
+ 		ped_constraint_destroy (constraint_exact);
++		if (!ok)
++			goto error;
+ 
+ 		/* non-nested extended partition */
+ 		if (part->type == PED_PARTITION_EXTENDED) {
+-- 
+1.6.3.3
+
+From d0cec198183be0b9989e4bc729c2930c7cdfe545 Mon Sep 17 00:00:00 2001
+From: Jim Meyering <meyering@redhat.com>
+Date: Fri, 15 Jan 2010 19:53:36 +0100
+Subject: [PATCH] gpt: don't leak a constraint upon partition-add failure
+
+* libparted/labels/gpt.c (gpt_read): Free constraint upon failure.
+---
+ libparted/labels/gpt.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libparted/labels/gpt.c b/libparted/labels/gpt.c
+index 76537fd..9d9876c 100644
+--- a/libparted/labels/gpt.c
++++ b/libparted/labels/gpt.c
+@@ -1020,7 +1020,6 @@ gpt_read (PedDisk *disk)
+       GuidPartitionEntry_t *pte
+         = (GuidPartitionEntry_t *) ((char *) ptes + i * p_ent_size);
+       PedPartition *part;
+-      PedConstraint *constraint_exact;
+ 
+       if (!guid_cmp (pte->PartitionTypeGuid, UNUSED_ENTRY_GUID))
+         continue;
+@@ -1032,9 +1031,10 @@ gpt_read (PedDisk *disk)
+       part->fs_type = ped_file_system_probe (&part->geom);
+       part->num = i + 1;
+ 
+-      constraint_exact = ped_constraint_exact (&part->geom);
++      PedConstraint *constraint_exact = ped_constraint_exact (&part->geom);
+       if (!ped_disk_add_partition (disk, part, constraint_exact))
+         {
++          ped_constraint_destroy (constraint_exact);
+           ped_partition_destroy (part);
+           goto error_delete_all;
+         }
+-- 
+1.6.3.3
+
+From 952e4919befce199b096fd1bbde93ef7902239d3 Mon Sep 17 00:00:00 2001
+From: Jim Meyering <meyering@redhat.com>
+Date: Fri, 15 Jan 2010 19:34:00 +0100
+Subject: [PATCH] gpt: do not leak a GPT header on an error path
+
+* libparted/labels/gpt.c (gpt_write): Avoid a leak by freeing the
+header buffer after pth_get_raw call where it's used, but before
+checking whether that pth_get_raw call succeeded.
+Avoid another leak in identical just 10 lines down.
+Add "FIXME: caution..." comments to warn about the duplication.
+---
+ libparted/labels/gpt.c |   12 ++++++++----
+ 1 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/libparted/labels/gpt.c b/libparted/labels/gpt.c
+index fe1f300..76537fd 100644
+--- a/libparted/labels/gpt.c
++++ b/libparted/labels/gpt.c
+@@ -1208,11 +1208,13 @@ gpt_write (const PedDisk *disk)
+     goto error_free_ptes;
+ 
+   /* Write PTH and PTEs */
++  /* FIXME: Caution: this code is nearly identical to what's just below. */
+   if (_generate_header (disk, 0, ptes_crc, &gpt) != 0)
+     goto error_free_ptes;
+-  if ((pth_raw = pth_get_raw (disk->dev, gpt)) == NULL)
+-    goto error_free_ptes;
++  pth_raw = pth_get_raw (disk->dev, gpt);
+   pth_free (gpt);
++  if (pth_raw == NULL)
++    goto error_free_ptes;
+   int write_ok = ped_device_write (disk->dev, pth_raw, 1, 1);
+   free (pth_raw);
+   if (!write_ok)
+@@ -1222,11 +1224,13 @@ gpt_write (const PedDisk *disk)
+     goto error_free_ptes;
+ 
+   /* Write Alternate PTH & PTEs */
++  /* FIXME: Caution: this code is nearly identical to what's just above. */
+   if (_generate_header (disk, 1, ptes_crc, &gpt) != 0)
+     goto error_free_ptes;
+-  if ((pth_raw = pth_get_raw (disk->dev, gpt)) == NULL)
+-    goto error_free_ptes;
++  pth_raw = pth_get_raw (disk->dev, gpt);
+   pth_free (gpt);
++  if (pth_raw == NULL)
++    goto error_free_ptes;
+   write_ok = ped_device_write (disk->dev, pth_raw, disk->dev->length - 1, 1);
+   free (pth_raw);
+   if (!write_ok)
+-- 
+1.6.3.3
+
+From 19b072592a7a551a861c200be58aef04a7546fb9 Mon Sep 17 00:00:00 2001
+From: Jim Meyering <meyering@redhat.com>
+Date: Fri, 15 Jan 2010 18:56:37 +0100
+Subject: [PATCH] libparted: avoid double-free on an OOM failure path
+
+* libparted/disk.c (ped_disk_check): Don't double-free "fs_size".
+---
+ libparted/disk.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/libparted/disk.c b/libparted/disk.c
+index c14d005..2d27b7c 100644
+--- a/libparted/disk.c
++++ b/libparted/disk.c
+@@ -632,7 +632,9 @@ ped_disk_check (const PedDisk* disk)
+ 				walk->num, part_size, fs_size);
+ 
+ 			free (part_size);
++
+ 			free (fs_size);
++			fs_size = NULL;
+ 
+ 			if (choice != PED_EXCEPTION_IGNORE)
+ 				return 0;
+-- 
+1.6.3.3
+
