@@ -34,8 +34,8 @@ PKG_URL        = http://oss.sgi.com/projects/xfs/
 PKG_LICENSE    = GPL+ and LGPLv2+
 PKG_SUMMARY    = Utilities for managing the XFS filesystem
 
-PKG_BUILD_DEPS+= libtool gettext e2fsprogs readline acl acl-devel
-PKG_DEPS      += readline
+PKG_BUILD_DEPS+= libtool gettext
+PKG_DEPS      += acl e2fsprogs readline
 
 define PKG_DESCRIPTION
 	A set of commands to use the XFS filesystem, including mkfs.xfs.
@@ -48,19 +48,28 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 ###############################################################################
 
 define STAGE_BUILD
-	cd $(DIR_APP) && ./configure \
+	cd $(DIR_APP) && \
+		./configure \
 			--prefix=/usr \
 			--mandir=/usr/share/man \
 			--bindir=/sbin \
 			--sbindir=/sbin \
 			--libdir=/lib \
 			--libexecdir=/usr/lib \
-			--enable-readline=yes
+			--enable-readline=yes \
+			--disable-static
+
+	# Kill rpaths
+	cd $(DIR_APP) && sed -i libtool \
+		-e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
+		-e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g'
+
 	cd $(DIR_APP) && make DEBUG=-DNDEBUG
 endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install install-dev install-qa DIST_ROOT=$(BUILDROOT)
+
 	chmod -v 755 $(BUILDROOT)/lib/libhandle.so*
 	rm -vf $(BUILDROOT)/lib/libhandle.so
 	-mkdir -pv $(BUILDROOT)/usr/lib
