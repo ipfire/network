@@ -34,8 +34,6 @@ PKG_URL        = http://sourceforge.net/projects/linux-diag/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = Utilities for interfacing with sysfs.
 
-PKG_DEPS      += 
-
 define PKG_DESCRIPTION
 	This package's purpose is to provide a set of utilities for interfacing \
 	with sysfs.
@@ -43,20 +41,4 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--disable-static \
-			--mandir=/usr/share/man
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-endef
+CONFIGURE_OPTIONS += --mandir=/usr/share/man
