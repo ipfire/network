@@ -15,6 +15,7 @@ endef
 define __INSTALL_INIT
 	-mkdir -pv $(BUILDROOT)/etc/init
 	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(1) $(BUILDROOT)/etc/init/$(subst .init,.conf,$(1))
+
 endef
 
 define DO_INSTALL_INIT
@@ -23,7 +24,8 @@ endef
 
 define __INSTALL_PAM
 	-mkdir -pv $(BUILDROOT)/etc/pam.d
-	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(1) $(BUILDROOT)/etc/pam.d/$(subst .pam,,$(1))
+	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(1) $(BUILDROOT)/etc/pam.d/$(subst .pam,,$(notdir $(1)))
+
 endef
 
 define DO_INSTALL_PAM

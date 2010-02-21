@@ -66,6 +66,7 @@ endif
 
 PKG_INIT_FILES = $(wildcard *.init)
 PKG_PAM_FILES = $(wildcard *.pam)
+PKG_PAM_FILES += $(wildcard pam.d/*)
 
 export CFLAGS CXXFLAGS BUILD_HOST
 
