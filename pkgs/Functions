@@ -12,6 +12,24 @@ define DO_FILELIST
 	@cd $(BUILDROOT) && find -ls
 endef
 
+define __INSTALL_INIT
+	-mkdir -pv $(BUILDROOT)/etc/init
+	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(1) $(BUILDROOT)/etc/init/$(subst .init,.conf,$(1))
+endef
+
+define DO_INSTALL_INIT
+	$(foreach file,$(PKG_INIT_FILES),$(call __INSTALL_INIT,$(file)))
+endef
+
+define __INSTALL_PAM
+	-mkdir -pv $(BUILDROOT)/etc/pam.d
+	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(1) $(BUILDROOT)/etc/pam.d/$(subst .pam,,$(1))
+endef
+
+define DO_INSTALL_PAM
+	$(foreach file,$(PKG_PAM_FILES),$(call __INSTALL_PAM,$(file)))
+endef
+
 define DO_PREPARE
 	@echo "#####################################################################"
 	@echo "# $(PKG_NAME) - Preparation started"
@@ -54,6 +72,9 @@ define DO_INSTALL
 	@echo "#####################################################################"
 
 	$(STAGE_INSTALL)
+
+	$(DO_INSTALL_INIT)
+	$(DO_INSTALL_PAM)
 
 	@echo "#####################################################################"
 	@echo "# $(PKG_NAME) - Install finished"
