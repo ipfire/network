@@ -65,6 +65,7 @@ else
 endif
 
 PKG_INIT_FILES = $(wildcard *.init)
+PKG_INIT_FILES += $(wildcard init/*.conf)
 PKG_PAM_FILES = $(wildcard *.pam)
 PKG_PAM_FILES += $(wildcard pam.d/*)
 
