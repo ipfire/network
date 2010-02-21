@@ -30,10 +30,8 @@ def list(toolchain=None):
 				continue
 
 		for package in os.listdir(os.path.join(PKGSDIR, dir)):
-			path = os.path.join(PKGSDIR, dir, package)
-			if not os.path.exists(os.path.join(path, package + ".nm")):
-				continue
-			pkgs.append(Package(path))
+			package = os.path.join(dir, package)
+			pkgs.append(Package(package))
 
 	pkgs.sort()
 	return pkgs
