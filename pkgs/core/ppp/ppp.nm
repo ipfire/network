@@ -73,7 +73,4 @@ define STAGE_INSTALL
 	chmod -v 600 $(BUILDROOT)/etc/ppp/secrets
 	ln -svf secrets $(BUILDROOT)/etc/ppp/pap-secrets
 	ln -svf secrets $(BUILDROOT)/etc/ppp/chap-secrets
-
-	-mkdir -pv $(BUILDROOT)/etc/pam.d/
-	cp -vf $(DIR_SOURCE)/ppp.pam $(BUILDROOT)/etc/pam.d/
 endef

@@ -65,7 +65,4 @@ CONFIGURE_OPTIONS += \
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/etc
 	cp -vf $(DIR_SOURCE)/sudoers $(BUILDROOT)/etc/sudoers
-
-	-mkdir -pv $(BUILDROOT)/etc/pam.d
-	cp -vf $(DIR_SOURCE)/sudo.pam $(BUILDROOT)/etc/pam.d/sudo
 endef

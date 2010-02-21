@@ -61,8 +61,4 @@ define STAGE_INSTALL_CMDS
 	# Install screenrc
 	-mkdir -pv $(BUILDROOT)/etc
 	cp -vf $(DIR_SOURCE)/screenrc $(BUILDROOT)/etc/screenrc
-
-	# Install pam file
-	-mkdir -pv $(BUILDROOT)/etc/pam.d/
-	cp -vf $(DIR_SOURCE)/screen.pam $(BUILDROOT)/etc/pam.d/
 endef

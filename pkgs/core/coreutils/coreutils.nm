@@ -71,7 +71,7 @@ endef
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
-	-mkdir -pv $(BUILDROOT)/{bin,etc/{pam,profile}.d,usr/sbin}
+	-mkdir -pv $(BUILDROOT)/{bin,etc/profile.d,usr/sbin}
 	mv -v $(BUILDROOT)/usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo} $(BUILDROOT)/bin
 	mv -v $(BUILDROOT)/usr/bin/{false,hostname,ln,ls,mkdir,mknod,mv,pwd,readlink,rm} $(BUILDROOT)/bin
 	mv -v $(BUILDROOT)/usr/bin/{rmdir,stty,sync,touch,true,uname} $(BUILDROOT)/bin
@@ -83,7 +83,4 @@ define STAGE_INSTALL
 	# Dump /etc/dircolors.
 	dircolors -p > $(BUILDROOT)/etc/dircolors
 	cp -vf $(DIR_SOURCE)/profile.d/dircolors.sh $(BUILDROOT)/etc/profile.d
-
-	# PAM
-	cp -vf $(DIR_SOURCE)/pam.d/su{,-l} $(BUILDROOT)/etc/pam.d
 endef

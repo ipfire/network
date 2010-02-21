@@ -58,9 +58,6 @@ CONFIGURE_OPTIONS += \
 	--with-pam
 
 define STAGE_INSTALL_CMDS
-	-mkdir -pv $(BUILDROOT)/etc/pam.d
-	cp -vf $(DIR_SOURCE)/sshd.pam $(BUILDROOT)/etc/pam.d/sshd
-
 	-mkdir -pv $(BUILDROOT)/etc/ssh
 	cp -vf $(DIR_SOURCE)/sshd_config $(BUILDROOT)/etc/ssh/sshd_config
 endef

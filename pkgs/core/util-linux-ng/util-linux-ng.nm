@@ -95,10 +95,6 @@ define STAGE_INSTALL
 	# Remove deprecated commands
 	rm -fv $(BUILDROOT)/{sbin,usr/share/man/man*}/{fsck,mkfs}.{bfs,minix}*
 
-	# PAM
-	-mkdir -pv $(BUILDROOT)/etc/pam.d
-	cp -vf $(DIR_SOURCE)/pam.d/login $(BUILDROOT)/etc/pam.d
-
 	# Set capabilities
 	chmod -v -s $(BUILDROOT)/bin/mount
 	setcap CAP_DAC_OVERRIDE,CAP_SYS_ADMIN=ep $(BUILDROOT)/bin/mount

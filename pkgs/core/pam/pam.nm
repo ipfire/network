@@ -80,7 +80,4 @@ define STAGE_INSTALL
 	-mkdir -pv $(BUILDROOT)/etc/security
 	install -v -m644 $(DIR_SOURCE)/pam_env.conf $(BUILDROOT)/etc/security/pam_env.conf
 	cp -vf $(DIR_SOURCE)/{login.defs,securetty} $(BUILDROOT)/etc
-
-	-mkdir -pv $(BUILDROOT)/etc/pam.d
-	cp -vf $(DIR_SOURCE)/pam.d/{other,system-auth} $(BUILDROOT)/etc/pam.d/
 endef
