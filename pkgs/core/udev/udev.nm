@@ -66,4 +66,6 @@ define STAGE_INSTALL_CMDS
 
 	ln -svf ../../../../lib/udev/udev-acl \
 		$(BUILDROOT)/usr/lib/ConsoleKit/run-seat.d/udev-acl.ck
+
+	install -m 755 $(DIR_SOURCE)/console_init $(BUILDROOT)/lib/udev/
 endef
