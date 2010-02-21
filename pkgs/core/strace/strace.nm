@@ -34,8 +34,6 @@ PKG_URL        = http://sourceforge.net/projects/strace/
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = Tracks and displays system calls associated with a running process.
 
-PKG_DEPS      += 
-
 define PKG_DESCRIPTION
 	The strace program intercepts and records the system calls called and \
 	received by a running process.  Strace can print a record of each \
@@ -47,20 +45,4 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--disable-static \
-			--mandir=/usr/share/man
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-endef
+CONFIGURE_OPTIONS += --mandir=/usr/share/man
