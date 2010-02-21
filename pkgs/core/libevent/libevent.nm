@@ -34,8 +34,6 @@ PKG_URL        = http://monkey.org/~provos/libevent/
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = Abstract asynchronous event notification library.
 
-PKG_DEPS      +=
-
 define PKG_DESCRIPTION
 	The libevent API provides a mechanism to execute a callback \
 	function when a specific event occurs on a file descriptor or \
@@ -48,20 +46,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP)-stable.tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+DIR_APP = $(DIR_SRC)/$(THISAPP)-stable
 
-define STAGE_BUILD
-	cd $(DIR_APP)-stable && \
-		./configure \
-			--prefix=/usr \
-			--disable-static \
-			--mandir=/usr/share/man
-
-	cd $(DIR_APP)-stable && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	cd $(DIR_APP)-stable && make install DESTDIR=$(BUILDROOT)
-endef
+CONFIGURE_OPTIONS += --mandir=/usr/share/man
