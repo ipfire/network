@@ -127,9 +127,9 @@ def deptree(packages):
 					next.append(package)
 					break
 		
-		ret[-1] = sorted(stage)
+		ret[-1] = stage
 		if next:
-			ret.append(sorted(next))
+			ret.append(next)
 			continue
 
 		break
@@ -172,6 +172,8 @@ Patches     :
 
 		self.config = config
 		self.__fetch_data = None
+
+		self._getAllDeps = None
 
 	def __str__(self):
 		return "%-20s %14s | %-24s | %s" % (self.name, "%s-%s" % \
@@ -282,7 +284,10 @@ Patches     :
 		if self.toolchain:
 			return depsolve(self.toolchain_deps, recursive)
 
-		return depsolve(self.deps + self.build_deps, recursive)
+		if not self._getAllDeps:
+			self._getAllDeps = depsolve(self.deps + self.build_deps, recursive)
+
+		return self._getAllDeps
 
 	@property
 	def build_deps(self):
