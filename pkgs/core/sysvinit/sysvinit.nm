@@ -44,11 +44,12 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 CFLAGS        += -D_GNU_SOURCE
 
 define STAGE_BUILD
-	cd $(DIR_APP) && make -C src CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make -C src CFLAGS="$(CFLAGS)" LDFLAGS="" \
+		LCRYPT="-lcrypt" $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/{bin,sbin,usr/bin}
-	-mkdir -pv $(BUILDROOT)/usr/share/man/man{1,8}
+	-mkdir -pv $(BUILDROOT)/{bin,sbin,usr/{bin,include}}
+	-mkdir -pv $(BUILDROOT)/usr/share/man/man{1,5,8}
 	cd $(DIR_APP) && make -C src install ROOT=$(BUILDROOT)
 endef
