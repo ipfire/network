@@ -12,6 +12,7 @@ for file in $(find ${BUILDROOT} -name "*.a" -or -name "*.la"); do
 	[ "${file##*/}" = "libgcc.a" ] && continue
 	[ "${file##*/}" = "libgcc_eh.a" ] && continue
 	[ "${file##*/}" = "libfl_pic.a" ] && continue
+	[ "${file##*/}" = "libpython2.6.a" ] && continue
 	
 	log "  Removing: ${file}"
 	rm -f ${file} || exit $?
