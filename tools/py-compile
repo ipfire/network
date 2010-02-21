@@ -1,32 +1,10 @@
 #!/bin/sh
-# called as "py-compile [--basedir DIR] PY_FILES ...
 
-if [ -z "$PYTHON" ]; then
-  PYTHON=python
-fi
+PYTHON=$(which python 2>/dev/null)
 
-basedir=
-
-case "$1" in
-    --basedir)
-	basedir=$2
-	shift 2
-	;;
-    --help)
-	echo "Usage: py-compile [--basedir DIR] PY_FILES ..."
-	echo "Byte compile some python scripts.  This should be performed"
-	echo "after they have been moved to the final installation location"
+if [ -z "${PYTHON}" ]; then
+	# Python is not present. Fail silently.
 	exit 0
-	;;
-    --version)
-	echo "py-compile version 0.0"
-	exit 0
-	;;
-esac
-
-if [ $# = 0 ]; then
-    echo "No files given to $0" 1>&2
-    exit 1
 fi
 
 files=""
@@ -37,12 +15,9 @@ for i in $*; do
 	files="$files $i"
 done
 
-# if basedir was given, then it should be prepended to filenames before
-# byte compilation.
-if [ -z "$basedir" ]; then
-    trans="path = file"
-else
-    trans="path = os.path.join('$basedir', file)"
+if [ -z "${files}" ]; then
+	# No files need to be proceeded.
+	exit 0
 fi
 
 $PYTHON -c "
@@ -51,7 +26,6 @@ import sys, os, string, py_compile
 files = '''$files'''
 print 'Byte-compiling python modules...'
 for file in string.split(files):
-    $trans
     if not os.path.exists(path) or not (len(path) >= 3 and path[-3:] == '.py'):
         continue
     print file,
@@ -66,11 +40,9 @@ import sys, os, string, py_compile
 files = '''$files'''
 print 'Byte-compiling python modules (optimised versions) ...'
 for file in string.split(files):
-    $trans
     if not os.path.exists(path) or not (len(path) >= 3 and path[-3:] == '.py'):
         continue
     print file,
     sys.stdout.flush()
     py_compile.compile(path)
 print" 2>/dev/null || :
-

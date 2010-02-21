@@ -32,6 +32,10 @@ define DO_INSTALL_PAM
 	$(foreach file,$(PKG_PAM_FILES),$(call __INSTALL_PAM,$(file)))
 endef
 
+define DO_PYTHON_COMPILE
+	@find $(BUILDROOT) -name "*.py" | xargs $(DIR_TOOLS)/py-compile
+endef
+
 define DO_PREPARE
 	@echo "#####################################################################"
 	@echo "# $(PKG_NAME) - Preparation started"
@@ -77,6 +81,8 @@ define DO_INSTALL
 
 	$(DO_INSTALL_INIT)
 	$(DO_INSTALL_PAM)
+
+	$(DO_PYTHON_COMPILE)
 
 	@echo "#####################################################################"
 	@echo "# $(PKG_NAME) - Install finished"
