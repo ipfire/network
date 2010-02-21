@@ -29,6 +29,7 @@ class Config(object):
 			"core/glibc",
 			"core/make",
 		],
+		"nice_level" : 0,
 		#
 		# Cleanup settings
 		"cleanup_on_failure" : False,
