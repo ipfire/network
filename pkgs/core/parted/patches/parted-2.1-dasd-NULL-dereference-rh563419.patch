@@ -1,0 +1,26 @@
+From 122bc980e27334d0f6243b74fffc8d2cefe0eb5c Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Wed, 10 Feb 2010 14:11:14 +0100
+Subject: [PATCH parted] dasd: Fix NULL pointer dereference in dasd_read
+
+* libparted/labels/dasd.c (dasd_read): Fix NULL ptr dereference.
+---
+ libparted/labels/dasd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/libparted/labels/dasd.c b/libparted/labels/dasd.c
+index 4b5840b..516d189 100644
+--- a/libparted/labels/dasd.c
++++ b/libparted/labels/dasd.c
+@@ -399,7 +399,7 @@ dasd_read (PedDisk* disk)
+ 
+ 		if (strncmp(PART_TYPE_SWAP, str, 6) == 0) {
+ 			fs = ped_file_system_probe(&part->geom);
+-			if (is_linux_swap(fs->name)) {
++			if (fs && is_linux_swap(fs->name)) {
+ 				dasd_data->system = PARTITION_LINUX_SWAP;
+ 				PDEBUG;
+ 			}
+-- 
+1.6.6
+

@@ -1,0 +1,30 @@
+From 38fe6955c11a8bbcdda050401f46abe25dced000 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Thu, 18 Feb 2010 14:24:32 +0100
+Subject: [PATCH parted] libparted: copy needs_clobber value in ped_disk_duplicate()
+
+Most duplicate disk_ops use ped_disk_new_fresh, which sets needs_clobber
+to 1. This would lead to clobbering the disk when committing a duplicate
+disk even when the original disk was not made with ped_disk_new_fresh.
+* libparted/disk.c (ped_disk_duplicate): copy needs_clobber value.
+---
+ libparted/disk.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/libparted/disk.c b/libparted/disk.c
+index b819d59..fc5ef17 100644
+--- a/libparted/disk.c
++++ b/libparted/disk.c
+@@ -276,6 +276,9 @@ ped_disk_duplicate (const PedDisk* old_disk)
+ 	}
+ 	if (!_disk_pop_update_mode (new_disk))
+ 		goto error_destroy_new_disk;
++
++        new_disk->needs_clobber = old_disk->needs_clobber;
++
+ 	return new_disk;
+ 
+ error_destroy_new_disk:
+-- 
+1.7.0
+
