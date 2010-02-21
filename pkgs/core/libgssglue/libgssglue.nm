@@ -1,0 +1,45 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = libgssglue
+PKG_VER        = 0.1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.citi.umich.edu/projects/nfsv4/linux/libgssglue/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = This library exports a gssapi interface.
+
+PKG_DEPS      += 
+
+define PKG_DESCRIPTION
+	This library exports a gssapi interface, but doesn't implement any \
+	gssapi mechanisms itself; instead it calls gssapi routines in other \
+	libraries, depending on the mechanism.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
