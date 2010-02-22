@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = glibc
-PKG_VER        = 2.10.1
+PKG_VER        = 2.11.1
 PKG_REL        = 0
 
 PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
@@ -153,7 +153,7 @@ define STAGE_PREPARE
 	# We don't need to set -march=i?86 in confparams because GCC was built with
 	# --with-arch=i?86.
 
-	cat $(DIR_SOURCE)/$(THISAPP)-stack_chk_fail.c \
+	cat $(DIR_SOURCE)/$(PKG_NAME)-stack_chk_fail.c \
 		> $(DIR_APP)/debug/stack_chk_fail.c
 
 	cd $(DIR_APP) && \
