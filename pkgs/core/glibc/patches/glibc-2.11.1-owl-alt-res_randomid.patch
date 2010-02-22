@@ -1,17 +1,8 @@
-From Alt Linux glibc-2.5-owl-alt-res_randomid.patch
+# Improve res_randomid in the resolver.
 
-See: http://www.openbsd.org/advisories/res_random.txt
-
-Bind needs to be modified to use this res_randomid(), and not its own (which
-is almost as bad as Glibc's vanilla version).
-
-Note: undefine CONSERVE_KERNEL_RANDOMNESS in resolv/shuffle.c when using
-/dev/erandom.
-
-diff -Naur glibc-2.8-20080929.orig/include/resolv.h glibc-2.8-20080929/include/resolv.h
---- glibc-2.8-20080929.orig/include/resolv.h	2007-02-09 23:46:19.000000000 +0000
-+++ glibc-2.8-20080929/include/resolv.h	2008-10-16 01:16:24.000000000 +0000
-@@ -31,6 +31,7 @@
+--- a/include/resolv.h
++++ b/include/resolv.h
+@@ -31,6 +31,7 @@ extern struct __res_state _res;
  # endif
  
  /* Now define the internal interfaces.  */
@@ -19,10 +10,9 @@ diff -Naur glibc-2.8-20080929.orig/include/resolv.h glibc-2.8-20080929/include/r
  extern int __res_vinit (res_state, int);
  extern int __res_maybe_init (res_state, int);
  extern void _sethtent (int);
-diff -Naur glibc-2.8-20080929.orig/resolv/Makefile glibc-2.8-20080929/resolv/Makefile
---- glibc-2.8-20080929.orig/resolv/Makefile	2007-04-30 22:30:05.000000000 +0000
-+++ glibc-2.8-20080929/resolv/Makefile	2008-10-16 01:16:24.000000000 +0000
-@@ -30,7 +30,7 @@
+--- a/resolv/Makefile
++++ b/resolv/Makefile
+@@ -29,7 +29,7 @@ distribute := ../conf/portability.h mapv4v6addr.h mapv4v6hostent.h \
  	      Banner res_hconf.h res_debug.h README gai_misc.h ga_test.c
  
  routines := herror inet_addr inet_ntop inet_pton nsap_addr res_init \
@@ -31,19 +21,9 @@ diff -Naur glibc-2.8-20080929.orig/resolv/Makefile glibc-2.8-20080929/resolv/Mak
  
  tests = tst-aton tst-leaks tst-inet_ntop
  xtests = tst-leaks2
-@@ -49,7 +49,7 @@
- 		      res_data res_mkquery res_query res_send		\
- 		      inet_net_ntop inet_net_pton inet_neta base64	\
- 		      ns_parse ns_name ns_netint ns_ttl ns_print	\
--		      ns_samedomain ns_date
-+		      ns_samedomain ns_date shuffle
- 
- libanl-routines := gai_cancel gai_error gai_misc gai_notify gai_suspend \
- 		   getaddrinfo_a
-diff -Naur glibc-2.8-20080929.orig/resolv/res_init.c glibc-2.8-20080929/resolv/res_init.c
---- glibc-2.8-20080929.orig/resolv/res_init.c	2008-04-07 17:20:25.000000000 +0000
-+++ glibc-2.8-20080929/resolv/res_init.c	2008-10-16 01:16:24.000000000 +0000
-@@ -568,7 +568,9 @@
+--- a/resolv/res_init.c
++++ b/resolv/res_init.c
+@@ -570,7 +570,9 @@ net_mask(in)		/* XXX - should really use system's version of this */
  
  u_int
  res_randomid(void) {
@@ -54,30 +34,28 @@ diff -Naur glibc-2.8-20080929.orig/resolv/res_init.c glibc-2.8-20080929/resolv/r
  }
  #ifdef _LIBC
  libc_hidden_def (__res_randomid)
-diff -Naur glibc-2.8-20080929.orig/resolv/res_mkquery.c glibc-2.8-20080929/resolv/res_mkquery.c
---- glibc-2.8-20080929.orig/resolv/res_mkquery.c	2007-02-09 23:42:17.000000000 +0000
-+++ glibc-2.8-20080929/resolv/res_mkquery.c	2008-10-16 01:16:24.000000000 +0000
-@@ -120,6 +120,7 @@
+--- a/resolv/res_mkquery.c
++++ b/resolv/res_mkquery.c
+@@ -120,6 +120,7 @@ res_nmkquery(res_state statp,
  		return (-1);
  	memset(buf, 0, HFIXEDSZ);
  	hp = (HEADER *) buf;
-+#if 0
++#ifdef USE_OLD_RANDOMIZE_CODE
  	/* We randomize the IDs every time.  The old code just
  	   incremented by one after the initial randomization which
  	   still predictable if the application does multiple
-@@ -137,6 +138,9 @@
+@@ -137,6 +138,9 @@ res_nmkquery(res_state statp,
  	  }
  	while ((randombits & 0xffff) == 0);
  	statp->id = (statp->id + randombits) & 0xffff;
 +#else
-+	statp->id = _shuffle_next();
++	statp->id = res_randomid ();
 +#endif
  	hp->id = statp->id;
  	hp->opcode = op;
  	hp->rd = (statp->options & RES_RECURSE) != 0;
-diff -Naur glibc-2.8-20080929.orig/resolv/shuffle.c glibc-2.8-20080929/resolv/shuffle.c
---- glibc-2.8-20080929.orig/resolv/shuffle.c	1970-01-01 00:00:00.000000000 +0000
-+++ glibc-2.8-20080929/resolv/shuffle.c	2008-10-16 01:16:24.000000000 +0000
+--- /dev/null
++++ b/resolv/shuffle.c
 @@ -0,0 +1,258 @@
 +/*
 + * Written by Solar Designer and placed in the public domain.
@@ -132,9 +110,9 @@ diff -Naur glibc-2.8-20080929.orig/resolv/shuffle.c glibc-2.8-20080929/resolv/sh
 +{
 +	int i, x;
 +
-+	srand(seed ^ rand());
++	__srandom(seed ^ __random());
 +	for (i = 0; i < sizeof(pool); i++) {
-+		x = rand();
++		x = __random();
 +		pool[i] += (x >> 16) ^ x;
 +	}
 +}
@@ -146,7 +124,7 @@ diff -Naur glibc-2.8-20080929.orig/resolv/shuffle.c glibc-2.8-20080929/resolv/sh
 +
 +	offset = 0;
 +	while (count > 0) {
-+		block = read(fd, &buffer[offset], count);
++		block = __read(fd, &buffer[offset], count);
 +
 +		if (block < 0) {
 +			if (errno == EINTR) continue;
@@ -171,15 +149,15 @@ diff -Naur glibc-2.8-20080929.orig/resolv/shuffle.c glibc-2.8-20080929/resolv/sh
 +		return -1;
 +#endif
 +
-+	if ((fd = open(DEVICE, O_RDONLY)) < 0)
++	if ((fd = __open(DEVICE, O_RDONLY)) < 0)
 +		return -1;
 +
 +#ifdef CONSERVE_KERNEL_RANDOMNESS
 +	if (read_loop(fd, (char *)seed, sizeof(seed)) != sizeof(seed)) {
-+		close(fd);
++		__close(fd);
 +		return -1;
 +	}
-+	close(fd);
++	__close(fd);
 +
 +	memset(pool, 'X', sizeof(pool));
 +	pool_update(seed[0]);
@@ -188,7 +166,7 @@ diff -Naur glibc-2.8-20080929.orig/resolv/shuffle.c glibc-2.8-20080929/resolv/sh
 +	memcpy(buffer, pool, count);
 +#else
 +	count = read_loop(fd, buffer, count);
-+	close(fd);
++	__close(fd);
 +#endif
 +
 +	return count;
@@ -203,9 +181,9 @@ diff -Naur glibc-2.8-20080929.orig/resolv/shuffle.c glibc-2.8-20080929/resolv/sh
 +
 +	if (read_random((char *)seed_f, sizeof(seed_f)) != sizeof(seed_f)) {
 +		memset(pool, 'X', sizeof(pool));
-+		pool_update(getpid());
-+		pool_update(getppid());
-+		if (!gettimeofday(&tv, NULL)) {
++		pool_update(__getpid());
++		pool_update(__getppid());
++		if (!__gettimeofday(&tv, NULL)) {
 +			pool_update(tv.tv_sec);
 +			pool_update(tv.tv_usec);
 +		}
@@ -222,7 +200,7 @@ diff -Naur glibc-2.8-20080929.orig/resolv/shuffle.c glibc-2.8-20080929/resolv/sh
 +	struct tms buf;
 +
 +	if (read_random((char *)&seed_c, sizeof(seed_c)) != sizeof(seed_c)) {
-+		pool_update(times(&buf));
++		pool_update(__times(&buf));
 +		pool_update(buf.tms_utime);
 +		pool_update(buf.tms_stime);
 +
@@ -314,7 +292,7 @@ diff -Naur glibc-2.8-20080929.orig/resolv/shuffle.c glibc-2.8-20080929/resolv/sh
 +	}
 +
 +/* Make sure the sequence we generate changes after fork() */
-+	pid = getpid();
++	pid = __getpid();
 +
 +	x = shuffle_1_next();
 +	x ^= pid & 0x7fff;
