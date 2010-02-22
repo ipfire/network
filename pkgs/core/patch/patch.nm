@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = patch
-PKG_VER        = 2.5.9
+PKG_VER        = 2.6
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -33,8 +33,6 @@ PKG_GROUP      = Development/Tools
 PKG_URL        = http://www.gnu.org/software/patch/patch.html
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Utility for modifying/upgrading files.
-
-PKG_BUILD_DEPS+= autoconf
 
 define PKG_DESCRIPTION
 	The patch program applies diff files to originals. The diff \
@@ -45,14 +43,6 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && autoreconf --force
-endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr
