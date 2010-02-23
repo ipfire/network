@@ -68,7 +68,6 @@ define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -e 's/__OpenBSD__/__linux__/' -e 's/arandom/urandom/' \
 				-i crypto/rand/randfile.c
 
-	cd $(DIR_APP) && sed 's/__OpenBSD__/__linux__/' -i crypto/uid.c
 	cd $(DIR_APP) && sed -e 's/__OpenBSD__/__linux__/' -i crypto/rand/rand_unix.c
 
 	cd $(DIR_APP) && find crypto/ -name Makefile -exec \
