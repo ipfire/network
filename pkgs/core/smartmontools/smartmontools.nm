@@ -45,18 +45,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man \
+	--sysconfdir=/etc
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--disable-static \
-			--mandir=/usr/share/man \
-			--sysconfdir=/etc \
-			--with-initscriptdir=$(DIR_APP)/tmp
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+define STAGE_INSTALL_CMDS
+	rm -rvf $(BUILDROOT)/etc/rc.d
 endef
