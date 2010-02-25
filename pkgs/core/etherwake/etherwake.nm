@@ -42,6 +42,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/^CFLAGS.*/CFLAGS = $(CFLAGS)/" -i Makefile
+endef
+
 define STAGE_BUILD
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
