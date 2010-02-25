@@ -1,12 +1,17 @@
-Based on: http://www.uclibc.org/cgi-bin/viewcvs.cgi/trunk/uClibc/libc/misc/\
-		internals/tempname.c?rev=8887&r1=5747&r2=8887
-
+Submitted By: Robert Connolly <robert at linuxfromscratch dot org> (ashes)
+Date: 2010-02-19
+Initial Package Version: 2.11.1
+Upstream Status: Not Submitted
+Origin: Based on http://www.uclibc.org/cgi-bin/viewcvs.cgi/trunk/uClibc/libc/
+	misc/internals/tempname.c?rev=8887&r1=5747&r2=8887
+Description:
 Use /dev/urandom exclusively with __gen_tempname(), for the mktemp/tmpnam
-family, instead of hp-timing, gettimeofday(), or getpid().
+family, instead of hp-timing, gettimeofday(), or getpid(). return -1 if
+/dev/urandom does not open.
 
-diff -Naur glibc-2.8-20080929.orig/sysdeps/posix/tempname.c glibc-2.8-20080929/sysdeps/posix/tempname.c
---- glibc-2.8-20080929.orig/sysdeps/posix/tempname.c	2008-03-30 03:30:25.000000000 +0000
-+++ glibc-2.8-20080929/sysdeps/posix/tempname.c	2008-10-15 20:24:16.000000000 +0000
+diff -Naur glibc-2.11.1.orig/sysdeps/posix/tempname.c glibc-2.11.1/sysdeps/posix/tempname.c
+--- glibc-2.11.1.orig/sysdeps/posix/tempname.c	2009-12-08 20:10:20.000000000 +0000
++++ glibc-2.11.1/sysdeps/posix/tempname.c	2010-02-19 17:36:44.000000000 +0000
 @@ -51,10 +51,6 @@
  # include <fcntl.h>
  #endif
@@ -66,7 +71,7 @@ diff -Naur glibc-2.8-20080929.orig/sysdeps/posix/tempname.c glibc-2.8-20080929/s
 +{
 +    int fd;
 +    unsigned int result = -1;
-+    fd = __open("/dev/urandom", O_RDONLY);
++    fd = __open("/dev/urandom", O_RDONLY|O_NONBLOCK|O_NOCTTY);
 +    if (fd >= 0)
 +      {
 +        result = __read(fd, buf, len);
@@ -76,24 +81,25 @@ diff -Naur glibc-2.8-20080929.orig/sysdeps/posix/tempname.c glibc-2.8-20080929/s
 +}
 +
  /* Generate a temporary file name based on TMPL.  TMPL must match the
-    rules for mk[s]temp (i.e. end in "XXXXXX").  The name constructed
-    does not exist at the time of the call to __gen_tempname.  TMPL is
-@@ -220,19 +210,19 @@
+    rules for mk[s]temp (i.e. end in "XXXXXX", possibly with a suffix).
+    The name constructed does not exist at the time of the call to
+@@ -219,13 +209,12 @@
+ 			at the time of the call.
     __GT_FILE:		create the file using open(O_CREAT|O_EXCL)
  			and return a read-write fd.  The file is mode 0600.
-    __GT_DIR:		create a directory, which will be mode 0700.
--
+-   __GT_DIR:		create a directory, which will be mode 0700.
++   __GT_DIR:		create a directory, which will be mode 0700. */
+ 
 -   We use a clever algorithm to get hard-to-predict names. */
-+*/
  int
- __gen_tempname (char *tmpl, int flags, int kind)
+ __gen_tempname (char *tmpl, int suffixlen, int flags, int kind)
  {
 -  int len;
 +  int len, i;
    char *XXXXXX;
    static uint64_t value;
--  uint64_t random_time_bits;
-   unsigned int count;
+   uint64_t random_time_bits;
+@@ -233,6 +222,8 @@
    int fd = -1;
    int save_errno = errno;
    struct_stat64 st;
@@ -102,9 +108,9 @@ diff -Naur glibc-2.8-20080929.orig/sysdeps/posix/tempname.c glibc-2.8-20080929/s
  
    /* A lower bound on the number of temporary files to attempt to
       generate.  The maximum total number of temporary file names that
-@@ -260,39 +250,19 @@
+@@ -260,39 +251,20 @@
    /* This is where the Xs start.  */
-   XXXXXX = &tmpl[len - 6];
+   XXXXXX = &tmpl[len - 6 - suffixlen];
  
 -  /* Get some more or less random data.  */
 -#ifdef RANDOM_BITS
@@ -121,10 +127,11 @@ diff -Naur glibc-2.8-20080929.orig/sysdeps/posix/tempname.c glibc-2.8-20080929/s
 -# endif
 -#endif
 -  value += random_time_bits ^ __getpid ();
-+  /* Get some random data.  */
++  /* Get some random data, and die otherwise.  */
 +  if (fillrand(randomness,  sizeof(randomness)) != sizeof(randomness))
 +    {
-+      goto all_done;
++      __set_errno (ENODEV);
++      return -1;
 +    }
 +  for (i = 0 ; i < sizeof(randomness) ; i++)
 +    {
@@ -152,11 +159,3 @@ diff -Naur glibc-2.8-20080929.orig/sysdeps/posix/tempname.c glibc-2.8-20080929/s
        switch (kind)
  	{
  	case __GT_FILE:
-@@ -337,6 +307,7 @@
-     }
- 
-   /* We got out of the loop because we ran out of combinations to try.  */
-+all_done:
-   __set_errno (EEXIST);
-   return -1;
- }

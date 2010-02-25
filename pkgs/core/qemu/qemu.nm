@@ -24,33 +24,33 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = etherwake
-PKG_VER        = 1.09
+PKG_NAME       = qemu-kvm
+PKG_VER        = 0.12.2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Networking/Tools
-PKG_URL        = 
-PKG_LICENSE    = 
-PKG_SUMMARY    = Can wake up sleeping PCs by WOL.
+PKG_GROUP      = Applications/Virtualization
+PKG_URL        = http://www.linux-kvm.org/page/Main_Page
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = QEMU is a generic and open source machine emulator and virtualizer.
+
+PKG_DEPS      += curl gnutls ncurses pciutils util-linux-ng
 
 define PKG_DESCRIPTION
-	A little tool to send magic Wake-on-LAN packets You can wake up WOL \
-	compliant Computers which have been powered down to sleep mode or start \
-	WOL compliant Computers with a BIOS feature.
+	QEMU is a processor emulator that relies on dynamic binary translation \
+	to achieve a reasonable speed while being easy to port on new host CPU \
+	architectures.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e "s/^CFLAGS.*/CFLAGS = $(CFLAGS)/" -i Makefile
+define QUALITY_AGENT_WHITELIST_EXECSTACK
+	/usr/share/qemu/openbios*
 endef
 
-define STAGE_BUILD
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/usr/sbin
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-endef
+CONFIGURE_OPTIONS += \
+	--prefix=/usr \
+	--enable-kvm \
+	--disable-strip \
+	--disable-sdl \
+	--disable-xen

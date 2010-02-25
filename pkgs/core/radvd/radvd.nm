@@ -24,33 +24,33 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = etherwake
-PKG_VER        = 1.09
+PKG_NAME       = radvd
+PKG_VER        = 1.5
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Networking/Tools
-PKG_URL        = 
-PKG_LICENSE    = 
-PKG_SUMMARY    = Can wake up sleeping PCs by WOL.
+PKG_GROUP      = System/Daemons
+PKG_URL        = http://flex.sourceforge.net/
+PKG_LICENSE    = BSD with advertising
+PKG_SUMMARY    = A Router Advertisement daemon.
+
+PKG_BUILD_DEPS+= flex bison
 
 define PKG_DESCRIPTION
-	A little tool to send magic Wake-on-LAN packets You can wake up WOL \
-	compliant Computers which have been powered down to sleep mode or start \
-	WOL compliant Computers with a BIOS feature.
+	radvd is the router advertisement daemon for IPv6. It listens to \
+	router solicitations and sends router advertisements as described \
+	in Neighbor Discovery for IP Version 6. With these \
+	advertisements hosts can automatically configure their addresses and \
+	some other parameters. They also can choose a default router based \
+	on these advertisements.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man \
+	--with-pidfile=/var/run/radvd/radvd.pid
+
 define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e "s/^CFLAGS.*/CFLAGS = $(CFLAGS)/" -i Makefile
-endef
-
-define STAGE_BUILD
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/usr/sbin
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+	cd $(DIR_APP) && sed -e "s/-lfl/-lfl_pic/g" -i Makefile.*
 endef

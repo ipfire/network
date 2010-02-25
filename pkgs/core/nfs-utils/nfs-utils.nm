@@ -24,33 +24,39 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = etherwake
-PKG_VER        = 1.09
+PKG_NAME       = nfs-utils
+PKG_VER        = 1.2.2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
 PKG_GROUP      = Networking/Tools
-PKG_URL        = 
-PKG_LICENSE    = 
-PKG_SUMMARY    = Can wake up sleeping PCs by WOL.
+PKG_URL        = http://nfs.sourceforge.net/
+PKG_LICENSE    = MIT and GPLv2 and GPLv2+
+PKG_SUMMARY    = NFS utilities and supporting clients and daemons for the NFS server.
+
+PKG_DEPS      += libevent libnfsidmap libgssglue libcap util-linux-ng
 
 define PKG_DESCRIPTION
-	A little tool to send magic Wake-on-LAN packets You can wake up WOL \
-	compliant Computers which have been powered down to sleep mode or start \
-	WOL compliant Computers with a BIOS feature.
+	The nfs-utils package provides a daemon for the kernel NFS server \
+	and related tools, which provides a much higher level of performance \
+	than the traditional Linux NFS server used by most users. This \
+	package also contains the showmount program.  Showmount queries the \
+	mount daemon on a remote host for information about the NFS server \
+	on the remote host.  For example, showmount can display the clients \
+	which are mounted on that host.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_TARBALL    = $(THISAPP).tar.bz2
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e "s/^CFLAGS.*/CFLAGS = $(CFLAGS)/" -i Makefile
-endef
-
-define STAGE_BUILD
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/usr/sbin
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-endef
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man \
+	--sysconfdir=/etc \
+	--without-tcp-wrappers \
+	--disable-static \
+	--enable-tirpc=no \
+	--enable-nfsv3 \
+	--enable-nfsv4 \
+	--with-krb5=no \
+	--disable-gss \
+	--with-rpcgen=internal \
+	--enable-mount

@@ -24,33 +24,31 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = etherwake
-PKG_VER        = 1.09
+PKG_NAME       = smartmontools
+PKG_VER        = 5.37
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Networking/Tools
-PKG_URL        = 
-PKG_LICENSE    = 
-PKG_SUMMARY    = Can wake up sleeping PCs by WOL.
+PKG_GROUP      = System/Statistics
+PKG_URL        = http://flex.sourceforge.net/
+PKG_LICENSE    = GPLv2
+PKG_SUMMARY    = A set of tools that watches HDD S.M.A.R.T status.
 
 define PKG_DESCRIPTION
-	A little tool to send magic Wake-on-LAN packets You can wake up WOL \
-	compliant Computers which have been powered down to sleep mode or start \
-	WOL compliant Computers with a BIOS feature.
+	The smartmontools package contains two utility programs (smartctl \
+	and smartd) to control and monitor storage systems using the \
+	Self-Monitoring, Analysis and Reporting Technology System (SMART) \
+	built into most modern ATA and SCSI harddisks. In many cases, \
+	these utilities will provide advanced warning of disk degradation \
+	and failure.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e "s/^CFLAGS.*/CFLAGS = $(CFLAGS)/" -i Makefile
-endef
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man \
+	--sysconfdir=/etc
 
-define STAGE_BUILD
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/usr/sbin
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+define STAGE_INSTALL_CMDS
+	rm -rvf $(BUILDROOT)/etc/rc.d
 endef

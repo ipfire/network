@@ -24,33 +24,40 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = etherwake
-PKG_VER        = 1.09
+PKG_NAME       = vsftpd
+PKG_VER        = 2.2.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Networking/Tools
-PKG_URL        = 
-PKG_LICENSE    = 
-PKG_SUMMARY    = Can wake up sleeping PCs by WOL.
+PKG_GROUP      = Networking/Daemons
+PKG_URL        = ftp://vsftpd.beasts.org/users/cevans/
+PKG_LICENSE    = GPLv2 with exceptions
+PKG_SUMMARY    = Very Secure Ftp Daemon.
+
+PKG_DEPS      += libcap openssl pam
 
 define PKG_DESCRIPTION
-	A little tool to send magic Wake-on-LAN packets You can wake up WOL \
-	compliant Computers which have been powered down to sleep mode or start \
-	WOL compliant Computers with a BIOS feature.
+	vsftpd is a Very Secure FTP daemon. It was written completely \
+	from scratch.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e "s/^CFLAGS.*/CFLAGS = $(CFLAGS)/" -i Makefile
-endef
+###############################################################################
+# Installation Details
+###############################################################################
 
 define STAGE_BUILD
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/usr/sbin
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+	-mkdir -pv $(BUILDROOT)/usr/bin/vsftpd
+	cd $(DIR_APP) && install -v -m 755 vsftpd $(BUILDROOT)/usr/bin/vsftpd
+	-mkdir -pv $(BUILDROOT)/usr/share/man/man8
+	cd $(DIR_APP) && install -v -m 644 vsftpd.8 $(BUILDROOT)/usr/share/man/man8
+	-mkdir -pv $(BUILDROOT)/usr/share/man/man5
+	cd $(DIR_APP) && install -v -m 644 vsftpd.conf.5 $(BUILDROOT)/usr/share/man/man5
+	-mkdir -pv $(BUILDROOT)/etc/$(PKG_NAME)
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME).{conf,user_list} $(BUILDROOT)/etc/$(PKG_NAME)
 endef
