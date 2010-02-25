@@ -1,0 +1,50 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = reiserfsprogs
+PKG_VER        = 3.6.21
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://www.kernel.org/pub/linux/utils/fs/reiserfs/
+PKG_LICENSE    = GPL
+PKG_SUMMARY    = Tools for ReiserFS filesystems.
+
+define PKG_DESCRIPTION
+	This package contains utilities to create, check, resize, and \
+	debug ReiserFS filesystems.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += \
+	--sbindir=/sbin
+
+define STAGE_INSTALL_CMDS
+	ln -svf reiserfsck $(BUILDROOT)/sbin/fsck.reiserfs
+	ln -svf mkreiserfs $(BUILDROOT)/sbin/mkfs.reiserfs
+endef
