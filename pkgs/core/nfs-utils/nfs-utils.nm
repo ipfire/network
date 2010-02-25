@@ -34,8 +34,7 @@ PKG_URL        = http://nfs.sourceforge.net/
 PKG_LICENSE    = MIT and GPLv2 and GPLv2+
 PKG_SUMMARY    = NFS utilities and supporting clients and daemons for the NFS server.
 
-PKG_BUILD_DEPS+= libevent libnfsidmap libgssglue libcap util-linux-ng
-PKG_DEPS      += 
+PKG_DEPS      += libevent libnfsidmap libgssglue libcap util-linux-ng
 
 define PKG_DESCRIPTION
 	The nfs-utils package provides a daemon for the kernel NFS server \
@@ -49,30 +48,15 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--disable-static \
-			--mandir=/usr/share/man \
-			--sysconfdir=/etc \
-			--without-tcp-wrappers \
-			--disable-static \
-			--enable-tirpc=no \
-			--enable-nfsv3 \
-			--enable-nfsv4 \
-			--with-krb5=no \
-			--disable-gss \
-			--with-rpcgen=internal \
-			--enable-mount
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-endef
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man \
+	--sysconfdir=/etc \
+	--without-tcp-wrappers \
+	--disable-static \
+	--enable-tirpc=no \
+	--enable-nfsv3 \
+	--enable-nfsv4 \
+	--with-krb5=no \
+	--disable-gss \
+	--with-rpcgen=internal \
+	--enable-mount
