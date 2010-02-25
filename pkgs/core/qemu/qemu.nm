@@ -30,12 +30,11 @@ PKG_REL        = 0
 
 PKG_MAINTAINER =
 PKG_GROUP      = Applications/Virtualization
-PKG_URL        = http://http://downloads.sourceforge.net/project/kvm/
+PKG_URL        = http://www.linux-kvm.org/page/Main_Page
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = QEMU is a generic and open source machine emulator and virtualizer.
 
-PKG_DEPS      += gnutls pciutils
-PKG_BUILD_DEPS+= gnutls pciutils
+PKG_DEPS      += curl gnutls ncurses pciutils util-linux-ng
 
 define PKG_DESCRIPTION
 	QEMU is a processor emulator that relies on dynamic binary translation \
@@ -45,26 +44,13 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define QUALITY_AGENT_WHITELIST_EXECSTACK
 	/usr/share/qemu/openbios*
 endef
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--enable-kvm \
-			--disable-strip \
-			--disable-sdl \
-			--disable-xen \
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-endef
+CONFIGURE_OPTIONS += \
+	--prefix=/usr \
+	--enable-kvm \
+	--disable-strip \
+	--disable-sdl \
+	--disable-xen
