@@ -34,7 +34,6 @@ PKG_URL        = http://flex.sourceforge.net/
 PKG_LICENSE    = BSD with advertising
 PKG_SUMMARY    = A Router Advertisement daemon.
 
-PKG_DEPS      += flex
 PKG_BUILD_DEPS+= flex bison
 
 define PKG_DESCRIPTION
@@ -48,17 +47,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man \
+	--with-pidfile=/var/run/radvd/radvd.pid
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--disable-static \
-			--mandir=/usr/share/man \
-			--with-pidfile=/var/run/radvd/radvd.pid
-	ln -s /usr/lib/libfl_pic.a /usr/lib/libfl.a ## needs to be checked. flex builds this file, but it is not there after extracting flex.
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/-lfl/-lfl_pic/g" -i Makefile.*
 endef
