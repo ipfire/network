@@ -34,7 +34,7 @@ PKG_URL        = http://www.squid-cache.org/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = The Squid proxy caching server.
 
-PKG_DEPS      += openssl openldap
+PKG_DEPS      += libxml2 openssl openldap
 
 define PKG_DESCRIPTION
 	Squid is a high-performance proxy caching server for Web clients, \
@@ -46,75 +46,59 @@ define PKG_DESCRIPTION
 
 endef
 
-PKG_BUILD_DEPS+= openssl openldap coreutils shadow
-
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_OPTIONS += \
+	--datadir=/usr/lib/squid \
+	--libexecdir=/usr/lib/squid \
+	--localstatedir=/var \
+	--sysconfdir=/etc/squid \
+	--enable-storeio="aufs,diskd,ufs,null" \
+	--enable-removal-policies="heap,lru" \
+	--enable-icmp \
+	--enable-delay-pools \
+	--disable-esi \
+	--disable-icap-client \
+	--enable-useragent-log \
+	--enable-referrer-log \
+	--disable-wccp \
+	--disable-wccpv2 \
+	--enable-kill-parent-hack \
+	--enable-snmp \
+	--enable-arp-acl \
+	--enable-htcp \
+	--enable-ssl \
+	--enable-forw-via-db \
+	--disable-cache-digests \
+	--enable-poll \
+	--enable-select \
+	--disable-kqueue \
+	--enable-epoll \
+	--enable-http-violations \
+	--enable-linux-netfilter \
+	--disable-ident-lookups \
+	--enable-internal-dns \
+	--enable-auth=basic,ntlm \
+	--enable-basic-auth-helpers="LDAP,MSNT,multi-domain-NTLM,PAM,NCSA,SMB,squid_radius_auth" \
+	--enable-ntlm-auth-helpers="SMB" \
+	--enable-ntlm-fail-open \
+	--enable-unlinkd \
+	--with-pthreads \
+	--with-aio \
+	--with-dl \
+	--with-large-files
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr \
-			--datadir=/usr/lib/squid \
-			--libexecdir=/usr/lib/squid \
-			--localstatedir=/var \
-			--sysconfdir=/etc/squid \
-			--enable-storeio="aufs,diskd,ufs,null" \
-			--enable-removal-policies="heap,lru" \
-			--enable-icmp \
-			--enable-delay-pools \
-			--disable-esi \
-			--disable-icap-client \
-			--enable-useragent-log \
-			--enable-referrer-log \
-			--disable-wccp \
-			--disable-wccpv2 \
-			--enable-kill-parent-hack \
-			--enable-snmp \
-			--enable-arp-acl \
-			--enable-htcp \
-			--enable-ssl \
-			--enable-forw-via-db \
-			--disable-cache-digests \
-			--enable-poll \
-			--enable-select \
-			--disable-kqueue \
-			--enable-epoll \
-			--enable-http-violations \
-			--enable-linux-netfilter \
-			--disable-ident-lookups \
-			--enable-internal-dns \
-			--enable-auth=basic,ntlm \
-			--enable-basic-auth-helpers="LDAP,MSNT,multi-domain-NTLM,PAM,NCSA,SMB,squid_radius_auth" \
-			--enable-ntlm-auth-helpers="SMB" \
-			--enable-ntlm-fail-open \
-			--enable-unlinkd \
-			--with-pthreads \
-			--with-aio \
-			--with-dl \
-			--with-large-files
-
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-	
+define STAGE_INSTALL_CMDS
 	rm -vf $(BUILDROOT)/etc/squid/errors
-#	ln -svf $(BUILDROOT)/usr/lib/squid/errors/English $(BUILDROOT)/etc/squid/errors
+	ln -svf ../../usr/lib/squid/errors/English $(BUILDROOT)/etc/squid/errors
 
 	-mkdir -pv $(BUILDROOT)/var/log/cache $(BUILDROOT)/var/log/squid
 	touch $(BUILDROOT)/var/log/squid/access.log
 	-mkdir -pv $(BUILDROOT)/var/cache/squid
-	groupadd -r squid && useradd -r -g squid -d $(BUILDROOT)/var/cache/squid -s /bin/false -p '*' squid
-	chown -Rv squid:squid $(BUILDROOT)/var/log/squid $(BUILDROOT)/var/log/cache $(BUILDROOT)/var/cache/squid
-	chmod 600 $(BUILDROOT)/var/cache/squid
-	chown squid:squid $(BUILDROOT)/var/log/squid
-#	ln -svf $(BUILDROOT)/usr/lib/squid $(BUILDROOT)/usr/lib/squid/auth
 
+	# What is this?????
+	#groupadd -r squid && useradd -r -g squid -d $(BUILDROOT)/var/cache/squid -s /bin/false -p '*' squid
+	#chown -Rv squid:squid $(BUILDROOT)/var/log/squid $(BUILDROOT)/var/log/cache $(BUILDROOT)/var/cache/squid
+	#chmod 600 $(BUILDROOT)/var/cache/squid
+	#chown squid:squid $(BUILDROOT)/var/log/squid
 endef
