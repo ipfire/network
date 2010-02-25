@@ -34,8 +34,7 @@ PKG_URL        = ftp://vsftpd.beasts.org/users/cevans/
 PKG_LICENSE    = GPLv2 with exceptions
 PKG_SUMMARY    = Very Secure Ftp Daemon.
 
-PKG_BUILD_DEPS+= openssl pam libcap
-PKG_DEPS      += openssl pam
+PKG_DEPS      += libcap openssl pam
 
 define PKG_DESCRIPTION
 	vsftpd is a Very Secure FTP daemon. It was written completely \
@@ -61,6 +60,4 @@ define STAGE_INSTALL
 	cd $(DIR_APP) && install -v -m 644 vsftpd.conf.5 $(BUILDROOT)/usr/share/man/man5
 	-mkdir -pv $(BUILDROOT)/etc/$(PKG_NAME)
 	cp -vf $(DIR_SOURCE)/$(PKG_NAME).{conf,user_list} $(BUILDROOT)/etc/$(PKG_NAME)
-	-mkdir -pv $(BUILDROOT)/etc/pam.d
-	cp -vf $(DIR_SOURCE)/$(PKG_NAME)-pam.d $(BUILDROOT)/etc/pam.d/$(PKG_NAME)
 endef
