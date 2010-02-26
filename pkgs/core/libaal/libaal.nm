@@ -39,3 +39,14 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+	--libdir=/lib
+
+define STAGE_INSTALL_CMDS
+	rm -vf $(BUILDROOT)/lib/libaal{,-minimal}.so
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	ln -svf ../../lib/libaal-1.0.so.5 $(BUILDROOT)/usr/lib/libaal-1.0.so
+	ln -svf libaal-1.0.so $(BUILDROOT)/usr/lib/libaal.so
+	ln -svf ../../lib/libaal-minimal.so.0 $(BUILDROOT)/usr/lib/libaal-minimal.so
+endef
