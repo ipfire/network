@@ -43,7 +43,7 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
-	--disable-kernel-module \
+	--disable-kernel-module
 
 define STAGE_INSTALL_CMDS
 	rm -vrf $(BUILDROOT)/etc/init.d
