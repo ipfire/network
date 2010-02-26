@@ -1,0 +1,65 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = lighttpd
+PKG_VER        = 1.4.23
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = Networking/Webservers
+PKG_URL        = http://www.lighttpd.net/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = Lightning fast webserver with light system requirements.
+
+PKG_BUILD_DEPS+= pkg-config
+PKG_DEPS      += bzip2 gdbm openldap openssl pcre zlib
+
+define PKG_DESCRIPTION
+	Secure, fast, compliant and very flexible web-server which has been optimized \
+	for high-performance environments. It has a very low memory footprint compared \
+	to other webservers and takes care of cpu-load. Its advanced feature-set \
+	(FastCGI, CGI, Auth, Output-Compression, URL-Rewriting and many more) make \
+	it the perfect webserver-software for every server that is suffering load \
+	problems.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += \
+	--libdir=/usr/lib/$(PKG_NAME) \
+	--with-ldap \
+	--with-openssl
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/etc
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME).conf $(BUILDROOT)/etc/$(PKG_NAME).conf
+
+	-mkdir -pv $(BUILDROOT)/var/log/$(PKG_NAME)
+	touch $(BUILDROOT)/var/log/$(PKG_NAME)/{access,error}.log
+	chown nobody.nobody -R $(BUILDROOT)/var/log/$(PKG_NAME)
+	-mkdir -pv $(BUILDROOT)/var/cache/lighttpd/compress
+	chown nobody.nobody -Rv $(BUILDROOT)/var/cache/lighttpd/
+endef
