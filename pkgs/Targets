@@ -31,7 +31,7 @@ $(OBJECTS):
 %.ipk: $(STAGE_DONE)
 	@echo "$(strip $(PKG_FILES_$(patsubst %$(PKG_SUFFIX),%,$@)))" \
 		> $(DIR_TMP)/filelist_$(patsubst %$(PKG_SUFFIX),%,$@)
-	@/usr/src/src/pakfire/compressor $(DIR_PACKAGES)/$@ \
+	@$(DIR_TOOLS)/compressor $(DIR_PACKAGES)/$@ \
 		--root=$(BUILDROOT) $(if $(PKG_FILES_$(patsubst %$(PKG_SUFFIX),%,$@)), \
 		--regexes=$(DIR_TMP)/filelist_$(patsubst %$(PKG_SUFFIX),%,$@))
 
