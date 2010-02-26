@@ -24,30 +24,25 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = libassuan
-PKG_VER        = 1.0.5
+PKG_NAME       = libtiff
+PKG_VER        = 3.9.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
 PKG_GROUP      = System/Libraries
-PKG_URL        = http://www.gnupg.org/
-PKG_LICENSE    = LGPLv2+
-PKG_SUMMARY    = GnuPG IPC library.
+PKG_URL        = http://www.libtiff.org
+PKG_LICENSE    = libtiff ( own )
+PKG_SUMMARY    = Library of functions for manipulating TIFF format image files.
 
-PKG_BUILD_DEPS+= autoconf automake libtool
-PKG_DEPS      += pth
+PKG_BUILD_DEPS+= libjpeg
 
 define PKG_DESCRIPTION
-	The Libassuan package contains an IPC library used by some of the other \
-	GnuPG related packages. Libassuan's primary use is to allow a client to \
-	interact with a non-persistent server. Libassuan is not, however, limited \
-	to use with GnuPG servers and clients. It was designed to be flexible \
-	enough to meet the demands of many transaction based environments with \
-	non-persistent servers.
+	The libtiff package contains a library of functions for manipulating \
+	TIFF (Tagged Image File Format) image format files.  TIFF is a widely \
+	used file format for bitmapped images.  TIFF files usually end in the \
+	.tif extension and they are often quite large.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = tiff-$(PKG_VER).tar.gz
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && autoreconf --install
-endef
+DIR_APP = /usr/src/tiff-$(PKG_VER)

@@ -24,30 +24,27 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = libassuan
-PKG_VER        = 1.0.5
+PKG_NAME       = gnupg
+PKG_VER        = 2.0.12
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
+PKG_GROUP      = Security/Tools
 PKG_URL        = http://www.gnupg.org/
-PKG_LICENSE    = LGPLv2+
-PKG_SUMMARY    = GnuPG IPC library.
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = Utility for secure communication and data storage.
 
-PKG_BUILD_DEPS+= autoconf automake libtool
-PKG_DEPS      += pth
+PKG_DEPS      += curl libassuan libgcrypt libksba pinentry pth
 
 define PKG_DESCRIPTION
-	The Libassuan package contains an IPC library used by some of the other \
-	GnuPG related packages. Libassuan's primary use is to allow a client to \
-	interact with a non-persistent server. Libassuan is not, however, limited \
-	to use with GnuPG servers and clients. It was designed to be flexible \
-	enough to meet the demands of many transaction based environments with \
-	non-persistent servers.
+	The GnuPG 2 package is GNU's tool for secure communication and data \
+	storage. It can be used to encrypt data and to create digital signatures. \
+	It includes an advanced key management facility and is compliant with the \
+	proposed OpenPGP Internet standard as described in RFC2440 and the S/MIME \
+	standard as described by several RFCs.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && autoreconf --install
-endef
+CONFIGURE_OPTIONS += \
+	--libexecdir=/usr/lib/gnupg2

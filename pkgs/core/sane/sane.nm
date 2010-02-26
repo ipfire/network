@@ -24,30 +24,34 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = libassuan
-PKG_VER        = 1.0.5
+PKG_NAME       = sane
+PKG_VER        = 1.0.20
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://www.gnupg.org/
-PKG_LICENSE    = LGPLv2+
-PKG_SUMMARY    = GnuPG IPC library.
+PKG_GROUP      = Application/Imaging
+PKG_URL        = ftp://ftp2.sane-project.org/pub/sane/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = SANE - Scanner Access Now Easy.
 
-PKG_BUILD_DEPS+= autoconf automake libtool
-PKG_DEPS      += pth
+PKG_DEPS      += libjpeg libtiff libusb
 
 define PKG_DESCRIPTION
-	The Libassuan package contains an IPC library used by some of the other \
-	GnuPG related packages. Libassuan's primary use is to allow a client to \
-	interact with a non-persistent server. Libassuan is not, however, limited \
-	to use with GnuPG servers and clients. It was designed to be flexible \
-	enough to meet the demands of many transaction based environments with \
-	non-persistent servers.
+	sane-backends - includes: backends (scanner drivers), \
+	command-line-frontend (scanimage), network scanning daemon \
+	(saned) and SANE-API documentation. 
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(PKG_NAME)-backends-$(PKG_VER).tar.gz
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && autoreconf --install
+DIR_APP = /usr/src/$(PKG_NAME)-backends-$(PKG_VER)
+
+CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc \
+	--enable-parport-directio
+ 
+define STAGE_INSTALL_CMDS
+	chmod 4755 $(BUILDROOT)/usr/bin/scanimage
+	install -v -m 644 $(DIR_APP)/include/sane/* $(BUILDROOT)/usr/include/sane
+	rm -vf $(BUILDROOT)/usr/share/doc/sane-1.0.20/README.solaris
 endef

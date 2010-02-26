@@ -24,30 +24,41 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = libassuan
-PKG_VER        = 1.0.5
+PKG_NAME       = net-snmp
+PKG_VER        = 5.4.2.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://www.gnupg.org/
-PKG_LICENSE    = LGPLv2+
-PKG_SUMMARY    = GnuPG IPC library.
+PKG_GROUP      = Networking/Daemons
+PKG_URL        = http://net-snmp.sourceforge.net
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = Simple Network Management Protocol Daemon.
 
-PKG_BUILD_DEPS+= autoconf automake libtool
-PKG_DEPS      += pth
+PKG_DEPS      += perl
 
 define PKG_DESCRIPTION
-	The Libassuan package contains an IPC library used by some of the other \
-	GnuPG related packages. Libassuan's primary use is to allow a client to \
-	interact with a non-persistent server. Libassuan is not, however, limited \
-	to use with GnuPG servers and clients. It was designed to be flexible \
-	enough to meet the demands of many transaction based environments with \
-	non-persistent servers.
+	Simple Network Management Protocol (SNMP) is a widely used protocol \
+	for monitoring the health and welfare of network equipment (eg. routers), \
+	computer equipment and even devices like UPSs.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && autoreconf --install
+PARALLELISMFLAGS = # No parallel build
+
+CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc \
+	--libdir=/usr/lib \
+	--mandir=/usr/share/man \
+	--with-default-snmp-version=2 \
+	--with-sys-contact=root@ \
+	--with-sys-location=localhost \
+	--with-logfile=/var/log/snmpd.log \
+	--with-persistent-directory=/var/net-snmp \
+	--without-perl-modules \
+	--disable-embedded-perl
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/etc
+	install -v -m644 $(DIR_APP)/python/netsnmp/tests/snmpd.conf $(BUILDROOT)/etc/snmpd.conf
 endef

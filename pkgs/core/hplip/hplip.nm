@@ -24,30 +24,32 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = libassuan
-PKG_VER        = 1.0.5
+PKG_NAME       = hplip
+PKG_VER        = 3.10.2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://www.gnupg.org/
-PKG_LICENSE    = LGPLv2+
-PKG_SUMMARY    = GnuPG IPC library.
+PKG_GROUP      = Applications/Printing
+PKG_URL        = http://hplipopensource.com/hplip-web/index.html
+PKG_LICENSE    = GPLv2*
+PKG_SUMMARY    = HP Printer/Scanner Library (full version).
 
 PKG_BUILD_DEPS+= autoconf automake libtool
-PKG_DEPS      += pth
+PKG_DEPS      += cups dbus libjpeg libusb-compat net-snmp python sane
 
 define PKG_DESCRIPTION
-	The Libassuan package contains an IPC library used by some of the other \
-	GnuPG related packages. Libassuan's primary use is to allow a client to \
-	interact with a non-persistent server. Libassuan is not, however, limited \
-	to use with GnuPG servers and clients. It was designed to be flexible \
-	enough to meet the demands of many transaction based environments with \
-	non-persistent servers.
+	HPLIP (Hewlett-Packard Linux Imaging & Printing) is an HP-developed \
+	olution for printing, scanning, and faxing with HP inkjet and laser based \
+	printers in Linux. The HPLIP project provides printing support for 1,924 \
+	printer models. \
+	This is the full version including printer/scanner support.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && autoreconf --install
-endef
+CONFIGURE_OPTIONS += \
+		--sysconfdir=/etc
+
+#define STAGE_PREPARE_CMDS
+	#cd $(DIR_APP) && autoreconf --force
+#endef
