@@ -1,0 +1,12 @@
+diff -Naur reiser4progs-1.0.7.org/plugin/node/node40/node40.c reiser4progs-1.0.7/plugin/node/node40/node40.c
+--- reiser4progs-1.0.7.org/plugin/node/node40/node40.c	2009-01-08 22:34:27.000000000 +0100
++++ reiser4progs-1.0.7/plugin/node/node40/node40.c	2009-04-28 14:15:04.000000000 +0200
+@@ -996,7 +996,7 @@
+ 	func = cb_comp_key3;
+ #elif defined(ENABLE_LARGE_KEYS)
+ 	func = cb_comp_key4;
+-#elif
++#else
+ 	func = NULL;
+ #endif
+ 	
