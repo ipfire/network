@@ -1,0 +1,55 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = hplip
+PKG_VER        = 3.10.2
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Printing
+PKG_URL        = http://hplipopensource.com/hplip-web/index.html
+PKG_LICENSE    = GPLv2*
+PKG_SUMMARY    = HP Printer/Scanner Library (full version).
+
+PKG_BUILD_DEPS+= autoconf automake libtool
+PKG_DEPS      += cups dbus libjpeg libusb-compat net-snmp python sane
+
+define PKG_DESCRIPTION
+	HPLIP (Hewlett-Packard Linux Imaging & Printing) is an HP-developed \
+	olution for printing, scanning, and faxing with HP inkjet and laser based \
+	printers in Linux. The HPLIP project provides printing support for 1,924 \
+	printer models. \
+	This is the full version including printer/scanner support.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+		--sysconfdir=/etc
+
+#define STAGE_PREPARE_CMDS
+	#cd $(DIR_APP) && autoreconf --force
+#endef
