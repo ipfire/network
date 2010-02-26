@@ -1,0 +1,51 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = nmap
+PKG_VER        = 5.00
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Networking/Sniffer
+PKG_URL        = http://nmap.org/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Network exploration tool and security scanner.
+
+PKG_DEPS      += libdnet libpcap lua openssl pcre
+
+define PKG_DESCRIPTION
+	Nmap is a utility for network exploration or security auditing. \
+	It supports ping scanning, many port scanning techniques, and \
+	TCP/IP fingerprinting. Nmap also offers flexible target and port \
+	specification, decoy scanning, determination of TCP sequence \
+	predictability characteristics, reverse-identd scanning, and more.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += \
+	--without-nmapfe \
+	--without-zenmap
