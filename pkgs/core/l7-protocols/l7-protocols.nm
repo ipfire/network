@@ -24,28 +24,30 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = hplip
-PKG_VER        = 3.10.2
+PKG_NAME       = l7-protocols
+PKG_VER        = 2007-11-22
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Applications/Printing
-PKG_URL        = http://hplipopensource.com/hplip-web/index.html
-PKG_LICENSE    = GPLv2*
-PKG_SUMMARY    = HP Printer/Scanner Library (full version).
+PKG_GROUP      = Networking/Firewall
+PKG_URL        = http://l7-filter.sourceforge.net/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Application Layer Packet Classifier for Linux.
 
-PKG_BUILD_DEPS+= autoconf automake libtool
-PKG_DEPS      += cups dbus libjpeg libusb-compat net-snmp python sane
+PKG_DEPS      += 
 
 define PKG_DESCRIPTION
-	HPLIP (Hewlett-Packard Linux Imaging & Printing) is an HP-developed \
-	olution for printing, scanning, and faxing with HP inkjet and laser based \
-	printers in Linux. The HPLIP project provides printing support for 1,924 \
-	printer models. \
-	This is the full version including printer/scanner support.
+	L7-filter is a classifier for Linux's Netfilter that identifies packets \
+	based on application layer data. It can classify packets as Kazaa, HTTP, \
+	Jabber, Citrix, Bittorrent, FTP, Gnucleus, eDonkey2000, etc., regardless \
+	of port.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += \
-		--sysconfdir=/etc
+STAGE_BUILD = # Do nothing
+
+define STAGE_INSTALL
+	-mkdir -p $(BUILDROOT)/etc/l7-protocols
+	cp -Rfv $(DIR_APP)/* $(BUILDROOT)/etc/l7-protocols
+endef
