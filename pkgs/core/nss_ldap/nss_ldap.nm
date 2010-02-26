@@ -1,0 +1,57 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = nss_ldap
+PKG_VER        = 262
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Base
+PKG_URL        = http://www.padl.com/
+PKG_LICENSE    = LGPLv2+
+PKG_SUMMARY    = NSS library and PAM module for LDAP.
+
+PKG_DEPS      += openldap
+
+define PKG_DESCRIPTION
+	This package includes two LDAP access clients: nss_ldap and \
+	pam_ldap. Nss_ldap is a set of C library extensions that allow \
+	X.500 and LDAP directory servers to be used as a primary source \
+	of aliases, ethers, groups, hosts, networks, protocol, users, \
+	RPCs, services, and shadow passwords.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc \
+	--mandir=/usr/share/man \
+	--with-ldap=openldap \
+	--enable-schema-mapping
+
+define STAGE_INSTALL_CMDS
+	mv -vf $(BUILDROOT)/usr/lib/libnss_ldap.so.* $(BUILDROOT)/usr/lib/libnss_ldap.so
+endef
