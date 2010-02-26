@@ -36,6 +36,15 @@ define DO_PYTHON_COMPILE
 	@find $(BUILDROOT) -name "*.py" | xargs $(DIR_TOOLS)/py-compile
 endef
 
+define DO_FIX_LIBTOOL
+	# remove rpath from libtool
+	@if [ -e "libtool" ]; then \
+		sed -i libtool \
+			-e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
+			-e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g'; \
+	fi
+endef
+
 define DO_PREPARE
 	@echo "#####################################################################"
 	@echo "# $(PKG_NAME) - Preparation started"
@@ -107,6 +116,7 @@ define STAGE_BUILD
 		./configure \
 			$(CONFIGURE_OPTIONS)
 
+	$(DO_FIX_LIBTOOL)
 	$(STAGE_CONFIGURE_CMDS)
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
