@@ -13,6 +13,7 @@ clean:
 	rm -vf pakfire python/*.py[co]
 
 install: pakfire
+	-mkdir -pv $(DESTDIR)/usr/bin
 	install -v -m 755 pakfire $(DESTDIR)/usr/bin
 	-mkdir -pv $(PYTHON_DIR)
 	cp -vf python/*.py $(PYTHON_DIR)/
