@@ -1,0 +1,56 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = lsof
+PKG_VER        = 4.82
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Debuggers
+PKG_URL        = ftp://lsof.itap.purdue.edu/pub/tools/unix/lsof
+PKG_LICENSE    = zlib
+PKG_SUMMARY    = A utility which lists open files on a Linux/UNIX system.
+
+define PKG_DESCRIPTION
+	Lsof stands for LiSt Open Files, and it does just that: \
+	it lists information about files that are open by the \
+	processes running on a system.
+endef
+
+PKG_TARBALL    = $(PKG_NAME)_$(PKG_VER)_src.tar.gz
+
+DIR_APP = /usr/src/$(PKG_NAME)_$(PKG_VER)_src
+
+define STAGE_BUILD
+	cd $(DIR_APP) && ./Configure linux -n
+	cd $(DIR_APP) && make DEBUG="$(CFLAGS)" $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	-mkdir -pv $(BUILDROOT)/usr/bin
+	cd $(DIR_APP) && install -m 4750 -o root -g nobody lsof $(BUILDROOT)/usr/bin
+endef
+
