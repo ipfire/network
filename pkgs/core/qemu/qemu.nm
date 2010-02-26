@@ -34,7 +34,7 @@ PKG_URL        = http://www.linux-kvm.org/page/Main_Page
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = QEMU is a generic and open source machine emulator and virtualizer.
 
-PKG_DEPS      += curl gnutls ncurses pciutils util-linux-ng
+PKG_DEPS      += curl gnutls ncurses pciutils sdl util-linux-ng
 
 define PKG_DESCRIPTION
 	QEMU is a processor emulator that relies on dynamic binary translation \
@@ -52,5 +52,8 @@ CONFIGURE_OPTIONS += \
 	--prefix=/usr \
 	--enable-kvm \
 	--disable-strip \
-	--disable-sdl \
 	--disable-xen
+
+define STAGE_CONFIGURE_CMDS
+	cd $(DIR_APP) && sed -e "s@-Wl,-rpath,/usr/lib@@g" -i */config-target.mak
+endef
