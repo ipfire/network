@@ -58,11 +58,6 @@ CONFIGURE_OPTIONS += \
 	--without-perl-modules \
 	--disable-embedded-perl
 
-#define STAGE_CONFIGURE_CMDS
-	#cd $(DIR_APP) && sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
-	#cd $(DIR_APP) && sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
-#endef
-
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/etc
 	install -v -m644 $(DIR_APP)/python/netsnmp/tests/snmpd.conf $(BUILDROOT)/etc/snmpd.conf
