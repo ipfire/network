@@ -1,0 +1,18 @@
+--- reiser4progs-1.0.2/configure.in.orig	2004-10-21 19:38:08.000000000 +0200
++++ reiser4progs-1.0.2/configure.in	2004-10-24 22:08:44.861671296 +0200
+@@ -576,13 +576,8 @@
+ 
+ CFLAGS="$CFLAGS -W -Wall"
+ 
+-if test x$enable_debug = xyes; then
+-    	GENERIC_CFLAGS="$GENERIC_CFLAGS -O1 -g"
+-    	MINIMAL_CFLAGS="$MINIMAL_CFLAGS -O1 -g"
+-else
+-    	GENERIC_CFLAGS="$GENERIC_CFLAGS -O3"
+-    	MINIMAL_CFLAGS="$MINIMAL_CFLAGS -Os"
+-
++MINIMAL_CFLAGS="$MINIMAL_CFLAGS -Os"
++if test x$enable_debug != xyes; then
+     	if test x$uninitialized = xyes; then
+        		CFLAGS="$CFLAGS -Wuninitialized"
+     	fi

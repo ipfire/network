@@ -1,0 +1,55 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = ldapvi
+PKG_VER        = 1.7
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/Editors
+PKG_URL        = http://www.lichteblau.com/ldapvi/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = An interactive LDAP client.
+
+PKG_BUILD_DEPS+= pkg-config
+PKG_DEPS      += glib2 libxslt ncurses openldap openssl popt readline
+
+define PKG_DESCRIPTION
+	ldapvi is an interactive LDAP client for Unix terminals. Using it, you can \
+	update LDAP entries with a text editor, which is the same as vi. Think of \
+	it as vipw(1) for LDAP.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && for i in $$(find . -name "*.[ch]"); do \
+		sed -e "s/getline/_&/g" -i $$i; done
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install prefix=$(BUILDROOT)/usr
+endef

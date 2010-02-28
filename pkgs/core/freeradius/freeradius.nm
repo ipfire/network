@@ -1,0 +1,85 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = freeradius-server
+PKG_VER        = 2.1.6
+PKG_REL        = 0
+
+PKG_MAINTAINER = 
+PKG_GROUP      = System/Daemons
+PKG_URL        = http://www.freeradius.org
+PKG_LICENSE    = GPLv2+ and LGPLv2+
+PKG_SUMMARY    = High-performance and highly configurable free RADIUS server.
+
+PKG_BUILD_DEPS+= libtool
+PKG_DEPS      += gdbm libpcap openssl perl
+
+define PKG_DESCRIPTION
+	The FreeRADIUS Server Project is a high performance and highly \
+	configurable GPL'd free RADIUS server. \
+	FreeRADIUS is an Internet authentication daemon, which implements \
+	the RADIUS protocol, as defined in RFC 2865. It allows \
+	Network Access Servers to perform authentication for dial-up users.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+define QUALITY_AGENT_WHITELIST_RPATH
+	/usr/bin/*
+	/usr/sbin/*
+	/usr/lib/freeradius/*
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			$(CONFIGURE_ARCH) \
+			--prefix=/usr \
+			--sysconfdir=/etc \
+			--libdir=/usr/lib/freeradius \
+			--localstatedir=/var \
+			--with-system-libtool \
+			--with-threads \
+			--with-thread-pool \
+			--disable-ltdl-install \
+			--with-gnu-ld \
+			--without-rlm_eap_ikev2 \
+			--without-rlm_sql_iodbc \
+			--without-rlm_sql_firebird \
+			--without-rlm_sql_db2 \
+			--without-rlm_sql_oracle
+
+	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC" #$(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && R=$(BUILDROOT) make install
+endef
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/etc/logrotate.d/
+	cp -vf $(DIR_SOURCE)/logrotate/freeradius $(BUILDROOT)/etc/logrotate.d/	
+endef

@@ -1,0 +1,67 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = reiser4progs
+PKG_VER        = 1.0.7
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Filesystems
+PKG_URL        = http://www.kernel.org/pub/linux/utils/fs/reiser4/reiser4progs/
+PKG_LICENSE    = GPL
+PKG_SUMMARY    = Administration utilities for the Reiser4 filesystem.
+
+PKG_BUILD_DEPS+= autoconf automake libtool
+PKG_DEPS       = e2fsprogs libaal ncurses readline util-linux-ng
+
+define PKG_DESCRIPTION
+	The filesystem utilities for the reiser4 filesystem, including: \
+	fsck.reiser4, measurefs.reiser4, mkfs.reiser4 and resizefs.reiser4.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += \
+	--sbindir=/sbin \
+	--libdir=/lib \
+	--disable-static \
+	--disable-libminimal
+
+define STAGE_PREPARE_CMDS
+	# Regenerate the buildsystem
+	cd $(DIR_APP) && libtoolize --install
+	cd $(DIR_APP) && aclocal
+	cd $(DIR_APP) && autoheader
+	cd $(DIR_APP) && autoconf
+	cd $(DIR_APP) && automake --add-missing
+endef
+
+define STAGE_INSTALL_CMDS
+	rm -vf $(BUILDROOT)/lib/lib{reiser4,repair}.so
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	ln -svf ../../lib/libreiser4-1.0.so.7 $(BUILDROOT)/usr/lib/libreiser4-1.0.so
+	ln -svf ../../lib/librepair-1.0.so.7 $(BUILDROOT)/usr/lib/librepair-1.0.so
+endef

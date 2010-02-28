@@ -14,7 +14,7 @@ endef
 
 define __INSTALL_INIT
 	-mkdir -pv $(BUILDROOT)/etc/init
-	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(1) $(BUILDROOT)/etc/init/$(subst .init,.conf,$(1))
+	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(1) $(BUILDROOT)/etc/init/$(subst .init,.conf,$(notdir $(1)))
 
 endef
 
@@ -30,6 +30,19 @@ endef
 
 define DO_INSTALL_PAM
 	$(foreach file,$(PKG_PAM_FILES),$(call __INSTALL_PAM,$(file)))
+endef
+
+define DO_PYTHON_COMPILE
+	@find $(BUILDROOT) -name "*.py" | xargs $(DIR_TOOLS)/py-compile
+endef
+
+define DO_FIX_LIBTOOL
+	# remove rpath from libtool
+	@if [ -e "libtool" ]; then \
+		sed -i libtool \
+			-e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
+			-e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g'; \
+	fi
 endef
 
 define DO_PREPARE
@@ -78,6 +91,8 @@ define DO_INSTALL
 	$(DO_INSTALL_INIT)
 	$(DO_INSTALL_PAM)
 
+	$(DO_PYTHON_COMPILE)
+
 	@echo "#####################################################################"
 	@echo "# $(PKG_NAME) - Install finished"
 	@echo "#####################################################################"
@@ -101,6 +116,7 @@ define STAGE_BUILD
 		./configure \
 			$(CONFIGURE_OPTIONS)
 
+	$(DO_FIX_LIBTOOL)
 	$(STAGE_CONFIGURE_CMDS)
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)

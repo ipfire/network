@@ -1,0 +1,52 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = pakfire
+PKG_VER        = 0.9
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = System/Packaging
+PKG_URL        = http://www.ipfire.org/
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = Package installer/updater.
+
+PKG_DEPS      += cpio python python-urlgrabber system-release xz
+
+define PKG_DESCRIPTION
+	Pakfire optains package lists from the mirrors and can install and update \
+	packages.
+endef
+
+DIR_APP = $(DIR_SOURCE)/src
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make VERSION="$(PKG_VER)" $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL_CMDS
+	cd $(DIR_APP) && make clean
+endef

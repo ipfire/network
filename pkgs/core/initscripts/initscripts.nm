@@ -1,0 +1,68 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = initscripts
+PKG_VER        = $(DISTRO_VERSION)
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Boot
+PKG_URL        =
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = The set of scripts that initalize the system.
+
+PKG_DEPS      += coreutils e2fsprogs module-init-tools procps sysvinit \
+	system-release upstart util-linux-ng
+
+define PKG_DESCRIPTION
+	The initscripts package contains the basic system scripts used to boot \
+	your system and shut the system down cleanly.
+endef
+
+DIR_APP = $(DIR_SOURCE)
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP)/src && make clean
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP)/src && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP)/src && make install clean DESTDIR=$(BUILDROOT)
+
+	-mkdir -pv $(BUILDROOT)/etc/{init,sysconfig}
+
+	cp -vf $(DIR_SOURCE)/functions $(BUILDROOT)/etc/init/
+
+	for i in $(DIR_SOURCE)/sysconfig/*; do \
+		install -v -m 644 $$i $(BUILDROOT)/etc/sysconfig/; \
+	done
+	chmod -v 755 $(BUILDROOT)/etc/sysconfig/rc.local
+
+	cp -vf $(DIR_SOURCE)/sysctl.conf $(BUILDROOT)/etc
+endef

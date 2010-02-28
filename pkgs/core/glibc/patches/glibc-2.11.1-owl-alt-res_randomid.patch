@@ -1,0 +1,317 @@
+# Improve res_randomid in the resolver.
+
+--- a/include/resolv.h
++++ b/include/resolv.h
+@@ -31,6 +31,7 @@ extern struct __res_state _res;
+ # endif
+ 
+ /* Now define the internal interfaces.  */
++extern unsigned int _shuffle_next (void);
+ extern int __res_vinit (res_state, int);
+ extern int __res_maybe_init (res_state, int);
+ extern void _sethtent (int);
+--- a/resolv/Makefile
++++ b/resolv/Makefile
+@@ -29,7 +29,7 @@ distribute := ../conf/portability.h mapv4v6addr.h mapv4v6hostent.h \
+ 	      Banner res_hconf.h res_debug.h README gai_misc.h ga_test.c
+ 
+ routines := herror inet_addr inet_ntop inet_pton nsap_addr res_init \
+-	    res_hconf res_libc res-state
++	    res_hconf res_libc res-state shuffle
+ 
+ tests = tst-aton tst-leaks tst-inet_ntop
+ xtests = tst-leaks2
+--- a/resolv/res_init.c
++++ b/resolv/res_init.c
+@@ -570,7 +570,9 @@ net_mask(in)		/* XXX - should really use system's version of this */
+ 
+ u_int
+ res_randomid(void) {
+-	return 0xffff & __getpid();
++/* We should probably randomize the port number as well,
++ * but this may be better done in the kernel */
++	return _shuffle_next();
+ }
+ #ifdef _LIBC
+ libc_hidden_def (__res_randomid)
+--- a/resolv/res_mkquery.c
++++ b/resolv/res_mkquery.c
+@@ -120,6 +120,7 @@ res_nmkquery(res_state statp,
+ 		return (-1);
+ 	memset(buf, 0, HFIXEDSZ);
+ 	hp = (HEADER *) buf;
++#ifdef USE_OLD_RANDOMIZE_CODE
+ 	/* We randomize the IDs every time.  The old code just
+ 	   incremented by one after the initial randomization which
+ 	   still predictable if the application does multiple
+@@ -137,6 +138,9 @@ res_nmkquery(res_state statp,
+ 	  }
+ 	while ((randombits & 0xffff) == 0);
+ 	statp->id = (statp->id + randombits) & 0xffff;
++#else
++	statp->id = res_randomid ();
++#endif
+ 	hp->id = statp->id;
+ 	hp->opcode = op;
+ 	hp->rd = (statp->options & RES_RECURSE) != 0;
+--- /dev/null
++++ b/resolv/shuffle.c
+@@ -0,0 +1,258 @@
++/*
++ * Written by Solar Designer and placed in the public domain.
++ */
++
++#include <unistd.h>
++#include <fcntl.h>
++#include <resolv.h>
++
++#ifdef __linux__
++#define DEVICE				"/dev/urandom"
++#else
++#undef DEVICE
++#endif
++
++#if defined(DEVICE) && defined(_LIBC)
++#define CONSERVE_KERNEL_RANDOMNESS
++#else
++#undef CONSERVE_KERNEL_RANDOMNESS
++#endif
++
++#ifdef DEVICE
++#include <errno.h>
++#endif
++
++#include <stdlib.h>
++#include <string.h>
++#include <sys/time.h>
++#include <sys/times.h>
++
++#ifdef TEST
++#include <stdio.h>
++#endif
++
++#define DIV				0x8000
++
++static unsigned char pool[0x100];
++
++static struct {
++	unsigned int base, xor;
++	unsigned char s[0x80];
++} seed_c;
++static unsigned char seed_f[0x100];
++
++static struct {
++	unsigned int msb;
++	unsigned int a, b;
++	unsigned int n;
++} state;
++
++static void pool_update(unsigned int seed)
++{
++	int i, x;
++
++	__srandom(seed ^ __random());
++	for (i = 0; i < sizeof(pool); i++) {
++		x = __random();
++		pool[i] += (x >> 16) ^ x;
++	}
++}
++
++#ifdef DEVICE
++static int read_loop(int fd, char *buffer, int count)
++{
++	int offset, block;
++
++	offset = 0;
++	while (count > 0) {
++		block = __read(fd, &buffer[offset], count);
++
++		if (block < 0) {
++			if (errno == EINTR) continue;
++			return block;
++		}
++		if (!block) return offset;
++
++		offset += block;
++		count -= block;
++	}
++
++	return offset;
++}
++
++static int read_random(char *buffer, int count)
++{
++	int fd;
++#ifdef CONSERVE_KERNEL_RANDOMNESS
++	unsigned int seed[2];
++
++	if (count > sizeof(pool))
++		return -1;
++#endif
++
++	if ((fd = __open(DEVICE, O_RDONLY)) < 0)
++		return -1;
++
++#ifdef CONSERVE_KERNEL_RANDOMNESS
++	if (read_loop(fd, (char *)seed, sizeof(seed)) != sizeof(seed)) {
++		__close(fd);
++		return -1;
++	}
++	__close(fd);
++
++	memset(pool, 'X', sizeof(pool));
++	pool_update(seed[0]);
++	pool_update(seed[1]);
++
++	memcpy(buffer, pool, count);
++#else
++	count = read_loop(fd, buffer, count);
++	__close(fd);
++#endif
++
++	return count;
++}
++#else
++#define read_random(buffer, count) (-1)
++#endif
++
++static void shuffle_init()
++{
++	struct timeval tv;
++
++	if (read_random((char *)seed_f, sizeof(seed_f)) != sizeof(seed_f)) {
++		memset(pool, 'X', sizeof(pool));
++		pool_update(__getpid());
++		pool_update(__getppid());
++		if (!__gettimeofday(&tv, NULL)) {
++			pool_update(tv.tv_sec);
++			pool_update(tv.tv_usec);
++		}
++
++		memcpy(seed_f, pool, sizeof(seed_f));
++	}
++
++	state.msb = 0;
++	state.n = DIV;			/* force a reseed() */
++}
++
++static void reseed()
++{
++	struct tms buf;
++
++	if (read_random((char *)&seed_c, sizeof(seed_c)) != sizeof(seed_c)) {
++		pool_update(__times(&buf));
++		pool_update(buf.tms_utime);
++		pool_update(buf.tms_stime);
++
++		memcpy(&seed_c, pool, sizeof(seed_c));
++	}
++
++	seed_c.base &= 0x1fff;
++	seed_c.base <<= 3;
++	seed_c.base += DIV + 3;
++	seed_c.xor &= (DIV - 1);
++	state.msb ^= 0x8000;
++	state.a = 1;
++	state.b = 1;
++	state.n = 0;
++}
++
++/*
++ * Now, time for a puzzle.  Think of division by DIV in seed_c.base.
++ * This is not as slow as it might appear: the inner loop needs only
++ * a few iterations per call, on average.
++ */
++static unsigned int shuffle_1_next()
++{
++	if (state.n >= DIV - 1)
++		reseed();
++
++	if (state.n && state.b <= state.a) {
++		do {
++			state.b = ++state.a;
++			do {
++				state.b *= seed_c.base;
++				state.b %= DIV;
++			} while (state.b > state.a);
++		} while (state.a != state.b);
++	}
++
++	state.b *= seed_c.base;
++	state.b %= DIV;
++	state.n++;
++
++	return state.b ^ seed_c.xor;
++}
++
++/*
++ * The idea behind shuffle_2 is David Wagner's (any bugs are mine,
++ * of course).
++ */
++static unsigned int shuffle_2(unsigned int x)
++{
++	unsigned int i, sum;
++
++	sum = 0;
++	for (i = 0; i < 8; i++) {
++		sum += 0x79b9;
++		x ^= ((unsigned int)seed_c.s[(x ^ sum) & 0x7f]) << 7;
++		x = ((x & 0xff) << 7) | (x >> 8);
++	}
++
++	return x;
++}
++
++/*
++ * A full 16-bit permutation.  This one can't be re-seeded, but still
++ * makes some attacks quite a bit harder.
++ */
++static unsigned int shuffle_3(unsigned int x)
++{
++	unsigned int i, sum;
++
++	sum = 0;
++	for (i = 0; i < 8; i++) {
++		sum += 0x79b9;
++		x ^= ((unsigned int)seed_f[(x ^ sum) & 0xff]) << 8;
++		x = ((x & 0xff) << 8) | (x >> 8);
++	}
++
++	return x;
++}
++
++unsigned int _shuffle_next()
++{
++	static int initialized = 0;
++	unsigned int pid, x;
++
++/* This isn't MT-safe, but the resolver itself isn't safe, anyway */
++	if (!initialized) {
++		shuffle_init();
++		initialized = 1;
++	}
++
++/* Make sure the sequence we generate changes after fork() */
++	pid = __getpid();
++
++	x = shuffle_1_next();
++	x ^= pid & 0x7fff;
++	x = shuffle_2(x);
++	x |= state.msb;
++	x ^= (pid >> 15) & 0xffff;
++	x = shuffle_3(x);
++
++	return x;
++}
++
++#ifdef TEST
++int main()
++{
++	int i;
++
++	for (i = 0; i < 0xfffe; i++)
++		printf("%u\n", _shuffle_next());
++
++	return 0;
++}
++#endif

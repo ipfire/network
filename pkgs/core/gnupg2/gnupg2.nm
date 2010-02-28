@@ -1,0 +1,50 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = gnupg
+PKG_VER        = 2.0.12
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Security/Tools
+PKG_URL        = http://www.gnupg.org/
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = Utility for secure communication and data storage.
+
+PKG_DEPS      += curl libassuan libgcrypt libksba pinentry pth
+
+define PKG_DESCRIPTION
+	The GnuPG 2 package is GNU's tool for secure communication and data \
+	storage. It can be used to encrypt data and to create digital signatures. \
+	It includes an advanced key management facility and is compliant with the \
+	proposed OpenPGP Internet standard as described in RFC2440 and the S/MIME \
+	standard as described by several RFCs.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += \
+	--libexecdir=/usr/lib/gnupg2

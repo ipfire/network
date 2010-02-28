@@ -1,0 +1,104 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = squid
+PKG_VER        = 3.0.STABLE18
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Networking/Daemons
+PKG_URL        = http://www.squid-cache.org/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = The Squid proxy caching server.
+
+PKG_DEPS      += libxml2 openssl openldap
+
+define PKG_DESCRIPTION
+	Squid is a high-performance proxy caching server for Web clients, \
+	supporting FTP, gopher, and HTTP data objects. Unlike traditional \
+	caching software, Squid handles all requests in a single, \
+	non-blocking, I/O-driven process. Squid keeps meta data and especially \
+	hot objects cached in RAM, caches DNS lookups, supports non-blocking \
+	DNS lookups, and implements negative caching of failed requests.
+
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += \
+	--datadir=/usr/lib/squid \
+	--libexecdir=/usr/lib/squid \
+	--localstatedir=/var \
+	--sysconfdir=/etc/squid \
+	--enable-storeio="aufs,diskd,ufs,null" \
+	--enable-removal-policies="heap,lru" \
+	--enable-icmp \
+	--enable-delay-pools \
+	--disable-esi \
+	--disable-icap-client \
+	--enable-useragent-log \
+	--enable-referrer-log \
+	--disable-wccp \
+	--disable-wccpv2 \
+	--enable-kill-parent-hack \
+	--enable-snmp \
+	--enable-arp-acl \
+	--enable-htcp \
+	--enable-ssl \
+	--enable-forw-via-db \
+	--disable-cache-digests \
+	--enable-poll \
+	--enable-select \
+	--disable-kqueue \
+	--enable-epoll \
+	--enable-http-violations \
+	--enable-linux-netfilter \
+	--disable-ident-lookups \
+	--enable-internal-dns \
+	--enable-auth=basic,ntlm \
+	--enable-basic-auth-helpers="LDAP,MSNT,multi-domain-NTLM,PAM,NCSA,SMB,squid_radius_auth" \
+	--enable-ntlm-auth-helpers="SMB" \
+	--enable-ntlm-fail-open \
+	--enable-unlinkd \
+	--with-pthreads \
+	--with-aio \
+	--with-dl \
+	--with-large-files
+
+define STAGE_INSTALL_CMDS
+	rm -vf $(BUILDROOT)/etc/squid/errors
+	ln -svf ../../usr/lib/squid/errors/English $(BUILDROOT)/etc/squid/errors
+
+	-mkdir -pv $(BUILDROOT)/var/log/cache $(BUILDROOT)/var/log/squid
+	touch $(BUILDROOT)/var/log/squid/access.log
+	-mkdir -pv $(BUILDROOT)/var/cache/squid
+
+	# What is this?????
+	#groupadd -r squid && useradd -r -g squid -d $(BUILDROOT)/var/cache/squid -s /bin/false -p '*' squid
+	#chown -Rv squid:squid $(BUILDROOT)/var/log/squid $(BUILDROOT)/var/log/cache $(BUILDROOT)/var/cache/squid
+	#chmod 600 $(BUILDROOT)/var/cache/squid
+	#chown squid:squid $(BUILDROOT)/var/log/squid
+endef

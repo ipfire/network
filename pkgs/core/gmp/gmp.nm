@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = gmp
-PKG_VER        = 4.3.1
+PKG_VER        = 5.0.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -72,12 +72,4 @@ endef
 
 define STAGE_TEST
 	cd $(DIR_APP) && make check
-endef
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
-	-mkdir -pv $(BUILDROOT)/usr/share/doc/$(THISAPP)
-	cd $(DIR_APP) && cp -vf doc/{isa_abi_headache,configuration} doc/*.html \
-         $(BUILDROOT)/usr/share/doc/$(THISAPP)
 endef
