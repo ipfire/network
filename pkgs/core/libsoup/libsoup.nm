@@ -47,9 +47,3 @@ PKG_TARBALL    = $(THISAPP).tar.bz2
 
 CONFIGURE_OPTIONS += \
         --without-gnome
-
-#define STAGE_INSTALL_CMDS
-	#rm -vf $(BUILDROOT)/lib/libnih{,-dbus}.so
-	#ln -svf ../../lib/libnih.so.1 $(BUILDROOT)/usr/lib/libnih.so
-	#ln -svf ../../lib/libnih-dbus.so.1 $(BUILDROOT)/usr/lib/libnih-dbus.so
-#endef
