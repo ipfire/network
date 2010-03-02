@@ -1,0 +1,49 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = gupnp
+PKG_VER        = 0.13.1
+PKG_REL        = 0
+
+PKG_MAINTAINER = 
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.gupnp.org
+PKG_LICENSE    = LGPL
+PKG_SUMMARY    = An UPNP framework.
+
+PKG_BUILD_DEPS+= pkg-config
+PKG_DEPS      += glib2 gssdp libsoup libxml2 util-linux-ng
+
+define PKG_DESCRIPTION
+	GUPnP is an object-oriented open source framework for creating UPnP\
+	devices and control points, written in C using GObject and libsoup.\
+	The GUPnP API is intended to be easy to use, efficient and flexible. 
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+        --without-gnome
