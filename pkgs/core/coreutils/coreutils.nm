@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = coreutils
-PKG_VER        = 7.6
+PKG_VER        = 8.4
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -43,7 +43,7 @@ PKG_DEPS      += acl attr libcap ncurses pam shadow util-linux-ng
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-PKG_BUILD_DEPS+= autoconf automake
+#PKG_BUILD_DEPS+= autoconf automake
 
 CFLAGS        += -D_GNU_SOURCE=1 -fno-strict-aliasing
 
@@ -51,9 +51,9 @@ CFLAGS        += -D_GNU_SOURCE=1 -fno-strict-aliasing
 # Installation Details
 ###############################################################################
 
-define STAGE_PRAPRE_CMDS
-	cd $(DIR_APP) && autoreconf --force
-endef
+#define STAGE_PRAPRE_CMDS
+	#cd $(DIR_APP) && autoreconf --force
+#endef
 
 define STAGE_BUILD
 	cd $(DIR_APP) && \
