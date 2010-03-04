@@ -39,28 +39,26 @@ define PKG_DESCRIPTION
 	the old GNU fileutils, sh-utils, and textutils packages.
 endef
 
+PKG_BUILD_DEPS+= autoconf automake
 PKG_DEPS      += acl attr libcap ncurses pam shadow util-linux-ng
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 CFLAGS        += -D_GNU_SOURCE=1 -fno-strict-aliasing
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		gl_cv_func_printf_directive_n=no \
-		./configure \
-			--prefix=/usr \
-			--enable-largefile \
-			--enable-install-program=arch,hostname,su \
-			--enable-no-install-program=kill,uptime
+CONFIGURE_OPTIONS += \
+	--enable-pam \
+	--enable-largefile \
+	--enable-install-program=arch,hostname,su \
+	--enable-no-install-program=kill,uptime
 
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) \
-		CPPFLAGS="-DUSE_PAM" su_LDFLAGS="-pie -lpam -lpam_misc"
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && aclocal -I m4
+	cd $(DIR_APP) && autoconf --force
+	#cd $(DIR_APP) && automake --copy --add-missing
 endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/{bin,etc/profile.d,usr/sbin}
 	mv -v $(BUILDROOT)/usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo} $(BUILDROOT)/bin
 	mv -v $(BUILDROOT)/usr/bin/{false,hostname,ln,ls,mkdir,mknod,mv,pwd,readlink,rm} $(BUILDROOT)/bin
