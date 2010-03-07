@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -22,70 +22,28 @@
 # Definitions
 ###############################################################################
 
-include Config
+include $(PKGROOT)/Include
 
-PKG_NAME   = gupnp-av
-PKG_VER    = 0.5.1
-PKG_REL    = 0
+PKG_NAME       = gupnp
+PKG_VER        = 0.13.1
+PKG_REL        = 0
 
-THISAPP    = $(PKG_NAME)-$(PKG_VER)
-DL_FILE    = $(THISAPP).tar.gz
-DIR_APP    = $(DIR_SRC)/$(THISAPP)
+PKG_MAINTAINER = 
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.gupnp.org
+PKG_LICENSE    = LGPL
+PKG_SUMMARY    = An UPNP framework.
 
-OBJECT     = $(DIR_INFO)/$(STAGE_ORDER)_$(STAGE)/$(THISAPP)
+PKG_BUILD_DEPS+= pkg-config
+PKG_DEPS      += glib2 gssdp libsoup libxml2 util-linux-ng
 
-MAINTAINER =
-GROUP      = System/Libraries
-CORE       = yes
-EXTRA      = yes
-DEBUG      = no
-BUILD_DEPS = 
-DEPS       = gssdp gupnp
-
-URL        = http://www.gupnp.org
-LICENSE    = LGPL
-SHORT_DESC = gupnp audio/video helpers
-
-define LONG_DESC
-	GUPnP-AV is a collection of helpers for building AV (audio/video) \
-	applications using GUPnP.
+define PKG_DESCRIPTION
+	GUPnP is an object-oriented open source framework for creating UPnP\
+	devices and control points, written in C using GObject and libsoup.\
+	The GUPnP API is intended to be easy to use, efficient and flexible. 
 endef
 
-###############################################################################
-# Top-level Rules
-###############################################################################
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-objects = $(DL_FILE) 
-	
-download: $(objects)
-
-info:
-	$(DO_PKG_INFO)
-
-install: $(OBJECT)
-
-packages: $(PACKAGES)
-
-$(PACKAGES): $(OBJECT)
-	@$(DO_PACKAGE)
-
-$(objects):
-	@$(LOAD)
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-$(OBJECT): $(objects)
-	@$(PREBUILD)
-	@rm -rf $(DIR_APP) && cd $(DIR_SRC) && $(EXTRACTOR) $(DIR_DL)/$(DL_FILE)
-	cd $(DIR_APP) && \
-		./configure \
-			$(CONFIGURE_ARCH) \
-			--prefix=/usr \
-			--without-gnome
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-	cd $(DIR_APP) && make install
-
-	@rm -rf $(DIR_APP)
-	@$(POSTBUILD)
+CONFIGURE_OPTIONS += \
+        --without-gnome

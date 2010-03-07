@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = bash
-PKG_VER        = 4.0
+PKG_VER        = 4.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -46,19 +46,6 @@ PKG_DEPS      += readline
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-# $(THISAPP)-rng.patch
-#	This patch modifies Bash to use /dev/urandom (settable with
-#	--with-randomdev=) for $RANDOM, instead of getpid() and gettimeofday().
-#	The test is "( echo $RANDOM; ( echo $RANDOM ); ( echo $RANDOM ) )": 
-
-# $(THISAPP)-fixes-4.patch
-#	This patch fixes various reportded issures. It is the latest posted
-#	patch from linuxfromscratch.org.
-
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_PREPARE_CMDS
 	# Bash uses the RTLD_LAZY option when loading libraries. We want to use
 	# RTLD_NOW (it is defined from <dlfcn.h>:
@@ -78,12 +65,18 @@ define STAGE_BUILD
 			--without-bash-malloc \
 			--with-installed-readline
 
+	# remove rpath from libtool
+	@if [ -e "libtool" ]; then \
+		sed -i libtool \
+			-e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
+			-e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g'; \
+	fi
+
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 endef
 
-define STAGE_INSTALL
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/{bin,etc/profile.d}
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
 	# Bash startup files
 	cp -avf $(DIR_SOURCE)/{bashrc,profile,shells} $(BUILDROOT)/etc

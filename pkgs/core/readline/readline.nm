@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = readline
-PKG_VER        = 6.0
+PKG_VER        = 6.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -47,23 +47,23 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		./configure \
 			--prefix=/usr \
 			--libdir=/lib \
-			--disable-static
+
+# remove rpath from libtool
+@if [ -e "libtool" ]; then \
+	sed -i libtool \
+		-e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
+		-e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g'; \
+fi
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) SHLIB_LIBS=-lncurses
 endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/usr/lib
 	rm -fv $(BUILDROOT)/lib/lib{readline,history}.so
 	ln -sfv ../../lib/libreadline.so.6 $(BUILDROOT)/usr/lib/libreadline.so
