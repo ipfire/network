@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = glib
-PKG_VER        = 2.22.2
+PKG_VER        = 2.23.4
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -47,15 +47,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-CONFIGURE_OPTIONS += --with-pcre=system
+CONFIGURE_OPTIONS += \
+	--with-pcre=system
 
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-	
+define STAGE_INSTALL_CMDS
 	cd $(DIR_APP) && ./mkinstalldirs $(BUILDROOT)/lib
 	cd $(BUILDROOT)/usr/lib && for name in glib gobject gmodule gthread gio; do \
 		mv -v lib$${name}-2.0.so.* ../../lib; \

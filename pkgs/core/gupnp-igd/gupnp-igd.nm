@@ -24,21 +24,23 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = automake
-PKG_VER        = 1.11.1
+PKG_NAME       = gupnp-igd
+PKG_VER        = 0.1.3
 PKG_REL        = 0
 
-PKG_MAINTAINER =
-PKG_GROUP      = Development/Tools
-PKG_URL        = http://www.gnu.org/software/automake/
-PKG_LICENSE    = GPLv2+
-PKG_SUMMARY    = A GNU tool for automatically configuring source code.
+PKG_MAINTAINER = 
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.gupnp.org
+PKG_LICENSE    = LGPL
+PKG_SUMMARY    = gupnp - Internet Gateway device implementation (Microsoft).
 
-PKG_DEPS      += autoconf perl
+PKG_DEPS      += gssdp gupnp libsoup
 
 define PKG_DESCRIPTION
-	Automake is a tool for automatically generating Makefile.in \
-	files compliant with the GNU Coding Standards.
+	This is a library to handle Internet Gateway Device port mappings.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+        --without-gnome

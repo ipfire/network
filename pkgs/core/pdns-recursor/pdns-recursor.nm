@@ -47,3 +47,7 @@ define STAGE_BUILD
 	cd $(DIR_APP) && LUA=1 LUA_CPPFLAGS_CONFIG= LUA_LIBS_CONFIG=-llua \
 		make OPTFLAGS="$(CFLAGS)" PROFILEFLAGS=-fprofile-use #$(PARALLELISMFLAGS)
 endef
+
+define STAGE_INSTALL_CMDS
+	rm -rf $(BUILDROOT)/etc/init.d
+endef
