@@ -55,7 +55,6 @@ CONFIGURE_OPTIONS += \
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && aclocal -I m4
 	cd $(DIR_APP) && autoconf --force
-	#cd $(DIR_APP) && automake --copy --add-missing
 endef
 
 define STAGE_INSTALL_CMDS
