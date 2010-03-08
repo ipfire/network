@@ -1,0 +1,26 @@
+
+PKG_TOOLCHAIN_DEPS += acl attr gcc glibc
+
+include ../../core/tcl/tcl.nm
+
+DIR_APP = $(DIR_SRC)/tcl$(PKG_VER)/unix
+
+define STAGE_BUILD
+	cd $(DIR_APP) && \
+		./configure \
+			--prefix=$(TOOLS_DIR) \
+			--disable-nls \
+			--enable-shared
+
+	cd $(DIR_APP) && autoconf
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make test
+endef
+
+define STAGE_INSTALL
+        cd $(DIR_APP) && make install
+endef
+
