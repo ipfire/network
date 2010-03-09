@@ -1,0 +1,60 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = tcl
+PKG_VER        = 8.5.8
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Languages
+PKG_URL        = http://tcl.sourceforge.net/
+PKG_LICENSE    = TCL
+PKG_SUMMARY    = Tool Command Language, pronounced tickle.
+
+PKG_BUILD_DEPS+= autoconf automake 
+
+define PKG_DESCRIPTION
+	The Tcl (Tool Command Language) provides a powerful platform for\
+	creating integration applications that tie together diverse \
+	applications, protocols, devices, and frameworks.
+endef
+
+PKG_TARBALL    = tcl$(PKG_VER)-src.tar.gz
+
+CONFIGURE_OPTIONS += \
+	--disable-nls \
+	--enable-shared
+
+DIR_APP = /usr/src/tcl$(PKG_VER)/unix
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && autoconf
+endef
+
+define STAGE_INSTALL_CMDS
+	cd $(DIR_APP) && make install-private-headers
+	ln -sf tclsh8.5 $(BUILDROOT)/usr/bin/tclsh	
+endef
