@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = zlib
-PKG_VER        = 1.2.3
+PKG_VER        = 1.2.3.8
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -43,7 +43,7 @@ PKG_BUILD_DEPS = glibc
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
-PKG_TARBALL    = $(THISAPP)-autotools-1.tar.gz
+PKG_TARBALL    = $(THISAPP).tar.gz
 
 CFLAGS        += -fPIC -DPIC
 
@@ -56,8 +56,7 @@ define STAGE_BUILD
 		ac_cv_func_working_mktime=yes \
 		./configure \
 			--prefix=/usr \
-			--libdir=/lib \
-			--disable-static
+			--libdir=/lib
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
 
@@ -71,4 +70,6 @@ define STAGE_INSTALL
 	cd $(DIR_APP) && cp -pfv zconf.h zlib.h $(BUILDROOT)/usr/include
 	rm -vf $(BUILDROOT)/lib/libz.so
 	ln -sfv ../../lib/libz.so.$(PKG_VER) $(BUILDROOT)/usr/lib/libz.so
+
+	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
 endef
