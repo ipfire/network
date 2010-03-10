@@ -58,6 +58,6 @@ define STAGE_TEST
 endef
 
 define STAGE_INSTALL_CMDS
-	cd $(DIR_APP) && make install-private-headers
+	cd $(DIR_APP) && make install-private-headers DESTDIR=$(BUILDROOT)
 	ln -sf tclsh8.5 $(BUILDROOT)/usr/bin/tclsh	
 endef
