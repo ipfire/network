@@ -45,13 +45,16 @@ endef
 PKG_TARBALL    = tcl$(PKG_VER)-src.tar.gz
 
 CONFIGURE_OPTIONS += \
-	--disable-nls \
 	--enable-shared
 
-DIR_APP = /usr/src/tcl$(PKG_VER)/unix
+DIR_APP = $(DIR_SRC)/tcl$(PKG_VER)/unix
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && autoconf
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make test
 endef
 
 define STAGE_INSTALL_CMDS
