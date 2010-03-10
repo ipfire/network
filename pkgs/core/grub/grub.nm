@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = grub
-PKG_VER        = 0.97
+PKG_VER        = 1.98
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,8 +34,8 @@ PKG_URL        = http://www.gnu.org/software/grub/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Grand Unified Boot Loader.
 
-PKG_BUILD_DEPS+= autoconf automake paxctl
-PKG_DEPS      += ncurses
+PKG_BUILD_DEPS+= autoconf automake bison paxctl
+PKG_DEPS      += freetype ncurses
 
 define PKG_DESCRIPTION
 	GRUB (Grand Unified Boot Loader) is an experimental boot loader \
@@ -46,43 +46,19 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-# Manual list patches because they need to be applied in speical order
-PKG_PATCHES    = $(THISAPP)-disk_geometry-1.patch
-PKG_PATCHES   += grub-0.95-graphics.patch
-PKG_PATCHES   += grub-0.91-splashimagehelp.patch
-PKG_PATCHES   += grub-0.93-graphics-bootterm.patch
-PKG_PATCHES   += grub-0.95-xpmjunk.patch
-PKG_PATCHES   += grub-0.95-splash-error-term.patch
-PKG_PATCHES   += grub-0.93-special-device-names.patch
-PKG_PATCHES   += grub-0.95-moreraid.patch
-PKG_PATCHES   += grub-0.94-i2o.patch
-PKG_PATCHES   += grub-0.93-configfile.patch
-PKG_PATCHES   += $(THISAPP)-256byte_inode-1.patch
-PKG_PATCHES   += $(THISAPP)-install.in.patch
-PKG_PATCHES   += grub-0.94-installcopyonly.patch
-PKG_PATCHES   += $(THISAPP)-ext4-1.patch
-
 define QUALITY_AGENT_WHITELIST_EXECSTACK
 	/usr/sbin/grub
 endef
 
-CFLAGS        += -fno-strict-aliasing -fno-stack-protector -fno-pic -fno-pie -nopie
-CXXFLAGS       =
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && autoconf
-endef
+#CFLAGS        += -fno-strict-aliasing -fno-stack-protector -fno-pic -fno-pie -nopie
+#CXXFLAGS       =
 
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		grub_cv_prog_objcopy_absolute=yes \
 		./configure \
 			--prefix=/usr \
-			--mandir=/usr/share/man
+			--sysconfdir=/etc
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
@@ -96,8 +72,4 @@ define STAGE_INSTALL
 	for i in $(DIR_SOURCE)/{grub.conf,splash.xpm.gz}; do \
 	    cp -vf $$i $(BUILDROOT)/boot/grub; \
 	done
-
-	# Grub uses anonymous mapping and will be killed by PaX.
-	# The following command changes Grub's PaX flags:
-	paxctl -spme $(BUILDROOT)/usr/sbin/grub
 endef
