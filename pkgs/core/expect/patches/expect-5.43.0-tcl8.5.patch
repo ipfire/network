@@ -1,0 +1,22 @@
+diff -up expect-5.43/Dbg.c.tcl8.5 expect-5.43/Dbg.c
+--- expect-5.43/Dbg.c.tcl8.5	2002-03-23 05:11:54.000000000 +0100
++++ expect-5.43/Dbg.c	2008-09-25 12:25:40.000000000 +0200
+@@ -10,6 +10,7 @@ would appreciate credit if this program 
+ 
+ #include <stdio.h>
+ 
++#include "expect_cf.h"
+ #include "tcldbgcf.h"
+ #if 0
+ /* tclInt.h drags in stdlib.  By claiming no-stdlib, force it to drag in */
+diff -up expect-5.43/exp_inter.c.tcl8.5 expect-5.43/exp_inter.c
+--- expect-5.43/exp_inter.c.tcl8.5	2004-08-18 04:03:00.000000000 +0200
++++ expect-5.43/exp_inter.c	2008-09-25 12:25:40.000000000 +0200
+@@ -36,6 +36,7 @@ would appreciate credit if this program 
+ #include <ctype.h>
+ 
+ #include "tcl.h"
++#include "tclInt.h"
+ #include "string.h"
+ 
+ #include "exp_tty_in.h"
