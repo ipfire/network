@@ -50,7 +50,7 @@ define STAGE_BUILD
 		./configure \
 			--prefix=/usr
 
-	cd $(DIR_APP) && echo '#define YYENABLE_NLS 1' >> config.h
+	cd $(DIR_APP) && echo '#define YYENABLE_NLS 1' >> lib/config.h
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
 
