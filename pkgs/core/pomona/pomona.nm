@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -18,43 +18,47 @@
 #                                                                             #
 ###############################################################################
 
-include ../Makefile.inc
+###############################################################################
+# Definitions
+###############################################################################
 
-CFLAGS +=  -I$(PYTHONINCLUDE) -I/usr/include -I.. -I.
+include $(PKGROOT)/Include
 
-OBJECTS = devices.o imount.o smp.o linkdetect.o \
-	lang.o isofs.o vio.o eddsupport.o str.o \
-	wireless.o ethtool.o
+PKG_NAME       = pomona
+PKG_VER        =
+PKG_REL        = 0
 
-SOBJECTS = $(patsubst %.o,%.lo,$(OBJECTS))
-SOURCES = $(patsubst %.o,%.c,$(OBJECTS)) isys.c
-LOADLIBES = -lpci -lpopt -lext2fs -lz -lpci -lblkid
-PYMODULES = _isys.so
+PKG_MAINTAINER =
+PKG_GROUP      = System/Installer
+PKG_URL        = http://www.ipfire.org
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = The IPFire 3.x installer.
 
-all: depend $(PYMODULES) libisys.a
+PKG_BUILD_DEPS+= pychecker
+PKG_DEPS      += e2fsprogs parted pciutils popt \
+	pyfire python python-dbus python-parted
 
-%.lo: %.c
-	$(CC) -c $(CFLAGS) -fPIC -o $@ $<
+define PKG_DESCRIPTION
+	Pomona is the installer for IPFire 3.x.
+endef
 
-_isys.so: isys.lo $(SOBJECTS)
-	$(CC) -shared -g -fPIC -o $@ isys.lo $(SOBJECTS) $(LOADLIBES) $(LDFLAGS)
+DIR_APP = src
 
-libisys.a: libisys.a($(OBJECTS))
+define STAGE_PREPARE
+	cd $(DIR_APP) && make clean
+	#cd $(DIR_APP) && make -C po update-po
+endef
 
-filtertest: filtertest.o libisys.a
+define STAGE_BUILD
+	cd $(DIR_APP) && make
+endef
 
-clean:
-	rm -f *.o *.so *.lo *.a *.pyc $(TARGET) $(SOBJECTS)
-	rm -f $(OBJECTS)
-	rm -f depend
+define STAGE_TEST
+	cd $(DIR_APP) && make test
+endef
 
-install: all
-	install -s $(PYMODULES) $(PYTHONLIBDIR)
-	install -m 644 isys.py $(PYTHONLIBDIR)
-
-depend:
-	$(CPP) -M $(CFLAGS) $(SOURCES) > depend
-
-ifeq (depend,$(wildcard depend))
-include depend
-endif
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) \
+		NAME=$(NAME) SNAME=$(SNAME) VERSION=$(VERSION) KVER=$(KVER)
+	cd $(DIR_APP) && make clean
+endef

@@ -25,7 +25,7 @@ PSNAME = pomona
 
 DESTDIR=$(INSTALLER_DIR)
 
-INSTALL = /usr/bin/install -c
+INSTALL = install -c
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALLNLSDIR = $(DESTDIR)/usr/share/locale
