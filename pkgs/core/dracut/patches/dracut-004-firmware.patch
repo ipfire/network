@@ -1,0 +1,19 @@
+diff -up dracut-004/modules.d/95udev-rules/install.fw dracut-004/modules.d/95udev-rules/install
+--- dracut-004/modules.d/95udev-rules/install.fw	2010-01-29 16:40:11.000000000 +0100
++++ dracut-004/modules.d/95udev-rules/install	2010-01-29 16:40:25.000000000 +0100
+@@ -15,7 +15,6 @@ inst_rules "$moddir/01-ignore.rules"
+ 
+ # for firmware loading
+ inst_rules 50-firmware.rules
+-dracut_install /lib/udev/firmware.sh
+ dracut_install cat uname
+ 
+ if [ ! -x /lib/udev/vol_id ]; then
+@@ -31,6 +30,7 @@ ata_id \
+ cdrom_id \
+ create_floppy_devices \
+ edd_id \
++firmware \
+ firmware.sh \
+ fw_unit_symlinks.sh \
+ hid2hci \
