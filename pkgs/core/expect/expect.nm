@@ -24,40 +24,41 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = tcl
-PKG_VER        = 8.5.8
+PKG_NAME       = expect
+PKG_VER        = 5.43
 PKG_REL        = 0
 
 PKG_MAINTAINER =
 PKG_GROUP      = Development/Languages
-PKG_URL        = http://tcl.sourceforge.net/
-PKG_LICENSE    = TCL
-PKG_SUMMARY    = Tool Command Language, pronounced tickle.
+PKG_URL        = http://expect.nist.gov/
+PKG_LICENSE    = Public Domain
+PKG_SUMMARY    = A program-script interaction and testing utility.
 
-PKG_BUILD_DEPS+= autoconf automake 
+PKG_BUILD_DEPS+= autoconf automake
+PKG_DEPS      += tcl
 
 define PKG_DESCRIPTION
-	The Tcl (Tool Command Language) provides a powerful platform for\
-	creating integration applications that tie together diverse \
-	applications, protocols, devices, and frameworks.
+	xpect is a tcl application for automating and testing \
+	interactive applications such as telnet, ftp, passwd, fsck, \
+	rlogin, tip, etc. Expect makes it easy for a script to \
+	control another program and interact with it.
 endef
 
-PKG_TARBALL    = tcl$(PKG_VER)-src.tar.gz
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += \
+CONFIGURE_OPTIONS = \
+	--mandir=/usr/share/man \
+	--with-tcl=/usr/lib \
+	--with-tclinclude=/usr/include/ \
+	--with-x=no \
+	--disable-nls \
 	--enable-shared
 
-DIR_APP = $(DIR_SRC)/tcl$(PKG_VER)/unix
-
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && autoconf
-endef
-
-define STAGE_TEST
-	cd $(DIR_APP) && make test
-endef
-
-define STAGE_INSTALL_CMDS
-	cd $(DIR_APP) && make install-private-headers DESTDIR=$(BUILDROOT)
-	ln -sf tclsh8.5 $(BUILDROOT)/usr/bin/tclsh	
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install INSTALL_ROOT=$(BUILDROOT)
+	
+	# remove cryptdir/decryptdir, as Linux has no crypt command
+	rm -f $(BUILDROOT)/usr/bin/{cryptdir,decryptdir} 
+	rm -f $(BUILDROOT)/usr/share/man1/{cryptdir,decryptdir}.1*
+	rm -f $(BUILDROOT)/usr/bin/autopasswd
 endef
