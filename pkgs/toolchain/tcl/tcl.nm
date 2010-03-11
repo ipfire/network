@@ -15,4 +15,5 @@ endef
 
 define STAGE_INSTALL
         cd $(DIR_APP) && make install
+	cd $(DIR_APP) && make install-private-headers
 endef
