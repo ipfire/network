@@ -25,9 +25,7 @@ class Config(object):
 		"toolchain" : False,
 		"mandatory_packages" : [
 			"core/ccache",
-			"core/gcc",
 			"core/glibc",
-			"core/make",
 		],
 		"nice_level" : 0,
 		#

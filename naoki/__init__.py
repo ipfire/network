@@ -25,6 +25,8 @@ class Naoki(object):
 		(self.options, self.args) = op.parse_args()
 
 		# set up basic logging until config file can be read
+		if not os.path.isdir(LOGDIR):
+			os.makedirs(LOGDIR)
 		logging.basicConfig(format="%(levelname)s: %(message)s",
 			level=logging.WARNING)
 		self.log = logging.getLogger()
