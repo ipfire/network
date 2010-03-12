@@ -1,0 +1,58 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = dracut
+PKG_VER        = 004
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Boot
+PKG_URL        = http://sourceforge.net/apps/trac/dracut/wiki
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Initramfs generator using udev.
+
+PKG_DEPS      += bash bzip2 cpio coreutils dmraid e2fsprogs gzip kbd lvm2 \
+	mdadm udev which
+
+define PKG_DESCRIPTION
+	dracut is a new, event-driven initramfs infrastructure based around udev.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+define STAGE_PREPARE_CMDS
+	# All check scripts must be executeable
+	cd $(DIR_APP) && chmod 0755 modules.d/*/check
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make WITH_SWITCH_ROOT=1
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) WITH_SWITCH_ROOT=1 \
+		sbindir=/sbin sysconfdir=/etc mandir=/usr/share/man
+endef

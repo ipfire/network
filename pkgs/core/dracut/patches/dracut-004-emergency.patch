@@ -1,0 +1,19 @@
+commit 5db587d7c118afc47b50b4872100b508c84646fa
+Author: Harald Hoyer <harald@redhat.com>
+Date:   Wed Jan 20 16:04:55 2010 +0100
+
+    init: fixed emergency_shell argument parsing
+
+diff --git a/modules.d/99base/init b/modules.d/99base/init
+index 8dc00a9..ab033a7 100755
+--- a/modules.d/99base/init
++++ b/modules.d/99base/init
+@@ -35,7 +35,7 @@ wait_for_loginit()
+ 
+ emergency_shell()
+ {
+-    if [ $1 = "-n" ]; then
++    if [ "$1" = "-n" ]; then
+         _rdshell_name=$2
+         shift 2 
+     else
