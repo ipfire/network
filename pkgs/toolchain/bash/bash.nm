@@ -13,11 +13,6 @@ define STAGE_BUILD
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 endef
 
-# Test hangs forever
-#define STAGE_TEST
-#	cd $(DIR_APP) && make tests
-#endef
-
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install
 
