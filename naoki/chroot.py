@@ -188,7 +188,6 @@ class Environment(object):
 		os.symlink("/proc/self/fd/0", self.chrootPath("dev", "stdin"))
 		os.symlink("/proc/self/fd/1", self.chrootPath("dev", "stdout"))
 		os.symlink("/proc/self/fd/2", self.chrootPath("dev", "stderr"))
-		os.symlink("/dev/pts/ptmx", self.chrootPath("dev", "ptmx"))
 		os.umask(prevMask)
 
 		# mount/umount
@@ -207,6 +206,13 @@ class Environment(object):
 				"mount -n -t tmpfs naoki_chroot_shmfs %s" % self.chrootPath("dev", "shm")):
 			if devMntCmd not in self.mountCmds:
 				self.mountCmds.append(devMntCmd)
+
+	def _checkDev(self):
+		if os.path.exists(self.chrootPath("dev", "pts", "ptmx")):
+			os.symlink("/dev/pts/ptmx", self.chrootPath("dev", "ptmx"))
+		else:
+			os.mknod(self.chrootPath("dev", "ptmx"), stat.S_IFCHR | 0666, os.makedev(5, 2))
+			os.chmod(self.chrootPath("dev", "ptmx"), 666)
 
 	def _setupUsers(self):
 		## XXX Could be done better
@@ -231,6 +237,7 @@ class Environment(object):
 		"""mount 'normal' fs like /dev/ /proc/ /sys"""
 		for cmd in self.mountCmds:
 			util.do(cmd, shell=True)
+		self._checkDev()
 
 	def _umountall(self):
 		"""umount all mounted chroot fs."""
