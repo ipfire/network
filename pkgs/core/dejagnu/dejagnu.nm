@@ -24,44 +24,28 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = m4
-PKG_VER        = 1.4.11
+PKG_NAME       = dejagnu
+PKG_VER        = 1.4.4
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Applications/Text
-PKG_URL        = http://www.gnu.org/software/m4/
-PKG_LICENSE    = GPLv3+
-PKG_SUMMARY    = The GNU macro processor.
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.gnu.org/software/dejagnu/ 
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = A front end for testing other programs 
+
+PKG_BUILD_DEPS+= bison
+PKG_DEPS      += expect tcl
 
 define PKG_DESCRIPTION
-	A GNU implementation of the traditional UNIX macro processor. M4 is \
-	useful for writing text files which can be logically parsed, and is \
-	used by many programs as part of their build process.  M4 has \
-	built-in functions for including files, running shell commands, \
-	doing arithmetic, etc. The autoconf program needs m4 for generating \
-	configure scripts, but not for running configure scripts.
+	DejaGnu is an Expect/Tcl based framework for testing other programs.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man
 
-define STAGE_BUILD
-	# We need -D_GNU_SOURCE because this version of M4 has a bug in gnulib (or
-	# possibly autoconf) that doesn't recognise that we have asprintf() in libc.
-	cd $(DIR_APP) && \
-		CPPFLAGS="-D_GNU_SOURCE" \
-		gl_cv_func_printf_directive_n=no \
-		./configure \
-			--prefix=/usr
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+define STAGE_INSTALL_CMDS
+	cd $(DIR_APP) && make -C doc DESTDIR=$(BUILDROOT) install-man
 endef
-
-# fails
-#define STAGE_TEST
-#	cd $(DIR_APP) && make check
-#endef
