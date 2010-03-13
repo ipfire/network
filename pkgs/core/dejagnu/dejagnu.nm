@@ -34,7 +34,8 @@ PKG_URL        = http://www.gnu.org/software/dejagnu/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = A front end for testing other programs 
 
-PKG_DEPS      += expect 
+PKG_BUILD_DEPS+= bison
+PKG_DEPS      += expect tcl
 
 define PKG_DESCRIPTION
 	DejaGnu is an Expect/Tcl based framework for testing other programs.
@@ -42,7 +43,9 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-# Disabled because testsuite doesn't wort at the moment.
-#define STAGE_TEST
-	#cd $(DIR_APP) && make check
-#endef
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man
+
+define STAGE_INSTALL_CMDS
+	cd $(DIR_APP) && make -C doc DESTDIR=$(BUILDROOT) install-man
+endef
