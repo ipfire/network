@@ -6,6 +6,7 @@ import urlgrabber
 import urlgrabber.progress
 
 import chroot
+import terminal
 import util
 
 from constants import *
@@ -46,6 +47,9 @@ def find(s, toolchain=False):
 			return package
 
 def groups():
+	return [Group(name) for name in group_names()]
+
+def group_names():
 	groups = []
 	for package in list():
 		group = package.group
@@ -165,15 +169,24 @@ Patches     :
 %(patches)s
 """
 
+	info_wiki_str = """\
+====== %(name)s ======
+| **Version:**  | %(version)s  |
+| **Release:**  | %(release)s  |
+| **Group:**  | %(group)s  |
+| **License:**  | %(license)s  |
+| **Maintainer:**  | %(maintainer)s |
+| **Dependencies:** | %(deps)s |
+| **Build dependencies:** | %(build_deps)s |
+| %(summary)s ||
+| **Website:**  | %(url)s  |
+"""
+
 	def __init__(self, name):
 		self._name = name
 
 		self.config = config
 		self.__fetch_data = None
-
-	def __str__(self):
-		return "%-20s %14s | %-24s | %s" % (self.name, "%s-%s" % \
-			(self.version, self.release), self.group, self.summary)
 
 	def __repr__(self):
 		return "<Package %s>" % self.name
@@ -333,17 +346,39 @@ Patches     :
 			"license" : self.license,
 			"isBuilt" : self.isBuilt,
 			"canBuild" : self.canBuild,
+			"url" : self.url,
 		}
 
-	@property
-	def info(self, wiki=False):
-		if wiki:
-			pass
+	def info(self, long=False):
+		return self.info_str % self.__info
+
+	def info_line(self, long=False):
+		if long:
+			s = "%-30s | %-15s | %s" % \
+				(self.name, "%s-%s" % (self.version, self.release), self.summary)
+
+			# Cut if text gets too long
+			columns = terminal.get_columns()
+			if len(s) >= columns:
+				s = s[:columns - 3] + "..."
+
+			return s
+
 		else:
-			info = self.__info
-			info["objects"] = "\n".join(info["objects"])
-			info["patches"] = "\n".join(info["patches"])
-			return self.info_str % info
+			return self.name
+
+	def info_wiki(self, long=True):
+		if not long:
+			return "  * [[.package:%(name)s|%(name)s]] - %(summary)s" % \
+				{ "name" : self.name, "summary" : self.summary, }
+
+		__info = self.__info
+		__info.update({
+			"deps" : "NOT IMPLEMENTED YET",
+			"build_deps" : "NOT IMPLEMENTED YET",
+		})
+
+		return self.info_wiki_str % __info
 
 	@property
 	def isBuilt(self):
@@ -388,3 +423,25 @@ Patches     :
 	@property
 	def toolchain_file(self):
 		return os.path.join(TOOLCHAINSDIR, "tools_i686", "built", self.id)
+
+
+class Group(object):
+	def __init__(self, name):
+		self.name = name
+
+		self.__packages = []
+
+	def wiki_headline(self):
+		return "===== %s =====" % self.name
+
+	@property
+	def packages(self):
+		if not self.__packages:
+			for pkg in list():
+				if not pkg.group == self.name:
+					continue
+				self.__packages.append(pkg)
+
+			self.__packages.sort()
+
+		return self.__packages

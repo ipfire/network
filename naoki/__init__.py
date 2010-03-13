@@ -50,10 +50,13 @@ class Naoki(object):
 
 	def __call__(self, action, **kwargs):
 		if action == "build":
-			self.call_build(kwargs.get("packages"))
+			self.call_build(kwargs.get("package"))
 
 		elif action == "toolchain":
 			self.call_toolchain(kwargs.get("subaction"), kwargs.get("arch"))
+		
+		elif action == "package":
+			self.call_package(kwargs.pop("subaction"), **kwargs)
 
 	def call_toolchain(self, subaction, arch):
 		tc = chroot.Toolchain(arch)
@@ -77,6 +80,41 @@ class Naoki(object):
 
 		self._build(packages, force=force)
 
+	def call_package(self, subaction, **kwargs):
+		if subaction == "list":
+			for pkg in self.packages:
+				print pkg.info_line(long=kwargs["long"])
+
+		elif subaction == "info":
+			packages = [package.find(pkg) for pkg in kwargs.get("package")]
+			packages.sort()
+
+			if kwargs["wiki"]:
+				for pkg in packages:
+					print pkg.info_wiki()
+				return
+			
+			delimiter = "----------------------------------------------------\n"
+
+			print delimiter.join([pkg.info(long=kwargs["long"]) for pkg in packages])
+		
+		elif subaction == "tree":
+			print package.deptree(self.packages)
+		
+		elif subaction == "groups":
+			groups = package.groups()
+
+			if kwargs["wiki"]:
+				print "====== All available groups of packages ======"
+				for group in groups:
+					print group.wiki_headline()
+					for pkg in group.packages:
+						print pkg.info_wiki(long=False)
+
+				return
+
+			print "\n".join(package.group_names())
+
 	def _build(self, packages, force=False):
 		requeue = []
 		packages = package.depsort(packages)
@@ -99,9 +137,13 @@ class Naoki(object):
 				if not self.packages:
 					self.log.error("Blah")
 					return
-				self.log.warn("Requeueing. %s" % (build.package.name, build.package.toolchain_deps))
+				self.log.warn("Requeueing. %s" % build.package.name)
 				self.packages.append(build.package)
 				continue
 
 			self.log.info("Building %s..." % build.package.name)
 			build.build()
+
+	@property
+	def packages(self):
+		return package.list()
