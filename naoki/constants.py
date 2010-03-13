@@ -33,6 +33,9 @@ class Config(object):
 		"cleanup_on_failure" : False,
 		"cleanup_on_success" : True,
 		#
+		# CLI variables
+		"quiet" : False,
+		#
 		# Distro items
 		"distro_name"     : "unknown",
 		"distro_sname"    : "unknown",
@@ -131,4 +134,3 @@ class Architectures(object):
 config = Config()
 
 arches = Architectures(config["architecture_config"])
-arches.set(config["architecture_arch"])
