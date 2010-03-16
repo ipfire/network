@@ -59,10 +59,6 @@ PARALLELISMFLAGS := -j3
 
 DIR_APP        = $(DIR_SRC)/$(PKG_NAME)_$(subst .,_,$(PKG_VER))
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_PREPARE_CMDS
 	# Let bjam use our own cflags
 	cd $(DIR_APP) && sed -e "s/-O3/$(CFLAGS)/g" -i tools/build/v2/tools/gcc.jam
