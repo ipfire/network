@@ -45,10 +45,9 @@ define STAGE_CONFIGURE_CMDS
 	cd $(DIR_APP) && echo '#define YYENABLE_NLS 1' >> lib/config.h
 endef
 
-# fails
-#define STAGE_TEST
-#	cd $(DIR_APP) && make check
-#endef
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
 
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/usr/lib
