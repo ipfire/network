@@ -46,11 +46,8 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += --sbindir=/sbin
-
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_OPTIONS += \
+	--sbindir=/sbin
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && autoconf
