@@ -36,7 +36,8 @@ PKG_SUMMARY    = A front end for testing other programs
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
-PKG_DEPS      += expect 
+PKG_BUILD_DEPS+= bison
+PKG_DEPS      += expect tcl
 
 define PKG_DESCRIPTION
 	DejaGnu is an Expect/Tcl based framework for testing other programs.
@@ -52,3 +53,6 @@ CONFIGURE_OPTIONS += \
 	#cd $(DIR_APP) && make check
 #endef
 
+define STAGE_INSTALL_CMDS
+	cd $(DIR_APP) && make -C doc DESTDIR=$(BUILDROOT) install-man
+endef

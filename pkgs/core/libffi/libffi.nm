@@ -24,26 +24,20 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = gobject-introspection
-PKG_VER        = 0.6.5
+PKG_NAME       = libffi
+PKG_VER        = 3.0.9
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Development/Libraries 
-PKG_URL        = http://live.gnome.org/GObjectIntrospection
-PKG_LICENSE    = GPLv2+, LGPLv2+, MIT
-PKG_SUMMARY    = Introspection system for GObject-based libraries.
-
-PKG_BUILD_DEPS+= bison flex pkg-config
-PKG_DEPS      += glib2 libffi libtool python
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://sourceware.org/libffi
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = A portable foreign function interface library.
 
 define PKG_DESCRIPTION
-	GObject Introspection can scan C header and source files in order \
-	to generate introspection "typelib" files. It also provides an API to \
-	examine typelib files, useful for creating language bindings among \
-	other things.
+	The libffi library provides a portable, high level programming \
+	interface to various calling conventions. This allows a programmer to \
+	call any function specified by a call interface description at run time.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
-
-CONFIGURE_OPTIONS += --sbindir=/sbin --disable-static
+PKG_TARBALL    = $(THISAPP).tar.gz
