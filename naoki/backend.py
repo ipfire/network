@@ -14,6 +14,34 @@ __cache = {
 	"group_names" : None,
 }
 
+def find_package_info(name, toolchain=False):
+	for repo in get_repositories(toolchain):
+		if not os.path.exists(os.path.join(repo.path, name, name + ".nm")):
+			continue
+
+		return PackageInfo(name, repo=repo)
+
+def find_package(name, toolchain=False):
+	package = find_package_info(name, toolchain)
+	if package:
+		package = backend.Package(package)
+
+	return package
+
+def parse_package_info(names, toolchain=False):
+	packages = []
+	for name in names:
+		package = find_package_info(name, toolchain)
+		if package:
+			packages.append(package)
+
+	return packages
+
+def parse_package(names, toolchain=False, naoki=None):
+	packages = parse_package_info(names, toolchain)
+
+	return [Package(package.name, naoki=naoki) for package in packages]
+
 def get_package_names(toolchain=False):
 	if not __cache["package_names"]:
 		names = []
@@ -27,8 +55,7 @@ def get_package_names(toolchain=False):
 def get_group_names():
 	if not __cache["group_names"]:
 		groups = []
-		for package in get_package_names():
-			package = PackageInfo(package)
+		for package in parse_package_info(get_package_names()):
 			if not package.group in groups:
 				groups.append(package.group)
 		
@@ -136,8 +163,9 @@ def download(files, logger=None):
 class PackageInfo(object):
 	__data = {}
 
-	def __init__(self, name):
+	def __init__(self, name, repo=None):
 		self._name = name
+		self.repo = repo
 
 	def __repr__(self):
 		return "<PackageInfo %s>" % self.name
@@ -158,7 +186,7 @@ class PackageInfo(object):
 		env.update(config.environment)
 		env["PKGROOT"] = PKGSDIR
 		output = util.do("make -f %s" % self.filename, shell=True,
-			cwd=os.path.join(PKGSDIR, self.name), returnOutput=1, env=env)
+			cwd=os.path.join(PKGSDIR, self.repo.name, self.name), returnOutput=1, env=env)
 
 		ret = {}
 		for line in output.splitlines():
@@ -197,12 +225,7 @@ class PackageInfo(object):
 	def _dependencies(self, s, recursive=False):
 		c = s + "_CACHE"
 		if not self._data.has_key(c):
-			deps = []
-			for name in self._data.get(s).split(" "):
-				name = find_package_name(name)
-				if name:
-					deps.append(Dependency(name))
-
+			deps = parse_package_info(self._data.get(s).split(" "))
 			self._data.update({c : depsolve(deps, recursive)})
 
 		return self._data.get(c)
@@ -225,7 +248,8 @@ class PackageInfo(object):
 
 	@property
 	def filename(self):
-		return os.path.join(PKGSDIR, self.name, os.path.basename(self.name)) + ".nm"
+		return os.path.join(PKGSDIR, self.repo.name, self.name,
+			os.path.basename(self.name)) + ".nm"
 
 	@property
 	def fingerprint(self):
@@ -276,17 +300,15 @@ class PackageInfo(object):
 		return self._data.get("PKG_VER")
 
 
-class Dependency(PackageInfo):
-	def __repr__(self):
-		return "<Dependency %s>" % self.name
-
-
 class Package(object):
 	def __init__(self, name, naoki):
-		self.info = PackageInfo(name)
+		self.info = find_package_info(name)
 		self.naoki = naoki
 
 		#self.log.debug("Initialized package object %s" % name)
+
+	def __repr__(self):
+		return "<Package %s>" % self.info.name
 
 	def build(self):
 		environment = chroot.Environment(self)
@@ -333,7 +355,7 @@ class Repository(object):
 	def packages(self):
 		packages = []
 		for package in os.listdir(self.path):
-			package = PackageInfo(os.path.join(self.name, package))
+			package = PackageInfo(package, repo=self)
 			packages.append(package)
 
 		return packages
