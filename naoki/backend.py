@@ -109,7 +109,7 @@ def download(files, logger=None):
 		if os.path.exists(filepath):
 			continue
 
-		url = config["sources_download_url"] + "/%s" % urllib.pathname2url(file)
+		url = config["sources_download_url"] + "/" + file
 
 		if logger:
 			logger.debug("Retrieving %s" % url)
@@ -117,6 +117,7 @@ def download(files, logger=None):
 		g = urlgrabber.grabber.URLGrabber(
 			user_agent = "%sSourceGrabber/%s" % (config["distro_name"], config["distro_version"],),
 			progress_obj = urlgrabber.progress.TextMeter(),
+			quote=0,
 		)
 
 		try:
