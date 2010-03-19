@@ -163,6 +163,10 @@ define STAGE_PREPARE
 	# Fix a very weird issue with rpath
 	cd $(DIR_APP) && sed -e "s/LDFLAGS-rpath-ORIGIN/LDFLAGS/g" \
 		-i iconvdata/Makefile
+
+	# Copy our customized SUPPORTED file to build localization files
+	# only for supported languages
+	cp -vf $(DIR_SOURCE)/SUPPORTED.locales $(DIR_APP)/localedata/SUPPORTED
 endef
 
 define STAGE_BUILD
