@@ -46,6 +46,7 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 define STAGE_BUILD
+	$(DO_FIX_LIBTOOL)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
 

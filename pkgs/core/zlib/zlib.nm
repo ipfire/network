@@ -47,25 +47,16 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 CFLAGS        += -fPIC -DPIC
 
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_ENVIRONMENT += ac_cv_func_working_mktime=yes
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		ac_cv_func_working_mktime=yes \
-		./configure \
-			--prefix=/usr \
-			--libdir=/lib
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
+CONFIGURE_OPTIONS += \
+	--libdir=/lib
 
 define STAGE_TEST
 	cd $(DIR_APP) && make check
 endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/usr/{include,lib}
 	cd $(DIR_APP) && cp -pfv zconf.h zlib.h $(BUILDROOT)/usr/include
 	rm -vf $(BUILDROOT)/lib/libz.so

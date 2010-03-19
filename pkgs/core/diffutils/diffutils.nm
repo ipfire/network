@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = diffutils
-PKG_VER        = 2.8.1
+PKG_VER        = 2.9
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -43,4 +43,7 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += --mandir=/usr/share
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share
+
+# This package doesn't have a testsuite.

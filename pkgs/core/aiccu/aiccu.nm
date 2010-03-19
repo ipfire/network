@@ -44,11 +44,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-define STAGE_PREPARE_CMDS
-	mv /usr/src/$(PKG_NAME) /usr/src/$(PKG_NAME)-$(PKG_VER)
-endef
+DIR_APP = $(DIR_SRC)/$(PKG_NAME)
 
 define STAGE_BUILD
+	$(DO_FIX_LIBTOOL)
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) RPM_OPT_FLAGS="$(CFLAGS)"
 endef
 

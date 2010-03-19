@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = m4
-PKG_VER        = 1.4.11
+PKG_VER        = 1.4.14
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -45,21 +45,9 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_BUILD
-	# We need -D_GNU_SOURCE because this version of M4 has a bug in gnulib (or
-	# possibly autoconf) that doesn't recognise that we have asprintf() in libc.
-	cd $(DIR_APP) && \
-		CPPFLAGS="-D_GNU_SOURCE" \
-		gl_cv_func_printf_directive_n=no \
-		./configure \
-			--prefix=/usr
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
+CONFIGURE_ENVIRONMENT += \
+	CPPFLAGS="-D_GNU_SOURCE" \
+	gl_cv_func_printf_directive_n=no \
 
 # fails
 #define STAGE_TEST

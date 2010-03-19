@@ -34,6 +34,8 @@ PKG_URL        = http://www.gnu.org/software/dejagnu/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = A front end for testing other programs 
 
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
 PKG_BUILD_DEPS+= bison
 PKG_DEPS      += expect tcl
 
@@ -45,6 +47,11 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
 	--mandir=/usr/share/man
+
+# Disabled because testsuite doesn't wort at the moment.
+#define STAGE_TEST
+	#cd $(DIR_APP) && make check
+#endef
 
 define STAGE_INSTALL_CMDS
 	cd $(DIR_APP) && make -C doc DESTDIR=$(BUILDROOT) install-man

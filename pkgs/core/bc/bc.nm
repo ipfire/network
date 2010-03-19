@@ -44,23 +44,13 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man \
+	--disable-static
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i '/PROTO.*readline/d' bc/scan.l
 	cd $(DIR_APP) && sed -i '/flex -I8/s/8//' configure
 	cd $(DIR_APP) && sed -i '/stdlib/a #include <string.h>' lib/number.c
 	cd $(DIR_APP) && sed -i 's/program.*save/static &/' bc/load.c
-endef
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--disable-static \
-			--mandir=/usr/share/man
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef

@@ -34,6 +34,8 @@ PKG_URL        = ftp://ftp.gnu.org/gnu/readline/
 PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = A library for editing typed command lines.
 
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
 PKG_DEPS      += ncurses
 
 define PKG_DESCRIPTION
@@ -47,21 +49,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--libdir=/lib \
+STAGE_BUILD_TARGETS += SHLIB_LIBS=-lncurses
 
-# remove rpath from libtool
-@if [ -e "libtool" ]; then \
-	sed -i libtool \
-		-e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
-		-e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g'; \
-fi
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) SHLIB_LIBS=-lncurses
-endef
+CONFIGURE_OPTIONS += \
+	--libdir=/lib \
 
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/usr/lib

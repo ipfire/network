@@ -46,22 +46,14 @@ PKG_DEPS      += attr libnfsidmap
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
+STAGE_BUILD_TARGETS += LIBTOOL="libtool --tag=CC"
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--bindir=/bin \
-			--disable-static \
-			--mandir=/usr/share/man
+CONFIGURE_OPTIONS += \
+	--bindir=/bin \
+	--disable-static \
+	--mandir=/usr/share/man
 
-	cd $(DIR_APP) && make LIBTOOL="libtool --tag=CC" #$(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/{,usr/}lib $(BUILDROOT)/usr/include/{acl,sys}
 	install -v -m0755 $(DIR_APP)/libacl/.libs/libacl.so.1.2.0 $(BUILDROOT)/lib
 	ln -vsf libacl.so.1.2.0 $(BUILDROOT)/lib/libacl.so.1

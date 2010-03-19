@@ -34,8 +34,9 @@ PKG_URL        = http://oss.sgi.com/projects/xfs/
 PKG_LICENSE    = GPLv2+ LGPLv2+
 PKG_SUMMARY    = Tools for extended attribute support.
 
-PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 PKG_BUILD_DEPS+= gettext gzip libtool make sed
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 define PKG_DESCRIPTION
 	A set of tools for manipulating extended attributes on filesystem \
@@ -44,23 +45,11 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_OPTIONS += \
+	--bindir=/bin \
+	--enable-shared
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--bindir=/bin \
-			--enable-shared
-
-	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/{,usr/}lib
 	install -v -m0755 $(DIR_APP)/libattr/.libs/libattr.so.1.1.0 $(BUILDROOT)/lib
 	ln -vsf libattr.so.1.1.0 $(BUILDROOT)/lib/libattr.so.1
