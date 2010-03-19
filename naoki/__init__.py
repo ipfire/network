@@ -72,10 +72,7 @@ class Naoki(object):
 		else:
 			package_names = args.packages
 
-		packages = []
-		for package in package_names:
-			package = backend.Package(package, naoki=self)
-			packages.append(package)
+		packages = backend.parse_package(package_names, naoki=self)
 
 		if len(packages) >= 2:
 			packages_sorted = backend.depsort(packages)
@@ -110,10 +107,7 @@ class Naoki(object):
 		return actionmap[args.action.name](args.action)
 
 	def call_package_info(self, args):
-		packages = args.packages or backend.get_package_names()
-
-		for package in packages:
-			package = backend.PackageInfo(package)
+		for package in backend.parse_package_info(args.packages):
 			if args.long:
 				print package.fmtstr("""\
 --------------------------------------------------------------------------------
@@ -145,8 +139,7 @@ Release       : %(release)s
 """)
 
 	def call_package_list(self, args):
-		for package in self.package_names:
-			package = backend.PackageInfo(package)
+		for package in backend.parse_package_info(backend.get_package_names()):
 			if args.long:
 				print package.fmtstr("%(name)-32s | %(version)-15s | %(summary)s")
 			else:
@@ -161,8 +154,7 @@ Release       : %(release)s
 			print "====== All available groups of packages ======"
 			for group in groups:
 				print "===== %s =====" % group
-				for package in backend.get_package_names():
-					package = backend.PackageInfo(package)
+				for package in backend.parse_package_info(backend.get_package_names()):
 					if not package.group == group:
 						continue
 
@@ -185,10 +177,8 @@ Release       : %(release)s
 		return actionmap[args.action.name](args.action)
 
 	def call_source_download(self, args):
-		packages = args.packages or backend.get_package_names()
-
-		for package in packages:
-			package = backend.Package(package, naoki=self)
+		for package in backend.parse_package(args.packages or \
+				backend.get_package_names(), naoki=self):
 			package.download()
 
 	def call_source_upload(self, args):
@@ -197,8 +187,8 @@ Release       : %(release)s
 	def call_source_clean(self, args):
 		self.log.info("Remove all unused files")
 		files = os.listdir(TARBALLDIR)
-		for package in backend.get_package_names():
-			for object in backend.PackageInfo(package).objects:
+		for package in backend.parse_package_info(backend.get_package_names()):
+			for object in package.objects:
 				if object in files:
 					files.remove(object)
 
@@ -234,7 +224,3 @@ Release       : %(release)s
 
 			self.log.info("Building %s..." % build.package.name)
 			build.build()
-
-	@property
-	def package_names(self):
-		return backend.get_package_names()
