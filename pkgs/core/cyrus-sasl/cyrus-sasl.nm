@@ -44,19 +44,15 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += --sysconfdir=/etc \
+CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc \
 	--with-dbpath=/var/lib/sasl/sasldb2 \
 	--with-saslauthd=/var/run/saslauthd \
 	--mandir=/usr/share/man
 
-PARALLELISMFLAGS =
-###############################################################################
-# Installation Details
-###############################################################################
+PARALLELISMFLAGS = # Disabled
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/usr/lib/sasl2
 	cp -vf $(DIR_SOURCE)/smtpd.conf $(BUILDROOT)/usr/lib/sasl2/
 
