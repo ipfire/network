@@ -15,6 +15,7 @@ from logger import getLog
 class Environment(object):
 	def __init__(self, package):
 		self.package = package
+		self.naoki = self.package.naoki
 
 		self.arch = arches.current
 		self.config = config
@@ -44,19 +45,8 @@ class Environment(object):
 		]
 
 		self.buildroot = "buildroot.%d" % random.randint(0, 1024)
-		self.log = None
-		self.__initialized = False
 
-	def init(self):
-		if self.__initialized:
-			return
-		self._init()
-		self.__initialized = True
-
-	def _init(self):
-		self._setupLogging()
-
-		self.log.info("Setting up environment %s..." % self.chrootPath())
+		self.log.debug("Setting up environment %s..." % self.chrootPath())
 
 		if os.path.exists(self.chrootPath()):
 			self.clean()
@@ -106,7 +96,7 @@ class Environment(object):
 		util.rm(self.chrootPath())
 
 	def make(self, target):
-		file = "/usr/src%s" % self.package.filename[len(BASEDIR):]
+		file = "/usr/src%s" % self.package.info.filename[len(BASEDIR):]
 
 		return self.doChroot("make -C %s -f %s %s" % \
 			(os.path.dirname(file), file, target), shell=True)
@@ -152,17 +142,7 @@ class Environment(object):
 		return ret
 
 	def chrootPath(self, *args):
-		return os.path.join(BUILDDIR, "environments", self.package.id, *args)
-
-	def _setupLogging(self):
-		logfile = os.path.join(LOGDIR, self.package.id, "build.log")
-		if not os.path.exists(os.path.dirname(logfile)):
-			util.mkdir(os.path.dirname(logfile))
-		self.log = logging.getLogger(self.package.id)
-		fh = logging.FileHandler(logfile)
-		fh.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
-		fh.setLevel(logging.NOTSET)
-		self.log.addHandler(fh)
+		return os.path.join(BUILDDIR, "environments", self.package.info.id, *args)
 
 	def _setupDev(self):
 		# files in /dev
@@ -242,20 +222,14 @@ class Environment(object):
 			util.do(cmd, raiseExc=0, shell=True)
 
 	def extractAll(self):
-		packages = self.package.deps + self.package.build_deps
-		for pkg in config["mandatory_packages"]:
-			pkg = package.find(pkg)
-			if not pkg in packages:
-				packages.append(pkg)
+		packages = [p.getPackage(self.naoki) \
+			for p in self.package.info.dependencies_all]
 
-		packages = package.depsolve(packages, recursive=True)
-
-		for pkg in packages:
-			pkg.extract(self.chrootPath())
+		for package in packages:
+			package.extract(self.chrootPath())
 
 	def build(self):
 		self.package.download()
-		self.init()
 
 		try:
 			self.make("package")
@@ -266,6 +240,10 @@ class Environment(object):
 
 		if config["cleanup_on_success"]:
 			self.clean()
+
+	@property
+	def log(self):
+		return self.package.log
 
 
 class Toolchain(object):

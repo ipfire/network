@@ -98,7 +98,7 @@ def logOutput(fds, logger, returnOutput=1, start=0, timeout=0):
 				tail = lines.pop()
 				for line in lines:
 					if line == '': continue
-					logger.debug(line)
+					logger.info(line)
 				for h in logger.handlers:
 					h.flush()
 			if returnOutput:

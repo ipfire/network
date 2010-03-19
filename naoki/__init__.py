@@ -1,121 +1,195 @@
 #!/usr/bin/python
 
 import ConfigParser
-import curses
-import logging
-import logging.config
-import logging.handlers
 import os.path
 import sys
 import time
 
+import backend
 import logger
-import package
+import terminal
 import util
 
 from constants import *
-
-# fix for python 2.4 logging module bug:
-logging.raiseExceptions = 0
+from handlers import *
 
 class Naoki(object):
 	def __init__(self):
-		self.setup_logging()
+		# First, setup the logging
+		self.logging = logger.Logging(self)
+
+		# Second, parse the command line options
+		self.cli = terminal.Commandline(self)
 
 		self.log.debug("Successfully initialized naoki instance")
 		for k, v in config.items():
 			self.log.debug("    %s: %s" % (k, v))
 
-	def setup_logging(self):
-		self.log = logging.getLogger()
+	def run(self):
+		args = self.cli.args
 
-		log_ini = config["log_config_file"]
-		if os.path.exists(log_ini):
-			logging.config.fileConfig(log_ini)
+		# If there is no action provided, exit
+		if not args.has_key("action"):
+			self.cli.help()
+			sys.exit(1)
 
-		if sys.stderr.isatty():
-			curses.setupterm()
-			self.log.handlers[0].setFormatter(logger._ColorLogFormatter())
+		actionmap = {
+			"build" : self.call_build,
+			"toolchain" : self.call_toolchain,
+			"package" : self.call_package,
+			"source" : self.call_source,
+		}
 
-		if config["quiet"]:
-			self.log.handlers[0].setLevel(logging.WARNING)
-		else:
-			self.log.handlers[0].setLevel(logging.INFO)
+		return actionmap[args.action.name](args.action)
 
-		if not os.path.isdir(LOGDIR):
-			os.makedirs(LOGDIR)
-		fh = logging.handlers.RotatingFileHandler(config["log_file"],
-			maxBytes=10*1024**2, backupCount=6)
-		fh.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
-		fh.setLevel(logging.NOTSET)
-		self.log.addHandler(fh)
+	def call_toolchain(self, args):
+		if not args.has_key("action"):
+			self.cli.help()
+			sys.exit(1)
 
-	def __call__(self, action, **kwargs):
-		if action == "build":
-			self.call_build(kwargs.get("package"))
+		actionmap = {
+			"build" : self.call_toolchain_build,
+			"download" : self.call_toolchain_download,
+		}
 
-		elif action == "toolchain":
-			self.call_toolchain(kwargs.get("subaction"), kwargs.get("arch"))
-		
-		elif action == "package":
-			self.call_package(kwargs.pop("subaction"), **kwargs)
+		return actionmap[args.action.name](args.action)
 
-	def call_toolchain(self, subaction, arch):
-		tc = chroot.Toolchain(arch)
-		
-		if subaction == "build":
-			tc.build()
+	def call_toolchain_build(self, args):
+		toolchain = chroot.Toolchain(arch)
 
-		elif subaction == "download":
-			tc.download()
+		return toolchain.build()
 
-	def call_build(self, packages):
+	def call_toolchain_download(self, args):
+		toolchain = chroot.Toolchain(arch)
+
+		return toolchain.download()
+
+	def call_build(self, args):
 		force = True
 
-		if packages == ["all"]:
+		if args.packages == ["all"]:
 			force = False
-			packages = package.list()
+			package_names = backend.get_package_names()
 		else:
-			packages = [package.find(p) for p in packages]
-			for p in packages:
-				if not p: packages.remove(p)
+			package_names = args.packages
 
-		self._build(packages, force=force)
+		packages = []
+		for package in package_names:
+			package = backend.Package(package, naoki=self)
+			packages.append(package)
 
-	def call_package(self, subaction, **kwargs):
-		if subaction == "list":
-			for pkg in self.packages:
-				print pkg.info_line(long=kwargs["long"])
-
-		elif subaction == "info":
-			packages = [package.find(pkg) for pkg in kwargs.get("package")]
-			packages.sort()
-
-			if kwargs["wiki"]:
-				for pkg in packages:
-					print pkg.info_wiki()
-				return
+		if len(packages) >= 2:
+			packages_sorted = backend.depsort(packages)
+			if packages_sorted == packages:
+				self.log.warn("Packages were resorted for build: %s" % packages_sorted)
+			packages = packages_sorted
+		
+		for package in packages:
+			environ = chroot.Environment(package)
 			
-			delimiter = "----------------------------------------------------\n"
+			if not environ.toolchain.exists:
+				self.log.error("You need to build or download a toolchain first.")
+				continue
 
-			print delimiter.join([pkg.info(long=kwargs["long"]) for pkg in packages])
-		
-		elif subaction == "tree":
-			print package.deptree(self.packages)
-		
-		elif subaction == "groups":
-			groups = package.groups()
+			environ.build()
 
-			if kwargs["wiki"]:
-				print "====== All available groups of packages ======"
-				for group in groups:
-					print group.wiki_headline()
-					for pkg in group.packages:
-						print pkg.info_wiki(long=False)
+	def call_package(self, args):
+		if not args.has_key("action"):
+			self.cli.help()
+			sys.exit(1)
 
-				return
+		actionmap = {
+			"info" : self.call_package_info,
+			"list" : self.call_package_list,
+			"tree" : self.call_package_tree,
+			"groups" : self.call_package_groups,
+		}
 
-			print "\n".join(package.group_names())
+		return actionmap[args.action.name](args.action)
+
+	def call_package_info(self, args):
+		packages = args.packages or backend.get_package_names()
+
+		for package in packages:
+			package = backend.PackageInfo(package)
+			if args.long:
+				print package.fmtstr("""\
+--------------------------------------------------------------------------------
+Name          : %(name)s
+Version       : %(version)s
+Release       : %(release)s
+
+  %(summary)s
+
+%(description)s
+
+Maintainer    : %(maintainer)s
+License       : %(license)s
+
+Files         : %(objects)s
+Patches       : %(patches)s
+--------------------------------------------------------------------------------\
+""")
+			else:
+				print package.fmtstr("""\
+--------------------------------------------------------------------------------
+Name          : %(name)s
+Version       : %(version)s
+Release       : %(release)s
+
+  %(summary)s
+
+--------------------------------------------------------------------------------\
+""")
+
+	def call_package_list(self, args):
+		for package in self.package_names:
+			package = backend.PackageInfo(package)
+			if args.long:
+				print package.fmtstr("%(name)-32s | %(version)-15s | %(summary)s")
+			else:
+				print package.fmtstr("%(name)s")
+
+	def call_package_tree(self, args):
+		print "TBD"
+
+	def call_package_groups(self, args):
+		groups = backend.get_group_names()
+		if args.wiki:
+			print "====== All available groups of packages ======"
+			for group in groups:
+				print "===== %s =====" % group
+				for package in backend.get_package_names():
+					package = backend.PackageInfo(package)
+					if not package.group == group:
+						continue
+
+					print package.fmtstr("  * [[.package:%(name)s|%(name)s]] - %(summary)s")
+
+		else:
+			print "\n".join(groups)
+
+	def call_source(self, args):
+		if not args.has_key("action"):
+			self.cli.help()
+			sys.exit(1)
+
+		actionmap = {
+			"download" : self.call_source_download,
+			"upload" : self.call_source_upload,
+		}
+
+		return actionmap[args.action.name](args.action)
+
+	def call_source_download(self, args):
+		packages = args.packages or backend.get_package_names()
+
+		for package in packages:
+			package = backend.Package(package, naoki=self)
+			package.download()
+
+	def call_source_upload(self, args):
+		pass # TODO
 
 	def _build(self, packages, force=False):
 		requeue = []
@@ -147,5 +221,5 @@ class Naoki(object):
 			build.build()
 
 	@property
-	def packages(self):
-		return package.list()
+	def package_names(self):
+		return backend.get_package_names()
