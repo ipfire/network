@@ -167,6 +167,9 @@ class PackageInfo(object):
 		self._name = name
 		self.repo = repo
 
+	#def __cmp__(self, other):
+	#	return cmp(self.name, other.name)
+
 	def __repr__(self):
 		return "<PackageInfo %s>" % self.name
 
@@ -225,7 +228,7 @@ class PackageInfo(object):
 	def _dependencies(self, s, recursive=False):
 		c = s + "_CACHE"
 		if not self._data.has_key(c):
-			deps = parse_package_info(self._data.get(s).split(" "))
+			deps = parse_package(self._data.get(s).split(" "))
 			self._data.update({c : depsolve(deps, recursive)})
 
 		return self._data.get(c)
@@ -309,6 +312,12 @@ class Package(object):
 
 	def __repr__(self):
 		return "<Package %s>" % self.info.name
+
+	def __cmp__(self, other):
+		return cmp(self.name, other.name)
+
+	def __getattr__(self, attr):
+		return getattr(self.info, attr)
 
 	def build(self):
 		environment = chroot.Environment(self)
