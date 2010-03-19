@@ -54,12 +54,12 @@ class Naoki(object):
 		return actionmap[args.action.name](args.action)
 
 	def call_toolchain_build(self, args):
-		toolchain = chroot.Toolchain(arch)
+		toolchain = chroot.Toolchain(arches.current["name"])
 
 		return toolchain.build()
 
 	def call_toolchain_download(self, args):
-		toolchain = chroot.Toolchain(arch)
+		toolchain = chroot.Toolchain(arches.current["name"])
 
 		return toolchain.download()
 
@@ -72,17 +72,17 @@ class Naoki(object):
 		else:
 			package_names = args.packages
 
-		packages = []
-		for package in package_names:
-			package = backend.Package(package, naoki=self)
-			packages.append(package)
+		packages = backend.parse_package(package_names, naoki=self)
 
 		if len(packages) >= 2:
 			packages_sorted = backend.depsort(packages)
 			if packages_sorted == packages:
 				self.log.warn("Packages were resorted for build: %s" % packages_sorted)
 			packages = packages_sorted
-		
+
+		for package in packages:
+			package.download()
+
 		for package in packages:
 			environ = chroot.Environment(package)
 			
@@ -107,10 +107,7 @@ class Naoki(object):
 		return actionmap[args.action.name](args.action)
 
 	def call_package_info(self, args):
-		packages = args.packages or backend.get_package_names()
-
-		for package in packages:
-			package = backend.PackageInfo(package)
+		for package in backend.parse_package_info(args.packages):
 			if args.long:
 				print package.fmtstr("""\
 --------------------------------------------------------------------------------
@@ -142,15 +139,14 @@ Release       : %(release)s
 """)
 
 	def call_package_list(self, args):
-		for package in self.package_names:
-			package = backend.PackageInfo(package)
+		for package in backend.parse_package_info(backend.get_package_names()):
 			if args.long:
 				print package.fmtstr("%(name)-32s | %(version)-15s | %(summary)s")
 			else:
 				print package.fmtstr("%(name)s")
 
 	def call_package_tree(self, args):
-		print "TBD"
+		print backend.deptree(backend.parse_package(backend.get_package_names()))
 
 	def call_package_groups(self, args):
 		groups = backend.get_group_names()
@@ -158,8 +154,7 @@ Release       : %(release)s
 			print "====== All available groups of packages ======"
 			for group in groups:
 				print "===== %s =====" % group
-				for package in backend.get_package_names():
-					package = backend.PackageInfo(package)
+				for package in backend.parse_package_info(backend.get_package_names()):
 					if not package.group == group:
 						continue
 
@@ -176,19 +171,30 @@ Release       : %(release)s
 		actionmap = {
 			"download" : self.call_source_download,
 			"upload" : self.call_source_upload,
+			"clean" : self.call_source_clean,
 		}
 
 		return actionmap[args.action.name](args.action)
 
 	def call_source_download(self, args):
-		packages = args.packages or backend.get_package_names()
-
-		for package in packages:
-			package = backend.Package(package, naoki=self)
+		for package in backend.parse_package(args.packages or \
+				backend.get_package_names(), naoki=self):
 			package.download()
 
 	def call_source_upload(self, args):
 		pass # TODO
+
+	def call_source_clean(self, args):
+		self.log.info("Remove all unused files")
+		files = os.listdir(TARBALLDIR)
+		for package in backend.parse_package_info(backend.get_package_names()):
+			for object in package.objects:
+				if object in files:
+					files.remove(object)
+
+		for file in sorted(files):
+			self.log.info("Removing %s..." % file)
+			os.remove(os.path.join(TARBALLDIR, file))
 
 	def _build(self, packages, force=False):
 		requeue = []
@@ -218,7 +224,3 @@ Release       : %(release)s
 
 			self.log.info("Building %s..." % build.package.name)
 			build.build()
-
-	@property
-	def package_names(self):
-		return backend.get_package_names()

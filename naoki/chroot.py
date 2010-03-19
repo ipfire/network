@@ -302,7 +302,8 @@ class Toolchain(object):
 		command = "make -C %s -f %s %s" % \
 			(os.path.dirname(pkg.filename), pkg.filename, target)
 
-		return util.do(command, shell=True, env=env, personality=self.arch["personality"])
+		return util.do(command, shell=True, env=env, personality=self.arch["personality"],
+			logger=self.log)
 
 	def build_package(self, pkg):
 		self.log.info("Building %s..." % pkg.name)
