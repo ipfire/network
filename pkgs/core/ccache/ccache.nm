@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = ccache
-PKG_VER        = 2.4
+PKG_VER        = 3.0pre0
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -33,6 +33,8 @@ PKG_GROUP      = Development/Compilers
 PKG_URL        = http://ccache.samba.org/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = C/C++ compiler cache.
+
+PKG_DEPS      += zlib
 
 define PKG_DESCRIPTION
 	ccache is a compiler cache.  It acts as a caching pre-processor to \
@@ -45,6 +47,10 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
 	--mandir=/usr/share
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/hash_int(&hash, st.st_mtime);//g" -i ccache.c
+endef
 
 define STAGE_INSTALL_CMDS
 	mkdir -pv $(BUILDROOT)/usr/ccache/bin
