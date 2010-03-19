@@ -2,8 +2,74 @@
 
 import curses
 import logging
+import logging.config
+import logging.handlers
 import sys
 import time
+
+# fix for python 2.4 logging module bug:
+logging.raiseExceptions = 0
+
+from constants import *
+
+class Logging(object):
+	def __init__(self, naoki):
+		self.naoki = naoki
+
+		self.setup()
+
+	def setup(self):
+		self.naoki.log = self.log = logging.getLogger()
+
+		log_ini = config["log_config_file"]
+		if os.path.exists(log_ini):
+			logging.config.fileConfig(log_ini)
+
+		if sys.stderr.isatty():
+			curses.setupterm()
+			self.log.handlers[0].setFormatter(_ColorLogFormatter())
+
+		# Set default configuration
+		self.quiet(config["quiet"])
+
+		self.log.handlers[0].setLevel(logging.DEBUG)
+		logging.getLogger("naoki").propagate = 1
+
+		if not os.path.isdir(LOGDIR):
+			os.makedirs(LOGDIR)
+		fh = logging.handlers.RotatingFileHandler(config["log_file"],
+			maxBytes=10*1024**2, backupCount=6)
+		fh.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+		fh.setLevel(logging.NOTSET)
+		self.log.addHandler(fh)
+
+	def quiet(self, val):
+		if val:
+			self.log.debug("Enabled quiet logging mode")
+			self.log.handlers[0].setLevel(logging.WARNING)
+		else:
+			#self.log.debug("Enabled verbose logging mode")
+			self.log.handlers[0].setLevel(logging.INFO)
+
+	def _setupBuildLogger(self, logger):
+		logger.setLevel(logging.DEBUG)
+
+		handler = logging.handlers.RotatingFileHandler(
+			os.path.join(LOGDIR, logger.name + ".log"), maxBytes=10*1024**2,
+			backupCount=5)
+
+		formatter = logging.Formatter("[BUILD] %(message)s")
+		handler.setFormatter(formatter)
+
+		logger.addHandler(handler)
+
+	def getBuildLogger(self, name):
+		logger = logging.getLogger(name)
+		if not logger.handlers:
+			self._setupBuildLogger(logger)
+
+		return logger
+
 
 # defaults to module verbose log
 # does a late binding on log. Forwards all attributes to logger.

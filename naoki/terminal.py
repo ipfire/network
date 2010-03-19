@@ -12,6 +12,14 @@ class ParsingError(Exception):
 	pass
 
 
+class NameSpace(dict):
+	def __getattr__(self, attr):
+		try:
+			return self.__getitem__(attr)
+		except KeyError:
+			raise AttributeError
+
+
 class Parser(object):
 	def __init__(self, name, arguments=[], parsers=[]):
 		self.name = name
@@ -51,11 +59,11 @@ class Parser(object):
 
 	@property
 	def values(self):
-		ret = {
-			"name" : self.name
-		}
+		ret = NameSpace(
+			name=self.name,
+		)
 		if self.subparser:
-			ret["subaction"] = self.subparser.values
+			ret["action"] = self.subparser.values
 
 		for argument in self.arguments:
 			ret[argument.name] = argument.value()
@@ -156,10 +164,10 @@ class Commandline(object):
 		self.naoki = naoki
 
 		# Parse the stuff
-		args = self.__parse()
+		self.args = self.__parse()
 
 		# ... afterwards, process global directives
-		self.__process_global(args)
+		self.__process_global(self.args)
 
 	def __process_global(self, args):
 		# Set quiet mode
@@ -244,6 +252,9 @@ class Commandline(object):
 			raise ParsingError, "Unknown argument(s) passed: %s" % args
 
 		return parser.values
+
+	def help(self):
+		print "PRINTING HELP TEXT"
 
 
 DEFAULT_COLUMNS = 80
