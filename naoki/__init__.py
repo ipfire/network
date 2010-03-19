@@ -11,7 +11,6 @@ import terminal
 import util
 
 from constants import *
-from handlers import *
 
 class Naoki(object):
 	def __init__(self):
