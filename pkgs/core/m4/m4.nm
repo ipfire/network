@@ -49,7 +49,6 @@ CONFIGURE_ENVIRONMENT += \
 	CPPFLAGS="-D_GNU_SOURCE" \
 	gl_cv_func_printf_directive_n=no \
 
-# fails
-#define STAGE_TEST
-#	cd $(DIR_APP) && make check
-#endef
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
