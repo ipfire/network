@@ -43,9 +43,6 @@ class Config(object):
 		"distro_version"  : "unknown",
 		"distro_slogan"   : "unknown",
 		#
-		# Downloads
-		"download_tarball_url" : "http://source.ipfire.org/source-3.x/%(file)s",
-		#
 		# Logging
 		"log_config_file" : os.path.join(CONFIGDIR, "logging.ini"),
 		"log_file"        : os.path.join(LOGDIR, "naoki.log"),

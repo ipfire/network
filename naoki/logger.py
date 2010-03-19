@@ -51,6 +51,14 @@ class Logging(object):
 			#self.log.debug("Enabled verbose logging mode")
 			self.log.handlers[0].setLevel(logging.INFO)
 
+	def debug(self, val):
+		if val:
+			self.log.handlers[0].setLevel(logging.DEBUG)
+			self.log.debug("Enabled debug logging mode")
+		else:
+			self.log.debug("Disabled debug logging mode")
+			self.log.handlers[0].setLevel(logging.INFO)
+
 	def _setupBuildLogger(self, logger):
 		logger.setLevel(logging.DEBUG)
 		logger.parent = self.log
