@@ -54,12 +54,12 @@ class Naoki(object):
 		return actionmap[args.action.name](args.action)
 
 	def call_toolchain_build(self, args):
-		toolchain = chroot.Toolchain(arch)
+		toolchain = chroot.Toolchain(arches.current["name"])
 
 		return toolchain.build()
 
 	def call_toolchain_download(self, args):
-		toolchain = chroot.Toolchain(arch)
+		toolchain = chroot.Toolchain(arches.current["name"])
 
 		return toolchain.download()
 
