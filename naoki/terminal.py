@@ -173,6 +173,9 @@ class Commandline(object):
 		# Set quiet mode
 		self.naoki.logging.quiet(args.quiet)
 
+		# Set debugging mode
+		self.naoki.logging.debug(args.debug)
+
 		# XXX Set architecture
 
 	def __parse(self):
