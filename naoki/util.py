@@ -126,8 +126,7 @@ def condPersonality(per=None):
     if res == -1:
         raise OSError(_errno.value, os.strerror(_errno.value))
 
-def do(command, shell=False, chrootPath=None, cwd=None, timeout=0, raiseExc=True, returnOutput=0, personality=None, *args, **kargs):
-	logger = kargs.get("logger", getLog())
+def do(command, shell=False, chrootPath=None, cwd=None, timeout=0, raiseExc=True, returnOutput=0, personality=None, logger=None, *args, **kargs):
 	output = ""
 	start = time.time()
 	env = kargs.get("env", None)
@@ -138,7 +137,8 @@ def do(command, shell=False, chrootPath=None, cwd=None, timeout=0, raiseExc=True
 
 	try:
 		child = None
-		logger.debug("Executing command: %s" % command)
+		if logger:
+			logger.debug("Executing command: %s" % command)
 		child = subprocess.Popen(
 			command, 
 			shell=shell,
@@ -149,7 +149,7 @@ def do(command, shell=False, chrootPath=None, cwd=None, timeout=0, raiseExc=True
 			preexec_fn = preexec,
 			env=env
 		)
-		
+
 		# use select() to poll for output so we dont block
 		output = logOutput([child.stdout, child.stderr], 
 				logger, returnOutput, start, timeout)
@@ -178,7 +178,8 @@ def do(command, shell=False, chrootPath=None, cwd=None, timeout=0, raiseExc=True
 	if not niceExit:
 		raise commandTimeoutExpired, ("Timeout(%s) expired for command:\n # %s\n%s" % (timeout, command, output))
 
-	logger.debug("Child returncode was: %s" % str(child.returncode))
+	if logger:
+		logger.debug("Child returncode was: %s" % str(child.returncode))
 	if raiseExc and child.returncode:
 		if returnOutput:
 			raise Error, ("Command failed: \n # %s\n%s" % (command, output), child.returncode)
