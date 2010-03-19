@@ -64,9 +64,14 @@ class Logging(object):
 		logger.parent = self.log
 		logger.propagate = 1
 
-		handler = logging.handlers.RotatingFileHandler(
-			os.path.join(LOGDIR, logger.name + ".log"), maxBytes=10*1024**2,
-			backupCount=5)
+		logfile = os.path.join(LOGDIR, logger.name + ".log")
+		logdir  = os.path.dirname(logfile)
+
+		if not os.path.exists(logdir):
+			os.makedirs(logdir)
+
+		handler = logging.handlers.RotatingFileHandler(logfile,
+			maxBytes=10*1024**2, backupCount=5)
 
 		formatter = logging.Formatter("[BUILD] %(message)s")
 		handler.setFormatter(formatter)
