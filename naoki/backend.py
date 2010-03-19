@@ -69,6 +69,34 @@ def depsolve(packages, recursive=False):
 	deps.sort()
 	return deps
 
+def deptree(packages):
+	ret = [packages]
+
+	while True:
+		next = []
+		stage = ret[-1][:]
+		for package in stage[:]:
+			for dep in package.info.dependencies_all:
+				if dep in ret[-1]:
+					stage.remove(package)
+					next.append(package)
+					break
+		
+		ret[-1] = stage
+		if next:
+			ret.append(next)
+			continue
+
+		break
+
+	return ret
+
+def depsort(packages):
+	ret = [] 
+	for l1 in deptree(packages):
+		ret.extend(l1)
+	return ret
+
 class PackageInfo(object):
 	__data = {}
 

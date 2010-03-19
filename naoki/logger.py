@@ -53,6 +53,8 @@ class Logging(object):
 
 	def _setupBuildLogger(self, logger):
 		logger.setLevel(logging.DEBUG)
+		logger.parent = self.log
+		logger.propagate = 1
 
 		handler = logging.handlers.RotatingFileHandler(
 			os.path.join(LOGDIR, logger.name + ".log"), maxBytes=10*1024**2,
@@ -108,8 +110,7 @@ class _ColorLogFormatter(logging.Formatter):
             record.message = "Bad message (%r): %r" % (e, record.__dict__)
         record.asctime = time.strftime(
             "%H:%M:%S", self.converter(record.created))
-        prefix = '[%(levelname)7s | %(asctime)s]' % \
-            record.__dict__
+        prefix = " %(levelname)-7s" % record.__dict__
         color = self._colors.get(record.levelno, self._normal)
         formatted = color + prefix + self._normal + " " + record.message
         if record.exc_info:

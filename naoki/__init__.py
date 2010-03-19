@@ -21,14 +21,12 @@ class Naoki(object):
 		# Second, parse the command line options
 		self.cli = terminal.Commandline(self)
 
-
 		self.log.debug("Successfully initialized naoki instance")
 		for k, v in config.items():
 			self.log.debug("    %s: %s" % (k, v))
 
 	def run(self):
 		args = self.cli.args
-		print "DEBUG", args
 
 		# If there is no action provided, exit
 		if not args.has_key("action"):
@@ -66,18 +64,34 @@ class Naoki(object):
 
 		return toolchain.download()
 
-	def call_build(self, packages):
+	def call_build(self, args):
 		force = True
 
-		if packages == ["all"]:
+		if args.packages == ["all"]:
 			force = False
-			packages = package.list()
+			package_names = backend.get_package_names()
 		else:
-			packages = [package.find(p) for p in packages]
-			for p in packages:
-				if not p: packages.remove(p)
+			package_names = args.packages
 
-		self._build(packages, force=force)
+		packages = []
+		for package in package_names:
+			package = backend.Package(package, naoki=self)
+			packages.append(package)
+
+		if len(packages) >= 2:
+			packages_sorted = backend.depsort(packages)
+			if packages_sorted == packages:
+				self.log.warn("Packages were resorted for build: %s" % packages_sorted)
+			packages = packages_sorted
+		
+		for package in packages:
+			environ = chroot.Environment(package)
+			
+			if not environ.toolchain.exists:
+				self.log.error("You need to build or download a toolchain first.")
+				continue
+
+			environ.build()
 
 	def call_package(self, args):
 		if not args.has_key("action"):
