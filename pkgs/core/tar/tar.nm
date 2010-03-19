@@ -49,20 +49,11 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_ENVIRONMENT = CC="gcc -std=gnu99 -fgnu89-inline"
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		CC="gcc -std=gnu99 -fgnu89-inline" \
-		./configure \
-			--prefix=/usr \
-			--bindir=/bin \
-			--libexecdir=/usr/sbin
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
+CONFIGURE_OPTIONS += \
+	--bindir=/bin \
+	--libexecdir=/usr/sbin
 
 define STAGE_TEST
 	cd $(DIR_APP) && sed -i '35 i AT_UNPRIVILEGED_PREREQ' tests/remfiles01.at
