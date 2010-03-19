@@ -43,15 +43,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += --mandir=/usr/share
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share
 
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	mkdir -pv $(BUILDROOT)/usr/ccache/bin
 	for i in gcc g++ cc c++; do \
 		ln -svf ../../bin/ccache $(BUILDROOT)/usr/ccache/bin/$${i}; \
