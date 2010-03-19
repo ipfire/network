@@ -146,7 +146,7 @@ Release       : %(release)s
 				print package.fmtstr("%(name)s")
 
 	def call_package_tree(self, args):
-		print "TBD"
+		print backend.deptree(backend.parse_package(backend.get_package_names()))
 
 	def call_package_groups(self, args):
 		groups = backend.get_group_names()
