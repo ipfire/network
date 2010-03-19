@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import os
+import urlgrabber
+import urllib
 
 import chroot
 import util
@@ -96,6 +98,39 @@ def depsort(packages):
 	for l1 in deptree(packages):
 		ret.extend(l1)
 	return ret
+
+def download(files, logger=None):
+	for file in files:
+		filepath = os.path.join(TARBALLDIR, file)
+
+		if not os.path.exists(TARBALLDIR):
+			os.makedirs(TARBALLDIR)
+
+		if os.path.exists(filepath):
+			continue
+
+		url = config["sources_download_url"] + "/%s" % urllib.pathname2url(file)
+
+		if logger:
+			logger.debug("Retrieving %s" % url)
+
+		g = urlgrabber.grabber.URLGrabber(
+			user_agent = "%sSourceGrabber/%s" % (config["distro_name"], config["distro_version"],),
+			progress_obj = urlgrabber.progress.TextMeter(),
+		)
+
+		try:
+			gobj = g.urlopen(url)
+		except urlgrabber.grabber.URLGrabError, e:
+			logger.error("Could not retrieve %s - %s" % (url, e))
+			raise
+
+		# XXX Need to check SHA1 sum here
+
+		fobj = open(filepath, "w")
+		fobj.write(gobj.read())
+		fobj.close()
+		gobj.close()
 
 class PackageInfo(object):
 	__data = {}
@@ -257,10 +292,7 @@ class Package(object):
 		environment.build()
 
 	def download(self):
-		return "TODO"
-		files = self.info.objects
-		#self.log.info("Downloading %s..." % files)
-		download(self.info.objects)
+		download(self.info.objects, logger=self.log)
 
 	def extract(self, dest):
 		files = [os.path.join(PACKAGESDIR, file) for file in self.info.package_files]

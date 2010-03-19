@@ -82,7 +82,10 @@ class Naoki(object):
 			if packages_sorted == packages:
 				self.log.warn("Packages were resorted for build: %s" % packages_sorted)
 			packages = packages_sorted
-		
+
+		for package in packages:
+			package.download()
+
 		for package in packages:
 			environ = chroot.Environment(package)
 			
