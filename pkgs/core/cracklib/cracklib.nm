@@ -49,24 +49,12 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 PKG_OBJECTS   += cracklib-words-20080507.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_OPTIONS += \
+	--with-default-dict=/lib/cracklib/pw_dict \
+	--with-python \
+	--disable-static
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--with-default-dict=/lib/cracklib/pw_dict \
-			--with-python \
-			--disable-static
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
-
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/{,usr/}lib
 	mv -v $(BUILDROOT)/usr/lib/libcrack.so.2* $(BUILDROOT)/lib
 	ln -vsf ../../lib/libcrack.so.2.8.0 $(BUILDROOT)/usr/lib/libcrack.so
