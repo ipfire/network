@@ -124,6 +124,22 @@ class Naoki(object):
 
 	def call_package_info(self, args):
 		for package in backend.parse_package_info(args.packages):
+			if args.wiki:
+				print package.fmtstr("""\
+====== %(name)s ======
+| **Version:**  | %(version)s  |
+| **Release:**  | %(release)s  |
+| **Group:**  | %(group)s  |
+| **License:**  | %(license)s  |
+| **Maintainer:**  | %(maintainer)s |
+| **Dependencies:** | %(deps)s |
+| **Build dependencies:** | %(build_deps)s |
+| %(summary)s ||
+| %(description)s ||
+| **Website:**  | %(url)s  |
+""")
+				continue
+
 			if args.long:
 				print package.fmtstr("""\
 --------------------------------------------------------------------------------
