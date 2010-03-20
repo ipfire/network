@@ -176,7 +176,8 @@ class Commandline(object):
 		# Set debugging mode
 		self.naoki.logging.debug(args.debug)
 
-		# XXX Set architecture
+		# Set architecture
+		arches.set(args.arch)
 
 	def __parse(self):
 		parser = Parser("root",
