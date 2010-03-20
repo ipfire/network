@@ -261,10 +261,6 @@ class PackageInfo(object):
 			os.path.basename(self.name)) + ".nm"
 
 	@property
-	def files(self):
-		return self._data.get("PKG_FILES").split(" ")
-
-	@property
 	def fingerprint(self):
 		return "%d" % os.stat(self.filename).st_mtime
 
@@ -337,7 +333,7 @@ class Package(object):
 		download(self.info.objects, logger=self.log)
 
 	def extract(self, dest):
-		files = [os.path.join(PACKAGESDIR, file) for file in self.info.package_files]
+		files = [os.path.join(PACKAGESDIR, file) for file in self.package_files]
 		if not files:
 			return
 

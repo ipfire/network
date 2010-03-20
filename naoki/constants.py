@@ -102,7 +102,6 @@ class Config(object):
 			"DISTRO_VERSION" : self["distro_version"],
 			"DISTRO_SLOGAN"  : self["distro_slogan"],
 			#
-			"CFLAGS"         : "-O2 -fomit-frame-pointer",
 			"PARALLELISMFLAGS" : "-j%d" % self["parallelism"],
 		}
 

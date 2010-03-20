@@ -31,7 +31,7 @@ OBJECTS = $(PKG_OBJECTS)
 
 PKG_NAME_REAL = $(notdir $(CURDIR))
 PKG_PACKAGES = $(PKG_NAME_REAL)
-PKG_FILES = $(foreach package,$(PKG_PACKAGES),$(call DO_PACKAGE_FILENAME,$(package)))
+PKG_PACKAGES_FILES = $(foreach package,$(PKG_PACKAGES),$(call DO_PACKAGE_FILENAME,$(package)))
 
 PKG_SUFFIX = -$(PKG_VER)-$(DISTRO_SNAME)$(DISTRO_EPOCH)-$(PKG_ARCH).$(PKG_REL).ipk
 
