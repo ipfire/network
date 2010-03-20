@@ -2,6 +2,7 @@
 
 import os
 import urlgrabber
+import urlgrabber.progress
 import urllib
 
 import chroot
