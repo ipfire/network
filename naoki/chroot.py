@@ -6,7 +6,6 @@ import os
 import random
 import stat
 
-import package
 import util
 from constants import *
 from exception import *
