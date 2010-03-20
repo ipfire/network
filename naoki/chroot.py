@@ -118,6 +118,7 @@ class Environment(object):
 				"CHROOT"         : "1",
 				"CFLAGS"         : self.arch["cflags"],
 				"CXXFLAGS"       : self.arch["cxxflags"],
+				"PKG_ARCH"       : self.arch["name"],
 			})
 
 			if os.path.exists(self.chrootPath("usr", "ccache")):
