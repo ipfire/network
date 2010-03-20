@@ -200,6 +200,7 @@ class Commandline(object):
 					parsers=[
 						Parser("download"),
 						Parser("build"),
+						Parser("tree"),
 					]),
 
 				# Package
