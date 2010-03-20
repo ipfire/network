@@ -116,6 +116,8 @@ class Environment(object):
 									 % { "arch" : self.arch["name"], },
 				"BUILDROOT"      : "/%s" % self.buildroot,
 				"CHROOT"         : "1",
+				"CFLAGS"         : self.arch["cflags"],
+				"CXXFLAGS"       : self.arch["cxxflags"],
 			})
 
 			if os.path.exists(self.chrootPath("usr", "ccache")):
