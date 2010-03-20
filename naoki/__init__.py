@@ -49,6 +49,7 @@ class Naoki(object):
 		actionmap = {
 			"build" : self.call_toolchain_build,
 			"download" : self.call_toolchain_download,
+			"tree" : self.call_toolchain_tree,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -62,6 +63,9 @@ class Naoki(object):
 		toolchain = chroot.Toolchain(arches.current["name"])
 
 		return toolchain.download()
+
+	def call_toolchain_tree(self, args):
+		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True))
 
 	def call_build(self, args):
 		force = True

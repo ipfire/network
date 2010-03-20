@@ -73,7 +73,7 @@ def find_package_name(name, toolchain=False):
 		if os.path.basename(package) == name:
 			return package
 
-def depsolve(packages, recursive=False):
+def depsolve(packages, recursive=False, toolchain=False):
 	deps = []
 	for package in packages:
 		if not package in deps:
@@ -100,7 +100,7 @@ def depsolve(packages, recursive=False):
 	deps.sort()
 	return deps
 
-def deptree(packages):
+def deptree(packages, toolchain=False):
 	ret = [packages]
 
 	while True:
@@ -122,9 +122,9 @@ def deptree(packages):
 
 	return ret
 
-def depsort(packages):
+def depsort(packages, toolchain=False):
 	ret = [] 
-	for l1 in deptree(packages):
+	for l1 in deptree(packages, toolchain=toolchain):
 		ret.extend(l1)
 	return ret
 
@@ -245,16 +245,19 @@ class PackageInfo(object):
 
 		return True
 
-	def _dependencies(self, s, recursive=False):
+	def _dependencies(self, s, recursive=False, toolchain=False):
 		c = s + "_CACHE"
 		if not self._data.has_key(c):
-			deps = parse_package(self._data.get(s).split(" "))
+			deps = parse_package(self._data.get(s).split(" "), toolchain=toolchain)
 			self._data.update({c : depsolve(deps, recursive)})
 
 		return self._data.get(c)
 
 	@property
 	def dependencies(self):
+		if self.__toolchain:
+			return self.dependencies_toolchain
+
 		return self._dependencies("PKG_DEPENDENCIES")
 
 	@property
@@ -281,7 +284,14 @@ class PackageInfo(object):
 
 	@property
 	def dependencies_all(self):
-		return depsolve(self.dependencies + self.dependencies_build, recursive=True)
+		deps = self.dependencies
+		if not self.__toolchain:
+			deps.extend(self.dependencies_build)
+		return depsolve(deps, recursive=True)
+
+	@property
+	def dependencies_toolchain(self):
+		return self._dependencies("PKG_TOOLCHAIN_DEPENDENCIES", toolchain=True)
 
 	@property
 	def description(self):
@@ -339,6 +349,10 @@ class PackageInfo(object):
 	@property
 	def version(self):
 		return self._data.get("PKG_VER")
+
+	@property
+	def __toolchain(self):
+		return self.repo.name == "toolchain"
 
 
 class Package(object):
