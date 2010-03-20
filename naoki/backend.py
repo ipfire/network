@@ -41,7 +41,8 @@ def parse_package_info(names, toolchain=False):
 def parse_package(names, toolchain=False, naoki=None):
 	packages = parse_package_info(names, toolchain)
 
-	return [Package(package.name, naoki=naoki) for package in packages]
+	return [Package(package.name, naoki=naoki, toolchain=toolchain) \
+		for package in packages]
 
 def get_package_names(toolchain=False):
 	if not __cache["package_names"]:
@@ -341,8 +342,8 @@ class PackageInfo(object):
 
 
 class Package(object):
-	def __init__(self, name, naoki):
-		self.info = find_package_info(name)
+	def __init__(self, name, naoki, toolchain=False):
+		self.info = find_package_info(name, toolchain)
 		self.naoki = naoki
 
 		#self.log.debug("Initialized package object %s" % name)
@@ -379,7 +380,7 @@ class Package(object):
 
 def get_repositories(toolchain=False):
 	if toolchain:
-		return Repository("toolchain")
+		return [Repository("toolchain")]
 
 	repos = []
 	for repo in os.listdir(PKGSDIR):
