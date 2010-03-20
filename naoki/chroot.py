@@ -6,7 +6,7 @@ import os
 import random
 import stat
 
-import package
+import backend
 import util
 from constants import *
 from exception import *
@@ -117,11 +117,16 @@ class Environment(object):
 									 % { "arch" : self.arch["name"], },
 				"BUILDROOT"      : "/%s" % self.buildroot,
 				"CHROOT"         : "1",
+				"CFLAGS"         : self.arch["cflags"],
+				"CXXFLAGS"       : self.arch["cxxflags"],
+				"PKG_ARCH"       : self.arch["name"],
 			})
 
-			if os.path.exists(self.chrootPath("usr", "ccache")):
+			ccache_path = os.path.join("tools_%s" % self.arch["name"],
+				"usr", "ccache", "bin")
+			if os.path.exists(self.chrootPath(ccache_path)):
 				env.update({
-					"PATH" : "/usr/ccache/bin:%s" % env["PATH"],
+					"PATH" : "/%s:%s" % (ccache_path, env["PATH"]),
 					"CCACHE_DIR" : "/usr/src/ccache",
 				})
 
@@ -329,9 +334,11 @@ class Toolchain(object):
 	def build(self):
 		self.log.info("Building toolchain...")
 
-		packages = package.depsort(package.list(toolchain=True))
+		packages = backend.get_package_names(toolchain=True)
+		packages = backend.parse_package(packages, toolchain=True)
+		packages = backend.depsort(packages)
 		for pkg in packages:
-			if pkg.isBuilt:
+			if os.path.exists(os.path.join(self.path, pkg.name)):
 				continue
 			self.build_package(pkg)
 		self.compress()

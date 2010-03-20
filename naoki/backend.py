@@ -2,6 +2,7 @@
 
 import os
 import urlgrabber
+import urlgrabber.progress
 import urllib
 
 import chroot
@@ -40,7 +41,8 @@ def parse_package_info(names, toolchain=False):
 def parse_package(names, toolchain=False, naoki=None):
 	packages = parse_package_info(names, toolchain)
 
-	return [Package(package.name, naoki=naoki) for package in packages]
+	return [Package(package.name, naoki=naoki, toolchain=toolchain) \
+		for package in packages]
 
 def get_package_names(toolchain=False):
 	if not __cache["package_names"]:
@@ -167,6 +169,8 @@ class PackageInfo(object):
 		self._name = name
 		self.repo = repo
 
+		self.arch = arches.current["name"]
+
 	#def __cmp__(self, other):
 	#	return cmp(self.name, other.name)
 
@@ -187,7 +191,10 @@ class PackageInfo(object):
 	def fetch(self):
 		env = os.environ.copy()
 		env.update(config.environment)
-		env["PKGROOT"] = PKGSDIR
+		env.update({
+			"PKG_ARCH" : self.arch,
+			"PKGROOT" : PKGSDIR,
+		})
 		output = util.do("make -f %s" % self.filename, shell=True,
 			cwd=os.path.join(PKGSDIR, self.repo.name, self.name), returnOutput=1, env=env)
 
@@ -214,6 +221,7 @@ class PackageInfo(object):
 			"description" : self.description,
 			"filename"    : self.filename,
 			"fingerprint" : self.fingerprint,
+			"files"       : self.files,
 			"group"       : self.group,
 			"license"     : self.license,
 			"maintainer"  : self.maintainer,
@@ -224,6 +232,18 @@ class PackageInfo(object):
 			"summary"     : self.summary,
 			"version"     : self.version,
 		}
+
+	@property
+	def buildable(self):
+		return self.dependencies_unbuilt == []
+
+	@property
+	def built(self):
+		for file in self.package_files:
+			if not os.path.exists(os.path.join(PACKAGESDIR, file)):
+				return False
+
+		return True
 
 	def _dependencies(self, s, recursive=False):
 		c = s + "_CACHE"
@@ -240,6 +260,24 @@ class PackageInfo(object):
 	@property
 	def dependencies_build(self):
 		return self._dependencies("PKG_BUILD_DEPENDENCIES")
+
+	@property
+	def dependencies_built(self):
+		ret = []
+		for dep in self.dependencies_all:
+			if dep.built:
+				ret.append(dep)
+
+		return ret
+
+	@property
+	def dependencies_unbuilt(self):
+		ret = []
+		for dep in self.dependencies_all:
+			if not dep.built:
+				ret.append(dep)
+
+		return ret
 
 	@property
 	def dependencies_all(self):
@@ -304,8 +342,8 @@ class PackageInfo(object):
 
 
 class Package(object):
-	def __init__(self, name, naoki):
-		self.info = find_package_info(name)
+	def __init__(self, name, naoki, toolchain=False):
+		self.info = find_package_info(name, toolchain)
 		self.naoki = naoki
 
 		#self.log.debug("Initialized package object %s" % name)
@@ -327,7 +365,7 @@ class Package(object):
 		download(self.info.objects, logger=self.log)
 
 	def extract(self, dest):
-		files = [os.path.join(PACKAGESDIR, file) for file in self.info.package_files]
+		files = [os.path.join(PACKAGESDIR, file) for file in self.package_files]
 		if not files:
 			return
 
@@ -342,7 +380,7 @@ class Package(object):
 
 def get_repositories(toolchain=False):
 	if toolchain:
-		return Repository("toolchain")
+		return [Repository("toolchain")]
 
 	repos = []
 	for repo in os.listdir(PKGSDIR):

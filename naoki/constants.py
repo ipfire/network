@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import ConfigParser
+import math
 import os
 
 BASEDIR = os.getcwd()
@@ -20,6 +21,19 @@ PATCHESDIR = os.path.join(CACHEDIR, "patches")
 
 CONFIGFILE = os.path.join(CONFIGDIR, "naoki.conf")
 
+def calc_parallelism():
+	"""
+		Calculate how many processes to run
+		at the same time.
+
+		We take the log10(number of processors) * factor
+	"""
+	num = os.sysconf("SC_NPROCESSORS_CONF")
+	if num == 1:
+		return 2
+	else:
+		return int(round(math.log10(num) * 26))
+
 class Config(object):
 	_items = {
 		"toolchain" : False,
@@ -28,6 +42,7 @@ class Config(object):
 			"core/glibc",
 		],
 		"nice_level" : 0,
+		"parallelism" : calc_parallelism(),
 		#
 		# Cleanup settings
 		"cleanup_on_failure" : False,
@@ -78,7 +93,7 @@ class Config(object):
 	def environment(self):
 		return {
 			"HOME"           : os.environ.get("HOME", "/root"),
-			"TERM"           : os.environ["TERM"],
+			"TERM"           : os.environ.get("TERM", ""),
 			"PS1"            : os.environ.get("PS1", "\u:\w\$ "),
 			#
 			"DISTRO_NAME"    : self["distro_name"],
@@ -87,8 +102,7 @@ class Config(object):
 			"DISTRO_VERSION" : self["distro_version"],
 			"DISTRO_SLOGAN"  : self["distro_slogan"],
 			#
-			"CFLAGS"         : "-O2 -fomit-frame-pointer",
-			"PARALLELISMFLAGS" : "-j6",
+			"PARALLELISMFLAGS" : "-j%d" % self["parallelism"],
 		}
 
 
