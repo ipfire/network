@@ -122,7 +122,8 @@ Release       : %(release)s
 Maintainer    : %(maintainer)s
 License       : %(license)s
 
-Files         : %(objects)s
+Files         : %(files)s
+Objects       : %(objects)s
 Patches       : %(patches)s
 --------------------------------------------------------------------------------\
 """)

@@ -167,6 +167,8 @@ class PackageInfo(object):
 		self._name = name
 		self.repo = repo
 
+		self.arch = arches.current["name"]
+
 	#def __cmp__(self, other):
 	#	return cmp(self.name, other.name)
 
@@ -187,7 +189,10 @@ class PackageInfo(object):
 	def fetch(self):
 		env = os.environ.copy()
 		env.update(config.environment)
-		env["PKGROOT"] = PKGSDIR
+		env.update({
+			"PKG_ARCH" : self.arch,
+			"PKGROOT" : PKGSDIR,
+		})
 		output = util.do("make -f %s" % self.filename, shell=True,
 			cwd=os.path.join(PKGSDIR, self.repo.name, self.name), returnOutput=1, env=env)
 
@@ -214,6 +219,7 @@ class PackageInfo(object):
 			"description" : self.description,
 			"filename"    : self.filename,
 			"fingerprint" : self.fingerprint,
+			"files"       : self.files,
 			"group"       : self.group,
 			"license"     : self.license,
 			"maintainer"  : self.maintainer,
@@ -253,6 +259,10 @@ class PackageInfo(object):
 	def filename(self):
 		return os.path.join(PKGSDIR, self.repo.name, self.name,
 			os.path.basename(self.name)) + ".nm"
+
+	@property
+	def files(self):
+		return self._data.get("PKG_FILES").split(" ")
 
 	@property
 	def fingerprint(self):
