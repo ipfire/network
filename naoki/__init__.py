@@ -72,7 +72,19 @@ class Naoki(object):
 		else:
 			package_names = args.packages
 
-		packages = backend.parse_package(package_names, naoki=self)
+		packages = []
+		for package in backend.parse_package(package_names, naoki=self):
+			if not force and package.built:
+				self.log.warn("Skipping %s which was already built" % package.name)
+				continue
+
+			if not package.buildable:
+				self.log.error("%s is currently not buildable" % package.name)
+				self.log.error("  The package requires these packages to be built first: %s" \
+					% [dep.name for dep in package.dependencies_unbuilt])
+				continue
+
+			packages.append(package)
 
 		if len(packages) >= 2:
 			packages_sorted = backend.depsort(packages)

@@ -232,6 +232,18 @@ class PackageInfo(object):
 			"version"     : self.version,
 		}
 
+	@property
+	def buildable(self):
+		return self.dependencies_unbuilt == []
+
+	@property
+	def built(self):
+		for file in self.package_files:
+			if not os.path.exists(os.path.join(PACKAGESDIR, file)):
+				return False
+
+		return True
+
 	def _dependencies(self, s, recursive=False):
 		c = s + "_CACHE"
 		if not self._data.has_key(c):
@@ -247,6 +259,24 @@ class PackageInfo(object):
 	@property
 	def dependencies_build(self):
 		return self._dependencies("PKG_BUILD_DEPENDENCIES")
+
+	@property
+	def dependencies_built(self):
+		ret = []
+		for dep in self.dependencies_all:
+			if dep.built:
+				ret.append(dep)
+
+		return ret
+
+	@property
+	def dependencies_unbuilt(self):
+		ret = []
+		for dep in self.dependencies_all:
+			if not dep.built:
+				ret.append(dep)
+
+		return ret
 
 	@property
 	def dependencies_all(self):
