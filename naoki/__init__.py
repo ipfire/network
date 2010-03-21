@@ -80,21 +80,24 @@ class Naoki(object):
 		for package in backend.parse_package(package_names, naoki=self):
 			if not force and package.built:
 				self.log.warn("Skipping %s which was already built" % package.name)
-				continue
-
-			if not package.buildable:
-				self.log.error("%s is currently not buildable" % package.name)
-				self.log.error("  The package requires these packages to be built first: %s" \
-					% [dep.name for dep in package.dependencies_unbuilt])
-				continue
 
 			packages.append(package)
 
 		if len(packages) >= 2:
 			packages_sorted = backend.depsort(packages)
-			if packages_sorted == packages:
+			if packages_sorted != packages:
 				self.log.warn("Packages were resorted for build: %s" % packages_sorted)
-			packages = packages_sorted
+				packages = packages_sorted
+
+		for i in range(0, len(packages)):
+			package = packages[i]
+			if not package.buildable:
+				for dep in package.dependencies_unbuilt:
+					if not dep in packages[:i]:
+						self.log.error("%s is currently not buildable" % package.name)
+						self.log.error("  The package requires these packages to be built first: %s" \
+							% [dep.name for dep in package.dependencies_unbuilt])
+						return
 
 		for package in packages:
 			package.download()
