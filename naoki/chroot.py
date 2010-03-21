@@ -85,6 +85,7 @@ class Environment(object):
 
 		self._setupDev()
 		self._setupUsers()
+		self._setupDns()
 
 		self.toolchain.extract(self.chrootPath())
 
@@ -219,6 +220,22 @@ class Environment(object):
 			if line.startswith("root") or line.startswith("nobody"):
 				g.write("%s" % line)
 		g.close()
+		f.close()
+
+	def _setupDns(self):
+		self.log.debug("Setting up DNS")
+		nameservers = []
+		f = open("/etc/resolv.conf")
+		for line in f.readlines():
+			if line.startswith("nameserver"):
+				nameservers.append(line.split(" ")[-1])
+		f.close()
+
+		self.log.debug("Using nameservers: %s" % nameservers)
+
+		f = open(self.chrootPath("etc", "resolv.conf"), "w")
+		for nameserver in nameservers:
+			f.write("nameserver %s" % nameserver)
 		f.close()
 
 	def _mountall(self):
