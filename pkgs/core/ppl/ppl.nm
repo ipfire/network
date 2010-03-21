@@ -1,0 +1,68 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = ppl
+PKG_VER        = 0.10.2
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = Development/Libraries
+PKG_URL        = http://www.cs.unipr.it/ppl/
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = The Parma Polyhedra Library: a library of numerical abstractions.
+
+PKG_BUILD_DEPS+= autoconf automake m4
+PKG_DEPS      += gmp
+
+define PKG_DESCRIPTION
+	The Parma Polyhedra Library (PPL) is a library for the manipulation of \
+	(not necessarily closed) convex polyhedra and other numerical \
+	abstractions.  The applications of convex polyhedra include program \
+	analysis, optimized compilation, integer and combinatorial \
+	optimization and statistical data-editing.  The Parma Polyhedra \
+	Library comes with several user friendly interfaces, is fully dynamic \
+	(available virtual memory is the only limitation to the dimension of \
+	anything), written in accordance to all the applicable standards, \
+	exception-safe, rather efficient, thoroughly documented, and free \
+	software.  This package provides all what is necessary to run \
+	applications using the PPL through its C and C++ interfaces.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+	--enable-interfaces="c cxx" \
+	--disable-debugging
+
+PARALLELISMFLAGS =
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && autoreconf -f
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
