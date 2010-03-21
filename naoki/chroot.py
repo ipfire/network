@@ -155,15 +155,23 @@ class Environment(object):
 		util.mkdir(self.chrootPath("dev", "pts"))
 		util.mkdir(self.chrootPath("dev", "shm"))
 		prevMask = os.umask(0000)
-		for i in (
-				(stat.S_IFCHR | 0666, os.makedev(1, 3), "dev/null"),
-				(stat.S_IFCHR | 0666, os.makedev(1, 7), "dev/full"),
-				(stat.S_IFCHR | 0666, os.makedev(1, 5), "dev/zero"),
-				(stat.S_IFCHR | 0666, os.makedev(1, 8), "dev/random"),
-				(stat.S_IFCHR | 0444, os.makedev(1, 9), "dev/urandom"),
-				(stat.S_IFCHR | 0666, os.makedev(5, 0), "dev/tty"),
-				(stat.S_IFCHR | 0600, os.makedev(5, 1), "dev/console")
-			):
+
+		kernel_version = os.uname()[2]
+		devNodes = [
+			(stat.S_IFCHR | 0666, os.makedev(1, 3), "dev/null"),
+			(stat.S_IFCHR | 0666, os.makedev(1, 7), "dev/full"),
+			(stat.S_IFCHR | 0666, os.makedev(1, 5), "dev/zero"),
+			(stat.S_IFCHR | 0666, os.makedev(1, 8), "dev/random"),
+			(stat.S_IFCHR | 0444, os.makedev(1, 9), "dev/urandom"),
+			(stat.S_IFCHR | 0666, os.makedev(5, 0), "dev/tty"),
+			(stat.S_IFCHR | 0600, os.makedev(5, 1), "dev/console")
+		]
+
+		# make device node for el4 and el5
+		if kernel_version < "2.6.19":
+			devNodes.append((stat.S_IFCHR | 0666, os.makedev(5, 2), "dev/ptmx"))
+
+		for i in devNodes:
 			# create node
 			os.mknod(self.chrootPath(i[2]), i[0], i[1])
 
@@ -171,6 +179,10 @@ class Environment(object):
 		os.symlink("/proc/self/fd/1", self.chrootPath("dev", "stdout"))
 		os.symlink("/proc/self/fd/2", self.chrootPath("dev", "stderr"))
 		os.symlink("/proc/self/fd", self.chrootPath("dev", "fd"))
+
+		if kernel_version >= "2.6.19":
+			os.symlink("/dev/pts/ptmx", self.chrootPath("dev", "ptmx"))
+
 		os.umask(prevMask)
 
 		# mount/umount
@@ -181,7 +193,7 @@ class Environment(object):
 				self.umountCmds.append(devUnmtCmd)
 
 		mountopt = "gid=%d,mode=0620,ptmxmode=0666" % grp.getgrnam("tty").gr_gid
-		if os.uname()[2] >= "2.6.29":
+		if kernel_version >= "2.6.29":
 			mountopt += ",newinstance"
 
 		for devMntCmd in (
@@ -189,13 +201,6 @@ class Environment(object):
 				"mount -n -t tmpfs naoki_chroot_shmfs %s" % self.chrootPath("dev", "shm")):
 			if devMntCmd not in self.mountCmds:
 				self.mountCmds.append(devMntCmd)
-
-	def _checkDev(self):
-		if os.path.exists(self.chrootPath("dev", "pts", "ptmx")):
-			os.symlink("/dev/pts/ptmx", self.chrootPath("dev", "ptmx"))
-		else:
-			os.mknod(self.chrootPath("dev", "ptmx"), stat.S_IFCHR | 0666, os.makedev(5, 2))
-			os.chmod(self.chrootPath("dev", "ptmx"), 666)
 
 	def _setupUsers(self):
 		## XXX Could be done better
@@ -220,7 +225,6 @@ class Environment(object):
 		"""mount 'normal' fs like /dev/ /proc/ /sys"""
 		for cmd in self.mountCmds:
 			util.do(cmd, shell=True)
-		self._checkDev()
 
 	def _umountall(self):
 		"""umount all mounted chroot fs."""
