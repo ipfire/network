@@ -39,7 +39,7 @@ define PKG_DESCRIPTION
 	tools for the manipulation of object code in various object file formats.
 endef
 
-PKG_BUILD_DEPS = glibc
+PKG_BUILD_DEPS = glibc dejagnu
 PKG_DEPS      += zlib
 
 PKG_TARBALL   += $(THISAPP).tar.bz2
@@ -70,11 +70,11 @@ define STAGE_BUILD
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr $(PARALLELISMFLAGS)
 endef
 
-define STAGE_TEST
+#define STAGE_TEST
 	# Apply a sed substitution to prevent a testsuite error:
-	cd $(DIR_APP) && sed -i 's/getline/get_line/' libiberty/testsuite/test-demangle.c
-	cd $(DIR_SRC)/binutils-build && make check
-endef
+	#cd $(DIR_APP) && sed -i 's/getline/get_line/' libiberty/testsuite/test-demangle.c
+	#cd $(DIR_SRC)/binutils-build && make check
+#endef
 
 define STAGE_INSTALL
 	cd $(DIR_SRC)/binutils-build && make tooldir=/usr install DESTDIR=$(BUILDROOT)
