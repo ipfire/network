@@ -34,7 +34,6 @@ PKG_URL        = http://www.mpfr.org/
 PKG_LICENSE    = LGPLv2+ and GPLv2+ and GFDL
 PKG_SUMMARY    = A C library for multiple-precision floating-point computations.
 
-PKG_BUILD_DEPS:= $(filter-out gcc,$(PKG_BUILD_DEPS))
 PKG_DEPS      += gmp
 
 define PKG_DESCRIPTION
