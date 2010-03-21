@@ -40,7 +40,7 @@ define PKG_DESCRIPTION
 endef
 
 PKG_BUILD_DEPS =
-PKG_DEPS      += binutils glibc gmp kernel-headers libffi mpfr
+PKG_DEPS      += binutils cloog glibc gmp kernel-headers libffi mpfr ppl
 
 CFLAGS         = -D__USE_XOPEN2K8 -pipe
 CXXFLAGS       =
@@ -50,7 +50,7 @@ ifeq "$(MACHINE)" "i586"
 endif
 
 ifeq "$(MACHINE)" "x86_64"
-	CONFIGURE_ARGS = --without-cloog --without-ppl --disable-multilib
+	CONFIGURE_ARGS = --disable-multilib
 else
 	CONFIG_CPU = --with-cpu=$(TARGET_MACHINE) --with-arch=$(TARGET_MACHINE)
 endif
