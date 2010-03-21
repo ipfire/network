@@ -170,6 +170,7 @@ class Environment(object):
 		os.symlink("/proc/self/fd/0", self.chrootPath("dev", "stdin"))
 		os.symlink("/proc/self/fd/1", self.chrootPath("dev", "stdout"))
 		os.symlink("/proc/self/fd/2", self.chrootPath("dev", "stderr"))
+		os.symlink("/proc/self/fd", self.chrootPath("dev", "fd"))
 		os.umask(prevMask)
 
 		# mount/umount
