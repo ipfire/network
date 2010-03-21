@@ -218,10 +218,12 @@ class PackageInfo(object):
 	@property
 	def all(self):
 		return {
+			"build_deps"  : [dep.name for dep in self.dependencies_build],
+			"deps"        : [dep.name for dep in self.dependencies],
 			"description" : self.description,
 			"filename"    : self.filename,
 			"fingerprint" : self.fingerprint,
-			"files"       : self.files,
+			"files"       : self.package_files,
 			"group"       : self.group,
 			"license"     : self.license,
 			"maintainer"  : self.maintainer,
@@ -230,6 +232,7 @@ class PackageInfo(object):
 			"patches"     : self.patches,
 			"release"     : self.release,
 			"summary"     : self.summary,
+			"url"         : self.url,
 			"version"     : self.version,
 		}
 
@@ -345,6 +348,10 @@ class PackageInfo(object):
 	@property
 	def summary(self):
 		return self._data.get("PKG_SUMMARY")
+
+	@property
+	def url(self):
+		return self._data.get("PKG_URL")
 
 	@property
 	def version(self):
