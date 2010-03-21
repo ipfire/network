@@ -34,8 +34,6 @@ PKG_URL        = http://gmplib.org/
 PKG_LICENSE    = LGPLv3+
 PKG_SUMMARY    = A GNU arbitrary precision library.
 
-PKG_BUILD_DEPS:= $(filter-out gcc,$(PKG_BUILD_DEPS))
-
 define PKG_DESCRIPTION
 	The gmp package contains GNU MP, a library for arbitrary precision \
 	arithmetic, signed integers operations, rational numbers and floating \
