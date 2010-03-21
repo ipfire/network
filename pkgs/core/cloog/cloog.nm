@@ -1,0 +1,55 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = cloog
+PKG_VER        = 0.15.8
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.cloog.org
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = The Chunky Loop Generator.
+
+PKG_BUILD_DEPS+= autoconf automake m4
+PKG_DEPS      += gmp ppl
+
+define PKG_DESCRIPTION
+	CLooG is a software which generates loops for scanning Z-polyhedra. That is, \
+	CLooG finds the code or pseudo-code where each integral point of one or more \
+	parametrized polyhedron or parametrized polyhedra union is reached. CLooG is \
+	designed to avoid control overhead and to produce a very efficient code.
+endef
+
+PKG_TARBALL    = $(PKG_NAME)-ppl-$(PKG_VER).tar.gz
+DIR_APP        = $(DIR_SRC)/$(PKG_NAME)-ppl-$(PKG_VER)
+
+CONFIGURE_OPTIONS += \
+	--with-ppl
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
