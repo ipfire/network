@@ -1,0 +1,15 @@
+diff -Nur a/ld/testsuite/ld-elf/elf.exp b/ld/testsuite/ld-elf/elf.exp
+--- a/ld/testsuite/ld-elf/elf.exp	2010-03-17 10:59:03.000000000 +0100
++++ b/ld/testsuite/ld-elf/elf.exp	2010-03-17 11:00:31.000000000 +0100
+@@ -70,11 +70,8 @@
+ 
+ set array_tests {
+     {"preinit array" "" "" {preinit.c} "preinit" "preinit.out"}
+-    {"static preinit array" "-static" "" {preinit.c} "preinit" "preinit.out"}
+     {"init array" "" "" {init.c} "init" "init.out"}
+-    {"static init array" "-static" "" {init.c} "init" "init.out"}
+     {"fini array" "" "" {fini.c} "fini" "fini.out"}
+-    {"static fini array" "-static" "" {fini.c} "fini" "fini.out"}
+ }
+ 
+ # NetBSD ELF systems do not currently support the .*_array sections.
