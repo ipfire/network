@@ -80,6 +80,7 @@ class Naoki(object):
 		for package in backend.parse_package(package_names, naoki=self):
 			if not force and package.built:
 				self.log.warn("Skipping %s which was already built" % package.name)
+				continue
 
 			packages.append(package)
 
