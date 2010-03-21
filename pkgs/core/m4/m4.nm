@@ -45,10 +45,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-CONFIGURE_ENVIRONMENT += \
-	CPPFLAGS="-D_GNU_SOURCE" \
-	gl_cv_func_printf_directive_n=no \
-
 define STAGE_TEST
 	cd $(DIR_APP) && make check
 endef
