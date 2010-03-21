@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = paxtest
-PKG_VER        = 0.9.7-pre4
+PKG_VER        = 0.9.9
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -39,18 +39,18 @@ define PKG_DESCRIPTION
 	and checks if it all works correctly.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_TARBALL    = $(THISAPP).tgz
 
 define QUALITY_AGENT_WHITELIST_EXECSTACK
 	/usr/lib/paxtest
 endef
 
 define STAGE_BUILD
-	cd $(DIR_APP) && make -f Makefile.generic RUNDIR=/usr/lib/paxtest \
+	cd $(DIR_APP) && make -f Makefile.psm RUNDIR=/usr/lib/paxtest \
 		$(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
-	cd $(DIR_APP) && make -f Makefile.generic install DESTDIR=$(BUILDROOT) \
+	cd $(DIR_APP) && make -f Makefile.psm install DESTDIR=$(BUILDROOT) \
 		RUNDIR=/usr/lib/paxtest BINDIR=/usr/bin
 endef
