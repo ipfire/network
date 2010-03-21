@@ -55,6 +55,10 @@ CONFIGURE_OPTIONS += \
 	--bindir=/bin \
 	--libexecdir=/usr/sbin
 
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -i /SIGPIPE/d src/tar.c
+endef
+
 define STAGE_TEST
 	cd $(DIR_APP) && sed -i '35 i AT_UNPRIVILEGED_PREREQ' tests/remfiles01.at
 	cd $(DIR_APP) && make check
