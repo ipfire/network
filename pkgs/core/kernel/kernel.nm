@@ -44,7 +44,7 @@ endef
 CFLAGS     =
 CXXFLAGS   =
 
-LOCALVERSION   = -ipfire1
+LOCALVERSION   = -$(DISTRO_SNAME)$(PKG_REL)
 FULLVER        = $(PKG_VER)$(LOCALVERSION)
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
@@ -54,7 +54,7 @@ PKG_TARBALL    = $(THISAPP).tar.bz2
 ###############################################################################
 
 define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && echo "$(LOCALVERSION)" > localversion-ipfire
+	cd $(DIR_APP) && echo "$(LOCALVERSION)" > localversion-$(DISTRO_SNAME)
 	rm -f $(DIR_APP)/localversion-grsec
 
 	cd $(DIR_APP) && sed -e "s/^HOSTCFLAGS.*=.*/& -fPIC/g" -i Makefile
