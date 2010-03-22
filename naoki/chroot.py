@@ -238,6 +238,11 @@ class Environment(object):
 			f.write("nameserver %s" % nameserver)
 		f.close()
 
+		self.log.debug("Creating record for localhost")
+		f = open(self.chrootPath("etc", "hosts"), "w")
+		f.write("127.0.0.1 localhost\n")
+		f.close()
+
 	def _mountall(self):
 		"""mount 'normal' fs like /dev/ /proc/ /sys"""
 		for cmd in self.mountCmds:
