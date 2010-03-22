@@ -43,6 +43,14 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-STAGE_INSTALL_TARGET += \
-	bindir=$(BUILDROOT)/sbin \
-	mandir=$(BUILDROOT)/usr/share
+###############################################################################
+# Installation Details
+###############################################################################
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make bindir=$(BUILDROOT)/sbin mandir=$(BUILDROOT)/usr/share install
+endef
