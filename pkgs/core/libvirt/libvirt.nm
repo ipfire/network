@@ -35,7 +35,7 @@ PKG_LICENSE    = LGPLv2.1+
 PKG_SUMMARY    = A library for controlling VMs.
 
 PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += avahi curl cyrus-sasl gnutls libssh2 libxml2 lvm2 readline
+PKG_DEPS      += avahi curl cyrus-sasl gnutls libssh2 libxml2 lvm2 readline udev
 
 define PKG_DESCRIPTION
 	A toolkit to interact with the virtualization capabilities of recent \
@@ -46,4 +46,11 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
 	--with-qemu \
-	--without-xen
+	--without-esx \
+	--without-hal \
+	--without-lxc \
+	--without-openvz \
+	--without-polkit \
+	--without-uml \
+	--without-vbox \
+	--without-xen \
