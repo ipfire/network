@@ -48,6 +48,11 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
+define STAGE_PREPARE_CMDS
+	# Overwrite version
+	cd $(DIR_APP) && echo "1.0.0" > VERSION
+endef
+
 define STAGE_INSTALL
 	-mkdir -pv $(BUILDROOT)/usr/bin
 	cd $(DIR_APP) && make install install-shared-so DESTDIR=$(BUILDROOT)
