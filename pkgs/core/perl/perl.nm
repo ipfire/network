@@ -55,10 +55,6 @@ define QUALITY_AGENT_WHITELIST_RPATH
 	/usr/lib/perl*/auto/Compress/Raw/Zlib/Zlib.so
 endef
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
 endef
@@ -69,9 +65,15 @@ define STAGE_BUILD
 							-e "s|LIB\s*= ./zlib-src|LIB = /usr/lib|" \
 							ext/Compress-Raw-Zlib/config.in
 
-	cd $(DIR_APP) && ./configure.gnu --prefix=/usr \
-		-Dman1dir=/usr/share/man/man1 -Dman3dir=/usr/share/man/man3 \
+	cd $(DIR_APP) && ./configure.gnu -Dprefix=/usr \
+		-Dman1dir=/usr/share/man/man1 \
+		-Dman3dir=/usr/share/man/man3 \
 		-Dpager="/usr/bin/less -isR"
 
 	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
 endef
+
+define STAGE_TEST
+	cd $(DIR_APP) && make test
+endef
+
