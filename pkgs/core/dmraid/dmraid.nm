@@ -45,7 +45,10 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
 DIR_APP        = $(DIR_SRC)/$(PKG_NAME)/$(PKG_VER)
-PARALLELISMFLAGS =
+
+PARALLELISMFLAGS = # Disabled
+
+STAGE_INSTALL_TARGETS += sbindir=$(BUILDROOT)/sbin
 
 CONFIGURE_OPTIONS += \
 	--sbindir=/sbin \
@@ -57,8 +60,7 @@ define STAGE_BUILD_CMDS
 	cd $(DIR_APP) && make -C lib libdmraid.so
 endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) sbindir=$(BUILDROOT)/sbin
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/{,usr}/lib
 	cd $(DIR_APP) && install -v -m 755 lib/libdmraid.so \
 		$(BUILDROOT)/lib/libdmraid.so.$(PKG_VER)

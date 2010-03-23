@@ -44,7 +44,8 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += --sysconfdir=/etc \
+CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc \
 	--with-srv-lease-file=/var/lib/dhcpd/dhcpd.leases \
 	--with-cli-lease-file=/var/lib/dhclient/dhclient.leases \
 	--with-srv-pid-file=/var/run/dhcpd.pid \
