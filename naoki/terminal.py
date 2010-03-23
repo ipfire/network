@@ -21,10 +21,12 @@ class NameSpace(dict):
 
 
 class Parser(object):
-	def __init__(self, name, arguments=[], parsers=[]):
+	def __init__(self, name, arguments=[], parsers=[], **kwargs):
 		self.name = name
 		self.arguments = arguments
 		self.parsers = parsers
+
+		self._help = kwargs.get("help", "No help available")
 
 		self.subparser = None
 
@@ -70,22 +72,65 @@ class Parser(object):
 
 		return ret
 
+	@property
+	def help_line(self):
+		ret = ""
+		for argument in self.arguments:
+			ret += " %s" % argument.help_line
+
+		if self.parsers:
+			ret += " <command ...>"
+
+		return ret
+
+	def help(self, indent=0):
+		ret = self.name
+
+		help_line = self.help_line
+		if help_line:
+			ret += self.help_line + "\n"
+			if self._help:
+				ret += "\n  " + self._help + "\n"
+		else:
+			ret += " - " + self._help + "\n"
+
+		if self.arguments:
+			ret += "\n"
+			for argument in sorted(self.arguments):
+				ret += "  %15s  | %s\n" % (", ".join(argument.args), argument.help)
+			ret += "\n"
+
+		if self.parsers:
+			ret += "\n"
+			for parser in self.parsers:
+				ret += parser.help(indent=indent + 4)
+
+		indent_string = " " * 4
+		return indent_string.join(["%s\n" % line for line in ret.split("\n")])
+
 
 class _Argument(object):
 	DEFAULT_HELP = "No help available"
 
 	def __init__(self, name, args, **kwargs):
 		self.name = name
-		self.args = args
+		self.args = sorted(args, reverse=True, key=str.__len__)
 		self.help = kwargs.get("help", self.DEFAULT_HELP)
 
 		self._parsed = False
 		self._parsed_args = []
 
+	def __cmp__(self, other):
+		return cmp(self.name, other.name)
+
 	def parse(self, args):
 		raise NotImplementedError
 
 	def value(self):
+		raise NotImplementedError
+
+	@property
+	def help_line(self):
 		raise NotImplementedError
 
 
@@ -109,12 +154,19 @@ class Option(_Argument):
 
 		return False
 
+	@property
+	def help_line(self):
+		return "[%s]" % ", ".join(self.args)
+
 
 class Choice(_Argument):
 	def __init__(self, *args, **kwargs):
 		_Argument.__init__(self, *args, **kwargs)
 
 		self.choices = kwargs.get("choices", [])
+		self.choices.sort()
+
+		self.help += " [%s]" % ", ".join(self.choices)
 
 	def parse(self, args):
 		self._parsed = True
@@ -144,6 +196,10 @@ class Choice(_Argument):
 
 		return None
 
+	@property
+	def help_line(self):
+		return "[%s %s]" % (", ".join(self.args), self.name.upper())
+
 
 class List(_Argument):
 	def __init__(self, name, **kwargs):
@@ -157,6 +213,11 @@ class List(_Argument):
 
 	def value(self):
 		return self._parsed_args
+
+	@property
+	def help_line(self):
+		name = self.name[:-1] + " "
+		return "[" + name * 2 + "...]"
 
 
 class Commandline(object):
@@ -180,7 +241,8 @@ class Commandline(object):
 		arches.set(args.arch)
 
 	def __parse(self):
-		parser = Parser("root",
+		parser = Parser(sys.argv[0],
+			help="Global help",
 			arguments=[
 				Option("help",  ["-h", "--help"],  help="Show help text"),
 				Option("quiet", ["-q", "--quiet"], help="Set quiet mode"),
@@ -191,67 +253,78 @@ class Commandline(object):
 			parsers=[
 				# Build
 				Parser("build",
+					help="Primary build command",
 					arguments=[
-						List("packages"),
+						List("packages", help="Give a list of packages to build or say 'all'"),
 					]),
 
 				# Toolchain
 				Parser("toolchain",
 					parsers=[
-						Parser("download"),
-						Parser("build"),
-						Parser("tree"),
+						Parser("download", help="Download a toolchain"),
+						Parser("build", help="Build the toolchain"),
+						Parser("tree", help="Show package tree of toolchain"),
 					]),
 
 				# Package
 				Parser("package",
 					parsers=[
 						Parser("info",
+							help="Show detailed information about given packages",
 							arguments=[
-								Option("long", ["-l", "--long"]),
-								Option("machine", ["--machine"]),
-								Option("wiki", ["--wiki"]),
+								Option("long", ["-l", "--long"], help="Show long list of information"),
+								Option("machine", ["--machine"], help="Output in machine parseable format"),
+								Option("wiki", ["--wiki"], help="Output in wiki format"),
 								List("packages"),
 							]),
-						Parser("tree"),
+						Parser("tree", help="Show package tree"),
 						Parser("list",
+							help="Show package list",
 							arguments=[
-								Option("long", ["-l", "--long"]),
-								Option("unbuilt", ["-u", "--unbuilt"]),
-								Option("built", ["-b", "--built"]),
+								Option("long", ["-l", "--long"], help="Show list with lots of information"),
+								Option("unbuilt", ["-u", "--unbuilt"], help="Do only show unbuilt packages"),
+								Option("built", ["-b", "--built"], help="Do only show already built packages"),
 							]),
 						Parser("groups",
+							help="Show package groups",
 							arguments=[
-								Option("wiki", ["--wiki"]),
+								Option("wiki", ["--wiki"], help="Output in wiki format"),
 							]),
 					]),
 
 				# Source
 				Parser("source",
+					help="Handle source tarballs",
 					parsers=[
 						Parser("download",
+							help="Download source tarballs",
 							arguments=[
 								List("packages"),
 							]),
 						Parser("upload",
+							help="Upload source tarballs",
 							arguments=[
 								List("packages"),
 							]),
-						Parser("clean"),
+						Parser("clean", help="Cleanup unused tarballs"),
 					]),
 
 				# Check
 				Parser("check",
+					help="Check commands",
 					parsers=[
-						Parser("host"),
+						Parser("host", help="Check if host fullfills prerequisites"),
 					]),
 
 				# Batch
 				Parser("batch",
+					help="Batch command - use with caution",
 					parsers=[
-						Parser("cron"),
+						Parser("cron", help="Command that gets called by cron"),
 					]),
 			])
+
+		self.parser = parser
 
 		args = parser.parse(sys.argv[1:])
 
@@ -261,7 +334,7 @@ class Commandline(object):
 		return parser.values
 
 	def help(self):
-		print "PRINTING HELP TEXT"
+		print >>sys.stderr, self.parser.help(),
 
 
 DEFAULT_COLUMNS = 80
