@@ -100,6 +100,9 @@ class Naoki(object):
 							% [dep.name for dep in package.dependencies_unbuilt])
 						return
 
+		self.log.info("Going on to build %d packages in order: %s" \
+			% (len(packages), [package.name for package in packages]))
+
 		for package in packages:
 			package.download()
 
