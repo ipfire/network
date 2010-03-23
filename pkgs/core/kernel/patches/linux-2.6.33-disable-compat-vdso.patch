@@ -1,5 +1,9 @@
+No need to wrap vdso calls as gentoo does not use any version of 
+glibc <=2.3.3
+---
 From: Gordon Malm <gengor@gentoo.org>
 From: Kerin Millar <kerframil@gmail.com>
+From: Jory A. Pratt	<anarchy@gentoo.org>
 
 COMPAT_VDSO is inappropriate for any modern Hardened Gentoo system. It
 conflicts with various parts of PaX, crashing the system if enabled
@@ -19,56 +23,24 @@ intact.
 
 Closes bug: http://bugs.gentoo.org/show_bug.cgi?id=210138
 
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -1215,16 +1215,7 @@ config HOTPLUG_CPU
+diff -urp a/arch/x86/Kconfig b/arch/x86/Kconfig
+--- a/arch/x86/Kconfig	2009-07-31 01:36:57.323857684 +0100
++++ b/arch/x86/Kconfig	2009-07-31 01:51:39.395749681 +0100
+@@ -1607,17 +1607,8 @@
  
  config COMPAT_VDSO
  	def_bool n
 -	prompt "Compat VDSO support"
- 	depends on (X86_32 || IA32_EMULATION) && !PAX_NOEXEC
--	help
--	  Map the 32-bit VDSO to the predictable old-style address too.
+ 	depends on X86_32 || IA32_EMULATION
+ 	depends on !PAX_NOEXEC && !PAX_MEMORY_UDEREF
 -	---help---
+-	  Map the 32-bit VDSO to the predictable old-style address too.
+-
 -	  Say N here if you are running a sufficiently recent glibc
 -	  version (2.3.3 or later), to remove the high-mapped
 -	  VDSO mapping and to exclusively use the randomized VDSO.
 -
 -	  If unsure, say Y.
  
- endmenu
- 
---- a/arch/x86/vdso/vdso32-setup.c
-+++ b/arch/x86/vdso/vdso32-setup.c
-@@ -333,17 +333,21 @@ int arch_setup_additional_pages(struct l
- 
- 	map_compat_vdso(compat);
- 
-+#if !defined(CONFIG_PAX_NOEXEC) && !defined(CONFIG_PAX_MEMORY_UDEREF)
- 	if (compat)
- 		addr = VDSO_HIGH_BASE;
- 	else {
-+#endif
- 		addr = get_unmapped_area(NULL, 0, PAGE_SIZE, 0, MAP_EXECUTABLE);
- 		if (IS_ERR_VALUE(addr)) {
- 			ret = addr;
- 			goto up_fail;
- 		}
-+#if !defined(CONFIG_PAX_NOEXEC) && !defined(CONFIG_PAX_MEMORY_UDEREF)
- 	}
- 
- 	if (compat_uses_vma || !compat) {
-+#endif
- 		/*
- 		 * MAYWRITE to allow gdb to COW and set breakpoints
- 		 *
-@@ -361,7 +365,9 @@ int arch_setup_additional_pages(struct l
- 
- 		if (ret)
- 			goto up_fail;
-+#if !defined(CONFIG_PAX_NOEXEC) && !defined(CONFIG_PAX_MEMORY_UDEREF)
- 	}
-+#endif
- 
- 	current->mm->context.vdso = addr;
- 	current_thread_info()->sysenter_return =
+ config CMDLINE_BOOL
+ 	bool "Built-in kernel command line"

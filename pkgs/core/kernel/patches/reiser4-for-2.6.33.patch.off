@@ -1,6 +1,6 @@
-diff -urN linux-2.6.30.orig/Documentation/Changes linux-2.6.30/Documentation/Changes
---- linux-2.6.30.orig/Documentation/Changes	2009-03-24 00:12:14.000000000 +0100
-+++ linux-2.6.30/Documentation/Changes	2009-06-22 16:08:11.000000000 +0200
+diff -urN linux-2.6.33.orig/Documentation/Changes linux-2.6.33/Documentation/Changes
+--- linux-2.6.33.orig/Documentation/Changes	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/Documentation/Changes	2010-03-04 19:33:22.000000000 +0100
 @@ -36,6 +36,7 @@
  o  e2fsprogs              1.41.4                  # e2fsck -V
  o  jfsutils               1.1.3                   # fsck.jfs -V
@@ -9,7 +9,7 @@ diff -urN linux-2.6.30.orig/Documentation/Changes linux-2.6.30/Documentation/Cha
  o  xfsprogs               2.6.0                   # xfs_db -V
  o  squashfs-tools         4.0                     # mksquashfs -version
  o  btrfs-progs            0.18                    # btrfsck
-@@ -147,6 +148,13 @@
+@@ -157,6 +158,13 @@
  versions of mkreiserfs, resize_reiserfs, debugreiserfs and
  reiserfsck. These utils work on both i386 and alpha platforms.
  
@@ -23,7 +23,7 @@ diff -urN linux-2.6.30.orig/Documentation/Changes linux-2.6.30/Documentation/Cha
  Xfsprogs
  --------
  
-@@ -325,6 +333,10 @@
+@@ -345,6 +353,10 @@
  -------------
  o  <http://www.namesys.com/pub/reiserfsprogs/reiserfsprogs-3.6.3.tar.gz>
  
@@ -34,9 +34,9 @@ diff -urN linux-2.6.30.orig/Documentation/Changes linux-2.6.30/Documentation/Cha
  Xfsprogs
  --------
  o  <ftp://oss.sgi.com/projects/xfs/download/>
-diff -urN linux-2.6.30.orig/Documentation/filesystems/reiser4.txt linux-2.6.30/Documentation/filesystems/reiser4.txt
---- linux-2.6.30.orig/Documentation/filesystems/reiser4.txt	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/Documentation/filesystems/reiser4.txt	2009-06-22 16:08:11.000000000 +0200
+diff -urN linux-2.6.33.orig/Documentation/filesystems/reiser4.txt linux-2.6.33/Documentation/filesystems/reiser4.txt
+--- linux-2.6.33.orig/Documentation/filesystems/reiser4.txt	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/Documentation/filesystems/reiser4.txt	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,75 @@
 +Reiser4 filesystem
 +==================
@@ -113,24 +113,268 @@ diff -urN linux-2.6.30.orig/Documentation/filesystems/reiser4.txt linux-2.6.30/D
 +dont_load_bitmap
 +	Don't load all bitmap blocks at mount time, it is useful for
 +	machines with tiny RAM and large disks.
-diff -urN linux-2.6.30.orig/fs/fs-writeback.c linux-2.6.30/fs/fs-writeback.c
---- linux-2.6.30.orig/fs/fs-writeback.c	2009-06-23 00:20:39.000000000 +0200
-+++ linux-2.6.30/fs/fs-writeback.c	2009-06-22 16:08:13.000000000 +0200
-@@ -593,7 +593,10 @@
- static void sync_sb_inodes(struct super_block *sb,
- 				struct writeback_control *wbc)
- {
--	generic_sync_sb_inodes(sb, wbc);
-+       if (sb->s_op->sync_inodes)
-+               sb->s_op->sync_inodes(sb, wbc);
-+       else
-+               generic_sync_sb_inodes(sb, wbc);
+diff -urN linux-2.6.33.orig/fs/fs-writeback.c linux-2.6.33/fs/fs-writeback.c
+--- linux-2.6.33.orig/fs/fs-writeback.c	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/fs/fs-writeback.c	2010-03-04 20:21:39.000000000 +0100
+@@ -549,108 +549,85 @@
+ 	return ret;
  }
  
+-static void unpin_sb_for_writeback(struct super_block **psb)
++static void unpin_sb_for_writeback(struct super_block *sb)
+ {
+-	struct super_block *sb = *psb;
+-
+-	if (sb) {
+-		up_read(&sb->s_umount);
+-		put_super(sb);
+-		*psb = NULL;
+-	}
++	up_read(&sb->s_umount);
++	put_super(sb);
+ }
+ 
++enum sb_pin_state {
++	SB_PINNED,
++	SB_NOT_PINNED,
++	SB_PIN_FAILED
++};
++
  /*
-diff -urN linux-2.6.30.orig/fs/Kconfig linux-2.6.30/fs/Kconfig
---- linux-2.6.30.orig/fs/Kconfig	2009-06-23 00:20:39.000000000 +0200
-+++ linux-2.6.30/fs/Kconfig	2009-06-22 16:08:13.000000000 +0200
+  * For WB_SYNC_NONE writeback, the caller does not have the sb pinned
+  * before calling writeback. So make sure that we do pin it, so it doesn't
+  * go away while we are writing inodes from it.
+- *
+- * Returns 0 if the super was successfully pinned (or pinning wasn't needed),
+- * 1 if we failed.
+  */
+-static int pin_sb_for_writeback(struct writeback_control *wbc,
+-				struct inode *inode, struct super_block **psb)
++static enum sb_pin_state pin_sb_for_writeback(struct writeback_control *wbc,
++					      struct super_block *sb)
+ {
+-	struct super_block *sb = inode->i_sb;
+-
+-	/*
+-	 * If this sb is already pinned, nothing more to do. If not and
+-	 * *psb is non-NULL, unpin the old one first
+-	 */
+-	if (sb == *psb)
+-		return 0;
+-	else if (*psb)
+-		unpin_sb_for_writeback(psb);
+-
+ 	/*
+ 	 * Caller must already hold the ref for this
+ 	 */
+ 	if (wbc->sync_mode == WB_SYNC_ALL) {
+ 		WARN_ON(!rwsem_is_locked(&sb->s_umount));
+-		return 0;
++		return SB_NOT_PINNED;
+ 	}
+-
+ 	spin_lock(&sb_lock);
+ 	sb->s_count++;
+ 	if (down_read_trylock(&sb->s_umount)) {
+ 		if (sb->s_root) {
+ 			spin_unlock(&sb_lock);
+-			goto pinned;
++			return SB_PINNED;
+ 		}
+ 		/*
+ 		 * umounted, drop rwsem again and fall through to failure
+ 		 */
+ 		up_read(&sb->s_umount);
+ 	}
+-
+ 	sb->s_count--;
+ 	spin_unlock(&sb_lock);
+-	return 1;
+-pinned:
+-	*psb = sb;
+-	return 0;
++	return SB_PIN_FAILED;
+ }
+ 
+-static void writeback_inodes_wb(struct bdi_writeback *wb,
++/*
++ * Write a portion of b_io inodes which belong to @sb.
++ * If @wbc->sb != NULL, then find and write all such
++ * inodes. Otherwise write only ones which go sequentially
++ * in reverse order.
++ * Return 1, if the caller writeback routine should be
++ * interrupted. Otherwise return 0.
++ */
++int generic_writeback_sb_inodes(struct super_block *sb,
++				struct bdi_writeback *wb,
+ 				struct writeback_control *wbc)
+ {
+-	struct super_block *sb = wbc->sb, *pin_sb = NULL;
+-	const unsigned long start = jiffies;	/* livelock avoidance */
+-
+-	spin_lock(&inode_lock);
+-
+-	if (!wbc->for_kupdate || list_empty(&wb->b_io))
+-		queue_io(wb, wbc->older_than_this);
+-
+ 	while (!list_empty(&wb->b_io)) {
+-		struct inode *inode = list_entry(wb->b_io.prev,
+-						struct inode, i_list);
+ 		long pages_skipped;
+-
+-		/*
+-		 * super block given and doesn't match, skip this inode
+-		 */
+-		if (sb && sb != inode->i_sb) {
++		struct inode *inode = list_entry(wb->b_io.prev,
++						 struct inode, i_list);
++		if (wbc->sb && sb != inode->i_sb) {
++			/* super block given and doesn't
++			   match, skip this inode */
+ 			redirty_tail(inode);
+ 			continue;
+ 		}
+-
++		if (sb != inode->i_sb)
++			/* finish with this superblock */
++			return 0;
+ 		if (inode->i_state & (I_NEW | I_WILL_FREE)) {
+ 			requeue_io(inode);
+ 			continue;
+ 		}
+-
+ 		/*
+ 		 * Was this inode dirtied after sync_sb_inodes was called?
+ 		 * This keeps sync from extra jobs and livelock.
+ 		 */
+-		if (inode_dirtied_after(inode, start))
+-			break;
+-
+-		if (pin_sb_for_writeback(wbc, inode, &pin_sb)) {
+-			requeue_io(inode);
+-			continue;
+-		}
++		if (inode_dirtied_after(inode, wbc->wb_start))
++			return 1;
+ 
+ 		BUG_ON(inode->i_state & (I_FREEING | I_CLEAR));
+ 		__iget(inode);
+@@ -669,14 +646,78 @@
+ 		spin_lock(&inode_lock);
+ 		if (wbc->nr_to_write <= 0) {
+ 			wbc->more_io = 1;
+-			break;
++			return 1;
+ 		}
+ 		if (!list_empty(&wb->b_more_io))
+ 			wbc->more_io = 1;
+ 	}
++	/* b_io is empty */
++	return 1;
++}
++EXPORT_SYMBOL(generic_writeback_sb_inodes);
++
++/*
++ * This function is for file systems which have their
++ * own means of periodical write-out of old data.
++ * NOTE: inode_lock should be hold.
++ *
++ * Skip a portion of b_io inodes which belong to @sb
++ * and go sequentially in reverse order.
++ */
++void writeback_skip_sb_inodes(struct super_block *sb,
++			      struct bdi_writeback *wb)
++{
++	while (1) {
++		struct inode *inode;
++
++		if (list_empty(&wb->b_io))
++			break;
++		inode = list_entry(wb->b_io.prev, struct inode, i_list);
++		if (sb != inode->i_sb)
++			break;
++		redirty_tail(inode);
++	}
++}
++EXPORT_SYMBOL(writeback_skip_sb_inodes);
+ 
+-	unpin_sb_for_writeback(&pin_sb);
++static void writeback_inodes_wb(struct bdi_writeback *wb,
++				struct writeback_control *wbc)
++{
++	int ret = 0;
+ 
++	wbc->wb_start = jiffies; /* livelock avoidance */
++	spin_lock(&inode_lock);
++	if (!wbc->for_kupdate || list_empty(&wb->b_io))
++		queue_io(wb, wbc->older_than_this);
++
++	while (!list_empty(&wb->b_io)) {
++		struct inode *inode = list_entry(wb->b_io.prev,
++						 struct inode, i_list);
++		struct super_block *sb = inode->i_sb;
++		enum sb_pin_state state;
++
++		if (wbc->sb && sb != wbc->sb) {
++			/* super block given and doesn't
++			   match, skip this inode */
++			redirty_tail(inode);
++			continue;
++		}
++		state = pin_sb_for_writeback(wbc, sb);
++
++		if (state == SB_PIN_FAILED) {
++			requeue_io(inode);
++			continue;
++		}
++ 		if (sb->s_op->writeback_inodes)
++ 			ret = sb->s_op->writeback_inodes(sb, wb, wbc);
++ 		else
++			ret = generic_writeback_sb_inodes(sb, wb, wbc);
++
++		if (state == SB_PINNED)
++			unpin_sb_for_writeback(sb);
++		if (ret)
++			break;
++	}
+ 	spin_unlock(&inode_lock);
+ 	/* Leave any unwritten inodes on b_io */
+ }
+@@ -687,6 +728,7 @@
+ 
+ 	writeback_inodes_wb(&bdi->wb, wbc);
+ }
++EXPORT_SYMBOL(writeback_inodes_wbc);
+ 
+ /*
+  * The maximum number of pages to writeout in a single bdi flush/kupdate
+@@ -1272,3 +1314,12 @@
+ 	return ret;
+ }
+ EXPORT_SYMBOL(sync_inode);
++/*
++ * Local variables:
++ * c-indentation-style: "K&R"
++ * mode-name: "LC"
++ * c-basic-offset: 8
++ * tab-width: 8
++ * fill-column: 79
++ * End:
++ */
+diff -urN linux-2.6.33.orig/fs/inode.c linux-2.6.33/fs/inode.c
+--- linux-2.6.33.orig/fs/inode.c	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/fs/inode.c	2010-03-04 19:33:22.000000000 +0100
+@@ -85,6 +85,7 @@
+  * the i_state of an inode while it is in use..
+  */
+ DEFINE_SPINLOCK(inode_lock);
++EXPORT_SYMBOL_GPL(inode_lock);
+ 
+ /*
+  * iprune_sem provides exclusion between the kswapd or try_to_free_pages
+diff -urN linux-2.6.33.orig/fs/Kconfig linux-2.6.33/fs/Kconfig
+--- linux-2.6.33.orig/fs/Kconfig	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/fs/Kconfig	2010-03-04 19:33:22.000000000 +0100
 @@ -27,6 +27,7 @@
  	default y if EXT4_FS=y && EXT4_FS_XATTR
  	default m if EXT2_FS_XATTR || EXT3_FS_XATTR || EXT4_FS_XATTR
@@ -139,9 +383,9 @@ diff -urN linux-2.6.30.orig/fs/Kconfig linux-2.6.30/fs/Kconfig
  source "fs/reiserfs/Kconfig"
  source "fs/jfs/Kconfig"
  
-diff -urN linux-2.6.30.orig/fs/Makefile linux-2.6.30/fs/Makefile
---- linux-2.6.30.orig/fs/Makefile	2009-06-23 00:20:39.000000000 +0200
-+++ linux-2.6.30/fs/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/Makefile linux-2.6.33/fs/Makefile
+--- linux-2.6.33.orig/fs/Makefile	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/fs/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -65,6 +65,7 @@
  # Do not add any filesystems before this line
  obj-$(CONFIG_FSCACHE)		+= fscache/
@@ -150,9 +394,9 @@ diff -urN linux-2.6.30.orig/fs/Makefile linux-2.6.30/fs/Makefile
  obj-$(CONFIG_EXT3_FS)		+= ext3/ # Before ext2 so root fs can be ext3
  obj-$(CONFIG_EXT2_FS)		+= ext2/
  # We place ext4 after ext2 so plain ext2 root fs's are mounted using ext2
-diff -urN linux-2.6.30.orig/fs/reiser4/as_ops.c linux-2.6.30/fs/reiser4/as_ops.c
---- linux-2.6.30.orig/fs/reiser4/as_ops.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/as_ops.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/as_ops.c linux-2.6.33/fs/reiser4/as_ops.c
+--- linux-2.6.33.orig/fs/reiser4/as_ops.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/as_ops.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,337 @@
 +/* Copyright 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -491,9 +735,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/as_ops.c linux-2.6.30/fs/reiser4/as_ops.c
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/block_alloc.c linux-2.6.30/fs/reiser4/block_alloc.c
---- linux-2.6.30.orig/fs/reiser4/block_alloc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/block_alloc.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/block_alloc.c linux-2.6.33/fs/reiser4/block_alloc.c
+--- linux-2.6.33.orig/fs/reiser4/block_alloc.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/block_alloc.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1142 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +reiser4/README */
@@ -1637,9 +1881,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/block_alloc.c linux-2.6.30/fs/reiser4/blo
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/block_alloc.h linux-2.6.30/fs/reiser4/block_alloc.h
---- linux-2.6.30.orig/fs/reiser4/block_alloc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/block_alloc.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/block_alloc.h linux-2.6.33/fs/reiser4/block_alloc.h
+--- linux-2.6.33.orig/fs/reiser4/block_alloc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/block_alloc.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,177 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -1818,9 +2062,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/block_alloc.h linux-2.6.30/fs/reiser4/blo
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/blocknrset.c linux-2.6.30/fs/reiser4/blocknrset.c
---- linux-2.6.30.orig/fs/reiser4/blocknrset.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/blocknrset.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/blocknrset.c linux-2.6.33/fs/reiser4/blocknrset.c
+--- linux-2.6.33.orig/fs/reiser4/blocknrset.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/blocknrset.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,371 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +reiser4/README */
@@ -2193,9 +2437,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/blocknrset.c linux-2.6.30/fs/reiser4/bloc
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/carry.c linux-2.6.30/fs/reiser4/carry.c
---- linux-2.6.30.orig/fs/reiser4/carry.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/carry.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/carry.c linux-2.6.33/fs/reiser4/carry.c
+--- linux-2.6.33.orig/fs/reiser4/carry.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/carry.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1398 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -3595,9 +3839,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/carry.c linux-2.6.30/fs/reiser4/carry.c
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/carry.h linux-2.6.30/fs/reiser4/carry.h
---- linux-2.6.30.orig/fs/reiser4/carry.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/carry.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/carry.h linux-2.6.33/fs/reiser4/carry.h
+--- linux-2.6.33.orig/fs/reiser4/carry.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/carry.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,445 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -4044,9 +4288,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/carry.h linux-2.6.30/fs/reiser4/carry.h
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/carry_ops.c linux-2.6.30/fs/reiser4/carry_ops.c
---- linux-2.6.30.orig/fs/reiser4/carry_ops.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/carry_ops.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/carry_ops.c linux-2.6.33/fs/reiser4/carry_ops.c
+--- linux-2.6.33.orig/fs/reiser4/carry_ops.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/carry_ops.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,2132 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -4129,7 +4373,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/carry_ops.c linux-2.6.30/fs/reiser4/carry
 +	left->free = 1;
 +
 +	flags = GN_TRY_LOCK;
-+	if (!op->u.insert.flags & COPI_LOAD_LEFT)
++	if (!(op->u.insert.flags & COPI_LOAD_LEFT))
 +		flags |= GN_NO_ALLOC;
 +
 +	/* then, feeling lucky, peek left neighbor in the cache. */
@@ -4253,7 +4497,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/carry_ops.c linux-2.6.30/fs/reiser4/carry
 +	read_unlock_tree(tree);
 +
 +	flags = GN_CAN_USE_UPPER_LEVELS;
-+	if (!op->u.insert.flags & COPI_LOAD_RIGHT)
++	if (!(op->u.insert.flags & COPI_LOAD_RIGHT))
 +		flags = GN_NO_ALLOC;
 +
 +	/* then, try to lock right neighbor */
@@ -6180,9 +6424,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/carry_ops.c linux-2.6.30/fs/reiser4/carry
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/carry_ops.h linux-2.6.30/fs/reiser4/carry_ops.h
---- linux-2.6.30.orig/fs/reiser4/carry_ops.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/carry_ops.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/carry_ops.h linux-2.6.33/fs/reiser4/carry_ops.h
+--- linux-2.6.33.orig/fs/reiser4/carry_ops.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/carry_ops.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,43 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -6227,9 +6471,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/carry_ops.h linux-2.6.30/fs/reiser4/carry
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/context.c linux-2.6.30/fs/reiser4/context.c
---- linux-2.6.30.orig/fs/reiser4/context.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/context.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/context.c linux-2.6.33/fs/reiser4/context.c
+--- linux-2.6.33.orig/fs/reiser4/context.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/context.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,289 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -6270,8 +6514,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/context.c linux-2.6.30/fs/reiser4/context
 +#include "debug.h"
 +#include "super.h"
 +#include "context.h"
++#include "vfs_ops.h"	/* for reiser4_throttle_write() */
 +
-+#include <linux/writeback.h>	/* balance_dirty_pages() */
++#include <linux/writeback.h> /* for current_is_pdflush() */
 +#include <linux/hardirq.h>
 +
 +static void _reiser4_init_context(reiser4_context * context,
@@ -6372,7 +6617,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/context.c linux-2.6.30/fs/reiser4/context
 + * because some important lock (like ->i_mutex on the parent directory) is
 + * held. To achieve this, ->nobalance flag can be set in the current context.
 + */
-+static void balance_dirty_pages_at(reiser4_context *context)
++static void reiser4_throttle_write_at(reiser4_context *context)
 +{
 +	reiser4_super_info_data *sbinfo = get_super_private(context->super);
 +
@@ -6385,8 +6630,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/context.c linux-2.6.30/fs/reiser4/context
 +	if (sbinfo != NULL && sbinfo->fake != NULL &&
 +	    context->nr_marked_dirty != 0 &&
 +	    !(current->flags & PF_MEMALLOC) &&
-+	    !current_is_pdflush())
-+		balance_dirty_pages_ratelimited(sbinfo->fake->i_mapping);
++	    !current_is_flush_bd_task())
++ 		/* FIXME-EDWARD: throttle with nr_marked_dirty? */
++ 		reiser4_throttle_write(sbinfo->fake, 1);	
 +}
 +
 +/* release resources associated with context.
@@ -6459,10 +6705,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/context.c linux-2.6.30/fs/reiser4/context
 +	assert("nikita-3021", reiser4_schedulable());
 +
 +	if (context->nr_children == 0) {
-+		if (!context->nobalance) {
-+			reiser4_txn_restart(context);
-+			balance_dirty_pages_at(context);
-+		}
++		if (!context->nobalance)
++			reiser4_throttle_write_at(context);
 +
 +		/* if filesystem is mounted with -o sync or -o dirsync - commit
 +		   transaction.  FIXME: TXNH_DONT_COMMIT is used to avoid
@@ -6520,9 +6764,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/context.c linux-2.6.30/fs/reiser4/context
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/context.h linux-2.6.30/fs/reiser4/context.h
---- linux-2.6.30.orig/fs/reiser4/context.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/context.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/context.h linux-2.6.33/fs/reiser4/context.h
+--- linux-2.6.33.orig/fs/reiser4/context.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/context.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,228 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -6592,7 +6836,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/context.h linux-2.6.30/fs/reiser4/context
 +	/* count non-trivial jnode_set_dirty() calls */
 +	unsigned long nr_marked_dirty;
 +
-+	/* reiser4_sync_inodes calls (via generic_sync_sb_inodes)
++	/* reiser4_writeback_inodes calls (via generic_writeback_sb_inodes)
 +	 * reiser4_writepages for each of dirty inodes. Reiser4_writepages
 +	 * captures pages. When number of pages captured in one
 +	 * reiser4_sync_inodes reaches some threshold - some atoms get
@@ -6752,9 +6996,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/context.h linux-2.6.30/fs/reiser4/context
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/coord.c linux-2.6.30/fs/reiser4/coord.c
---- linux-2.6.30.orig/fs/reiser4/coord.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/coord.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/coord.c linux-2.6.33/fs/reiser4/coord.c
+--- linux-2.6.33.orig/fs/reiser4/coord.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/coord.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,928 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -7684,9 +7928,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/coord.c linux-2.6.30/fs/reiser4/coord.c
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/coord.h linux-2.6.30/fs/reiser4/coord.h
---- linux-2.6.30.orig/fs/reiser4/coord.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/coord.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/coord.h linux-2.6.33/fs/reiser4/coord.h
+--- linux-2.6.33.orig/fs/reiser4/coord.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/coord.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,399 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -8087,9 +8331,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/coord.h linux-2.6.30/fs/reiser4/coord.h
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/debug.c linux-2.6.30/fs/reiser4/debug.c
---- linux-2.6.30.orig/fs/reiser4/debug.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/debug.c	2009-06-22 18:11:49.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/debug.c linux-2.6.33/fs/reiser4/debug.c
+--- linux-2.6.33.orig/fs/reiser4/debug.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/debug.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,308 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -8399,9 +8643,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/debug.c linux-2.6.30/fs/reiser4/debug.c
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/debug.h linux-2.6.30/fs/reiser4/debug.h
---- linux-2.6.30.orig/fs/reiser4/debug.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/debug.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/debug.h linux-2.6.33/fs/reiser4/debug.h
+--- linux-2.6.33.orig/fs/reiser4/debug.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/debug.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,351 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -8754,9 +8998,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/debug.h linux-2.6.30/fs/reiser4/debug.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/dformat.h linux-2.6.30/fs/reiser4/dformat.h
---- linux-2.6.30.orig/fs/reiser4/dformat.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/dformat.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/dformat.h linux-2.6.33/fs/reiser4/dformat.h
+--- linux-2.6.33.orig/fs/reiser4/dformat.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/dformat.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,71 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -8829,9 +9073,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/dformat.h linux-2.6.30/fs/reiser4/dformat
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/dscale.c linux-2.6.30/fs/reiser4/dscale.c
---- linux-2.6.30.orig/fs/reiser4/dscale.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/dscale.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/dscale.c linux-2.6.33/fs/reiser4/dscale.c
+--- linux-2.6.33.orig/fs/reiser4/dscale.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/dscale.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,192 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -9025,9 +9269,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/dscale.c linux-2.6.30/fs/reiser4/dscale.c
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/dscale.h linux-2.6.30/fs/reiser4/dscale.h
---- linux-2.6.30.orig/fs/reiser4/dscale.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/dscale.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/dscale.h linux-2.6.33/fs/reiser4/dscale.h
+--- linux-2.6.33.orig/fs/reiser4/dscale.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/dscale.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,28 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -9057,10 +9301,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/dscale.h linux-2.6.30/fs/reiser4/dscale.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/entd.c linux-2.6.30/fs/reiser4/entd.c
---- linux-2.6.30.orig/fs/reiser4/entd.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/entd.c	2009-06-22 16:08:13.000000000 +0200
-@@ -0,0 +1,335 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/entd.c linux-2.6.33/fs/reiser4/entd.c
+--- linux-2.6.33.orig/fs/reiser4/entd.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/entd.c	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,338 @@
 +/* Copyright 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
 +
@@ -9299,16 +9543,19 @@ diff -urN linux-2.6.30.orig/fs/reiser4/entd.c linux-2.6.30/fs/reiser4/entd.c
 +	rq->wbc->range_end = rq->wbc->range_start +
 +		(ENTD_CAPTURE_APAGE_BURST << PAGE_CACHE_SHIFT);
 +	tmp = rq->wbc->nr_to_write;
++
++	assert("edward-1561", super == rq->wbc->sb);
++
 +	rq->mapping->a_ops->writepages(rq->mapping, rq->wbc);
 +
 +	if (rq->wbc->nr_to_write > 0) {
 +		rq->wbc->range_start = 0;
 +		rq->wbc->range_end = LLONG_MAX;
-+		generic_sync_sb_inodes(super, rq->wbc);
++		writeback_inodes_wbc(rq->wbc);
 +	}
 +	rq->wbc->nr_to_write = ENTD_CAPTURE_APAGE_BURST;
-+	reiser4_writeout(super, rq->wbc);
 +
++	reiser4_writeout(super, rq->wbc);
 +	context_set_commit_async(&ctx);
 +	reiser4_exit_context(&ctx);
 +}
@@ -9396,9 +9643,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/entd.c linux-2.6.30/fs/reiser4/entd.c
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/entd.h linux-2.6.30/fs/reiser4/entd.h
---- linux-2.6.30.orig/fs/reiser4/entd.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/entd.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/entd.h linux-2.6.33/fs/reiser4/entd.h
+--- linux-2.6.33.orig/fs/reiser4/entd.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/entd.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,90 @@
 +/* Copyright 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -9490,9 +9737,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/entd.h linux-2.6.30/fs/reiser4/entd.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/eottl.c linux-2.6.30/fs/reiser4/eottl.c
---- linux-2.6.30.orig/fs/reiser4/eottl.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/eottl.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/eottl.c linux-2.6.33/fs/reiser4/eottl.c
+--- linux-2.6.33.orig/fs/reiser4/eottl.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/eottl.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,510 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -10004,9 +10251,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/eottl.c linux-2.6.30/fs/reiser4/eottl.c
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/estimate.c linux-2.6.30/fs/reiser4/estimate.c
---- linux-2.6.30.orig/fs/reiser4/estimate.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/estimate.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/estimate.c linux-2.6.33/fs/reiser4/estimate.c
+--- linux-2.6.33.orig/fs/reiser4/estimate.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/estimate.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,129 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -10137,9 +10384,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/estimate.c linux-2.6.30/fs/reiser4/estima
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/export_ops.c linux-2.6.30/fs/reiser4/export_ops.c
---- linux-2.6.30.orig/fs/reiser4/export_ops.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/export_ops.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/export_ops.c linux-2.6.33/fs/reiser4/export_ops.c
+--- linux-2.6.33.orig/fs/reiser4/export_ops.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/export_ops.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,328 @@
 +/* Copyright 2005 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -10469,9 +10716,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/export_ops.c linux-2.6.30/fs/reiser4/expo
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/flush.c linux-2.6.30/fs/reiser4/flush.c
---- linux-2.6.30.orig/fs/reiser4/flush.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/flush.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/flush.c linux-2.6.33/fs/reiser4/flush.c
+--- linux-2.6.33.orig/fs/reiser4/flush.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/flush.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,3703 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -14176,9 +14423,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/flush.c linux-2.6.30/fs/reiser4/flush.c
 +   LocalWords:  preceder
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/flush.h linux-2.6.30/fs/reiser4/flush.h
---- linux-2.6.30.orig/fs/reiser4/flush.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/flush.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/flush.h linux-2.6.33/fs/reiser4/flush.h
+--- linux-2.6.33.orig/fs/reiser4/flush.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/flush.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,300 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -14480,9 +14727,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/flush.h linux-2.6.30/fs/reiser4/flush.h
 +   LocalWords:  preceder
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/flush_queue.c linux-2.6.30/fs/reiser4/flush_queue.c
---- linux-2.6.30.orig/fs/reiser4/flush_queue.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/flush_queue.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/flush_queue.c linux-2.6.33/fs/reiser4/flush_queue.c
+--- linux-2.6.33.orig/fs/reiser4/flush_queue.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/flush_queue.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,678 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -15162,9 +15409,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/flush_queue.c linux-2.6.30/fs/reiser4/flu
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/forward.h linux-2.6.30/fs/reiser4/forward.h
---- linux-2.6.30.orig/fs/reiser4/forward.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/forward.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/forward.h linux-2.6.33/fs/reiser4/forward.h
+--- linux-2.6.33.orig/fs/reiser4/forward.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/forward.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,256 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -15422,9 +15669,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/forward.h linux-2.6.30/fs/reiser4/forward
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/fsdata.c linux-2.6.30/fs/reiser4/fsdata.c
---- linux-2.6.30.orig/fs/reiser4/fsdata.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/fsdata.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/fsdata.c linux-2.6.33/fs/reiser4/fsdata.c
+--- linux-2.6.33.orig/fs/reiser4/fsdata.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/fsdata.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,804 @@
 +/* Copyright 2001, 2002, 2003, 2004, 2005 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -16230,9 +16477,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/fsdata.c linux-2.6.30/fs/reiser4/fsdata.c
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/fsdata.h linux-2.6.30/fs/reiser4/fsdata.h
---- linux-2.6.30.orig/fs/reiser4/fsdata.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/fsdata.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/fsdata.h linux-2.6.33/fs/reiser4/fsdata.h
+--- linux-2.6.33.orig/fs/reiser4/fsdata.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/fsdata.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,205 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -16439,10 +16686,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/fsdata.h linux-2.6.30/fs/reiser4/fsdata.h
 + * fill-column: 120
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/init_super.c linux-2.6.30/fs/reiser4/init_super.c
---- linux-2.6.30.orig/fs/reiser4/init_super.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/init_super.c	2009-06-22 16:08:13.000000000 +0200
-@@ -0,0 +1,751 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/init_super.c linux-2.6.33/fs/reiser4/init_super.c
+--- linux-2.6.33.orig/fs/reiser4/init_super.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/init_super.c	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,761 @@
 +/* Copyright by Hans Reiser, 2003 */
 +
 +#include "super.h"
@@ -16737,84 +16984,28 @@ diff -urN linux-2.6.30.orig/fs/reiser4/init_super.c linux-2.6.30/fs/reiser4/init
 +
 +#define MAX_NR_OPTIONS (30)
 +
-+/**
-+ * reiser4_init_super_data - initialize reiser4 private super block
-+ * @super: super block to initialize
-+ * @opt_string: list of reiser4 mount options
-+ *
-+ * Sets various reiser4 parameters to default values. Parses mount options and
-+ * overwrites default settings.
-+ */
-+int reiser4_init_super_data(struct super_block *super, char *opt_string)
-+{
-+	int result;
-+	struct opt_desc *opts, *p;
-+	reiser4_super_info_data *sbinfo = get_super_private(super);
-+
-+	/* initialize super, export, dentry operations */
-+	sbinfo->ops.super = reiser4_super_operations;
-+	sbinfo->ops.export = reiser4_export_operations;
-+	sbinfo->ops.dentry = reiser4_dentry_operations;
-+	super->s_op = &sbinfo->ops.super;
-+	super->s_export_op = &sbinfo->ops.export;
-+
-+	/* initialize transaction manager parameters to default values */
-+	sbinfo->tmgr.atom_max_size = totalram_pages / 4;
-+	sbinfo->tmgr.atom_max_age = REISER4_ATOM_MAX_AGE / HZ;
-+	sbinfo->tmgr.atom_min_size = 256;
-+	sbinfo->tmgr.atom_max_flushers = ATOM_MAX_FLUSHERS;
-+
-+	/* initialize cbk cache parameter */
-+	sbinfo->tree.cbk_cache.nr_slots = CBK_CACHE_SLOTS;
-+
-+	/* initialize flush parameters */
-+	sbinfo->flush.relocate_threshold = FLUSH_RELOCATE_THRESHOLD;
-+	sbinfo->flush.relocate_distance = FLUSH_RELOCATE_DISTANCE;
-+	sbinfo->flush.written_threshold = FLUSH_WRITTEN_THRESHOLD;
-+	sbinfo->flush.scan_maxnodes = FLUSH_SCAN_MAXNODES;
-+
-+	sbinfo->optimal_io_size = REISER4_OPTIMAL_IO_SIZE;
-+
-+	/* preliminary tree initializations */
-+	sbinfo->tree.super = super;
-+	sbinfo->tree.carry.new_node_flags = REISER4_NEW_NODE_FLAGS;
-+	sbinfo->tree.carry.new_extent_flags = REISER4_NEW_EXTENT_FLAGS;
-+	sbinfo->tree.carry.paste_flags = REISER4_PASTE_FLAGS;
-+	sbinfo->tree.carry.insert_flags = REISER4_INSERT_FLAGS;
-+	rwlock_init(&(sbinfo->tree.tree_lock));
-+	spin_lock_init(&(sbinfo->tree.epoch_lock));
-+
-+	/* initialize default readahead params */
-+	sbinfo->ra_params.max = num_physpages / 4;
-+	sbinfo->ra_params.flags = 0;
-+
-+	/* allocate memory for structure describing reiser4 mount options */
-+	opts = kmalloc(sizeof(struct opt_desc) * MAX_NR_OPTIONS,
-+		       reiser4_ctx_gfp_mask_get());
-+	if (opts == NULL)
-+		return RETERR(-ENOMEM);
-+
-+	/* initialize structure describing reiser4 mount options */
-+	p = opts;
-+
 +#if REISER4_DEBUG
-+#  define OPT_ARRAY_CHECK if ((p) > (opts) + MAX_NR_OPTIONS) {		\
++#  define OPT_ARRAY_CHECK(opt, array)					\
++	if ((opt) > (array) + MAX_NR_OPTIONS) {				\
 +		warning("zam-1046", "opt array is overloaded"); break;	\
 +	}
 +#else
-+#   define OPT_ARRAY_CHECK noop
++#   define OPT_ARRAY_CHECK(opt, array) noop
 +#endif
 +
-+#define PUSH_OPT(...)				\
++#define PUSH_OPT(opt, array, ...)		\
 +do {						\
 +	struct opt_desc o = __VA_ARGS__;	\
-+	OPT_ARRAY_CHECK;			\
-+	*p ++ = o;				\
++	OPT_ARRAY_CHECK(opt, array);		\
++	*(opt) ++ = o;				\
 +} while (0)
 +
-+#define PUSH_SB_FIELD_OPT(field, format) PUSH_OPT(SB_FIELD_OPT(field, format))
-+#define PUSH_BIT_OPT(name, bit) PUSH_OPT(BIT_OPT(name, bit))
-+
++static noinline void push_sb_field_opts(struct opt_desc **p,
++					struct opt_desc *opts,
++					reiser4_super_info_data *sbinfo)
++{
++#define PUSH_SB_FIELD_OPT(field, format)		\
++	PUSH_OPT(*p, opts, SB_FIELD_OPT(field, format))
 +	/*
 +	 * tmgr.atom_max_size=N
 +	 * Atoms containing more than N blocks will be forced to commit. N is
@@ -16880,8 +17071,74 @@ diff -urN linux-2.6.30.orig/fs/reiser4/init_super.c linux-2.6.30/fs/reiser4/init
 +	 */
 +	PUSH_SB_FIELD_OPT(altsuper, "%lu");
 +#endif
++}
 +
++/**
++ * reiser4_init_super_data - initialize reiser4 private super block
++ * @super: super block to initialize
++ * @opt_string: list of reiser4 mount options
++ *
++ * Sets various reiser4 parameters to default values. Parses mount options and
++ * overwrites default settings.
++ */
++int reiser4_init_super_data(struct super_block *super, char *opt_string)
++{
++	int result;
++	struct opt_desc *opts, *p;
++	reiser4_super_info_data *sbinfo = get_super_private(super);
++
++	/* initialize super, export, dentry operations */
++	sbinfo->ops.super = reiser4_super_operations;
++	sbinfo->ops.export = reiser4_export_operations;
++	sbinfo->ops.dentry = reiser4_dentry_operations;
++	super->s_op = &sbinfo->ops.super;
++	super->s_export_op = &sbinfo->ops.export;
++
++	/* initialize transaction manager parameters to default values */
++	sbinfo->tmgr.atom_max_size = totalram_pages / 4;
++	sbinfo->tmgr.atom_max_age = REISER4_ATOM_MAX_AGE / HZ;
++	sbinfo->tmgr.atom_min_size = 256;
++	sbinfo->tmgr.atom_max_flushers = ATOM_MAX_FLUSHERS;
++
++	/* initialize cbk cache parameter */
++	sbinfo->tree.cbk_cache.nr_slots = CBK_CACHE_SLOTS;
++
++	/* initialize flush parameters */
++	sbinfo->flush.relocate_threshold = FLUSH_RELOCATE_THRESHOLD;
++	sbinfo->flush.relocate_distance = FLUSH_RELOCATE_DISTANCE;
++	sbinfo->flush.written_threshold = FLUSH_WRITTEN_THRESHOLD;
++	sbinfo->flush.scan_maxnodes = FLUSH_SCAN_MAXNODES;
++
++	sbinfo->optimal_io_size = REISER4_OPTIMAL_IO_SIZE;
++
++	/* preliminary tree initializations */
++	sbinfo->tree.super = super;
++	sbinfo->tree.carry.new_node_flags = REISER4_NEW_NODE_FLAGS;
++	sbinfo->tree.carry.new_extent_flags = REISER4_NEW_EXTENT_FLAGS;
++	sbinfo->tree.carry.paste_flags = REISER4_PASTE_FLAGS;
++	sbinfo->tree.carry.insert_flags = REISER4_INSERT_FLAGS;
++	rwlock_init(&(sbinfo->tree.tree_lock));
++	spin_lock_init(&(sbinfo->tree.epoch_lock));
++
++	/* initialize default readahead params */
++	sbinfo->ra_params.max = num_physpages / 4;
++	sbinfo->ra_params.flags = 0;
++
++	/* allocate memory for structure describing reiser4 mount options */
++	opts = kmalloc(sizeof(struct opt_desc) * MAX_NR_OPTIONS,
++		       reiser4_ctx_gfp_mask_get());
++	if (opts == NULL)
++		return RETERR(-ENOMEM);
++
++	/* initialize structure describing reiser4 mount options */
++	p = opts;
++
++	push_sb_field_opts(&p, opts, sbinfo);
 +	/* turn on BSD-style gid assignment */
++
++#define PUSH_BIT_OPT(name, bit)			\
++	PUSH_OPT(p, opts, BIT_OPT(name, bit))
++
 +	PUSH_BIT_OPT("bsdgroups", REISER4_BSD_GID);
 +	/* turn on 32 bit times */
 +	PUSH_BIT_OPT("32bittimes", REISER4_32_BIT_TIMES);
@@ -16895,7 +17152,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/init_super.c linux-2.6.30/fs/reiser4/init
 +	/* disable use of write barriers in the reiser4 log writer. */
 +	PUSH_BIT_OPT("no_write_barrier", REISER4_NO_WRITE_BARRIER);
 +
-+	PUSH_OPT(
++	PUSH_OPT(p, opts,
 +	{
 +		/*
 +		 * tree traversal readahead parameters:
@@ -16921,7 +17178,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/init_super.c linux-2.6.30/fs/reiser4/init
 +	);
 +
 +	/* What to do in case of fs error */
-+	PUSH_OPT(
++	PUSH_OPT(p, opts,
 +	{
 +		.name = "onerror",
 +		.type = OPT_ONEOF,
@@ -17194,9 +17451,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/init_super.c linux-2.6.30/fs/reiser4/init
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/inode.c linux-2.6.30/fs/reiser4/inode.c
---- linux-2.6.30.orig/fs/reiser4/inode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/inode.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/inode.c linux-2.6.33/fs/reiser4/inode.c
+--- linux-2.6.33.orig/fs/reiser4/inode.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/inode.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,711 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -17909,9 +18166,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/inode.c linux-2.6.30/fs/reiser4/inode.c
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/inode.h linux-2.6.30/fs/reiser4/inode.h
---- linux-2.6.30.orig/fs/reiser4/inode.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/inode.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/inode.h linux-2.6.33/fs/reiser4/inode.h
+--- linux-2.6.33.orig/fs/reiser4/inode.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/inode.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,453 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -18366,9 +18623,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/inode.h linux-2.6.30/fs/reiser4/inode.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/ioctl.h linux-2.6.30/fs/reiser4/ioctl.h
---- linux-2.6.30.orig/fs/reiser4/ioctl.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/ioctl.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/ioctl.h linux-2.6.33/fs/reiser4/ioctl.h
+--- linux-2.6.33.orig/fs/reiser4/ioctl.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/ioctl.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,41 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -18411,9 +18668,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/ioctl.h linux-2.6.30/fs/reiser4/ioctl.h
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/jnode.c linux-2.6.30/fs/reiser4/jnode.c
---- linux-2.6.30.orig/fs/reiser4/jnode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/jnode.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/jnode.c linux-2.6.33/fs/reiser4/jnode.c
+--- linux-2.6.33.orig/fs/reiser4/jnode.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/jnode.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1923 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -20338,9 +20595,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/jnode.c linux-2.6.30/fs/reiser4/jnode.c
 +   fill-column: 80
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/jnode.h linux-2.6.30/fs/reiser4/jnode.h
---- linux-2.6.30.orig/fs/reiser4/jnode.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/jnode.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/jnode.h linux-2.6.33/fs/reiser4/jnode.h
+--- linux-2.6.33.orig/fs/reiser4/jnode.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/jnode.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,704 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -21046,9 +21303,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/jnode.h linux-2.6.30/fs/reiser4/jnode.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/kassign.c linux-2.6.30/fs/reiser4/kassign.c
---- linux-2.6.30.orig/fs/reiser4/kassign.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/kassign.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/kassign.c linux-2.6.33/fs/reiser4/kassign.c
+--- linux-2.6.33.orig/fs/reiser4/kassign.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/kassign.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,677 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -21727,9 +21984,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/kassign.c linux-2.6.30/fs/reiser4/kassign
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/kassign.h linux-2.6.30/fs/reiser4/kassign.h
---- linux-2.6.30.orig/fs/reiser4/kassign.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/kassign.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/kassign.h linux-2.6.33/fs/reiser4/kassign.h
+--- linux-2.6.33.orig/fs/reiser4/kassign.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/kassign.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,111 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -21842,9 +22099,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/kassign.h linux-2.6.30/fs/reiser4/kassign
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/Kconfig linux-2.6.30/fs/reiser4/Kconfig
---- linux-2.6.30.orig/fs/reiser4/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/Kconfig	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/Kconfig linux-2.6.33/fs/reiser4/Kconfig
+--- linux-2.6.33.orig/fs/reiser4/Kconfig	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/Kconfig	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,34 @@
 +config REISER4_FS
 +	tristate "Reiser4 (EXPERIMENTAL)"
@@ -21880,9 +22137,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/Kconfig linux-2.6.30/fs/reiser4/Kconfig
 +	  Don't use this unless you are debugging reiser4.
 +
 +	  If unsure, say N.
-diff -urN linux-2.6.30.orig/fs/reiser4/key.c linux-2.6.30/fs/reiser4/key.c
---- linux-2.6.30.orig/fs/reiser4/key.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/key.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/key.c linux-2.6.33/fs/reiser4/key.c
+--- linux-2.6.33.orig/fs/reiser4/key.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/key.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,138 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -22022,9 +22279,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/key.c linux-2.6.30/fs/reiser4/key.c
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/key.h linux-2.6.30/fs/reiser4/key.h
---- linux-2.6.30.orig/fs/reiser4/key.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/key.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/key.h linux-2.6.33/fs/reiser4/key.h
+--- linux-2.6.33.orig/fs/reiser4/key.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/key.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,392 @@
 +/* Copyright 2000, 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -22418,9 +22675,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/key.h linux-2.6.30/fs/reiser4/key.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/ktxnmgrd.c linux-2.6.30/fs/reiser4/ktxnmgrd.c
---- linux-2.6.30.orig/fs/reiser4/ktxnmgrd.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/ktxnmgrd.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/ktxnmgrd.c linux-2.6.33/fs/reiser4/ktxnmgrd.c
+--- linux-2.6.33.orig/fs/reiser4/ktxnmgrd.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/ktxnmgrd.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,215 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +/* Transaction manager daemon. */
@@ -22637,9 +22894,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/ktxnmgrd.c linux-2.6.30/fs/reiser4/ktxnmg
 + * fill-column: 120
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/ktxnmgrd.h linux-2.6.30/fs/reiser4/ktxnmgrd.h
---- linux-2.6.30.orig/fs/reiser4/ktxnmgrd.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/ktxnmgrd.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/ktxnmgrd.h linux-2.6.33/fs/reiser4/ktxnmgrd.h
+--- linux-2.6.33.orig/fs/reiser4/ktxnmgrd.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/ktxnmgrd.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,52 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -22693,9 +22950,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/ktxnmgrd.h linux-2.6.30/fs/reiser4/ktxnmg
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/lock.c linux-2.6.30/fs/reiser4/lock.c
---- linux-2.6.30.orig/fs/reiser4/lock.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/lock.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/lock.c linux-2.6.33/fs/reiser4/lock.c
+--- linux-2.6.33.orig/fs/reiser4/lock.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/lock.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1237 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -23934,9 +24191,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/lock.c linux-2.6.30/fs/reiser4/lock.c
 +   fill-column: 79
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/lock.h linux-2.6.30/fs/reiser4/lock.h
---- linux-2.6.30.orig/fs/reiser4/lock.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/lock.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/lock.h linux-2.6.33/fs/reiser4/lock.h
+--- linux-2.6.33.orig/fs/reiser4/lock.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/lock.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,250 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -24188,9 +24445,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/lock.h linux-2.6.30/fs/reiser4/lock.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/Makefile linux-2.6.30/fs/reiser4/Makefile
---- linux-2.6.30.orig/fs/reiser4/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/Makefile linux-2.6.33/fs/reiser4/Makefile
+--- linux-2.6.33.orig/fs/reiser4/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,98 @@
 +#
 +# reiser4/Makefile
@@ -24290,9 +24547,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/Makefile linux-2.6.30/fs/reiser4/Makefile
 +		   plugin/disk_format/disk_format40.o \
 +		   plugin/disk_format/disk_format.o
 +
-diff -urN linux-2.6.30.orig/fs/reiser4/oid.c linux-2.6.30/fs/reiser4/oid.c
---- linux-2.6.30.orig/fs/reiser4/oid.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/oid.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/oid.c linux-2.6.33/fs/reiser4/oid.c
+--- linux-2.6.33.orig/fs/reiser4/oid.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/oid.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,141 @@
 +/* Copyright 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -24435,9 +24692,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/oid.c linux-2.6.30/fs/reiser4/oid.c
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/page_cache.c linux-2.6.30/fs/reiser4/page_cache.c
---- linux-2.6.30.orig/fs/reiser4/page_cache.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/page_cache.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/page_cache.c linux-2.6.33/fs/reiser4/page_cache.c
+--- linux-2.6.33.orig/fs/reiser4/page_cache.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/page_cache.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,693 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -24927,15 +25184,15 @@ diff -urN linux-2.6.30.orig/fs/reiser4/page_cache.c linux-2.6.30/fs/reiser4/page
 +int reiser4_writepage(struct page *page,
 +		      struct writeback_control *wbc)
 +{
-+	struct super_block *s;
-+	reiser4_context *ctx;
-+
++	/*
++	 * assert("edward-1562",
++	 * can_hit_entd(get_current_context_check(), sb));
++	 */
 +	assert("vs-828", PageLocked(page));
 +
-+	s = page->mapping->host->i_sb;
-+	ctx = get_current_context_check();
++	wbc->sb = page->mapping->host->i_sb;
++	wbc->bdi = page->mapping->backing_dev_info;
 +
-+	/* assert("", can_hit_entd(ctx, s)); */
 +	return write_page_by_ent(page, wbc);
 +}
 +
@@ -25132,9 +25389,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/page_cache.c linux-2.6.30/fs/reiser4/page
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/page_cache.h linux-2.6.30/fs/reiser4/page_cache.h
---- linux-2.6.30.orig/fs/reiser4/page_cache.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/page_cache.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/page_cache.h linux-2.6.33/fs/reiser4/page_cache.h
+--- linux-2.6.33.orig/fs/reiser4/page_cache.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/page_cache.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,66 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -25202,9 +25459,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/page_cache.h linux-2.6.30/fs/reiser4/page
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/cluster.c linux-2.6.30/fs/reiser4/plugin/cluster.c
---- linux-2.6.30.orig/fs/reiser4/plugin/cluster.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/cluster.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/cluster.c linux-2.6.33/fs/reiser4/plugin/cluster.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/cluster.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/cluster.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,72 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -25278,9 +25535,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/cluster.c linux-2.6.30/fs/reiser4/
 +  scroll-step: 1
 +  End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/cluster.h linux-2.6.30/fs/reiser4/plugin/cluster.h
---- linux-2.6.30.orig/fs/reiser4/plugin/cluster.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/cluster.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/cluster.h linux-2.6.33/fs/reiser4/plugin/cluster.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/cluster.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/cluster.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,410 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -25692,9 +25949,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/cluster.h linux-2.6.30/fs/reiser4/
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/compress.c linux-2.6.30/fs/reiser4/plugin/compress/compress.c
---- linux-2.6.30.orig/fs/reiser4/plugin/compress/compress.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/compress/compress.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/compress/compress.c linux-2.6.33/fs/reiser4/plugin/compress/compress.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/compress/compress.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/compress/compress.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,355 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +/* reiser4 compression transform plugins */
@@ -25812,8 +26069,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/compress.c linux-2.6.30/f
 +}
 +
 +static void
-+gzip1_compress(coa_t coa, __u8 * src_first, unsigned src_len,
-+	       __u8 * dst_first, unsigned *dst_len)
++gzip1_compress(coa_t coa, __u8 * src_first, size_t src_len,
++	       __u8 * dst_first, size_t *dst_len)
 +{
 +	int ret = 0;
 +	struct z_stream_s stream;
@@ -25854,8 +26111,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/compress.c linux-2.6.30/f
 +}
 +
 +static void
-+gzip1_decompress(coa_t coa, __u8 * src_first, unsigned src_len,
-+		 __u8 * dst_first, unsigned *dst_len)
++gzip1_decompress(coa_t coa, __u8 * src_first, size_t src_len,
++		 __u8 * dst_first, size_t *dst_len)
 +{
 +	int ret = 0;
 +	struct z_stream_s stream;
@@ -25964,8 +26221,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/compress.c linux-2.6.30/f
 +}
 +
 +static void
-+lzo1_compress(coa_t coa, __u8 * src_first, unsigned src_len,
-+	      __u8 * dst_first, unsigned *dst_len)
++lzo1_compress(coa_t coa, __u8 * src_first, size_t src_len,
++	      __u8 * dst_first, size_t *dst_len)
 +{
 +	int result;
 +
@@ -25988,8 +26245,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/compress.c linux-2.6.30/f
 +}
 +
 +static void
-+lzo1_decompress(coa_t coa, __u8 * src_first, unsigned src_len,
-+		__u8 * dst_first, unsigned *dst_len)
++lzo1_decompress(coa_t coa, __u8 * src_first, size_t src_len,
++		__u8 * dst_first, size_t *dst_len)
 +{
 +	int result;
 +
@@ -26051,9 +26308,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/compress.c linux-2.6.30/f
 +  scroll-step: 1
 +  End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/compress.h linux-2.6.30/fs/reiser4/plugin/compress/compress.h
---- linux-2.6.30.orig/fs/reiser4/plugin/compress/compress.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/compress/compress.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/compress/compress.h linux-2.6.33/fs/reiser4/plugin/compress/compress.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/compress/compress.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/compress/compress.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,43 @@
 +#if !defined( __FS_REISER4_COMPRESS_H__ )
 +#define __FS_REISER4_COMPRESS_H__
@@ -26098,9 +26355,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/compress.h linux-2.6.30/f
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/compress_mode.c linux-2.6.30/fs/reiser4/plugin/compress/compress_mode.c
---- linux-2.6.30.orig/fs/reiser4/plugin/compress/compress_mode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/compress/compress_mode.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/compress/compress_mode.c linux-2.6.33/fs/reiser4/plugin/compress/compress_mode.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/compress/compress_mode.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/compress/compress_mode.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,162 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +/* This file contains Reiser4 compression mode plugins.
@@ -26264,18 +26521,18 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/compress_mode.c linux-2.6
 +  scroll-step: 1
 +  End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/compress/Makefile linux-2.6.30/fs/reiser4/plugin/compress/Makefile
---- linux-2.6.30.orig/fs/reiser4/plugin/compress/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/compress/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/compress/Makefile linux-2.6.33/fs/reiser4/plugin/compress/Makefile
+--- linux-2.6.33.orig/fs/reiser4/plugin/compress/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/compress/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,5 @@
 +obj-$(CONFIG_REISER4_FS) += compress_plugins.o
 +
 +compress_plugins-objs :=	\
 +	compress.o		\
 +	compress_mode.o
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/crypto/cipher.c linux-2.6.30/fs/reiser4/plugin/crypto/cipher.c
---- linux-2.6.30.orig/fs/reiser4/plugin/crypto/cipher.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/crypto/cipher.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/crypto/cipher.c linux-2.6.33/fs/reiser4/plugin/crypto/cipher.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/crypto/cipher.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/crypto/cipher.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,37 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser,
 +   licensing governed by reiser4/README */
@@ -26314,9 +26571,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/crypto/cipher.c linux-2.6.30/fs/re
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/crypto/cipher.h linux-2.6.30/fs/reiser4/plugin/crypto/cipher.h
---- linux-2.6.30.orig/fs/reiser4/plugin/crypto/cipher.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/crypto/cipher.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/crypto/cipher.h linux-2.6.33/fs/reiser4/plugin/crypto/cipher.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/crypto/cipher.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/crypto/cipher.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,55 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +/* This file contains definitions for the objects operated
@@ -26373,9 +26630,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/crypto/cipher.h linux-2.6.30/fs/re
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/crypto/digest.c linux-2.6.30/fs/reiser4/plugin/crypto/digest.c
---- linux-2.6.30.orig/fs/reiser4/plugin/crypto/digest.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/crypto/digest.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/crypto/digest.c linux-2.6.33/fs/reiser4/plugin/crypto/digest.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/crypto/digest.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/crypto/digest.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,58 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -26435,9 +26692,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/crypto/digest.c linux-2.6.30/fs/re
 +  scroll-step: 1
 +  End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/dir/dir.h linux-2.6.30/fs/reiser4/plugin/dir/dir.h
---- linux-2.6.30.orig/fs/reiser4/plugin/dir/dir.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/dir/dir.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/dir/dir.h linux-2.6.33/fs/reiser4/plugin/dir/dir.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/dir/dir.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/dir/dir.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,36 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -26475,9 +26732,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/dir/dir.h linux-2.6.30/fs/reiser4/
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/dir/hashed_dir.c linux-2.6.30/fs/reiser4/plugin/dir/hashed_dir.c
---- linux-2.6.30.orig/fs/reiser4/plugin/dir/hashed_dir.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/dir/hashed_dir.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/dir/hashed_dir.c linux-2.6.33/fs/reiser4/plugin/dir/hashed_dir.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/dir/hashed_dir.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/dir/hashed_dir.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,81 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -26560,18 +26817,18 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/dir/hashed_dir.c linux-2.6.30/fs/r
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/dir/Makefile linux-2.6.30/fs/reiser4/plugin/dir/Makefile
---- linux-2.6.30.orig/fs/reiser4/plugin/dir/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/dir/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/dir/Makefile linux-2.6.33/fs/reiser4/plugin/dir/Makefile
+--- linux-2.6.33.orig/fs/reiser4/plugin/dir/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/dir/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,5 @@
 +obj-$(CONFIG_REISER4_FS) += dir_plugins.o
 +
 +dir_plugins-objs :=	\
 +	hashed_dir.o	\
 +	seekable_dir.o
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/dir/seekable_dir.c linux-2.6.30/fs/reiser4/plugin/dir/seekable_dir.c
---- linux-2.6.30.orig/fs/reiser4/plugin/dir/seekable_dir.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/dir/seekable_dir.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/dir/seekable_dir.c linux-2.6.33/fs/reiser4/plugin/dir/seekable_dir.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/dir/seekable_dir.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/dir/seekable_dir.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,46 @@
 +/* Copyright 2005 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -26619,9 +26876,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/dir/seekable_dir.c linux-2.6.30/fs
 +	set_key_offset(result, (__u64) 0);
 +	return;
 +}
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/dir_plugin_common.c linux-2.6.30/fs/reiser4/plugin/dir_plugin_common.c
---- linux-2.6.30.orig/fs/reiser4/plugin/dir_plugin_common.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/dir_plugin_common.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/dir_plugin_common.c linux-2.6.33/fs/reiser4/plugin/dir_plugin_common.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/dir_plugin_common.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/dir_plugin_common.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,865 @@
 +/* Copyright 2005 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -27488,9 +27745,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/dir_plugin_common.c linux-2.6.30/f
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format40.c linux-2.6.30/fs/reiser4/plugin/disk_format/disk_format40.c
---- linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format40.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/disk_format/disk_format40.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/disk_format/disk_format40.c linux-2.6.33/fs/reiser4/plugin/disk_format/disk_format40.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/disk_format/disk_format40.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/disk_format/disk_format40.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,655 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -28147,9 +28404,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format40.c linux-
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format40.h linux-2.6.30/fs/reiser4/plugin/disk_format/disk_format40.h
---- linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format40.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/disk_format/disk_format40.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/disk_format/disk_format40.h linux-2.6.33/fs/reiser4/plugin/disk_format/disk_format40.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/disk_format/disk_format40.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/disk_format/disk_format40.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,109 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -28260,9 +28517,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format40.h linux-
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format.c linux-2.6.30/fs/reiser4/plugin/disk_format/disk_format.c
---- linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/disk_format/disk_format.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/disk_format/disk_format.c linux-2.6.33/fs/reiser4/plugin/disk_format/disk_format.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/disk_format/disk_format.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/disk_format/disk_format.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,38 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -28302,9 +28559,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format.c linux-2.
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format.h linux-2.6.30/fs/reiser4/plugin/disk_format/disk_format.h
---- linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/disk_format/disk_format.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/disk_format/disk_format.h linux-2.6.33/fs/reiser4/plugin/disk_format/disk_format.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/disk_format/disk_format.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/disk_format/disk_format.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,27 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -28333,18 +28590,18 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/disk_format/disk_format.h linux-2.
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/disk_format/Makefile linux-2.6.30/fs/reiser4/plugin/disk_format/Makefile
---- linux-2.6.30.orig/fs/reiser4/plugin/disk_format/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/disk_format/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/disk_format/Makefile linux-2.6.33/fs/reiser4/plugin/disk_format/Makefile
+--- linux-2.6.33.orig/fs/reiser4/plugin/disk_format/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/disk_format/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,5 @@
 +obj-$(CONFIG_REISER4_FS) += df_plugins.o
 +
 +df_plugins-objs :=	\
 +	disk_format40.o	\
 +	disk_format.o
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/fibration.c linux-2.6.30/fs/reiser4/plugin/fibration.c
---- linux-2.6.30.orig/fs/reiser4/plugin/fibration.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/fibration.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/fibration.c linux-2.6.33/fs/reiser4/plugin/fibration.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/fibration.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/fibration.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,175 @@
 +/* Copyright 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -28521,9 +28778,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/fibration.c linux-2.6.30/fs/reiser
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/fibration.h linux-2.6.30/fs/reiser4/plugin/fibration.h
---- linux-2.6.30.orig/fs/reiser4/plugin/fibration.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/fibration.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/fibration.h linux-2.6.33/fs/reiser4/plugin/fibration.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/fibration.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/fibration.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,37 @@
 +/* Copyright 2004 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -28562,10 +28819,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/fibration.h linux-2.6.30/fs/reiser
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/fs/reiser4/plugin/file/cryptcompress.c
---- linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file/cryptcompress.c	2009-06-22 16:08:13.000000000 +0200
-@@ -0,0 +1,3807 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.33/fs/reiser4/plugin/file/cryptcompress.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/file/cryptcompress.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file/cryptcompress.c	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,3803 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 +   reiser4/README */
 +/*
@@ -29582,7 +29839,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 +	coplug = inode_compression_plugin(inode);
 +	if (should_compress(tc, clust->index, inode)) {
 +		/* try to compress, discard bad results */
-+		__u32 dst_len;
++		size_t dst_len;
 +		compression_mode_plugin * mplug =
 +			inode_compression_mode_plugin(inode);
 +		assert("edward-602", coplug != NULL);
@@ -29732,7 +29989,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 +		transformed = 1;
 +	}
 +	if (need_inflate(clust, inode, 0)) {
-+		unsigned dst_len = inode_cluster_size(inode);
++		size_t dst_len = inode_cluster_size(inode);
 +		if(transformed)
 +			alternate_streams(tc);
 +
@@ -30541,8 +30798,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 +	info = cryptcompress_inode_data(inode);
 +
 +	mutex_unlock(&info->checkin_mutex);
-+	reiser4_txn_restart_current();
-+	balance_dirty_pages_ratelimited_nr(inode->i_mapping, nr_dirtied);
++	reiser4_throttle_write(inode, nr_dirtied);
 +	mutex_lock(&info->checkin_mutex);
 +	return 0;
 +}
@@ -31210,7 +31466,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 +/* the heart of write_cryptcompress */
 +static loff_t do_write_cryptcompress(struct file *file, struct inode *inode,
 +				     const char __user *buf, size_t to_write,
-+				     loff_t pos, struct psched_context *cont)
++				     loff_t pos, struct dispatch_context *cont)
 +{
 +	int i;
 +	hint_t *hint;
@@ -31251,10 +31507,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 +	if (next_window_stat(&win) == HOLE_WINDOW) {
 +		/* write hole in this iteration
 +		   separated from the loop below */
-+		result = write_pschedule_hook(file, inode,
-+					      pos,
-+					      &clust,
-+					      cont);
++		result = write_dispatch_hook(file, inode,
++					     pos, &clust, cont);
 +		if (result)
 +			goto out;
 +		result = prepare_logical_cluster(inode, pos, count, &clust,
@@ -31268,14 +31522,13 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 +
 +		assert("edward-750", reiser4_schedulable());
 +
-+		result = write_pschedule_hook(file, inode,
-+					      pos + to_write - count,
-+					      &clust,
-+					      cont);
++		result = write_dispatch_hook(file, inode,
++					     pos + to_write - count,
++					     &clust, cont);
 +		if (result)
 +			goto out;
-+		if (cont->state == PSCHED_ASSIGNED_NEW)
-+			/* done_lh was called in write_pschedule_hook */
++		if (cont->state == DISPATCH_ASSIGNED_NEW)
++			/* done_lh was called in write_dispatch_hook */
 +			goto out_no_longterm_lock;
 +
 +		result = prepare_logical_cluster(inode, pos, count, &clust,
@@ -31355,7 +31608,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 +	put_cluster_handle(&clust);
 +	assert("edward-195",
 +	       ergo((to_write == count),
-+		    (result < 0 || cont->state == PSCHED_ASSIGNED_NEW)));
++		    (result < 0 || cont->state == DISPATCH_ASSIGNED_NEW)));
 +	return (to_write - count) ? (to_write - count) : result;
 +}
 +
@@ -31368,7 +31621,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 + */
 +ssize_t write_cryptcompress(struct file *file, const char __user *buf,
 +			    size_t count, loff_t *off,
-+			    struct psched_context *cont)
++			    struct dispatch_context *cont)
 +{
 +	ssize_t result;
 +	struct inode *inode;
@@ -31376,7 +31629,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 +  	loff_t pos = *off;
 +  	struct cryptcompress_info *info;
 +
-+  	assert("edward-1449", cont->state == PSCHED_INVAL_STATE);
++  	assert("edward-1449", cont->state == DISPATCH_INVAL_STATE);
 +
 +	inode = file->f_dentry->d_inode;
 +	assert("edward-196", cryptcompress_inode_ok(inode));
@@ -32269,7 +32522,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 +			ctx = reiser4_init_context(dentry->d_inode->i_sb);
 +			if (IS_ERR(ctx))
 +				return PTR_ERR(ctx);
-+			result = setattr_pschedule_hook(inode);
++			result = setattr_dispatch_hook(inode);
 +			if (result) {
 +				context_set_commit_async(ctx);
 +				reiser4_exit_context(ctx);
@@ -32373,9 +32626,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.c linux-2.6.30/
 +  scroll-step: 1
 +  End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.h linux-2.6.30/fs/reiser4/plugin/file/cryptcompress.h
---- linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file/cryptcompress.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file/cryptcompress.h linux-2.6.33/fs/reiser4/plugin/file/cryptcompress.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/file/cryptcompress.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file/cryptcompress.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,616 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +/* See http://www.namesys.com/cryptcompress_design.html */
@@ -32941,10 +33194,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.h linux-2.6.30/
 +void destroy_inode_cryptcompress(struct inode * inode);
 +int grab_page_cluster(struct inode *inode, struct cluster_handle * clust,
 +		      rw_op rw);
-+int write_pschedule_hook(struct file *file, struct inode * inode,
-+			 loff_t pos, struct cluster_handle * clust,
-+			 struct psched_context * cont);
-+int setattr_pschedule_hook(struct inode * inode);
++int write_dispatch_hook(struct file *file, struct inode * inode,
++			loff_t pos, struct cluster_handle * clust,
++			struct dispatch_context * cont);
++int setattr_dispatch_hook(struct inode * inode);
 +struct reiser4_crypto_info * inode_crypto_info(struct inode * inode);
 +void inherit_crypto_info_common(struct inode * parent, struct inode * object,
 +				int (*can_inherit)(struct inode * child,
@@ -32993,10 +33246,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/cryptcompress.h linux-2.6.30/
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file.c linux-2.6.30/fs/reiser4/plugin/file/file.c
---- linux-2.6.30.orig/fs/reiser4/plugin/file/file.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file/file.c	2009-06-22 16:08:13.000000000 +0200
-@@ -0,0 +1,2687 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file/file.c linux-2.6.33/fs/reiser4/plugin/file/file.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/file/file.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file/file.c	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,2688 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
 +
@@ -33823,14 +34076,16 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file.c linux-2.6.30/fs/reiser
 +
 +	BUG_ON(node->atom == NULL);
 +	JF_CLR(node, JNODE_WRITE_PREPARED);
-+	jput(node);
 +
 +	if (get_current_context()->entd) {
 +		entd_context *ent = get_entd_context(node->tree->super);
 +
 +		if (ent->cur_request->page == page)
-+			ent->cur_request->node = node;
++			/* the following reference will be
++			   dropped in reiser4_writeout */
++			ent->cur_request->node = jref(node);
 +	}
++	jput(node);
 +	return 0;
 +}
 +
@@ -35058,8 +35313,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file.c linux-2.6.30/fs/reiser
 + * @cont: unused argument, as we don't perform plugin conversion when being
 + * managed by unix_file plugin.
 + */
-+ssize_t write_unix_file(struct file *file, const char __user *buf,
-+			size_t count, loff_t *pos, struct psched_context *cont)
++ssize_t write_unix_file(struct file *file,
++			const char __user *buf,
++			size_t count, loff_t *pos,
++			struct dispatch_context *cont)
 +{
 +	int result;
 +	reiser4_context *ctx;
@@ -35224,16 +35481,13 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file.c linux-2.6.30/fs/reiser
 +		}
 +		drop_access(uf_info);
 +		ea = NEITHER_OBTAINED;
-+		reiser4_txn_restart(ctx);
-+		current->journal_info = NULL;
++
 +		/*
 +		 * tell VM how many pages were dirtied. Maybe number of pages
 +		 * which were dirty already should not be counted
 +		 */
-+		balance_dirty_pages_ratelimited_nr(inode->i_mapping,
-+						   (written + PAGE_CACHE_SIZE - 1) / PAGE_CACHE_SIZE);
-+		current->journal_info = ctx;
-+
++		reiser4_throttle_write(inode,
++			     (written + PAGE_CACHE_SIZE - 1) / PAGE_CACHE_SIZE);
 +		left -= written;
 +		buf += written;
 +		*pos += written;
@@ -35684,70 +35938,38 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file.c linux-2.6.30/fs/reiser
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.30/fs/reiser4/plugin/file/file_conversion.c
---- linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file/file_conversion.c	2009-06-22 16:44:21.000000000 +0200
-@@ -0,0 +1,779 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.33/fs/reiser4/plugin/file/file_conversion.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/file/file_conversion.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file/file_conversion.c	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,747 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser,
 +   licensing governed by reiser4/README */
 +
 +/**
-+ * This file contains plugin schedule hooks, and plugin conversion methods.
++ * This file contains dispatching hooks, and conversion methods, which
++ * implement transitions in the FILE interface.
 + *
-+ * Plugin schedule hook makes a decision (at plugin schedule point) about the
-+ * most reasonable plugins for managing a regular file. Usually such decisions
-+ * is made by some O(1)-heuristic.
++ * Dispatching hook makes a decision (at dispatching point) about the
++ * most reasonable plugin. Such decision is made in accordance with some
++ * O(1)-heuristic.
 + *
-+ * By default we assign a unix_file plugin id when writing incompressible file
-+ * managed by cryptcompress plugin id. Currently used heuristic for estimating
-+ * compressibility is very simple: if first complete logical cluster (64K by
-+ * default) of a file is incompressible, then we make a decision, that the whole
-+ * file is incompressible (*).
++ * We implement a transition CRYPTCOMPRESS -> UNIX_FILE for files with
++ * incompressible data. Current heuristic to estimate compressibility is
++ * very simple: if first complete logical cluster (64K by default) of a
++ * file is incompressible, then we make a decision, that the whole file
++ * is incompressible.
 + *
-+ * To enable a conversion we install a special "magic" compression mode plugin
-+ * (CONVX_COMPRESSION_MODE_ID, see plugin/compress/compress_mode.c for details)
-+ * at file creation time (**).
++ * To enable dispatching we install a special "magic" compression mode
++ * plugin CONVX_COMPRESSION_MODE_ID at file creation time.
 + *
-+ * Note, that we don't perform back conversion (unix_file->cryptcompress)
-+ * because of compatibility reasons (see http://dev.namesys.com/Version4.X.Y
-+ * for details).
++ * Note, that we don't perform back conversion (UNIX_FILE->CRYPTCOMPRESS)
++ * because of compatibility reasons).
 + *
-+ * The conversion is accompanied by rebuilding disk structures of a file, so it
-+ * is important to protect them from being interacted with other plugins which
-+ * don't expect them to be in such inconsistent state. For this to be protected
-+ * we serialize readers and writers of a file's conversion set (FCS).
-+ *
-+ * We define FCS as a file plugin installed in inode's pset plus file's data
-+ * and metadata that this file plugin manipulates with (items, etc).
-+ * Note, that FCS is defined per file.
-+ * FCS reader is defined as a set of instruction of the following type:
-+ * {inode_file_plugin(inode)->method()} (I.e. retrieving a file plugin id
-+ * conjoined with all method's instructions should be atomic).
-+ * FCS writer is a set of instructions that perform file plugin conversion
-+ * (convert items, update pset, etc).
-+ * Example:
-+ * reiser4_write_careful() supplied to VFS as a ->write() file operation is
-+ * composed of the following (optional) instructions:
-+ *             1              2                         3
-+ * *********************** ####### -------------------------------------------->
-+ *
-+ * 1) "****" are instructions performed on behalf of cryptcompress file plugin;
-+ * 2) "####" is a FCS writer (performing a conversion cryptcompress->unix_file);
-+ * 3) "----" are instructions performed on behalf of unix_file plugin;
-+ * Here (1) and (3) are FCS readers.
-+ *
-+ * In this example FCS readers and writers are already serialized (by design),
-+ * however there can be readers and writers executing at the same time in
-+ * different contexts, so we need a common mechanism of serialization.
-+ *
-+ * Currently serialization of FCS readers and writers is performed via acquiring
-+ * a special per-inode rw-semaphore (conv_sem). And yes, {down, up}_read is for
-+ * FCS readers, and  {down, up}_write is for FCS writers, see the macros below
-+ * for passive/active protection.
-+ *
-+ * ---
-+ * (*)  This heuristic can be changed to a better one (benchmarking is needed).
-+ * (**) Such technique allows to keep enable/disable state on disk.
++ * In conversion time we protect CS, the conversion set (file's (meta)data
++ * and plugin table (pset)) via special per-inode rw-semaphore (conv_sem).
++ * The methods which implement conversion are CS writers. The methods of FS
++ * interface (file_operations, inode_operations, address_space_operations)
++ * are CS readers.
 + */
 +
 +#include "../../inode.h"
@@ -35902,11 +36124,11 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 +/**
 + * Check if we really have achieved plugin scheduling point
 + */
-+static int check_psched_point(struct inode * inode,
-+			      loff_t pos /* position in the
-+					    file to write from */,
-+			      struct cluster_handle * clust,
-+			      struct psched_context * cont)
++static int check_dispatch_point(struct inode * inode,
++				loff_t pos /* position in the
++					      file to write from */,
++				struct cluster_handle * clust,
++				struct dispatch_context * cont)
 +{
 +	assert("edward-1505", conversion_enabled(inode));
 +	/*
@@ -35931,9 +36153,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 +	       pos == inode->i_size &&
 +	       pos == inode_cluster_size(inode));
 +	assert("edward-1539", cont != NULL);
-+	assert("edward-1540", cont->state == PSCHED_INVAL_STATE);
++	assert("edward-1540", cont->state == DISPATCH_INVAL_STATE);
 +
-+	cont->state = PSCHED_SCHED_POINT;
++	cont->state = DISPATCH_POINT;
 +	return 0;
 +}
 +
@@ -35991,14 +36213,14 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 + */
 +static int read_check_compressibility(struct inode * inode,
 +				      struct cluster_handle * clust,
-+				      struct psched_context * cont)
++				      struct dispatch_context * cont)
 +{
 +	int i;
 +	int result;
-+	__u32 dst_len;
++	size_t dst_len;
 +	hint_t tmp_hint;
 +	hint_t * cur_hint = clust->hint;
-+	assert("edward-1541", cont->state == PSCHED_SCHED_POINT);
++	assert("edward-1541", cont->state == DISPATCH_POINT);
 +
 +	start_check_compressibility(inode, clust, &tmp_hint);
 +
@@ -36063,8 +36285,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 +	finish_check_compressibility(inode, clust, cur_hint);
 +	cont->state =
 +		(data_is_compressible(dst_len, inode_cluster_size(inode)) ?
-+		 PSCHED_REMAINS_OLD :
-+		 PSCHED_ASSIGNED_NEW);
++		 DISPATCH_REMAINS_OLD :
++		 DISPATCH_ASSIGNED_NEW);
 +	return 0;
 + error:
 +	put_page_cluster(clust, inode, READ_OP);
@@ -36123,8 +36345,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 +/**
 + * Convert cryptcompress file plugin to unix_file plugin.
 + */
-+static int cryptcompress2unixfile(struct file * file, struct inode * inode,
-+				  struct psched_context * cont)
++static int cryptcompress2unixfile(struct file *file, struct inode *inode,
++				  struct dispatch_context *cont)
 +{
 +	int i;
 +	int result = 0;
@@ -36180,28 +36402,28 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 + * Make a decision about the most reasonable file plugin id to manage
 + * the file.
 + */
-+int write_pschedule_hook(struct file * file, struct inode * inode,
-+			 loff_t pos, struct cluster_handle * clust,
-+			 struct psched_context * cont)
++int write_dispatch_hook(struct file *file, struct inode *inode,
++			loff_t pos, struct cluster_handle *clust,
++			struct dispatch_context *cont)
 +{
 +	int result;
 +	if (!conversion_enabled(inode))
 +		return 0;
-+	result = check_psched_point(inode, pos, clust, cont);
-+	if (result || cont->state != PSCHED_SCHED_POINT)
++	result = check_dispatch_point(inode, pos, clust, cont);
++	if (result || cont->state != DISPATCH_POINT)
 +		return result;
 +	result = read_check_compressibility(inode, clust, cont);
 +	if (result)
 +		return result;
-+	if (cont->state == PSCHED_REMAINS_OLD) {
++	if (cont->state == DISPATCH_REMAINS_OLD) {
 +		put_page_cluster(clust, inode, READ_OP);
 +		return disable_conversion(inode);
 +	}
-+	assert("edward-1543", cont->state == PSCHED_ASSIGNED_NEW);
++	assert("edward-1543", cont->state == DISPATCH_ASSIGNED_NEW);
 +	/*
 +	 * page cluster is grabbed and uptodate. It will be
 +	 * released with a pgset after plugin conversion is
-+	 * finished, see put_psched_context().
++	 * finished, see put_dispatch_context().
 +	 */
 +	reiser4_unset_hint(clust->hint);
 +	move_cluster_pgset(clust, &cont->pages, &cont->nr_pages);
@@ -36211,20 +36433,20 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 +/**
 + * This is called by ->setattr() method of cryptcompress file plugin.
 + */
-+int setattr_pschedule_hook(struct inode * inode)
++int setattr_dispatch_hook(struct inode * inode)
 +{
 +	if (conversion_enabled(inode))
 +		return disable_conversion(inode);
 +	return 0;
 +}
 +
-+static inline void init_psched_context(struct psched_context * cont)
++static inline void init_dispatch_context(struct dispatch_context * cont)
 +{
 +	memset(cont, 0, sizeof(*cont));
 +}
 +
-+static inline void done_psched_context(struct psched_context * cont,
-+				       struct inode * inode)
++static inline void done_dispatch_context(struct dispatch_context * cont,
++					 struct inode * inode)
 +{
 +	if (cont->pages) {
 +		__put_page_cluster(0, cont->nr_pages, cont->pages, inode);
@@ -36254,13 +36476,13 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 +	reiser4_context *ctx;
 +	ssize_t written_old = 0; /* bytes written with initial plugin */
 +	ssize_t written_new = 0; /* bytes written with new plugin */
-+	struct psched_context cont;
++	struct dispatch_context cont;
 +	struct inode * inode = file->f_dentry->d_inode;
 +
 +	ctx = reiser4_init_context(inode->i_sb);
 +	if (IS_ERR(ctx))
 +		return PTR_ERR(ctx);
-+	init_psched_context(&cont);
++	init_dispatch_context(&cont);
 +	mutex_lock(&inode->i_mutex);
 +	/**
 +	 * First step.
@@ -36272,7 +36494,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 +						      count,
 +						      off,
 +						      &cont);
-+	if (cont.state != PSCHED_ASSIGNED_NEW || written_old < 0)
++	if (cont.state != DISPATCH_ASSIGNED_NEW || written_old < 0)
 +		goto exit;
 +	/**
 +	 * Second step.
@@ -36306,7 +36528,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 +						      NULL);
 + exit:
 +	mutex_unlock(&inode->i_mutex);
-+	done_psched_context(&cont, inode);
++	done_dispatch_context(&cont, inode);
 +	reiser4_exit_context(ctx);
 +
 +	return written_old + (written_new < 0 ? 0 : written_new);
@@ -36467,9 +36689,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file_conversion.c linux-2.6.3
 +  scroll-step: 1
 +  End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file.h linux-2.6.30/fs/reiser4/plugin/file/file.h
---- linux-2.6.30.orig/fs/reiser4/plugin/file/file.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file/file.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file/file.h linux-2.6.33/fs/reiser4/plugin/file/file.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/file/file.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file/file.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,336 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -36481,18 +36703,18 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file.h linux-2.6.30/fs/reiser
 +#if !defined( __REISER4_FILE_H__ )
 +#define __REISER4_FILE_H__
 +
-+/* possible states when scheduling a new file plugin */
++/* possible states in dispatching process */
 +typedef enum {
-+	PSCHED_INVAL_STATE,    /* invalid state */
-+	PSCHED_SCHED_POINT,    /* scheduling point has been achieved */
-+	PSCHED_REMAINS_OLD,    /* made a decision to be managed by old plugin */
-+	PSCHED_ASSIGNED_NEW    /* new plugin has been scheduled */
-+} psched_state;
++	DISPATCH_INVAL_STATE,  /* invalid state */
++	DISPATCH_POINT,        /* dispatching point has been achieved */
++	DISPATCH_REMAINS_OLD,  /* made a decision to manage by old plugin */
++	DISPATCH_ASSIGNED_NEW  /* a new plugin has been assigned */
++} dispatch_state;
 +
-+struct psched_context {
++struct dispatch_context {
 +	int nr_pages;
 +	struct page **pages;
-+	psched_state state;
++	dispatch_state state;
 +};
 +
 +/**
@@ -36555,7 +36777,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file.h linux-2.6.30/fs/reiser
 +ssize_t read_unix_file(struct file *, char __user *buf, size_t read_amount,
 +		       loff_t *off);
 +ssize_t write_unix_file(struct file *, const char __user *buf, size_t write_amount,
-+			loff_t * off, struct psched_context * cont);
++			loff_t * off, struct dispatch_context * cont);
 +int ioctl_unix_file(struct inode *, struct file *, unsigned int cmd,
 +		    unsigned long arg);
 +int mmap_unix_file(struct file *, struct vm_area_struct *);
@@ -36594,7 +36816,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file.h linux-2.6.30/fs/reiser
 +			   size_t count, loff_t *off);
 +ssize_t write_cryptcompress(struct file *, const char __user *buf,
 +			    size_t count, loff_t * off,
-+			    struct psched_context *cont);
++			    struct dispatch_context *cont);
 +int ioctl_cryptcompress(struct inode *, struct file *, unsigned int cmd,
 +			unsigned long arg);
 +int mmap_cryptcompress(struct file *, struct vm_area_struct *);
@@ -36807,9 +37029,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/file.h linux-2.6.30/fs/reiser
 + * scroll-step: 1
 + * End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/Makefile linux-2.6.30/fs/reiser4/plugin/file/Makefile
---- linux-2.6.30.orig/fs/reiser4/plugin/file/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file/Makefile linux-2.6.33/fs/reiser4/plugin/file/Makefile
+--- linux-2.6.33.orig/fs/reiser4/plugin/file/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,7 @@
 +obj-$(CONFIG_REISER4_FS) += file_plugins.o
 +
@@ -36818,9 +37040,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/Makefile linux-2.6.30/fs/reis
 +	tail_conversion.o	\
 +	symlink.o		\
 +	cryptcompress.o
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/symfile.c linux-2.6.30/fs/reiser4/plugin/file/symfile.c
---- linux-2.6.30.orig/fs/reiser4/plugin/file/symfile.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file/symfile.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file/symfile.c linux-2.6.33/fs/reiser4/plugin/file/symfile.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/file/symfile.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file/symfile.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,87 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -36909,9 +37131,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/symfile.c linux-2.6.30/fs/rei
 +   sophisticated symfile syntax that we are not planning to write for
 +   version 4.0.
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/symlink.c linux-2.6.30/fs/reiser4/plugin/file/symlink.c
---- linux-2.6.30.orig/fs/reiser4/plugin/file/symlink.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file/symlink.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file/symlink.c linux-2.6.33/fs/reiser4/plugin/file/symlink.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/file/symlink.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file/symlink.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,95 @@
 +/* Copyright 2002, 2003, 2005 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -37008,10 +37230,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/symlink.c linux-2.6.30/fs/rei
 +  scroll-step: 1
 +  End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/tail_conversion.c linux-2.6.30/fs/reiser4/plugin/file/tail_conversion.c
---- linux-2.6.30.orig/fs/reiser4/plugin/file/tail_conversion.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file/tail_conversion.c	2009-06-22 16:08:13.000000000 +0200
-@@ -0,0 +1,737 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file/tail_conversion.c linux-2.6.33/fs/reiser4/plugin/file/tail_conversion.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/file/tail_conversion.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file/tail_conversion.c	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,743 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
 +#include "../../inode.h"
@@ -37500,8 +37722,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/tail_conversion.c linux-2.6.3
 +			 * on partially converted files.
 +			 */
 +			drop_exclusive_access(uf_info);
-+			/* throttle the conversion */
-+			reiser4_throttle_write(inode);
++			/* throttle the conversion
++			   FIXME-EDWARD: Pass the precise number of pages
++			   that was dirtied */
++			reiser4_throttle_write(inode, 1);
 +			get_exclusive_access(uf_info);
 +
 +			/*
@@ -37699,8 +37923,12 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/tail_conversion.c linux-2.6.3
 +		page_cache_release(page);
 +
 +		drop_exclusive_access(uf_info);
-+		/* throttle the conversion */
-+		reiser4_throttle_write(inode);
++		/*
++		 * throttle the conversion.
++		 * FIXME-EDWARD: Calculate and pass the precise number
++		 * of pages that was dirtied
++		 */
++		reiser4_throttle_write(inode, 1);
 +		get_exclusive_access(uf_info);
 +		/*
 +		 * nobody is allowed to complete conversion but a process which
@@ -37749,9 +37977,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file/tail_conversion.c linux-2.6.3
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file_ops.c linux-2.6.30/fs/reiser4/plugin/file_ops.c
---- linux-2.6.30.orig/fs/reiser4/plugin/file_ops.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file_ops.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file_ops.c linux-2.6.33/fs/reiser4/plugin/file_ops.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/file_ops.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file_ops.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,162 @@
 +/* Copyright 2005 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -37915,9 +38143,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file_ops.c linux-2.6.30/fs/reiser4
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file_ops_readdir.c linux-2.6.30/fs/reiser4/plugin/file_ops_readdir.c
---- linux-2.6.30.orig/fs/reiser4/plugin/file_ops_readdir.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file_ops_readdir.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file_ops_readdir.c linux-2.6.33/fs/reiser4/plugin/file_ops_readdir.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/file_ops_readdir.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file_ops_readdir.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,658 @@
 +/* Copyright 2005 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -38577,9 +38805,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file_ops_readdir.c linux-2.6.30/fs
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file_plugin_common.c linux-2.6.30/fs/reiser4/plugin/file_plugin_common.c
---- linux-2.6.30.orig/fs/reiser4/plugin/file_plugin_common.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/file_plugin_common.c	2009-06-22 17:27:31.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/file_plugin_common.c linux-2.6.33/fs/reiser4/plugin/file_plugin_common.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/file_plugin_common.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/file_plugin_common.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1008 @@
 +/* Copyright 2005 by Hans Reiser, licensing governed by
 +   reiser4/README */
@@ -39589,9 +39817,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/file_plugin_common.c linux-2.6.30/
 +  scroll-step: 1
 +  End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/hash.c linux-2.6.30/fs/reiser4/plugin/hash.c
---- linux-2.6.30.orig/fs/reiser4/plugin/hash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/hash.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/hash.c linux-2.6.33/fs/reiser4/plugin/hash.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/hash.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/hash.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,352 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -39945,9 +40173,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/hash.c linux-2.6.30/fs/reiser4/plu
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/inode_ops.c linux-2.6.30/fs/reiser4/plugin/inode_ops.c
---- linux-2.6.30.orig/fs/reiser4/plugin/inode_ops.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/inode_ops.c	2009-06-22 17:27:31.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/inode_ops.c linux-2.6.33/fs/reiser4/plugin/inode_ops.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/inode_ops.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/inode_ops.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,906 @@
 +/*
 + * Copyright 2005 by Hans Reiser, licensing governed by reiser4/README
@@ -40855,9 +41083,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/inode_ops.c linux-2.6.30/fs/reiser
 +	dir->i_ctime = dir->i_mtime = CURRENT_TIME;
 +	return reiser4_update_sd(dir);
 +}
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/inode_ops_rename.c linux-2.6.30/fs/reiser4/plugin/inode_ops_rename.c
---- linux-2.6.30.orig/fs/reiser4/plugin/inode_ops_rename.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/inode_ops_rename.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/inode_ops_rename.c linux-2.6.33/fs/reiser4/plugin/inode_ops_rename.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/inode_ops_rename.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/inode_ops_rename.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,925 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -41784,9 +42012,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/inode_ops_rename.c linux-2.6.30/fs
 +	return result;
 +}
 +#endif
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/acl.h linux-2.6.30/fs/reiser4/plugin/item/acl.h
---- linux-2.6.30.orig/fs/reiser4/plugin/item/acl.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/acl.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/acl.h linux-2.6.33/fs/reiser4/plugin/item/acl.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/acl.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/acl.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,66 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -41854,9 +42082,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/acl.h linux-2.6.30/fs/reiser4
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/blackbox.c linux-2.6.30/fs/reiser4/plugin/item/blackbox.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/blackbox.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/blackbox.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/blackbox.c linux-2.6.33/fs/reiser4/plugin/item/blackbox.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/blackbox.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/blackbox.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,142 @@
 +/* Copyright 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -42000,9 +42228,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/blackbox.c linux-2.6.30/fs/re
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/blackbox.h linux-2.6.30/fs/reiser4/plugin/item/blackbox.h
---- linux-2.6.30.orig/fs/reiser4/plugin/item/blackbox.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/blackbox.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/blackbox.h linux-2.6.33/fs/reiser4/plugin/item/blackbox.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/blackbox.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/blackbox.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,33 @@
 +/* Copyright 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -42037,9 +42265,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/blackbox.h linux-2.6.30/fs/re
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/cde.c linux-2.6.30/fs/reiser4/plugin/item/cde.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/cde.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/cde.c	2009-06-22 17:27:31.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/cde.c linux-2.6.33/fs/reiser4/plugin/item/cde.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/cde.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/cde.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1008 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -43049,9 +43277,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/cde.c linux-2.6.30/fs/reiser4
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/cde.h linux-2.6.30/fs/reiser4/plugin/item/cde.h
---- linux-2.6.30.orig/fs/reiser4/plugin/item/cde.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/cde.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/cde.h linux-2.6.33/fs/reiser4/plugin/item/cde.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/cde.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/cde.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,87 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -43140,9 +43368,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/cde.h linux-2.6.30/fs/reiser4
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/ctail.c linux-2.6.30/fs/reiser4/plugin/item/ctail.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/ctail.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/ctail.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/ctail.c linux-2.6.33/fs/reiser4/plugin/item/ctail.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/ctail.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/ctail.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1613 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -44757,9 +44985,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/ctail.c linux-2.6.30/fs/reise
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/ctail.h linux-2.6.30/fs/reiser4/plugin/item/ctail.h
---- linux-2.6.30.orig/fs/reiser4/plugin/item/ctail.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/ctail.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/ctail.h linux-2.6.33/fs/reiser4/plugin/item/ctail.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/ctail.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/ctail.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,102 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -44863,9 +45091,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/ctail.h linux-2.6.30/fs/reise
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/extent.c linux-2.6.30/fs/reiser4/plugin/item/extent.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/extent.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/extent.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/extent.c linux-2.6.33/fs/reiser4/plugin/item/extent.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/extent.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/extent.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,197 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -45064,9 +45292,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/extent.c linux-2.6.30/fs/reis
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/extent_file_ops.c linux-2.6.30/fs/reiser4/plugin/item/extent_file_ops.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/extent_file_ops.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/extent_file_ops.c	2009-06-22 17:27:31.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/extent_file_ops.c linux-2.6.33/fs/reiser4/plugin/item/extent_file_ops.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/extent_file_ops.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/extent_file_ops.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1453 @@
 +/* COPYRIGHT 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -46521,9 +46749,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/extent_file_ops.c linux-2.6.3
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/extent_flush_ops.c linux-2.6.30/fs/reiser4/plugin/item/extent_flush_ops.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/extent_flush_ops.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/extent_flush_ops.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/extent_flush_ops.c linux-2.6.33/fs/reiser4/plugin/item/extent_flush_ops.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/extent_flush_ops.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/extent_flush_ops.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1028 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -47553,9 +47781,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/extent_flush_ops.c linux-2.6.
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/extent.h linux-2.6.30/fs/reiser4/plugin/item/extent.h
---- linux-2.6.30.orig/fs/reiser4/plugin/item/extent.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/extent.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/extent.h linux-2.6.33/fs/reiser4/plugin/item/extent.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/extent.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/extent.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,231 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -47788,9 +48016,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/extent.h linux-2.6.30/fs/reis
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/extent_item_ops.c linux-2.6.30/fs/reiser4/plugin/item/extent_item_ops.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/extent_item_ops.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/extent_item_ops.c	2009-06-22 17:27:31.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/extent_item_ops.c linux-2.6.33/fs/reiser4/plugin/item/extent_item_ops.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/extent_item_ops.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/extent_item_ops.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,889 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -48681,9 +48909,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/extent_item_ops.c linux-2.6.3
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/internal.c linux-2.6.30/fs/reiser4/plugin/item/internal.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/internal.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/internal.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/internal.c linux-2.6.33/fs/reiser4/plugin/item/internal.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/internal.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/internal.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,404 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -49089,9 +49317,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/internal.c linux-2.6.30/fs/re
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/internal.h linux-2.6.30/fs/reiser4/plugin/item/internal.h
---- linux-2.6.30.orig/fs/reiser4/plugin/item/internal.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/internal.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/internal.h linux-2.6.33/fs/reiser4/plugin/item/internal.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/internal.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/internal.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,57 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +/* Internal item contains down-link to the child of the internal/twig
@@ -49150,9 +49378,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/internal.h linux-2.6.30/fs/re
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/item.c linux-2.6.30/fs/reiser4/plugin/item/item.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/item.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/item.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/item.c linux-2.6.33/fs/reiser4/plugin/item/item.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/item.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/item.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,719 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -49873,9 +50101,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/item.c linux-2.6.30/fs/reiser
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/item.h linux-2.6.30/fs/reiser4/plugin/item/item.h
---- linux-2.6.30.orig/fs/reiser4/plugin/item/item.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/item.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/item.h linux-2.6.33/fs/reiser4/plugin/item/item.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/item.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/item.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,398 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -50112,8 +50340,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/item.h linux-2.6.30/fs/reiser
 +
 +/* operations specific to items regular (unix) file metadata are built of */
 +struct file_iops{
-+	int (*write) (struct file *, struct inode *,
-+		      const char __user *, size_t, loff_t *pos);
++	ssize_t (*write) (struct file *, struct inode *,
++			  const char __user *, size_t, loff_t *pos);
 +	int (*read) (struct file *, flow_t *, hint_t *);
 +	int (*readpage) (void *, struct page *);
 +	int (*get_block) (const coord_t *, sector_t, sector_t *);
@@ -50275,9 +50503,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/item.h linux-2.6.30/fs/reiser
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/Makefile linux-2.6.30/fs/reiser4/plugin/item/Makefile
---- linux-2.6.30.orig/fs/reiser4/plugin/item/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/Makefile linux-2.6.33/fs/reiser4/plugin/item/Makefile
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,18 @@
 +obj-$(CONFIG_REISER4_FS) += item_plugins.o
 +
@@ -50297,9 +50525,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/Makefile linux-2.6.30/fs/reis
 +
 +
 +
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/sde.c linux-2.6.30/fs/reiser4/plugin/item/sde.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/sde.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/sde.c	2009-06-22 17:27:31.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/sde.c linux-2.6.33/fs/reiser4/plugin/item/sde.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/sde.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/sde.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,190 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -50491,9 +50719,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/sde.c linux-2.6.30/fs/reiser4
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/sde.h linux-2.6.30/fs/reiser4/plugin/item/sde.h
---- linux-2.6.30.orig/fs/reiser4/plugin/item/sde.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/sde.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/sde.h linux-2.6.33/fs/reiser4/plugin/item/sde.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/sde.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/sde.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,66 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -50561,9 +50789,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/sde.h linux-2.6.30/fs/reiser4
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/static_stat.c linux-2.6.30/fs/reiser4/plugin/item/static_stat.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/static_stat.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/static_stat.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/static_stat.c linux-2.6.33/fs/reiser4/plugin/item/static_stat.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/static_stat.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/static_stat.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1107 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -51672,9 +51900,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/static_stat.c linux-2.6.30/fs
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/static_stat.h linux-2.6.30/fs/reiser4/plugin/item/static_stat.h
---- linux-2.6.30.orig/fs/reiser4/plugin/item/static_stat.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/static_stat.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/static_stat.h linux-2.6.33/fs/reiser4/plugin/item/static_stat.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/static_stat.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/static_stat.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,224 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -51900,9 +52128,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/static_stat.h linux-2.6.30/fs
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/tail.c linux-2.6.30/fs/reiser4/plugin/item/tail.c
---- linux-2.6.30.orig/fs/reiser4/plugin/item/tail.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/tail.c	2009-06-22 17:36:20.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/tail.c linux-2.6.33/fs/reiser4/plugin/item/tail.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/tail.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/tail.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,807 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -52711,10 +52939,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/tail.c linux-2.6.30/fs/reiser
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/tail.h linux-2.6.30/fs/reiser4/plugin/item/tail.h
---- linux-2.6.30.orig/fs/reiser4/plugin/item/tail.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/item/tail.h	2009-06-22 16:08:13.000000000 +0200
-@@ -0,0 +1,58 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/item/tail.h linux-2.6.33/fs/reiser4/plugin/item/tail.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/item/tail.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/item/tail.h	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,56 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
 +#if !defined( __REISER4_TAIL_H__ )
@@ -52757,8 +52985,6 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/tail.h linux-2.6.30/fs/reiser
 +reiser4_key *append_key_tail(const coord_t *, reiser4_key *);
 +void init_coord_extension_tail(uf_coord_t *, loff_t offset);
 +int get_block_address_tail(const coord_t *, sector_t, sector_t *);
-+int item_balance_dirty_pages(struct address_space *, const flow_t *,
-+			     hint_t *, int back_to_dirty, int set_hint);
 +
 +/* __REISER4_TAIL_H__ */
 +#endif
@@ -52773,9 +52999,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/item/tail.h linux-2.6.30/fs/reiser
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/Makefile linux-2.6.30/fs/reiser4/plugin/Makefile
---- linux-2.6.30.orig/fs/reiser4/plugin/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/Makefile linux-2.6.33/fs/reiser4/plugin/Makefile
+--- linux-2.6.33.orig/fs/reiser4/plugin/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,26 @@
 +obj-$(CONFIG_REISER4_FS) += plugins.o
 +
@@ -52803,18 +53029,18 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/Makefile linux-2.6.30/fs/reiser4/p
 +obj-$(CONFIG_REISER4_FS) += space/
 +obj-$(CONFIG_REISER4_FS) += disk_format/
 +obj-$(CONFIG_REISER4_FS) += security/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/node/Makefile linux-2.6.30/fs/reiser4/plugin/node/Makefile
---- linux-2.6.30.orig/fs/reiser4/plugin/node/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/node/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/node/Makefile linux-2.6.33/fs/reiser4/plugin/node/Makefile
+--- linux-2.6.33.orig/fs/reiser4/plugin/node/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/node/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,5 @@
 +obj-$(CONFIG_REISER4_FS) += node_plugins.o
 +
 +node_plugins-objs :=	\
 +	node.o		\
 +	node40.o
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/node/node40.c linux-2.6.30/fs/reiser4/plugin/node/node40.c
---- linux-2.6.30.orig/fs/reiser4/plugin/node/node40.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/node/node40.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/node/node40.c linux-2.6.33/fs/reiser4/plugin/node/node40.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/node/node40.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/node/node40.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,2924 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -55740,9 +55966,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/node/node40.c linux-2.6.30/fs/reis
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/node/node40.h linux-2.6.30/fs/reiser4/plugin/node/node40.h
---- linux-2.6.30.orig/fs/reiser4/plugin/node/node40.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/node/node40.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/node/node40.h linux-2.6.33/fs/reiser4/plugin/node/node40.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/node/node40.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/node/node40.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,125 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -55869,9 +56095,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/node/node40.h linux-2.6.30/fs/reis
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/node/node.c linux-2.6.30/fs/reiser4/plugin/node/node.c
---- linux-2.6.30.orig/fs/reiser4/plugin/node/node.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/node/node.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/node/node.c linux-2.6.33/fs/reiser4/plugin/node/node.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/node/node.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/node/node.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,131 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -56004,9 +56230,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/node/node.c linux-2.6.30/fs/reiser
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/node/node.h linux-2.6.30/fs/reiser4/plugin/node/node.h
---- linux-2.6.30.orig/fs/reiser4/plugin/node/node.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/node/node.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/node/node.h linux-2.6.33/fs/reiser4/plugin/node/node.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/node/node.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/node/node.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,272 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -56280,9 +56506,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/node/node.h linux-2.6.30/fs/reiser
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/object.c linux-2.6.30/fs/reiser4/plugin/object.c
---- linux-2.6.30.orig/fs/reiser4/plugin/object.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/object.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/object.c linux-2.6.33/fs/reiser4/plugin/object.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/object.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/object.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,531 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -56815,9 +57041,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/object.c linux-2.6.30/fs/reiser4/p
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/object.h linux-2.6.30/fs/reiser4/plugin/object.h
---- linux-2.6.30.orig/fs/reiser4/plugin/object.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/object.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/object.h linux-2.6.33/fs/reiser4/plugin/object.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/object.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/object.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,117 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -56936,9 +57162,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/object.h linux-2.6.30/fs/reiser4/p
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin.c linux-2.6.30/fs/reiser4/plugin/plugin.c
---- linux-2.6.30.orig/fs/reiser4/plugin/plugin.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/plugin.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/plugin.c linux-2.6.33/fs/reiser4/plugin/plugin.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/plugin.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/plugin.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,560 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -57500,9 +57726,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin.c linux-2.6.30/fs/reiser4/p
 + * fill-column: 120
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin.h linux-2.6.30/fs/reiser4/plugin/plugin.h
---- linux-2.6.30.orig/fs/reiser4/plugin/plugin.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/plugin.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/plugin.h linux-2.6.33/fs/reiser4/plugin/plugin.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/plugin.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/plugin.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,942 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -57741,7 +57967,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin.h linux-2.6.30/fs/reiser4/p
 +	 * in @cont */
 +	ssize_t (*write) (struct file *, const char __user *buf,
 +			  size_t write_amount, loff_t * off,
-+			  struct psched_context * cont);
++			  struct dispatch_context * cont);
 +	int (*ioctl) (struct inode *inode, struct file *filp,
 +		      unsigned int cmd, unsigned long arg);
 +	int (*mmap) (struct file *, struct vm_area_struct *);
@@ -58066,10 +58292,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin.h linux-2.6.30/fs/reiser4/p
 +	int (*min_size_deflate) (void);
 +	 __u32(*checksum) (char *data, __u32 length);
 +	/* main transform procedures */
-+	void (*compress) (coa_t coa, __u8 *src_first, unsigned src_len,
-+			  __u8 *dst_first, unsigned *dst_len);
-+	void (*decompress) (coa_t coa, __u8 *src_first, unsigned src_len,
-+			    __u8 *dst_first, unsigned *dst_len);
++	void (*compress) (coa_t coa, __u8 *src_first, size_t src_len,
++			  __u8 *dst_first, size_t *dst_len);
++	void (*decompress) (coa_t coa, __u8 *src_first, size_t src_len,
++			    __u8 *dst_first, size_t *dst_len);
 +} compression_plugin;
 +
 +typedef struct compression_mode_plugin {
@@ -58446,10 +58672,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin.h linux-2.6.30/fs/reiser4/p
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin_header.h linux-2.6.30/fs/reiser4/plugin/plugin_header.h
---- linux-2.6.30.orig/fs/reiser4/plugin/plugin_header.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/plugin_header.h	2009-06-22 16:08:13.000000000 +0200
-@@ -0,0 +1,157 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/plugin_header.h linux-2.6.33/fs/reiser4/plugin/plugin_header.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/plugin_header.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/plugin_header.h	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,149 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
 +/* plugin header. Data structures required by all plugin types. */
@@ -58462,32 +58688,24 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin_header.h linux-2.6.30/fs/re
 +#include "../debug.h"
 +#include "../dformat.h"
 +
-+/* Every plugin type can be considered as a class of virtual objects
-+   {(type, i) | i = 0, 1, ...}, which has one the following categories
-+   of virtualization:
-+   A - no virtualization;
-+   F - per-file virtualization;
-+   S - per-superblock virtualization;
-+   FIXME-EDWARD: Define every such category */
-+
-+/* Supported plugin types: (id, (virtualization category), short description) */
++/* The list of Reiser4 interfaces */
 +typedef enum {
-+	REISER4_FILE_PLUGIN_TYPE,             /* (F) service VFS enry-points */
-+	REISER4_DIR_PLUGIN_TYPE,              /* (F) service VFS enry-points */
-+	REISER4_ITEM_PLUGIN_TYPE,             /* (F) manage items */
-+	REISER4_NODE_PLUGIN_TYPE,             /* (S) manage formatted nodes */
-+	REISER4_HASH_PLUGIN_TYPE,             /* (F) compute hash */
-+	REISER4_FIBRATION_PLUGIN_TYPE,        /* (F) directory fibrations */
-+	REISER4_FORMATTING_PLUGIN_TYPE,       /* (F) tail-packing policy */
-+	REISER4_PERM_PLUGIN_TYPE,             /*       stub (vacancy)     */
-+	REISER4_SD_EXT_PLUGIN_TYPE,           /* (A) stat-data extensions */
-+	REISER4_FORMAT_PLUGIN_TYPE,           /* (S) specify disk format */
-+	REISER4_JNODE_PLUGIN_TYPE,            /* (A) in-memory node headers */
-+	REISER4_CIPHER_PLUGIN_TYPE,           /* (F) cipher transform algs */
-+	REISER4_DIGEST_PLUGIN_TYPE,           /* (F) digest transform algs */
-+	REISER4_COMPRESSION_PLUGIN_TYPE,      /* (F) compression tfm algs */
-+	REISER4_COMPRESSION_MODE_PLUGIN_TYPE, /* (F) compression heuristic */
-+	REISER4_CLUSTER_PLUGIN_TYPE,          /* (F) size of logical cluster */
++	REISER4_FILE_PLUGIN_TYPE,             /* manage VFS objects */
++	REISER4_DIR_PLUGIN_TYPE,              /* manage directories */
++	REISER4_ITEM_PLUGIN_TYPE,             /* manage items */
++	REISER4_NODE_PLUGIN_TYPE,             /* manage formatted nodes */
++	REISER4_HASH_PLUGIN_TYPE,             /* hash methods */
++	REISER4_FIBRATION_PLUGIN_TYPE,        /* directory fibrations */
++	REISER4_FORMATTING_PLUGIN_TYPE,       /* dispatching policy */
++	REISER4_PERM_PLUGIN_TYPE,             /* stub (vacancy) */
++	REISER4_SD_EXT_PLUGIN_TYPE,           /* manage stat-data extensions */
++	REISER4_FORMAT_PLUGIN_TYPE,           /* disk format specifications */
++	REISER4_JNODE_PLUGIN_TYPE,            /* manage in-memory headers */
++	REISER4_CIPHER_PLUGIN_TYPE,           /* cipher transform methods */
++	REISER4_DIGEST_PLUGIN_TYPE,           /* digest transform methods */
++	REISER4_COMPRESSION_PLUGIN_TYPE,      /* compression methods */
++	REISER4_COMPRESSION_MODE_PLUGIN_TYPE, /* dispatching policies */
++	REISER4_CLUSTER_PLUGIN_TYPE,          /* manage logical clusters */
 +	REISER4_PLUGIN_TYPES
 +} reiser4_plugin_type;
 +
@@ -58607,9 +58825,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin_header.h linux-2.6.30/fs/re
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin_set.c linux-2.6.30/fs/reiser4/plugin/plugin_set.c
---- linux-2.6.30.orig/fs/reiser4/plugin/plugin_set.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/plugin_set.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/plugin_set.c linux-2.6.33/fs/reiser4/plugin/plugin_set.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/plugin_set.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/plugin_set.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,380 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -58991,9 +59209,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin_set.c linux-2.6.30/fs/reise
 + * fill-column: 120
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin_set.h linux-2.6.30/fs/reiser4/plugin/plugin_set.h
---- linux-2.6.30.orig/fs/reiser4/plugin/plugin_set.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/plugin_set.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/plugin_set.h linux-2.6.33/fs/reiser4/plugin/plugin_set.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/plugin_set.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/plugin_set.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,78 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -59073,17 +59291,17 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/plugin_set.h linux-2.6.30/fs/reise
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/security/Makefile linux-2.6.30/fs/reiser4/plugin/security/Makefile
---- linux-2.6.30.orig/fs/reiser4/plugin/security/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/security/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/security/Makefile linux-2.6.33/fs/reiser4/plugin/security/Makefile
+--- linux-2.6.33.orig/fs/reiser4/plugin/security/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/security/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,4 @@
 +obj-$(CONFIG_REISER4_FS) += security_plugins.o
 +
 +security_plugins-objs :=	\
 +	perm.o
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/security/perm.c linux-2.6.30/fs/reiser4/plugin/security/perm.c
---- linux-2.6.30.orig/fs/reiser4/plugin/security/perm.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/security/perm.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/security/perm.c linux-2.6.33/fs/reiser4/plugin/security/perm.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/security/perm.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/security/perm.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,33 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -59118,9 +59336,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/security/perm.c linux-2.6.30/fs/re
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/security/perm.h linux-2.6.30/fs/reiser4/plugin/security/perm.h
---- linux-2.6.30.orig/fs/reiser4/plugin/security/perm.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/security/perm.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/security/perm.h linux-2.6.33/fs/reiser4/plugin/security/perm.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/security/perm.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/security/perm.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,38 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -59160,9 +59378,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/security/perm.h linux-2.6.30/fs/re
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/space/bitmap.c linux-2.6.30/fs/reiser4/plugin/space/bitmap.c
---- linux-2.6.30.orig/fs/reiser4/plugin/space/bitmap.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/space/bitmap.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/space/bitmap.c linux-2.6.33/fs/reiser4/plugin/space/bitmap.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/space/bitmap.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/space/bitmap.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1585 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -60749,9 +60967,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/space/bitmap.c linux-2.6.30/fs/rei
 + * scroll-step: 1
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/space/bitmap.h linux-2.6.30/fs/reiser4/plugin/space/bitmap.h
---- linux-2.6.30.orig/fs/reiser4/plugin/space/bitmap.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/space/bitmap.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/space/bitmap.h linux-2.6.33/fs/reiser4/plugin/space/bitmap.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/space/bitmap.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/space/bitmap.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,47 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -60800,17 +61018,17 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/space/bitmap.h linux-2.6.30/fs/rei
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/space/Makefile linux-2.6.30/fs/reiser4/plugin/space/Makefile
---- linux-2.6.30.orig/fs/reiser4/plugin/space/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/space/Makefile	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/space/Makefile linux-2.6.33/fs/reiser4/plugin/space/Makefile
+--- linux-2.6.33.orig/fs/reiser4/plugin/space/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/space/Makefile	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,4 @@
 +obj-$(CONFIG_REISER4_FS) += space_plugins.o
 +
 +space_plugins-objs := \
 +	bitmap.o
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/space/space_allocator.h linux-2.6.30/fs/reiser4/plugin/space/space_allocator.h
---- linux-2.6.30.orig/fs/reiser4/plugin/space/space_allocator.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/space/space_allocator.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/space/space_allocator.h linux-2.6.33/fs/reiser4/plugin/space/space_allocator.h
+--- linux-2.6.33.orig/fs/reiser4/plugin/space/space_allocator.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/space/space_allocator.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,80 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -60892,9 +61110,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/space/space_allocator.h linux-2.6.
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/plugin/tail_policy.c linux-2.6.30/fs/reiser4/plugin/tail_policy.c
---- linux-2.6.30.orig/fs/reiser4/plugin/tail_policy.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/plugin/tail_policy.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/plugin/tail_policy.c linux-2.6.33/fs/reiser4/plugin/tail_policy.c
+--- linux-2.6.33.orig/fs/reiser4/plugin/tail_policy.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/plugin/tail_policy.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,113 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -61009,9 +61227,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/plugin/tail_policy.c linux-2.6.30/fs/reis
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/pool.c linux-2.6.30/fs/reiser4/pool.c
---- linux-2.6.30.orig/fs/reiser4/pool.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/pool.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/pool.c linux-2.6.33/fs/reiser4/pool.c
+--- linux-2.6.33.orig/fs/reiser4/pool.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/pool.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,231 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -61244,9 +61462,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/pool.c linux-2.6.30/fs/reiser4/pool.c
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/pool.h linux-2.6.30/fs/reiser4/pool.h
---- linux-2.6.30.orig/fs/reiser4/pool.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/pool.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/pool.h linux-2.6.33/fs/reiser4/pool.h
+--- linux-2.6.33.orig/fs/reiser4/pool.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/pool.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,57 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -61305,9 +61523,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/pool.h linux-2.6.30/fs/reiser4/pool.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/readahead.c linux-2.6.30/fs/reiser4/readahead.c
---- linux-2.6.30.orig/fs/reiser4/readahead.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/readahead.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/readahead.c linux-2.6.33/fs/reiser4/readahead.c
+--- linux-2.6.33.orig/fs/reiser4/readahead.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/readahead.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,140 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -61449,9 +61667,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/readahead.c linux-2.6.30/fs/reiser4/reada
 +   fill-column: 80
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/readahead.h linux-2.6.30/fs/reiser4/readahead.h
---- linux-2.6.30.orig/fs/reiser4/readahead.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/readahead.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/readahead.h linux-2.6.33/fs/reiser4/readahead.h
+--- linux-2.6.33.orig/fs/reiser4/readahead.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/readahead.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,52 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -61505,9 +61723,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/readahead.h linux-2.6.30/fs/reiser4/reada
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/README linux-2.6.30/fs/reiser4/README
---- linux-2.6.30.orig/fs/reiser4/README	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/README	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/README linux-2.6.33/fs/reiser4/README
+--- linux-2.6.33.orig/fs/reiser4/README	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/README	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,128 @@
 +[LICENSING]
 +
@@ -61637,9 +61855,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/README linux-2.6.30/fs/reiser4/README
 +Edward Shishkin wrote cryptcompress file plugin (which manages files
 +built of encrypted and(or) compressed bodies) and other plugins related
 +to transparent encryption and compression support.
-diff -urN linux-2.6.30.orig/fs/reiser4/reiser4.h linux-2.6.30/fs/reiser4/reiser4.h
---- linux-2.6.30.orig/fs/reiser4/reiser4.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/reiser4.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/reiser4.h linux-2.6.33/fs/reiser4/reiser4.h
+--- linux-2.6.33.orig/fs/reiser4/reiser4.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/reiser4.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,259 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -61900,9 +62118,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/reiser4.h linux-2.6.30/fs/reiser4/reiser4
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/safe_link.c linux-2.6.30/fs/reiser4/safe_link.c
---- linux-2.6.30.orig/fs/reiser4/safe_link.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/safe_link.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/safe_link.c linux-2.6.33/fs/reiser4/safe_link.c
+--- linux-2.6.33.orig/fs/reiser4/safe_link.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/safe_link.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,354 @@
 +/* Copyright 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -62258,9 +62476,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/safe_link.c linux-2.6.30/fs/reiser4/safe_
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/safe_link.h linux-2.6.30/fs/reiser4/safe_link.h
---- linux-2.6.30.orig/fs/reiser4/safe_link.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/safe_link.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/safe_link.h linux-2.6.33/fs/reiser4/safe_link.h
+--- linux-2.6.33.orig/fs/reiser4/safe_link.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/safe_link.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,29 @@
 +/* Copyright 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -62291,9 +62509,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/safe_link.h linux-2.6.30/fs/reiser4/safe_
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/seal.c linux-2.6.30/fs/reiser4/seal.c
---- linux-2.6.30.orig/fs/reiser4/seal.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/seal.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/seal.c linux-2.6.33/fs/reiser4/seal.c
+--- linux-2.6.33.orig/fs/reiser4/seal.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/seal.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,218 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +/* Seals implementation. */
@@ -62513,9 +62731,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/seal.c linux-2.6.30/fs/reiser4/seal.c
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/seal.h linux-2.6.30/fs/reiser4/seal.h
---- linux-2.6.30.orig/fs/reiser4/seal.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/seal.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/seal.h linux-2.6.33/fs/reiser4/seal.h
+--- linux-2.6.33.orig/fs/reiser4/seal.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/seal.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,49 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -62566,9 +62784,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/seal.h linux-2.6.30/fs/reiser4/seal.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/search.c linux-2.6.30/fs/reiser4/search.c
---- linux-2.6.30.orig/fs/reiser4/search.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/search.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/search.c linux-2.6.33/fs/reiser4/search.c
+--- linux-2.6.33.orig/fs/reiser4/search.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/search.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1612 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -64182,9 +64400,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/search.c linux-2.6.30/fs/reiser4/search.c
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/status_flags.c linux-2.6.30/fs/reiser4/status_flags.c
---- linux-2.6.30.orig/fs/reiser4/status_flags.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/status_flags.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/status_flags.c linux-2.6.33/fs/reiser4/status_flags.c
+--- linux-2.6.33.orig/fs/reiser4/status_flags.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/status_flags.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,174 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -64360,9 +64578,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/status_flags.c linux-2.6.30/fs/reiser4/st
 +	get_super_private(sb)->status_bio = NULL;
 +	return 0;
 +}
-diff -urN linux-2.6.30.orig/fs/reiser4/status_flags.h linux-2.6.30/fs/reiser4/status_flags.h
---- linux-2.6.30.orig/fs/reiser4/status_flags.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/status_flags.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/status_flags.h linux-2.6.33/fs/reiser4/status_flags.h
+--- linux-2.6.33.orig/fs/reiser4/status_flags.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/status_flags.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,47 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -64411,9 +64629,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/status_flags.h linux-2.6.30/fs/reiser4/st
 +int reiser4_status_finish(void);
 +
 +#endif
-diff -urN linux-2.6.30.orig/fs/reiser4/super.c linux-2.6.30/fs/reiser4/super.c
---- linux-2.6.30.orig/fs/reiser4/super.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/super.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/super.c linux-2.6.33/fs/reiser4/super.c
+--- linux-2.6.33.orig/fs/reiser4/super.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/super.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,306 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -64721,9 +64939,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/super.c linux-2.6.30/fs/reiser4/super.c
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/super.h linux-2.6.30/fs/reiser4/super.h
---- linux-2.6.30.orig/fs/reiser4/super.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/super.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/super.h linux-2.6.33/fs/reiser4/super.h
+--- linux-2.6.33.orig/fs/reiser4/super.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/super.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,466 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -65191,10 +65409,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/super.h linux-2.6.30/fs/reiser4/super.h
 + * fill-column: 120
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/super_ops.c linux-2.6.30/fs/reiser4/super_ops.c
---- linux-2.6.30.orig/fs/reiser4/super_ops.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/super_ops.c	2009-06-22 16:08:13.000000000 +0200
-@@ -0,0 +1,725 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/super_ops.c linux-2.6.33/fs/reiser4/super_ops.c
+--- linux-2.6.33.orig/fs/reiser4/super_ops.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/super_ops.c	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,736 @@
 +/* Copyright 2005 by Hans Reiser, licensing governed by
 + * reiser4/README */
 +
@@ -65576,48 +65794,59 @@ diff -urN linux-2.6.30.orig/fs/reiser4/super_ops.c linux-2.6.30/fs/reiser4/super
 +}
 +
 +/**
-+ * reiser4_sync_inodes - sync_inodes of super operations
++ * reiser4_writeback_inodes - writeback_inodes of super operations
 + * @super:
++ * @wb:
 + * @wbc:
 + *
 + * This method is called by background and non-backgound writeback. Reiser4's
-+ * implementation uses generic_sync_sb_inodes to call reiser4_writepages for
-+ * each of dirty inodes. Reiser4_writepages handles pages dirtied via shared
-+ * mapping - dirty pages get into atoms. Writeout is called to flush some
-+ * atoms.
++ * implementation uses generic_writeback_sb_inodes to call reiser4_writepages
++ * for each of dirty inodes. reiser4_writepages handles pages dirtied via shared
++ * mapping - dirty pages get into atoms. Writeout is called to flush some atoms.
 + */
-+static void reiser4_sync_inodes(struct super_block *super,
-+			       struct writeback_control *wbc)
++static int reiser4_writeback_inodes(struct super_block *super,
++				    struct bdi_writeback *wb,
++				    struct writeback_control *wbc)
 +{
-+	reiser4_context *ctx;
++	int ret;
 +	long to_write;
++	reiser4_context *ctx;
 +
 +	if (wbc->for_kupdate)
 +		/* reiser4 has its own means of periodical write-out */
-+		return;
-+
-+	to_write = wbc->nr_to_write;
++		goto skip;
 +	assert("vs-49", wbc->older_than_this == NULL);
 +
++	spin_unlock(&inode_lock);
 +	ctx = reiser4_init_context(super);
 +	if (IS_ERR(ctx)) {
 +		warning("vs-13", "failed to init context");
-+		return;
++		spin_lock(&inode_lock);
++		goto skip;
 +	}
-+
++	to_write = wbc->nr_to_write;
 +	/*
-+	 * call reiser4_writepages for each of dirty inodes to turn dirty pages
-+	 * into transactions if they were not yet.
++	 * call reiser4_writepages for each of dirty inodes to turn
++	 * dirty pages into transactions if they were not yet.
 +	 */
-+	generic_sync_sb_inodes(super, wbc);
++	spin_lock(&inode_lock);
++	ret = generic_writeback_sb_inodes(super, wb, wbc);
++	spin_unlock(&inode_lock);
++
++	wbc->nr_to_write = to_write;
 +
 +	/* flush goes here */
-+	wbc->nr_to_write = to_write;
 +	reiser4_writeout(super, wbc);
 +
-+	/* avoid recursive calls to ->sync_inodes */
++	/* avoid recursive calls to ->writeback_inodes */
 +	context_set_commit_async(ctx);
 +	reiser4_exit_context(ctx);
++	spin_lock(&inode_lock);
++
++	return wbc->nr_to_write <= 0 ? 1 : ret;
++ skip:
++	writeback_skip_sb_inodes(super, wb);
++	return 0;
 +}
 +
 +/**
@@ -65655,7 +65884,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/super_ops.c linux-2.6.30/fs/reiser4/super
 +	.write_super = reiser4_write_super,
 +	.statfs = reiser4_statfs,
 +	.clear_inode = reiser4_clear_inode,
-+	.sync_inodes = reiser4_sync_inodes,
++	.writeback_inodes = reiser4_writeback_inodes,
 +	.show_options = reiser4_show_options
 +};
 +
@@ -65920,9 +66149,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/super_ops.c linux-2.6.30/fs/reiser4/super
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/tap.c linux-2.6.30/fs/reiser4/tap.c
---- linux-2.6.30.orig/fs/reiser4/tap.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/tap.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/tap.c linux-2.6.33/fs/reiser4/tap.c
+--- linux-2.6.33.orig/fs/reiser4/tap.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/tap.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,376 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -66300,9 +66529,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/tap.c linux-2.6.30/fs/reiser4/tap.c
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/tap.h linux-2.6.30/fs/reiser4/tap.h
---- linux-2.6.30.orig/fs/reiser4/tap.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/tap.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/tap.h linux-2.6.33/fs/reiser4/tap.h
+--- linux-2.6.33.orig/fs/reiser4/tap.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/tap.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,70 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -66374,9 +66603,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/tap.h linux-2.6.30/fs/reiser4/tap.h
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/tree.c linux-2.6.30/fs/reiser4/tree.c
---- linux-2.6.30.orig/fs/reiser4/tree.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/tree.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/tree.c linux-2.6.33/fs/reiser4/tree.c
+--- linux-2.6.33.orig/fs/reiser4/tree.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/tree.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1878 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -68256,9 +68485,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/tree.c linux-2.6.30/fs/reiser4/tree.c
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/tree.h linux-2.6.30/fs/reiser4/tree.h
---- linux-2.6.30.orig/fs/reiser4/tree.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/tree.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/tree.h linux-2.6.33/fs/reiser4/tree.h
+--- linux-2.6.33.orig/fs/reiser4/tree.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/tree.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,577 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -68837,9 +69066,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/tree.h linux-2.6.30/fs/reiser4/tree.h
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/tree_mod.c linux-2.6.30/fs/reiser4/tree_mod.c
---- linux-2.6.30.orig/fs/reiser4/tree_mod.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/tree_mod.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/tree_mod.c linux-2.6.33/fs/reiser4/tree_mod.c
+--- linux-2.6.33.orig/fs/reiser4/tree_mod.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/tree_mod.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,386 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -69227,9 +69456,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/tree_mod.c linux-2.6.30/fs/reiser4/tree_m
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/tree_mod.h linux-2.6.30/fs/reiser4/tree_mod.h
---- linux-2.6.30.orig/fs/reiser4/tree_mod.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/tree_mod.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/tree_mod.h linux-2.6.33/fs/reiser4/tree_mod.h
+--- linux-2.6.33.orig/fs/reiser4/tree_mod.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/tree_mod.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,29 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -69260,9 +69489,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/tree_mod.h linux-2.6.30/fs/reiser4/tree_m
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/tree_walk.c linux-2.6.30/fs/reiser4/tree_walk.c
---- linux-2.6.30.orig/fs/reiser4/tree_walk.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/tree_walk.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/tree_walk.c linux-2.6.33/fs/reiser4/tree_walk.c
+--- linux-2.6.33.orig/fs/reiser4/tree_walk.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/tree_walk.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,927 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -70191,9 +70420,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/tree_walk.c linux-2.6.30/fs/reiser4/tree_
 +   fill-column: 80
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/tree_walk.h linux-2.6.30/fs/reiser4/tree_walk.h
---- linux-2.6.30.orig/fs/reiser4/tree_walk.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/tree_walk.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/tree_walk.h linux-2.6.33/fs/reiser4/tree_walk.h
+--- linux-2.6.33.orig/fs/reiser4/tree_walk.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/tree_walk.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,125 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -70320,10 +70549,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/tree_walk.h linux-2.6.30/fs/reiser4/tree_
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/txnmgr.c linux-2.6.30/fs/reiser4/txnmgr.c
---- linux-2.6.30.orig/fs/reiser4/txnmgr.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/txnmgr.c	2009-06-22 16:08:13.000000000 +0200
-@@ -0,0 +1,3164 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/txnmgr.c linux-2.6.33/fs/reiser4/txnmgr.c
+--- linux-2.6.33.orig/fs/reiser4/txnmgr.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/txnmgr.c	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,3165 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
 +
@@ -71736,7 +71965,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/txnmgr.c linux-2.6.30/fs/reiser4/txnmgr.c
 +		 * Write throttling is case of no one atom can be
 +		 * flushed/committed.
 +		 */
-+		if (!current_is_pdflush() && !wbc->nonblocking) {
++		if (!current_is_flush_bd_task() && !wbc->nonblocking) {
 +			list_for_each_entry(atom, &tmgr->atoms_list, atom_link) {
 +				spin_lock_atom(atom);
 +				/* Repeat the check from the above. */
@@ -72654,7 +72883,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/txnmgr.c linux-2.6.30/fs/reiser4/txnmgr.c
 +
 +	JF_SET(node, JNODE_DIRTY);
 +
-+	get_current_context()->nr_marked_dirty++;
++	if (!JF_ISSET(node, JNODE_CLUSTER_PAGE))
++		get_current_context()->nr_marked_dirty++;
 +
 +	/* We grab2flush_reserve one additional block only if node was
 +	   not CREATED and jnode_flush did not sort it into neither
@@ -73488,9 +73718,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/txnmgr.c linux-2.6.30/fs/reiser4/txnmgr.c
 + * fill-column: 79
 + * End:
 + */
-diff -urN linux-2.6.30.orig/fs/reiser4/txnmgr.h linux-2.6.30/fs/reiser4/txnmgr.h
---- linux-2.6.30.orig/fs/reiser4/txnmgr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/txnmgr.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/txnmgr.h linux-2.6.33/fs/reiser4/txnmgr.h
+--- linux-2.6.33.orig/fs/reiser4/txnmgr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/txnmgr.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,701 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -74193,9 +74423,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/txnmgr.h linux-2.6.30/fs/reiser4/txnmgr.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/type_safe_hash.h linux-2.6.30/fs/reiser4/type_safe_hash.h
---- linux-2.6.30.orig/fs/reiser4/type_safe_hash.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/type_safe_hash.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/type_safe_hash.h linux-2.6.33/fs/reiser4/type_safe_hash.h
+--- linux-2.6.33.orig/fs/reiser4/type_safe_hash.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/type_safe_hash.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,320 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -74517,10 +74747,10 @@ diff -urN linux-2.6.30.orig/fs/reiser4/type_safe_hash.h linux-2.6.30/fs/reiser4/
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/vfs_ops.c linux-2.6.30/fs/reiser4/vfs_ops.c
---- linux-2.6.30.orig/fs/reiser4/vfs_ops.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/vfs_ops.c	2009-06-22 16:08:13.000000000 +0200
-@@ -0,0 +1,259 @@
+diff -urN linux-2.6.33.orig/fs/reiser4/vfs_ops.c linux-2.6.33/fs/reiser4/vfs_ops.c
+--- linux-2.6.33.orig/fs/reiser4/vfs_ops.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/vfs_ops.c	2010-03-04 19:33:22.000000000 +0100
+@@ -0,0 +1,267 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
 +
@@ -74707,7 +74937,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/vfs_ops.c linux-2.6.30/fs/reiser4/vfs_ops
 +				 * requested page itself - start flush from
 +				 * that page
 +				 */
-+				node = jref(ent->cur_request->node);
++				node = ent->cur_request->node;
 +		}
 +
 +		result = flush_some_atom(node, &nr_submitted, wbc,
@@ -74715,6 +74945,8 @@ diff -urN linux-2.6.30.orig/fs/reiser4/vfs_ops.c linux-2.6.30/fs/reiser4/vfs_ops
 +		if (result != 0)
 +			warning("nikita-31001", "Flush failed: %i", result);
 +		if (node)
++			/* drop the reference aquired
++			   in find_or_create_extent() */
 +			jput(node);
 +		if (!nr_submitted)
 +			break;
@@ -74724,10 +74956,16 @@ diff -urN linux-2.6.30.orig/fs/reiser4/vfs_ops.c linux-2.6.30/fs/reiser4/vfs_ops
 +	} while (wbc->nr_to_write > 0);
 +}
 +
-+void reiser4_throttle_write(struct inode *inode)
++/* tell VM how many pages were dirtied */
++void reiser4_throttle_write(struct inode *inode, int nrpages)
 +{
-+	reiser4_txn_restart_current();
-+	balance_dirty_pages_ratelimited(inode->i_mapping);
++	reiser4_context *ctx;
++
++	ctx = get_current_context();
++	reiser4_txn_restart(ctx);
++	current->journal_info = NULL;
++	balance_dirty_pages_ratelimited_nr(inode->i_mapping, nrpages);
++	current->journal_info = ctx;
 +}
 +
 +const char *REISER4_SUPER_MAGIC_STRING = "ReIsEr4";
@@ -74780,9 +75018,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/vfs_ops.c linux-2.6.30/fs/reiser4/vfs_ops
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/vfs_ops.h linux-2.6.30/fs/reiser4/vfs_ops.h
---- linux-2.6.30.orig/fs/reiser4/vfs_ops.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/vfs_ops.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/vfs_ops.h linux-2.6.33/fs/reiser4/vfs_ops.h
+--- linux-2.6.33.orig/fs/reiser4/vfs_ops.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/vfs_ops.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,53 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -74816,7 +75054,7 @@ diff -urN linux-2.6.30.orig/fs/reiser4/vfs_ops.h linux-2.6.30/fs/reiser4/vfs_ops
 +extern int reiser4_del_nlink(struct inode *, struct inode *, int);
 +
 +extern int reiser4_start_up_io(struct page *page);
-+extern void reiser4_throttle_write(struct inode *);
++extern void reiser4_throttle_write(struct inode *, int nrpages);
 +extern int jnode_is_releasable(jnode *);
 +
 +#define CAPTURE_APAGE_BURST (1024l)
@@ -74837,9 +75075,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/vfs_ops.h linux-2.6.30/fs/reiser4/vfs_ops
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/wander.c linux-2.6.30/fs/reiser4/wander.c
---- linux-2.6.30.orig/fs/reiser4/wander.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/wander.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/wander.c linux-2.6.33/fs/reiser4/wander.c
+--- linux-2.6.33.orig/fs/reiser4/wander.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/wander.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1798 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -76639,9 +76877,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/wander.c linux-2.6.30/fs/reiser4/wander.c
 +   fill-column: 80
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/wander.h linux-2.6.30/fs/reiser4/wander.h
---- linux-2.6.30.orig/fs/reiser4/wander.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/wander.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/wander.h linux-2.6.33/fs/reiser4/wander.h
+--- linux-2.6.33.orig/fs/reiser4/wander.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/wander.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,135 @@
 +/* Copyright 2002, 2003 by Hans Reiser, licensing governed by reiser4/README */
 +
@@ -76778,9 +77016,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/wander.h linux-2.6.30/fs/reiser4/wander.h
 +   scroll-step: 1
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/writeout.h linux-2.6.30/fs/reiser4/writeout.h
---- linux-2.6.30.orig/fs/reiser4/writeout.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/writeout.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/writeout.h linux-2.6.33/fs/reiser4/writeout.h
+--- linux-2.6.33.orig/fs/reiser4/writeout.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/writeout.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,21 @@
 +/* Copyright 2002, 2003, 2004 by Hans Reiser, licensing governed by reiser4/README  */
 +
@@ -76803,9 +77041,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/writeout.h linux-2.6.30/fs/reiser4/writeo
 +   fill-column: 80
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/znode.c linux-2.6.30/fs/reiser4/znode.c
---- linux-2.6.30.orig/fs/reiser4/znode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/znode.c	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/znode.c linux-2.6.33/fs/reiser4/znode.c
+--- linux-2.6.33.orig/fs/reiser4/znode.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/znode.c	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,1029 @@
 +/* Copyright 2001, 2002, 2003 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -77836,9 +78074,9 @@ diff -urN linux-2.6.30.orig/fs/reiser4/znode.c linux-2.6.30/fs/reiser4/znode.c
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/fs/reiser4/znode.h linux-2.6.30/fs/reiser4/znode.h
---- linux-2.6.30.orig/fs/reiser4/znode.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.30/fs/reiser4/znode.h	2009-06-22 16:08:13.000000000 +0200
+diff -urN linux-2.6.33.orig/fs/reiser4/znode.h linux-2.6.33/fs/reiser4/znode.h
+--- linux-2.6.33.orig/fs/reiser4/znode.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.33/fs/reiser4/znode.h	2010-03-04 19:33:22.000000000 +0100
 @@ -0,0 +1,433 @@
 +/* Copyright 2001, 2002, 2003, 2004 by Hans Reiser, licensing governed by
 + * reiser4/README */
@@ -78273,30 +78511,47 @@ diff -urN linux-2.6.30.orig/fs/reiser4/znode.h linux-2.6.30/fs/reiser4/znode.h
 +   fill-column: 120
 +   End:
 +*/
-diff -urN linux-2.6.30.orig/include/linux/fs.h linux-2.6.30/include/linux/fs.h
---- linux-2.6.30.orig/include/linux/fs.h	2009-06-23 00:20:41.000000000 +0200
-+++ linux-2.6.30/include/linux/fs.h	2009-06-22 16:08:13.000000000 +0200
-@@ -1571,6 +1571,8 @@
+diff -urN linux-2.6.33.orig/include/linux/fs.h linux-2.6.33/include/linux/fs.h
+--- linux-2.6.33.orig/include/linux/fs.h	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/include/linux/fs.h	2010-03-04 19:33:22.000000000 +0100
+@@ -511,6 +511,7 @@
+ struct page;
+ struct address_space;
+ struct writeback_control;
++struct bdi_writeback;
+ 
+ struct iov_iter {
+ 	const struct iovec *iov;
+@@ -1567,7 +1568,11 @@
+ 	int (*remount_fs) (struct super_block *, int *, char *);
  	void (*clear_inode) (struct inode *);
  	void (*umount_begin) (struct super_block *);
- 
+-
++	int (*writeback_inodes)(struct super_block *sb,
++				struct bdi_writeback *wb,
++				struct writeback_control *wbc);
 +	void (*sync_inodes) (struct super_block *sb,
 +				struct writeback_control *wbc);
  	int (*show_options)(struct seq_file *, struct vfsmount *);
  	int (*show_stats)(struct seq_file *, struct vfsmount *);
  #ifdef CONFIG_QUOTA
-@@ -2067,6 +2069,7 @@
- extern void generic_sync_sb_inodes(struct super_block *sb,
- 				struct writeback_control *wbc);
+@@ -2074,6 +2079,12 @@
+ extern int invalidate_inode_pages2_range(struct address_space *mapping,
+ 					 pgoff_t start, pgoff_t end);
  extern int write_inode_now(struct inode *, int);
-+extern void generic_sync_sb_inodes(struct super_block *, struct writeback_control *);
++extern void writeback_skip_sb_inodes(struct super_block *sb,
++				     struct bdi_writeback *wb);
++extern void writeback_inodes_wbc(struct writeback_control *wbc);
++extern int generic_writeback_sb_inodes(struct super_block *sb,
++				       struct bdi_writeback *wb,
++				       struct writeback_control *wbc);
  extern int filemap_fdatawrite(struct address_space *);
  extern int filemap_flush(struct address_space *);
  extern int filemap_fdatawait(struct address_space *);
-diff -urN linux-2.6.30.orig/include/linux/mm.h linux-2.6.30/include/linux/mm.h
---- linux-2.6.30.orig/include/linux/mm.h	2009-06-23 00:20:41.000000000 +0200
-+++ linux-2.6.30/include/linux/mm.h	2009-06-22 16:17:44.000000000 +0200
-@@ -838,6 +838,7 @@
+diff -urN linux-2.6.33.orig/include/linux/mm.h linux-2.6.33/include/linux/mm.h
+--- linux-2.6.33.orig/include/linux/mm.h	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/include/linux/mm.h	2010-03-04 19:33:22.000000000 +0100
+@@ -850,6 +850,7 @@
  void account_page_dirtied(struct page *page, struct address_space *mapping);
  int set_page_dirty(struct page *page);
  int set_page_dirty_lock(struct page *page);
@@ -78304,10 +78559,36 @@ diff -urN linux-2.6.30.orig/include/linux/mm.h linux-2.6.30/include/linux/mm.h
  int clear_page_dirty_for_io(struct page *page);
  
  extern unsigned long move_page_tables(struct vm_area_struct *vma,
-diff -urN linux-2.6.30.orig/mm/filemap.c linux-2.6.30/mm/filemap.c
---- linux-2.6.30.orig/mm/filemap.c	2009-06-23 00:20:41.000000000 +0200
-+++ linux-2.6.30/mm/filemap.c	2009-06-22 16:51:45.000000000 +0200
-@@ -134,6 +134,7 @@
+diff -urN linux-2.6.33.orig/include/linux/writeback.h linux-2.6.33/include/linux/writeback.h
+--- linux-2.6.33.orig/include/linux/writeback.h	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/include/linux/writeback.h	2010-03-04 19:33:22.000000000 +0100
+@@ -13,6 +13,12 @@
+ extern struct list_head inode_in_use;
+ extern struct list_head inode_unused;
+ 
++static inline int is_flush_bd_task(struct task_struct *task)
++{
++       return task->flags & PF_FLUSHER;
++}
++#define current_is_flush_bd_task()  is_flush_bd_task(current)
++
+ /*
+  * fs/fs-writeback.c
+  */
+@@ -34,6 +40,9 @@
+ 	enum writeback_sync_modes sync_mode;
+ 	unsigned long *older_than_this;	/* If !NULL, only write back inodes
+ 					   older than this */
++	unsigned long wb_start;         /* Time writeback_inodes_wb was
++					   called. This is needed to avoid
++					   extra jobs and livelock */
+ 	long nr_to_write;		/* Write this many pages, and decrement
+ 					   this for each page written */
+ 	long pages_skipped;		/* Pages which were not written */
+diff -urN linux-2.6.33.orig/mm/filemap.c linux-2.6.33/mm/filemap.c
+--- linux-2.6.33.orig/mm/filemap.c	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/mm/filemap.c	2010-03-04 19:33:22.000000000 +0100
+@@ -139,6 +139,7 @@
  		dec_bdi_stat(mapping->backing_dev_info, BDI_RECLAIMABLE);
  	}
  }
@@ -78315,7 +78596,7 @@ diff -urN linux-2.6.30.orig/mm/filemap.c linux-2.6.30/mm/filemap.c
  
  void remove_from_page_cache(struct page *page)
  {
-@@ -146,6 +147,7 @@
+@@ -151,6 +152,7 @@
  	spin_unlock_irq(&mapping->tree_lock);
  	mem_cgroup_uncharge_cache_page(page);
  }
@@ -78323,18 +78604,18 @@ diff -urN linux-2.6.30.orig/mm/filemap.c linux-2.6.30/mm/filemap.c
  
  static int sync_page(void *word)
  {
-@@ -1009,6 +1011,7 @@
- 
+@@ -948,6 +950,7 @@
+ {
  	ra->ra_pages /= 4;
  }
 +EXPORT_SYMBOL(find_get_pages);
  
  /**
   * do_generic_file_read - generic file read routine
-diff -urN linux-2.6.30.orig/mm/page-writeback.c linux-2.6.30/mm/page-writeback.c
---- linux-2.6.30.orig/mm/page-writeback.c	2009-06-23 00:20:41.000000000 +0200
-+++ linux-2.6.30/mm/page-writeback.c	2009-06-22 16:53:49.000000000 +0200
-@@ -1258,6 +1258,32 @@
+diff -urN linux-2.6.33.orig/mm/page-writeback.c linux-2.6.33/mm/page-writeback.c
+--- linux-2.6.33.orig/mm/page-writeback.c	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/mm/page-writeback.c	2010-03-04 19:33:22.000000000 +0100
+@@ -1130,6 +1130,32 @@
  EXPORT_SYMBOL(__set_page_dirty_nobuffers);
  
  /*

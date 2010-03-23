@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = linux
-PKG_VER        = 2.6.31.1
+PKG_VER        = 2.6.33.1
 PKG_REL        = 0
 
 PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
@@ -33,6 +33,8 @@ PKG_GROUP      = System/Kernels
 PKG_URL        = http://www.kernel.org/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = The Linux kernel.
+
+PKG_BUILD_DEPS = # No build dependencies
 
 define PKG_DESCRIPTION
 	The kernel package contains the Linux kernel (vmlinuz), the core of any \
@@ -44,7 +46,7 @@ endef
 CFLAGS     =
 CXXFLAGS   =
 
-LOCALVERSION   = -ipfire1
+LOCALVERSION   = -$(DISTRO_SNAME)$(PKG_REL)
 FULLVER        = $(PKG_VER)$(LOCALVERSION)
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
@@ -54,7 +56,7 @@ PKG_TARBALL    = $(THISAPP).tar.bz2
 ###############################################################################
 
 define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && echo "$(LOCALVERSION)" > localversion-ipfire
+	cd $(DIR_APP) && echo "$(LOCALVERSION)" > localversion-$(DISTRO_SNAME)
 	rm -f $(DIR_APP)/localversion-grsec
 
 	cd $(DIR_APP) && sed -e "s/^HOSTCFLAGS.*=.*/& -fPIC/g" -i Makefile
