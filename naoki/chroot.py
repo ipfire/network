@@ -268,9 +268,9 @@ class Environment(object):
 			if config["cleanup_on_failure"]:
 				self.clean()
 			raise
-		finally:
-			time_end = time.time()
-			self.log.debug("Package build took %.2fs" % (time_end - time_start))
+
+		time_end = time.time()
+		self.log.debug("Package build took %.2fs" % (time_end - time_start))
 
 		if config["cleanup_on_success"]:
 			self.clean()
