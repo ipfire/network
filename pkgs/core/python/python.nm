@@ -52,6 +52,8 @@ PKG_TARBALL    = $(THISAPP).tar.bz2
 ###############################################################################
 
 define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/#*shared*/*shared*/g" -i Modules/Setup.dist
+
 	cd $(DIR_APP) && autoreconf
 endef
 
@@ -61,16 +63,15 @@ define STAGE_BUILD
 		./configure \
 			--prefix=/usr \
 			--enable-ipv6 \
-			--enable-system-expat
+			--with-system-expat \
+			--with-system-ffi \
+			--enable-shared
 
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
-	# Remove awkward module
-	rm -vf $(BUILDROOT)/usr/lib/python2.6/lib-dynload/_bsddb.so
 
 	rm -rf $(BUILDROOT)/usr/lib/python*/test/
 endef
