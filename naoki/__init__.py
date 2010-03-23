@@ -84,6 +84,14 @@ class Naoki(object):
 
 			packages.append(package)
 
+			if args.withdeps:
+				deps = []
+				for dep in package.dependencies_all:
+					if not dep.built:
+						deps.append(dep.name)
+
+				packages.extend(backend.parse_package(deps, naoki=self))
+
 		if len(packages) >= 2:
 			packages_sorted = backend.depsort(packages)
 			if packages_sorted != packages:

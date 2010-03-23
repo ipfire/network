@@ -255,6 +255,7 @@ class Commandline(object):
 				Parser("build",
 					help="Primary build command",
 					arguments=[
+						Option("withdeps", ["--with-deps"], help="Build all dependencies first if needed"),
 						List("packages", help="Give a list of packages to build or say 'all'"),
 					]),
 

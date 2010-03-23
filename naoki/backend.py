@@ -73,7 +73,7 @@ def find_package_name(name, toolchain=False):
 		if os.path.basename(package) == name:
 			return package
 
-def depsolve(packages, recursive=False, toolchain=False):
+def depsolve(packages, recursive=False, build=False, toolchain=False):
 	deps = []
 	for package in packages:
 		if not package in deps:
@@ -86,6 +86,8 @@ def depsolve(packages, recursive=False, toolchain=False):
 		length = len(deps)
 		for dep in deps[:]:
 			deps.extend(dep.dependencies)
+			if build:
+				deps.extend(dep.dependencies_build)
 
 		new_deps = []
 		for dep in deps:
@@ -107,7 +109,7 @@ def deptree(packages, toolchain=False):
 		next = []
 		stage = ret[-1][:]
 		for package in stage[:]:
-			for dep in package.info.dependencies_all:
+			for dep in package.dependencies_all:
 				if dep in ret[-1]:
 					stage.remove(package)
 					next.append(package)
@@ -123,7 +125,7 @@ def deptree(packages, toolchain=False):
 	return ret
 
 def depsort(packages, toolchain=False):
-	ret = [] 
+	ret = []
 	for l1 in deptree(packages, toolchain=toolchain):
 		ret.extend(l1)
 	return ret
@@ -290,7 +292,7 @@ class PackageInfo(object):
 		deps = self.dependencies
 		if not self.__toolchain:
 			deps.extend(self.dependencies_build)
-		return depsolve(deps, recursive=True)
+		return depsolve(deps, build=True, recursive=True)
 
 	@property
 	def dependencies_toolchain(self):
