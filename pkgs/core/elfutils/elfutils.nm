@@ -1,0 +1,59 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = elfutils
+PKG_VER        = 0.145
+PKG_REL        = 0
+
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
+PKG_GROUP      = Development/Libraries
+PKG_URL        = https://fedorahosted.org/elfutils/
+PKG_LICENSE    = GPLv2 with exceptions
+PKG_SUMMARY    = A collection of utilities and DSOs to handle compiled objects.
+
+PKG_DEPS      += bzip2 xz zlib
+
+define PKG_DESCRIPTION
+	Elfutils is a collection of utilities, including ld (a linker), \
+	nm (for listing symbols from object files), size (for listing the \
+	section sizes of an object or archive file), strip (for discarding \
+	symbols), readelf (to see the raw ELF file structures), and elflint \
+	(to check for well-formed ELF files).
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += \
+	--program-prefix=eu-
+
+define QUALITY_AGENT_WHITELIST_RPATH
+	/usr/lib/libdw-*.so*
+endef
+
+# fails
+#define STAGE_TEST
+#	cd $(DIR_APP) && make check
+#endef
