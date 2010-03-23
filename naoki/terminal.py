@@ -217,6 +217,8 @@ class Commandline(object):
 						Parser("list",
 							arguments=[
 								Option("long", ["-l", "--long"]),
+								Option("unbuilt", ["-u", "--unbuilt"]),
+								Option("built", ["-b", "--built"]),
 							]),
 						Parser("groups",
 							arguments=[

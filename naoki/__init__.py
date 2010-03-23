@@ -177,6 +177,14 @@ Release       : %(release)s
 
 	def call_package_list(self, args):
 		for package in backend.parse_package_info(backend.get_package_names()):
+			# Skip unbuilt packages if we want built packages
+			if args.built and not package.built:
+				continue
+
+			# Skip built packages if we want unbuilt only
+			if args.unbuilt and package.built:
+				continue
+
 			if args.long:
 				print package.fmtstr("%(name)-32s | %(version)-15s | %(summary)s")
 			else:
