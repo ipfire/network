@@ -188,7 +188,7 @@ Release       : %(release)s
 			if args.long:
 				print package.fmtstr("%(name)-32s | %(version)-15s | %(summary)s")
 			else:
-				print package.fmtstr("%(name)s")
+				print package.name
 
 	def call_package_tree(self, args):
 		print backend.deptree(backend.parse_package(backend.get_package_names()))
