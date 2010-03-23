@@ -5,6 +5,7 @@ import logging
 import os
 import random
 import stat
+import time
 
 import backend
 import util
@@ -258,12 +259,18 @@ class Environment(object):
 	def build(self):
 		self.package.download()
 
+		# Save start time
+		time_start = time.time()
+
 		try:
 			self.make("package")
 		except Error:
 			if config["cleanup_on_failure"]:
 				self.clean()
 			raise
+		finally:
+			time_end = time.time()
+			self.log.debug("Package build took %.2fs" % (time_end - time_start))
 
 		if config["cleanup_on_success"]:
 			self.clean()
