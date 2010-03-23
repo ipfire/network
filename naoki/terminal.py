@@ -256,6 +256,7 @@ class Commandline(object):
 					help="Primary build command",
 					arguments=[
 						Option("withdeps", ["--with-deps"], help="Build all dependencies first if needed"),
+						Option("onlydeps", ["--only-deps"], help="Build only dependencies that belong to a package"),
 						List("packages", help="Give a list of packages to build or say 'all'"),
 					]),
 

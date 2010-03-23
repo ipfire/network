@@ -82,9 +82,10 @@ class Naoki(object):
 				self.log.warn("Skipping %s which was already built" % package.name)
 				continue
 
-			packages.append(package)
+			if not args.onlydeps:
+				packages.append(package)
 
-			if args.withdeps:
+			if args.withdeps or args.onlydeps:
 				deps = []
 				for dep in package.dependencies_all:
 					if not dep.built:
