@@ -86,7 +86,7 @@ def depsolve(packages, recursive=False, build=False, toolchain=False):
 		length = len(deps)
 		for dep in deps[:]:
 			deps.extend(dep.dependencies)
-			if build:
+			if build and not toolchain:
 				deps.extend(dep.dependencies_build)
 
 		new_deps = []
@@ -292,7 +292,7 @@ class PackageInfo(object):
 		deps = self.dependencies
 		if not self.__toolchain:
 			deps.extend(self.dependencies_build)
-		return depsolve(deps, build=True, recursive=True)
+		return depsolve(deps, build=True, recursive=True, toolchain=self.__toolchain)
 
 	@property
 	def dependencies_toolchain(self):
