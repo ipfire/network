@@ -103,7 +103,7 @@ define STAGE_INSTALL
 	cd $(DIR_APP) && cp -v arch/x86/boot/bzImage $(BUILDROOT)/boot/$(DISTRO_SNAME)kernel-$(FULLVER)
 	cd $(DIR_APP) && cp -v System.map $(BUILDROOT)/boot/System.map-$(FULLVER)
 	
-	ln -svf $(SNAME)kernel-$(FULLVER) $(BUILDROOT)/boot/$(DISTRO_SNAME)kernel
+	ln -svf $(DISTRO_SNAME)kernel-$(FULLVER) $(BUILDROOT)/boot/$(DISTRO_SNAME)kernel
 	ln -svf System.map-$(FULLVER) $(BUILDROOT)/boot/System.map
 
 	-mkdir -pv $(BUILDROOT)/lib/modules/$(FULLVER)/extra
