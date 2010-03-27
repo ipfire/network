@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = util-linux-ng
-PKG_VER        = 2.17
+PKG_VER        = 2.17.2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -48,40 +48,30 @@ PKG_TARBALL    = $(THISAPP).tar.bz2
 
 CFLAGS        += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
-###############################################################################
-# Installation Details
-###############################################################################
+CONFIGURE_OPTIONS += \
+	--bindir=/bin \
+	--sbindir=/sbin \
+	--disable-wall \
+	--enable-arch \
+	--enable-kill \
+	--enable-login-utils \
+	--enable-partx \
+	--enable-write \
+	--disable-makeinstall-chown \
+	--disable-static
+	
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
 		-i $$(grep -rl '/etc/adjtime' .)
 endef
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--bindir=/bin \
-			--sbindir=/sbin \
-			--disable-wall \
-			--enable-arch \
-			--enable-kill \
-			--enable-login-utils \
-			--enable-partx \
-			--enable-write \
-			--disable-makeinstall-chown \
-			--disable-static
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-
+define STAGE_BUILD_CMDS
 	# Build nologin
 	cd $(DIR_APP) && gcc $(CFLAGS) -o nologin $(DIR_SOURCE)/nologin.c
-
 endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/sbin \
 		$(BUILDROOT)/var/lib/hwclock \
 		$(BUILDROOT)/usr/share/man/man8 \
