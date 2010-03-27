@@ -48,9 +48,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tgz
 
-###############################################################################
-# Installation Details
-###############################################################################
 CONFIGURE_OPTIONS += \
 	--libexecdir=/usr/lib \
 	--sysconfdir=/etc \
@@ -75,6 +72,16 @@ CONFIGURE_OPTIONS += \
 
 define STAGE_INSTALL_CMDS
 	mv -v $(BUILDROOT)/usr/lib/slapd $(BUILDROOT)/usr/sbin/slapd
+	ln -svf slapd $(BUILDROOT)/usr/sbin/slapacl
+	ln -svf	slapd $(BUILDROOT)/usr/sbin/slapadd	
+	ln -svf	slapd $(BUILDROOT)/usr/sbin/slapauth
+	ln -svf	slapd $(BUILDROOT)/usr/sbin/slapcat
+	ln -svf	slapd $(BUILDROOT)/usr/sbin/slapdn
+	ln -svf	slapd $(BUILDROOT)/usr/sbin/slapindex
+	ln -svf	slapd $(BUILDROOT)/usr/sbin/slappasswd
+	ln -svf	slapd $(BUILDROOT)/usr/sbin/slapschema
+	ln -svf	slapd $(BUILDROOT)/usr/sbin/slaptest
+
 	rm -rvf $(BUILDROOT)/var/openldap-data
 
 	for LINK in lber ldap ldap_r; do \
