@@ -54,10 +54,6 @@ CONFIGURE_OPTIONS += \
 	--with-vgrind=/usr/bin/vgrind \
 	--with-grap=/usr/bin/grap
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i -e '\%\t/usr/man%d' -e '\%\t/usr/local/man%d' \
 		src/man_db.conf.in
