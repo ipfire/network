@@ -103,34 +103,39 @@ class Environment(object):
 		return self.doChroot("make -C %s -f %s %s" % \
 			(os.path.dirname(file), file, target), shell=True)
 
+	@property
+	def environ(self):
+		env = config.environment.copy()
+		env.update({
+			"HOME"           : "/root",
+			"BASEDIR"        : "/usr/src",
+			"PKGROOT"        : "/usr/src/pkgs",
+			"TOOLS_DIR"      : "/tools_%s" % self.arch["name"],
+			"TARGET"         : "%s-ipfire-linux-gnu" % self.arch["machine"],
+			"TARGET_MACHINE" : self.arch["machine"],
+			"PATH"           : "/sbin:/bin:/usr/sbin:/usr/bin:/tools_%(arch)s/sbin:/tools_%(arch)s/bin" \
+								 % { "arch" : self.arch["name"], },
+			"BUILDROOT"      : "/%s" % self.buildroot,
+			"CHROOT"         : "1",
+			"CFLAGS"         : self.arch["cflags"],
+			"CXXFLAGS"       : self.arch["cxxflags"],
+			"PKG_ARCH"       : self.arch["name"],
+		})
+
+		ccache_path = os.path.join("tools_%s" % self.arch["name"],
+			"usr", "ccache", "bin")
+		if os.path.exists(self.chrootPath(ccache_path)):
+			env.update({
+				"PATH" : "/%s:%s" % (ccache_path, env["PATH"]),
+				"CCACHE_DIR" : "/usr/src/ccache",
+			})
+
+		return env
+
 	def doChroot(self, command, shell=True, *args, **kwargs):
 		ret = None
 		try:
-			# XXX Should be globally defined
-			env = config.environment.copy()
-			env.update({
-				"HOME"           : "/root",
-				"BASEDIR"        : "/usr/src",
-				"PKGROOT"        : "/usr/src/pkgs",
-				"TOOLS_DIR"      : "/tools_%s" % self.arch["name"],
-				"TARGET"         : "%s-ipfire-linux-gnu" % self.arch["machine"],
-				"TARGET_MACHINE" : self.arch["machine"],
-				"PATH"           : "/sbin:/bin:/usr/sbin:/usr/bin:/tools_%(arch)s/sbin:/tools_%(arch)s/bin" \
-									 % { "arch" : self.arch["name"], },
-				"BUILDROOT"      : "/%s" % self.buildroot,
-				"CHROOT"         : "1",
-				"CFLAGS"         : self.arch["cflags"],
-				"CXXFLAGS"       : self.arch["cxxflags"],
-				"PKG_ARCH"       : self.arch["name"],
-			})
-
-			ccache_path = os.path.join("tools_%s" % self.arch["name"],
-				"usr", "ccache", "bin")
-			if os.path.exists(self.chrootPath(ccache_path)):
-				env.update({
-					"PATH" : "/%s:%s" % (ccache_path, env["PATH"]),
-					"CCACHE_DIR" : "/usr/src/ccache",
-				})
+			env = self.environ
 
 			if kwargs.has_key("env"):
 				env.update(kwargs.pop("env"))
@@ -283,6 +288,25 @@ class Environment(object):
 	@property
 	def log(self):
 		return self.package.log
+
+	def shell(self, args, cleanbefore=False, cleanafter=True):
+		if cleanbefore:
+			self.clean()
+
+		command = "chroot %s /usr/src/tools/chroot-shell %s" % \
+			(self.chrootPath(), " ".join(args))
+
+		for key, val in self.environ.items():
+			command = "%s=\"%s\" " % (key, val) + command
+
+		try:
+			self._mountall()
+
+			shell = os.system(command)
+			return os.WEXITSTATUS(shell)
+
+		finally:
+			self._umountall()
 
 
 class Toolchain(object):

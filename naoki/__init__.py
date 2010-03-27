@@ -37,6 +37,7 @@ class Naoki(object):
 			"toolchain" : self.call_toolchain,
 			"package" : self.call_package,
 			"source" : self.call_source,
+			"shell" : self.call_shell,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -252,6 +253,14 @@ Release       : %(release)s
 		for file in sorted(files):
 			self.log.info("Removing %s..." % file)
 			os.remove(os.path.join(TARBALLDIR, file))
+
+	def call_shell(self, args):
+		package = backend.parse_package([args.package], naoki=self)[0]
+
+		environ = chroot.Environment(package)
+
+		return environ.shell(args.args,
+			cleanbefore=args.cleanbefore, cleanafter=not args.nocleanafter)
 
 	def _build(self, packages, force=False):
 		requeue = []

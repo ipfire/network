@@ -134,6 +134,29 @@ class _Argument(object):
 		raise NotImplementedError
 
 
+class Argument(_Argument):
+	def __init__(self, name, **kwargs):
+		_Argument.__init__(self, name, [], **kwargs)
+
+	def parse(self, args):
+		self._parsed = True
+
+		if len(args) >= 1:
+			self._parsed_args = args[:1]
+
+		return args[1:]
+
+	def value(self):
+		if self._parsed_args:
+			return self._parsed_args[0]
+
+		return []
+
+	@property
+	def help_line(self):
+		return self.name
+
+
 class Option(_Argument):
 	def parse(self, args):
 		self._parsed = True
@@ -323,6 +346,16 @@ class Commandline(object):
 					help="Batch command - use with caution",
 					parsers=[
 						Parser("cron", help="Command that gets called by cron"),
+					]),
+
+				# Shell
+				Parser("shell",
+					help="Go into a chroot shell",
+					arguments=[
+						Option("nocleanafter", ["--no-clean-after"], help="Don't clean up the environment afterwards"),
+						Option("cleanbefore", ["--clean-before"], help="Clean up the environment before"),
+						Argument("package", help="Give the package name"),
+						List("args", help="Give some additional arguments to be executed"),
 					]),
 			])
 
