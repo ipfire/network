@@ -8,12 +8,20 @@ import urllib
 import chroot
 import util
 
+from exception import *
 from constants import *
 
 __cache = {
 	"package_names" : None,
 	"group_names" : None,
 }
+
+try:
+	import hashlib
+	have_hashlib = 1
+except ImportError:
+	import sha
+	have_hashlib = 0
 
 def find_package_info(name, toolchain=False):
 	for repo in get_repositories(toolchain):
@@ -130,6 +138,14 @@ def depsort(packages, toolchain=False):
 		ret.extend(l1)
 	return ret
 
+def calc_hash(data):
+	if have_hashlib:
+		obj = hashlib.sha1(data)
+	else:
+		obj = sha.new(data)
+
+	return obj.hexdigest()
+
 def download(files, logger=None):
 	for file in files:
 		filepath = os.path.join(TARBALLDIR, file)
@@ -154,15 +170,30 @@ def download(files, logger=None):
 		try:
 			gobj = g.urlopen(url)
 		except urlgrabber.grabber.URLGrabError, e:
-			logger.error("Could not retrieve %s - %s" % (url, e))
+			if logger:
+				logger.error("Could not retrieve %s - %s" % (url, e))
 			raise
 
-		# XXX Need to check SHA1 sum here
+		data = gobj.read()
+		gobj.close()
+
+		if gobj.hdr.has_key("X-Hash-Sha1"):
+			hash_server = gobj.hdr["X-Hash-Sha1"]
+			msg = "Comparing hashes - %s" % hash_server
+
+			hash_calculated = calc_hash(data)
+			if hash_calculated == hash_server:
+				if logger:
+					logger.debug(msg + " - OK")
+			else:
+				if logger:
+					logger.error(msg + " - ERROR")
+				raise DownloadError, "Hash sum of downloaded file does not match"
 
 		fobj = open(filepath, "w")
-		fobj.write(gobj.read())
+		fobj.write(data)
 		fobj.close()
-		gobj.close()
+
 
 class PackageInfo(object):
 	__data = {}
@@ -437,8 +468,3 @@ class Repository(object):
 	@property
 	def path(self):
 		return os.path.join(PKGSDIR, self.name)
-
-if __name__ == "__main__":
-	pi = PackageInfo("core/grub")
-
-	print pi.dependencies
