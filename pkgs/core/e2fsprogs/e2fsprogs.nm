@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = e2fsprogs
-PKG_VER        = 1.41.8
+PKG_VER        = 1.41.11
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -46,10 +46,6 @@ PKG_BUILD_DEPS+= pkg-config
 PKG_DEPS      += util-linux-ng
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-###############################################################################
-# Installation Details
-###############################################################################
 
 define STAGE_PREPARE_CMDS
 	-mkdir -pv $(DIR_APP)/build
@@ -96,5 +92,4 @@ define STAGE_INSTALL
 	ln -svf ../../lib/libe2p.so.2 $(BUILDROOT)/usr/lib/libe2p.so
 	ln -svf ../../lib/libext2fs.so.2 $(BUILDROOT)/usr/lib/libext2fs.so
 	ln -svf ../../lib/libss.so.2 $(BUILDROOT)/usr/lib/libss.so
-	ln -svf ../../lib/libuuid.so.1 $(BUILDROOT)/usr/lib/libuuid.so
 endef
