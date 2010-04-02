@@ -125,7 +125,7 @@ class Environment(object):
 			"TOOLS_DIR"      : "/tools_%s" % self.arch["name"],
 			"TARGET"         : "%s-ipfire-linux-gnu" % self.arch["machine"],
 			"TARGET_MACHINE" : self.arch["machine"],
-			"PATH"           : "/sbin:/bin:/usr/sbin:/usr/bin:/tools_%(arch)s/sbin:/tools_%(arch)s/bin" \
+			"PATH"           : CHROOT_PATH + ":/tools_%(arch)s/sbin:/tools_%(arch)s/bin" \
 								 % { "arch" : self.arch["name"], },
 			"BUILDROOT"      : "/%s" % self.buildroot,
 			"CHROOT"         : "1",
@@ -316,6 +316,9 @@ class Environment(object):
 			"mount -n -t tmpfs naoki_chroot_shmfs %s" % self.chrootPath("dev", "shm")])
 
 		return ret
+
+	def extractAll(self):
+		raise NotImplementedError
 
 
 class PackageEnvironment(Environment):

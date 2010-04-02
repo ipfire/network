@@ -22,12 +22,12 @@ def find_package_info(name, toolchain=False):
 
 		return PackageInfo(name, repo=repo)
 
-def find_package(name, toolchain=False):
+def find_package(name, naoki, toolchain=False):
 	package = find_package_info(name, toolchain)
 	if package:
-		package = backend.Package(package)
+		return package.getPackage(naoki)
 
-	return package
+	return None
 
 def parse_package_info(names, toolchain=False):
 	packages = []
@@ -173,8 +173,8 @@ class PackageInfo(object):
 
 		self.arch = arches.current["name"]
 
-	#def __cmp__(self, other):
-	#	return cmp(self.name, other.name)
+	def __cmp__(self, other):
+		return cmp(self.name, other.name)
 
 	def __repr__(self):
 		return "<PackageInfo %s>" % self.name
@@ -253,7 +253,7 @@ class PackageInfo(object):
 	def _dependencies(self, s, recursive=False, toolchain=False):
 		c = s + "_CACHE"
 		if not self._data.has_key(c):
-			deps = parse_package(self._data.get(s).split(" "), toolchain=toolchain)
+			deps = parse_package_info(self._data.get(s).split(" "), toolchain=toolchain)
 			self._data.update({c : depsolve(deps, recursive)})
 
 		return self._data.get(c)
@@ -367,6 +367,8 @@ class PackageInfo(object):
 class Package(object):
 	def __init__(self, name, naoki, toolchain=False):
 		self.info = find_package_info(name, toolchain)
+
+		assert naoki
 		self.naoki = naoki
 
 		#self.log.debug("Initialized package object %s" % name)
@@ -380,15 +382,19 @@ class Package(object):
 	def __getattr__(self, attr):
 		return getattr(self.info, attr)
 
+	@property
+	def name(self):
+		return self.info.name
+
 	def build(self):
-		environment = chroot.Environment(self)
+		environment = chroot.PackageEnvironment(self)
 		environment.build()
 
 	def download(self):
 		download(self.info.objects, logger=self.log)
 
 	def extract(self, dest):
-		files = [os.path.join(PACKAGESDIR, file) for file in self.package_files]
+		files = [os.path.join(PACKAGESDIR, file) for file in self.info.package_files]
 		if not files:
 			return
 

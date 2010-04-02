@@ -6,6 +6,7 @@ import sys
 import time
 
 import backend
+import chroot
 import logger
 import terminal
 import util
@@ -16,6 +17,7 @@ class Naoki(object):
 	def __init__(self):
 		# First, setup the logging
 		self.logging = logger.Logging(self)
+		self.log = self.logging.log
 
 		# Second, parse the command line options
 		self.cli = terminal.Commandline(self)
@@ -204,7 +206,7 @@ Release       : %(release)s
 				print package.name
 
 	def call_package_tree(self, args):
-		print backend.deptree(backend.parse_package(backend.get_package_names()))
+		print backend.deptree(backend.parse_package(backend.get_package_names(), naoki=self))
 
 	def call_package_groups(self, args):
 		groups = backend.get_group_names()
@@ -272,6 +274,9 @@ Release       : %(release)s
 		return environ.clean()
 
 	def call_shell_extract(self, environ, args):
+		if args.packages == ["all"]:
+			args.packages = backend.get_package_names()
+
 		packages = backend.parse_package(args.packages, naoki=self)
 		for package in backend.depsolve(packages, recursive=True):
 			package.naoki = self

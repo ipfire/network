@@ -19,7 +19,7 @@ class Logging(object):
 		self.setup()
 
 	def setup(self):
-		self.naoki.log = self.log = logging.getLogger()
+		self.log = logging.getLogger()
 
 		log_ini = config["log_config_file"]
 		if os.path.exists(log_ini):

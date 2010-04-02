@@ -22,6 +22,8 @@ PATCHESDIR = os.path.join(CACHEDIR, "patches")
 
 CONFIGFILE = os.path.join(CONFIGDIR, "naoki.conf")
 
+CHROOT_PATH = "/sbin:/bin:/usr/sbin:/usr/bin"
+
 def calc_parallelism():
 	"""
 		Calculate how many processes to run
