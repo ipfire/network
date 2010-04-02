@@ -61,7 +61,7 @@ class Naoki(object):
 	def call_toolchain_build(self, args):
 		toolchain = chroot.Toolchain(arches.current["name"])
 
-		return toolchain.build()
+		return toolchain.build(naoki=self)
 
 	def call_toolchain_download(self, args):
 		toolchain = chroot.Toolchain(arches.current["name"])
@@ -280,8 +280,7 @@ Release       : %(release)s
 
 		packages = backend.parse_package(args.packages, naoki=self)
 		for package in backend.depsolve(packages, recursive=True):
-			package.naoki = self
-			package.extract(environ.chrootPath())
+			package.getPackage(self).extract(environ.chrootPath())
 
 	def call_shell_enter(self, environ, args):
 		return environ.shell()

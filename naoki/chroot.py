@@ -455,11 +455,11 @@ class Toolchain(object):
 	def adjust(self, path):
 		self.cmd(["adjust", path])
 
-	def build(self):
+	def build(self, naoki):
 		self.log.info("Building toolchain...")
 
 		packages = backend.get_package_names(toolchain=True)
-		packages = backend.parse_package(packages, toolchain=True)
+		packages = backend.parse_package(packages, toolchain=True, naoki=naoki)
 		packages = backend.depsort(packages)
 		for pkg in packages:
 			if os.path.exists(os.path.join(self.path, pkg.name)):
