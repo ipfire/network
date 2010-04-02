@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+. $(dirname ${0})/common-functions
+
 PACKAGE_VERSION="0"
 TAR_OPTIONS="--posix --acls --no-recursion --sparse"
 
@@ -188,7 +190,9 @@ PKG_DESCRIPTION="$PKG_DESCRIPTION"
 
 # Dependency info
 PKG_DEPS="$PKG_DEPS"
-PKG_BUILD_DEPS="$PKG_BUILD_DEPS"
+
+PKG_PROVIDES="$(find_provides)"
+PKG_REQUIRES="$(find_requires)"
 
 PKG_DATA_SHA1="$(sha1sum ${archieve} | awk '{ print $1 }')"
 

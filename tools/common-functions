@@ -1,0 +1,75 @@
+#!/bin/bash
+
+LIBARY_PATHS="${BUILDROOT}/lib ${BUILDROOT}/usr/lib"
+BINARY_PATHS="${LIBARY_PATHS} ${BUILDROOT}/bin ${BUILDROOT}/sbin"
+BINARY_PATHS="${BINARY_PATHS} ${BUILDROOT}/usr/bin ${BUILDROOT}/usr/sbin"
+
+get_interpreter() {
+	local file=${1}
+
+	readelf -l ${file} | grep "program interpreter" | \
+		tr -d "]" | awk '{ print $NF }'
+}
+
+get_needed() {
+	local file=${1}
+
+	readelf -d ${file} | grep NEEDED | \
+		tr -d "[]" | awk '{ print $NF }'
+}
+
+get_soname() {
+	local file=${1}
+
+	readelf -d ${file} | grep SONAME | \
+		tr -d "[]" | awk '{ print $NF }'
+}
+
+find_requires() {
+	local output
+	local file
+	local files=$(find_elf_files ${BINARY_PATHS})
+
+	for file in ${files}; do
+		output="${output} $(get_needed ${file})"
+	done
+
+	listsort ${output}
+}
+
+find_provides() {
+	local output
+	local file
+	local files=$(find_elf_files ${LIBARY_PATHS})
+
+	for file in ${files}; do
+		output="${output} $(get_soname ${file})"
+	done
+
+	listsort ${output}
+}
+
+find_elf_files() {
+	local dir
+	local dirs=$@
+
+	local file
+	local files
+
+	for dir in ${dirs}; do
+		for file in $(find ${dir} -maxdepth 1 -type f 2>/dev/null); do
+			if file ${file} | grep -q ELF; then
+				files="${files} ${file}"
+			fi
+		done
+	done
+
+	echo ${files}
+}
+
+listsort() {
+	local item
+	for item in $@; do
+		echo "${item}"
+	done | sort -u | tr "\n" " "
+}
