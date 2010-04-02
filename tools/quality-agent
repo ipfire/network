@@ -4,7 +4,7 @@ DIR_QA=${0}.d
 
 for file in ${DIR_QA}/*; do
 	[ -x "${file}" ] || continue
-	
+
 	${file} || exit $?
 done
 

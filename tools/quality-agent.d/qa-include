@@ -9,9 +9,5 @@ if [ -z "${BUILDROOT}" ]; then
 	exit 1
 fi
 
-get_interpreter() {
-	local file=${1}
-
-	readelf -l ${file} | grep "program interpreter" | \
-		tr -d "]" | awk '{ print $NF }'
-}
+# Include additional functions
+. $(dirname ${0})/qa-functions
