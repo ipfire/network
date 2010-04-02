@@ -88,6 +88,8 @@ define DO_INSTALL
 	@echo "# $(PKG_NAME) - Install started"
 	@echo "#####################################################################"
 
+	-mkdir -pv $(BUILDROOT)
+
 	$(STAGE_INSTALL)
 
 	$(DO_INSTALL_INIT)

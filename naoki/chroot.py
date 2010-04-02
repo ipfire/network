@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import fcntl
 import grp
 import logging
 import os
@@ -14,49 +15,40 @@ from exception import *
 from logger import getLog
 
 class Environment(object):
-	def __init__(self, package):
-		self.package = package
-		self.naoki = self.package.naoki
+	kernel_version = os.uname()[2]
 
-		self.arch = arches.current
+	def __init__(self, naoki, arch=arches.current):
+		self.arch = arch
 		self.config = config
+		self.naoki = naoki
+
+		self.initialized = False
+		self.__buildroot = None
 
 		self.toolchain = Toolchain(self.arch["name"])
 
-		# mount/umount
-		self.umountCmds = [
-			"umount -n %s" % self.chrootPath("proc"),
-			"umount -n %s" % self.chrootPath("sys"),
-			"umount -n %s" % self.chrootPath("usr", "src", "cache"),
-			"umount -n %s" % self.chrootPath("usr", "src", "ccache"),
-			"umount -n %s" % self.chrootPath("usr", "src", "packages"),
-			"umount -n %s" % self.chrootPath("usr", "src", "pkgs"),
-			"umount -n %s" % self.chrootPath("usr", "src", "src"),
-			"umount -n %s" % self.chrootPath("usr", "src", "tools"),
-		]
-		self.mountCmds = [
-			"mount -n -t proc naoki_chroot_proc %s" % self.chrootPath("proc"),
-			"mount -n -t sysfs naoki_chroot_sysfs %s" % self.chrootPath("sys"),
-			"mount -n --bind %s %s" % (os.path.join(CACHEDIR), self.chrootPath("usr", "src", "cache")),
-			"mount -n --bind %s %s" % (os.path.join(CCACHEDIR), self.chrootPath("usr", "src", "ccache")),
-			"mount -n --bind %s %s" % (os.path.join(PACKAGESDIR), self.chrootPath("usr", "src", "packages")),
-			"mount -n --bind %s %s" % (os.path.join(PKGSDIR), self.chrootPath("usr", "src", "pkgs")),
-			"mount -n --bind %s %s" % (os.path.join(BASEDIR, "src"), self.chrootPath("usr", "src", "src")),
-			"mount -n --bind %s %s" % (os.path.join(TOOLSDIR), self.chrootPath("usr", "src", "tools")),
-		]
+		# Create initial directory that we can set the lock
+		util.mkdir(self.chrootPath())
 
-		self.buildroot = "buildroot.%d" % random.randint(0, 1024)
+		# Lock environment. Throws exception if function cannot set the lock.
+		self.lock()
 
-		self.log.debug("Setting up environment %s..." % self.chrootPath())
+	def init(self, clean=True):
+		marker = self.chrootPath(".initialized")
+		self.log.debug("Initialize environment %s..." % self.chrootPath())
 
-		if os.path.exists(self.chrootPath()):
+		if clean:
 			self.clean()
+
+		# If marker exists, we won't reinit again
+		if os.path.exists(marker):
+			return
 
 		# create dirs
 		dirs = (
 			CACHEDIR,
+			CCACHEDIR,
 			PACKAGESDIR,
-			self.chrootPath(self.buildroot),
 			self.chrootPath("bin"),
 			self.chrootPath("etc"),
 			self.chrootPath("proc"),
@@ -94,49 +86,76 @@ class Environment(object):
 
 		self.toolchain.adjust(self.chrootPath())
 
-	def clean(self):
-		util.rm(self.chrootPath())
+		# Set marker
+		util.touch(marker)
 
-	def make(self, target):
-		file = "/usr/src%s" % self.package.info.filename[len(BASEDIR):]
+	@property
+	def buildroot(self):
+		if not self.__buildroot:
+			self.__buildroot = "buildroot.%s" % util.random_string()
 
-		return self.doChroot("make -C %s -f %s %s" % \
-			(os.path.dirname(file), file, target), shell=True)
+		return self.__buildroot
 
-	def doChroot(self, command, shell=True, *args, **kwargs):
-		ret = None
+	def lock(self):
+		self.log.debug("Trying to lock environment")
+
 		try:
-			# XXX Should be globally defined
-			env = config.environment.copy()
+			self._lock = open(self.chrootPath(".lock"), "a+")
+		except IOError, e:
+			return 0
+
+		try:
+			fcntl.lockf(self._lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+		except IOError, e:
+			raise BuildRootLocked, "Environment is locked by another process"
+
+		return 1
+
+	def clean(self):
+		if os.path.exists(self.chrootPath()):
+			util.rm(self.chrootPath())
+
+	@property
+	def environ(self):
+		env = config.environment.copy()
+		env.update({
+			"HOME"           : "/root",
+			"BASEDIR"        : "/usr/src",
+			"PKGROOT"        : "/usr/src/pkgs",
+			"TOOLS_DIR"      : "/tools_%s" % self.arch["name"],
+			"TARGET"         : "%s-ipfire-linux-gnu" % self.arch["machine"],
+			"TARGET_MACHINE" : self.arch["machine"],
+			"PATH"           : CHROOT_PATH + ":/tools_%(arch)s/sbin:/tools_%(arch)s/bin" \
+								 % { "arch" : self.arch["name"], },
+			"BUILDROOT"      : "/%s" % self.buildroot,
+			"CHROOT"         : "1",
+			"CFLAGS"         : self.arch["cflags"],
+			"CXXFLAGS"       : self.arch["cxxflags"],
+			"PKG_ARCH"       : self.arch["name"],
+		})
+
+		ccache_path = os.path.join("tools_%s" % self.arch["name"],
+			"usr", "ccache", "bin")
+		if os.path.exists(self.chrootPath(ccache_path)):
 			env.update({
-				"HOME"           : "/root",
-				"BASEDIR"        : "/usr/src",
-				"PKGROOT"        : "/usr/src/pkgs",
-				"TOOLS_DIR"      : "/tools_%s" % self.arch["name"],
-				"TARGET"         : "%s-ipfire-linux-gnu" % self.arch["machine"],
-				"TARGET_MACHINE" : self.arch["machine"],
-				"PATH"           : "/sbin:/bin:/usr/sbin:/usr/bin:/tools_%(arch)s/sbin:/tools_%(arch)s/bin" \
-									 % { "arch" : self.arch["name"], },
-				"BUILDROOT"      : "/%s" % self.buildroot,
-				"CHROOT"         : "1",
-				"CFLAGS"         : self.arch["cflags"],
-				"CXXFLAGS"       : self.arch["cxxflags"],
-				"PKG_ARCH"       : self.arch["name"],
+				"PATH" : "/%s:%s" % (ccache_path, env["PATH"]),
+				"CCACHE_DIR" : "/usr/src/ccache",
 			})
 
-			ccache_path = os.path.join("tools_%s" % self.arch["name"],
-				"usr", "ccache", "bin")
-			if os.path.exists(self.chrootPath(ccache_path)):
-				env.update({
-					"PATH" : "/%s:%s" % (ccache_path, env["PATH"]),
-					"CCACHE_DIR" : "/usr/src/ccache",
-				})
+		return env
+
+	def doChroot(self, command, shell=True, *args, **kwargs):
+		self.init()
+
+		ret = None
+		try:
+			env = self.environ
 
 			if kwargs.has_key("env"):
 				env.update(kwargs.pop("env"))
 
 			self._mountall()
-			
+
 			if not kwargs.has_key("chrootPath"):
 				kwargs["chrootPath"] = self.chrootPath()
 
@@ -145,20 +164,21 @@ class Environment(object):
 
 		finally:
 			self._umountall()
-		
+
 		return ret
 
 	def chrootPath(self, *args):
-		return os.path.join(BUILDDIR, "environments", self.package.info.id, *args)
+		raise NotImplementedError
 
 	def _setupDev(self):
+		self.log.debug("Setting up /dev and /proc")
+
 		# files in /dev
 		util.rm(self.chrootPath("dev"))
 		util.mkdir(self.chrootPath("dev", "pts"))
 		util.mkdir(self.chrootPath("dev", "shm"))
 		prevMask = os.umask(0000)
 
-		kernel_version = os.uname()[2]
 		devNodes = [
 			(stat.S_IFCHR | 0666, os.makedev(1, 3), "dev/null"),
 			(stat.S_IFCHR | 0666, os.makedev(1, 7), "dev/full"),
@@ -170,7 +190,7 @@ class Environment(object):
 		]
 
 		# make device node for el4 and el5
-		if kernel_version < "2.6.19":
+		if self.kernel_version < "2.6.19":
 			devNodes.append((stat.S_IFCHR | 0666, os.makedev(5, 2), "dev/ptmx"))
 
 		for i in devNodes:
@@ -182,27 +202,10 @@ class Environment(object):
 		os.symlink("/proc/self/fd/2", self.chrootPath("dev", "stderr"))
 		os.symlink("/proc/self/fd", self.chrootPath("dev", "fd"))
 
-		if kernel_version >= "2.6.19":
+		if self.kernel_version >= "2.6.19":
 			os.symlink("/dev/pts/ptmx", self.chrootPath("dev", "ptmx"))
 
 		os.umask(prevMask)
-
-		# mount/umount
-		for devUnmtCmd in (
-				"umount -n %s" % self.chrootPath("dev", "pts"),
-				"umount -n %s" % self.chrootPath("dev", "shm")):
-			if devUnmtCmd not in self.umountCmds:
-				self.umountCmds.append(devUnmtCmd)
-
-		mountopt = "gid=%d,mode=0620,ptmxmode=0666" % grp.getgrnam("tty").gr_gid
-		if kernel_version >= "2.6.29":
-			mountopt += ",newinstance"
-
-		for devMntCmd in (
-				"mount -n -t devpts -o %s naoki_chroot_devpts %s" % (mountopt, self.chrootPath("dev", "pts")),
-				"mount -n -t tmpfs naoki_chroot_shmfs %s" % self.chrootPath("dev", "shm")):
-			if devMntCmd not in self.mountCmds:
-				self.mountCmds.append(devMntCmd)
 
 	def _setupUsers(self):
 		## XXX Could be done better
@@ -246,20 +249,83 @@ class Environment(object):
 
 	def _mountall(self):
 		"""mount 'normal' fs like /dev/ /proc/ /sys"""
+		self.log.debug("Mounting chroot")
 		for cmd in self.mountCmds:
 			util.do(cmd, shell=True)
 
 	def _umountall(self):
 		"""umount all mounted chroot fs."""
+		self.log.debug("Umounting chroot")
 		for cmd in self.umountCmds:
 			util.do(cmd, raiseExc=0, shell=True)
 
-	def extractAll(self):
-		packages = [p.getPackage(self.naoki) \
-			for p in self.package.info.dependencies_all]
+	@property
+	def log(self):
+		return getLog()
 
-		for package in packages:
-			package.extract(self.chrootPath())
+	def shell(self, args=[]):
+		command = "chroot %s /usr/src/tools/chroot-shell %s" % \
+			(self.chrootPath(), " ".join(args))
+
+		for key, val in self.environ.items():
+			command = "%s=\"%s\" " % (key, val) + command
+
+		try:
+			self._mountall()
+
+			shell = os.system(command)
+			return os.WEXITSTATUS(shell)
+
+		finally:
+			self._umountall()
+
+	@property
+	def umountCmds(self):
+		ret = (
+			"umount -n %s" % self.chrootPath("proc"),
+			"umount -n %s" % self.chrootPath("sys"),
+			"umount -n %s" % self.chrootPath("usr", "src", "cache"),
+			"umount -n %s" % self.chrootPath("usr", "src", "ccache"),
+			"umount -n %s" % self.chrootPath("usr", "src", "packages"),
+			"umount -n %s" % self.chrootPath("usr", "src", "pkgs"),
+			"umount -n %s" % self.chrootPath("usr", "src", "tools"),
+			"umount -n %s" % self.chrootPath("dev", "pts"),
+			"umount -n %s" % self.chrootPath("dev", "shm")
+		)
+
+		return ret
+
+	@property
+	def mountCmds(self):
+		ret = [
+			"mount -n -t proc naoki_chroot_proc %s" % self.chrootPath("proc"),
+			"mount -n -t sysfs naoki_chroot_sysfs %s" % self.chrootPath("sys"),
+			"mount -n --bind %s %s" % (CACHEDIR, self.chrootPath("usr", "src", "cache")),
+			"mount -n --bind %s %s" % (CCACHEDIR, self.chrootPath("usr", "src", "ccache")),
+			"mount -n --bind %s %s" % (PACKAGESDIR, self.chrootPath("usr", "src", "packages")),
+			"mount -n --bind %s %s" % (PKGSDIR, self.chrootPath("usr", "src", "pkgs")),
+			"mount -n --bind %s %s" % (TOOLSDIR, self.chrootPath("usr", "src", "tools")),
+		]
+
+		mountopt = "gid=%d,mode=0620,ptmxmode=0666" % grp.getgrnam("tty").gr_gid
+		if self.kernel_version >= "2.6.29":
+			mountopt += ",newinstance"
+
+		ret.extend([
+			"mount -n -t devpts -o %s naoki_chroot_devpts %s" % (mountopt, self.chrootPath("dev", "pts")),
+			"mount -n -t tmpfs naoki_chroot_shmfs %s" % self.chrootPath("dev", "shm")])
+
+		return ret
+
+	def extractAll(self):
+		raise NotImplementedError
+
+
+class PackageEnvironment(Environment):
+	def __init__(self, package, *args, **kwargs):
+		self.package = package
+
+		Environment.__init__(self, naoki=package.naoki, *args, **kwargs)
 
 	def build(self):
 		self.package.download()
@@ -280,9 +346,33 @@ class Environment(object):
 		if config["cleanup_on_success"]:
 			self.clean()
 
+	def chrootPath(self, *args):
+		return os.path.join(BUILDDIR, "environments", self.package.info.id, *args)
+
+	def extractAll(self):
+		packages = [p.getPackage(self.naoki) \
+			for p in self.package.info.dependencies_all]
+
+		for package in packages:
+			package.extract(self.chrootPath())
+
+	def make(self, target):
+		file = "/usr/src%s" % self.package.info.filename[len(BASEDIR):]
+
+		return self.doChroot("make -C %s -f %s %s" % \
+			(os.path.dirname(file), file, target), shell=True)
+
 	@property
 	def log(self):
 		return self.package.log
+
+
+class ShellEnvironment(Environment):
+	def chrootPath(self, *args):
+		return os.path.join(BUILDDIR, "environments", "shell", *args)
+
+	def extractAll(self):
+		pass
 
 
 class Toolchain(object):
