@@ -40,6 +40,7 @@ class Naoki(object):
 			"package" : self.call_package,
 			"source" : self.call_source,
 			"shell" : self.call_shell,
+			"repository" : self.call_repository,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -284,3 +285,27 @@ Release       : %(release)s
 
 	def call_shell_enter(self, environ, args):
 		return environ.shell()
+
+	def call_repository(self, args):
+		actionmap = {
+			"clean" : self.call_repository_clean,
+			"build" : self.call_repository_build,
+		}
+
+		return actionmap[args.action.name](args.action)
+
+	def call_repository_clean(self, repo, args):
+		if args.names == ["all"]:
+			args.names = [r.name for r in backend.get_repositories()]
+
+		for name in args.names:
+			repo = backend.BinaryRepository(name, naoki=self)
+			repo.clean()
+
+	def call_repository_build(self, args):
+		if args.names == ["all"]:
+			args.names = [r.name for r in backend.get_repositories()]
+
+		for name in args.names:
+			repo = backend.BinaryRepository(name, naoki=self)
+			repo.build()

@@ -14,6 +14,7 @@ DOCDIR = os.path.join(BASEDIR, "doc")
 LOGDIR = os.path.join(BASEDIR, "logs")
 PKGSDIR = os.path.join(BASEDIR, "pkgs")
 PACKAGESDIR = os.path.join(BUILDDIR, "packages")
+REPOSDIR = os.path.join(BUILDDIR, "repositories")
 TOOLSDIR = os.path.join(BASEDIR, "tools")
 
 TARBALLDIR = os.path.join(CACHEDIR, "tarballs")

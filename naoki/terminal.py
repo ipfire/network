@@ -361,6 +361,22 @@ class Commandline(object):
 							]),
 						Parser("enter", help="Enter into environment"),
 					]),
+
+				# Repository
+				Parser("repository",
+					help="Repository commands",
+					parsers=[
+						Parser("clean",
+							help="Cleanup the repository",
+							arguments=[
+								List("names", help="List of repositories"),
+							]),
+						Parser("build",
+							help="Build the repository",
+							arguments=[
+								List("names", help="List of repositories"),
+							]),
+					]),
 			])
 
 		self.parser = parser
