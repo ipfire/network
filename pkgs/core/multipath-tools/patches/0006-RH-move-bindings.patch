@@ -1,0 +1,56 @@
+From ff4c0c9ccbf8abe4a67c2a6cceef07bda9d38d7d Mon Sep 17 00:00:00 2001
+From: Fabio M. Di Nitto <fdinitto@redhat.com>
+Date: Tue, 13 Oct 2009 09:26:25 +0200
+Subject: [PATCH 06/12] RH: move bindings
+
+Signed-off-by: Fabio M. Di Nitto <fdinitto@redhat.com>
+---
+:100644 100644 84e5d6b... 5a38d25... M	libmultipath/defaults.h
+:100644 100644 9afa615... 7b6453f... M	multipath.conf.annotated
+:100644 100644 a165e4e... 4340e51... M	multipath/multipath.conf.5
+ libmultipath/defaults.h    |    2 +-
+ multipath.conf.annotated   |    2 +-
+ multipath/multipath.conf.5 |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/libmultipath/defaults.h b/libmultipath/defaults.h
+index 84e5d6b..5a38d25 100644
+--- a/libmultipath/defaults.h
++++ b/libmultipath/defaults.h
+@@ -19,6 +19,6 @@
+ #define DEFAULT_PIDFILE		"/var/run/multipathd.pid"
+ #define DEFAULT_SOCKET		"/var/run/multipathd.sock"
+ #define DEFAULT_CONFIGFILE	"/etc/multipath.conf"
+-#define DEFAULT_BINDINGS_FILE	"/var/lib/multipath/bindings"
++#define DEFAULT_BINDINGS_FILE	"/etc/multipath/bindings"
+ 
+ char * set_default (char * str);
+diff --git a/multipath.conf.annotated b/multipath.conf.annotated
+index 9afa615..7b6453f 100644
+--- a/multipath.conf.annotated
++++ b/multipath.conf.annotated
+@@ -165,7 +165,7 @@
+ #	# name    : user_friendly_names
+ #	# scope   : multipath
+ #	# desc    : If set to "yes", using the bindings file
+-#	#           /var/lib/multipath/bindings to assign a persistent and
++#	#           /etc/multipath/bindings to assign a persistent and
+ #	#           unique alias to the multipath, in the form of mpath<n>.
+ #	#           If set to "no" use the WWID as the alias. In either case
+ #	#           this be will be overriden by any specific aliases in this
+diff --git a/multipath/multipath.conf.5 b/multipath/multipath.conf.5
+index a165e4e..4340e51 100644
+--- a/multipath/multipath.conf.5
++++ b/multipath/multipath.conf.5
+@@ -224,7 +224,7 @@ for never stop queueing. Default is 0.
+ If set to 
+ .I yes
+ , using the bindings file
+-.I /var/lib/multipath/bindings
++.I /etc/multipath/bindings
+ to assign a persistent and unique alias to the multipath, in the form of mpath<n>.
+ If set to 
+ .I no
+-- 
+1.6.5.1
+

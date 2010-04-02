@@ -1,0 +1,198 @@
+From f9ddbc18b7580f75c15bf6f3e10f08d6f016caca Mon Sep 17 00:00:00 2001
+From: Fabio M. Di Nitto <fdinitto@redhat.com>
+Date: Tue, 13 Oct 2009 08:18:00 +0200
+Subject: [PATCH 02/12] RH: path checker
+
+Signed-off-by: Fabio M. Di Nitto <fdinitto@redhat.com>
+---
+:100644 100644 e06dc52... 47107a2... M	libmultipath/checkers/tur.c
+:100644 100644 98d1618... 00aa5ea... M	libmultipath/discovery.c
+:100644 100644 7283f36... 17cd4af... M	libmultipath/discovery.h
+:100644 100644 90de6df... 5d3625a... M	multipathd/main.c
+ libmultipath/checkers/tur.c |    1 -
+ libmultipath/discovery.c    |   62 +++++++++++++++++++++++++++++++++---------
+ libmultipath/discovery.h    |    2 +
+ multipathd/main.c           |   21 +-------------
+ 4 files changed, 52 insertions(+), 34 deletions(-)
+
+Index: multipath-tools/libmultipath/checkers/tur.c
+===================================================================
+--- multipath-tools.orig/libmultipath/checkers/tur.c
++++ multipath-tools/libmultipath/checkers/tur.c
+@@ -69,7 +69,6 @@ libcheck_check (struct checker * c)
+ 		case DID_NO_CONNECT:
+ 		case DID_BAD_TARGET:
+ 		case DID_ABORT:
+-		case DID_TRANSPORT_DISRUPTED:
+ 		case DID_TRANSPORT_FAILFAST:
+ 			break;
+ 		default:
+Index: multipath-tools/libmultipath/discovery.c
+===================================================================
+--- multipath-tools.orig/libmultipath/discovery.c
++++ multipath-tools/libmultipath/discovery.c
+@@ -616,10 +616,9 @@ struct sysfs_device *sysfs_device_from_p
+ }
+ 
+ int
+-path_offline (struct path * pp)
++path_state (struct path * pp, char * buff)
+ {
+ 	struct sysfs_device * parent;
+-	char buff[SCSI_STATE_SIZE];
+ 
+ 	pp->sysdev = sysfs_device_from_path(pp);
+ 	if (!pp->sysdev) {
+@@ -641,6 +640,16 @@ path_offline (struct path * pp)
+ 		return 1;
+ 
+ 	condlog(3, "%s: state = %s", pp->dev, buff);
++	return 0;
++}
++
++int
++path_offline (struct path * pp)
++{
++	char buff[SCSI_STATE_SIZE];
++
++	if (path_state(pp, buff))
++		return 1;
+ 
+ 	if (!strncmp(buff, "offline", 7)) {
+ 		pp->offline = 1;
+@@ -650,6 +659,21 @@ path_offline (struct path * pp)
+ 	return 0;
+ }
+ 
++int
++path_blocked (struct path * pp)
++{
++	char buff[SCSI_STATE_SIZE];
++
++	if (pp->bus != SYSFS_BUS_SCSI)
++		return 0;
++	if (path_state(pp, buff))
++		return 0;
++	if (!strncmp(buff, "blocked", 7)) {
++		return 1;
++	}
++	return 0;
++}
++
+ extern int
+ sysfs_pathinfo(struct path * pp)
+ {
+@@ -736,36 +760,43 @@ cciss_ioctl_pathinfo (struct path * pp, 
+ 	return 0;
+ }
+ 
+-static int
+-get_state (struct path * pp)
++int
++get_state (struct path * pp, int daemon)
+ {
+ 	struct checker * c = &pp->checker;
++	int state;
+ 
+ 	condlog(3, "%s: get_state", pp->dev);
+ 
+ 	if (!checker_selected(c)) {
++		if (daemon)
++			pathinfo(pp, conf->hwtable, DI_SYSFS);
+ 		select_checker(pp);
+ 		if (!checker_selected(c)) {
+ 			condlog(3, "%s: No checker selected", pp->dev);
+-			return 1;
++			return PATH_UNCHECKED;
+ 		}
+ 		checker_set_fd(c, pp->fd);
+ 		if (checker_init(c, pp->mpp?&pp->mpp->mpcontext:NULL)) {
+ 			condlog(3, "%s: checker init failed", pp->dev);
+-			return 1;
++			return PATH_UNCHECKED;
+ 		}
+ 	}
+ 	if (path_offline(pp)) {
+ 		condlog(3, "%s: path offline", pp->dev);
+-		pp->state = PATH_DOWN;
+-		return 0;
++		return PATH_DOWN;
+ 	}
+-	pp->state = checker_check(c);
+-	condlog(3, "%s: state = %i", pp->dev, pp->state);
+-	if (pp->state == PATH_DOWN && strlen(checker_message(c)))
++	if (daemon) {
++		if (path_blocked(pp))
++			return PATH_PENDING;
++		checker_set_async(c);
++	}
++	state = checker_check(c);
++	condlog(3, "%s: state = %i", pp->dev, state);
++	if (state == PATH_DOWN && strlen(checker_message(c)))
+ 		condlog(3, "%s: checker msg is \"%s\"",
+ 			pp->dev, checker_message(c));
+-	return 0;
++	return state;
+ }
+ 
+ static int
+@@ -850,8 +881,11 @@ pathinfo (struct path *pp, vector hwtabl
+ 	    cciss_ioctl_pathinfo(pp, mask))
+ 		goto blank;
+ 
+-	if (mask & DI_CHECKER && get_state(pp))
+-		goto blank;
++	if (mask & DI_CHECKER) {
++		pp->state = get_state(pp, 0);
++		if (pp->state == PATH_UNCHECKED || pp->state == PATH_WILD)
++			goto blank;
++	}
+ 
+ 	 /*
+ 	  * Retrieve path priority, even for PATH_DOWN paths if it has never
+Index: multipath-tools/libmultipath/discovery.h
+===================================================================
+--- multipath-tools.orig/libmultipath/discovery.h
++++ multipath-tools/libmultipath/discovery.h
+@@ -30,6 +30,8 @@ int path_discovery (vector pathvec, stru
+ int do_tur (char *);
+ int devt2devname (char *, char *);
+ int path_offline (struct path *);
++int get_state (struct path * pp, int daemon);
++int path_blocked (struct path *);
+ int pathinfo (struct path *, vector hwtable, int mask);
+ struct path * store_pathinfo (vector pathvec, vector hwtable,
+ 			      char * devname, int flag);
+Index: multipath-tools/multipathd/main.c
+===================================================================
+--- multipath-tools.orig/multipathd/main.c
++++ multipath-tools/multipathd/main.c
+@@ -908,26 +908,9 @@ check_path (struct vectors * vecs, struc
+ 	 */
+ 	pp->tick = conf->checkint;
+ 
+-	if (!checker_selected(&pp->checker)) {
+-		pathinfo(pp, conf->hwtable, DI_SYSFS);
+-		select_checker(pp);
+-	}
+-	if (!checker_selected(&pp->checker)) {
+-		condlog(0, "%s: checker is not set", pp->dev);
+-		return;
+-	}
+-	/*
+-	 * Set checker in async mode.
+-	 * Honored only by checker implementing the said mode.
+-	 */
+-	checker_set_async(&pp->checker);
+-
+-	if (path_offline(pp))
+-		newstate = PATH_DOWN;
+-	else
+-		newstate = checker_check(&pp->checker);
++	newstate = get_state(pp, 1);
+ 
+-	if (newstate < 0) {
++	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
+ 		condlog(2, "%s: unusable path", pp->dev);
+ 		pathinfo(pp, conf->hwtable, 0);
+ 		return;

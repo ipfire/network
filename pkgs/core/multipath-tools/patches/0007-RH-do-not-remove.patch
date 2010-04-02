@@ -1,0 +1,39 @@
+From b3519ef2eda768672d47c61f0acf8c87d74db427 Mon Sep 17 00:00:00 2001
+From: Fabio M. Di Nitto <fdinitto@redhat.com>
+Date: Tue, 13 Oct 2009 09:33:59 +0200
+Subject: [PATCH 07/12] RH: do not remove
+
+Signed-off-by: Fabio M. Di Nitto <fdinitto@redhat.com>
+---
+:100644 100644 5d3625a... 244b8d5... M	multipathd/main.c
+ multipathd/main.c |   13 ++++++++++++-
+ 1 files changed, 12 insertions(+), 1 deletions(-)
+
+diff --git a/multipathd/main.c b/multipathd/main.c
+index 5d3625a..244b8d5 100644
+--- a/multipathd/main.c
++++ b/multipathd/main.c
+@@ -290,8 +290,19 @@ ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
+ static int
+ uev_remove_map (struct sysfs_device * dev, struct vectors * vecs)
+ {
++	struct multipath * mpp;
++
+ 	condlog(2, "%s: remove map (uevent)", dev->kernel);
+-	return ev_remove_map(dev->kernel, vecs);
++
++	mpp = find_mp_by_str(vecs->mpvec, dev->kernel);
++	if (!mpp) {
++		condlog(2, "%s: devmap not registered, can't remove",
++			dev->kernel);
++		return 0;
++	}
++	orphan_paths(vecs->pathvec, mpp);
++	remove_map_and_stop_waiter(mpp, vecs, 1);
++	return 0;
+ }
+ 
+ int
+-- 
+1.6.5.1
+

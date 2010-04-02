@@ -1,0 +1,219 @@
+From a3db7def912c2fd3756cfd99c1165db075281caa Mon Sep 17 00:00:00 2001
+From: Fabio M. Di Nitto <fdinitto@redhat.com>
+Date: Tue, 13 Oct 2009 09:26:02 +0200
+Subject: [PATCH 05/12] RH: cciss_id
+
+Signed-off-by: Fabio M. Di Nitto <fdinitto@redhat.com>
+---
+:100644 100644 54be0a5... 7e4b7b1... M	Makefile
+:000000 100644 0000000... 6db12a4... A	cciss_id/Makefile
+:000000 100644 0000000... 091b5fe... A	cciss_id/cciss_id.c
+ Makefile            |    3 +-
+ cciss_id/Makefile   |   47 +++++++++++++++++++
+ cciss_id/cciss_id.c |  128 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 177 insertions(+), 1 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 54be0a5..7e4b7b1 100644
+--- a/Makefile
++++ b/Makefile
+@@ -25,7 +25,8 @@ BUILDDIRS = \
+ 	libmultipath/checkers \
+ 	multipath \
+ 	multipathd \
+-	kpartx
++	kpartx \
++	cciss_id
+ 
+ ifeq   ($(MULTIPATH_VERSION),)
+ VERSION = $(shell basename ${PWD} | cut -d'-' -f3)
+diff --git a/cciss_id/Makefile b/cciss_id/Makefile
+new file mode 100644
+index 0000000..6db12a4
+--- /dev/null
++++ b/cciss_id/Makefile
+@@ -0,0 +1,47 @@
++
++# *****************************************************************************
++# *                                                                           *
++# *     (C)  Copyright 2007 Hewlett-Packard Development Company, L.P          *
++# *                                                                           *
++# * This program is free software; you can redistribute it and/or modify it   *
++# * under the terms of the GNU General Public License as published by the Free*
++# * Software  Foundation; either version 2 of the License, or (at your option)*
++# * any later version.                                                        *
++# *                                                                           *
++# * This program is distributed in the hope that it will be useful, but       *
++# * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY*
++# * or FITNESS FOR  A PARTICULAR PURPOSE. See the GNU General Public License  *
++# * for more details.                                                         *
++# *                                                                           *
++# * You should have received a copy of the GNU General Public License along   *
++# * with this program; if not, write to the Free Software Foundation, Inc.,   *
++# * 675 Mass Ave, Cambridge, MA 02139, USA.                                   *
++# *                                                                           *
++# *                                                                           *
++# *                                                                           *
++# *                                                                           *
++# *****************************************************************************
++
++include ../Makefile.inc
++
++OBJS = cciss_id.o
++CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes
++
++LDFLAGS = -ldevmapper
++
++EXEC = cciss_id
++
++all: $(EXEC)
++
++$(EXEC): $(OBJS)
++	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
++
++install:
++	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
++	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)/
++
++uninstall:
++	rm $(DESTDIR)$(bindir)/$(EXEC)
++
++clean:
++	rm -f core.* *.o $(EXEC) *.gz
+diff --git a/cciss_id/cciss_id.c b/cciss_id/cciss_id.c
+new file mode 100644
+index 0000000..091b5fe
+--- /dev/null
++++ b/cciss_id/cciss_id.c
+@@ -0,0 +1,128 @@
++/*
++ *****************************************************************************
++ *                                                                           *
++ *     (C)  Copyright 2007 Hewlett-Packard Development Company, L.P          *
++ *                                                                           *
++ * This program is free software; you can redistribute it and/or modify it   *
++ * under the terms of the GNU General Public License as published by the Free*
++ * Software  Foundation; either version 2 of the License, or (at your option)*
++ * any later version.                                                        *
++ *                                                                           *
++ * This program is distributed in the hope that it will be useful, but       *
++ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY*
++ * or FITNESS FOR  A PARTICULAR PURPOSE. See the GNU General Public License  *
++ * for more details.                                                         *
++ *                                                                           *
++ * You should have received a copy of the GNU General Public License along   *
++ * with this program; if not, write to the Free Software Foundation, Inc.,   *
++ * 675 Mass Ave, Cambridge, MA 02139, USA.                                   *
++ *                                                                           *
++ *                                                                           *
++ *                                                                           *
++ *                                                                           *
++ *****************************************************************************
++*/
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <sys/ioctl.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <errno.h>
++#include <string.h>
++
++#include <linux/cciss_ioctl.h>
++
++#define LEN_PAGE83_CCISSDEV	0x20 	/* Page length of 83h for cciss devices */
++#define LEN_DEVICEFILE	255 		/* Length of device file name */
++#define PATH_CCISSDEV	"/dev/cciss/" 	/* Path of CCISS devices */
++int main(int argc, char *argv[])
++{
++	const int resp_len = LEN_PAGE83_CCISSDEV;
++	unsigned char resp[resp_len+1];
++	char dev_name[LEN_DEVICEFILE] = "\0" ;
++	unsigned int lun_id = 0;
++	int fd, status, i;
++	struct stat file_stat;
++
++	LogvolInfo_struct    lvi;	// logical "volume" info
++	IOCTL_Command_struct cic; 	// cciss ioctl command
++
++	if(argc < 2) {
++		fprintf(stderr, "Usage: %s /dev/cciss/cNdN\n", argv[0]);
++		return -1;
++	}
++
++	if ( strncmp(PATH_CCISSDEV, argv[1], strlen(PATH_CCISSDEV) ) != 0 ) {
++		if ( strchr(argv[1], '!') ) {
++			sprintf(dev_name, "%s%s", PATH_CCISSDEV,
++				strchr(argv[1], '!')+1);
++		}
++                //fprintf(stderr, "dev_name is: -%s-", dev_name);
++        } else {
++		sprintf(dev_name, "%s", argv[1]);
++	}
++
++	if (stat(dev_name, &file_stat) < 0) {
++		fprintf (stderr, "Stat failed for file %s. Errno=%d\n", dev_name, errno);
++		return -1;
++	}
++	if (!S_ISBLK(file_stat.st_mode)) {
++		fprintf (stderr, "File %s is not a block device. \n", dev_name);
++                return -1;
++	}
++
++
++	if((fd = open(dev_name,  O_RDWR)) < 0) {
++		fprintf(stderr, "Open failed for file %s. Errno=%d\n", dev_name, errno);
++		return -1;
++	}
++
++       	if (ioctl(fd, CCISS_GETLUNINFO, &lvi) < 0) {
++		fprintf(stderr, "IOCTL failure CCISS_GETLUNINFO for file %s Errno=%d\n", dev_name, errno);
++		close(fd);
++                return -1;
++       	} else {
++	       	lun_id = lvi.LunID;
++       	}
++
++	memset(&cic, 0, sizeof(IOCTL_Command_struct));
++	memset(resp, 0, resp_len+1);
++	cic.LUN_info.LogDev.Mode = 0x01; /* logical volume addressing */
++	cic.LUN_info.LogDev.VolId = lun_id & 0x3FFFFFFF;
++	cic.Request.CDBLen = 6;
++	cic.Request.Type.Type =  TYPE_CMD; // It is a command.
++	cic.Request.Type.Attribute = ATTR_SIMPLE;
++	cic.Request.Type.Direction = XFER_READ; // Read
++	cic.Request.Timeout = 0; // Don't time out
++	cic.Request.CDB[0] = 0x12;
++	cic.Request.CDB[1] = 0x01; /* EVPD (enable vital product data) */
++	cic.Request.CDB[2] = 0x83;
++	cic.Request.CDB[4] = resp_len & 0xFF;
++	cic.buf_size = resp_len;
++	cic.buf = resp;
++	status = ioctl(fd, CCISS_PASSTHRU, &cic);
++	if(status) {
++		fprintf(stderr, "IOCTL failure CCISS_PASSTHRU for file %s Errno=%d\n", dev_name, errno);
++		close(fd);
++                return -1;
++	}
++	else {
++		if ((cic.error_info.CommandStatus | cic.error_info.ScsiStatus )) {
++             		fprintf(stderr, "CCISS command status error for Inquiry on %s\n",
++                       		dev_name);
++                	close(fd);
++             		return -1;
++        	}
++		printf("3");
++		for(i=8; i<24; i++)
++			/* printf("Buff[%d] =%x\n", i, resp[i]); */
++			printf("%02x", resp[i]);
++		printf("\n");
++	}
++
++	close(fd);
++	return 0;
++}
+-- 
+1.6.5.1
+
