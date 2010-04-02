@@ -3,8 +3,10 @@
 import ctypes
 import fcntl
 import os
+import random
 import select
 import shutil
+import string
 import subprocess
 import sys
 import time
@@ -199,3 +201,11 @@ class ChildPreExec(object):
 		condPersonality(self.personality)
 		condChroot(self.chrootPath)
 		condChdir(self.cwd)
+
+def random_string(length=5):
+	ret = ""
+	while length:
+		ret += random.choice(string.hexdigits)
+		length -= 1
+
+	return ret

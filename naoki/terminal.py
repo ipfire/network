@@ -280,6 +280,7 @@ class Commandline(object):
 					arguments=[
 						Option("withdeps", ["--with-deps"], help="Build all dependencies first if needed"),
 						Option("onlydeps", ["--only-deps"], help="Build only dependencies that belong to a package"),
+						Option("shell", ["-s", "--shell"], help="Change into a chroot environment"),
 						List("packages", help="Give a list of packages to build or say 'all'"),
 					]),
 
@@ -350,12 +351,15 @@ class Commandline(object):
 
 				# Shell
 				Parser("shell",
-					help="Go into a chroot shell",
-					arguments=[
-						Option("nocleanafter", ["--no-clean-after"], help="Don't clean up the environment afterwards"),
-						Option("cleanbefore", ["--clean-before"], help="Clean up the environment before"),
-						Argument("package", help="Give the package name"),
-						List("args", help="Give some additional arguments to be executed"),
+					help="Shell environment",
+					parsers=[
+						Parser("clean", help="Cleanup the environment"),
+						Parser("extract",
+							help="Extract packages",
+							arguments=[
+								List("packages", help="Give a list of packages")
+							]),
+						Parser("enter", help="Enter into environment"),
 					]),
 			])
 

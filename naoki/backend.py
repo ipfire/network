@@ -396,6 +396,9 @@ class Package(object):
 		util.do("%s --root=%s %s" % (os.path.join(TOOLSDIR, "decompressor"),
 			dest, " ".join(files)), shell=True)
 
+	def getEnvironment(self, *args, **kwargs):
+		return chroot.PackageEnvironment(self, *args, **kwargs)
+
 	@property
 	def log(self):
 		return self.naoki.logging.getBuildLogger(self.info.id)

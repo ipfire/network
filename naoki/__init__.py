@@ -30,7 +30,7 @@ class Naoki(object):
 		# If there is no action provided, exit
 		if not args.has_key("action"):
 			self.cli.help()
-			sys.exit(1)
+			return 1
 
 		actionmap = {
 			"build" : self.call_build,
@@ -45,7 +45,7 @@ class Naoki(object):
 	def call_toolchain(self, args):
 		if not args.has_key("action"):
 			self.cli.help()
-			sys.exit(1)
+			return 1
 
 		actionmap = {
 			"build" : self.call_toolchain_build,
@@ -114,21 +114,21 @@ class Naoki(object):
 			% (len(packages), [package.name for package in packages]))
 
 		for package in packages:
-			package.download()
+			environ = package.getEnvironment()
 
-		for package in packages:
-			environ = chroot.Environment(package)
-			
 			if not environ.toolchain.exists:
 				self.log.error("You need to build or download a toolchain first.")
 				continue
+
+			if args.shell:
+				return environ.shell([])
 
 			environ.build()
 
 	def call_package(self, args):
 		if not args.has_key("action"):
 			self.cli.help()
-			sys.exit(1)
+			return 1
 
 		actionmap = {
 			"info" : self.call_package_info,
@@ -255,38 +255,27 @@ Release       : %(release)s
 			os.remove(os.path.join(TARBALLDIR, file))
 
 	def call_shell(self, args):
-		package = backend.parse_package([args.package], naoki=self)[0]
+		environ = chroot.ShellEnvironment(naoki=self)
 
-		environ = chroot.Environment(package)
+		actionmap = {
+			"clean" : self.call_shell_clean,
+			"extract" : self.call_shell_extract,
+			"enter" : self.call_shell_enter,
+		}
 
-		return environ.shell(args.args,
-			cleanbefore=args.cleanbefore, cleanafter=not args.nocleanafter)
+		if args.action.name in ("enter", "execute"):
+			environ.init(clean=False)
 
-	def _build(self, packages, force=False):
-		requeue = []
-		packages = package.depsort(packages)
-		while packages:
-			# Get first package that is to be done
-			build = chroot.Environment(packages.pop(0))
-			
-			if not build.toolchain.exists:
-				self.log.error("You need to build or download a toolchain first.")
-				return
-			
-			if build.package.isBuilt:
-				if not force:
-					self.log.info("Skipping already built package %s..." % build.package.name)
-					continue
-				self.log.warn("Package is already built. Will overwrite.")
-			
-			if not build.package.canBuild:
-				self.log.warn("Cannot build package %s." % build.package.name)
-				if not self.packages:
-					self.log.error("Blah")
-					return
-				self.log.warn("Requeueing. %s" % build.package.name)
-				self.packages.append(build.package)
-				continue
+		return actionmap[args.action.name](environ, args.action)
 
-			self.log.info("Building %s..." % build.package.name)
-			build.build()
+	def call_shell_clean(self, environ, args):
+		return environ.clean()
+
+	def call_shell_extract(self, environ, args):
+		packages = backend.parse_package(args.packages, naoki=self)
+		for package in backend.depsolve(packages, recursive=True):
+			package.naoki = self
+			package.extract(environ.chrootPath())
+
+	def call_shell_enter(self, environ, args):
+		return environ.shell()
