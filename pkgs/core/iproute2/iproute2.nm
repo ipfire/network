@@ -45,10 +45,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i -e "s@DESTDIR=.*@DESTDIR=@" \
 		-e "s@/share/@/usr/share/@g" Makefile
