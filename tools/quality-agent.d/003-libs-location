@@ -4,7 +4,7 @@
 
 # Check for libs that are missing in /usr/lib.
 
-log "Checking correct installation of libraries"
+log_debug "Checking correct installation of libraries"
 
 failed=0
 for lib in $(find ${BUILDROOT}/lib -type f -name "lib*.so.*" 2>/dev/null); do
@@ -13,7 +13,7 @@ for lib in $(find ${BUILDROOT}/lib -type f -name "lib*.so.*" 2>/dev/null); do
 
 	if [ ! -e "${BUILDROOT}/usr/lib/${lib}.so" ]; then
 		failed=1
-		log "  /usr/lib/${lib}.so is missing"
+		log_error "  /usr/lib/${lib}.so is missing"
 	fi
 done
 

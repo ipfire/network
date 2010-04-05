@@ -1,0 +1,12 @@
+#!/bin/bash
+
+export PATH=${PATH}:/tools_i686/bin
+
+if [ -z "${1}" ]; then
+	exit 1
+fi
+
+cpio --extract --to-stdout data.img <${1} | xzcat | \
+	tar tvv
+
+cpio --extract --to-stdout info < ${1}

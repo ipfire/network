@@ -134,6 +134,29 @@ class _Argument(object):
 		raise NotImplementedError
 
 
+class Argument(_Argument):
+	def __init__(self, name, **kwargs):
+		_Argument.__init__(self, name, [], **kwargs)
+
+	def parse(self, args):
+		self._parsed = True
+
+		if len(args) >= 1:
+			self._parsed_args = args[:1]
+
+		return args[1:]
+
+	def value(self):
+		if self._parsed_args:
+			return self._parsed_args[0]
+
+		return []
+
+	@property
+	def help_line(self):
+		return self.name
+
+
 class Option(_Argument):
 	def parse(self, args):
 		self._parsed = True
@@ -235,6 +258,7 @@ class Commandline(object):
 		self.naoki.logging.quiet(args.quiet)
 
 		# Set debugging mode
+		config.debug = args.debug
 		self.naoki.logging.debug(args.debug)
 
 		# Set architecture
@@ -257,6 +281,7 @@ class Commandline(object):
 					arguments=[
 						Option("withdeps", ["--with-deps"], help="Build all dependencies first if needed"),
 						Option("onlydeps", ["--only-deps"], help="Build only dependencies that belong to a package"),
+						Option("shell", ["-s", "--shell"], help="Change into a chroot environment"),
 						List("packages", help="Give a list of packages to build or say 'all'"),
 					]),
 
@@ -323,6 +348,42 @@ class Commandline(object):
 					help="Batch command - use with caution",
 					parsers=[
 						Parser("cron", help="Command that gets called by cron"),
+					]),
+
+				# Shell
+				Parser("shell",
+					help="Shell environment",
+					parsers=[
+						Parser("clean", help="Cleanup the environment"),
+						Parser("extract",
+							help="Extract packages",
+							arguments=[
+								List("packages", help="Give a list of packages")
+							]),
+						Parser("enter", help="Enter into environment"),
+					]),
+
+				# Repository
+				Parser("repository",
+					help="Repository commands",
+					parsers=[
+						Parser("clean",
+							help="Cleanup the repository",
+							arguments=[
+								List("names", help="List of repositories"),
+							]),
+						Parser("build",
+							help="Build the repository",
+							arguments=[
+								List("names", help="List of repositories"),
+							]),
+					]),
+
+				# Generator
+				Parser("generate",
+					help="Generator command",
+					arguments=[
+						Argument("type", help="Type of image to generate"),
 					]),
 			])
 
