@@ -33,6 +33,7 @@ define STAGE_BUILD
 			--target=$(TARGET) \
 			$(CONFIG_CPU) \
 			--prefix=$(TOOLS_DIR) \
+			--libexecdir=$(TOOLS_DIR)/lib \
 			--disable-decimal-float \
 			--disable-libgomp \
 			--disable-libmudflap \
@@ -42,9 +43,10 @@ define STAGE_BUILD
 			--disable-multilib \
 			--disable-shared \
 			--disable-nls \
+			--enable-espf \
 			$(CONFIGURE_ARGS)
 
-	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
+	cd $(DIR_SRC)/gcc-build && make #$(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL

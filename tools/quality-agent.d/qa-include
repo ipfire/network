@@ -1,7 +1,29 @@
 #!/bin/bash
 
+# Include additional functions
+. $(dirname ${0})/qa-functions
+
+function debug() {
+	[ "${NAOKI_DEBUG}" = "1" ]
+}
+
 function log() {
-	printf "%-22s: %s\n" "${0##*/}" "$@"
+	local facility=${1}
+	shift
+
+	printf " %-7s %s\n" "${facility}" "$@"
+}
+
+function log_debug() {
+	debug && log DEBUG "$@"
+}
+
+function log_error() {
+	log "ERROR" "$@"
+}
+
+function log_info() {
+	log "INFO" "$@"
 }
 
 if [ -z "${BUILDROOT}" ]; then
@@ -9,5 +31,55 @@ if [ -z "${BUILDROOT}" ]; then
 	exit 1
 fi
 
-# Include additional functions
-. $(dirname ${0})/qa-functions
+function filtered() {
+	[ -z "${FILTER}" ] && return 1
+	grep -qE ${FILTER} <<<$@
+}
+
+function print_description() {
+	# Remove all whitespaces
+	local desc=$(echo ${DESC})
+
+	log_info "Check: $(basename ${0})"
+	IFS='
+'
+	for line in $(fold -s -w 60 <<<${desc}); do
+		log_info "  ${line}"
+	done
+	log_info # Empty line
+
+	unset IFS
+}
+
+function qa_find() {
+	local filetype=${1}
+	local command=${2}
+
+	log_debug "Running qa_find with command ${command} in ${filetype}"
+
+	local file
+	for file in $(find_elf_files ${!filetype}); do
+		${command} ${file}
+	done
+}
+
+function check() {
+	log_error "REPLACE THIS FUNCTION BY A CUSTOM CHECK"
+	return 1
+}
+
+function run() {
+	local error_message
+	local ret
+
+	error_message=$(check)
+	ret=$?
+
+	[ "${ret}" = "0" ] && return 0
+
+	print_description
+
+	echo "${error_message}"
+	return ${ret}	
+}
+

@@ -1,0 +1,24 @@
+diff -Naur gcc-4.4-20100216.orig/gcc/config/i386/linux.h gcc-4.4-20100216/gcc/config/i386/linux.h
+--- gcc-4.4-20100216.orig/gcc/config/i386/linux.h	2010-02-26 17:44:46.000000000 +0000
++++ gcc-4.4-20100216/gcc/config/i386/linux.h	2010-02-26 17:46:55.000000000 +0000
+@@ -113,7 +113,7 @@
+   { "dynamic_linker", LINUX_DYNAMIC_LINKER }
+ 
+ #undef	LINK_SPEC
+-#define LINK_SPEC "-m %(link_emulation) %{shared:-shared} \
++#define LINK_SPEC "-m %(link_emulation) %{shared:-shared} --hash-style=gnu -O1 \
+   %{!shared: \
+     %{!ibcs: \
+       %{!static: \
+diff -Naur gcc-4.4-20100216.orig/gcc/config/i386/linux64.h gcc-4.4-20100216/gcc/config/i386/linux64.h
+--- gcc-4.4-20100216.orig/gcc/config/i386/linux64.h	2010-02-26 17:44:46.000000000 +0000
++++ gcc-4.4-20100216/gcc/config/i386/linux64.h	2010-02-26 17:47:47.000000000 +0000
+@@ -75,7 +75,7 @@
+ #endif
+ 
+ #undef	LINK_SPEC
+-#define LINK_SPEC "%{" SPEC_64 ":-m elf_x86_64} %{" SPEC_32 ":-m elf_i386} \
++#define LINK_SPEC "%{" SPEC_64 ":-m elf_x86_64} %{" SPEC_32 ":-m elf_i386} --hash-style=gnu -O1 \
+   %{shared:-shared} \
+   %{!shared: \
+     %{!static: \
