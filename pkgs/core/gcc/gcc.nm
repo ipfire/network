@@ -42,9 +42,6 @@ endef
 PKG_BUILD_DEPS =
 PKG_DEPS      += binutils cloog glibc gmp kernel-headers libffi mpfr ppl
 
-CFLAGS         = -D__USE_XOPEN2K8 -pipe
-CXXFLAGS       =
-
 ifeq "$(MACHINE)" "i586"
 	CONFIGURE_ARGS = --disable-decimal-float
 endif

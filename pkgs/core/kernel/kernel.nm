@@ -34,7 +34,8 @@ PKG_URL        = http://www.kernel.org/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = The Linux kernel.
 
-PKG_BUILD_DEPS = # No build dependencies
+PKG_BUILD_DEPS+= module-init-tools
+PKG_DEPS       = # No dependencies
 
 define PKG_DESCRIPTION
 	The kernel package contains the Linux kernel (vmlinuz), the core of any \

@@ -2,24 +2,24 @@
 
 . $(dirname ${0})/qa-include
 
-log "Searching for world-writeable files..."
+log_debug "Searching for world-writeable files..."
 
 files=$(find ${BUILDROOT} -type f -perm -2 2>/dev/null)
 if [ -n "${files}" ]; then
-	log "  QA Security Notice:"
-	log "   - The folloing files will be world writable."
-	log "   - This may or may not be a security problem, most of the time it is one."
-	log "   - Please double check that these files really need a world writeable bit and file bugs accordingly."
-	log
-	log "${files}"
+	log_error "  QA Security Notice:"
+	log_error "   - The folloing files will be world writable."
+	log_error "   - This may or may not be a security problem, most of the time it is one."
+	log_error "   - Please double check that these files really need a world writeable bit and file bugs accordingly."
+	log_error
+	log_error "${files}"
 	exit 1
 fi
 
 files=$(find ${BUILDROOT} -type f '(' -perm -2002 -o -perm -4002 ')')
 if [ -n "${files}" ]; then
-	log "  QA Notice: Unsafe files detected (set*id and world writable)"
-	log
-	log "${files}"
+	log_error "  QA Notice: Unsafe files detected (set*id and world writable)"
+	log_error
+	log_error "${files}"
 	exit 1
 fi
 

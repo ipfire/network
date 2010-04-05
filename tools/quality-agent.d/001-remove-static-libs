@@ -3,7 +3,7 @@
 . $(dirname ${0})/qa-include
 
 # Remove unwanted files
-log "Removing unwanted files: *.a *.la"
+log_debug "Removing unwanted files: *.a *.la"
 for file in $(find ${BUILDROOT} -name "*.a" -or -name "*.la"); do
 	
 	# Don't remove libc_nonshared.a. It is used by gcc/ld.
@@ -14,7 +14,7 @@ for file in $(find ${BUILDROOT} -name "*.a" -or -name "*.la"); do
 	[ "${file##*/}" = "libfl_pic.a" ] && continue
 	[ "${file##*/}" = "libpython2.6.a" ] && continue
 	
-	log "  Removing: ${file}"
+	log_debug "  Removing: ${file}"
 	rm -f ${file} || exit $?
 done
 

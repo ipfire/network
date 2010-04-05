@@ -40,6 +40,8 @@ class Naoki(object):
 			"package" : self.call_package,
 			"source" : self.call_source,
 			"shell" : self.call_shell,
+			"repository" : self.call_repository,
+			"generate" : self.call_generate,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -60,7 +62,7 @@ class Naoki(object):
 	def call_toolchain_build(self, args):
 		toolchain = chroot.Toolchain(arches.current["name"])
 
-		return toolchain.build()
+		return toolchain.build(naoki=self)
 
 	def call_toolchain_download(self, args):
 		toolchain = chroot.Toolchain(arches.current["name"])
@@ -68,7 +70,7 @@ class Naoki(object):
 		return toolchain.download()
 
 	def call_toolchain_tree(self, args):
-		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True))
+		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True, naoki=self))
 
 	def call_build(self, args):
 		force = True
@@ -123,7 +125,10 @@ class Naoki(object):
 				continue
 
 			if args.shell:
+				environ.init(clean=False)
 				return environ.shell([])
+
+			environ.init()
 
 			environ.build()
 
@@ -279,8 +284,38 @@ Release       : %(release)s
 
 		packages = backend.parse_package(args.packages, naoki=self)
 		for package in backend.depsolve(packages, recursive=True):
-			package.naoki = self
-			package.extract(environ.chrootPath())
+			package.getPackage(self).extract(environ.chrootPath())
 
 	def call_shell_enter(self, environ, args):
 		return environ.shell()
+
+	def call_repository(self, args):
+		actionmap = {
+			"clean" : self.call_repository_clean,
+			"build" : self.call_repository_build,
+		}
+
+		return actionmap[args.action.name](args.action)
+
+	def call_repository_clean(self, repo, args):
+		if args.names == ["all"]:
+			args.names = [r.name for r in backend.get_repositories()]
+
+		for name in args.names:
+			repo = backend.BinaryRepository(name, naoki=self)
+			repo.clean()
+
+	def call_repository_build(self, args):
+		if args.names == ["all"]:
+			args.names = [r.name for r in backend.get_repositories()]
+
+		for name in args.names:
+			repo = backend.BinaryRepository(name, naoki=self)
+			repo.build()
+
+	def call_generate(self, args):
+		if not args.type in ("iso",):
+			return
+
+		gen = chroot.Generator(self, arches.current, args.type)
+		return gen.run()

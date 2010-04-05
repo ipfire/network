@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import shutil
 import urlgrabber
 import urlgrabber.progress
 import urllib
@@ -23,12 +24,12 @@ except ImportError:
 	import sha
 	have_hashlib = 0
 
-def find_package_info(name, toolchain=False):
+def find_package_info(name, toolchain=False, **kwargs):
 	for repo in get_repositories(toolchain):
 		if not os.path.exists(os.path.join(repo.path, name, name + ".nm")):
 			continue
 
-		return PackageInfo(name, repo=repo)
+		return PackageInfo(name, repo=repo, **kwargs)
 
 def find_package(name, naoki, toolchain=False):
 	package = find_package_info(name, toolchain)
@@ -37,10 +38,10 @@ def find_package(name, naoki, toolchain=False):
 
 	return None
 
-def parse_package_info(names, toolchain=False):
+def parse_package_info(names, toolchain=False, **kwargs):
 	packages = []
 	for name in names:
-		package = find_package_info(name, toolchain)
+		package = find_package_info(name, toolchain, **kwargs)
 		if package:
 			packages.append(package)
 
@@ -198,11 +199,11 @@ def download(files, logger=None):
 class PackageInfo(object):
 	__data = {}
 
-	def __init__(self, name, repo=None):
+	def __init__(self, name, repo=None, arch=arches.current["name"]):
 		self._name = name
 		self.repo = repo
 
-		self.arch = arches.current["name"]
+		self.arch = arch
 
 	def __cmp__(self, other):
 		return cmp(self.name, other.name)
@@ -477,3 +478,78 @@ class Repository(object):
 	@property
 	def path(self):
 		return os.path.join(PKGSDIR, self.name)
+
+
+class BinaryRepository(object):
+	DIRS = ("db", "packages")
+
+	def __init__(self, name, naoki=None, arch=None):
+		self.name = name
+		self.arch = arch or arches.current
+		self.repo = Repository(self.name)
+
+		assert naoki
+		self.naoki = naoki
+
+	def build(self):
+		if not self.buildable:
+			raise Exception, "Cannot build repository"
+
+		# Create temporary directory layout
+		util.rm(self.repopath("tmp"))
+		for dir in self.DIRS:
+			util.mkdir(self.repopath("tmp", dir))
+
+		# Copy packages
+		for package in self.packages:
+			for file in package.package_files:
+				shutil.copy(os.path.join(PACKAGESDIR, file),
+					self.repopath("tmp", "packages"))
+
+		# TODO check repository's sanity
+		# TODO create repoview
+		f = open(self.repopath("tmp", "db", "package-list.txt"), "w")
+		for package in self.packages:
+			s = "%-40s" % package.fmtstr("%(name)s-%(version)s-%(release)s")
+			s += " | %s\n" % package.summary
+			f.write(s)
+		f.close()
+
+		for dir in self.DIRS:
+			util.rm(self.repopath(dir))
+			shutil.move(self.repopath("tmp", dir), self.repopath(dir))
+		util.rm(self.repopath("tmp"))
+
+	def clean(self):
+		if os.path.exists(self.path):
+			self.log.debug("Cleaning up repository: %s" % self.path)
+			util.rm(self.path)
+
+	def repopath(self, *args):
+		return os.path.join(self.path, *args)
+
+	@property
+	def buildable(self):
+		for package in self.packages:
+			if package.built:
+				continue
+			return False
+
+		return True
+
+	@property
+	def log(self):
+		return self.naoki.log
+
+	@property
+	def packages(self):
+		packages = []
+		for package in parse_package_info(get_package_names(), arch=self.arch["name"]):
+			if not package.repo.name == self.name:
+				continue
+			packages.append(package)
+		return packages
+
+	@property
+	def path(self):
+		return os.path.join(REPOSDIR, self.name, self.arch["name"])

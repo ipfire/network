@@ -11,9 +11,11 @@ CACHEDIR = os.path.join(BASEDIR, "cache")
 CCACHEDIR = os.path.join(BASEDIR, "ccache")
 CONFIGDIR = os.path.join(BASEDIR, "config")
 DOCDIR = os.path.join(BASEDIR, "doc")
+IMAGESDIR = os.path.join(BUILDDIR, "images")
 LOGDIR = os.path.join(BASEDIR, "logs")
 PKGSDIR = os.path.join(BASEDIR, "pkgs")
 PACKAGESDIR = os.path.join(BUILDDIR, "packages")
+REPOSDIR = os.path.join(BUILDDIR, "repositories")
 TOOLSDIR = os.path.join(BASEDIR, "tools")
 
 TARBALLDIR = os.path.join(CACHEDIR, "tarballs")
@@ -52,6 +54,7 @@ class Config(object):
 		"cleanup_on_success" : True,
 		#
 		# CLI variables
+		"debug" : False,
 		"quiet" : False,
 		#
 		# Distro items
@@ -92,9 +95,15 @@ class Config(object):
 	def __setitem__(self, item, value):
 		self._items[item] = value
 
+	def __getattr__(self, *args):
+		return self.__getitem__(*args)
+
+	def __setattr__(self, *args):
+		return self.__setitem__(*args)
+
 	@property
 	def environment(self):
-		return {
+		ret = {
 			"HOME"           : os.environ.get("HOME", "/root"),
 			"TERM"           : os.environ.get("TERM", ""),
 			"PS1"            : os.environ.get("PS1", "\u:\w\$ "),
@@ -107,6 +116,11 @@ class Config(object):
 			#
 			"PARALLELISMFLAGS" : "-j%d" % self["parallelism"],
 		}
+
+		if self["debug"]:
+			ret["NAOKI_DEBUG"] = "1"
+
+		return ret
 
 
 class Architectures(object):
