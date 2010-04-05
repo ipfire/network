@@ -41,6 +41,7 @@ class Naoki(object):
 			"source" : self.call_source,
 			"shell" : self.call_shell,
 			"repository" : self.call_repository,
+			"generate" : self.call_generate,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -122,6 +123,8 @@ class Naoki(object):
 			if not environ.toolchain.exists:
 				self.log.error("You need to build or download a toolchain first.")
 				continue
+
+			environ.init()
 
 			if args.shell:
 				return environ.shell([])
@@ -308,3 +311,10 @@ Release       : %(release)s
 		for name in args.names:
 			repo = backend.BinaryRepository(name, naoki=self)
 			repo.build()
+
+	def call_generate(self, args):
+		if not args.type in ("iso",):
+			return
+
+		gen = chroot.Generator(self, arches.current, args.type)
+		return gen.run()

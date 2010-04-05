@@ -377,6 +377,13 @@ class Commandline(object):
 								List("names", help="List of repositories"),
 							]),
 					]),
+
+				# Generator
+				Parser("generate",
+					help="Generator command",
+					arguments=[
+						Argument("type", help="Type of image to generate"),
+					]),
 			])
 
 		self.parser = parser
