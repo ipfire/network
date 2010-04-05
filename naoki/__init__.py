@@ -124,10 +124,11 @@ class Naoki(object):
 				self.log.error("You need to build or download a toolchain first.")
 				continue
 
-			environ.init()
-
 			if args.shell:
+				environ.init(clean=False)
 				return environ.shell([])
+
+			environ.init()
 
 			environ.build()
 
