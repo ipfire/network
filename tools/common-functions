@@ -4,6 +4,53 @@ LIBARY_PATHS="${BUILDROOT}/lib ${BUILDROOT}/usr/lib"
 BINARY_PATHS="${LIBARY_PATHS} ${BUILDROOT}/bin ${BUILDROOT}/sbin"
 BINARY_PATHS="${BINARY_PATHS} ${BUILDROOT}/usr/bin ${BUILDROOT}/usr/sbin"
 
+has_canary() {
+	local file=${1}
+
+	readelf -s ${file} | grep -q "__stack_chk_fail"
+}
+
+has_execstack() {
+	local file=${1}
+
+	readelf -h ${file} | grep -qE "Type:[[:space:]]*EXEC"
+}
+
+has_interpreter() {
+	local file=${1}
+
+	[ -n "$(get_interpreter ${file})" ]
+}
+
+has_nx() {
+	local file=${1}
+
+	readelf -l ${file} | grep "GNU_STACK" | grep -q "RWE"
+	[ $? != 0 ]
+}
+
+is_relro_partly() {
+	local file=${1}
+
+	readelf -l ${file} | grep -q "GNU_RELRO"
+}
+
+is_relro_full() {
+	local file=${1}
+
+	if is_relro_partly ${file}; then
+		readelf -d ${file} | grep -q "BIND_NOW"
+		return $?
+	fi
+	return 1
+}
+
+is_shared_object() {
+	local file=${1}
+
+	file ${file} | grep -q "shared object"
+}
+
 get_interpreter() {
 	local file=${1}
 
@@ -15,6 +62,13 @@ get_needed() {
 	local file=${1}
 
 	readelf -d ${file} | grep NEEDED | \
+		tr -d "[]" | awk '{ print $NF }'
+}
+
+get_rpath() {
+	local file=${1}
+
+	readelf -d ${file} | grep RPATH | \
 		tr -d "[]" | awk '{ print $NF }'
 }
 
@@ -58,7 +112,7 @@ find_elf_files() {
 
 	for dir in ${dirs}; do
 		for file in $(find ${dir} -maxdepth 1 -type f 2>/dev/null); do
-			if file ${file} | grep -q ELF; then
+			if file ${file} | grep -q "ELF"; then
 				files="${files} ${file}"
 			fi
 		done

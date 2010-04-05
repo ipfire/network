@@ -2,11 +2,15 @@
 
 . $(dirname ${0})/qa-include
 
-# Fix include files
-log "Fix include files"
+DESC="Include files have to belong to the root user. \
+	This script will fix this automatically."
 
-if [ ! -d "${BUILDROOT}/usr/include" ]; then
-	exit 0
-fi
+check() {
+	if [ ! -d "${BUILDROOT}/usr/include" ]; then
+		return 0
+	fi
+	
+	chown -R root:root ${BUILDROOT}/usr/include
+}
 
-chown -R root:root ${BUILDROOT}/usr/include
+run
