@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = libjpeg
-PKG_VER        = 7
+PKG_VER        = 8a
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -42,7 +42,7 @@ endef
 
 PKG_TARBALL    = jpegsrc.v$(PKG_VER).tar.gz
 
-DIR_APP        = /usr/src/jpeg-7
+DIR_APP        = /usr/src/jpeg-$(PKG_VER)
 
 CONFIGURE_OPTIONS += \
 	--enable-shared

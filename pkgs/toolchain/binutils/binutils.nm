@@ -9,7 +9,8 @@ define STAGE_BUILD
 		CC="$(TARGET)-gcc -B$(TOOLS_DIR)/lib/" \
 		RANLIB=$(TARGET)-ranlib \
 		../$(THISAPP)/configure \
-			$(CONFIGURE_ARCH) \
+			--host=$(TARGET) \
+			--build=$(TARGET) \
 			--prefix=$(TOOLS_DIR) \
 			--with-lib-path=$(TOOLS_DIR)/lib \
 			--disable-nls \

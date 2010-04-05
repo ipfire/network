@@ -1,0 +1,1213 @@
+#!/bin/bash
+HEADER="\
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+"
+
+## GLOBAL VARIABLES ARE UPPERCASE
+##  LOCAL VARIABLES ARE LOWERCASE
+
+VERBOSE=
+FORCE=
+TARGET=
+KERNEL=$(uname -r)
+MODULES=
+
+TMPDIR=$(mktemp -d)
+
+# Check if we are root
+if [ $UID != 0 ]; then
+	error "$0 must be run as root."
+	exit 1
+fi
+
+# Usage
+function usage() {
+    echo "$0	[--help] [-f] [-v] <out-initrd-image> <kernel-version>"
+    echo "			[--with=<module>]"
+    echo
+    echo "example: $0 /boot/myinitramfs.img \`uname -r\`"
+}
+
+# Setting verbose mode
+function set_verbose() {
+	case "$1" in
+		yes|y|on|1)
+			VERBOSE=-v
+			;;
+		no|n|off|0)
+			VERBOSE=
+			;;
+	esac
+}
+
+# Returns if verbose is on or not
+function is_verbose() {
+	[ -n "$VERBOSE" ] && return 0
+	return 1
+}
+
+# Like is_verbose but prints
+# the content of $VERBOSE
+function get_verbose() {
+	echo "$VERBOSE"
+	is_verbose
+}
+
+# Prints text if verbose is on
+function vecho() {
+	is_verbose && echo "$@"
+}
+
+# Prints error if verbose is on
+function error() {
+	vecho "$@" >&2
+}
+
+function compress() {
+	cd - >/dev/null
+	IMAGE=$(mktemp)
+	vecho "[TASK] Compressing image $TARGET..."
+	(cd $TMPDIR && find . | cpio -H newc --quiet -o >| $IMAGE) || exit 1
+	gzip -c9 $IMAGE > $TARGET
+}
+
+function findone() {
+	find "$@" | awk '{ print $1; exit; }'
+}
+
+function findall() {
+	find "$@"
+}
+
+qpushd() {
+	pushd "$1" >/dev/null 2>&1
+}
+
+qpopd() {
+	popd >/dev/null 2>&1
+}
+
+function read_link() {
+	READLINK=$(readlink $1)
+	if grep -q "^/" <<< $READLINK; then
+		echo $READLINK
+	else
+		echo "$(dirname $1)/$READLINK"
+	fi
+}
+
+function get_dso_deps() {
+	local bin="$1"
+	shift
+
+	declare -a FILES
+	declare -a NAMES
+
+	local LDSO="/lib/ld-linux.so.2"
+
+	declare -i n=0
+	while read NAME I0 FILE ADDR I1 ; do
+		[ "$FILE" == "not" ] && FILE="$FILE $ADDR"
+		[ "$NAME" == "not" ] && NAME="$NAME $I0"
+		NAMES[$n]="$NAME"
+		FILES[$n]="$FILE"
+		let n++
+	done << EOF
+		$(LD_TRACE_PRELINKING=1 LD_WARN= LD_TRACE_LOADED_OBJECTS=1 \
+			$LDSO $bin 2>/dev/null)
+EOF
+
+	[ ${#FILES[*]} -eq 0 ] && return 1
+
+	# we don't want the name of the binary in the list
+	if [ "${FILES[0]}" == "$bin" ]; then
+		FILES[0]=""
+		NAMES[0]=""
+		[ ${#FILES[*]} -eq 1 ] && return 1
+	fi
+
+	declare -i n=0
+	while [ $n -lt ${#FILES[*]} ]; do
+		local FILE="${FILES[$n]}"
+		local NAME="${NAMES[$n]}"
+		if [ "$FILE" == "not found" -o "$NAME" == "not found" ]; then
+			cat 1>&2 <<EOF
+There are missing files on your system.  The dynamic object $bin
+requires ${NAMES[$n]} n order to properly function. mkinitramfs cannot continue.
+EOF
+			return 1
+		fi
+		case "$FILE" in
+			/lib*)
+				TLIBDIR=`echo "$FILE" | sed 's,\(/lib[^/]*\)/.*$,\1,'`
+				BASE=`basename "$FILE"`
+				if [ -f "$TLIBDIR/$BASE" ]; then
+					FILE="$TLIBDIR/$BASE"
+				fi
+				FILES[$n]="$FILE"
+				;;
+		esac
+		let n++
+	done
+	echo "${FILES[@]}"
+}
+
+function install() {
+	local file dest
+	for file in $@; do
+		local msg="[FILE]"
+
+		## Check if this is an absolute path
+		if [ "$(basename $file)" = "$file" ]; then
+			file=$(which $file)
+		fi
+		
+		# Destination file
+		dest="$TMPDIR$file"
+		[ -e "$dest" ] && continue
+
+		mkdir -p "$(dirname $dest)" 2>/dev/null
+
+		local old_indent=$INDENT
+		INDENT=" $INDENT"
+		
+		[ "${file%%.ko}" != "${file}" ] && msg="[KMOD]"
+		[ -L "$file" ] && msg="[SYML]"
+		#vecho "$msg$INDENT$file -> $dest"
+		vecho "$msg$INDENT$file"
+
+		# Check if $file is a symlink
+		if [ -L "$file" ]; then
+			install $(read_link $file)
+		fi
+
+		if [ "${file%%.ko}" != "${file}" ]; then
+			for i in $(moduledep $file); do
+				[ "$(locatemodule $i)" = "$file" ] && continue
+				installmodule $i
+			done
+		fi
+
+		cp -ld $file $dest
+
+		# Check if file is a script file
+		if [ "$(dd if=$file bs=2 count=1 2>/dev/null)" = "#!" ]; then
+			install $(head -n 1 $file | cut -c3-)
+		# Check if file is a kernel module
+		elif [ "${file%%.ko}" != "${file}" ]; then
+			local firmware
+			for firmware in $(modinfo -F firmware $file 2>/dev/null); do
+				firmware="/lib/firmware/$firmware"
+				[ -e "$firmware" ] && install $firmware
+			done
+		else
+			for dep in $(get_dso_deps "$file"); do
+				install $dep
+			done
+		fi
+
+		INDENT=$old_indent
+	done
+}
+
+# find module dependencies
+function moduledep() {
+	local deps mpargs
+	if [ "$1" == "--ignore-install" ]; then
+		mpargs="$mpargs --ignore-install"
+		shift
+	fi
+	local module=$(basename ${1%%.ko})
+	modprobe $mpargs --set-version $KERNEL --show-depends $module 2>/dev/null | \
+		awk '/^insmod / { print gensub(".*/","","g",$2) }' | \
+			while read foo; do \
+				[ "${foo%%.ko}" != "$1" ] && \
+				echo -n "${foo%%.ko} "; \
+			done
+}
+
+# XXX May be, we can drop this...
+# This loops to make sure it resolves dependencies of dependencies of...
+function resolvemoduledeps () {
+	local dep
+	local deps
+	local module
+	local newmodules
+	local modules=$@
+
+	before=0; after=1
+	while [ $before != $after ]; do
+		newmodules=
+		before=$(wc -c <<< $modules)
+		for module in $modules; do
+			deps=$(moduledep $module)
+			is_verbose && echo "Module $module depends on: $deps"
+			newmodules="$newmodules $module $deps"
+		done
+		modules=$(for i in $newmodules; do echo $i; done | sort -u)
+		after=$(wc -c <<< $modules)
+	done
+	echo $modules
+}
+
+function locatemodule() {
+	local mpargs=""
+	if [ "$1" == "--ignore-install" ]; then
+		mpargs="$mpargs --ignore-install"
+		shift
+	fi
+	local path=$(modprobe $mpargs --set-version $KERNEL --show-depends $1 2>/dev/null | \
+		awk '/^insmod / { print $2; }' | tail -n 1)
+	[ -n "$path" -a -f "$path" ] && echo $path
+}
+
+function installmodule() {
+	local module
+	local load
+	for module in $@; do
+		[ "$module" = "--load" ] && load=1
+		module=$(locatemodule $module)
+		[ -z "$module" ] && continue
+
+		install $module
+	done
+	if [ "$load" = "1" ]; then
+		for module in $@; do
+			[ "$module" = "--load" ] && continue
+			cat >> $TMPDIR/sbin/real-init <<EOF
+vecho "Loading module $i..."
+modprobe $i
+EOF
+		done
+	fi
+}
+
+resolve_device_name() {
+	if [[ "$1" =~ ^/dev ]]; then
+		echo $1
+	else
+		findfs $1
+	fi
+}
+
+function finalize() {
+	qpopd
+
+	# Adding modules
+	depmod -a $KERNEL
+	installmodule $MODULES
+	
+	# Build module deps file so we can use modprobe
+	vecho "[TASK] Running depmod..."
+	depmod -a -b "$TMPDIR" $KERNEL
+
+	# ldconfig
+	install /etc/ld.so.conf
+	[ -d "/etc/ld.so.conf.d" ] && \
+		for i in $(find /etc/ld.so.conf.d -type f); do
+			install $i
+		done
+	vecho "[TASK] Running ldconfig..."
+	ldconfig -r $TMPDIR
+
+	# Compressing
+	compress
+	rm -rf $TMPDIR 2>/dev/null
+}
+
+# resolve a device node to its major:minor numbers in decimal or hex
+function get_numeric_dev() {
+	( fmt="%d:%d"
+		if [ "$1" == "hex" ]; then
+			fmt="%x:%x"
+		fi
+		ls -lH "$2" | awk '{ sub(/,/, "", $5); printf("'"$fmt"'", $5, $6); }'
+	) 2>/dev/null
+}
+
+function resolve_device_name() {
+	if [[ "$1" =~ ^/dev ]]; then
+		echo $1
+	else
+		findfs $1
+	fi
+}
+
+function finddevnoinsys() {
+	majmin="$1"
+	if [ -n "$majmin" ]; then
+		dev=$(for x in /sys/block/* ; do find $x/ -name dev ; done | while read device ; do \
+			echo "$majmin" | cmp -s $device && echo $device ; done)
+		if [ -n "$dev" ]; then
+			dev=${dev%%/dev}
+			dev=${dev%%/}
+			echo "$dev"
+			return 0
+		fi
+	fi
+	return 1
+}
+
+findblockdevinsys() {
+	devname=$(resolve_device_name "$1")
+	if [[ "$devname" =~ ^/sys/block/ ]]; then
+		echo "$devname"
+	fi
+	majmin=$(get_numeric_dev dec $devname)
+	finddevnoinsys "$majmin"
+}
+
+findstoragedriverinsys () {
+	while [ ! -L device ]; do
+		for slave in $(ls -d slaves/* 2>/dev/null) ; do
+			slavename=${slave##*/}
+			case " $slavestried " in
+				*" $slavename "*)
+					continue
+					;;
+				*)
+					slavestried="$slavestried $slavename"
+					qpushd $slave
+					findstoragedriverinsys
+					qpopd
+					;;
+			esac
+		done
+		[ "$PWD" = "/sys" ] && return
+		cd ..
+	done
+	cd $(read_link ./device)
+	if echo $PWD | grep -q /virtio-pci/ ; then
+		installmodule --load virtio_pci
+	fi
+	while [ "$PWD" != "/sys/devices" ]; do
+		deps=
+		if [ -f modalias ]; then
+			installmodule --load $(cat modalias)
+		fi
+
+		[ -z "$deps" -a -L driver/module ] && \
+			deps=$(basename $(read_link driver/module))
+		installmodule --load $deps
+		cd ..
+	done
+}
+
+function findstoragedriver() {
+	for device in $@; do
+		case " $handleddevices " in
+			*" $device "*)
+				continue ;;
+			*) handleddevices="$handleddevices $device" ;;
+		esac
+		vecho "[INFO] Looking for driver for device $device"
+		if [[ "$device" =~ ^/sys ]]; then
+			device=${device##*/}
+		fi
+		sysfs=""
+		device=$(echo "$device" | sed 's,/,!,g')
+		if [ -d /sys/block/$device/ ]; then
+			sysfs="/sys/block/$device"
+		else
+			sysfs=$(for x in /sys/block/*; do findone $x/ -type d -name $device; done)
+		fi
+		[ -z "$sysfs" ] && return
+		qpushd $sysfs
+		findstoragedriverinsys
+		qpopd
+	done
+}
+
+# Main
+while [ $# -gt 0 ] ; do
+	case $1 in
+		--help)
+			usage
+			exit 0
+			;;
+		-f|--force)
+			FORCE=yes
+			;;
+		-v|--verbose)
+			set_verbose on
+			;;
+		--with=*)
+			MODULES="$MODULES ${1#--with=*}"
+			;;
+		--with-net)
+			WITH_NET=1
+			;;
+		*)
+			if [ -z "$target" ] ; then
+				target=$1
+			elif [ -z "$kernel" ] ; then
+				kernel=$1
+			else
+				echo "Unknown option or parameter \"$1\""
+				usage
+				exit 1
+			fi
+			;;
+	esac
+
+	shift
+done
+
+TARGET=${target-$TARGET}
+KERNEL=${kernel-$KERNEL}
+
+if [ -z "$TARGET" ]; then
+	usage
+	exit 1
+fi
+
+[[ "$TARGET" =~ "^/" ]] && TARGET="$PWD/$TARGET"
+
+if [ -z "$FORCE" ] && [ -e "$TARGET" ]; then
+	echo "Image $TARGET already exists. Use -f to overwrite"
+	exit 1
+fi
+
+# Changing to our dir, where we do our actions in
+qpushd $TMPDIR || exit 1
+
+# Make directory structure
+mkdir -p bin sbin dev sys proc sysroot \
+	etc/udev/rules.d lib/udev/rules.d
+
+# Install some essential binaries
+install bash blkid chmod cat cut dmesg env find grep head ip kbd_mode \
+	kill killall5 less ln \
+	ls lsmod mkdir mknod modprobe mount mountpoint openvt pidof ps rm sed \
+	setfont sh sleep switch_root udevadm udevd umount \
+	/lib/udev/console_init
+
+# Copy modprobe.conf and friends over
+[ -e /etc/modprobe.conf ] && install /etc/modprobe.conf
+for f in $(find /etc/modprobe.d -type f); do
+	install $f
+done
+
+# Install an empty fstab
+touch $TMPDIR/etc/fstab
+
+# terminfo bits make things work better if you fall into interactive mode
+[ -d "/usr/lib/terminfo" ] && \
+	for f in $(find /usr/lib/terminfo -type f); do
+		install $f
+	done
+
+# Add localization
+if [ -e "/etc/sysconfig/console" ]; then
+	install /etc/sysconfig/console
+	. /etc/sysconfig/console
+fi
+[ -z "$FONT" ] && FONT="LatArCyrHeb-16"
+for i in /lib/kbd/consolefonts/$FONT.*; do
+	mkdir -p $TMPDIR/$(dirname $i) 2>/dev/null || true
+	cp -f $i $TMPDIR/$i
+	case "$i" in
+		*.gz)
+			gzip -fd $TMPDIR/$i
+			;;
+		*.bz2)
+			bzip2 -fd $TMPDIR/$i
+			;;
+	esac
+done
+
+cat > init <<'EOF'
+#!/bin/sh
+
+# Mounting directories
+mount -t proc proc /proc
+mount -t sysfs /sys /sys
+mount -t tmpfs -o mode=0755 udev /dev
+
+# Silencing kernel
+echo > /proc/sys/kernel/printk "1 4 1 7"
+
+# Adding important dev nodes
+mknod /dev/console c 5 1
+mknod /dev/null c 1 3
+mknod /dev/kmsg c 1 11
+mknod /dev/ptmx c 5 2
+mknod /dev/fb c 29 0
+mknod /dev/systty c 4 0
+
+# XXX really we need to openvt too, in case someting changes the
+# color palette and then changes vts on fbcon before gettys start.
+# (yay, fbcon bugs!)
+for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 ; do
+	mknod /dev/tty$i c 4 $i
+done
+
+for i in 0 1 2 3 ; do
+	mknod /dev/ttyS$i c 4 $(($i + 64))
+done
+
+mkdir -m 1777 /dev/shm
+ln -s /proc/self/fd /dev/fd
+ln -s fd/0 /dev/stdin
+ln -s fd/1 /dev/stdout
+ln -s fd/2 /dev/stderr
+
+mkdir /dev/pts
+mount -t devpts -o gid=5,mode=620 /dev/pts /dev/pts
+
+exec sbin/real-init
+EOF
+chmod 755 init
+
+# Write out real-init
+touch sbin/real-init; chmod 755 sbin/real-init
+cat > sbin/real-init <<'EOF'
+#!/bin/bash
+$HEADER
+
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+export TERM=linux
+
+init="/sbin/init"
+VERBOSE=-v
+
+READONLY=0
+SHELL=0
+ESHELL=0
+
+function emergency_shell()
+{
+    echo "Bug in initramfs /init detected. Dropping to a shell. Good luck!"
+    echo
+    bash
+}
+trap "emergency_shell" 0 2
+
+# exit immediately if a command fails
+set -e
+
+# Setting verbose mode
+function set_verbose() {
+	case "$1" in
+		yes|y|on|1)
+			VERBOSE=-v
+			;;
+		no|n|off|0)
+			VERBOSE=
+			;;
+	esac
+}
+
+# Returns if verbose is on or not
+function is_verbose() {
+	[ -n "$VERBOSE" ] && return 0
+	return 1
+}
+
+# Like is_verbose but prints
+# the content of $VERBOSE
+function get_verbose() {
+	echo "$VERBOSE"
+	is_verbose
+}
+
+# Prints text if verbose is on
+function vecho() {
+	if is_verbose; then echo "$@"; fi
+}
+
+# Prints error if verbose is on
+function error() {
+	vecho "$@" >&2
+}
+
+/lib/udev/console_init tty0
+
+# Disable hotplugging
+echo "" > /proc/sys/kernel/hotplug
+
+# Parse kernel commandline options
+for o in $(cat /proc/cmdline) ; do
+	case $o in
+	init=*)
+		init=${o#init=}
+		;;
+	ro)
+		READONLY=1
+		;;
+	rw)
+		READONLY=0
+		;;
+	quiet)
+		set_verbose no
+		;;
+	shell)
+		SHELL=1
+		;;
+	eshell)
+		ESHELL=1
+		;;
+	blacklist=*)
+		echo "blacklist ${o#blacklist=}" >> /etc/modprobe.conf
+		;;
+	*)
+		m=$(echo $o |cut -s -d . -f 1)
+		opt=$(echo $o |cut -s -d . -f 2-)
+		if [ -z "$m" -o -z "$opt" ]; then
+			continue
+		fi
+		p=$(echo $opt |cut -s -d = -f 1)
+		v=$(echo $opt |cut -s -d = -f 2-)
+		if [ -z "$p" -o -z "$v" ]; then
+			continue
+		fi
+		echo "options $m $p=$v" >> /etc/modprobe.conf
+		;;
+	esac
+done
+
+vecho "kernel commandline: $(cat /proc/cmdline)"
+EOF
+
+if [ "${WITH_NET}" = "1" ]; then
+	MODULES="$MODULES af_packet"
+	for module in /lib/modules/$KERNEL/kernel/drivers/net/{,*/}*; do
+		MODULES="$MODULES $(basename ${module/.ko})"
+	done
+
+	install arping curl dhclient ip ping sha1sum /etc/nsswitch.conf \
+		/usr/lib/libnsl.so /usr/lib/libnss_{dns,files}.so
+	touch etc/hosts
+	mkdir -p $TMPDIR/var/lib/dhclient 2>/dev/null
+
+	cat > sbin/dhclient-script <<'EOF'
+#!/bin/sh
+
+PATH=/usr/sbin:/sbin:/usr/bin:/bin
+
+function ip_encode() {
+	IFS=.
+
+	local int=0
+	for field in $1; do
+		int=$(( $(( $int << 8 )) | $field ))
+	done
+
+	echo $int
+	unset IFS
+}
+
+function mask_to_cidr() {
+	local mask
+	mask=$(ip_encode $1)
+	local cidr
+	cidr=0
+	local x
+	x=$(( 128 << 24 )) # 0x80000000
+
+	while [ $(( $x & $mask )) -ne 0 ]; do
+		[ $mask -eq $x ] && mask=0 || mask=$(( $mask << 1 ))
+		cidr=$(($cidr + 1))
+	done
+
+	if [ $(( $mask & 2147483647 )) -ne 0 ]; then # 2147483647 = 0x7fffffff
+		echo "Invalid net mask: $1" >&2
+	else
+		echo $cidr
+	fi
+}
+
+function ip_in_subnet() {
+	local netmask
+	netmask=$(_netmask $2)
+	[ $(( $(ip_encode $1) & $netmask)) = $(( $(ip_encode ${2%/*}) & $netmask )) ]
+}
+
+function _netmask() {
+	local vlsm
+	vlsm=${1#*/}
+	[ $vlsm -eq 0 ] && echo 0 || echo $(( -1 << $(( 32 - $vlsm )) ))
+}
+
+dhconfig() {
+	if [ -n "${old_ip_address}" ] &&
+			[ ! "${old_ip_address}" = "${new_ip_address}" ]; then
+		# IP address changed.  Bringing down the interface will delete all
+		# routes, and clear the ARP cache.
+		ip -family inet addr flush dev ${interface} >/dev/null 2>&1
+		ip -family inet link set dev ${interface} down
+    fi
+
+	if [ "${reason}" = "BOUND" ] || [ "${reason}" = "REBOOT" ] ||
+			[ ! "${old_ip_address}" = "${new_ip_address}" ] ||
+			[ ! "${old_subnet_mask}" = "${new_subnet_mask}" ] ||
+			[ ! "${old_network_number}" = "${new_network_number}" ] ||
+			[ ! "${old_broadcast_address}" = "${new_broadcast_address}" ] ||
+			[ ! "${old_routers}" = "${new_routers}" ] ||
+			[ ! "${old_interface_mtu}" = "${new_interface_mtu}" ]; then
+		ip -family inet addr add ${new_ip_address}/${new_prefix} \
+			broadcast ${new_broadcast_address} dev ${interface}
+
+		if [ -n "${new_interface_mtu}" ]; then
+			ip link set ${interface} mtu ${new_interface_mtu}
+		fi
+		
+		for router in ${new_routers}; do
+			if ! ip_in_subnet ${router} ${new_ip_address}/${new_prefix}; then
+				continue
+			fi
+			ip route replace default via ${router}
+			break
+		done
+	fi
+
+	if [ "${reason}" = "RENEW" ] && \
+			[ "${new_domain_name}" = "${old_domain_name}" ] && \
+			[ "${new_domain_name_servers}" = "${old_domain_name_servers}" ]; then
+		return
+	fi
+
+    if [ -n "${new_domain_name}" ] || [ -n "${new_domain_name_servers}" ] || \
+			[ -n "${new_domain_search}" ]; then
+
+		echo "; generated by $0" > /etc/resolv.conf
+
+		if [ -n "${new_domain_search}" ]; then
+			echo "search ${new_domain_search//\\032/ }" >> /etc/resolv.conf
+		elif [ -n "${new_domain_name}" ]; then
+			echo "search ${new_domain_name//\\032/ }" >> /etc/resolv.conf
+		fi
+
+		for nameserver in ${new_domain_name_servers} ; do
+			echo "nameserver ${nameserver}" >> /etc/resolv.conf
+		done
+    fi
+	
+	if [ -n "${new_host_name}" ]; then
+		hostname ${new_host_name}
+	fi
+}
+
+new_prefix=$(mask_to_cidr ${new_subnet_mask})
+
+case "${reason}" in
+	MEDIUM)
+		exit 0
+		;;
+
+	PREINIT)
+		ip -family inet addr flush dev ${interface} >/dev/null 2>&1
+		ip -family inet link set ${interface} up
+		exit 0
+		;;
+
+	ARPCHECK|ARPSEND)
+		if [ -z "${new_ip_address}" ] || [ -z "${interface}" ] || \
+				arping -q -f -c 2 -w 3 -D -I ${interface} ${new_ip_address}; then
+			exit 0
+		else
+			exit 1
+		fi
+		;;
+
+	BOUND|RENEW|REBIND|REBOOT)
+		dhconfig
+		exit 0
+        ;;
+
+	EXPIRE|FAIL|RELEASE|STOP)
+		if [ -n "${old_ip_address}" ]; then
+			# Shut down interface, which will delete routes and clear arp cache.
+			ip -family inet addr flush dev ${interface} >/dev/null 2>&1
+			ip -family inet link set ${interface} down
+		fi
+		exit 0
+		;;
+
+	*)
+		echo "Unhandled state: ${reason}" >&2
+		exit 1	
+		;;
+esac
+
+EOF
+	chmod 755 sbin/dhclient-script
+fi
+
+# Modules needed by the live system
+MODULES="$MODULES aufs squashfs loop vfat ehci-hcd ohci-hcd uhci-hcd usb-storage"
+
+# Add all storage modules
+for module in /lib/modules/$KERNEL/kernel/drivers/{ata,message/fusion,pcmcia,scsi{,/*}}/*; do
+	MODULES="$MODULES $(basename ${module/.ko})"
+done
+
+# Creating folders
+mkdir -p mnt/{source,tmpfs,overlayfs,squashfs}
+
+cat >> sbin/real-init <<'EOF'
+
+netdevice=eth0
+
+# Users can override rootfs target on the kernel commandline
+for o in $(cat /proc/cmdline); do
+	case $o in
+	root=*)
+		root=${o#root=}
+		;;
+	rootflags=*)
+		rootflags=${o#rootflags=}
+		;;
+	rootfstype=*)
+		rootfstype=${o#rootfstype=}
+		;;
+	net=*)
+		net=${o#net=}
+		;;
+	netdevice=*)
+		netdevice=${o#netdevice=}
+		;;
+	gateway=*)
+		gateway=${o#gateway=}
+		;;
+	dns=*)
+		dns="$dns ${o#dns=}"
+		;;
+	esac
+done
+
+# generate udev rules to generate /dev/root symlink
+if [ -z $root ] ; then
+	root=/dev/something
+else
+	case $root in
+		/dev/disk/by-label/*)
+			type="block"
+			LABEL=${root#/dev/disk/by-label/}
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
+			if is_verbose; then
+				echo "Added udev rule 00-label.rules:"
+				cat /etc/udev/rules.d/00-label.rules
+			fi
+			type="block"
+			;;
+		CDLABEL=*)
+			CDLABEL=${root#CDLABEL=}
+			echo "KERNEL==\"hd[a-z]\", BUS==\"ide\", SYSFS{removable}==\"1\", ATTRS{media}==\"cdrom\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-cdlabel.rules
+			echo "KERNEL==\"sr[0-9]\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
+			echo "KERNEL==\"scd[0-9]\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
+			echo "KERNEL==\"pcd[0-9]\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$CDLABEL\", SYMLINK+=\"root\"" >> /etc/udev/rules.d/00-cdlabel.rules
+			if is_verbose; then
+				echo "Added udev rule 00-cdlabel.rules:"
+				cat /etc/udev/rules.d/00-cdlabel.rules
+			fi
+			type="block"
+			;;
+		LABEL=*)
+			LABEL=${root#LABEL=}
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/sbin/blkid -s LABEL -o value %N\", RESULT==\"$LABEL\", SYMLINK+=\"root\"" > /etc/udev/rules.d/00-label.rules
+			if is_verbose; then
+				echo "Added udev rule 00-label.rules:"
+				cat /etc/udev/rules.d/00-label.rules
+			fi
+			type="block"
+			;;
+		/dev/disk/by-id/*)
+			UUID=${root#/dev/disk/by-id/}
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/sbin/blkid -s UUID -o value %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
+			if is_verbose; then
+				echo "Added udev rule 01-uuid.rules:"
+				cat /etc/udev/rules.d/01-uuid.rules
+			fi
+			type="block"
+			;;
+		UUID=*)
+			UUID=${root#UUID=}
+			echo "SUBSYSTEM==\"block\", PROGRAM=\"/sbin/blkid -s UUID -o value %N\", RESULT==\"$UUID\", SYMLINK+=\"root\"" > /etc/udev/rules.d/01-uuid.rules
+			if is_verbose; then
+				echo "Added udev rule 01-uuid.rules:"
+				cat /etc/udev/rules.d/01-uuid.rules
+			fi
+			type="block"
+			;;
+		http://*|https://*|ftp*://*|ftps://*|scp://*|sftp://*)
+			thingtofetch="${root}"
+			type="download"
+
+			# When doing http(s) transfers, compress the data
+			if [ "${thingtofetch:0:4}" = "http" ]; then
+				curloptions="--compressed"
+			fi
+			;;
+		/dev/*)
+			ln -s $root /dev/root
+			type="block"
+			;;
+		*)
+			thingtomount=$root
+			;;
+	esac
+fi
+
+if [ "$type" = "block" ]; then
+	thingtomount=/dev/root
+
+elif [ "$type" = "download" ]; then
+	rootflags="loop"
+	thingtomount=/${thingtofetch##*/}
+
+	# If no network configuration was given,
+	# we'll try dhcp
+	if [ -z "${net}" ]; then
+		net="dhcp"
+	fi
+fi
+
+echo "udev_log=\"error\"" >> /etc/udev/udev.conf
+
+# rules for loading modules
+echo -n "ACTION==\"add\", SUBSYSTEM==\"?*\", ENV{MODALIAS}==\"?*\", RUN+=\"/sbin/modprobe $" >> /etc/udev/rules.d/10-modprobe.rules
+echo "env{MODALIAS}\"" >> /etc/udev/rules.d/10-modprobe.rules
+echo "ACTION==\"add\", SUBSYSTEM==\"scsi_device\" RUN+=\"/sbin/modprobe sg\"" >> /etc/udev/rules.d/10-modprobe.rules
+echo "ACTION==\"add\", SUBSYSTEM==\"scsi_device\", SYSFS{type}==\"0|7|14\", RUN+=\"/sbin/modprobe sd_mod\"" >> /etc/udev/rules.d/10-modprobe.rules
+echo "ACTION==\"add\", SUBSYSTEM==\"scsi_device\", SYSFS{type}==\"[45]\", RUN+=\"/sbin/modprobe sr_mod\"" >> /etc/udev/rules.d/10-modprobe.rules
+echo "SUBSYSTEM==\"mmc\", RUN+=\"/sbin/modprobe mmc_block\"" >> /etc/udev/rules.d/10-modprobe.rules
+
+if [ "${type}" = "block" ]; then
+	# FIXME: hack since sr_mod seems to fail to get loaded sometimes (#239657)
+	modprobe sr_mod
+fi
+
+modprobe loop max_loop=16
+
+vecho "Starting udevd..."
+udevd --daemon
+
+vecho "Creating devices..."
+udevadm trigger
+
+if [ "${type}" = "download" ]; then
+	# Wait 30 seconds for network to appear.
+	COUNTDOWN=30
+	while [ "x$COUNTDOWN" != "x0" ] ; do
+		is_verbose && echo -n "."
+	
+		if ip link show $netdevice &>/dev/null; then
+			COUNTDOWN=0
+			continue
+		fi
+
+		COUNTDOWN=$(($COUNTDOWN - 1))
+		sleep 1
+	done
+	vecho # Blank line
+
+	ip link set $netdevice up
+	if [ "$net" = "dhcp" ]; then
+		vecho "Getting an IP address by DHCP..."
+		dhclient $(get_verbose) $netdevice
+	else
+		vecho "Setting IP address $net..."
+		ip addr add $net dev $netdevice
+	fi
+	if [ -n "$gateway" ]; then
+		vecho "Setting default gateway $gateway..."
+		ip route add default via $gateway
+	fi
+	if [ -n "$dns" ]; then
+		vecho "Setting up dns server $dns..."
+		echo "nameserver $dns" > /etc/resolv.conf
+	fi
+	if [ -n "$gateway" ]; then
+		vecho "Pinging gateway $gateway..."
+		if ! ping -c3 -w10 $gateway &>/dev/null; then
+			echo "This box does not seem to have a connection"
+			echo "to the default gateway $gateway."
+			echo "You may fix this now and continue then:"
+			echo
+			bash
+		fi
+	fi
+fi
+
+if [ "$type" = "download" ]; then
+	curloptions="${curloptions} --connect-timeout 30 --output ${thingtomount}"
+	#curloptions="${curloptions} --write-out=\"Fetched %{url_effective} in %{time_total}s (%{speed_download} bytes/s).\""
+
+	vecho "Running donwload..."
+	vecho "  $thingtofetch"
+
+	curl ${curloptions} ${thingtofetch}
+
+	if [ "$?" != "0" ]; then
+		echo "An error occured when fetching ${thingtomount}:"
+		echo "  Command: ${curl} ${thingtofetch}"
+		echo
+		echo "You now get a shell to download the file manually."
+		echo "Exit to continue booting."
+		echo
+		bash
+	fi
+fi
+
+if [ "$SHELL" == "1" ] ; then
+	echo "Shell requested on kernel commandline. Exit to continue booting."
+	echo
+	bash
+fi
+
+if [ "${type}" = "block" ]; then
+	# Wait 90 seconds for $thingtomount to appear.
+	COUNTDOWN=90
+	while [ "x$COUNTDOWN" != "x0" ] ; do
+		is_verbose && echo -n "."
+
+		if [ -e $thingtomount ]; then
+			COUNTDOWN=0
+			continue
+		fi
+		# this is kind of lame, but we could have had a situation
+		# where we were unable to read the volume id.  so trigger
+		# another run through the block devs
+		if [ "x$COUNTDOWN" = "x30" ]; then
+			udevadm trigger --subsystem-match=block
+		fi
+	
+		COUNTDOWN=$(($COUNTDOWN - 1))
+		sleep 1
+	done
+	vecho # Blank line
+fi
+
+if [ ! -e $thingtomount ] ; then
+	echo
+	echo "--------------------------------------"
+	echo "WARNING: Cannot find root file system!"
+	echo "--------------------------------------"
+	echo
+	echo "Create symlink $thingtomount and then exit this shell to continue"
+	echo "the boot sequence."
+	echo
+	bash
+fi
+
+if is_verbose; then
+	vecho "Mounting $thingtomount..."
+	ls -lh $thingtomount
+fi
+
+if [ "x$READONLY" == "x1" ] ; then
+	rootflags="$rootflags,ro"
+else
+	rootflags="$rootflags,rw"
+fi
+
+if [ -n $rootflags ]; then
+	mountoptions=" -o$rootflags"
+fi
+
+[ -n "$rootfstype" ] && rootfstype="-t $rootfstype"
+
+mount -n $rootfstype $mountoptions $thingtomount /mnt/source
+
+if [ "$?" != "0" ]; then
+	echo "---------------------------------"
+	echo "WARNING: Cannot mount rootfs!"
+	echo "---------------------------------"
+	echo
+	echo "Dropping to a shell. "
+	echo "Mount /mnt/source and exit shell to continue. Good luck!"
+	echo
+	bash
+fi
+
+mount -n -t tmpfs none /mnt/tmpfs
+aufsmountoptions="br:/mnt/tmpfs=rw"
+
+count=0
+for overlay in $(find /mnt/source -name "*.overlay" 2>/dev/null); do
+	vecho "Setting up overlay ${overlay}..."
+	mkdir -p /mnt/overlay${count} 2>/dev/null
+	mount -n -t squashfs -o loop,ro ${overlay} /mnt/overlay${count}
+	aufsmountoptions="$aufsmountoptions:/mnt/overlay${count}=rr"
+	count=$((${count} + 1))
+done
+
+count=0
+for sfs in $(find /mnt/source -name "*.sfs" 2>/dev/null); do
+	vecho "Setting up squashed fs ${sfs}..."
+	mount -n -t squashfs -o loop,ro ${sfs} /mnt/squashfs
+	aufsmountoptions="$aufsmountoptions:/mnt/squashfs=rr"
+	break
+done
+
+mount -t aufs -o $aufsmountoptions none /sysroot
+
+for i in $(cd /mnt; ls); do
+	mountpoint /mnt/$i >/dev/null || continue
+	mkdir -p /sysroot/mnt/$i || :
+	mount --move /mnt/$i /sysroot/mnt/$i
+done
+
+# Shutting down network
+if [ "${type}" = "download" ]; then
+	if [ "${net}" = "dhcp" ]; then
+		kill $(pidof dhclient)
+	else
+		ip address flush dev ${netdevice}
+	fi
+	ip link set ${netdevice} down
+	ip route flush table main
+fi
+
+if [ "$ESHELL" == "1" ]; then
+	echo "Shell requested on kernel commandline."
+	echo "Rootfs is mounted ro on /sysroot. Exit to continue booting."
+	echo
+	bash
+fi
+
+if [ -x /sysroot$init ]; then
+	# Leave initramfs and transition to rootfs
+	kill $(pidof udevd)
+	vecho "Transfering control to $init"
+
+	exec switch_root /sysroot ${init}
+	echo "---------------------------------"
+	echo "WARNING: Error switching to real rootfs!"
+	echo "---------------------------------"
+	echo
+	echo "Dropping to a shell. Good luck!"
+	echo
+	bash
+else
+	echo "---------------------------------------------------------"
+	echo "WARNING: Requested $init binary does not exist on rootfs."
+	echo "---------------------------------------------------------"
+	echo
+	echo "Dropping to a shell. Good luck!"
+	echo
+	bash
+fi
+
+EOF
+
+finalize

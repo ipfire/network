@@ -2,10 +2,11 @@
 
 DIR_QA=${0}.d
 
+failed=0
 for file in ${DIR_QA}/*; do
 	[ -x "${file}" ] || continue
-	
-	${file} || exit $?
+
+	${file} || failed=1
 done
 
-exit 0
+exit ${failed}

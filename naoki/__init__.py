@@ -6,6 +6,7 @@ import sys
 import time
 
 import backend
+import chroot
 import logger
 import terminal
 import util
@@ -16,6 +17,7 @@ class Naoki(object):
 	def __init__(self):
 		# First, setup the logging
 		self.logging = logger.Logging(self)
+		self.log = self.logging.log
 
 		# Second, parse the command line options
 		self.cli = terminal.Commandline(self)
@@ -30,13 +32,16 @@ class Naoki(object):
 		# If there is no action provided, exit
 		if not args.has_key("action"):
 			self.cli.help()
-			sys.exit(1)
+			return 1
 
 		actionmap = {
 			"build" : self.call_build,
 			"toolchain" : self.call_toolchain,
 			"package" : self.call_package,
 			"source" : self.call_source,
+			"shell" : self.call_shell,
+			"repository" : self.call_repository,
+			"generate" : self.call_generate,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -44,7 +49,7 @@ class Naoki(object):
 	def call_toolchain(self, args):
 		if not args.has_key("action"):
 			self.cli.help()
-			sys.exit(1)
+			return 1
 
 		actionmap = {
 			"build" : self.call_toolchain_build,
@@ -57,7 +62,7 @@ class Naoki(object):
 	def call_toolchain_build(self, args):
 		toolchain = chroot.Toolchain(arches.current["name"])
 
-		return toolchain.build()
+		return toolchain.build(naoki=self)
 
 	def call_toolchain_download(self, args):
 		toolchain = chroot.Toolchain(arches.current["name"])
@@ -65,7 +70,7 @@ class Naoki(object):
 		return toolchain.download()
 
 	def call_toolchain_tree(self, args):
-		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True))
+		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True, naoki=self))
 
 	def call_build(self, args):
 		force = True
@@ -113,21 +118,24 @@ class Naoki(object):
 			% (len(packages), [package.name for package in packages]))
 
 		for package in packages:
-			package.download()
+			environ = package.getEnvironment()
 
-		for package in packages:
-			environ = chroot.Environment(package)
-			
 			if not environ.toolchain.exists:
 				self.log.error("You need to build or download a toolchain first.")
 				continue
+
+			if args.shell:
+				environ.init(clean=False)
+				return environ.shell([])
+
+			environ.init()
 
 			environ.build()
 
 	def call_package(self, args):
 		if not args.has_key("action"):
 			self.cli.help()
-			sys.exit(1)
+			return 1
 
 		actionmap = {
 			"info" : self.call_package_info,
@@ -203,7 +211,7 @@ Release       : %(release)s
 				print package.name
 
 	def call_package_tree(self, args):
-		print backend.deptree(backend.parse_package(backend.get_package_names()))
+		print backend.deptree(backend.parse_package(backend.get_package_names(), naoki=self))
 
 	def call_package_groups(self, args):
 		groups = backend.get_group_names()
@@ -253,31 +261,61 @@ Release       : %(release)s
 			self.log.info("Removing %s..." % file)
 			os.remove(os.path.join(TARBALLDIR, file))
 
-	def _build(self, packages, force=False):
-		requeue = []
-		packages = package.depsort(packages)
-		while packages:
-			# Get first package that is to be done
-			build = chroot.Environment(packages.pop(0))
-			
-			if not build.toolchain.exists:
-				self.log.error("You need to build or download a toolchain first.")
-				return
-			
-			if build.package.isBuilt:
-				if not force:
-					self.log.info("Skipping already built package %s..." % build.package.name)
-					continue
-				self.log.warn("Package is already built. Will overwrite.")
-			
-			if not build.package.canBuild:
-				self.log.warn("Cannot build package %s." % build.package.name)
-				if not self.packages:
-					self.log.error("Blah")
-					return
-				self.log.warn("Requeueing. %s" % build.package.name)
-				self.packages.append(build.package)
-				continue
+	def call_shell(self, args):
+		environ = chroot.ShellEnvironment(naoki=self)
 
-			self.log.info("Building %s..." % build.package.name)
-			build.build()
+		actionmap = {
+			"clean" : self.call_shell_clean,
+			"extract" : self.call_shell_extract,
+			"enter" : self.call_shell_enter,
+		}
+
+		if args.action.name in ("enter", "execute"):
+			environ.init(clean=False)
+
+		return actionmap[args.action.name](environ, args.action)
+
+	def call_shell_clean(self, environ, args):
+		return environ.clean()
+
+	def call_shell_extract(self, environ, args):
+		if args.packages == ["all"]:
+			args.packages = backend.get_package_names()
+
+		packages = backend.parse_package(args.packages, naoki=self)
+		for package in backend.depsolve(packages, recursive=True):
+			package.getPackage(self).extract(environ.chrootPath())
+
+	def call_shell_enter(self, environ, args):
+		return environ.shell()
+
+	def call_repository(self, args):
+		actionmap = {
+			"clean" : self.call_repository_clean,
+			"build" : self.call_repository_build,
+		}
+
+		return actionmap[args.action.name](args.action)
+
+	def call_repository_clean(self, repo, args):
+		if args.names == ["all"]:
+			args.names = [r.name for r in backend.get_repositories()]
+
+		for name in args.names:
+			repo = backend.BinaryRepository(name, naoki=self)
+			repo.clean()
+
+	def call_repository_build(self, args):
+		if args.names == ["all"]:
+			args.names = [r.name for r in backend.get_repositories()]
+
+		for name in args.names:
+			repo = backend.BinaryRepository(name, naoki=self)
+			repo.build()
+
+	def call_generate(self, args):
+		if not args.type in ("iso",):
+			return
+
+		gen = chroot.Generator(self, arches.current, args.type)
+		return gen.run()

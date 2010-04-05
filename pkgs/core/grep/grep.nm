@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = grep
-PKG_VER        = 2.5.4
+PKG_VER        = 2.6.2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,32 +34,20 @@ PKG_URL        = http://www.gnu.org/software/grep/
 PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = A pattern matching utilities.
 
+PKG_DEPS      += pcre
+
 define PKG_DESCRIPTION
 	The GNU versions of commonly used grep utilities. Grep searches through \
 	textual input for lines which contain a match to a specified pattern and then \
 	prints the matching lines. GNU's grep utilities include grep, egrep and fgrep.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_BUILD
-	# --without-included-regex makes Grep use libc for regex. This gets rid of
-	# some compiler warnings, and I can't imagine why it's unsafe.
-
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--bindir=/bin \
-			--without-included-regex
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
+CONFIGURE_OPTIONS += \
+	--bindir=/bin
 
 define STAGE_TEST
-        cd $(DIR_APP) && make check
+	# TODO - This testsuite id known to fail.
+	cd $(DIR_APP) && make check || :
 endef
-

@@ -23,7 +23,10 @@ define STAGE_BUILD
 		CC="$(TARGET)-gcc -B$(TOOLS_DIR)/lib/" \
 		RANLIB=$(TARGET)-ranlib \
 		../$(THISAPP)/configure \
+			--host=$(TARGET) \
+			--build=$(TARGET) \
 			--prefix=$(TOOLS_DIR) \
+			--libexecdir=$(TOOLS_DIR)/lib \
 			--with-local-prefix=$(TOOLS_DIR) \
 			--enable-clocale=gnu \
 			--enable-shared \
@@ -32,12 +35,12 @@ define STAGE_BUILD
 			--enable-languages=c,c++ \
 			--disable-libstdcxx-pch \
 			--disable-multilib \
-			--disable-bootstrap \
+			--disable-libssp \
 			--enable-espf \
 			\
 			$(CONFIG_CPU)
 
-	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
+	cd $(DIR_SRC)/gcc-build && make #$(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL

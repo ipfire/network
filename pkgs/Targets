@@ -42,6 +42,9 @@ package: $(if $(TOOLCHAIN),$(STAGE_DONE),$$(STAGE_PACKAGE_TARGETS))
 shell: $(OBJECTS)
 	$(if $(STAGE_PREPARE),$(DO_PREPARE))
 
+prepare:
+	$(if $(STAGE_PREPARE),$(DO_PREPARE))
+
 $(STAGE_DONE): $(OBJECTS)
 	$(if $(STAGE_PREPARE),$(DO_PREPARE))
 	$(if $(STAGE_BUILD),$(DO_BUILD))

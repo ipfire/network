@@ -2,30 +2,30 @@
 
 . $(dirname ${0})/qa-include
 
-log "Searching bad libs that lack a SONAME"
+DESC="Every shared object has to provide the SONAME entry."
 
-check_files=$(find ${BUILDROOT} -name lib*.so)
+check() {
+	local failed=0
 
-command="scanelf -ByF '%S %p' $check_files | awk '$2 == "" { print }'"
+	local file
+	local soname
+	for file in $(find_elf_files ${LIBARY_PATHS}); do
+		if ! is_shared_object ${file}; then
+			continue
+		fi
 
-for i in $QUALITY_AGENT_WHITELIST_SONAME; do
-	if [ -n "$FILTER" ]; then
-		FILTER="$FILTER|$i"
-	else
-		FILTER="$i"
-	fi
-done
+		if ! has_interpreter ${file}; then
+			continue
+		fi
 
-if [ -n "$FILTER" ]; then
-	command="$command | grep -vE \"$FILTER\""
-fi
+		soname=$(get_soname ${file})
+		if [ -z "${soname}" ]; then
+			log_error "  File lacks soname attribute: ${file}"
+			failed=1
+		fi
+	done
 
-files=$(${command})
-if [ -n "${files}" ]; then
-	log "  QA Notice: The following shared libraries lack a SONAME"
-	log "${files}"
+	return ${failed}
+}
 
-	exit 1
-fi
-
-exit 0
+run

@@ -59,4 +59,7 @@ define STAGE_INSTALL_CMDS
 	rm -fv $(BUILDROOT)/lib/lib{readline,history}.so
 	ln -sfv ../../lib/libreadline.so.6 $(BUILDROOT)/usr/lib/libreadline.so
 	ln -sfv ../../lib/libhistory.so.6 $(BUILDROOT)/usr/lib/libhistory.so
+
+	-mkdir -pv $(BUILDROOT)/etc/profile.d
+	cp -vf $(DIR_SOURCE)/readline.sh $(BUILDROOT)/etc/profile.d/
 endef

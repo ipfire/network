@@ -25,10 +25,10 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = openssl
-PKG_VER        = 0.9.8k
+PKG_VER        = 1.0.0
 PKG_REL        = 0
 
-PKG_MAINTAINER =
+PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
 PKG_GROUP      = System/Libraries
 PKG_URL        = http://www.openssl.org/
 PKG_LICENSE    = OpenSSL
@@ -58,13 +58,7 @@ endif
 #endif
 #endif
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e 's/-O3 -fomit-frame-pointer/$(CFLAGS)/' -i Configure
-
 	cd $(DIR_APP) && sed -e 's/__OpenBSD__/__linux__/' -e 's/arandom/urandom/' \
 				-i crypto/rand/randfile.c
 
@@ -72,6 +66,13 @@ define STAGE_PREPARE_CMDS
 
 	cd $(DIR_APP) && find crypto/ -name Makefile -exec \
 		sed 's/^ASFLAGS=/&-Wa,--noexecstack /' -i {} \;
+
+	# # Modify the various perl scripts to reference perl in the right location.
+	cd $(DIR_APP) && perl util/perlpath.pl /usr/bin
+
+	# Generate a table with the compile settings for my perusal.
+	cd $(DIR_APP) && touch Makefile
+	cd $(DIR_APP) && make TABLE PERL=/usr/bin/perl
 endef
 
 define STAGE_BUILD
@@ -84,6 +85,7 @@ define STAGE_BUILD
 			shared \
 			zlib-dynamic \
 			enable-camellia \
+			enable-md2 \
 			enable-seed \
 			enable-tlsext \
 			enable-rfc3779 \
@@ -96,7 +98,7 @@ define STAGE_BUILD
 			-DSSL_FORBID_ENULL
 
 	# Build.
-	cd $(DIR_APP) && make all build-shared #$(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make depend all build-shared RPM_OPT_FLAGS="$(CFLAGS)" #$(PARALLELISMFLAGS)
 
 	# Generate hashes for the included certs.
 	cd $(DIR_APP) && make rehash build-shared
@@ -108,6 +110,10 @@ endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install build-shared INSTALL_PREFIX=$(BUILDROOT)
+
+	# Install manpages do right place
+	-mkdir -pv $(BUILDROOT)/usr/share
+	mv -v $(BUILDROOT)/etc/pki/tls/man $(BUILDROOT)/usr/share/
 
 	-mkdir -pv $(BUILDROOT)/usr/lib/openssl
 	mv -v $(BUILDROOT)/usr/lib/engines $(BUILDROOT)/usr/lib/openssl
