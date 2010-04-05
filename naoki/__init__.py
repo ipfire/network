@@ -41,6 +41,7 @@ class Naoki(object):
 			"source" : self.call_source,
 			"shell" : self.call_shell,
 			"repository" : self.call_repository,
+			"generate" : self.call_generate,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -69,7 +70,7 @@ class Naoki(object):
 		return toolchain.download()
 
 	def call_toolchain_tree(self, args):
-		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True))
+		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True, naoki=self))
 
 	def call_build(self, args):
 		force = True
@@ -124,7 +125,10 @@ class Naoki(object):
 				continue
 
 			if args.shell:
+				environ.init(clean=False)
 				return environ.shell([])
+
+			environ.init()
 
 			environ.build()
 
@@ -308,3 +312,10 @@ Release       : %(release)s
 		for name in args.names:
 			repo = backend.BinaryRepository(name, naoki=self)
 			repo.build()
+
+	def call_generate(self, args):
+		if not args.type in ("iso",):
+			return
+
+		gen = chroot.Generator(self, arches.current, args.type)
+		return gen.run()

@@ -5,17 +5,17 @@
 # Check for absolute symlinks.
 # We do not allow them because they may point to any bad location.
 
-log "Search for absolute symlinks"
+log_debug "Search for absolute symlinks"
 
 failed=0
 for link in $(find ${BUILDROOT} -type l); do
 	destination=$(readlink ${link})
 	if [ "${destination:0:1}" = "/" ]; then
-		log "  absolute symlink: ${link}"
+		log_error "  absolute symlink: ${link}"
 		failed=1
 	fi
 	if [ ! -e "${link%/*}/${destination}" ]; then
-		log "  not existant destination: ${link} -> ${destination}"
+		log_error "  not existant destination: ${link} -> ${destination}"
 		failed=1
 	fi
 done

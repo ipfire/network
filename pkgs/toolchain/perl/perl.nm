@@ -19,6 +19,8 @@ define STAGE_BUILD
 	cd $(DIR_APP) && make perl utilities ext/Errno/pm_to_blib #$(PARALLELISMFLAGS)
 endef
 
+STAGE_TEST = # No test in toolchain
+
 define STAGE_INSTALL
 	cd $(DIR_APP) && cp -vf perl pod/pod2man $(TOOLS_DIR)/bin/
 	-mkdir -pv $(TOOLS_DIR)/lib/perl5/$(PKG_VER)
