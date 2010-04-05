@@ -69,7 +69,7 @@ class Naoki(object):
 		return toolchain.download()
 
 	def call_toolchain_tree(self, args):
-		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True))
+		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True, naoki=self))
 
 	def call_build(self, args):
 		force = True
