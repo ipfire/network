@@ -1,0 +1,57 @@
+---
+ libmultipath/hwtable.c  |   16 ++++++++++++++++
+ multipath.conf.defaults |   16 ++++++++++++++++
+ 2 files changed, 32 insertions(+)
+
+Index: multipath-tools/libmultipath/hwtable.c
+===================================================================
+--- multipath-tools.orig/libmultipath/hwtable.c
++++ multipath-tools/libmultipath/hwtable.c
+@@ -959,6 +959,22 @@ static struct hwentry default_hw[] = {
+ 		.checker_name  = RDAC,
+ 		.prio_name     = PRIO_RDAC,
+ 	},
++	{
++		.vendor        = "STK",
++		.product       = "FLEXLINE 380",
++		.bl_product    = "Universal Xport",
++		.getuid        = DEFAULT_GETUID,
++		.features      = DEFAULT_FEATURES,
++		.hwhandler     = "1 rdac",
++		.selector      = DEFAULT_SELECTOR,
++		.pgpolicy      = GROUP_BY_PRIO,
++		.pgfailback    = -FAILBACK_IMMEDIATE,
++		.rr_weight     = RR_WEIGHT_NONE,
++		.no_path_retry = NO_PATH_RETRY_QUEUE,
++		.minio         = DEFAULT_MINIO,
++		.checker_name  = RDAC,
++		.prio_name     = PRIO_RDAC,
++	},
+ 	/*
+ 	 * EOL
+ 	 */
+Index: multipath-tools/multipath.conf.defaults
+===================================================================
+--- multipath-tools.orig/multipath.conf.defaults
++++ multipath-tools/multipath.conf.defaults
+@@ -571,4 +571,20 @@
+ #		path_checker		rdac
+ #		prio			rdac
+ #	}
++#	device {
++#		vendor			"STK"
++#		product			"FLEXLINE 380"
++#		product_blacklist	"Universal Xport"
++#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
++#		features		"0"
++#		hardware_handler	"1 rdac"
++#		path_selector		"round-robin 0"
++#		path_grouping_policy	group_by_prio
++#		failback		immediate
++#		rr_weight		uniform
++#		no_path_retry		queue
++#		rr_min_io		1000
++#		path_checker		rdac
++#		prio			rdac
++#	}
+ #}

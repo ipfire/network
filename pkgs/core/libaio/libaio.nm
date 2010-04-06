@@ -1,0 +1,66 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = libaio
+PKG_VER        = 0.3.109
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = ftp://ftp.kernel.org/pub/linux/libs/aio/
+PKG_LICENSE    = LGPLv2+
+PKG_SUMMARY    = Linux-native asynchronous I/O access library.
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+define PKG_DESCRIPTION
+	The Linux-native asynchronous I/O facility ("async I/O", or "aio") \
+	has a richer API and capability set than the simple POSIX async I/O \
+	facility. This library, libaio, provides the Linux-native API for \
+	async I/O. The POSIX async I/O facility requires this library in \
+	order to provide kernel-accelerated async I/O capabilities, as do \
+	applications which require the Linux-native async I/O API. 
+endef
+
+PKG_BUILD_DEPS+= e2fsprogs
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	# Only do a partcheck, because a full check requires a 
+	# loop device, which isn't avialable.
+	cd $(DIR_APP) && make partcheck
+endef
+
+define STAGE_INSTALL_CMDS
+	# Modify links to be relative
+	ln -svf libaio.so.1 $(BUILDROOT)/usr/lib/libaio.so
+	ln -svf libaio.so.1.0.1 $(BUILDROOT)/usr/lib/libaio.so.1
+endef

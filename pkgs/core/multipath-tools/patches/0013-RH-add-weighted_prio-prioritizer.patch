@@ -1,0 +1,546 @@
+---
+ libmultipath/config.c                |   10 ++
+ libmultipath/config.h                |    4 +
+ libmultipath/dict.c                  |   92 ++++++++++++++++++++---
+ libmultipath/discovery.c             |   56 +++++++-------
+ libmultipath/prio.h                  |    1 
+ libmultipath/prioritizers/Makefile   |    3 
+ libmultipath/prioritizers/weighted.c |  139 +++++++++++++++++++++++++++++++++++
+ libmultipath/prioritizers/weighted.h |    8 ++
+ libmultipath/propsel.c               |   11 ++
+ libmultipath/structs.h               |    1 
+ 10 files changed, 286 insertions(+), 39 deletions(-)
+
+Index: multipath-tools/libmultipath/config.c
+===================================================================
+--- multipath-tools.orig/libmultipath/config.c
++++ multipath-tools/libmultipath/config.c
+@@ -156,6 +156,9 @@ free_hwe (struct hwentry * hwe)
+ 	if (hwe->prio_name)
+ 		FREE(hwe->prio_name);
+ 
++	if (hwe->prio_args)
++		FREE(hwe->prio_args);
++
+ 	if (hwe->bl_product)
+ 		FREE(hwe->bl_product);
+ 
+@@ -195,6 +198,12 @@ free_mpe (struct mpentry * mpe)
+ 	if (mpe->alias)
+ 		FREE(mpe->alias);
+ 
++	if (mpe->prio_name)
++		FREE(mpe->prio_name);
++
++	if (mpe->prio_args)
++		FREE(mpe->prio_args);
++
+ 	FREE(mpe);
+ }
+ 
+@@ -279,6 +288,7 @@ merge_hwe (struct hwentry * hwe1, struct
+ 	merge_str(selector);
+ 	merge_str(checker_name);
+ 	merge_str(prio_name);
++	merge_str(prio_args);
+ 	merge_str(bl_product);
+ 	merge_num(pgpolicy);
+ 	merge_num(pgfailback);
+Index: multipath-tools/libmultipath/config.h
+===================================================================
+--- multipath-tools.orig/libmultipath/config.h
++++ multipath-tools/libmultipath/config.h
+@@ -25,6 +25,7 @@ struct hwentry {
+ 	char * selector;
+ 	char * checker_name;
+ 	char * prio_name;
++	char * prio_args;
+ 
+ 	int pgpolicy;
+ 	int pgfailback;
+@@ -43,6 +44,8 @@ struct mpentry {
+ 	char * alias;
+ 	char * getuid;
+ 	char * selector;
++	char * prio_name;
++	char * prio_args;
+ 
+ 	int pgpolicy;
+ 	int pgfailback;
+@@ -97,6 +100,7 @@ struct config {
+ 	char * hwhandler;
+ 	char * bindings_file;
+ 	char * prio_name;
++	char * prio_args;
+ 	char * checker_name;
+ 
+ 	vector keywords;
+Index: multipath-tools/libmultipath/dict.c
+===================================================================
+--- multipath-tools.orig/libmultipath/dict.c
++++ multipath-tools/libmultipath/dict.c
+@@ -139,11 +139,23 @@ def_getuid_callout_handler(vector strvec
+ static int
+ def_prio_handler(vector strvec)
+ {
+-	conf->prio_name = set_value(strvec);
++	char *name, *args;
+ 
+-	if (!conf->prio_name)
++	name = set_value(strvec);
++	if (!name)
+ 		return 1;
+ 
++	args = strpbrk(name, " \t");
++	if (args) {
++		*args = 0;
++		while(*++args && isblank(*args)); /* Do nothing */
++	}
++
++	conf->prio_name = STRDUP(name);
++	if (args && *args)
++		conf->prio_args = STRDUP(args);
++
++	FREE(name);
+ 	return 0;
+ }
+ 
+@@ -806,16 +818,27 @@ hw_handler_handler(vector strvec)
+ static int
+ hw_prio_handler(vector strvec)
+ {
++	char *name, *args;
+ 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+ 
+ 	if (!hwe)
+ 		return 1;
+ 
+-	hwe->prio_name = set_value(strvec);
+-
+-	if (!hwe->prio_name)
++	name = set_value(strvec);
++	if (!name)
+ 		return 1;
+ 
++	args = strpbrk(name, " \t");
++	if (args) {
++		*args = 0;
++		while(*++args && isblank(*args)); /* Do nothing */
++	}
++
++	hwe->prio_name = STRDUP(name);
++	if (args && *args)
++		hwe->prio_args = STRDUP(args);
++
++	FREE(name);
+ 	return 0;
+ }
+ 
+@@ -1293,6 +1316,33 @@ mp_flush_on_last_del_handler(vector strv
+ 	return 0;
+ }
+ 
++static int
++mp_prio_handler(vector strvec)
++{
++	char *name, *args;
++	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
++
++	if (!mpe)
++		return 1;
++
++	name = set_value(strvec);
++	if (!name)
++		return 1;
++
++	args = strpbrk(name, " \t");
++	if (args) {
++		*args = 0;
++		while(*++args && isblank(*args)); /* Do nothing */
++	}
++
++	mpe->prio_name = STRDUP(name);
++	if (args && *args)
++		mpe->prio_args = STRDUP(args);
++
++	FREE(name);
++	return 0;
++}
++
+ /*
+  * config file keywords printing
+  */
+@@ -1472,6 +1522,20 @@ snprint_mp_flush_on_last_del (char * buf
+ }
+ 
+ static int
++snprint_mp_prio (char * buff, int len, void * data)
++{
++	struct mpentry * mpe = (struct mpentry *)data;
++
++	if (!mpe->prio_name)
++		return 0;
++	if (!strcmp(mpe->prio_name, conf->prio_name) && !mpe->prio_args)
++		return 0;
++	if (!mpe->prio_args)
++		return snprintf(buff, len, "%s", mpe->prio_name);
++	return snprintf(buff, len, "%s %s", mpe->prio_name, mpe->prio_args);
++}
++
++static int
+ snprint_hw_fast_io_fail(char * buff, int len, void * data)
+ {
+ 	struct hwentry * hwe = (struct hwentry *)data;
+@@ -1545,10 +1609,11 @@ snprint_hw_prio (char * buff, int len, v
+ 
+ 	if (!hwe->prio_name)
+ 		return 0;
+-	if (!strcmp(hwe->prio_name, conf->prio_name))
++	if (!strcmp(hwe->prio_name, conf->prio_name) && !hwe->prio_args)
+ 		return 0;
+-	
+-	return snprintf(buff, len, "%s", hwe->prio_name);
++	if (!hwe->prio_args)
++		return snprintf(buff, len, "%s", hwe->prio_name);
++	return snprintf(buff, len, "%s %s", hwe->prio_name, hwe->prio_args);
+ }
+ 
+ static int
+@@ -1837,10 +1902,14 @@ snprint_def_prio (char * buff, int len, 
+ 		return 0;
+ 
+ 	if (strlen(conf->prio_name) == strlen(DEFAULT_PRIO) &&
+-	    !strcmp(conf->prio_name, DEFAULT_PRIO))
++	    !strcmp(conf->prio_name, DEFAULT_PRIO) && !conf->prio_args)
+ 		return 0;
+-	
+-	return snprintf(buff, len, "%s", conf->prio_name);
++
++	if (!conf->prio_args)
++		return snprintf(buff, len, "%s", conf->prio_name);
++	else
++		return snprintf(buff, len, "%s %s", conf->prio_name,
++				conf->prio_args);
+ }
+ 
+ static int
+@@ -2146,5 +2215,6 @@ init_keywords(void)
+ 	install_keyword("mode", &mp_mode_handler, &snprint_mp_mode);
+ 	install_keyword("uid", &mp_uid_handler, &snprint_mp_uid);
+ 	install_keyword("gid", &mp_gid_handler, &snprint_mp_gid);
++	install_keyword("prio", &mp_prio_handler, &snprint_mp_prio);
+ 	install_sublevel_end();
+ }
+Index: multipath-tools/libmultipath/discovery.c
+===================================================================
+--- multipath-tools.orig/libmultipath/discovery.c
++++ multipath-tools/libmultipath/discovery.c
+@@ -800,30 +800,6 @@ get_state (struct path * pp, int daemon)
+ }
+ 
+ static int
+-get_prio (struct path * pp)
+-{
+-	if (!pp)
+-		return 0;
+-
+-	if (!pp->prio) {
+-		select_prio(pp);
+-		if (!pp->prio) {
+-			condlog(3, "%s: no prio selected", pp->dev);
+-			return 1;
+-		}
+-	}
+-	pp->priority = prio_getprio(pp->prio, pp);
+-	if (pp->priority < 0) {
+-		condlog(3, "%s: %s prio error", pp->dev, prio_name(pp->prio));
+-		pp->priority = PRIO_UNDEF;
+-		return 1;
+-	}
+-	condlog(3, "%s: %s prio = %u",
+-		pp->dev, prio_name(pp->prio), pp->priority);
+-	return 0;
+-}
+-
+-static int
+ get_uid (struct path * pp)
+ {
+ 	char buff[CALLOUT_MAX_SIZE];
+@@ -850,6 +826,32 @@ get_uid (struct path * pp)
+ 	return 0;
+ }
+ 
++static int
++get_prio (struct path * pp)
++{
++	if (!pp)
++		return 0;
++
++	if (!pp->prio) {
++		if (!strlen(pp->wwid))
++			get_uid(pp);
++		select_prio(pp);
++		if (!pp->prio) {
++			condlog(3, "%s: no prio selected", pp->dev);
++			return 1;
++		}
++	}
++	pp->priority = prio_getprio(pp->prio, pp);
++	if (pp->priority < 0) {
++		condlog(3, "%s: %s prio error", pp->dev, prio_name(pp->prio));
++		pp->priority = PRIO_UNDEF;
++		return 1;
++	}
++	condlog(3, "%s: %s prio = %u",
++		pp->dev, prio_name(pp->prio), pp->priority);
++	return 0;
++}
++
+ extern int
+ pathinfo (struct path *pp, vector hwtable, int mask)
+ {
+@@ -887,6 +889,9 @@ pathinfo (struct path *pp, vector hwtabl
+ 			goto blank;
+ 	}
+ 
++	if (mask & DI_WWID && !strlen(pp->wwid))
++		get_uid(pp);
++
+ 	 /*
+ 	  * Retrieve path priority, even for PATH_DOWN paths if it has never
+ 	  * been successfully obtained before.
+@@ -895,9 +900,6 @@ pathinfo (struct path *pp, vector hwtabl
+ 	    (pp->state != PATH_DOWN || pp->priority == PRIO_UNDEF))
+ 		get_prio(pp);
+ 
+-	if (mask & DI_WWID && !strlen(pp->wwid))
+-		get_uid(pp);
+-
+ 	return 0;
+ 
+ blank:
+Index: multipath-tools/libmultipath/prio.h
+===================================================================
+--- multipath-tools.orig/libmultipath/prio.h
++++ multipath-tools/libmultipath/prio.h
+@@ -24,6 +24,7 @@
+ #define PRIO_NETAPP "netapp"
+ #define PRIO_RANDOM "random"
+ #define PRIO_RDAC "rdac"
++#define PRIO_WEIGHTED "weighted"
+ 
+ /*
+  * Value used to mark the fact prio was not defined
+Index: multipath-tools/libmultipath/prioritizers/Makefile
+===================================================================
+--- multipath-tools.orig/libmultipath/prioritizers/Makefile
++++ multipath-tools/libmultipath/prioritizers/Makefile
+@@ -13,7 +13,8 @@ LIBS = \
+ 	libprioalua.so \
+ 	libpriotpg_pref.so \
+ 	libprionetapp.so \
+-	libpriohds.so
++	libpriohds.so \
++	libprioweighted.so \
+ 
+ CFLAGS += -I..
+ 
+Index: multipath-tools/libmultipath/prioritizers/weighted.c
+===================================================================
+--- /dev/null
++++ multipath-tools/libmultipath/prioritizers/weighted.c
+@@ -0,0 +1,139 @@
++/******************************************************************************
++*******************************************************************************
++**
++**  Copyright (C) 2009 Red Hat, Inc.  All rights reserved.
++**
++**  This copyrighted material is made available to anyone wishing to use,
++**  modify, copy, or redistribute it subject to the terms and conditions
++**  of the GNU General Public License v.2.
++**
++*******************************************************************************
++******************************************************************************/
++
++/* This prioritizer is based on a path's device name or its H:T:B:L. Both of
++ * these can change when the node is rebooted, and can differ from node to
++ * node. (i.e. there is no guarantee that sda will point to the same device
++ * after a reboot) If you use this prioritizer, it may be necessary to
++ * manually edit /etc/multipath.conf after any reboot
++ *
++ * Format:
++ * prio		"weighted hbtl <regex> <prio> [<regex> <prio>]
++ * prio		"weighted devname <regex> <prio> [<regex> <prio>]
++ *
++ * Examples:
++ * prio		"weighted hbtl 4:* 2 3:.:.:. 1"
++ * prio		"weighted devname sda 2 sde 1"
++ *
++ */
++
++#include <string.h>
++#include <prio.h>
++#include <debug.h>
++#include <regex.h>
++
++#include "weighted.h"
++
++#define DEFAULT_WEIGHTED_PRIO 0
++
++#define pp_weighted_log(prio, fmt, args...) \
++	condlog(prio, "%s: weighted prio: " fmt, dev, ##args)
++
++static char *
++next_str(char **str)
++{
++	char *next;
++
++	do {
++		next = strsep(str, " \t");
++	} while (next && strcmp(next, "") == 0);
++	return next;
++}
++
++
++static int
++match (char *dev, char *target, char *regex_str, char *prio_str,
++       unsigned int *prio)
++{
++
++	regex_t regex;
++	int err, ret = 0;
++	char *errbuf;
++	size_t errbuf_size;
++	unsigned int prio_match;
++
++	if (sscanf(prio_str, "%u", &prio_match) != 1) {
++		condlog(0, "%s: weighted prio: invalid prio '%s'", dev,
++			prio_str);
++		return 0;
++	}
++	err = regcomp(&regex, regex_str, REG_EXTENDED|REG_NOSUB);
++	if (err) {
++		errbuf_size = regerror(err, &regex, NULL, 0);
++		errbuf = malloc(errbuf_size);
++		regerror(err, &regex, errbuf, errbuf_size);
++		condlog(0, "%s: weighted prio: cannot compile regex '%s' : %s",
++			dev, regex_str, errbuf);
++		free(errbuf);
++		return 0;
++	}
++	if (regexec(&regex, target, 0, NULL, 0) == 0) {
++		*prio = prio_match;
++		ret = 1;
++	}
++
++	regfree(&regex);
++	return ret;
++}
++
++int
++prio_weighted(struct path * pp)
++{
++	char target[FILE_NAME_SIZE];
++	char *buff, *args, *ptr, *prio_str;
++	unsigned int prio = DEFAULT_WEIGHTED_PRIO;
++	char *regex_str = NULL;
++	int regex_size = 0;
++
++	if (!pp->prio_args)
++		return DEFAULT_WEIGHTED_PRIO;
++	buff = args = strdup(pp->prio_args);
++	ptr = next_str(&args);
++
++	if (strcasecmp(ptr, "hbtl") == 0)
++		sprintf(target, "%d:%d:%d:%d", pp->sg_id.host_no,
++			pp->sg_id.channel, pp->sg_id.scsi_id, pp->sg_id.lun);
++	else if (strcasecmp(ptr, "devname") == 0)
++		strcpy(target, pp->dev);
++	else {
++		condlog(0, "%s: weighted prio: invalid argument. Want 'hbtl' or 'devname'. Got '%s'", pp->dev, ptr);
++		goto out;
++	}
++
++	while ((ptr = next_str(&args)) != NULL) {
++
++		prio_str = next_str(&args);
++		if (!prio_str) {
++			condlog(0, "%s weighted prio: missing prio for regex '%s'", pp->dev, ptr);
++			goto out;
++		}
++		if (!regex_str || regex_size < strlen(ptr) + 3){
++			regex_size = strlen(ptr) + 3;
++			regex_str = realloc(regex_str, regex_size);
++		}
++		sprintf(regex_str, "%s%s%s", (ptr[0] == '^')? "" : "^",
++			ptr, (ptr[strlen(ptr)-1] == '$')? "" : "$");
++		if (match(pp->dev, target, regex_str, prio_str, &prio))
++			break;
++	}
++out:
++	free(buff);
++	if (regex_str)
++		free(regex_str);
++	return prio;
++}
++
++int
++getprio(struct path * pp)
++{
++	return prio_weighted(pp);
++}
+Index: multipath-tools/libmultipath/propsel.c
+===================================================================
+--- multipath-tools.orig/libmultipath/propsel.c
++++ multipath-tools/libmultipath/propsel.c
+@@ -312,14 +312,25 @@ select_getuid (struct path * pp)
+ extern int
+ select_prio (struct path * pp)
+ {
++	struct mpentry * mpe;
++
++	if ((mpe = find_mpe(pp->wwid)) && mpe->prio_name) {
++		pp->prio = prio_lookup(mpe->prio_name);
++		pp->prio_args = mpe->prio_args;
++		condlog(3, "%s: prio = %s (LUN setting)",
++			pp->dev, mpe->prio_name);
++		return 0;
++	}
+ 	if (pp->hwe && pp->hwe->prio_name) {
+ 		pp->prio = prio_lookup(pp->hwe->prio_name);
++		pp->prio_args = pp->hwe->prio_args;
+ 		condlog(3, "%s: prio = %s (controller setting)",
+ 			pp->dev, pp->hwe->prio_name);
+ 		return 0;
+ 	}
+ 	if (conf->prio_name) {
+ 		pp->prio = prio_lookup(conf->prio_name);
++		pp->prio_args = conf->prio_args;
+ 		condlog(3, "%s: prio = %s (config file default)",
+ 			pp->dev, conf->prio_name);
+ 		return 0;
+Index: multipath-tools/libmultipath/structs.h
+===================================================================
+--- multipath-tools.orig/libmultipath/structs.h
++++ multipath-tools/libmultipath/structs.h
+@@ -142,6 +142,7 @@ struct path {
+ 	int priority;
+ 	int pgindex;
+ 	char * getuid;
++	char * prio_args;
+ 	struct prio * prio;
+ 	struct checker checker;
+ 	struct multipath * mpp;
+Index: multipath-tools/libmultipath/prioritizers/weighted.h
+===================================================================
+--- /dev/null
++++ multipath-tools/libmultipath/prioritizers/weighted.h
+@@ -0,0 +1,8 @@
++#ifndef _WEIGHTED_H
++#define _WEIGHTED_H
++
++#define PRIO_WEIGHTED  "weighted"
++
++int prio_weighted(struct path *pp);
++
++#endif

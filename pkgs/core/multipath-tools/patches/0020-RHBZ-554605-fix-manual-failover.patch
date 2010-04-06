@@ -1,0 +1,52 @@
+---
+ libmultipath/pgpolicies.c |   23 +++++++++++++++++++----
+ 1 file changed, 19 insertions(+), 4 deletions(-)
+
+Index: multipath-tools/libmultipath/pgpolicies.c
+===================================================================
+--- multipath-tools.orig/libmultipath/pgpolicies.c
++++ multipath-tools/libmultipath/pgpolicies.c
+@@ -205,7 +205,8 @@ out:
+ extern int
+ one_path_per_group (struct multipath * mp)
+ {
+-	int i;
++	int i, j;
++	unsigned int prio;
+ 	struct path * pp;
+ 	struct pathgroup * pgp;
+ 
+@@ -217,16 +218,30 @@ one_path_per_group (struct multipath * m
+ 
+ 	for (i = 0; i < VECTOR_SIZE(mp->paths); i++) {
+ 		pp = VECTOR_SLOT(mp->paths, i);
++		prio = pp->priority;
++
++		vector_foreach_slot(mp->pg, pgp, j) {
++			pp = VECTOR_SLOT(pgp->paths, 0);
++
++			if (prio > pp->priority)
++				break;
++		}
++
+ 		pgp = alloc_pathgroup();
+ 
+ 		if (!pgp)
+ 			goto out;
+ 
+-		if (store_pathgroup(mp->pg, pgp))
++		if (store_path(pgp->paths, VECTOR_SLOT(mp->paths, i)))
+ 			goto out;
+ 
+-		if (store_path(pgp->paths, pp))
+-			goto out;
++		if (j < VECTOR_SIZE(mp->pg)) {
++			if (!vector_insert_slot(mp->pg, j, pgp))
++				goto out;
++		} else {
++			if (store_pathgroup(mp->pg, pgp))
++				goto out;
++		}
+ 	}
+ 	free_pathvec(mp->paths, KEEP_PATHS);
+ 	mp->paths = NULL;

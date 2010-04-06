@@ -1,0 +1,17 @@
+---
+ multipath/multipath.8 |    2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: multipath-tools/multipath/multipath.8
+===================================================================
+--- multipath-tools.orig/multipath/multipath.8
++++ multipath-tools/multipath/multipath.8
+@@ -75,6 +75,8 @@ is in. 
+ is in the /dev/sdb (as shown by udev in the $DEVNAME variable) or major:minor format.
+ .I device
+ may alternatively be a multipath mapname
++.SH NOTES
++a map may be unused if, eg, the file system on it is not mounted or there are no open file descriptors against the device file, as in a raw device.
+ .SH "SEE ALSO"
+ .BR udev (8),
+ .BR dmsetup (8)
