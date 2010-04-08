@@ -1,0 +1,150 @@
+Index: multipath-tools/libmultipath/uevent.c
+===================================================================
+--- multipath-tools.orig/libmultipath/uevent.c
++++ multipath-tools/libmultipath/uevent.c
+@@ -52,6 +52,12 @@ pthread_mutex_t uevc_lock, *uevc_lockp =
+ pthread_cond_t  uev_cond,  *uev_condp  = &uev_cond;
+ uev_trigger *my_uev_trigger;
+ void * my_trigger_data;
++int servicing_uev;
++
++int is_uevent_busy(void)
++{
++	return (uevqhp != NULL || servicing_uev);
++}
+ 
+ static struct uevent * alloc_uevent (void)
+ {
+@@ -96,7 +102,9 @@ uevq_thread(void * et)
+ 
+ 	while (1) {
+ 		pthread_mutex_lock(uevc_lockp);
++		servicing_uev = 0;
+ 		pthread_cond_wait(uev_condp, uevc_lockp);
++		servicing_uev = 1;
+ 		pthread_mutex_unlock(uevc_lockp);
+ 
+ 		service_uevq();
+Index: multipath-tools/libmultipath/uevent.h
+===================================================================
+--- multipath-tools.orig/libmultipath/uevent.h
++++ multipath-tools/libmultipath/uevent.h
+@@ -17,3 +17,4 @@ struct uevent {
+ 
+ int uevent_listen(int (*store_uev)(struct uevent *, void * trigger_data),
+ 		  void * trigger_data);
++int is_uevent_busy(void);
+Index: multipath-tools/multipathd/cli.c
+===================================================================
+--- multipath-tools.orig/multipathd/cli.c
++++ multipath-tools/multipathd/cli.c
+@@ -174,6 +174,7 @@ load_keys (void)
+ 	r += add_key(keys, "devices", DEVICES, 0);
+ 	r += add_key(keys, "format", FMT, 1);
+ 	r += add_key(keys, "wildcards", WILDCARDS, 0);
++	r += add_key(keys, "count", COUNT, 0);
+ 	r += add_key(keys, "quit", QUIT, 0);
+ 	r += add_key(keys, "exit", QUIT, 0);
+ 
+@@ -443,6 +444,7 @@ cli_init (void) {
+ 	add_handler(RESTOREQ+MAPS, NULL);
+ 	add_handler(REINSTATE+PATH, NULL);
+ 	add_handler(FAIL+PATH, NULL);
++	add_handler(COUNT+PATHS, NULL);
+ 	add_handler(QUIT, NULL);
+ 
+ 	return 0;
+Index: multipath-tools/multipathd/cli_handlers.h
+===================================================================
+--- multipath-tools.orig/multipathd/cli_handlers.h
++++ multipath-tools/multipathd/cli_handlers.h
+@@ -25,5 +25,6 @@ int cli_restore_all_queueing(void * v, c
+ int cli_suspend(void * v, char ** reply, int * len, void * data);
+ int cli_resume(void * v, char ** reply, int * len, void * data);
+ int cli_reinstate(void * v, char ** reply, int * len, void * data);
++int cli_count_paths(void * v, char ** reply, int * len, void * data);
+ int cli_fail(void * v, char ** reply, int * len, void * data);
+ int cli_quit(void * v, char ** reply, int * len, void * data);
+Index: multipath-tools/multipathd/main.c
+===================================================================
+--- multipath-tools.orig/multipathd/main.c
++++ multipath-tools/multipathd/main.c
+@@ -768,6 +768,7 @@ uxlsnrloop (void * ap)
+ 	set_handler_callback(RESTOREQ+MAP, cli_restore_queueing);
+ 	set_handler_callback(DISABLEQ+MAPS, cli_disable_all_queueing);
+ 	set_handler_callback(RESTOREQ+MAPS, cli_restore_all_queueing);
++	set_handler_callback(COUNT+PATHS, cli_count_paths);
+ 	set_handler_callback(QUIT, cli_quit);
+ 
+ 	umask(077);
+Index: multipath-tools/multipathd/cli.h
+===================================================================
+--- multipath-tools.orig/multipathd/cli.h
++++ multipath-tools/multipathd/cli.h
+@@ -23,6 +23,7 @@ enum {
+ 	__BLACKLIST,
+ 	__DEVICES,
+ 	__FMT,
++	__COUNT,
+ 	__WILDCARDS,
+ 	__QUIT,
+ };
+@@ -51,6 +52,7 @@ enum {
+ #define BLACKLIST	(1 << __BLACKLIST)
+ #define DEVICES  	(1 << __DEVICES)
+ #define FMT 	 	(1 << __FMT)
++#define COUNT		(1 << __COUNT)
+ #define WILDCARDS	(1 << __WILDCARDS)
+ #define QUIT		(1 << __QUIT)
+ 
+Index: multipath-tools/multipathd/cli_handlers.c
+===================================================================
+--- multipath-tools.orig/multipathd/cli_handlers.c
++++ multipath-tools/multipathd/cli_handlers.c
+@@ -18,6 +18,29 @@
+ 
+ #include "main.h"
+ #include "cli.h"
++#include "uevent.h"
++
++int
++count_paths(char  **r, int *l, struct vectors *vecs)
++{
++	int i, len;
++	struct path *pp;
++	char * reply;
++	unsigned int maxlen = INITIAL_REPLY_LEN;
++	int monitored_count = 0;
++
++	reply = MALLOC(maxlen);
++	if (!reply)
++		return 1;
++	vector_foreach_slot(vecs->pathvec, pp, i)
++		if (pp->fd != -1)
++			monitored_count++;
++	len = sprintf(reply, "Paths: %d\nBusy: %s\n", monitored_count,
++		    is_uevent_busy()? "True" : "False");
++	*r = reply;
++	*l = len + 1;
++	return 0;
++}
+ 
+ int
+ show_paths (char ** r, int * len, struct vectors * vecs, char * style)
+@@ -176,6 +199,16 @@ cli_list_config (void * v, char ** reply
+ }
+ 
+ int
++cli_count_paths (void * v, char ** reply, int * len, void * data)
++{
++	struct vectors * vecs = (struct vectors *)data;
++
++	condlog(3, "count paths (operator)");
++
++	return count_paths(reply, len, vecs);
++}
++
++int
+ cli_list_paths (void * v, char ** reply, int * len, void * data)
+ {
+ 	struct vectors * vecs = (struct vectors *)data;

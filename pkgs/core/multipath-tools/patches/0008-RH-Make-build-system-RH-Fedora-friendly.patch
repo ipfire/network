@@ -1,0 +1,62 @@
+From f5e11246063b07d6dce6d37d3b74662475baa981 Mon Sep 17 00:00:00 2001
+From: Fabio M. Di Nitto <fdinitto@redhat.com>
+Date: Thu, 15 Oct 2009 04:39:27 +0200
+Subject: [PATCH 08/12] RH: Make build system RH/Fedora friendly
+
+Signed-off-by: Fabio M. Di Nitto <fdinitto@redhat.com>
+---
+:100644 100644 7ec25d5... 06fb625... M	Makefile.inc
+:100644 100644 21e4ad4... 06d79c0... M	kpartx/Makefile
+:100644 100644 32d9ef5... 25e1483... M	multipathd/Makefile
+ Makefile.inc        |    2 +-
+ kpartx/Makefile     |    8 ++++----
+ multipathd/Makefile |    1 +
+ 3 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/Makefile.inc b/Makefile.inc
+index 7ec25d5..06fb625 100644
+--- a/Makefile.inc
++++ b/Makefile.inc
+@@ -28,7 +28,7 @@ libudevdir  = ${prefix}/lib/udev
+ multipathdir = $(TOPDIR)/libmultipath
+ mandir      = $(prefix)/usr/share/man/man8
+ man5dir     = $(prefix)/usr/share/man/man5
+-rcdir	    = $(prefix)/etc/init.d
++rcdir	    = $(prefix)/etc/rc.d/init.d
+ syslibdir   = $(prefix)/$(LIB)
+ libdir	    = $(prefix)/$(LIB)/multipath
+ 
+diff --git a/kpartx/Makefile b/kpartx/Makefile
+index 21e4ad4..06d79c0 100644
+--- a/kpartx/Makefile
++++ b/kpartx/Makefile
+@@ -20,10 +20,10 @@ $(EXEC): $(OBJS)
+ install: $(EXEC) $(EXEC).8
+ 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
+ 	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)
+-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(libudevdir)
+-	$(INSTALL_PROGRAM) -m 755 kpartx_id $(DESTDIR)$(libudevdir)
+-	$(INSTALL_PROGRAM) -d $(DESTDIR)/etc/udev/rules.d
+-	$(INSTALL_PROGRAM) -m 644 kpartx.rules $(DESTDIR)/etc/udev/rules.d/
++#	$(INSTALL_PROGRAM) -d $(DESTDIR)$(libudevdir)
++#	$(INSTALL_PROGRAM) -m 755 kpartx_id $(DESTDIR)$(libudevdir)
++#	$(INSTALL_PROGRAM) -d $(DESTDIR)/etc/udev/rules.d
++#	$(INSTALL_PROGRAM) -m 644 kpartx.rules $(DESTDIR)/etc/udev/rules.d/
+ 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)
+ 	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
+ 
+diff --git a/multipathd/Makefile b/multipathd/Makefile
+index 32d9ef5..25e1483 100644
+--- a/multipathd/Makefile
++++ b/multipathd/Makefile
+@@ -35,6 +35,7 @@ install:
+ 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
+ 	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)
+ 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(rcdir)
++	$(INSTALL_PROGRAM) -m 755 multipathd.init.redhat $(DESTDIR)$(rcdir)/$(EXEC)
+ 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)
+ 	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
+ 
+-- 
+1.6.5.1
+

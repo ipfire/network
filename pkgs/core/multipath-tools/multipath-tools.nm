@@ -24,38 +24,32 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = attr
-PKG_VER        = 2.4.43
+PKG_NAME       = multipath-tools
+PKG_VER        = 0.4.9
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Filesystems
-PKG_URL        = http://oss.sgi.com/projects/xfs/
-PKG_LICENSE    = GPLv2+ LGPLv2+
-PKG_SUMMARY    = Tools for extended attribute support.
+PKG_GROUP      = System/Base
+PKG_URL        = http://christophe.varoqui.free.fr/
+PKG_LICENSE    = GPL+
+PKG_SUMMARY    = Tools to manage multipath devices using device-mapper.
 
-PKG_BUILD_DEPS+= gettext gzip libtool make sed
-
-PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+PKG_BUILD_DEPS+= gzip
+PKG_DEPS      += libaio lvm2 ncurses readline
 
 define PKG_DESCRIPTION
-	A set of tools for manipulating extended attributes on filesystem \
-	objects.
+	This package provides tools to manage multipath devices by \
+	instructing the device-mapper multipath kernel module what to do.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_TARBALL    = $(PKG_NAME)-091027.tar.gz
 
-CONFIGURE_OPTIONS += \
-	--bindir=/bin \
-	--enable-shared \
-	--mandir=/usr/share/man
+DIR_APP = $(DIR_SRC)/$(PKG_NAME)
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make
+endef
 
 define STAGE_INSTALL_CMDS
-	-mkdir -pv $(BUILDROOT)/{,usr/}lib
-	install -v -m0755 $(DIR_APP)/libattr/.libs/libattr.so.1.1.0 $(BUILDROOT)/lib
-	ln -vsf libattr.so.1.1.0 $(BUILDROOT)/lib/libattr.so.1
-	ln -vsf ../../lib/libattr.so.1 $(BUILDROOT)/usr/lib/libattr.so
-	install -v -d $(BUILDROOT)/usr/include/attr
-	cp -vf $(DIR_APP)/include/{attributes.h,error_context.h,libattr.h,xattr.h} \
-		$(BUILDROOT)/usr/include/attr/
+	rm -rf $(BUILDROOT)/etc/rc.d
 endef

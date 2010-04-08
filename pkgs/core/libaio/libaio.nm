@@ -24,38 +24,43 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = attr
-PKG_VER        = 2.4.43
+PKG_NAME       = libaio
+PKG_VER        = 0.3.109
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Filesystems
-PKG_URL        = http://oss.sgi.com/projects/xfs/
-PKG_LICENSE    = GPLv2+ LGPLv2+
-PKG_SUMMARY    = Tools for extended attribute support.
-
-PKG_BUILD_DEPS+= gettext gzip libtool make sed
+PKG_GROUP      = System/Libraries
+PKG_URL        = ftp://ftp.kernel.org/pub/linux/libs/aio/
+PKG_LICENSE    = LGPLv2+
+PKG_SUMMARY    = Linux-native asynchronous I/O access library.
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 define PKG_DESCRIPTION
-	A set of tools for manipulating extended attributes on filesystem \
-	objects.
+	The Linux-native asynchronous I/O facility ("async I/O", or "aio") \
+	has a richer API and capability set than the simple POSIX async I/O \
+	facility. This library, libaio, provides the Linux-native API for \
+	async I/O. The POSIX async I/O facility requires this library in \
+	order to provide kernel-accelerated async I/O capabilities, as do \
+	applications which require the Linux-native async I/O API. 
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_BUILD_DEPS+= e2fsprogs
 
-CONFIGURE_OPTIONS += \
-	--bindir=/bin \
-	--enable-shared \
-	--mandir=/usr/share/man
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	# Only do a partcheck, because a full check requires a 
+	# loop device, which isn't avialable.
+	cd $(DIR_APP) && make partcheck
+endef
 
 define STAGE_INSTALL_CMDS
-	-mkdir -pv $(BUILDROOT)/{,usr/}lib
-	install -v -m0755 $(DIR_APP)/libattr/.libs/libattr.so.1.1.0 $(BUILDROOT)/lib
-	ln -vsf libattr.so.1.1.0 $(BUILDROOT)/lib/libattr.so.1
-	ln -vsf ../../lib/libattr.so.1 $(BUILDROOT)/usr/lib/libattr.so
-	install -v -d $(BUILDROOT)/usr/include/attr
-	cp -vf $(DIR_APP)/include/{attributes.h,error_context.h,libattr.h,xattr.h} \
-		$(BUILDROOT)/usr/include/attr/
+	# Modify links to be relative
+	ln -svf libaio.so.1 $(BUILDROOT)/usr/lib/libaio.so
+	ln -svf libaio.so.1.0.1 $(BUILDROOT)/usr/lib/libaio.so.1
 endef
