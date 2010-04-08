@@ -34,8 +34,7 @@ PKG_URL        = ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = A userspace implementation of devfs.
 
-PKG_BUILD_DEPS+= gobject-introspection
-PKG_DEPS      += acl gperf libusb-compat pciutils usbutils util-linux-ng
+PKG_DEPS      += acl glib2 gperf libusb-compat pciutils usbutils util-linux-ng
 
 define PKG_DESCRIPTION
 	The udev package contains an implementation of devfs in userspace using \
@@ -50,7 +49,7 @@ CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
 	--libexecdir=/lib/udev \
 	--with-rootlibdir=/lib \
-	--enable-introspection
+	--disable-introspection
 
 define STAGE_INSTALL_CMDS
 	# Install rules
