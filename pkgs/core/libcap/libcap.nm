@@ -65,4 +65,6 @@ define STAGE_INSTALL
 	rm -vf $(BUILDROOT)/lib/libcap.so
 	-mkdir -pv $(BUILDROOT)/usr/lib
 	ln -svf ../../lib/libcap.so.2 $(BUILDROOT)/usr/lib/libcap.so
+
+	chmod 755 $(BUILDROOT)/lib/libcap.so.$(PKG_VER)
 endef
