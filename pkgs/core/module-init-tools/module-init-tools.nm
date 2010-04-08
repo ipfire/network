@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = module-init-tools
-PKG_VER        = 3.7
+PKG_VER        = 3.11.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,7 +34,6 @@ PKG_URL        = http://ftp.kernel.org/pub/linux/utils/kernel/module-init-tools/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Kernel module management utilities.
 
-PKG_BUILD_DEPS+= autoconf automake
 PKG_DEPS      += zlib
 
 define PKG_DESCRIPTION
@@ -49,15 +48,16 @@ PKG_TARBALL    = $(THISAPP).tar.bz2
 
 CFLAGS        += -DCONFIG_NO_BACKWARDS_COMPAT=1
 
+# Set docbooktoman=true, because this package is not available
+# in IPFire and prevents us from errors
 export DOCBOOKTOMAN=true
 
-CONFIGURE_OPTIONS = \
-	--prefix=/ \
-	--mandir=/usr/share/man
-
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && autoconf --force
-endef
+CONFIGURE_OPTIONS += \
+	--bindir=/bin \
+	--sbindir=/sbin \
+	--mandir=/usr/share/man \
+	--enable-zlib-dynamic \
+	--disable-static-utils
 
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/etc/modprobe.d
