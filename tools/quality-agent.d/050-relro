@@ -12,6 +12,10 @@ function check() {
 
 	local file
 	for file in $(find_elf_files ${BINARY_PATHS}); do
+		if filter_startfiles ${file}; then
+			continue
+		fi
+
 		if ! is_relro_full ${file}; then
 			log_error "  Is not full relro: ${file}"
 			failed=1
