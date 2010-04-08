@@ -84,7 +84,11 @@ make_installer() {
 
 	rm -rf /installer/usr/include
 
-	mksquashfs * ${dest}/installer.img -no-progress
+	for dir in dev proc sys; do
+		mkdir -p ${dir} 2>/dev/null
+	done
+
+	mksquashfs * ${dest}/installer.sfs -no-progress
 
 	popd
 }
