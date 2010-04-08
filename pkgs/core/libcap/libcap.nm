@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = libcap
-PKG_VER        = 2.16
+PKG_VER        = 2.19
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -43,20 +43,10 @@ endef
 
 PKG_DEPS      += attr pam
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e "s@<stdlib.h>@&\n#include <asm/types.h>@g" \
-		-i progs/capsh.c
-	cd $(DIR_APP) && sed 's/--static//' -i.orig progs/Makefile
-endef
+PKG_TARBALL    = $(THISAPP).tar.gz
 
 define STAGE_BUILD
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CC="gcc $(CFLAGS)"
+	cd $(DIR_APP) && make DYNAMIC=yes LIBATTR=yes
 endef
 
 define STAGE_INSTALL
