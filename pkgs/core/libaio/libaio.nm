@@ -24,38 +24,43 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = iproute2
-PKG_VER        = 2.6.33
+PKG_NAME       = libaio
+PKG_VER        = 0.3.109
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Networking/Tools
-PKG_URL        = http://www.linuxfoundation.org/en/Net:Iproute2
-PKG_LICENSE    = GPLv2+
-PKG_SUMMARY    = Advanced IP routing and network device configuration tools.
+PKG_GROUP      = System/Libraries
+PKG_URL        = ftp://ftp.kernel.org/pub/linux/libs/aio/
+PKG_LICENSE    = LGPLv2+
+PKG_SUMMARY    = Linux-native asynchronous I/O access library.
 
-PKG_BUILD_DEPS+= bison flex
-PKG_DEPS      += db
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 define PKG_DESCRIPTION
-	The iproute package contains networking utilities (ip and rtmon, for \
-	example) which are designed to use the advanced networking \
-	capabilities of the Linux 2.4.x and 2.6.x kernel.
+	The Linux-native asynchronous I/O facility ("async I/O", or "aio") \
+	has a richer API and capability set than the simple POSIX async I/O \
+	facility. This library, libaio, provides the Linux-native API for \
+	async I/O. The POSIX async I/O facility requires this library in \
+	order to provide kernel-accelerated async I/O capabilities, as do \
+	applications which require the Linux-native async I/O API. 
 endef
+
+PKG_BUILD_DEPS+= e2fsprogs
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -i -e "s@DESTDIR=.*@DESTDIR=@" \
-		-e "s@/share/@/usr/share/@g" Makefile
-endef
-
 define STAGE_BUILD
-	cd $(DIR_APP) && make OPT_FLAGS="$(CFLAGS)" #$(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-	-mkdir -pv $(BUILDROOT)/usr/sbin
-	cd $(DIR_APP) && mv -v $(BUILDROOT)/sbin/arpd $(BUILDROOT)/usr/sbin
+define STAGE_TEST
+	# Only do a partcheck, because a full check requires a 
+	# loop device, which isn't avialable.
+	cd $(DIR_APP) && make partcheck
+endef
+
+define STAGE_INSTALL_CMDS
+	# Modify links to be relative
+	ln -svf libaio.so.1 $(BUILDROOT)/usr/lib/libaio.so
+	ln -svf libaio.so.1.0.1 $(BUILDROOT)/usr/lib/libaio.so.1
 endef

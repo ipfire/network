@@ -10,6 +10,10 @@ check() {
 	local file
 	local soname
 	for file in $(find_elf_files ${LIBARY_PATHS}); do
+		if ! grep -q "\.so" <<<${file}; then
+			continue
+		fi
+
 		if ! is_shared_object ${file}; then
 			continue
 		fi

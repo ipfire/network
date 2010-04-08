@@ -1,0 +1,52 @@
+Index: multipath-tools/libmultipath/hwtable.c
+===================================================================
+--- multipath-tools.orig/libmultipath/hwtable.c
++++ multipath-tools/libmultipath/hwtable.c
+@@ -282,6 +282,21 @@ static struct hwentry default_hw[] = {
+ 		.checker_name  = EMC_CLARIION,
+ 		.prio_name     = PRIO_EMC,
+ 	},
++	{
++		.vendor        = "EMC",
++		.product       = "Invista",
++		.bl_product    = "LUNZ",
++		.getuid        = DEFAULT_GETUID,
++		.features      = DEFAULT_FEATURES,
++		.hwhandler     = DEFAULT_HWHANDLER,
++		.selector      = DEFAULT_SELECTOR,
++		.pgpolicy      = MULTIBUS,
++		.pgfailback    = FAILBACK_UNDEF,
++		.rr_weight     = RR_WEIGHT_NONE,
++		.no_path_retry = 5,
++		.minio         = DEFAULT_MINIO,
++		.prio_name     = DEFAULT_PRIO,
++	},
+ 	/*
+ 	 * Fujitsu controller family
+ 	 *
+Index: multipath-tools/multipath.conf.defaults
+===================================================================
+--- multipath-tools.orig/multipath.conf.defaults
++++ multipath-tools/multipath.conf.defaults
+@@ -209,6 +209,21 @@
+ #		prio			emc
+ #	}
+ #	device {
++#		vendor			"EMC"
++#		product			"Invista"
++#		product_blacklist	"LUNZ"
++#		getuid_callout		"/lib/udev/scsi_id --whitelisted --page=pre-spc3-83 --device=/dev/%n"
++#		features		"0"
++#		hardware_handler	"0"
++#		path_selector		"round-robin 0"
++#		path_grouping_policy	multibus
++#		rr_weight		uniform
++#		no_path_retry		5
++#		rr_min_io		1000
++#		path_checker		tur
++#		prio			const
++#	}
++#	device {
+ #		vendor			"FSC"
+ #		product			"CentricStor"
+ #		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"

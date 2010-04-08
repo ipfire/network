@@ -1,0 +1,1153 @@
+---
+ libmultipath/Makefile    |    2 
+ libmultipath/alias.c     |  152 ------------------------------
+ libmultipath/alias.h     |    1 
+ libmultipath/config.c    |    5 -
+ libmultipath/config.h    |    1 
+ libmultipath/configure.c |   23 ++++
+ libmultipath/defaults.h  |    2 
+ libmultipath/dict.c      |   34 ++++++
+ libmultipath/file.c      |  178 +++++++++++++++++++++++++++++++++++
+ libmultipath/file.h      |   11 ++
+ libmultipath/finder.c    |  150 ++++++++++++++++++++++++++++++
+ libmultipath/finder.h    |   18 +++
+ multipath/Makefile       |    2 
+ multipath/main.c         |    2 
+ multipath/mpathconf      |  234 +++++++++++++++++++++++++++++++++++++++++++++++
+ multipathd/main.c        |   27 +++--
+ 16 files changed, 679 insertions(+), 163 deletions(-)
+
+Index: multipath-tools/libmultipath/alias.c
+===================================================================
+--- multipath-tools.orig/libmultipath/alias.c
++++ multipath-tools/libmultipath/alias.c
+@@ -3,19 +3,16 @@
+  * Copyright (c) 2005 Benjamin Marzinski, Redhat
+  */
+ #include <stdlib.h>
+-#include <sys/types.h>
+-#include <sys/stat.h>
+-#include <fcntl.h>
+ #include <errno.h>
+ #include <unistd.h>
+ #include <string.h>
+ #include <limits.h>
+ #include <stdio.h>
+-#include <signal.h>
+ 
+ #include "debug.h"
+ #include "uxsock.h"
+ #include "alias.h"
++#include "file.h"
+ 
+ 
+ /*
+@@ -37,149 +34,6 @@
+  */
+ 
+ static int
+-ensure_directories_exist(char *str, mode_t dir_mode)
+-{
+-	char *pathname;
+-	char *end;
+-	int err;
+-
+-	pathname = strdup(str);
+-	if (!pathname){
+-		condlog(0, "Cannot copy bindings file pathname : %s",
+-			strerror(errno));
+-		return -1;
+-	}
+-	end = pathname;
+-	/* skip leading slashes */
+-	while (end && *end && (*end == '/'))
+-		end++;
+-
+-	while ((end = strchr(end, '/'))) {
+-		/* if there is another slash, make the dir. */
+-		*end = '\0';
+-		err = mkdir(pathname, dir_mode);
+-		if (err && errno != EEXIST) {
+-			condlog(0, "Cannot make directory [%s] : %s",
+-				pathname, strerror(errno));
+-			free(pathname);
+-			return -1;
+-		}
+-		if (!err)
+-			condlog(3, "Created dir [%s]", pathname);
+-		*end = '/';
+-		end++;
+-	}
+-	free(pathname);
+-	return 0;
+-}
+-
+-static void
+-sigalrm(int sig)
+-{
+-	/* do nothing */
+-}
+-
+-static int
+-lock_bindings_file(int fd)
+-{
+-	struct sigaction act, oldact;
+-	sigset_t set, oldset;
+-	struct flock lock;
+-	int err;
+-
+-	memset(&lock, 0, sizeof(lock));
+-	lock.l_type = F_WRLCK;
+-	lock.l_whence = SEEK_SET;
+-
+-	act.sa_handler = sigalrm;
+-	sigemptyset(&act.sa_mask);
+-	act.sa_flags = 0;
+-	sigemptyset(&set);
+-	sigaddset(&set, SIGALRM);
+-
+-	sigaction(SIGALRM, &act, &oldact);
+-	sigprocmask(SIG_UNBLOCK, &set, &oldset);
+-
+-	alarm(BINDINGS_FILE_TIMEOUT);
+-	err = fcntl(fd, F_SETLKW, &lock);
+-	alarm(0);
+-
+-	if (err) {
+-		if (errno != EINTR)
+-			condlog(0, "Cannot lock bindings file : %s",
+-					strerror(errno));
+-		else
+-			condlog(0, "Bindings file is locked. Giving up.");
+-	}
+-
+-	sigprocmask(SIG_SETMASK, &oldset, NULL);
+-	sigaction(SIGALRM, &oldact, NULL);
+-	return err;
+-
+-}
+-
+-
+-static int
+-open_bindings_file(char *file, int *can_write)
+-{
+-	int fd;
+-	struct stat s;
+-
+-	if (ensure_directories_exist(file, 0700))
+-		return -1;
+-	*can_write = 1;
+-	fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+-	if (fd < 0) {
+-		if (errno == EROFS) {
+-			*can_write = 0;
+-			condlog(3, "Cannot open bindings file [%s] read/write. "
+-				" trying readonly", file);
+-			fd = open(file, O_RDONLY);
+-			if (fd < 0) {
+-				condlog(0, "Cannot open bindings file [%s] "
+-					"readonly : %s", file, strerror(errno));
+-				return -1;
+-			}
+-		}
+-		else {
+-			condlog(0, "Cannot open bindings file [%s] : %s", file,
+-				strerror(errno));
+-			return -1;
+-		}
+-	}
+-	if (*can_write && lock_bindings_file(fd) < 0)
+-		goto fail;
+-
+-	memset(&s, 0, sizeof(s));
+-	if (fstat(fd, &s) < 0){
+-		condlog(0, "Cannot stat bindings file : %s", strerror(errno));
+-		goto fail;
+-	}
+-	if (s.st_size == 0) {
+-		if (*can_write == 0)
+-			goto fail;
+-		/* If bindings file is empty, write the header */
+-		size_t len = strlen(BINDINGS_FILE_HEADER);
+-		if (write_all(fd, BINDINGS_FILE_HEADER, len) != len) {
+-			condlog(0,
+-				"Cannot write header to bindings file : %s",
+-				strerror(errno));
+-			/* cleanup partially written header */
+-			ftruncate(fd, 0);
+-			goto fail;
+-		}
+-		fsync(fd);
+-		condlog(3, "Initialized new bindings file [%s]", file);
+-	}
+-
+-	return fd;
+-
+-fail:
+-	close(fd);
+-	return -1;
+-}
+-
+-static int
+ format_devname(char *name, int id, int len)
+ {
+ 	int pos;
+@@ -364,7 +218,7 @@ get_user_friendly_alias(char *wwid, char
+ 		return NULL;
+ 	}
+ 
+-	fd = open_bindings_file(file, &can_write);
++	fd = open_file(file, &can_write, BINDINGS_FILE_HEADER);
+ 	if (fd < 0)
+ 		return NULL;
+ 
+@@ -414,7 +268,7 @@ get_user_friendly_wwid(char *alias, char
+ 		return NULL;
+ 	}
+ 
+-	fd = open_bindings_file(file, &unused);
++	fd = open_file(file, &unused, BINDINGS_FILE_HEADER);
+ 	if (fd < 0)
+ 		return NULL;
+ 
+Index: multipath-tools/libmultipath/alias.h
+===================================================================
+--- multipath-tools.orig/libmultipath/alias.h
++++ multipath-tools/libmultipath/alias.h
+@@ -1,4 +1,3 @@
+-#define BINDINGS_FILE_TIMEOUT 30
+ #define BINDINGS_FILE_HEADER \
+ "# Multipath bindings, Version : 1.0\n" \
+ "# NOTE: this file is automatically maintained by the multipath program.\n" \
+Index: multipath-tools/libmultipath/config.c
+===================================================================
+--- multipath-tools.orig/libmultipath/config.c
++++ multipath-tools/libmultipath/config.c
+@@ -452,6 +452,7 @@ load_config (char * file)
+ 	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
+ 	conf->flush_on_last_del = 0;
+ 	conf->attribute_flags = 0;
++	conf->find_multipaths = DEFAULT_FIND_MULTIPATHS;
+ 
+ 	/*
+ 	 * preload default hwtable
+@@ -476,10 +477,12 @@ load_config (char * file)
+ 		}
+ 	} else {
+ 		condlog(0, "/etc/multipath.conf does not exist, blacklisting all devices.");
+-		condlog(0, "A default multipath.conf file is located at");
++		condlog(0, "A sample multipath.conf file is located at");
+ 		condlog(0,
+ "/usr/share/doc/device-mapper-multipath-%d.%d.%d/multipath.conf",
+ 			MULTIPATH_VERSION(VERSION_CODE));
++		condlog(0, 
++"You can run /sbin/mpathconf to create or modify /etc/multipath.conf");
+ 		conf->blist_devnode = vector_alloc();
+ 		if (!conf->blist_devnode) {
+ 			condlog(0, "cannot allocate blacklist\n");
+Index: multipath-tools/libmultipath/config.h
+===================================================================
+--- multipath-tools.orig/libmultipath/config.h
++++ multipath-tools/libmultipath/config.h
+@@ -85,6 +85,7 @@ struct config {
+ 	int attribute_flags;
+ 	int fast_io_fail;
+ 	unsigned int dev_loss;
++	int find_multipaths;
+ 	uid_t uid;
+ 	gid_t gid;
+ 	mode_t mode;
+Index: multipath-tools/libmultipath/configure.c
+===================================================================
+--- multipath-tools.orig/libmultipath/configure.c
++++ multipath-tools/libmultipath/configure.c
+@@ -35,6 +35,7 @@
+ #include "alias.h"
+ #include "prio.h"
+ #include "util.h"
++#include "finder.h"
+ 
+ extern int
+ setup_map (struct multipath * mpp)
+@@ -462,6 +463,10 @@ coalesce_paths (struct vectors * vecs, v
+ 
+ 	memset(empty_buff, 0, WWID_SIZE);
+ 
++	/* ignore refwwid if it's empty */
++	if (refwwid && !strlen(refwwid))
++		refwwid = NULL;
++
+ 	if (force_reload) {
+ 		vector_foreach_slot (pathvec, pp1, k) {
+ 			pp1->mpp = NULL;
+@@ -472,21 +477,35 @@ coalesce_paths (struct vectors * vecs, v
+ 
+ 		/* 1. if path has no unique id or wwid blacklisted */
+ 		if (memcmp(empty_buff, pp1->wwid, WWID_SIZE) == 0 ||
+-		    filter_path(conf, pp1) > 0)
++		    filter_path(conf, pp1) > 0) {
++			orphan_path(pp1);
+ 			continue;
++		}
+ 
+ 		/* 2. if path already coalesced */
+ 		if (pp1->mpp)
+ 			continue;
+ 
+ 		/* 3. if path has disappeared */
+-		if (!pp1->size)
++		if (!pp1->size) {
++			orphan_path(pp1);
+ 			continue;
++		}
+ 
+ 		/* 4. path is out of scope */
+ 		if (refwwid && strncmp(pp1->wwid, refwwid, WWID_SIZE))
+ 			continue;
+ 
++		/* If find_multipaths was selected check if the path is valid */
++		if (conf->find_multipaths){
++			if (refwwid || should_multipath(pp1, pathvec))
++				remember_wwid(pp1->wwid);
++			else {
++				orphan_path(pp1);
++				continue;
++			}
++		}
++
+ 		/*
+ 		 * at this point, we know we really got a new mp
+ 		 */
+Index: multipath-tools/libmultipath/defaults.h
+===================================================================
+--- multipath-tools.orig/libmultipath/defaults.h
++++ multipath-tools/libmultipath/defaults.h
+@@ -12,6 +12,7 @@
+ #define DEFAULT_PGTIMEOUT      -PGTIMEOUT_NONE
+ #define DEFAULT_USER_FRIENDLY_NAMES    0
+ #define DEFAULT_VERBOSITY	2
++#define DEFAULT_FIND_MULTIPATHS 0
+ 
+ #define DEFAULT_CHECKINT	5
+ #define MAX_CHECKINT(a)		(a << 2)
+@@ -20,5 +21,6 @@
+ #define DEFAULT_SOCKET		"/var/run/multipathd.sock"
+ #define DEFAULT_CONFIGFILE	"/etc/multipath.conf"
+ #define DEFAULT_BINDINGS_FILE	"/etc/multipath/bindings"
++#define DEFAULT_WWIDS_FILE	"/etc/multipath/wwids"
+ 
+ char * set_default (char * str);
+Index: multipath-tools/libmultipath/dict.c
+===================================================================
+--- multipath-tools.orig/libmultipath/dict.c
++++ multipath-tools/libmultipath/dict.c
+@@ -444,6 +444,27 @@ def_flush_on_last_del_handler(vector str
+ }
+ 
+ static int
++def_find_multipaths_handler(vector strvec)
++{
++	char * buff;
++
++	buff = set_value(strvec);
++
++	if (!buff)
++		return 1;
++
++	if ((strlen(buff) == 2 && !strcmp(buff, "no")) ||
++	    (strlen(buff) == 1 && !strcmp(buff, "0")))
++		conf->find_multipaths = 0;
++	else if ((strlen(buff) == 3 && !strcmp(buff, "yes")) ||
++		 (strlen(buff) == 1 && !strcmp(buff, "1")))
++		conf->find_multipaths = 1;
++
++	FREE(buff);
++	return 0;
++}
++
++static int
+ names_handler(vector strvec)
+ {
+ 	char * buff;
+@@ -2076,6 +2097,18 @@ snprint_def_flush_on_last_del (char * bu
+ }
+ 
+ static int
++snprint_def_find_multipaths (char * buff, int len, void * data)
++{
++	if (conf->find_multipaths == DEFAULT_FIND_MULTIPATHS)
++		return 0;
++	if (!conf->find_multipaths)
++		return snprintf(buff, len, "no");
++
++	return snprintf(buff, len, "yes");
++}
++
++
++static int
+ snprint_def_user_friendly_names (char * buff, int len, void * data)
+ {
+ 	if (conf->user_friendly_names == DEFAULT_USER_FRIENDLY_NAMES)
+@@ -2141,6 +2174,7 @@ init_keywords(void)
+ 	install_keyword("gid", &def_gid_handler, &snprint_def_gid);
+ 	install_keyword("fast_io_fail_tmo", &def_fast_io_fail_handler, &snprint_def_fast_io_fail);
+ 	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
++	install_keyword("find_multipaths", &def_find_multipaths_handler, &snprint_def_find_multipaths);
+ 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
+ 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
+ 	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
+Index: multipath-tools/libmultipath/file.c
+===================================================================
+--- /dev/null
++++ multipath-tools/libmultipath/file.c
+@@ -0,0 +1,178 @@
++/*
++ * Copyright (c) 2005 Christophe Varoqui
++ * Copyright (c) 2005 Benjamin Marzinski, Redhat
++ */
++#include <stdlib.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <unistd.h>
++#include <string.h>
++#include <limits.h>
++#include <stdio.h>
++#include <signal.h>
++
++#include "file.h"
++#include "debug.h"
++#include "uxsock.h"
++
++
++/*
++ * significant parts of this file were taken from iscsi-bindings.c of the
++ * linux-iscsi project.
++ * Copyright (C) 2002 Cisco Systems, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published
++ * by the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * See the file COPYING included with this distribution for more details.
++ */
++
++static int
++ensure_directories_exist(char *str, mode_t dir_mode)
++{
++	char *pathname;
++	char *end;
++	int err;
++
++	pathname = strdup(str);
++	if (!pathname){
++		condlog(0, "Cannot copy file pathname %s : %s",
++			str, strerror(errno));
++		return -1;
++	}
++	end = pathname;
++	/* skip leading slashes */
++	while (end && *end && (*end == '/'))
++		end++;
++
++	while ((end = strchr(end, '/'))) {
++		/* if there is another slash, make the dir. */
++		*end = '\0';
++		err = mkdir(pathname, dir_mode);
++		if (err && errno != EEXIST) {
++			condlog(0, "Cannot make directory [%s] : %s",
++				pathname, strerror(errno));
++			free(pathname);
++			return -1;
++		}
++		if (!err)
++			condlog(3, "Created dir [%s]", pathname);
++		*end = '/';
++		end++;
++	}
++	free(pathname);
++	return 0;
++}
++
++static void
++sigalrm(int sig)
++{
++	/* do nothing */
++}
++
++static int
++lock_file(int fd, char *file_name)
++{
++	struct sigaction act, oldact;
++	sigset_t set, oldset;
++	struct flock lock;
++	int err;
++
++	memset(&lock, 0, sizeof(lock));
++	lock.l_type = F_WRLCK;
++	lock.l_whence = SEEK_SET;
++
++	act.sa_handler = sigalrm;
++	sigemptyset(&act.sa_mask);
++	act.sa_flags = 0;
++	sigemptyset(&set);
++	sigaddset(&set, SIGALRM);
++
++	sigaction(SIGALRM, &act, &oldact);
++	sigprocmask(SIG_UNBLOCK, &set, &oldset);
++
++	alarm(FILE_TIMEOUT);
++	err = fcntl(fd, F_SETLKW, &lock);
++	alarm(0);
++
++	if (err) {
++		if (errno != EINTR)
++			condlog(0, "Cannot lock %s : %s", file_name,
++				strerror(errno));
++		else
++			condlog(0, "%s is locked. Giving up.", file_name);
++	}
++
++	sigprocmask(SIG_SETMASK, &oldset, NULL);
++	sigaction(SIGALRM, &oldact, NULL);
++	return err;
++}
++
++int
++open_file(char *file, int *can_write, char *header)
++{
++	int fd;
++	struct stat s;
++
++	if (ensure_directories_exist(file, 0700))
++		return -1;
++	*can_write = 1;
++	fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
++	if (fd < 0) {
++		if (errno == EROFS) {
++			*can_write = 0;
++			condlog(3, "Cannot open file [%s] read/write. "
++				" trying readonly", file);
++			fd = open(file, O_RDONLY);
++			if (fd < 0) {
++				condlog(0, "Cannot open file [%s] "
++					"readonly : %s", file, strerror(errno));
++				return -1;
++			}
++		}
++		else {
++			condlog(0, "Cannot open file [%s] : %s", file,
++				strerror(errno));
++			return -1;
++		}
++	}
++	if (*can_write && lock_file(fd, file) < 0)
++		goto fail;
++
++	memset(&s, 0, sizeof(s));
++	if (fstat(fd, &s) < 0){
++		condlog(0, "Cannot stat file %s : %s", file, strerror(errno));
++		goto fail;
++	}
++	if (s.st_size == 0) {
++		if (*can_write == 0)
++			goto fail;
++		/* If file is empty, write the header */
++		size_t len = strlen(header);
++		if (write_all(fd, header, len) != len) {
++			condlog(0,
++				"Cannot write header to file %s : %s", file,
++				strerror(errno));
++			/* cleanup partially written header */
++			ftruncate(fd, 0);
++			goto fail;
++		}
++		fsync(fd);
++		condlog(3, "Initialized new file [%s]", file);
++	}
++
++	return fd;
++
++fail:
++	close(fd);
++	return -1;
++}
+Index: multipath-tools/libmultipath/file.h
+===================================================================
+--- /dev/null
++++ multipath-tools/libmultipath/file.h
+@@ -0,0 +1,11 @@
++/*
++ * Copyright (c) 2010 Benjamin Marzinski, Redhat
++ */
++
++#ifndef _FILE_H
++#define _FILE_H
++
++#define FILE_TIMEOUT 30
++int open_file(char *file, int *can_write, char *header);
++
++#endif /* _FILE_H */
+Index: multipath-tools/libmultipath/finder.c
+===================================================================
+--- /dev/null
++++ multipath-tools/libmultipath/finder.c
+@@ -0,0 +1,150 @@
++#include <stdlib.h>
++#include <errno.h>
++#include <unistd.h>
++#include <string.h>
++#include <limits.h>
++#include <stdio.h>
++
++#include "checkers.h"
++#include "vector.h"
++#include "structs.h"
++#include "debug.h"
++#include "uxsock.h"
++#include "file.h"
++#include "finder.h"
++#include "defaults.h"
++
++/*
++ * Copyright (c) 2010 Benjamin Marzinski, Redhat
++ */
++
++static int
++lookup_wwid(FILE *f, char *wwid) {
++	char buf[LINE_MAX];
++
++	while (fgets(buf, LINE_MAX, f)) {
++		char *c;
++
++		c = strpbrk(buf, "#\n\r");
++		if (c)
++			*c = '\0';
++		if (*buf == '\0')
++			continue;
++		if (strncmp(wwid, buf, WWID_SIZE) == 0)
++			return 1;
++	}
++	return 0;
++}
++
++static int
++write_out_wwid(int fd, char *wwid) {
++	int ret;
++	off_t offset;
++	char buf[WWID_SIZE + 1];
++
++	ret = snprintf(buf, WWID_SIZE + 1, "%s\n", wwid);
++	if (ret > WWID_SIZE || ret < 0){
++		condlog(0, "can't format wwid for writing (%d) : %s",
++			ret, strerror(errno));
++		return -1;
++	}
++	offset = lseek(fd, 0, SEEK_END);
++	if (offset < 0) {
++		condlog(0, "can't seek to the end of wwids file : %s",
++			strerror(errno));
++		return -1;
++	}
++	if (write_all(fd, buf, strlen(buf)) != strlen(buf)) {
++		condlog(0, "cannot write wwid to wwids file : %s",
++			strerror(errno));
++		ftruncate(fd, offset);
++		return -1;
++	}
++	return 1;
++}
++
++static int
++check_wwids_file(char *wwid, int write_wwid)
++{
++	int scan_fd, fd, can_write, found, ret;
++	FILE *f;
++	fd = open_file(DEFAULT_WWIDS_FILE, &can_write, WWIDS_FILE_HEADER);
++	if (fd < 0)
++		return -1;
++
++	scan_fd = dup(fd);
++	if (scan_fd < 0) {
++		condlog(0, "can't dup wwids file descriptor : %s",
++			strerror(errno));
++		close(fd);
++		return -1;
++	}
++	f = fdopen(scan_fd, "r");
++	if (!f) {
++		condlog(0,"can't fdopen wwids file : %s", strerror(errno));
++		close(fd);
++		close(scan_fd);
++		return -1;
++	}
++	found = lookup_wwid(f, wwid);
++	if (found) {
++		ret = 0;
++		goto out;
++	}
++	if (!write_wwid) {
++		ret = -1;
++		goto out;
++	}
++	if (!can_write) {
++		condlog(0, "wwids file is read-only. Can't write wwid");
++		ret = -1;
++		goto out;
++	}
++	ret = write_out_wwid(fd, wwid);
++out:
++	fclose(f);
++	close(scan_fd);
++	close(fd);
++	return ret;
++}
++
++int
++should_multipath(struct path *pp1, vector pathvec)
++{
++	int i;
++	struct path *pp2;
++
++	condlog(4, "checking if %s should be multipathed", pp1->dev);
++	vector_foreach_slot(pathvec, pp2, i) {
++		if (pp1->dev == pp2->dev)
++			continue;
++		if (strncmp(pp1->wwid, pp2->wwid, WWID_SIZE) == 0) {
++			condlog(3, "found multiple paths with wwid %s, "
++				"multipathing %s", pp1->wwid, pp1->dev);
++			return 1;
++		}
++	}
++	if (check_wwids_file(pp1->wwid, 0) < 0) {
++		condlog(3, "wwid %s not in wwids file, skipping %s",
++			pp1->wwid, pp1->dev);
++		return 0;
++	}
++	condlog(3, "found wwid %s in wwids file, multipathing %s", pp1->wwid,
++		pp1->dev);
++	return 1;
++}
++
++int
++remember_wwid(char *wwid)
++{
++	int ret = check_wwids_file(wwid, 1);
++	if (ret < 0){
++		condlog(3, "failed writing wwid %s to wwids file", wwid);
++		return -1;
++	}
++	if (ret == 1)
++		condlog(3, "wrote wwid %s to wwids file", wwid);
++	else
++		condlog(4, "wwid %s already in wwids file", wwid);
++	return 0;
++}
+Index: multipath-tools/libmultipath/finder.h
+===================================================================
+--- /dev/null
++++ multipath-tools/libmultipath/finder.h
+@@ -0,0 +1,18 @@
++/*
++ * Copyright (c) 2010 Benjamin Marzinski, Redhat
++ */
++
++#ifndef _FINDER_H
++#define _FINDER_H
++
++#define WWIDS_FILE_HEADER \
++"# Multipath wwids, Version : 1.0\n" \
++"# NOTE: This file is automatically maintained by multipath and multipathd.\n" \
++"# You should not need to edit this file in normal circumstances.\n" \
++"#\n" \
++"# Valid WWIDs:\n"
++
++int should_multipath(struct path *pp, vector pathvec);
++int remember_wwid(char *wwid);
++
++#endif /* _FINDER_H */
+Index: multipath-tools/multipath/main.c
+===================================================================
+--- multipath-tools.orig/multipath/main.c
++++ multipath-tools/multipath/main.c
+@@ -307,7 +307,7 @@ configure (void)
+ 	/*
+ 	 * core logic entry point
+ 	 */
+-	r = coalesce_paths(&vecs, NULL, NULL, conf->force_reload);
++	r = coalesce_paths(&vecs, NULL, refwwid, conf->force_reload);
+ 
+ out:
+ 	if (refwwid)
+Index: multipath-tools/multipathd/main.c
+===================================================================
+--- multipath-tools.orig/multipathd/main.c
++++ multipath-tools/multipathd/main.c
+@@ -47,6 +47,7 @@
+ #include <print.h>
+ #include <configure.h>
+ #include <prio.h>
++#include <finder.h>
+ 
+ #include "main.h"
+ #include "pidfile.h"
+@@ -397,7 +398,7 @@ ev_add_path (char * devname, struct vect
+ 	 */
+ 	if (memcmp(empty_buff, pp->wwid, WWID_SIZE) == 0) {
+ 		condlog(0, "%s: failed to get path uid", devname);
+-		return 1; /* leave path added to pathvec */
++		goto fail; /* leave path added to pathvec */
+ 	}
+ 	if (filter_path(conf, pp) > 0){
+ 		int i = find_slot(vecs->pathvec, (void *)pp);
+@@ -412,18 +413,26 @@ rescan:
+ 		condlog(4,"%s: adopting all paths for path %s",
+ 			mpp->alias, pp->dev);
+ 		if (adopt_paths(vecs->pathvec, mpp))
+-			return 1; /* leave path added to pathvec */
++			goto fail; /* leave path added to pathvec */
+ 
+ 		verify_paths(mpp, vecs, NULL);
+ 		mpp->flush_on_last_del = FLUSH_UNDEF;
+ 		mpp->action = ACT_RELOAD;
+ 	}
+ 	else {
++		if (conf->find_multipaths) {
++			if (should_multipath(pp, vecs->pathvec))
++				remember_wwid(pp->wwid);
++			else {
++				orphan_path(pp);
++				return 0;
++			}
++		}
+ 		condlog(4,"%s: creating new map", pp->dev);
+ 		if ((mpp = add_map_with_path(vecs, pp, 1)))
+ 			mpp->action = ACT_CREATE;
+ 		else
+-			return 1; /* leave path added to pathvec */
++			goto fail; /* leave path added to pathvec */
+ 	}
+ 
+ 	/*
+@@ -432,7 +441,7 @@ rescan:
+ 	if (setup_map(mpp)) {
+ 		condlog(0, "%s: failed to setup map for addition of new "
+ 			"path %s", mpp->alias, devname);
+-		goto out;
++		goto fail_map;
+ 	}
+ 	/*
+ 	 * reload the map for the multipath mapped device
+@@ -450,7 +459,7 @@ rescan:
+ 			goto rescan;
+ 		}
+ 		else
+-			goto out;
++			goto fail_map;
+ 	}
+ 	dm_lib_release();
+ 
+@@ -458,19 +467,21 @@ rescan:
+ 	 * update our state from kernel regardless of create or reload
+ 	 */
+ 	if (setup_multipath(vecs, mpp))
+-		goto out;
++		goto fail_map;
+ 
+ 	sync_map_state(mpp);
+ 
+ 	if (mpp->action == ACT_CREATE &&
+ 	    start_waiter_thread(mpp, vecs))
+-			goto out;
++			goto fail_map;
+ 
+ 	condlog(2, "%s path added to devmap %s", devname, mpp->alias);
+ 	return 0;
+ 
+-out:
++fail_map:
+ 	remove_map(mpp, vecs, 1);
++fail:
++	orphan_path(pp);
+ 	return 1;
+ }
+ 
+Index: multipath-tools/libmultipath/Makefile
+===================================================================
+--- multipath-tools.orig/libmultipath/Makefile
++++ multipath-tools/libmultipath/Makefile
+@@ -12,7 +12,7 @@ OBJS = memory.o parser.o vector.o devmap
+        pgpolicies.o debug.o regex.o defaults.o uevent.o \
+        switchgroup.o uxsock.o print.o alias.o log_pthread.o \
+        log.o configure.o structs_vec.o sysfs.o prio.o checkers.o \
+-       lock.o waiter.o
++       lock.o waiter.o file.o finder.o
+ 
+ LIBDM_API_FLUSH = $(shell if test -d /lib64 ; then objdump -T /lib64/libdevmapper.so* ; else objdump -T /lib/libdevmapper.so.* ; fi | grep -c dm_task_no_flush)
+ 
+Index: multipath-tools/multipath/mpathconf
+===================================================================
+--- /dev/null
++++ multipath-tools/multipath/mpathconf
+@@ -0,0 +1,234 @@
++#!/bin/sh
++#
++# Copyright (C) 2010 Red Hat, Inc. All rights reserved.
++#
++# This file is part of the device-mapper-multipath package.
++#
++# This copyrighted material is made available to anyone wishing to use,
++# modify, copy, or redistribute it subject to the terms and conditions
++# of the GNU General Public License v.2.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software Foundation,
++# Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++
++#
++# Simple editting of /etc/multipath.conf
++# This program was largely ripped off from lvmconf
++#
++
++DEFAULT_CONFIGFILE="/usr/share/doc/device-mapper-multipath-0.4.9/multipath.conf"
++CONFIGFILE="/etc/multipath.conf"
++MULTIPATHDIR="/etc/multipath"
++TMPFILE=/etc/multipath/.multipath.conf.tmp
++
++function usage
++{
++	echo "usage: $0 <command>"
++	echo ""
++	echo "Commands:"
++	echo "Enable: --enable [--user_friendly_names <y|n>] [--find_multipaths <y|n>"
++	echo "Disable: --disable"
++	echo "Set user_friendly_names: --user_friendly_names <y|n>"
++	echo "Set find_multipaths: --find_multipaths <y|n>"
++	echo ""
++}
++
++function parse_args
++{
++	while [ -n "$1" ]; do
++		case $1 in
++			--enable)
++				ENABLE=1
++				shift
++				;;
++			--disable)
++				ENABLE=0
++				shift
++				;;
++			--user_friendly_names)
++				if [ -n "$2" ]; then
++					FRIENDLY=$2
++					shift 2
++				else
++					usage
++					exit 1
++				fi
++				;;
++			--find_multipaths)
++				if [ -n "$2" ]; then
++					FIND=$2
++					shift 2
++				else
++					usage
++					exit 1
++				fi
++				;;
++			*)
++				usage
++				exit
++		esac
++	done
++}
++
++function validate_args
++{
++	if [ "$ENABLE" = "0" ] && [ -n "$FRIENDLY" -o -n "$FIND" ]; then
++		echo "ignoring extra parameters on disable"
++		FRIENDLY=""
++		FIND=""
++	fi
++	if [ -n "$FRIENDLY" ] && [ "$FRIENDLY" != "y" -a "$FRIENDLY" != "n" ]; then
++		echo "--user_friendly_names must be either 'y' or 'n'"
++		exit 1
++	fi
++	if [ -n "$FIND" ] && [ "$FIND" != "y" -a "$FIND" != "n" ]; then
++		echo "--find_multipaths must be either 'y' or 'n'"
++		exit 1
++	fi
++	if [ -z "$ENABLE" -a -z "$FIND" -a -z "$FRIENDLY" ]; then
++		DISPLAY=1
++	fi
++}
++
++umask 0077
++
++parse_args "$@"
++
++validate_args
++
++if [ ! -d "$MULTIPATHDIR" ]; then
++	echo "/etc/multipath/ does not exist. failing"
++	exit 1
++fi
++
++rm $TMPFILE 2> /dev/null
++if [ -f "$CONFIGFILE" ]; then
++	cp $CONFIGFILE $TMPFILE
++elif [ -f "$DEFAULT_CONFIGFILE" ]; then
++	cp $DEFAULT_CONFIGFILE $TMPFILE
++else
++	touch $TMPFILE
++fi
++
++if grep -q "^blacklist[[:space:]]*{" $TMPFILE ; then
++	HAVE_BLACKLIST=1
++fi
++
++if grep -q "^defaults[[:space:]]*{" $TMPFILE ; then
++	HAVE_DEFAULTS=1
++fi
++
++if [ "$HAVE_BLACKLIST" = "1" ]; then
++	if sed -n '/^blacklist[[:space:]]*{/,/^}/ p' $TMPFILE | grep -q "^[[:space:]]*devnode \"\.\?\*\"" ; then
++		HAVE_DISABLE=1
++	elif sed -n '/^blacklist[[:space:]]*{/,/^}/ p' $TMPFILE | grep -q "^[[:space:]]*#[#[:space:]]*devnode \"\.\?\*\"" ; then
++		HAVE_DISABLE=0
++	fi
++fi
++
++if [ "$HAVE_DEFAULTS" = "1" ]; then
++	if sed -n '/^defaults[[:space:]]*{/,/^}/ p' $TMPFILE | grep -q "^[[:space:]]*find_multipaths[[:space:]]*\(yes\|1\)" ; then
++		HAVE_FIND=1
++	elif sed -n '/^defaults[[:space:]]*{/,/^}/ p' $TMPFILE | grep -q "^[[:space:]]*find_multipaths[[:space:]]*\(no\|0\)" ; then
++		HAVE_FIND=0
++	fi
++	if sed -n '/^defaults[[:space:]]*{/,/^}/ p' $TMPFILE | grep -q "^[[:space:]]*user_friendly_names[[:space:]]*\(yes\|1\)" ; then
++		HAVE_FRIENDLY=1
++	elif sed -n '/^defaults[[:space:]]*{/,/^}/ p' $TMPFILE | grep -q "^[[:space:]]*user_friendly_names[[:space:]]*\(no\|0\)" ; then
++		HAVE_FRIENDLY=0
++	fi
++fi
++
++if [ -n "$DISPLAY" ]; then
++	if [ -z "$HAVE_DISABLE" -o "$HAVE_DISABLE" = 0 ]; then
++		echo "multipath is enabled"
++	else
++		echo "multipath is disabled"
++	fi
++	if [ -z "$HAVE_FIND"  -o "$HAVE_FIND" = 0 ]; then
++		echo "find_multipaths is disabled"
++	else
++		echo "find_multipaths is enabled"
++	fi
++	if [ -z "$HAVE_FRIENDLY" -o "$HAVE_FRIENDLY" = 0 ]; then
++		echo "user_friendly_names is disabled"
++	else
++		echo "user_friendly_names is enabled"
++	fi
++	exit 0
++fi
++
++if [ -z "$HAVE_BLACKLIST" ]; then
++	cat >> $TMPFILE <<- _EOF_
++
++blacklist {
++}
++_EOF_
++fi
++
++if [ -z "$HAVE_DEFAULTS" ]; then
++	cat >> $TMPFILE <<- _EOF_
++
++defaults {
++}
++_EOF_
++fi
++
++if [ "$ENABLE" = 1 ]; then
++	if [ "$HAVE_DISABLE" = 1 ]; then
++		sed -i '/^blacklist[[:space:]]*{/,/^}/ s/^[[:space:]]*devnode \"\.\?\*\"/#	devnode ".*"/' $TMPFILE
++	fi
++elif [ "$ENABLE" = 0 ]; then
++	if [ -z "$HAVE_DISABLE" ]; then
++		sed -i '/^blacklist[[:space:]]*{/ a\
++	devnode "*"
++' $TMPFILE
++	elif [ "$HAVE_DISABLE" = 0 ]; then
++		sed -i '/^blacklist[[:space:]]*{/,/^}/ s/^[[:space:]]*#[#[:space:]]*devnode \"\.\?\*\"/	devnode ".*"/' $TMPFILE
++	fi
++fi
++
++if [ "$FIND" = "n" ]; then
++	if [ "$HAVE_FIND" = 1 ]; then
++		sed -i '/^defaults[[:space:]]*{/,/^}/ s/^[[:space:]]*find_multipaths[[:space:]]*\(yes\|1\)/	find_multipaths no/' $TMPFILE
++	fi
++elif [ "$FIND" = "y" ]; then
++	if [ -z "$HAVE_FIND" ]; then
++		sed -i '/^defaults[[:space:]]*{/ a\
++	find_multipaths yes
++' $TMPFILE
++	elif [ "$HAVE_FIND" = 0 ]; then
++		sed -i '/^defaults[[:space:]]*{/,/^}/ s/^[[:space:]]*find_multipaths[[:space:]]*\(no\|0\)/	find_multipaths yes/' $TMPFILE
++	fi
++fi
++
++if [ "$FRIENDLY" = "n" ]; then
++	if [ "$HAVE_FRIENDLY" = 1 ]; then
++		sed -i '/^defaults[[:space:]]*{/,/^}/ s/^[[:space:]]*user_friendly_names[[:space:]]*\(yes\|1\)/	user_friendly_names no/' $TMPFILE
++	fi
++elif [ "$FRIENDLY" = "y" ]; then
++	if [ -z "$HAVE_FRIENDLY" ]; then
++		sed -i '/^defaults[[:space:]]*{/ a\
++	user_friendly_names yes
++' $TMPFILE
++	elif [ "$HAVE_FRIENDLY" = 0 ]; then
++		sed -i '/^defaults[[:space:]]*{/,/^}/ s/^[[:space:]]*user_friendly_names[[:space:]]*\(no\|0\)/	user_friendly_names yes/' $TMPFILE
++	fi
++fi
++
++if [ -f "$CONFIGFILE" ]; then
++	cp $CONFIGFILE $CONFIGFILE.old
++	if [ $? != 0 ]; then
++		echo "failed to backup old config file, $CONFIGFILE not updated"
++		exit 1
++	fi
++fi
++
++cp $TMPFILE $CONFIGFILE
++if [ $? != 0 ]; then
++	echo "failed to copy new config file into place, check $CONFIGFILE is still OK"
++	exit 1
++fi
++
++rm -f $TMPFILE
+Index: multipath-tools/multipath/Makefile
+===================================================================
+--- multipath-tools.orig/multipath/Makefile
++++ multipath-tools/multipath/Makefile
+@@ -21,6 +21,7 @@ $(EXEC): $(OBJS)
+ install:
+ 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
+ 	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)/
++	$(INSTALL_PROGRAM) -m 755 mpathconf $(DESTDIR)$(bindir)/
+ 	$(INSTALL_PROGRAM) -d $(DESTDIR)/lib/udev/rules.d
+ 	$(INSTALL_PROGRAM) -m 644 multipath.rules $(DESTDIR)/lib/udev/rules.d/40-multipath.rules
+ 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)
+@@ -31,6 +32,7 @@ install:
+ uninstall:
+ 	rm $(DESTDIR)/lib/udev/rules.d/multipath.rules
+ 	rm $(DESTDIR)$(bindir)/$(EXEC)
++	rm $(DESTDIR)$(bindir)/mpathconf
+ 	rm $(DESTDIR)$(mandir)/$(EXEC).8.gz
+ 	rm $(DESTDIR)$(man5dir)/$(EXEC).conf.5.gz
+ 

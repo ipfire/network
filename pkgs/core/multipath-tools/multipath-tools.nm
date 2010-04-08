@@ -24,38 +24,32 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = iproute2
-PKG_VER        = 2.6.33
+PKG_NAME       = multipath-tools
+PKG_VER        = 0.4.9
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Networking/Tools
-PKG_URL        = http://www.linuxfoundation.org/en/Net:Iproute2
-PKG_LICENSE    = GPLv2+
-PKG_SUMMARY    = Advanced IP routing and network device configuration tools.
+PKG_GROUP      = System/Base
+PKG_URL        = http://christophe.varoqui.free.fr/
+PKG_LICENSE    = GPL+
+PKG_SUMMARY    = Tools to manage multipath devices using device-mapper.
 
-PKG_BUILD_DEPS+= bison flex
-PKG_DEPS      += db
+PKG_BUILD_DEPS+= gzip
+PKG_DEPS      += libaio lvm2 ncurses readline
 
 define PKG_DESCRIPTION
-	The iproute package contains networking utilities (ip and rtmon, for \
-	example) which are designed to use the advanced networking \
-	capabilities of the Linux 2.4.x and 2.6.x kernel.
+	This package provides tools to manage multipath devices by \
+	instructing the device-mapper multipath kernel module what to do.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(PKG_NAME)-091027.tar.gz
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -i -e "s@DESTDIR=.*@DESTDIR=@" \
-		-e "s@/share/@/usr/share/@g" Makefile
-endef
+DIR_APP = $(DIR_SRC)/$(PKG_NAME)
 
 define STAGE_BUILD
-	cd $(DIR_APP) && make OPT_FLAGS="$(CFLAGS)" #$(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make
 endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-	-mkdir -pv $(BUILDROOT)/usr/sbin
-	cd $(DIR_APP) && mv -v $(BUILDROOT)/sbin/arpd $(BUILDROOT)/usr/sbin
+define STAGE_INSTALL_CMDS
+	rm -rf $(BUILDROOT)/etc/rc.d
 endef

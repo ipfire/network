@@ -1,0 +1,428 @@
+---
+ libmultipath/checkers.h              |   15 +--------------
+ libmultipath/checkers/emc_clariion.c |    4 ++--
+ libmultipath/checkers/hp_sw.c        |   12 ++++++------
+ libmultipath/checkers/libsg.c        |    5 +++--
+ libmultipath/checkers/libsg.h        |    3 ++-
+ libmultipath/checkers/rdac.c         |    9 +++++----
+ libmultipath/checkers/readsector0.c  |    2 +-
+ libmultipath/checkers/tur.c          |    4 ++--
+ libmultipath/config.h                |    1 +
+ libmultipath/dict.c                  |   29 +++++++++++++++++++++++++++++
+ libmultipath/discovery.c             |   27 +++++++++++++++++++++++++++
+ libmultipath/discovery.h             |    1 +
+ libmultipath/propsel.c               |   19 +++++++++++++++++--
+ multipath.conf.annotated             |    9 +++++++++
+ 14 files changed, 106 insertions(+), 34 deletions(-)
+
+Index: multipath-tools/libmultipath/checkers.h
+===================================================================
+--- multipath-tools.orig/libmultipath/checkers.h
++++ multipath-tools/libmultipath/checkers.h
+@@ -69,20 +69,6 @@ enum path_check_state {
+ 
+ #define DEFAULT_CHECKER DIRECTIO
+ 
+-/*
+- * Overloaded storage response time can be very long.
+- * SG_IO timouts after DEF_TIMEOUT milliseconds, and checkers interprets this
+- * as a path failure. multipathd then proactively evicts the path from the DM
+- * multipath table in this case.
+- *
+- * This generaly snow balls and ends up in full eviction and IO errors for end
+- * users. Bad. This may also cause SCSI bus resets, causing disruption for all
+- * local and external storage hardware users.
+- * 
+- * Provision a long timeout. Longer than any real-world application would cope
+- * with.
+- */
+-#define DEF_TIMEOUT		300000
+ #define ASYNC_TIMEOUT_SEC	30
+ 
+ /*
+@@ -98,6 +84,7 @@ struct checker {
+ 	struct list_head node;
+ 	int fd;
+ 	int sync;
++	unsigned int timeout;
+ 	int disable;
+ 	char name[CHECKER_NAME_LEN];
+ 	char message[CHECKER_MSG_LEN];       /* comm with callers */
+Index: multipath-tools/libmultipath/checkers/emc_clariion.c
+===================================================================
+--- multipath-tools.orig/libmultipath/checkers/emc_clariion.c
++++ multipath-tools/libmultipath/checkers/emc_clariion.c
+@@ -113,7 +113,7 @@ int libcheck_check (struct checker * c)
+ 	io_hdr.dxferp = sense_buffer;
+ 	io_hdr.cmdp = inqCmdBlk;
+ 	io_hdr.sbp = sb;
+-	io_hdr.timeout = DEF_TIMEOUT;
++	io_hdr.timeout = c->timeout;
+ 	io_hdr.pack_id = 0;
+ 	if (ioctl(c->fd, SG_IO, &io_hdr) < 0) {
+ 		MSG(c, "emc_clariion_checker: sending query command failed");
+@@ -182,7 +182,7 @@ int libcheck_check (struct checker * c)
+ 		unsigned char buf[4096];
+ 
+ 		memset(buf, 0, 4096);
+-		ret = sg_read(c->fd, &buf[0], sbb = &sb[0]);
++		ret = sg_read(c->fd, &buf[0], sbb = &sb[0], c->timeout);
+ 		if (ret == PATH_DOWN) {
+ 			hexadecimal_to_ascii(ct->wwn, wwnstr);
+ 
+Index: multipath-tools/libmultipath/checkers/hp_sw.c
+===================================================================
+--- multipath-tools.orig/libmultipath/checkers/hp_sw.c
++++ multipath-tools/libmultipath/checkers/hp_sw.c
+@@ -46,7 +46,7 @@ void libcheck_free (struct checker * c)
+ 
+ static int
+ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
+-       void *resp, int mx_resp_len, int noisy)
++       void *resp, int mx_resp_len, int noisy, unsigned int timeout)
+ {
+ 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] =
+ 		{ INQUIRY_CMD, 0, 0, 0, 0, 0 };
+@@ -70,7 +70,7 @@ do_inq(int sg_fd, int cmddt, int evpd, u
+ 	io_hdr.dxferp = resp;
+ 	io_hdr.cmdp = inqCmdBlk;
+ 	io_hdr.sbp = sense_b;
+-	io_hdr.timeout = DEF_TIMEOUT;
++	io_hdr.timeout = timeout;
+ 
+ 	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
+ 		return 1;
+@@ -98,7 +98,7 @@ do_inq(int sg_fd, int cmddt, int evpd, u
+ }
+ 
+ static int
+-do_tur (int fd)
++do_tur (int fd, unsigned int timeout)
+ {
+ 	unsigned char turCmdBlk[TUR_CMD_LEN] = { 0x00, 0, 0, 0, 0, 0 };
+ 	struct sg_io_hdr io_hdr;
+@@ -111,7 +111,7 @@ do_tur (int fd)
+ 	io_hdr.dxfer_direction = SG_DXFER_NONE;
+ 	io_hdr.cmdp = turCmdBlk;
+ 	io_hdr.sbp = sense_buffer;
+-	io_hdr.timeout = DEF_TIMEOUT;
++	io_hdr.timeout = timeout;
+ 	io_hdr.pack_id = 0;
+ 
+ 	if (ioctl(fd, SG_IO, &io_hdr) < 0)
+@@ -128,12 +128,12 @@ libcheck_check (struct checker * c)
+ {
+ 	char buff[MX_ALLOC_LEN];
+ 
+-	if (0 != do_inq(c->fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0)) {
++	if (0 != do_inq(c->fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0, c->timeout)) {
+ 		MSG(c, MSG_HP_SW_DOWN);
+ 		return PATH_DOWN;
+ 	}
+ 
+-	if (do_tur(c->fd)) {
++	if (do_tur(c->fd, c->timeout)) {
+ 		MSG(c, MSG_HP_SW_GHOST);
+ 		return PATH_GHOST;
+ 	}
+Index: multipath-tools/libmultipath/checkers/libsg.c
+===================================================================
+--- multipath-tools.orig/libmultipath/checkers/libsg.c
++++ multipath-tools/libmultipath/checkers/libsg.c
+@@ -11,7 +11,8 @@
+ #include "../libmultipath/sg_include.h"
+ 
+ int
+-sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff)
++sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff,
++	 unsigned int timeout)
+ {
+ 	/* defaults */
+ 	int blocks = 1;
+@@ -51,7 +52,7 @@ sg_read (int sg_fd, unsigned char * buff
+ 	io_hdr.dxferp = buff;
+ 	io_hdr.mx_sb_len = SENSE_BUFF_LEN;
+ 	io_hdr.sbp = senseBuff;
+-	io_hdr.timeout = DEF_TIMEOUT;
++	io_hdr.timeout = timeout;
+ 	io_hdr.pack_id = (int)start_block;
+ 	if (diop && *diop)
+ 	io_hdr.flags |= SG_FLAG_DIRECT_IO;
+Index: multipath-tools/libmultipath/checkers/libsg.h
+===================================================================
+--- multipath-tools.orig/libmultipath/checkers/libsg.h
++++ multipath-tools/libmultipath/checkers/libsg.h
+@@ -3,6 +3,7 @@
+ 
+ #define SENSE_BUFF_LEN 32
+ 
+-int sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff);
++int sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff,
++	     unsigned int timeout);
+ 
+ #endif /* _LIBSG_H */
+Index: multipath-tools/libmultipath/checkers/rdac.c
+===================================================================
+--- multipath-tools.orig/libmultipath/checkers/rdac.c
++++ multipath-tools/libmultipath/checkers/rdac.c
+@@ -18,7 +18,6 @@
+ #define INQUIRY_CMDLEN		6
+ #define INQUIRY_CMD		0x12
+ #define SENSE_BUFF_LEN		32
+-#define RDAC_DEF_TIMEOUT	60000
+ #define SCSI_CHECK_CONDITION	0x2
+ #define SCSI_COMMAND_TERMINATED	0x22
+ #define SG_ERR_DRIVER_SENSE	0x08
+@@ -43,7 +42,8 @@ void libcheck_free (struct checker * c)
+ }
+ 
+ static int
+-do_inq(int sg_fd, unsigned int pg_op, void *resp, int mx_resp_len)
++do_inq(int sg_fd, unsigned int pg_op, void *resp, int mx_resp_len,
++       unsigned int timeout)
+ {
+ 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] = { INQUIRY_CMD, 1, 0, 0, 0, 0 };
+ 	unsigned char sense_b[SENSE_BUFF_LEN];
+@@ -62,7 +62,7 @@ do_inq(int sg_fd, unsigned int pg_op, vo
+ 	io_hdr.dxferp = resp;
+ 	io_hdr.cmdp = inqCmdBlk;
+ 	io_hdr.sbp = sense_b;
+-	io_hdr.timeout = RDAC_DEF_TIMEOUT;
++	io_hdr.timeout = timeout;
+ 
+ 	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
+ 		return 1;
+@@ -103,7 +103,8 @@ libcheck_check (struct checker * c)
+ 	struct volume_access_inq inq;
+ 
+ 	memset(&inq, 0, sizeof(struct volume_access_inq));
+-	if (0 != do_inq(c->fd, 0xC9, &inq, sizeof(struct volume_access_inq))) {
++	if (0 != do_inq(c->fd, 0xC9, &inq, sizeof(struct volume_access_inq),
++			c->timeout)) {
+ 		MSG(c, MSG_RDAC_DOWN);
+ 		return PATH_DOWN;
+ 	} else {
+Index: multipath-tools/libmultipath/checkers/readsector0.c
+===================================================================
+--- multipath-tools.orig/libmultipath/checkers/readsector0.c
++++ multipath-tools/libmultipath/checkers/readsector0.c
+@@ -29,7 +29,7 @@ int libcheck_check (struct checker * c)
+ 	unsigned char sbuf[SENSE_BUFF_LEN];
+ 	int ret;
+ 
+-	ret = sg_read(c->fd, &buf[0], &sbuf[0]);
++	ret = sg_read(c->fd, &buf[0], &sbuf[0], c->timeout);
+ 
+ 	switch (ret)
+ 	{
+Index: multipath-tools/libmultipath/checkers/tur.c
+===================================================================
+--- multipath-tools.orig/libmultipath/checkers/tur.c
++++ multipath-tools/libmultipath/checkers/tur.c
+@@ -63,7 +63,7 @@ retry:
+ 	io_hdr.dxferp = (unsigned char *)resp_buffer;
+ 	io_hdr.cmdp = inq_cmd;
+ 	io_hdr.sbp = sense_buffer;
+-	io_hdr.timeout = 60; // IOCTL timeout value.
++	io_hdr.timeout = c->timeout; // IOCTL timeout value.
+ 
+ 	if (ioctl(c->fd, SG_IO, &io_hdr) < 0) {
+ 		condlog(0, "SG_IO ioctl failed: %s", strerror(errno));
+@@ -148,7 +148,7 @@ libcheck_check (struct checker * c)
+ 	io_hdr.dxfer_direction = SG_DXFER_NONE;
+ 	io_hdr.cmdp = turCmdBlk;
+ 	io_hdr.sbp = sense_buffer;
+-	io_hdr.timeout = DEF_TIMEOUT;
++	io_hdr.timeout = c->timeout;
+ 	io_hdr.pack_id = 0;
+ 	if (ioctl(c->fd, SG_IO, &io_hdr) < 0) {
+ 		MSG(c, MSG_TUR_DOWN);
+Index: multipath-tools/libmultipath/config.h
+===================================================================
+--- multipath-tools.orig/libmultipath/config.h
++++ multipath-tools/libmultipath/config.h
+@@ -80,6 +80,7 @@ struct config {
+ 	int max_fds;
+ 	int force_reload;
+ 	int queue_without_daemon;
++	int checker_timeout;
+ 	int daemon;
+ 	int flush_on_last_del;
+ 	int attribute_flags;
+Index: multipath-tools/libmultipath/dict.c
+===================================================================
+--- multipath-tools.orig/libmultipath/dict.c
++++ multipath-tools/libmultipath/dict.c
+@@ -396,6 +396,25 @@ def_queue_without_daemon(vector strvec)
+ }
+ 
+ static int
++def_checker_timeout_handler(vector strvec)
++{
++	unsigned int checker_timeout;
++	char *buff;
++
++	buff = set_value(strvec);
++	if (!buff)
++		return 1;
++
++	if (sscanf(buff, "%u", &checker_timeout) == 1)
++		conf->checker_timeout = checker_timeout;
++	else
++		conf->checker_timeout = 0;
++
++	free(buff);
++	return 0;
++}
++
++static int
+ def_pg_timeout_handler(vector strvec)
+ {
+ 	int pg_timeout;
+@@ -2068,6 +2087,15 @@ snprint_def_queue_without_daemon (char *
+ }
+ 
+ static int
++snprint_def_checker_timeout (char *buff, int len, void *data)
++{
++	if (!conf->checker_timeout)
++		return 0;
++
++	return snprintf(buff, len, "%u", conf->checker_timeout);
++}
++
++static int
+ snprint_def_pg_timeout (char * buff, int len, void * data)
+ {
+ 	if (conf->pg_timeout == DEFAULT_PGTIMEOUT)
+@@ -2166,6 +2194,7 @@ init_keywords(void)
+ 	install_keyword("rr_weight", &def_weight_handler, &snprint_def_rr_weight);
+ 	install_keyword("no_path_retry", &def_no_path_retry_handler, &snprint_def_no_path_retry);
+ 	install_keyword("queue_without_daemon", &def_queue_without_daemon, &snprint_def_queue_without_daemon);
++	install_keyword("checker_timeout", &def_checker_timeout_handler, &snprint_def_checker_timeout);
+ 	install_keyword("pg_timeout", &def_pg_timeout_handler, &snprint_def_pg_timeout);
+ 	install_keyword("flush_on_last_del", &def_flush_on_last_del_handler, &snprint_def_flush_on_last_del);
+ 	install_keyword("user_friendly_names", &names_handler, &snprint_def_user_friendly_names);
+Index: multipath-tools/libmultipath/discovery.c
+===================================================================
+--- multipath-tools.orig/libmultipath/discovery.c
++++ multipath-tools/libmultipath/discovery.c
+@@ -164,6 +164,31 @@ sysfs_get_dev (struct sysfs_device * dev
+ }
+ 
+ int
++sysfs_get_timeout(struct sysfs_device *dev, unsigned int *timeout)
++{
++	char *attr;
++	char attr_path[SYSFS_PATH_SIZE];
++	int r;
++	unsigned int t;
++
++	if (safe_sprintf(attr_path, "%s/device", dev->devpath))
++		return 1;
++
++	attr = sysfs_attr_get_value(dev->devpath, "timeout");
++	if (!attr)
++		return 1;
++
++	r = sscanf(attr, "%u\n", &t);
++
++	if (r != 1)
++		return 1;
++
++	*timeout = t * 1000;
++
++	return 0;
++}
++
++int
+ sysfs_get_size (struct sysfs_device * dev, unsigned long long * size)
+ {
+ 	char *attr;
+@@ -791,6 +816,8 @@ get_state (struct path * pp, int daemon)
+ 			return PATH_PENDING;
+ 		checker_set_async(c);
+ 	}
++	if (!conf->checker_timeout)
++		sysfs_get_timeout(pp->sysdev, &(c->timeout));
+ 	state = checker_check(c);
+ 	condlog(3, "%s: state = %i", pp->dev, state);
+ 	if (state == PATH_DOWN && strlen(checker_message(c)))
+Index: multipath-tools/libmultipath/propsel.c
+===================================================================
+--- multipath-tools.orig/libmultipath/propsel.c
++++ multipath-tools/libmultipath/propsel.c
+@@ -16,6 +16,7 @@
+ #include "defaults.h"
+ #include "devmapper.h"
+ #include "prio.h"
++#include "discovery.h"
+ 
+ pgpolicyfn *pgpolicies[] = {
+ 	NULL,
+@@ -274,17 +275,31 @@ select_checker(struct path *pp)
+ 		checker_get(c, pp->hwe->checker_name);
+ 		condlog(3, "%s: path checker = %s (controller setting)",
+ 			pp->dev, checker_name(c));
+-		return 0;
++		goto out;
+ 	}
+ 	if (conf->checker_name) {
+ 		checker_get(c, conf->checker_name);
+ 		condlog(3, "%s: path checker = %s (config file default)",
+ 			pp->dev, checker_name(c));
+-		return 0;
++		goto out;
+ 	}
+ 	checker_get(c, DEFAULT_CHECKER);
+ 	condlog(3, "%s: path checker = %s (internal default)",
+ 		pp->dev, checker_name(c));
++out:
++	if (conf->checker_timeout) {
++		c->timeout = conf->checker_timeout * 1000;
++		condlog(3, "%s: checker timeout = %u ms (config file default)",
++				pp->dev, c->timeout);
++	}
++	else if (sysfs_get_timeout(pp->sysdev, &c->timeout) == 0)
++		condlog(3, "%s: checker timeout = %u ms (sysfs setting)",
++				pp->dev, c->timeout);
++	else {
++		c->timeout = DEF_TIMEOUT;
++		condlog(3, "%s: checker timeout = %u ms (internal default)",
++				pp->dev, c->timeout);
++	}
+ 	return 0;
+ }
+ 
+Index: multipath-tools/multipath.conf.annotated
+===================================================================
+--- multipath-tools.orig/multipath.conf.annotated
++++ multipath-tools/multipath.conf.annotated
+@@ -202,6 +202,15 @@
+ #	gid disk
+ #
+ #	#
++#	# name    : checker_timeout
++#	# scope   : multipath & multipathd
++#	# desc    : The timeout to use for path checkers that issue scsi
++#	#           commands with an explicit timeout, in seconds.
++#	# values  : n > 0
++#	# default : taken from /sys/block/sd<x>/device/timeout
++#	checker_timeout 60
++#
++#	#
+ #	# name    : fast_io_fail_tmo
+ #	# scope   : multipath & multipathd
+ #	# desc    : The number of seconds the scsi layer will wait after a
+Index: multipath-tools/libmultipath/discovery.h
+===================================================================
+--- multipath-tools.orig/libmultipath/discovery.h
++++ multipath-tools/libmultipath/discovery.h
+@@ -36,6 +36,7 @@ int pathinfo (struct path *, vector hwta
+ struct path * store_pathinfo (vector pathvec, vector hwtable,
+ 			      char * devname, int flag);
+ int sysfs_set_scsi_tmo (struct multipath *mpp);
++int sysfs_get_timeout(struct sysfs_device *dev, unsigned int *timeout);
+ 
+ /*
+  * discovery bitmask

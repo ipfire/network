@@ -1,0 +1,325 @@
+---
+ kpartx/bsd.c    |   35 ----------------
+ kpartx/dos.c    |    7 +--
+ kpartx/kpartx.c |  121 +++++++-------------------------------------------------
+ kpartx/kpartx.h |    1 
+ kpartx/sun.c    |   35 ----------------
+ 5 files changed, 24 insertions(+), 175 deletions(-)
+
+Index: multipath-tools/kpartx/bsd.c
+===================================================================
+--- multipath-tools.orig/kpartx/bsd.c
++++ multipath-tools/kpartx/bsd.c
+@@ -50,10 +50,10 @@ int
+ read_bsd_pt(int fd, struct slice all, struct slice *sp, int ns) {
+ 	struct bsd_disklabel *l;
+ 	struct bsd_partition *p;
+-	unsigned int offset = all.start, end;
++	unsigned int offset = all.start;
+ 	int max_partitions;
+ 	char *bp;
+-	int n = 0, i, j;
++	int n = 0;
+ 
+ 	bp = getblock(fd, offset+1);    /* 1 sector suffices */
+ 	if (bp == NULL)
+@@ -79,36 +79,5 @@ read_bsd_pt(int fd, struct slice all, st
+ 			break;
+ 		}
+ 	}
+-	/*
+-	 * Convention has it that the bsd disklabel will always have
+-	 * the 'c' partition spanning the entire disk.
+-	 * So we have to check for contained slices.
+-	 */
+-	for(i = 0; i < n; i++) {
+-		if (sp[i].size == 0)
+-			continue;
+-
+-		end = sp[i].start + sp[i].size;
+-		for(j = 0; j < n; j ++) {
+-			if ( i == j )
+-				continue;
+-			if (sp[j].size == 0)
+-				continue;
+-
+-			if (sp[i].start < sp[j].start) {
+-				if (end > sp[j].start &&
+-				    end < sp[j].start + sp[j].size) {
+-					/* Invalid slice */
+-					fprintf(stderr,
+-						"bsd_disklabel: slice %d overlaps with %d\n", i , j);
+-					sp[i].size = 0;
+-				}
+-			} else {
+-				if (end <= sp[j].start + sp[j].size) {
+-					sp[i].container = j + 1;
+-				}
+-			}
+-		}
+-	}
+ 	return n;
+ }
+Index: multipath-tools/kpartx/dos.c
+===================================================================
+--- multipath-tools.orig/kpartx/dos.c
++++ multipath-tools/kpartx/dos.c
+@@ -16,7 +16,7 @@ is_extended(int type) {
+ }
+ 
+ static int
+-read_extended_partition(int fd, struct partition *ep, int en,
++read_extended_partition(int fd, struct partition *ep,
+ 			struct slice *sp, int ns)
+ {
+ 	struct partition p;
+@@ -53,7 +53,6 @@ read_extended_partition(int fd, struct p
+ 			if (n < ns) {
+ 				sp[n].start = here + le32_to_cpu(p.start_sect);
+ 				sp[n].size = le32_to_cpu(p.nr_sects);
+-				sp[n].container = en + 1;
+ 				n++;
+ 			} else {
+ 				fprintf(stderr,
+@@ -98,7 +97,9 @@ read_dos_pt(int fd, struct slice all, st
+ 			break;
+ 		}
+ 		if (is_extended(p.sys_type)) {
+-			n += read_extended_partition(fd, &p, i, sp+n, ns-n);
++			n += read_extended_partition(fd, &p, sp+n, ns-n);
++			/* hide the extended partition itself */
++			sp[i].size = 2;
+ 		}
+ 	}
+ 	return n;
+Index: multipath-tools/kpartx/kpartx.c
+===================================================================
+--- multipath-tools.orig/kpartx/kpartx.c
++++ multipath-tools/kpartx/kpartx.c
+@@ -185,7 +185,7 @@ get_hotplug_device(void)
+ 
+ int
+ main(int argc, char **argv){
+-	int fd, i, j, m, n, op, off, arg, c, d;
++	int fd, i, j, k, n, op, off, arg;
+ 	struct slice all;
+ 	struct pt *ptp;
+ 	enum action what = LIST;
+@@ -355,49 +355,30 @@ main(int argc, char **argv){
+ 		else
+ 			continue;
+ 
++		/*
++ 		 * test for overlap, as in the case of an extended partition
++ 		 * zero their size to avoid mapping
++ 		 */
++		for (j = 0; j < n; j++) {
++			for (k = j + 1; k < n; k++) {
++				if (slices[k].start > slices[j].start &&
++				    slices[k].start < slices[j].start +
++				    slices[j].size)
++					slices[j].size = 0;
++			}
++		}
++
+ 		switch(what) {
+ 		case LIST:
+-			for (j = 0, c = 0, m = 0; j < n; j++) {
++			for (j = 0; j < n; j++) {
+ 				if (slices[j].size == 0)
+ 					continue;
+-				if (slices[j].container > 0) {
+-					c++;
+-					continue;
+-				}
+-
+-				slices[j].minor = m++;
+ 
+ 				printf("%s%s%d : 0 %" PRIu64 " %s %" PRIu64"\n",
+ 				       mapname, delim, j+1,
+ 				       slices[j].size, device,
+ 				       slices[j].start);
+ 			}
+-			/* Loop to resolve contained slices */
+-			d = c;
+-			while (c) {
+-				for (j = 0; j < n; j++) {
+-					uint64_t start;
+-					int k = slices[j].container - 1;
+-
+-					if (slices[j].size == 0)
+-						continue;
+-					if (slices[j].minor > 0)
+-						continue;
+-					if (slices[j].container == 0)
+-						continue;
+-					slices[j].minor = m++;
+-
+-					start = slices[j].start - slices[k].start;
+-					printf("%s%s%d : 0 %" PRIu64 " /dev/dm-%d %" PRIu64 "\n",
+-					       mapname, delim, j+1,
+-					       slices[j].size,
+-					       slices[k].minor, start);
+-					c--;
+-				}
+-				/* Terminate loop if nothing more to resolve */
+-				if (d == c)
+-					break;
+-			}
+ 
+ 			if (loopcreated && S_ISREG (buf.st_mode)) {
+ 				if (del_loop(device)) {
+@@ -443,16 +424,10 @@ main(int argc, char **argv){
+ 			break;
+ 
+ 		case ADD:
+-			for (j = 0, c = 0; j < n; j++) {
++			for (j = 0; j < n; j++) {
+ 				if (slices[j].size == 0)
+ 					continue;
+ 
+-				/* Skip all contained slices */
+-				if (slices[j].container > 0) {
+-					c++;
+-					continue;
+-				}
+-
+ 				if (safe_sprintf(partname, "%s%s%d",
+ 					     mapname, delim, j+1)) {
+ 					fprintf(stderr, "partname too small\n");
+@@ -493,70 +468,6 @@ main(int argc, char **argv){
+ 					       slices[j].minor, slices[j].size,
+ 					       DM_TARGET, params);
+ 			}
+-			/* Loop to resolve contained slices */
+-			d = c;
+-			while (c) {
+-				for (j = 0; j < n; j++) {
+-					uint64_t start;
+-					int k = slices[j].container - 1;
+-
+-					if (slices[j].size == 0)
+-						continue;
+-
+-					/* Skip all existing slices */
+-					if (slices[j].minor > 0)
+-						continue;
+-
+-					/* Skip all simple slices */
+-					if (slices[j].container == 0)
+-						continue;
+-
+-					/* Check container slice */
+-					if (slices[k].size == 0)
+-						fprintf(stderr, "Invalid slice %d\n",
+-							k);
+-
+-					if (safe_sprintf(partname, "%s%s%d",
+-							 mapname, delim, j+1)) {
+-						fprintf(stderr, "partname too small\n");
+-						exit(1);
+-					}
+-					strip_slash(partname);
+-
+-					start = slices[j].start - slices[k].start;
+-					if (safe_sprintf(params, "%d:%d %" PRIu64,
+-							 slices[k].major,
+-							 slices[k].minor,
+-							 start)) {
+-						fprintf(stderr, "params too small\n");
+-						exit(1);
+-					}
+-
+-					op = (dm_map_present(partname) ?
+-					      DM_DEVICE_RELOAD : DM_DEVICE_CREATE);
+-
+-					dm_addmap(op, partname, DM_TARGET, params,
+-						  slices[j].size, uuid, j+1,
+-						  buf.st_mode & 0777,
+-						  buf.st_uid, buf.st_gid);
+-
+-					if (op == DM_DEVICE_RELOAD)
+-						dm_simplecmd(DM_DEVICE_RESUME,
+-							     partname, 1);
+-
+-					dm_devn(partname, &slices[j].major,
+-						&slices[j].minor);
+-
+-					if (verbose)
+-						printf("add map %s : 0 %" PRIu64 " %s %s\n",
+-						       partname, slices[j].size,
+-						       DM_TARGET, params);
+-					c--;
+-				}
+-				/* Terminate loop */
+-				if (d == c)
+-					break;
+-			}
+ 			break;
+ 
+ 		default:
+Index: multipath-tools/kpartx/kpartx.h
+===================================================================
+--- multipath-tools.orig/kpartx/kpartx.h
++++ multipath-tools/kpartx/kpartx.h
+@@ -24,7 +24,6 @@
+ struct slice {
+ 	uint64_t start;
+ 	uint64_t size;
+-	int container;
+ 	int major;
+ 	int minor;
+ };
+Index: multipath-tools/kpartx/sun.c
+===================================================================
+--- multipath-tools.orig/kpartx/sun.c
++++ multipath-tools/kpartx/sun.c
+@@ -62,8 +62,8 @@ int
+ read_sun_pt(int fd, struct slice all, struct slice *sp, int ns) {
+ 	struct sun_disk_label *l;
+ 	struct sun_raw_part *s;
+-	unsigned int offset = all.start, end;
+-	int i, j, n;
++	unsigned int offset = all.start;
++	int i, n;
+ 	char *bp;
+ 
+ 	bp = getblock(fd, offset);
+@@ -95,37 +95,6 @@ read_sun_pt(int fd, struct slice all, st
+ 			break;
+ 		}
+ 	}
+-	/*
+-	 * Convention has it that the SUN disklabel will always have
+-	 * the 'c' partition spanning the entire disk.
+-	 * So we have to check for contained slices.
+-	 */
+-	for(i = 0; i < SUN_DISK_MAXPARTITIONS; i++) {
+-		if (sp[i].size == 0)
+-			continue;
+-
+-		end = sp[i].start + sp[i].size;
+-		for(j = 0; j < SUN_DISK_MAXPARTITIONS; j ++) {
+-			if ( i == j )
+-				continue;
+-			if (sp[j].size == 0)
+-				continue;
+-
+-			if (sp[i].start < sp[j].start) {
+-				if (end > sp[j].start &&
+-				    end < sp[j].start + sp[j].size) {
+-					/* Invalid slice */
+-					fprintf(stderr,
+-						"sun_disklabel: slice %d overlaps with %d\n", i , j);
+-					sp[i].size = 0;
+-				}
+-			} else {
+-				if (end <= sp[j].start + sp[j].size) {
+-					sp[i].container = j + 1;
+-				}
+-			}
+-		}
+-	}
+ 	return n;
+ }
+ 
