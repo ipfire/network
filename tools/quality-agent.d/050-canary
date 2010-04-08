@@ -14,10 +14,13 @@ function check() {
 		fi
 
 		if ! has_canary ${file}; then
-			log_error "  Has no canary: ${file}"
+			log_warning "  Has no canary: ${file}"
 			failed=1
 		fi
 	done
+
+	# This is currently disabled and will only return a warning !
+	failed=0
 
 	return ${failed}
 }
