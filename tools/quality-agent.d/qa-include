@@ -26,6 +26,10 @@ function log_info() {
 	log "INFO" "$@"
 }
 
+function log_warning() {
+	log "WARNING" "$@"
+}
+
 if [ -z "${BUILDROOT}" ]; then
 	echo "${0##*/}: ERROR: BUILDROOT is not set." >&2
 	exit 1
@@ -75,6 +79,7 @@ function run() {
 	error_message=$(check)
 	ret=$?
 
+	[ -z "${error_message}" ] && \
 	[ "${ret}" = "0" ] && return 0
 
 	print_description
