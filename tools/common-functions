@@ -29,6 +29,12 @@ has_nx() {
 	[ $? != 0 ]
 }
 
+is_elf() {
+	local file=${1}
+
+	file ${file} | grep -q "ELF"
+}
+
 is_relro_partly() {
 	local file=${1}
 
@@ -49,6 +55,12 @@ is_shared_object() {
 	local file=${1}
 
 	file ${file} | grep -q "shared object"
+}
+
+is_static() {
+	local file=${1}
+
+	file ${file} | grep -q "statically linked"
 }
 
 get_interpreter() {
@@ -77,6 +89,12 @@ get_soname() {
 
 	readelf -d ${file} | grep SONAME | \
 		tr -d "[]" | awk '{ print $NF }'
+}
+
+filter_startfiles() {
+	local file=${1}
+
+	grep -qE "crt[1in]\.o$" <<<${file}
 }
 
 find_requires() {
@@ -111,8 +129,8 @@ find_elf_files() {
 	local files
 
 	for dir in ${dirs}; do
-		for file in $(find ${dir} -maxdepth 1 -type f 2>/dev/null); do
-			if file ${file} | grep -q "ELF"; then
+		for file in $(find ${dir} -type f 2>/dev/null); do
+			if is_elf ${file} && ! is_static ${file}; then
 				files="${files} ${file}"
 			fi
 		done
