@@ -9,7 +9,7 @@ for file in ${BUILDROOT}/{bin,lib,sbin}/*; do
 	log "  ${file}"
 
 	interpreter=$(get_interpreter ${file})
-	if [ ! -e "${BUILDROOT}${interpreter}" ]; then
+	if [ ! -e "${interpreter}" ]; then
 		log "  SKIPPED because interpreter is not available"
 		continue
 	fi
