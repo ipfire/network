@@ -130,7 +130,7 @@ find_elf_files() {
 
 	for dir in ${dirs}; do
 		for file in $(find ${dir} -type f 2>/dev/null); do
-			if is_elf ${file} && ! is_static ${file}; then
+			if is_elf ${file} && is_shared_object ${file} && ! is_static ${file}; then
 				files="${files} ${file}"
 			fi
 		done
