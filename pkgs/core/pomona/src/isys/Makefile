@@ -20,41 +20,31 @@
 
 include ../Makefile.inc
 
-CFLAGS +=  -I$(PYTHONINCLUDE) -I/usr/include -I.. -I.
+OBJECTS = isys.o mount.o
 
-OBJECTS = devices.o imount.o smp.o linkdetect.o \
-	lang.o isofs.o vio.o eddsupport.o str.o \
-	wireless.o ethtool.o
+CFLAGS += -I$(PYTHONINCLUDE)
+LDFLAGS =
+LIBS =
 
-SOBJECTS = $(patsubst %.o,%.lo,$(OBJECTS))
-SOURCES = $(patsubst %.o,%.c,$(OBJECTS)) isys.c
-LOADLIBES = -lpci -lpopt -lext2fs -lz -lpci -lblkid
-PYMODULES = _isys.so
+all: depend _isys.so
 
-all: depend $(PYMODULES) libisys.a
+depend: $(patsubst %.o,%.c,$(OBJECTS))
+	$(CPP) -M $(CFLAGS) $(patsubst %.o,%.c,$(OBJECTS)) > depend
 
-%.lo: %.c
-	$(CC) -c $(CFLAGS) -fPIC -o $@ $<
+%.o: %.c
+	$(CC) -c $(CFLAGS) -o $@ $<
 
-_isys.so: isys.lo $(SOBJECTS)
-	$(CC) -shared -g -fPIC -o $@ isys.lo $(SOBJECTS) $(LOADLIBES) $(LDFLAGS)
+_isys.so: $(OBJECTS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $(OBJECTS)
 
-libisys.a: libisys.a($(OBJECTS))
-
-filtertest: filtertest.o libisys.a
+install: _isys.so isys.py
+	cp -vf _isys.so isys.py $(PYTHONLIBDIR)
 
 clean:
-	rm -f *.o *.so *.lo *.a *.pyc $(TARGET) $(SOBJECTS)
-	rm -f $(OBJECTS)
-	rm -f depend
+	rm -vf $(OBJECTS) depend _isys.so *.py[co]
 
-install: all
-	-mkdir -p $(PYTHONLIBDIR)
-	install -s $(PYMODULES) $(PYTHONLIBDIR)
-	install -m 644 isys.py $(PYTHONLIBDIR)
-
-depend:
-	$(CPP) -M $(CFLAGS) $(SOURCES) > depend
+test: _isys.so
+	python -c "import isys"
 
 ifeq (depend,$(wildcard depend))
 include depend
