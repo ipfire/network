@@ -9,6 +9,10 @@ function check() {
 
 	local file
 	for file in $(find_elf_files ${BINARY_PATHS}); do
+		if filter_startfiles ${file}; then
+			continue
+		fi
+
 		if ! has_canary ${file}; then
 			log_warning "  Has no canary: ${file}"
 			failed=1

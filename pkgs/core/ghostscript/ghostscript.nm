@@ -56,6 +56,8 @@ PKG_TARBALL    = $(THISAPP).tar.bz2
 CONFIGURE_OPTIONS += \
 		--without-omni
 
+PARALLELISMFLAGS = # Disable this
+
 define STAGE_INSTALL_CMDS
 	chown -v root:root $(BUILDROOT)/usr/share/ghostscript/8.70/Resource/Font/*
 endef

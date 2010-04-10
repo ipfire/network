@@ -24,18 +24,20 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = openlldp
-PKG_VER        = 0.3alpha
+PKG_NAME       = lldpd
+PKG_VER        = 0.5.0
 PKG_REL        = 0
 
 PKG_MAINTAINER =
 PKG_GROUP      = Networking/Tools
-PKG_URL        = http://openlldp.sourceforge.net/
+PKG_URL        = https://trac.luffy.cx/lldpd/
 PKG_LICENSE    = GPL
 PKG_SUMMARY    = Utilities for the Link Layer Discovery Protocol.
 
+PKG_DEPS      += net-snmp
+
 define PKG_DESCRIPTION
-	The OpenLLDP project aims to provide a comprehensive implementation of \
+	The LLDPD project aims to provide a comprehensive implementation of \
 	the IEEE standard 802.1AB Link Layer Discovery Protocol.
 endef
 

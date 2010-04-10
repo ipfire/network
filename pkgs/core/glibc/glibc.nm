@@ -46,12 +46,12 @@ define PKG_DESCRIPTION
 	Linux system will not function.
 endef
 
-PKG_BUILD_DEPS = # Has got no dependencies
+PKG_DEPS = # Has got no dependencies
 
-CFLAGS         = -O2 -fomit-frame-pointer -pipe -DPIC -fno-strict-aliasing \
-					-mno-tls-direct-seg-refs -D_FORTIFY_SOURCE=2 \
-					-fstack-protector-all
-CXXFLAGS       = $(CFLAGS)
+GLIBC_FLAGS += -DPIC -fno-strict-aliasing -mno-tls-direct-seg-refs
+
+CFLAGS   += $(GLIBC_FLAGS)
+CXXFLAGS += $(GLIBC_FLAGS)
 
 OPTIMIZED_KERNEL = 2.6.18
 
@@ -143,10 +143,6 @@ define STAGE_PREPARE
 	# $(TOOLS_DIR):
 	cd $(DIR_APP) && sed -e "/^install.*pt_chown/d" -i login/Makefile
 
-	# ldconfig is statically linked, so don't build it PIC:
-	cd $(DIR_APP) && sed "s/CFLAGS-ldconfig.c =/& -fno-PIC -fno-PIE/" \
-		-i elf/Makefile
-
 	# Build nscd with -fstack-protector-all, instead of -fstack-protector:
 	cd $(DIR_APP) && sed -e "s/fstack-protector/&-all/" -i nscd/Makefile
 
@@ -167,6 +163,10 @@ define STAGE_PREPARE
 	# Copy our customized SUPPORTED file to build localization files
 	# only for supported languages
 	cp -vf $(DIR_SOURCE)/SUPPORTED.locales $(DIR_APP)/localedata/SUPPORTED
+
+	# Use gnu hash style
+	cd $(DIR_APP) && sed -i Makeconfig \
+		-e "s/-Wl,--hash-style=both/-Wl,--hash-style=gnu -Wl,-O1/"
 endef
 
 define STAGE_BUILD
@@ -177,8 +177,6 @@ define STAGE_BUILD
 	# (rngd). This version of Glibc uses high precision timing with SSP, so the
 	# canary value changes at run-time. This is not as good as /dev/urandom, but
 	# it's better than nothing and has very good performance.
-
-	cd $(DIR_APP) && sed 's/-nostdlib/& -fno-stack-protector/g' -i.orig configure
 
 	cd $(DIR_SRC)/glibc-build && \
 		CFLAGS= \
@@ -204,13 +202,12 @@ define STAGE_BUILD
 		>> $(DIR_SRC)/glibc-build/configparms
 
 	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS) \
-		CFLAGS="-O2 -DPIC -fno-stack-protector -U_FORTIFY_SOURCE" \
-		CXXFLAGS="-O2 -DPIC -fno-stack-protector -U_FORTIFY_SOURCE"
+		CFLAGS="$(CFLAGS) -fno-stack-protector -U_FORTIFY_SOURCE" \
+		CXXFLAGS="$(CXXFLAGS) -fno-stack-protector -U_FORTIFY_SOURCE"
 
 	# Then build the programs with hardening, so everything possible in
 	# $(TOOLS_DIR) is hardened:
-	echo "CFLAGS   = $(CFLAGS)"   >  $(DIR_SRC)/glibc-build/configparms
-	echo "CXXFLAGS = $(CXXFLAGS)" >> $(DIR_SRC)/glibc-build/configparms
+	echo "# Nothing in here :D" >  $(DIR_SRC)/glibc-build/configparms
 	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS) \
 		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)"
 endef

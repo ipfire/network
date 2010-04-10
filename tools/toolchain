@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. $(dirname ${0})/common-functions
+
 case "${1}" in
 	adjust)
 		TARGET_PATH=${2}
@@ -47,10 +49,26 @@ case "${1}" in
 		TARGET=${2}
 		COMPRESS_PATH=${3}
 
-		# TODO: stripping/remove unneeded files
-		rm -rf ${COMPRESS_PATH}/{info,man,share/{doc,info,locale,man}}
+		target=$(mktemp)
 
-		cd ${COMPRESS_PATH} && tar --posix -czf ${TARGET} *
+		# Remove unneeded files
+		rm -rf ${COMPRESS_PATH}/{info,man,share/{doc,info,locale,man}}
+		rm -rf ${COMPRESS_PATH}/usr/src/*
+
+		# Strip all files
+		for file in $(find_elf_files ${COMPRESS_PATH}); do
+			strip --strip-debug ${file}
+		done
+
+		# Strip executeable files
+		for file in $(find_elf_files ${COMPRESS_PATH}/bin ${COMPRESS_PATH}/*/bin); do
+			strip --stip-all ${file}
+		done
+
+		cd ${COMPRESS_PATH} && tar --posix -czf ${target} -p -S * || exit 1
+
+		cat ${target} > ${TARGET}
+		rm -f ${target}
 		;;
 
 	extract)
