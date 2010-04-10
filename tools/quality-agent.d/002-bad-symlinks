@@ -9,6 +9,10 @@ log_debug "Search for absolute symlinks"
 
 failed=0
 for link in $(find ${BUILDROOT} -type l); do
+	if fgrep -q "/lib/udev/devices" <<<${link}; then
+		continue
+	fi
+
 	destination=$(readlink ${link})
 	if [ "${destination:0:1}" = "/" ]; then
 		log_error "  absolute symlink: ${link}"
