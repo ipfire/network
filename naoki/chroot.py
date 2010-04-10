@@ -522,7 +522,7 @@ class Generator(Environment):
 				"less", "module-init-tools", "procps", "sed", "sysvinit",
 				"udev", "util-linux-ng", "which", "dvdrtools", "kernel", 
 				"squashfs-tools", "syslinux", "zlib",],
-			"installer" : ["kernel", "pomona", "upstart",],
+			"installer" : ["initscripts", "kernel", "pomona", "upstart"],
 		}
 		_package_infos = backend.parse_package_info(_packages[type])
 
