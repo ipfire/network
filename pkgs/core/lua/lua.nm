@@ -34,6 +34,7 @@ PKG_URL        = http://www.lua.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = Powerful light-weight programming language.
 
+PKG_BUILD_DEPS+= autoconf automake libtool
 PKG_DEPS      += ncurses readline
 
 define PKG_DESCRIPTION
@@ -52,6 +53,7 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && chmod u+x autogen.sh config.guess config.sub configure \
 		depcomp install-sh missing
+	cd $(DIR_APP) && sh autogen.sh
 endef
 
 define STAGE_BUILD
@@ -61,8 +63,8 @@ define STAGE_BUILD
 			--mandir=/usr/share/man \
 			--with-readline
 
-	cd $(DIR_APP) && sed -e 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
-		 -e 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' -i libtool
+	$(DO_FIX_LIBTOOL)
+
 	# hack so that only /usr/bin/lua gets linked with readline as it is the
 	# only one which needs this and otherwise we get License troubles
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) LIBS="-ldl" luac_LDADD="liblua.la -lm -ldl"
