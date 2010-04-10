@@ -35,8 +35,8 @@ PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = The IPFire 3.x installer.
 
 PKG_BUILD_DEPS+= pychecker
-PKG_DEPS      += e2fsprogs parted pciutils popt \
-	pyfire python python-dbus python-parted
+PKG_DEPS      += e2fsprogs initscripts libuser newt parted pciutils popt \
+	pyfire python python-dbus python-parted python-pyblock syslog-ng udev
 
 define PKG_DESCRIPTION
 	Pomona is the installer for IPFire 3.x.
