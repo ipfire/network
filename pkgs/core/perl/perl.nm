@@ -50,11 +50,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-define QUALITY_AGENT_WHITELIST_RPATH
-	/usr/lib/perl*/auto/Time/HiRes/HiRes.so
-	/usr/lib/perl*/auto/Compress/Raw/Zlib/Zlib.so
-endef
-
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i 's/command /command[ -]/' makedepend.SH
 endef
