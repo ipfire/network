@@ -145,3 +145,16 @@ listsort() {
 		echo "${item}"
 	done | sort -u | tr "\n" " "
 }
+
+listmatch() {
+	local arg=${1}
+	shift
+
+	local item
+	for item in $@; do
+		if [ "${arg}" = "${item}" ]; then
+			return 0
+		fi
+	done
+	return 1
+}
