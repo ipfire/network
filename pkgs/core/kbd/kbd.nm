@@ -34,8 +34,6 @@ PKG_URL        = http://ftp.altlinux.org/pub/people/legion/kbd
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Tools for configuring the console (keyboard, virtual terminals, etc.).
 
-PKG_BUILD_DEPS+= autoconf automake
-
 define PKG_DESCRIPTION
 	The kbd package contains tools for managing a Linux \
 	system's console's behavior, including the keyboard, the screen \
@@ -56,9 +54,6 @@ define STAGE_PREPARE_CMDS
 	# Adding our own fonts
 	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/kbd-latsun-fonts.tar.bz2
 	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/kbd-latarcyrheb-16-fixed.tar.bz2
-
-	cd $(DIR_APP) && autoreconf --force --install
-	cd $(DIR_APP) && sed -i "s/ifdef OPTIONAL_PROGS/ifeq (\$$(OPTIONAL_PROGS),yes)/" man/Makefile.in
 endef
 
 define STAGE_INSTALL
