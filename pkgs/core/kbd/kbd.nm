@@ -46,19 +46,13 @@ PKG_OBJECTS   += kbd-latsun-fonts.tar.bz2
 
 CONFIGURE_OPTIONS += --datadir=/lib/kbd
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_PREPARE_CMDS
 	# Adding our own fonts
 	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/kbd-latsun-fonts.tar.bz2
 	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/kbd-latarcyrheb-16-fixed.tar.bz2
 endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/bin
 	mv -v $(BUILDROOT)/usr/bin/{kbd_mode,loadkeys,openvt,setfont} $(BUILDROOT)/bin
 endef
