@@ -24,33 +24,32 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = pdns
-PKG_VER        = 2.9.22
+PKG_NAME       = arpwatch
+PKG_VER        = 2.1a15
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Networking/DNS
-PKG_URL        = http://powerdns.com/
-PKG_LICENSE    = GPLv2
-PKG_SUMMARY    = A modern, advanced and high performance authoritative-only nameserver.
+PKG_GROUP      = Networking/Tools
+PKG_URL        = http://ee.lbl.gov/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = Tools for monitoring ethernet activity.
 
-PKG_DEPS      += boost openldap sqlite zlib
+PKG_DEPS      += libpcap
 
 define PKG_DESCRIPTION
-	The PowerDNS Nameserver is a modern, advanced and high performance \
-	authoritative-only nameserver. It is written from scratch and conforms \
-	to all relevant DNS standards documents. \
-	Furthermore, PowerDNS interfaces with almost any database.
+	This package contains arpwatch and arpsnmp, tools \
+	that monitor ethernet or fddi activity and maintain a database of \
+	ethernet/ip address pairings. It also reports certain changes via \
+	email.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-export CPPFLAGS = -DLDAP_DEPRECATED
-
-PARALLELISMFLAGS =
-
-CONFIGURE_OPTIONS += \
-	--sysconfdir=/etc/pdns \
-	--libdir=/usr/lib/powerdns \
-	--with-modules="" \
-	--with-dynmodules="pipe geo ldap gsqlite3"
+define STAGE_INSTALL
+	-mkdir -pv $(BUILDROOT)/usr/sbin
+	cd $(DIR_APP) && install -m 755 arpwatch $(BUILDROOT)/usr/sbin
+	cd $(DIR_APP) && install -m 755 arpsnmp $(BUILDROOT)/usr/sbin
+	-mkdir -pv $(BUILDROOT)/usr/share/man/man8
+	cd $(DIR_APP) && cp -vf arpwatch.8 $(BUILDROOT)/usr/share/man/man8
+	cd $(DIR_APP) && cp -vf arpsnmp.8 $(BUILDROOT)/usr/share/man/man8
+endef
