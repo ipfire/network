@@ -34,8 +34,8 @@ PKG_URL        = http://www.openldap.org/
 PKG_LICENSE    = OpenLDAP
 PKG_SUMMARY    = LDAP support libraries.
 
-PKG_BUILD_DEPS+= libtool groff
-PKG_DEPS      += db cyrus-sasl openssl pth
+PKG_BUILD_DEPS+= groff
+PKG_DEPS      += db cyrus-sasl libtool openssl pth
 
 define PKG_DESCRIPTION
 	OpenLDAP is an open source suite of LDAP (Lightweight Directory Access \
