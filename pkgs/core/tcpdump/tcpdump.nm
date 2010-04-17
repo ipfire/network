@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = tcpdump
-PKG_VER        = 4.0.0
+PKG_VER        = 4.1.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -46,3 +46,7 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 CFLAGS        += -fno-strict-aliasing
+
+CONFIGURE_OPTIONS += \
+	--with-crypto \
+	--without-smi
