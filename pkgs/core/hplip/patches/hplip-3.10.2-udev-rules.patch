@@ -1,0 +1,17 @@
+diff -up hplip-3.10.2/data/rules/56-hpmud_support.rules.udev-rules hplip-3.10.2/data/rules/56-hpmud_support.rules
+--- hplip-3.10.2/data/rules/56-hpmud_support.rules.udev-rules	2010-03-01 11:21:01.049740484 +0000
++++ hplip-3.10.2/data/rules/56-hpmud_support.rules	2010-03-01 11:21:07.288609454 +0000
+@@ -7,8 +7,9 @@ SUBSYSTEM!="usb_device", GOTO="hpmud_rul
+ LABEL="pid_test"
+ 
+ # Check for LaserJet products (0x03f0xx17).
+-SYSFS{idVendor}=="03f0", SYSFS{idProduct}=="??17", ENV{hp_model}="$sysfs{product}", ENV{hp_test}="yes"
++ENV{ID_USB_INTERFACES}=="", IMPORT{program}="usb_id --export %p"
++ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="??17", ENV{hp_model}="$attr{product}", ENV{hp_test}="yes"
+ 
+-ENV{hp_test}=="yes", RUN+="bin/sh -c '/usr/bin/hp-mkuri -c &'"
++ENV{hp_test}=="yes", RUN+="/bin/sh -c '/usr/bin/hp-mkuri -c &'"
+ 
+-LABEL="hpmud_rules_end"
+\ No newline at end of file
++LABEL="hpmud_rules_end"
