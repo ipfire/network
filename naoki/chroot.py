@@ -209,22 +209,15 @@ class Environment(object):
 		os.umask(prevMask)
 
 	def _setupUsers(self):
-		## XXX Could be done better
 		self.log.debug("Creating users")
-		f = open("/etc/passwd")
-		g = open(self.chrootPath("etc", "passwd"), "w")
-		for line in f.readlines():
-			if line.startswith("root") or line.startswith("nobody"):
-				g.write("%s" % line)
-		g.close()
+		f = open(self.chrootPath("etc", "passwd"), "w")
+		f.write("root:x:0:0:root:/root:/bin/bash\n")
+		f.write("nobody:x:99:99:Nobody:/:/sbin/nologin\n")
 		f.close()
 
-		f = open("/etc/group")
-		g = open(self.chrootPath("etc", "group"), "w")
-		for line in f.readlines():
-			if line.startswith("root") or line.startswith("nobody"):
-				g.write("%s" % line)
-		g.close()
+		f = open(self.chrootPath("etc", "group"), "w")
+		f.write("root:x:0:root\n")
+		f.write("nobody:x:99:\n")
 		f.close()
 
 	def _setupDns(self):
