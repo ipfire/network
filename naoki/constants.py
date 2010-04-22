@@ -3,6 +3,7 @@
 import ConfigParser
 import math
 import os
+import socket
 
 BASEDIR = os.getcwd()
 
@@ -25,6 +26,8 @@ PATCHESDIR = os.path.join(CACHEDIR, "patches")
 CONFIGFILE = os.path.join(CONFIGDIR, "naoki.conf")
 
 CHROOT_PATH = "/sbin:/bin:/usr/sbin:/usr/bin"
+
+LOG_MARKER = "### LOG MARKER ###"
 
 def calc_parallelism():
 	"""
@@ -67,6 +70,16 @@ class Config(object):
 		# Logging
 		"log_config_file" : os.path.join(CONFIGDIR, "logging.ini"),
 		"log_file"        : os.path.join(LOGDIR, "naoki.log"),
+		#
+		# Reporting
+		"error_report_recipient" : None,
+		"error_report_sender" : "buildsystem@%s" % socket.gethostname(),
+		"error_report_subject" : "[NAOKI] %(id)s got a build failure",
+		#
+		# SMTP
+		"smtp_server" : None,
+		"smtp_user" : None,
+		"smtp_password" : None,
 	}
 
 	def __init__(self):

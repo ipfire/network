@@ -333,6 +333,8 @@ class PackageEnvironment(Environment):
 		Environment.__init__(self, naoki=package.naoki, *args, **kwargs)
 
 	def build(self):
+		self.log.debug(LOG_MARKER)
+
 		self.package.download()
 
 		# Save start time
@@ -343,6 +345,7 @@ class PackageEnvironment(Environment):
 		except Error:
 			if config["cleanup_on_failure"]:
 				self.clean()
+			backend.report_error_by_mail(self.package)
 			raise
 
 		time_end = time.time()
