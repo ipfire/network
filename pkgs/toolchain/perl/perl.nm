@@ -13,7 +13,6 @@ define STAGE_BUILD
 	cd $(DIR_APP) && \
 		$(DIR_APP)/Configure \
 			-Dprefix=$(TOOLS_DIR) \
-			-Dstatic_ext="Data/Dumper Fcntl IO POSIX" \
 			-d -e -s
 
 	cd $(DIR_APP) && make perl utilities ext/Errno/pm_to_blib #$(PARALLELISMFLAGS)
