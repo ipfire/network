@@ -24,29 +24,32 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = tcpdump
-PKG_VER        = 4.1.1
+PKG_NAME       = pcapy
+PKG_VER        = 0.10.5
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Networking/Sniffer
-PKG_URL        = http://www.tcpdump.org/
-PKG_LICENSE    = BSD with advertising
-PKG_SUMMARY    = A network traffic monitoring tool.
+PKG_GROUP      = Development/Languages
+PKG_URL        = http://oss.coresecurity.com/projects/pcapy.html
+PKG_LICENSE    = ASL 1.1
+PKG_SUMMARY    = A Python interface to libpcap.
 
-PKG_DEPS      += libpcap openssl
+PKG_DEPS      += libpcap python
 
 define PKG_DESCRIPTION
-	Tcpdump is a command-line tool for monitoring network traffic. \
-	Tcpdump can capture and display the packet headers on a particular \
-	network interface or on all interfaces.  Tcpdump can display all of \
-	the packet headers, or just the ones that match particular criteria.
+	Pcapy is a Python extension module that interfaces with the libpcap \
+	packet capture library. Pcapy enables python scripts to capture packets \
+	on the network. Pcapy is highly effective when used in conjunction with \
+	a packet-handling package such as Impacket, which is a collection of \
+	Python classes for constructing and dissecting network packets.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CFLAGS        += -fno-strict-aliasing
+define STAGE_BUILD
+	cd $(DIR_APP) && python setup.py build
+endef
 
-CONFIGURE_OPTIONS += \
-	--with-crypto \
-	--without-smi
+define STAGE_INSTALL
+	cd $(DIR_APP) && python setup.py install -O1 --skip-build --root $(BUILDROOT)
+endef

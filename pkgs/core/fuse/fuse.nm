@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = fuse
-PKG_VER        = 2.7.4
+PKG_VER        = 2.8.3
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -33,6 +33,8 @@ PKG_GROUP      = System/Filesystems
 PKG_URL        = http://fuse.sf.net/
 PKG_LICENSE    = GPL+
 PKG_SUMMARY    = File System in Userspace (FUSE) utilities.
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 define PKG_DESCRIPTION
 	With FUSE it is possible to implement a fully functional \
@@ -43,7 +45,8 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
-	--disable-kernel-module
+	--disable-static \
+	--disable-rpath
 
 define STAGE_INSTALL_CMDS
 	rm -vrf $(BUILDROOT)/etc/init.d

@@ -46,6 +46,7 @@ define PKG_FILES_$(PKG_NAME_REAL)-devel
 	*/lib/*.so
 endef
 
+PKG_BUILD_DEPS += kernel-headers
 PKG_DEPS += glibc
 
 CONFIGURE_OPTIONS = --prefix=/usr
