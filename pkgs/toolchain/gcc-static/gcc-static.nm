@@ -4,16 +4,19 @@ PKG_TOOLCHAIN_DEPS += binutils-static
 include ../../core/gcc/gcc.nm
 
 GMP  = gmp-5.0.1
+MPC  = mpc-0.8.1
 MPFR = mpfr-2.4.2
 
-PKG_OBJECTS += $(GMP).tar.bz2 $(MPFR).tar.bz2
+PKG_OBJECTS += $(GMP).tar.bz2 $(MPC).tar.gz $(MPFR).tar.bz2
 
 define STAGE_PREPARE_CMDS
 	-mkdir -pv $(DIR_SRC)/gcc-build
 
 	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/$(GMP).tar.bz2
+	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/$(MPC).tar.gz
 	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/$(MPFR).tar.bz2
 	cd $(DIR_APP) && ln -svf $(GMP) gmp
+	cd $(DIR_APP) && ln -svf $(MPC) mpc
 	cd $(DIR_APP) && ln -svf $(MPFR) mpfr
 endef
 
@@ -43,7 +46,7 @@ define STAGE_BUILD
 			--disable-multilib \
 			--disable-shared \
 			--disable-nls \
-			--enable-espf \
+			--enable-esp \
 			$(CONFIGURE_ARGS)
 
 	cd $(DIR_SRC)/gcc-build && make #$(PARALLELISMFLAGS)
