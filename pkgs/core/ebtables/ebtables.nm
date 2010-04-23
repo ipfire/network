@@ -45,8 +45,7 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 CFLAGS += -Wall
 
 define QUALITY_AGENT_WHITELIST_RPATH
-	/sbin/ebtables-restore \
-	/sbin/ebtables
+	/lib/ebtables
 endef
 
 define STAGE_BUILD

@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = kbd
-PKG_VER        = 1.15.1
+PKG_VER        = 1.15.2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -33,8 +33,6 @@ PKG_GROUP      = System/Base
 PKG_URL        = http://ftp.altlinux.org/pub/people/legion/kbd
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Tools for configuring the console (keyboard, virtual terminals, etc.).
-
-PKG_BUILD_DEPS+= autoconf automake
 
 define PKG_DESCRIPTION
 	The kbd package contains tools for managing a Linux \
@@ -48,22 +46,13 @@ PKG_OBJECTS   += kbd-latsun-fonts.tar.bz2
 
 CONFIGURE_OPTIONS += --datadir=/lib/kbd
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_PREPARE_CMDS
 	# Adding our own fonts
 	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/kbd-latsun-fonts.tar.bz2
 	cd $(DIR_APP) && $(DO_EXTRACT) $(DIR_DL)/kbd-latarcyrheb-16-fixed.tar.bz2
-
-	cd $(DIR_APP) && autoreconf --force --install
-	cd $(DIR_APP) && sed -i "s/ifdef OPTIONAL_PROGS/ifeq (\$$(OPTIONAL_PROGS),yes)/" man/Makefile.in
 endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/bin
 	mv -v $(BUILDROOT)/usr/bin/{kbd_mode,loadkeys,openvt,setfont} $(BUILDROOT)/bin
 endef

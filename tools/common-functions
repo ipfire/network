@@ -130,7 +130,7 @@ find_elf_files() {
 
 	for dir in ${dirs}; do
 		for file in $(find ${dir} -type f 2>/dev/null); do
-			if is_elf ${file} && ! is_static ${file}; then
+			if is_elf ${file} && is_shared_object ${file} && ! is_static ${file}; then
 				files="${files} ${file}"
 			fi
 		done
@@ -144,4 +144,17 @@ listsort() {
 	for item in $@; do
 		echo "${item}"
 	done | sort -u | tr "\n" " "
+}
+
+listmatch() {
+	local arg=${1}
+	shift
+
+	local item
+	for item in $@; do
+		if [ "${arg}" = "${item}" ]; then
+			return 0
+		fi
+	done
+	return 1
 }

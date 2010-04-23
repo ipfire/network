@@ -26,11 +26,11 @@ import sys, os, string, py_compile
 files = '''$files'''
 print 'Byte-compiling python modules...'
 for file in string.split(files):
-    if not os.path.exists(path) or not (len(path) >= 3 and path[-3:] == '.py'):
+    if not os.path.exists(file) or not (len(file) >= 3 and file[-3:] == '.py'):
         continue
     print file,
     sys.stdout.flush()
-    py_compile.compile(path)
+    py_compile.compile(file)
 print" || exit $?
 
 # this will fail for python < 1.5, but that doesn't matter ...
@@ -40,9 +40,9 @@ import sys, os, string, py_compile
 files = '''$files'''
 print 'Byte-compiling python modules (optimised versions) ...'
 for file in string.split(files):
-    if not os.path.exists(path) or not (len(path) >= 3 and path[-3:] == '.py'):
+    if not os.path.exists(file) or not (len(file) >= 3 and file[-3:] == '.py'):
         continue
     print file,
     sys.stdout.flush()
-    py_compile.compile(path)
+    py_compile.compile(file)
 print" 2>/dev/null || :

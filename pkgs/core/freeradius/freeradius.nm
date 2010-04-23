@@ -48,9 +48,7 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
 define QUALITY_AGENT_WHITELIST_RPATH
-	/usr/bin/*
-	/usr/sbin/*
-	/usr/lib/freeradius/*
+	/usr/lib/freeradius
 endef
 
 define STAGE_BUILD

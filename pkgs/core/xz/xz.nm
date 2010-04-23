@@ -45,22 +45,3 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-define QUALITY_AGENT_WHITELIST_RPATH
-	/usr/bin/xz \
-	/usr/bin/lzmadec \
-	/usr/bin/xzdec
-endef
-
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--disable-static
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef

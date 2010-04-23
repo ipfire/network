@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = libpcap
-PKG_VER        = 1.0.0-5.20091201git117cb5
+PKG_VER        = 1.1.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,7 +34,7 @@ PKG_URL        = http://www.tcpdump.org/
 PKG_LICENSE    = BSD with advertising
 PKG_SUMMARY    = A system-independent interface for user-level packet capture.
 
-PKG_BUILD_DEPS+= bison flex
+PKG_BUILD_DEPS+= bison flex libnl
 
 define PKG_DESCRIPTION
 	Libpcap provides a portable framework for low-level network \
@@ -48,14 +48,7 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-define STAGE_PREPARE_CMDS
-	# Overwrite version
-	cd $(DIR_APP) && echo "1.0.0" > VERSION
-endef
-
 define STAGE_INSTALL
 	-mkdir -pv $(BUILDROOT)/usr/bin
 	cd $(DIR_APP) && make install install-shared-so DESTDIR=$(BUILDROOT)
-	ln -svf libpcap.so.1.0.0 $(BUILDROOT)/usr/lib/libpcap.so.1
-	ln -svf libpcap.so.1 $(BUILDROOT)/usr/lib/libpcap.so
 endef

@@ -8,18 +8,6 @@ DESC="Searching for RPATHs. We don't want paths that point to the tree where \
 	finds null paths."
 
 check() {
-	for i in $QUALITY_AGENT_WHITELIST_RPATH; do
-		if [ -n "$FILTER" ]; then
-			FILTER="$FILTER|$i"
-		else
-			FILTER="$i"
-		fi
-	done
-	
-	if [ -n "$FILTER" ]; then
-		log_debug "  Filter: $FILTER"
-	fi
-
 	local failed=0
 
 	local file
@@ -31,7 +19,10 @@ check() {
 
 		rpath=$(get_rpath ${file})
 		if [ -n "${rpath}" ]; then
-			log_error "  File has rpath: ${file} - ${rpath}"
+			if listmatch ${rpath} ${QUALITY_AGENT_WHITELIST_RPATH}; then
+				continue
+			fi
+			log_error "  File has unallowed rpath: ${file} - ${rpath}"
 			failed=1
 		fi
 	done

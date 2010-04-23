@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = perl
-PKG_VER        = 5.10.1
+PKG_VER        = 5.12.0
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -51,8 +51,8 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 define QUALITY_AGENT_WHITELIST_RPATH
-	/usr/lib/perl*/auto/Time/HiRes/HiRes.so
-	/usr/lib/perl*/auto/Compress/Raw/Zlib/Zlib.so
+	/lib
+	/usr/lib
 endef
 
 define STAGE_PREPARE_CMDS
@@ -63,7 +63,7 @@ define STAGE_BUILD
 	cd $(DIR_APP) && sed -i -e "s|BUILD_ZLIB\s*= True|BUILD_ZLIB = False|" \
 							-e "s|INCLUDE\s*= ./zlib-src|INCLUDE = /usr/include|" \
 							-e "s|LIB\s*= ./zlib-src|LIB = /usr/lib|" \
-							ext/Compress-Raw-Zlib/config.in
+							cpan/Compress-Raw-Zlib/config.in
 
 	cd $(DIR_APP) && ./configure.gnu -Dprefix=/usr \
 		-Dman1dir=/usr/share/man/man1 \
@@ -76,4 +76,3 @@ endef
 define STAGE_TEST
 	cd $(DIR_APP) && make test
 endef
-
