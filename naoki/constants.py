@@ -27,6 +27,8 @@ CONFIGFILE = os.path.join(CONFIGDIR, "naoki.conf")
 
 CHROOT_PATH = "/sbin:/bin:/usr/sbin:/usr/bin"
 
+LOCK_BATCH = os.path.join(BUILDDIR, ".batch")
+
 LOG_MARKER = "### LOG MARKER ###"
 
 def calc_parallelism():

@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import ConfigParser
+import fcntl
 import os.path
 import random
 import sys
@@ -323,6 +324,17 @@ Release       : %(release)s
 		return gen.run()
 
 	def call_batch(self, args):
+                try:
+                        self._lock = open(LOCK_BATCH, "a+")
+                except IOError, e:
+                        return 0
+
+                try:
+                        fcntl.lockf(self._lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except IOError, e:
+                        print >>sys.stderr, "Batch operations are locked by another process"
+			return 0
+
 		actionmap = {
 			"cron" : self.call_batch_cron,
 		}
