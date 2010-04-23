@@ -1,7 +1,10 @@
 #!/usr/bin/python
 
+import email.mime.multipart
+import email.mime.text
 import os
 import shutil
+import smtplib
 import urlgrabber
 import urlgrabber.progress
 import urllib
@@ -259,6 +262,7 @@ class PackageInfo(object):
 			"fingerprint" : self.fingerprint,
 			"files"       : self.package_files,
 			"group"       : self.group,
+			"id"          : self.id,
 			"license"     : self.license,
 			"maintainer"  : self.maintainer,
 			"name"        : self.name,
@@ -553,3 +557,81 @@ class BinaryRepository(object):
 	@property
 	def path(self):
 		return os.path.join(REPOSDIR, self.name, self.arch["name"])
+
+def report_error_by_mail(package):
+	log = package.naoki.log
+
+	# Do not send a report if no recipient is configured
+	if not config["error_report_recipient"]:
+		return
+
+	try:
+		connection = smtplib.SMTP(config["smtp_server"])
+		#connection.set_debuglevel(1)
+
+		if config["smtp_user"] and config["smtp_password"]:
+			connection.login(config["smtp_user"], config["smtp_password"])
+
+	except SMTPConnectError, e:
+		log.error("Could not establish a connection to the smtp server: %s" % e)
+		return
+	except SMTPAuthenticationError, e:
+		log.error("Could not successfully login to the smtp server: %s" % e)
+		return
+
+	msg = email.mime.multipart.MIMEMultipart()
+	msg["From"] = config["error_report_sender"]
+	msg["To"] = config["error_report_recipient"]
+	msg["Subject"] = config["error_report_subject"] % package.all
+	msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
+
+	body = """\
+The package %(name)s had a difficulty to build itself.
+This email will give you a short report about the error.
+
+Package information:
+  Name    : %(name)s - %(summary)s
+  Version : %(version)s
+  Release : %(release)s
+
+  This package in maintained by %(maintainer)s.
+
+
+A detailed logfile is attached.
+
+Sincerely,
+    Naoki
+	""" % package.all
+
+	msg.attach(email.mime.text.MIMEText(body))
+
+	# Read log and append it to mail
+	logfile = os.path.join(LOGDIR, package.id + ".log")
+	if os.path.exists(logfile):
+		log = []
+		f = open(logfile)
+		line = f.readline()
+		while line:
+			line = line.rstrip("\n")
+			if line.endswith(LOG_MARKER):
+				# Reset log
+				log = []
+
+			log.append(line)
+			line = f.readline()
+
+		f.close()
+
+	log = email.mime.text.MIMEText("\n".join(log), _subtype="plain")
+	log.add_header('Content-Disposition', 'attachment',
+		filename="%s.log" % package.id)
+	msg.attach(log)
+
+	try:
+		connection.sendmail(config["error_report_sender"],
+			config["error_report_recipient"], msg.as_string())
+	except Exception, e:
+		log.error("Could not send error report: %s: %s" % (e.__class__.__name__, e))
+		return
+
+	connection.quit()
