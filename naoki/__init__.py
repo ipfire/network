@@ -2,6 +2,7 @@
 
 import ConfigParser
 import os.path
+import random
 import sys
 import time
 
@@ -42,6 +43,7 @@ class Naoki(object):
 			"shell" : self.call_shell,
 			"repository" : self.call_repository,
 			"generate" : self.call_generate,
+			"batch" : self.call_batch,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -319,3 +321,39 @@ Release       : %(release)s
 
 		gen = chroot.Generator(self, arches.current, args.type)
 		return gen.run()
+
+	def call_batch(self, args):
+		actionmap = {
+			"cron" : self.call_batch_cron,
+		}
+
+		return actionmap[args.action.name](args.action)
+
+	def call_batch_cron(self, args):
+		packages = []
+		packages_must = []
+		packages_may = []
+		for package in backend.parse_package_info(backend.get_package_names()):
+			if not package.built and package.buildable:
+				packages_must.append(package)
+				continue
+
+			if package.buildable:
+				packages_may.append(package)
+
+		packages += packages_must
+
+		while len(packages) < 10 and packages_may:
+			package = random.choice(packages_may)
+			packages_may.remove(package)
+			packages.append(package)
+
+		random.shuffle(packages)
+
+		# Bad hack because we lack a _build method
+		args.packages = [p.name for p in packages]
+		args.onlydeps = False
+		args.withdeps = False
+		args.shell = False
+
+		self.call_build(args)
