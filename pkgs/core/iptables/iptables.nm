@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = iptables
-PKG_VER        = 1.4.5
+PKG_VER        = 1.4.7
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -33,8 +33,6 @@ PKG_GROUP      = Networking/Tools
 PKG_URL        = http://www.netfilter.org/
 PKG_LICENSE    = GPL+
 PKG_SUMMARY    = Tools for managing Linux kernel packet filtering capabilities.
-
-#PKG_DEPS      += m4
 
 define PKG_DESCRIPTION
 	The iptables utility controls the network packet filtering code in the \
@@ -76,11 +74,12 @@ define STAGE_INSTALL_CMDS
 		$(BUILDROOT)/usr/include/libiptc
 
 	-mkdir -pv $(BUILDROOT)/usr/lib
-	rm -vf $(BUILDROOT)/lib/libip{,4,6}tc.so $(BUILDROOT)/lib/libxtables.so
+	rm -vf $(BUILDROOT)/lib/libip{tc,4tc,6tc,q}.so $(BUILDROOT)/lib/libxtables.so
 	ln -svf ../../lib/libiptc.so.0 $(BUILDROOT)/usr/lib/libiptc.so
 	ln -svf ../../lib/libip4tc.so.0 $(BUILDROOT)/usr/lib/libip4tc.so
 	ln -svf ../../lib/libip6tc.so.0 $(BUILDROOT)/usr/lib/libip6tc.so
-	ln -svf ../../lib/libxtables.so.2 $(BUILDROOT)/usr/lib/libxtables.so
+	ln -svf ../../lib/libipq.so.0 $(BUILDROOT)/usr/lib/libipq.so
+	ln -svf ../../lib/libxtables.so.4 $(BUILDROOT)/usr/lib/libxtables.so
 
 	# Replace absolute symlink
 	ln -svf ../sbin/iptables-multi $(BUILDROOT)/bin/iptables-xml
