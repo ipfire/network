@@ -34,7 +34,7 @@ PKG_URL        = https://trac.luffy.cx/lldpd/
 PKG_LICENSE    = GPL
 PKG_SUMMARY    = Utilities for the Link Layer Discovery Protocol.
 
-PKG_DEPS      += net-snmp
+PKG_DEPS      += libxml2
 
 define PKG_DESCRIPTION
 	The LLDPD project aims to provide a comprehensive implementation of \
@@ -42,3 +42,6 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+	--with-xml
