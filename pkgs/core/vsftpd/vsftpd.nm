@@ -52,8 +52,8 @@ define STAGE_BUILD
 endef
 
 define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/usr/bin/vsftpd
-	cd $(DIR_APP) && install -v -m 755 vsftpd $(BUILDROOT)/usr/bin/vsftpd
+	-mkdir -pv $(BUILDROOT)/usr/bin
+	cd $(DIR_APP) && install -v -m 755 vsftpd $(BUILDROOT)/usr/bin
 	-mkdir -pv $(BUILDROOT)/usr/share/man/man8
 	cd $(DIR_APP) && install -v -m 644 vsftpd.8 $(BUILDROOT)/usr/share/man/man8
 	-mkdir -pv $(BUILDROOT)/usr/share/man/man5
