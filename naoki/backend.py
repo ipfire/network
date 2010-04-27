@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-import email.mime.multipart
-import email.mime.text
+
 import os
 import shutil
 import smtplib
@@ -19,6 +18,15 @@ __cache = {
 	"package_names" : None,
 	"group_names" : None,
 }
+
+# Python 2.4 does not have that email module, so
+# we disable the mail function here.
+try:
+	import email.mime.multipart
+	import email.mime.text
+	have_email = 1
+except ImportError:
+	have_email = 0
 
 try:
 	import hashlib
@@ -563,6 +571,10 @@ def report_error_by_mail(package):
 
 	# Do not send a report if no recipient is configured
 	if not config["error_report_recipient"]:
+		return
+
+	if not have_email:
+		log.error("Can't send mail because this python version does not support this")
 		return
 
 	try:
