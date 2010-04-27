@@ -1,0 +1,9 @@
+description             "Very secure FTP daemon"
+author                  "IPFire Team"
+
+start on started network
+stop on stopping network
+
+exec /usr/sbin/vsftpd
+expect daemon
+respawn
