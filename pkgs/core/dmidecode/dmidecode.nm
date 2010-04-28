@@ -1,0 +1,55 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = dmidecode
+PKG_VER        = 2.10
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Applications/System
+PKG_URL        = http://www.nongnu.org/dmidecode/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Tool to analyse BIOS DMI data.
+
+define PKG_DESCRIPTION
+	dmidecode reports information about x86 & ia64 hardware as described \
+	in the system BIOS according to the SMBIOS/DMI standard. This \
+	information typically includes system manufacturer, model name, \
+	serial number, BIOS version, asset tag as well as a lot of other \
+	details of varying level of interest and reliability depending on the \
+	manufacturer. 
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+define STAGE_BUILD
+	$(DO_FIX_LIBTOOL)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install-bin install-man prefix=/usr DESTDIR=$(BUILDROOT)
+endef
