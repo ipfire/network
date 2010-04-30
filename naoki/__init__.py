@@ -343,22 +343,19 @@ Release       : %(release)s
 
 	def call_batch_cron(self, args):
 		packages = []
-		packages_must = []
 		packages_may = []
 		for package in backend.parse_package_info(backend.get_package_names()):
 			if not package.built and package.buildable:
-				packages_must.append(package)
+				packages.append(package)
 				continue
 
 			# If package was altered since last build
 			if package.last_change >= package.last_build:
-				packages_must.append(package)
+				packages.append(package)
 				continue
 
 			if package.buildable:
 				packages_may.append(package)
-
-		packages += packages_must
 
 		packages_may = sorted(packages_may, key=lambda p: p.last_build)
 
