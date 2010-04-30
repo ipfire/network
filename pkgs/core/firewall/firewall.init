@@ -2,7 +2,7 @@ description		"Starts the firewall"
 author			"IPFire Team"
 
 start on starting network
-stop on stopped network
+stop on stopped network or starting reboot
 
 pre-start script
 	firewall start
