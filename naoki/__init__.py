@@ -350,17 +350,21 @@ Release       : %(release)s
 				packages_must.append(package)
 				continue
 
+			# If package was altered since last build
+			if package.last_change >= package.last_build:
+				packages_must.append(package)
+				continue
+
 			if package.buildable:
 				packages_may.append(package)
 
 		packages += packages_must
 
-		while len(packages) < 10 and packages_may:
-			package = random.choice(packages_may)
-			packages_may.remove(package)
-			packages.append(package)
+		packages_may = sorted(packages_may, key=lambda p: p.last_build)
 
-		random.shuffle(packages)
+		while len(packages) < 10 and packages_may:
+			package = packages_may.pop(0)
+			packages.append(package)
 
 		# Bad hack because we lack a _build method
 		args.packages = [p.name for p in packages]

@@ -353,7 +353,7 @@ class PackageInfo(object):
 
 	@property
 	def fingerprint(self):
-		return "%d" % os.stat(self.filename).st_mtime
+		return "%d" % self.last_change
 
 	@property
 	def group(self):
@@ -362,6 +362,18 @@ class PackageInfo(object):
 	@property
 	def id(self):
 		return "%s-%s-%s" % (self.name, self.version, self.release)
+
+	@property
+	def last_build(self):
+		file = os.path.join(PACKAGESDIR, self.package_files[0])
+		if not os.path.exists(file):
+			return 0
+
+		return os.stat(file).st_mtime
+
+	@property
+	def last_change(self):
+		return os.stat(self.filename).st_mtime
 
 	@property
 	def license(self):
