@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = qemu-kvm
-PKG_VER        = 0.12.2
+PKG_VER        = 0.12.3
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -49,7 +49,6 @@ define QUALITY_AGENT_WHITELIST_EXECSTACK
 endef
 
 CONFIGURE_OPTIONS += \
-	--prefix=/usr \
 	--enable-kvm \
 	--disable-strip \
 	--disable-xen
