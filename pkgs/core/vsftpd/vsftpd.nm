@@ -43,10 +43,7 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
-CFLAGS +=-Wall -W -Wshadow -fstack-protector -fpie -Wextra -Werror
+CFLAGS += -Wall -W -Wshadow -fstack-protector -fpie -Wextra -Werror
 
 define STAGE_BUILD
 	cd $(DIR_APP) && make CFLAGS='$(CFLAGS)' $(PARALLELISMFLAGS)
