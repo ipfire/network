@@ -4,7 +4,7 @@
 
 log "Check for binaries in /bin or /sbin that link to /usr/..."
 
-for file in ${BUILDROOT}/{bin,lib,sbin}/*; do
+for file in $(find ${BUILDROOT}/{bin,lib,sbin}/* 2>/dev/null); do
 	[ -f "${file}" ] || continue
 	log "  ${file}"
 
