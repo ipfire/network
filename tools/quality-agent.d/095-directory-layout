@@ -11,7 +11,7 @@ function check() {
 
 	local dir
 	for dir in ${DIRS}; do
-		if [ -d "${dir}" ]; then
+		if [ -d "${BUILDROOT}${dir}" ]; then
 			log_error "Bad directory: ${dir}"
 			failed=1
 		fi
