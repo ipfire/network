@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = vsftpd
-PKG_VER        = 2.2.1
+PKG_VER        = 2.2.2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -43,12 +43,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+CFLAGS += -Wall -W -Wshadow -fstack-protector -fpie -Wextra -Werror
 
 define STAGE_BUILD
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make CFLAGS='$(CFLAGS)' $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
