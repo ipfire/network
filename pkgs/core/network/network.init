@@ -2,7 +2,7 @@ description		"Control the networking"
 author			"IPFire Team"
 
 start on stopped mountfs
-stop on starting shutdown
+stop on starting shutdown or starting reboot
 
 pre-start script
 	network start
