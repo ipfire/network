@@ -44,6 +44,8 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
+CFLAGS        := $(filter-out -pipe,$(CFLAGS))
+
 define QUALITY_AGENT_WHITELIST_EXECSTACK
 	/usr/share/qemu/openbios*
 endef
