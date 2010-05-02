@@ -46,9 +46,17 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
+	--libdir=/lib \
 	--libexecdir=/usr/lib \
 	--mandir=/usr/share/man
 
 define STAGE_TEST
 	cd $(DIR_APP) && make check
+endef
+
+define STAGE_INSTALL_CMDS
+	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
+
+	rm -vf $(BUILDROOT)/lib/libdbus-glib-1.so
+	ln -svf ../../lib/libdbus-glib-1.so.2 $(BUILDROOT)/usr/lib/libdbus-glib-1.so
 endef
