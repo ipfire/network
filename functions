@@ -461,6 +461,8 @@ function hook_list() {
 	local type=${1}
 	local hook
 	for hook in ${HOOKS_DIR}/*; do
+		[ -x "${hook}" ] || continue
+
 		hook=${hook##*/}
 		
 		[[ ${hook} =~ helper$ ]] && continue
