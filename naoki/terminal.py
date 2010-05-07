@@ -258,6 +258,7 @@ class Commandline(object):
 		self.naoki.logging.quiet(args.quiet)
 
 		# Set debugging mode
+		config.debug = args.debug
 		self.naoki.logging.debug(args.debug)
 
 		# Set architecture
@@ -376,6 +377,13 @@ class Commandline(object):
 							arguments=[
 								List("names", help="List of repositories"),
 							]),
+					]),
+
+				# Generator
+				Parser("generate",
+					help="Generator command",
+					arguments=[
+						Argument("type", help="Type of image to generate"),
 					]),
 			])
 

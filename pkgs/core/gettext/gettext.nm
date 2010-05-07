@@ -52,3 +52,9 @@ endef
 PKG_BUILD_DEPS+= autoconf automake
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+	--disable-static \
+	--enable-shared \
+	--disable-rpath
+

@@ -46,4 +46,6 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 CONFIGURE_OPTIONS += \
 	--mandir=/usr/share
 
-# This package doesn't have a testsuite.
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef

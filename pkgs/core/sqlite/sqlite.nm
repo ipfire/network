@@ -55,6 +55,7 @@ define STAGE_BUILD
 	cd $(DIR_SRC)/sqlite-build && \
 		$(DIR_APP)/configure \
 			--prefix=/usr \
+			--enable-threadsafe \
 			--disable-tcl
 
 	cd $(DIR_SRC)/sqlite-build && make $(PARALLELISMFLAGS)

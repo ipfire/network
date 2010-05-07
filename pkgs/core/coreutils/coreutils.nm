@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = coreutils
-PKG_VER        = 8.4
+PKG_VER        = 8.5
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -39,7 +39,7 @@ define PKG_DESCRIPTION
 	the old GNU fileutils, sh-utils, and textutils packages.
 endef
 
-PKG_BUILD_DEPS+= autoconf automake
+PKG_BUILD_DEPS+= autoconf automake e2fsprogs
 PKG_DEPS      += acl attr libcap ncurses pam shadow util-linux-ng
 
 PKG_TARBALL    = $(THISAPP).tar.gz

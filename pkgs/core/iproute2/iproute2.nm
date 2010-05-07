@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = iproute2
-PKG_VER        = 2.6.29-1
+PKG_VER        = 2.6.33
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -44,10 +44,6 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
-
-###############################################################################
-# Installation Details
-###############################################################################
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i -e "s@DESTDIR=.*@DESTDIR=@" \

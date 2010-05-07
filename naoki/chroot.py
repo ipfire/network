@@ -5,6 +5,7 @@ import grp
 import logging
 import os
 import random
+import shutil
 import stat
 import time
 
@@ -48,6 +49,7 @@ class Environment(object):
 		dirs = (
 			CACHEDIR,
 			CCACHEDIR,
+			IMAGESDIR,
 			PACKAGESDIR,
 			self.chrootPath("bin"),
 			self.chrootPath("etc"),
@@ -59,6 +61,7 @@ class Environment(object):
 			self.chrootPath("tools_%s" % self.arch["name"]),
 			self.chrootPath("usr/src/cache"),
 			self.chrootPath("usr/src/ccache"),
+			self.chrootPath("usr/src/images"),
 			self.chrootPath("usr/src/packages"),
 			self.chrootPath("usr/src/pkgs"),
 			self.chrootPath("usr/src/src"),
@@ -145,8 +148,6 @@ class Environment(object):
 		return env
 
 	def doChroot(self, command, shell=True, *args, **kwargs):
-		self.init()
-
 		ret = None
 		try:
 			env = self.environ
@@ -208,22 +209,15 @@ class Environment(object):
 		os.umask(prevMask)
 
 	def _setupUsers(self):
-		## XXX Could be done better
 		self.log.debug("Creating users")
-		f = open("/etc/passwd")
-		g = open(self.chrootPath("etc", "passwd"), "w")
-		for line in f.readlines():
-			if line.startswith("root") or line.startswith("nobody"):
-				g.write("%s" % line)
-		g.close()
+		f = open(self.chrootPath("etc", "passwd"), "w")
+		f.write("root:x:0:0:root:/root:/bin/bash\n")
+		f.write("nobody:x:99:99:Nobody:/:/sbin/nologin\n")
 		f.close()
 
-		f = open("/etc/group")
-		g = open(self.chrootPath("etc", "group"), "w")
-		for line in f.readlines():
-			if line.startswith("root") or line.startswith("nobody"):
-				g.write("%s" % line)
-		g.close()
+		f = open(self.chrootPath("etc", "group"), "w")
+		f.write("root:x:0:root\n")
+		f.write("nobody:x:99:\n")
 		f.close()
 
 	def _setupDns(self):
@@ -286,8 +280,10 @@ class Environment(object):
 			"umount -n %s" % self.chrootPath("sys"),
 			"umount -n %s" % self.chrootPath("usr", "src", "cache"),
 			"umount -n %s" % self.chrootPath("usr", "src", "ccache"),
+			"umount -n %s" % self.chrootPath("usr", "src", "images"),
 			"umount -n %s" % self.chrootPath("usr", "src", "packages"),
 			"umount -n %s" % self.chrootPath("usr", "src", "pkgs"),
+			"umount -n %s" % self.chrootPath("usr", "src", "src"),
 			"umount -n %s" % self.chrootPath("usr", "src", "tools"),
 			"umount -n %s" % self.chrootPath("dev", "pts"),
 			"umount -n %s" % self.chrootPath("dev", "shm")
@@ -302,8 +298,10 @@ class Environment(object):
 			"mount -n -t sysfs naoki_chroot_sysfs %s" % self.chrootPath("sys"),
 			"mount -n --bind %s %s" % (CACHEDIR, self.chrootPath("usr", "src", "cache")),
 			"mount -n --bind %s %s" % (CCACHEDIR, self.chrootPath("usr", "src", "ccache")),
+			"mount -n --bind %s %s" % (IMAGESDIR, self.chrootPath("usr", "src", "images")),
 			"mount -n --bind %s %s" % (PACKAGESDIR, self.chrootPath("usr", "src", "packages")),
 			"mount -n --bind %s %s" % (PKGSDIR, self.chrootPath("usr", "src", "pkgs")),
+			"mount -n --bind %s %s" % (os.path.join(BASEDIR, "src"), self.chrootPath("usr", "src", "src")),
 			"mount -n --bind %s %s" % (TOOLSDIR, self.chrootPath("usr", "src", "tools")),
 		]
 
@@ -328,6 +326,8 @@ class PackageEnvironment(Environment):
 		Environment.__init__(self, naoki=package.naoki, *args, **kwargs)
 
 	def build(self):
+		self.log.debug(LOG_MARKER)
+
 		self.package.download()
 
 		# Save start time
@@ -338,6 +338,7 @@ class PackageEnvironment(Environment):
 		except Error:
 			if config["cleanup_on_failure"]:
 				self.clean()
+			backend.report_error_by_mail(self.package)
 			raise
 
 		time_end = time.time()
@@ -483,3 +484,53 @@ class Toolchain(object):
 
 
 		os.symlink(destination, link)
+
+
+class Generator(Environment):
+	def __init__(self, naoki, arch, type):
+		self.type = type
+		Environment.__init__(self, naoki, arch)
+
+	def chrootPath(self, *args):
+		return os.path.join(BUILDDIR, "generators", self.type, self.arch["name"], *args)
+
+	def run(self):
+		self.init()
+
+		# Extracting installer packages
+		util.mkdir(self.chrootPath("installer"))
+
+		for package in self.get_packages("installer"):
+			package.extract(self.chrootPath("installer"))
+
+		all_package_files = []
+		for package in self.get_packages("all"):
+			all_package_files.extend(package.package_files)
+
+		self.doChroot("/usr/src/tools/generator %s" % self.type,
+			env={"ALL_PACKAGES" : " ".join(all_package_files)})
+
+	def get_packages(self, type):
+		_packages = {
+			"all" : backend.get_package_names(),
+			"build" : [ "arping", "bash", "coreutils", "cpio", "curl",
+				"dhcp", "findutils", "grep", "iproute2", "iputils", "kbd",
+				"less", "module-init-tools", "procps", "sed", "sysvinit",
+				"udev", "util-linux-ng", "which", "dvdrtools", "kernel", 
+				"squashfs-tools", "syslinux", "zlib",],
+			"installer" : ["initscripts", "kernel", "pomona", "upstart"],
+		}
+		_package_infos = backend.parse_package_info(_packages[type])
+
+		packages = []
+		for package in backend.depsolve(_package_infos, recursive=True):
+			package = package.getPackage(self.naoki)
+			if not package in packages:
+				packages.append(package)
+
+		return packages
+
+	def extractAll(self):
+		# Extract required tools
+		for package in self.get_packages("build"):
+			package.extract(self.chrootPath())

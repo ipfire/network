@@ -44,9 +44,8 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-# XXX has to be removed
 define QUALITY_AGENT_WHITELIST_RPATH
-	/usr/lib/perl5/site_perl/*/auto/XML/Parser/Expat/Expat.so
+	/lib
 endef
 
 define STAGE_BUILD

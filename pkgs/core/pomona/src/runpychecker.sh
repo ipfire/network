@@ -39,8 +39,8 @@ fi
 
 export PYTHONPATH="isys"
 
-FILES=installer.py
-for file in *.py isys/*.py; do FILES="${FILES} ${file}"; done
+#for file in *.py isys/*.py; do FILES="${FILES} ${file}"; done
+FILES=$(find . -name "*.py")
 
 pychecker --only --limit 1000 \
   --maxlines 500 --maxargs 20 --maxbranches 80 --maxlocals 60 --maxreturns 20 \

@@ -3,6 +3,7 @@
 import ConfigParser
 import math
 import os
+import socket
 
 BASEDIR = os.getcwd()
 
@@ -11,6 +12,7 @@ CACHEDIR = os.path.join(BASEDIR, "cache")
 CCACHEDIR = os.path.join(BASEDIR, "ccache")
 CONFIGDIR = os.path.join(BASEDIR, "config")
 DOCDIR = os.path.join(BASEDIR, "doc")
+IMAGESDIR = os.path.join(BUILDDIR, "images")
 LOGDIR = os.path.join(BASEDIR, "logs")
 PKGSDIR = os.path.join(BASEDIR, "pkgs")
 PACKAGESDIR = os.path.join(BUILDDIR, "packages")
@@ -24,6 +26,10 @@ PATCHESDIR = os.path.join(CACHEDIR, "patches")
 CONFIGFILE = os.path.join(CONFIGDIR, "naoki.conf")
 
 CHROOT_PATH = "/sbin:/bin:/usr/sbin:/usr/bin"
+
+LOCK_BATCH = os.path.join(BUILDDIR, ".batch")
+
+LOG_MARKER = "### LOG MARKER ###"
 
 def calc_parallelism():
 	"""
@@ -53,6 +59,7 @@ class Config(object):
 		"cleanup_on_success" : True,
 		#
 		# CLI variables
+		"debug" : False,
 		"quiet" : False,
 		#
 		# Distro items
@@ -65,6 +72,16 @@ class Config(object):
 		# Logging
 		"log_config_file" : os.path.join(CONFIGDIR, "logging.ini"),
 		"log_file"        : os.path.join(LOGDIR, "naoki.log"),
+		#
+		# Reporting
+		"error_report_recipient" : None,
+		"error_report_sender" : "buildsystem@%s" % socket.gethostname(),
+		"error_report_subject" : "[NAOKI] %(id)s got a build failure",
+		#
+		# SMTP
+		"smtp_server" : None,
+		"smtp_user" : None,
+		"smtp_password" : None,
 	}
 
 	def __init__(self):
@@ -93,9 +110,15 @@ class Config(object):
 	def __setitem__(self, item, value):
 		self._items[item] = value
 
+	def __getattr__(self, *args):
+		return self.__getitem__(*args)
+
+	def __setattr__(self, *args):
+		return self.__setitem__(*args)
+
 	@property
 	def environment(self):
-		return {
+		ret = {
 			"HOME"           : os.environ.get("HOME", "/root"),
 			"TERM"           : os.environ.get("TERM", ""),
 			"PS1"            : os.environ.get("PS1", "\u:\w\$ "),
@@ -108,6 +131,11 @@ class Config(object):
 			#
 			"PARALLELISMFLAGS" : "-j%d" % self["parallelism"],
 		}
+
+		if self["debug"]:
+			ret["NAOKI_DEBUG"] = "1"
+
+		return ret
 
 
 class Architectures(object):

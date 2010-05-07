@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = ebtables
-PKG_VER        = v2.0.9-1
+PKG_VER        = v2.0.9-2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -42,11 +42,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CFLAGS        += -fno-stack-protector # XXX Why do we need this?
+CFLAGS += -Wall
 
 define QUALITY_AGENT_WHITELIST_RPATH
-	/sbin/ebtables-restore \
-	/sbin/ebtables
+	/lib/ebtables
 endef
 
 define STAGE_BUILD

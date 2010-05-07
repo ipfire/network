@@ -1,8 +1,0 @@
-description		"Starts the OpenLLDP Daemon"
-author			"IPFire Team"
-
-start on started network
-stop on stopping network
-
-exec /usr/sbin/lldpd
-respawn

@@ -54,6 +54,13 @@ define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/usr/lib
 	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
 
+	#change the arch-deps.h include directory to /usr/lib instead of /lib
+	sed -e 's@-I$${libdir}@-I$${prefix}/lib@' -i $(BUILDROOT)/usr/lib/pkgconfig/dbus-1.pc
+
+	-mkdir -pv $(BUILDROOT)/usr/lib/dbus-1.0/include
+	mv -v $(BUILDROOT)/lib/dbus-1.0/include/* $(BUILDROOT)/usr/lib/dbus-1.0/include
+	rm -rvf $(BUILDROOT)/lib/dbus-1.0
+
 	rm -vf $(BUILDROOT)/lib/libdbus-1.so
 	ln -svf ../../lib/libdbus-1.so.3 $(BUILDROOT)/usr/lib/libdbus-1.so
 endef

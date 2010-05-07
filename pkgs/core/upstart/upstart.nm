@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = upstart
-PKG_VER        = 0.6.5
+PKG_VER        = 0.6.6
 PKG_REL        = 0
 
 PKG_MAINTAINER = Stefan Schantl <stefan.schantl@ipfire.org>
@@ -35,7 +35,7 @@ PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = An event-driven init system.
 
 PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += dbus libnih
+PKG_DEPS      += dbus libnih sysvinit
 
 define PKG_DESCRIPTION
 	Upstart is an event-based replacement for the /sbin/init daemon \

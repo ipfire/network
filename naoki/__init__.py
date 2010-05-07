@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
 import ConfigParser
+import fcntl
 import os.path
+import random
 import sys
 import time
 
@@ -41,6 +43,8 @@ class Naoki(object):
 			"source" : self.call_source,
 			"shell" : self.call_shell,
 			"repository" : self.call_repository,
+			"generate" : self.call_generate,
+			"batch" : self.call_batch,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -69,7 +73,7 @@ class Naoki(object):
 		return toolchain.download()
 
 	def call_toolchain_tree(self, args):
-		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True))
+		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True, naoki=self))
 
 	def call_build(self, args):
 		force = True
@@ -124,7 +128,10 @@ class Naoki(object):
 				continue
 
 			if args.shell:
+				environ.init(clean=False)
 				return environ.shell([])
+
+			environ.init()
 
 			environ.build()
 
@@ -308,3 +315,58 @@ Release       : %(release)s
 		for name in args.names:
 			repo = backend.BinaryRepository(name, naoki=self)
 			repo.build()
+
+	def call_generate(self, args):
+		if not args.type in ("iso",):
+			return
+
+		gen = chroot.Generator(self, arches.current, args.type)
+		return gen.run()
+
+	def call_batch(self, args):
+                try:
+                        self._lock = open(LOCK_BATCH, "a+")
+                except IOError, e:
+                        return 0
+
+                try:
+                        fcntl.lockf(self._lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except IOError, e:
+                        print >>sys.stderr, "Batch operations are locked by another process"
+			return 0
+
+		actionmap = {
+			"cron" : self.call_batch_cron,
+		}
+
+		return actionmap[args.action.name](args.action)
+
+	def call_batch_cron(self, args):
+		packages = []
+		packages_may = []
+		for package in backend.parse_package_info(backend.get_package_names()):
+			if not package.built and package.buildable:
+				packages.append(package)
+				continue
+
+			# If package was altered since last build
+			if package.last_change >= package.last_build:
+				packages.append(package)
+				continue
+
+			if package.buildable:
+				packages_may.append(package)
+
+		packages_may = sorted(packages_may, key=lambda p: p.last_build)
+
+		while len(packages) < 10 and packages_may:
+			package = packages_may.pop(0)
+			packages.append(package)
+
+		# Bad hack because we lack a _build method
+		args.packages = [p.name for p in packages]
+		args.onlydeps = False
+		args.withdeps = False
+		args.shell = False
+
+		self.call_build(args)

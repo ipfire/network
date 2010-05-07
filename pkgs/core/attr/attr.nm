@@ -47,7 +47,8 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
 	--bindir=/bin \
-	--enable-shared
+	--enable-shared \
+	--mandir=/usr/share/man
 
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/{,usr/}lib

@@ -11,7 +11,7 @@ define STAGE_BUILD
 		libc_cv_forced_unwind=yes \
 		../$(THISAPP)/configure \
 			--host=$(TARGET) \
-			--build=$$(../$(THISAPP)/scripts/config.guess) \
+			--build=$(TARGET) \
 			--prefix=$(TOOLS_DIR) \
 			--libexecdir=$(TOOLS_DIR)/lib/$(PKG_NAME) \
 			--with-headers=$(TOOLS_DIR)/include \

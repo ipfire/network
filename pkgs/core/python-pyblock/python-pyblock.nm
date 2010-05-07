@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = pyblock
-PKG_VER        = 0.42
+PKG_VER        = 0.46
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -40,15 +40,15 @@ define PKG_DESCRIPTION
 	The pyblock contains Python modules for dealing with block devices.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.gz
-
-DIR_APP = $(DIR_SRC)/$(PKG_NAME)
+PKG_TARBALL    = $(THISAPP).tar.bz2
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -e "s/-Werror//g" -i Makefile
 endef
 
-STAGE_BUILD = # Nothing to do
+define STAGE_BUILD
+	cd $(DIR_APP) && make USESELINUX=0
+endef
 
 define STAGE_INSTALL	
 	cd $(DIR_APP) && make install USESELINUX=0 DESTDIR=$(BUILDROOT)

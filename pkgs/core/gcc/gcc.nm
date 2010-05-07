@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = gcc
-PKG_VER        = 4.4.3
+PKG_VER        = 4.5.0
 PKG_REL        = 0
 
 PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
@@ -40,10 +40,7 @@ define PKG_DESCRIPTION
 endef
 
 PKG_BUILD_DEPS =
-PKG_DEPS      += binutils cloog glibc gmp kernel-headers libffi mpfr ppl
-
-CFLAGS         = -D__USE_XOPEN2K8 -pipe
-CXXFLAGS       =
+PKG_DEPS      += binutils cloog glibc gmp kernel-headers libffi mpc mpfr ppl
 
 ifeq "$(MACHINE)" "i586"
 	CONFIGURE_ARGS = --disable-decimal-float
@@ -99,7 +96,7 @@ define STAGE_BUILD
 			--prefix=/usr \
 			--libexecdir=/usr/lib \
 			--mandir=/usr/share/man \
-			--enable-espf \
+			--enable-esp \
 			--enable-shared \
 			--enable-threads=posix \
 			--enable-__cxa_atexit \

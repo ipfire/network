@@ -13,6 +13,8 @@ define STAGE_BUILD
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
 
+STAGE_TEST = # Disable tests in toolchain
+
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install
 

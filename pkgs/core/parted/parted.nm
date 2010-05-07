@@ -44,3 +44,14 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+	--libdir=/lib
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/usr/lib
+	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
+	rm -rf $(BUILDROOT)/lib/libparted{,-2.1}.so
+	ln -svf ../../lib/libparted-$(PKG_VER).so.0 $(BUILDROOT)/usr/lib/libparted-$(PKG_VER).so
+	ln -svf libparted-$(PKG_VER).so $(BUILDROOT)/usr/lib/libparted.so
+endef

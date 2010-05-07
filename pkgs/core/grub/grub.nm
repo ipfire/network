@@ -46,22 +46,12 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-define QUALITY_AGENT_WHITELIST_EXECSTACK
-	/usr/sbin/grub
-endef
+QUALITY_AGENT_WHITELIST_NX = /usr/bin/*|/usr/sbin/*
 
-#CFLAGS        += -fno-strict-aliasing -fno-stack-protector -fno-pic -fno-pie -nopie
-#CXXFLAGS       =
+CFLAGS        += -fno-strict-aliasing
 
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		grub_cv_prog_objcopy_absolute=yes \
-		./configure \
-			--prefix=/usr \
-			--sysconfdir=/etc
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
+CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)

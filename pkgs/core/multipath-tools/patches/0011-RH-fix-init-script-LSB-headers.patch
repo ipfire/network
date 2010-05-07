@@ -1,0 +1,29 @@
+From 887b0721d29eed45621b5a7fefaf462378cc9dcd Mon Sep 17 00:00:00 2001
+From: Fabio M. Di Nitto <fdinitto@redhat.com>
+Date: Mon, 19 Oct 2009 08:33:07 +0200
+Subject: [PATCH 11/12] RH: fix init script LSB headers
+
+Signed-off-by: Fabio M. Di Nitto <fdinitto@redhat.com>
+---
+:100644 100644 e46b1b8... cfc9cf5... M	multipathd/multipathd.init.redhat
+ multipathd/multipathd.init.redhat |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/multipathd/multipathd.init.redhat b/multipathd/multipathd.init.redhat
+index e46b1b8..cfc9cf5 100644
+--- a/multipathd/multipathd.init.redhat
++++ b/multipathd/multipathd.init.redhat
+@@ -7,6 +7,10 @@
+ 
+ ### BEGIN INIT INFO
+ # Provides: multipathd
++# Required-Start:
++# Required-Stop:
++# Default-Start:
++# Default-Stop:
+ # Short-Description: Control multipathd
+ # Description: This service monitors and manages
+ #              device-mapper multipath devices
+-- 
+1.6.5.1
+

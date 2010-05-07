@@ -1,0 +1,120 @@
+#!/bin/bash -x
+
+BOOTLOADER_DIR=/usr/src/src/bootloader
+IMAGES_DIR=/usr/src/images
+
+MKLIVERAMFS=$(dirname ${0})/mkliveramfs
+
+ISO_FILENAME=${DISTRO_SNAME}-${DISTRO_VERSION}-${TARGET}.iso
+
+install_config() {
+	local src=${1}
+	local dest=${2}
+
+	sed \
+		-e "s/@NAME@/${DISTRO_NAME}/g" \
+		-e "s/@SNAME@/${DISTRO_SNAME}/g" \
+		-e "s/@VERSION@/${DISTRO_VERSION}/g" \
+		-e "s/@SLOGAN@/${DISTRO_SLOGAN}/g" \
+	< ${src} > ${dest}
+}
+
+install_isolinux() {
+	local dest=${1}
+
+	mkdir -p ${dest} 2>/dev/null
+
+	local i
+	for i in isolinux.bin vesamenu.c32; do
+		cp -f /usr/share/syslinux/${i} ${dest}/
+	done
+
+	install_config ${BOOTLOADER_DIR}/installer.conf ${dest}/isolinux.cfg
+	cp -f ${BOOTLOADER_DIR}/{*.msg,splash.*} ${dest}/
+
+	install_kernel ${dest}
+}
+
+install_kernel() {
+	local dest=${1}
+
+	mkdir -p ${dest} 2>/dev/null
+
+	local release
+	local releases
+	for release in /lib/modules/*; do
+		[ ! -d "${release}" ] && continue
+		releases="${releases} $(basename ${release})"
+	done
+	releases=$(echo ${releases})
+
+	# Grab first release
+	release=$(awk '{ print $1 }' <<<${releases})
+
+	if [ -z "${release}" ]; then
+		echo "No kernel image installed" >&2
+		return 1
+	fi
+
+	cp -f /boot/${DISTRO_SNAME}kernel-${release} ${dest}/${DISTRO_SNAME}0
+
+	# Create liveramfs
+	${MKLIVERAMFS} -v --with-net -f ${dest}/initrd0 ${release}
+}
+
+copy_packages() {
+	local dest=${1}
+
+	mkdir -p ${dest} 2>/dev/null
+
+	for i in ${ALL_PACKAGES}; do
+		cp -f /usr/src/packages/${i} ${dest}/
+	done
+}
+
+make_installer() {
+	local dest=${1}
+
+	mkdir -p ${dest} 2>/dev/null
+
+	pushd /installer
+
+	# Copy installer overlay	
+	cp -prf /usr/src/src/install/* .
+
+	rm -rf /installer/usr/include
+
+	for dir in dev proc sys; do
+		mkdir -p ${dir} 2>/dev/null
+	done
+	install -dv -m 1777 tmp var/tmp
+
+	mksquashfs * ${dest}/installer.sfs -no-progress
+
+	popd
+}
+
+## main ##
+
+type=${1}
+
+case "${type}" in
+	iso)
+		mkdir /iso
+		cd /iso
+
+		copy_packages packages
+
+		make_installer /iso
+		install_isolinux /iso/isolinux
+
+		cd /iso && \
+			mkisofs -J -r -V "${DISTRO_NAME}_${DISTRO_VERSION}" \
+				-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot \
+				-boot-load-size 4 -boot-info-table . > ${IMAGES_DIR}/${ISO_FILENAME}
+		;;
+
+	"")
+		exit 1
+		;;
+esac

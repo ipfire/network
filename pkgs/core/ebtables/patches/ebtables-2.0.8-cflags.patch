@@ -1,0 +1,19 @@
+diff -up ebtables-v2.0.8-1/extensions/Makefile.BAD ebtables-v2.0.8-1/extensions/Makefile
+--- ebtables-v2.0.8-1/extensions/Makefile.BAD	2007-08-23 09:52:37.000000000 -0400
++++ ebtables-v2.0.8-1/extensions/Makefile	2007-08-23 09:52:50.000000000 -0400
+@@ -11,13 +11,13 @@ EXT_LIBSI+=$(foreach T,$(EXT_FUNC), -leb
+ EXT_LIBSI+=$(foreach T,$(EXT_TABLES), -lebtable_$(T))
+ 
+ extensions/ebt_%.so: extensions/ebt_%.o
+-	$(CC) -shared -o $@ -lc $< -nostartfiles
++	$(CC) $(CFLAGS) -shared -o $@ -lc $< -nostartfiles
+ 
+ extensions/libebt_%.so: extensions/ebt_%.so
+ 	mv $< $@
+ 
+ extensions/ebtable_%.so: extensions/ebtable_%.o
+-	$(CC) -shared -o $@ -lc $< -nostartfiles
++	$(CC) $(CFLAGS) -shared -o $@ -lc $< -nostartfiles
+ 
+ extensions/libebtable_%.so: extensions/ebtable_%.so
+ 	mv $< $@

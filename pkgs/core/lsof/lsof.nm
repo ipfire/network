@@ -45,12 +45,16 @@ PKG_TARBALL    = $(PKG_NAME)_$(PKG_VER)_src.tar.gz
 DIR_APP = /usr/src/$(PKG_NAME)_$(PKG_VER)_src
 
 define STAGE_BUILD
-	cd $(DIR_APP) && ./Configure linux -n
+	cd $(DIR_APP) && \
+		LINUX_BASE=/proc \
+		LSOF_VSTR="2.6.16" \
+		./Configure linux -n
 	cd $(DIR_APP) && make DEBUG="$(CFLAGS)" $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/usr/bin
-	cd $(DIR_APP) && install -m 4750 -o root -g nobody lsof $(BUILDROOT)/usr/bin
+	-mkdir -pv $(BUILDROOT)/usr/sbin
+	cd $(DIR_APP) && install -m 755 lsof $(BUILDROOT)/usr/sbin
+	-mkdir -pv $(BUILDROOT)/usr/share/man/man8
+	cd $(DIR_APP) && cp -vf lsof.8 $(BUILDROOT)/usr/share/man/man8
 endef
-

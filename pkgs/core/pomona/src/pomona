@@ -25,15 +25,10 @@
 #                                                                             #
 ###############################################################################
 
-echo "Running the Pomona Text Installer..."
-echo -n "Loading modules:"
-for i in md_mod dm_mod ext3 xfs reiserfs reiser4 btrfs; do
-	echo -n " $i"
-	modprobe $i
-done
-echo # Newline
+echo "Running the Pomona Installer..."
 
-python /usr/lib/pomona/installer.py $@
+python /usr/lib/pomona/pomona.py $@
+ret=$?
 
 for i in $@; do
 	if [ "$i" == "--debug" ]; then
@@ -47,4 +42,13 @@ for i in $@; do
 	fi
 done
 
-reboot
+#reboot
+
+cat <<EOF
+
+	The installer program has finished with exit code ${ret}.
+
+	Please reboot your system or do some debugging work :P
+
+EOF
+sleep 1h

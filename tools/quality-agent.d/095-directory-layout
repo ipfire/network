@@ -2,27 +2,22 @@
 
 . $(dirname ${0})/qa-include
 
+DESC="The filelayout should comply to the FHS."
+
+DIRS="/etc/init.d /etc/rc.d /lib/pkgconfig /usr/etc /usr/libexec /usr/local /usr/man /usr/usr /usr/var"
+
 function check() {
-	local dir=${1}
+	local failed=0
 
-	log "    ...${dir}"
+	local dir
+	for dir in ${DIRS}; do
+		if [ -d "${BUILDROOT}${dir}" ]; then
+			log_error "Bad directory: ${dir}"
+			failed=1
+		fi
+	done
 
-	if [ -d "${BUILDROOT}/${dir}" ]; then
-		log "ERROR: This directory should not be there: ${dir}"
-		exit 1
-	fi
+	return ${failed}
 }
 
-log "Check directory layout"
-
-log "  Checking for directories that should not be there"
-check /etc/init.d
-check /etc/rc.d
-check /lib/pkgconfig
-check /usr/etc
-check /usr/local
-check /usr/man
-check /usr/usr
-check /usr/var
-
-exit 0
+run
