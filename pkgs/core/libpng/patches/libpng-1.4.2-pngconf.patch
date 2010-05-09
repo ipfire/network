@@ -1,0 +1,29 @@
+diff -Nur a/pngconf.h b/pngconf.h
+--- a/pngconf.h	2010-05-06 12:30:09.000000000 +0200
++++ b/pngconf.h	2010-05-09 13:19:16.000000000 +0200
+@@ -35,6 +35,25 @@
+ #  ifdef HAVE_CONFIG_H
+ #    include "config.h"
+ #  endif
++# else
++/* pngconf.h is part of the exported API. When a libpng-using application
++   includes us, PNG_CONFIGURE_LIBPNG is of course not defined as we do not have
++   libpng's config.h available in this case. This means that we do not have the
++   defines added to config.h and the commandline by libpng's ./configure .
++   
++   For all defines from config.h not having them set is not a problem, however
++   ./configure also adds -DPNG_NO_ASSEMBLER_CODE to the CFLAGS when compiling
++   on a platform on which the MMX and SSE asm code in libpng is not supported.
++   
++   We do need this define as this define is used to determine whether or not
++   to define PNG_ASSEMBLER_CODE_SUPPORTED and other assembler related defines
++   and prototypes. PNG_ASSEMBLER_CODE_SUPPORTED in turn is used by applications
++   (ImageMagick for example) to determine whether or not they can use the asm
++   functions. Thus we need to define PNG_NO_ASSEMBLER_CODE here on platforms
++   on which the MMX and SSE asm code in libpng is not supported: */
++#  ifndef __i386__ /* change this if MMX/SSE become supported on x86_64! */
++#  define PNG_NO_ASSEMBLER_CODE
++# endif
+ #endif
+ 
+ /*
