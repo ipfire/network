@@ -24,35 +24,52 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = pdns-recursor
-PKG_VER        = 3.1.7.1
+PKG_NAME       = cmake
+PKG_VER        = 2.8.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Networking/DNS
-PKG_URL        = http://powerdns.com/
-PKG_LICENSE    = GPLv2
-PKG_SUMMARY    = A modern, advanced and high performance recursing nameserver.
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.cmake.org
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = Cross-platform make system.
 
-PKG_DEPS      += boost lua
+PKG_DEPS      += curl expat ncurses zlib
 
 define PKG_DESCRIPTION
-	PowerDNS Recursor is a non authoritative/recursing DNS server. Use this \
-	package if you need a dns cache for your network.
+	CMake is used to control the software compilation process using simple \
+	platform and compiler independent configuration files. CMake generates \
+	native makefiles and workspaces that can be used in the compiler \
+	environment of your choice. CMake is quite sophisticated: it is possible \
+	to support complex environments requiring system configuration, pre-processor \
+	generation, code generation, and template instantiation.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+define STAGE_PREPARE_CMDS
+	# Fixup permissions
+	cd $(DIR_APP) && find -name \*.h -o -name \*.cxx -print0 | xargs -0 chmod -x
+endef
 
 define STAGE_BUILD
-	cd $(DIR_APP) && LUA=1 LUA_CPPFLAGS_CONFIG= LUA_LIBS_CONFIG=-llua \
-		make OPTFLAGS="$(CFLAGS)" #$(PARALLELISMFLAGS)
+	-mkdir -pv $(DIR_APP)/build
+	cd $(DIR_APP)/build && \
+		../bootstrap \
+			--prefix=/usr \
+			--datadir=/share/cmake \
+			--docdir=/share/doc/cmake-$(PKG_VER) \
+			--mandir=/share/man \
+			--system-libs \
+			--parallel=$(shell /usr/bin/getconf _NPROCESSORS_ONLN)
+
+	cd $(DIR_APP)/build && make VERBOSE=1 $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP)/build && bin/ctest -V -E ModuleNotices
 endef
 
 define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) \
-		CONFIGDIR=/etc/$(PKG_NAME)
-
-	rm -rf $(BUILDROOT)/etc/init.d
-
-	mv -v $(BUILDROOT)/etc/$(PKG_NAME)/recursor.conf{-dist,}
+	cd $(DIR_APP)/build && make install DESTDIR=$(BUILDROOT)
 endef
