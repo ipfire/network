@@ -43,3 +43,9 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 define STAGE_BUILD
 	cd $(DIR_APP) && make CC=gcc RPM_OPT_FLAGS="$(CFLAGS)" $(PARALLLEISMFLAGS)
 endef
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/etc/acpi/{actions,events}
+	cp -vf power $(BUILDROOT)/etc/acpi/events/
+	cp -vf power.sh $(BUILDROOT)/etc/acpi/actions/
+endef
