@@ -48,6 +48,11 @@ define STAGE_BUILD
 		make OPTFLAGS="$(CFLAGS)" #$(PARALLELISMFLAGS)
 endef
 
-define STAGE_INSTALL_CMDS
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) \
+		CONFIGDIR=/etc/$(PKG_NAME)
+
 	rm -rf $(BUILDROOT)/etc/init.d
+
+	mv -v $(BUILDROOT)/etc/$(PKG_NAME)/recursor.conf{-dist,}
 endef

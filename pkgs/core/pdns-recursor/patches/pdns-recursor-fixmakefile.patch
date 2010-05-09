@@ -1,0 +1,19 @@
+diff -up pdns-recursor-3.2-rc2/Makefile.orig pdns-recursor-3.2-rc2/Makefile
+--- pdns-recursor-3.2-rc2/Makefile.orig	2010-03-01 16:52:23.000000000 +0100
++++ pdns-recursor-3.2-rc2/Makefile	2010-03-01 16:53:10.000000000 +0100
+@@ -71,15 +71,12 @@ basic_checks: 
+ install: all
+ 	-mkdir -p $(DESTDIR)/$(SBINDIR)
+ 	mv pdns_recursor $(DESTDIR)/$(SBINDIR)
+-	strip $(DESTDIR)/$(SBINDIR)/pdns_recursor
+ 	mkdir -p $(DESTDIR)/$(BINDIR)
+ 	mv rec_control $(DESTDIR)/$(BINDIR)
+-	strip $(DESTDIR)/$(BINDIR)/rec_control
+ 	-mkdir -p $(DESTDIR)/$(CONFIGDIR)
+ 	$(DESTDIR)/$(SBINDIR)/pdns_recursor --config > $(DESTDIR)/$(CONFIGDIR)/recursor.conf-dist
+ 	-mkdir -p $(DESTDIR)/usr/share/man/man1
+ 	cp pdns_recursor.1 rec_control.1 $(DESTDIR)/usr/share/man/man1
+-	$(OS_SPECIFIC_INSTALL)	
+ 
+ clean: binclean
+ 	-rm -f dep *~ *.gcda *.gcno optional/*.gcda optional/*.gcno
