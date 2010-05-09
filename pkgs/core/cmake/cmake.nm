@@ -1,0 +1,75 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = cmake
+PKG_VER        = 2.8.1
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.cmake.org
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = Cross-platform make system.
+
+PKG_DEPS      += curl expat ncurses zlib
+
+define PKG_DESCRIPTION
+	CMake is used to control the software compilation process using simple \
+	platform and compiler independent configuration files. CMake generates \
+	native makefiles and workspaces that can be used in the compiler \
+	environment of your choice. CMake is quite sophisticated: it is possible \
+	to support complex environments requiring system configuration, pre-processor \
+	generation, code generation, and template instantiation.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+define STAGE_PREPARE_CMDS
+	# Fixup permissions
+	cd $(DIR_APP) && find -name \*.h -o -name \*.cxx -print0 | xargs -0 chmod -x
+endef
+
+define STAGE_BUILD
+	-mkdir -pv $(DIR_APP)/build
+	cd $(DIR_APP)/build && \
+		../bootstrap \
+			--prefix=/usr \
+			--datadir=/share/cmake \
+			--docdir=/share/doc/cmake-$(PKG_VER) \
+			--mandir=/share/man \
+			--system-libs \
+			--parallel=$(shell /usr/bin/getconf _NPROCESSORS_ONLN)
+
+	cd $(DIR_APP)/build && make VERBOSE=1 $(PARALLELISMFLAGS)
+endef
+
+define STAGE_TEST
+	cd $(DIR_APP)/build && bin/ctest -V -E ModuleNotices
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP)/build && make install DESTDIR=$(BUILDROOT)
+endef
