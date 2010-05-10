@@ -1,0 +1,21 @@
+Index: /trunk/boost/iostreams/filter/zlib.hpp
+===================================================================
+--- a/boost/iostreams/filter/zlib.hpp	(revision 45783)
++++ b/boost/iostreams/filter/zlib.hpp	(revision 57610)
+@@ -21,4 +21,5 @@
+ #include <new>          
+ #include <boost/config.hpp>  // MSVC, STATIC_CONSTANT, DEDUCED_TYPENAME, DINKUM.
++#include <boost/cstdint.hpp> // uint*_t
+ #include <boost/detail/workaround.hpp>
+ #include <boost/iostreams/constants.hpp>   // buffer size.
+@@ -44,7 +45,7 @@
+                     // Typedefs
+ 
+-typedef unsigned int uint;
+-typedef unsigned char byte;
+-typedef unsigned long ulong;
++typedef uint32_t uint;
++typedef uint8_t byte;
++typedef uint32_t ulong;
+ 
+ // Prefix 'x' prevents symbols from being redefined when Z_PREFIX is defined
