@@ -45,6 +45,7 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
+	--libexecdir=/usr/lib \
 	--disable-static \
 	--with-qemu \
 	--without-esx \

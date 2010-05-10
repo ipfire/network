@@ -68,6 +68,7 @@ define STAGE_INSTALL_CMDS
 		$(BUILDROOT)/usr/share/dict/cracklib-extra-words
 
 	-mkdir -pv $(BUILDROOT)/lib/cracklib
+	cd $(DIR_APP) && chmod a+x util/cracklib-{format,packer}
 	cd $(DIR_APP) && util/cracklib-format \
 			$(BUILDROOT)/usr/share/dict/cracklib-words \
 			$(BUILDROOT)/usr/share/dict/cracklib-extra-words | \
