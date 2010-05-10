@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = boost
-PKG_VER        = 1.39.0
+PKG_VER        = 1.41.0
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,7 +34,8 @@ PKG_URL        = http://www.boost.org/
 PKG_LICENSE    = Boost
 PKG_SUMMARY    = The Boost C++ Libraries.
 
-PKG_DEPS      += python
+PKG_BUILD_DEPS+= cmake
+PKG_DEPS      += zlib
 
 define PKG_DESCRIPTION
 	Boost provides free peer-reviewed portable C++ source libraries. The \
@@ -46,51 +47,39 @@ define PKG_DESCRIPTION
 	Standards Committee's upcoming C++ Standard Library Technical Report.)
 endef
 
-PKG_TARBALL    = $(PKG_NAME)_$(subst .,_,$(PKG_VER)).tar.bz2
-
-export BOOST_ROOT=$(DIR_APP)
-BUILD_FLAGS    = -d2 --layout=system variant=release threading=single,multi \
-					debug-symbols=on link=shared runtime-link=shared
-SONAMEVERSION  = 5
+PKG_TARBALL    = $(THISAPP).cmake0.tar.gz
 
 CFLAGS        += -fno-strict-aliasing
+CXXFLAGS      += -fno-strict-aliasing
 
-PARALLELISMFLAGS := -j3
-
-DIR_APP        = $(DIR_SRC)/$(PKG_NAME)_$(subst .,_,$(PKG_VER))
+DIR_APP        = $(DIR_SRC)/$(THISAPP).cmake0
 
 define STAGE_PREPARE_CMDS
-	# Let bjam use our own cflags
-	cd $(DIR_APP) && sed -e "s/-O3/$(CFLAGS)/g" -i tools/build/v2/tools/gcc.jam
+	-mkdir -pv $(DIR_APP)/serial
 endef
 
 define STAGE_BUILD
-	# build jam
-	cd $(DIR_APP)/tools/jam/src && ./build.sh
+	cd $(DIR_APP)/serial && \
+		cmake \
+			-DCMAKE_INSTALL_PREFIX=/usr \
+			-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+			-DBUILD_TESTS="NONE" \
+			-DENABLE_SINGLE_THREADED=YES \
+			-DINSTALL_VERSIONED=OFF \
+			-DWITH_MPI=OFF \
+			-DENABLE_STATIC=OFF \
+			-DENABLE_DEBUG=OFF \
+			..
 
-	# build libs
-	cd $(DIR_APP) && ./bootstrap.sh \
-		--with-toolset=gcc \
-		--with-icu
-
-	cd $(DIR_APP) && \
-		./bjam $(BUILD_FLAGS) $(PARALLELISMFLAGS) stage
+	cd $(DIR_APP)/serial && make VERBOSE=1 #$(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
-	# install libs
-	-mkdir -pv $(BUILDROOT)/usr/lib
-	cd $(DIR_APP) && for i in $$(find stage -type f -name "*.so"); do \
-		install -v -p -m 755 $$i $(BUILDROOT)/usr/lib/$$(basename $$i).$(PKG_VER); \
-		ln -svf $$(basename $$i).$(PKG_VER) $(BUILDROOT)/usr/lib/$$(basename $$i).$(SONAMEVERSION); \
-		ln -svf $$(basename $$i).$(SONAMEVERSION) $(BUILDROOT)/usr/lib/$$(basename $$i); \
-	done
+	cd $(DIR_APP)/serial && make install DESTDIR=$(BUILDROOT)
 
-	# install includes
-	-mkdir -pv $(BUILDROOT)/usr/include
-	cd $(DIR_APP) && find boost -type d | while read a; do \
-		mkdir -pv $(BUILDROOT)/usr/include/$$a; \
-		find $$a -mindepth 1 -maxdepth 1 -type f | \
-			xargs -r install -v -m 644 -p -t $(BUILDROOT)/usr/include/$$a; \
-	done
+	# Kill any debug library versions that may show up un-invited.
+	rm -f $(BUILDROOT)/usr/lib/*-d.*
+
+	# Remove cmake configuration files used to build the Boost libraries
+	find $(BUILDROOT)/usr/lib -name '*.cmake' -exec rm -f {} \;
 endef
