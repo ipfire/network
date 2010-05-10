@@ -463,7 +463,7 @@ class Package(object):
 
 	@property
 	def log(self):
-		return self.naoki.logging.getBuildLogger(self.info.id)
+		return self.naoki.logging.getBuildLogger(os.path.join(self.repo.name, self.info.id))
 
 
 def get_repositories(toolchain=False):

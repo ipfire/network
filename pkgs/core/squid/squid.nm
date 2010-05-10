@@ -90,6 +90,7 @@ CONFIGURE_OPTIONS += \
 
 define STAGE_INSTALL_CMDS
 	rm -vf $(BUILDROOT)/etc/squid/errors
+	rmdir  $(BUILDROOT)/var/logs
 	ln -svf ../../usr/lib/squid/errors/English $(BUILDROOT)/etc/squid/errors
 
 	-mkdir -pv $(BUILDROOT)/var/log/cache $(BUILDROOT)/var/log/squid

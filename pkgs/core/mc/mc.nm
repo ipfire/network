@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = mc
-PKG_VER        = 4.6.2
+PKG_VER        = 4.7.2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,7 +34,6 @@ PKG_URL        = http://www.ibiblio.org/mc/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = User-friendly text console file manager and visual shell.
 
-PKG_BUILD_DEPS+= autoconf automake
 PKG_DEPS      += e2fsprogs glib2 samba slang
 
 define PKG_DESCRIPTION
@@ -45,15 +44,16 @@ define PKG_DESCRIPTION
 	specific files.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_TARBALL    = $(THISAPP).tar.bz2
 
 CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc \
 	--libexecdir=/usr/lib \
-	--enable-charset
-
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && AUTOPOINT=true autoreconf -f -v -i
-endef
+	--with-screen=slang \
+	--with-samba \
+	--without-x \
+	--enable-charset \
+	--disable-rpath
 
 define STAGE_INSTALL_CMDS
 	chmod 1755 $(BUILDROOT)/usr/lib/mc/cons.saver

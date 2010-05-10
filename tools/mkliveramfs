@@ -1002,7 +1002,7 @@ vecho "Starting udevd..."
 udevd --daemon
 
 vecho "Creating devices..."
-udevadm trigger
+udevadm trigger --action=add
 
 if [ "${type}" = "download" ]; then
 	# Wait 30 seconds for network to appear.
@@ -1088,7 +1088,7 @@ if [ "${type}" = "block" ]; then
 		# where we were unable to read the volume id.  so trigger
 		# another run through the block devs
 		if [ "x$COUNTDOWN" = "x30" ]; then
-			udevadm trigger --subsystem-match=block
+			udevadm trigger --action=add --subsystem-match=block
 		fi
 	
 		COUNTDOWN=$(($COUNTDOWN - 1))

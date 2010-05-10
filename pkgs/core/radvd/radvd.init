@@ -1,0 +1,9 @@
+description             "Starts the radvd Daemon"
+author                  "IPFire Team"
+
+start on started network
+stop on stopping network
+
+exec radvd -C /etc/radvd.conf -m stderr_syslog -p /var/run/radvd.pid
+expect fork
+respawn
