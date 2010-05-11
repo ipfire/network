@@ -456,14 +456,18 @@ class Package(object):
 
 		self.log.debug("Extracting %s..." % files)
 		util.do("%s --root=%s %s" % (os.path.join(TOOLSDIR, "decompressor"),
-			dest, " ".join(files)), shell=True)
+			dest, " ".join(files)), shell=True, logger=self.log)
 
 	def getEnvironment(self, *args, **kwargs):
 		return chroot.PackageEnvironment(self, *args, **kwargs)
 
 	@property
+	def logfile(self):
+		return os.path.join(LOGDIR, self.repo.name, self.info.id) + ".log"
+
+	@property
 	def log(self):
-		return self.naoki.logging.getBuildLogger(os.path.join(self.repo.name, self.info.id))
+		return self.naoki.logging.getBuildLogger(self)
 
 
 def get_repositories(toolchain=False):
@@ -632,21 +636,21 @@ Sincerely,
 	# Read log and append it to mail
 	logfile = os.path.join(LOGDIR, package.id + ".log")
 	if os.path.exists(logfile):
-		log = []
+		loglines = []
 		f = open(logfile)
 		line = f.readline()
 		while line:
 			line = line.rstrip("\n")
 			if line.endswith(LOG_MARKER):
 				# Reset log
-				log = []
+				loglines = []
 
-			log.append(line)
+			loglines.append(line)
 			line = f.readline()
 
 		f.close()
 
-	log = email.mime.text.MIMEText("\n".join(log), _subtype="plain")
+	log = email.mime.text.MIMEText("\n".join(loglines), _subtype="plain")
 	log.add_header('Content-Disposition', 'attachment',
 		filename="%s.log" % package.id)
 	msg.attach(log)

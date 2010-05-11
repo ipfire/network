@@ -59,12 +59,12 @@ class Logging(object):
 			self.log.debug("Disabled debug logging mode")
 			self.log.handlers[0].setLevel(logging.INFO)
 
-	def _setupBuildLogger(self, logger):
+	def _setupBuildLogger(self, logger, package):
 		logger.setLevel(logging.DEBUG)
 		logger.parent = self.log
 		logger.propagate = 1
 
-		logfile = os.path.join(LOGDIR, logger.name + ".log")
+		logfile = package.logfile
 		logdir  = os.path.dirname(logfile)
 
 		if not os.path.exists(logdir):
@@ -78,10 +78,10 @@ class Logging(object):
 
 		logger.addHandler(handler)
 
-	def getBuildLogger(self, name):
-		logger = logging.getLogger(name)
+	def getBuildLogger(self, package):
+		logger = logging.getLogger(package.id)
 		if not logger.handlers:
-			self._setupBuildLogger(logger)
+			self._setupBuildLogger(logger, package)
 
 		return logger
 
