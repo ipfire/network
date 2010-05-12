@@ -634,10 +634,9 @@ Sincerely,
 	msg.attach(email.mime.text.MIMEText(body))
 
 	# Read log and append it to mail
-	logfile = os.path.join(LOGDIR, package.id + ".log")
-	if os.path.exists(logfile):
-		loglines = []
-		f = open(logfile)
+	loglines = []
+	if os.path.exists(package.logfile):
+		f = open(package.logfile)
 		line = f.readline()
 		while line:
 			line = line.rstrip("\n")
@@ -649,6 +648,9 @@ Sincerely,
 			line = f.readline()
 
 		f.close()
+
+	if not loglines:
+		loglines = ["Logfile wasn't found."]
 
 	log = email.mime.text.MIMEText("\n".join(loglines), _subtype="plain")
 	log.add_header('Content-Disposition', 'attachment',

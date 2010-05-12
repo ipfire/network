@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = memtest86+
-PKG_VER        = 4.00
+PKG_VER        = 4.10
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -53,4 +53,7 @@ endef
 define STAGE_INSTALL
 	-mkdir -pv $(BUILDROOT)/boot
 	cd $(DIR_APP) && cp -vf memtest.bin $(BUILDROOT)/boot/memtest86+
+
+	-mkdir -pv $(BUILDROOT)/etc/grub.d
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME).grub $(BUILDROOT)/etc/grub.d/20_$(PKG_NAME)
 endef

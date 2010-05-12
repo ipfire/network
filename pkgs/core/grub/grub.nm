@@ -66,7 +66,5 @@ define STAGE_INSTALL
 	sed -e "s/pkgdatadir/pkglibdir/g" -i $(BUILDROOT)/usr/sbin/grub-install
 
 	mkdir -pv $(BUILDROOT)/boot/grub
-	for i in $(DIR_SOURCE)/{grub.conf,splash.xpm.gz}; do \
-	    cp -vf $$i $(BUILDROOT)/boot/grub; \
-	done
+	cp -vf $(DIR_SOURCE)/splash.xpm.gz $(BUILDROOT)/boot/grub
 endef
