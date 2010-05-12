@@ -34,8 +34,8 @@ PKG_URL        = http://www.gnu.org/software/grub/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Grand Unified Boot Loader.
 
-PKG_BUILD_DEPS+= autoconf automake bison paxctl
-PKG_DEPS      += freetype ncurses
+PKG_BUILD_DEPS+= autoconf automake bison flex
+PKG_DEPS      += freetype ncurses zlib
 
 define PKG_DESCRIPTION
 	GRUB (Grand Unified Boot Loader) is an experimental boot loader \
@@ -51,7 +51,14 @@ QUALITY_AGENT_WHITELIST_NX = /usr/bin/*|/usr/sbin/*
 CFLAGS        += -fno-strict-aliasing
 
 CONFIGURE_OPTIONS += \
-	--sysconfdir=/etc
+	--sysconfdir=/etc \
+	--with-platform=pc \
+	--enable-grub-emu
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && \
+		sed -e "s@ GNU/Linux\"@\"@" -i util/grub.d/10_linux.in
+endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
