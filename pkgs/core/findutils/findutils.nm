@@ -45,28 +45,16 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
-
-define STAGE_BUILD
-	cd $(DIR_APP) && \
-		./configure \
-			--prefix=/usr \
-			--libexecdir=/usr/lib/findutils \
-			--localstatedir=/var/lib/locate
-
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
-endef
+CONFIGURE_OPTIONS += \
+	--libexecdir=/usr/lib/findutils \
+	--localstatedir=/var/lib/locate
 
 # fails
 #define STAGE_TEST
 #	cd $(DIR_APP) && make check
 #endef
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/bin
 	mv -v $(BUILDROOT)/usr/bin/find $(BUILDROOT)/bin
 
