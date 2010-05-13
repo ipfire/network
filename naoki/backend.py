@@ -600,10 +600,10 @@ def report_error_by_mail(package):
 		if config["smtp_user"] and config["smtp_password"]:
 			connection.login(config["smtp_user"], config["smtp_password"])
 
-	except SMTPConnectError, e:
+	except smtplib.SMTPConnectError, e:
 		log.error("Could not establish a connection to the smtp server: %s" % e)
 		return
-	except SMTPAuthenticationError, e:
+	except smtplib.SMTPAuthenticationError, e:
 		log.error("Could not successfully login to the smtp server: %s" % e)
 		return
 
@@ -639,7 +639,7 @@ Sincerely,
 		f = open(package.logfile)
 		line = f.readline()
 		while line:
-			line = line.rstrip("\n")
+			line = line.rstrip()
 			if line.endswith(LOG_MARKER):
 				# Reset log
 				loglines = []
