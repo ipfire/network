@@ -2,6 +2,11 @@
 
 . $(dirname ${0})/common-functions
 
+gzip=gzip
+if [ -x "/usr/bin/pigz" ]; then
+	gzip=pigz
+fi
+
 case "${1}" in
 	adjust)
 		TARGET_PATH=${2}
@@ -65,7 +70,7 @@ case "${1}" in
 			strip --strip-all ${file}
 		done
 
-		cd ${COMPRESS_PATH} && tar --posix -czf ${target} -p -S * || exit 1
+		cd ${COMPRESS_PATH} && tar --posix -c -p -S * | ${gzip} -9 > ${target}
 
 		cat ${target} > ${TARGET}
 		rm -f ${target}
@@ -75,7 +80,7 @@ case "${1}" in
 		ARCHIVE=${2}
 		TARGET_PATH=${3}
 
-		tar xfz ${ARCHIVE} -C ${TARGET_PATH}
+		${gzip} -d < ${ARCHIVE} | tar x -C ${TARGET_PATH}
 		;;
 
 esac
