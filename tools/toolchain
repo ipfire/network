@@ -60,6 +60,18 @@ case "${1}" in
 		rm -rf ${COMPRESS_PATH}/{info,man,share/{doc,info,locale,man}}
 		rm -rf ${COMPRESS_PATH}/usr/src/*
 
+		# Remove all static libs
+		for i in $(find ${COMPRESS_PATH} -name "*.a"); do
+			grep -q "_nonshared" <<<${i} && continue
+			grep -q "libgcc" <<<${i} && continue
+			rm -rf ${i}
+		done
+		rm -rf ${COMPRESS_PATH}/{lib/pkgconfig,libexec,var}
+
+		for i in $(find ${COMPRESS_PATH} -name "*.la"); do
+			rm -rf ${i}
+		done
+
 		# Strip all files
 		for file in $(find_elf_files ${COMPRESS_PATH}); do
 			strip --strip-debug ${file}
