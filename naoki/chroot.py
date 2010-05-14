@@ -407,7 +407,7 @@ class Toolchain(object):
 		if args:
 			cmd += " "
 			cmd += " ".join(args)
-		util.do(cmd, cwd=self.build_dir, shell=True,
+		util.do(cmd, cwd=self.build_dir, shell=True, logger=self.log,
 			env={ "TOOLS_DIR" : self.build_dir })
 
 	# TODO:

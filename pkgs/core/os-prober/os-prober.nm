@@ -24,38 +24,38 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = gettext
-PKG_VER        = 0.18
+PKG_NAME       = os-prober
+PKG_VER        = 1.38
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Base
-PKG_URL        = http://www.gnu.org/software/gettext/
-PKG_LICENSE    = GPLv3 LGPL2+
-PKG_SUMMARY    = GNU libraries and utilities for producing multi-lingual messages.
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://joey.kitenet.net/code/os-prober/
+PKG_LICENSE    = GPL
+PKG_SUMMARY    = Utility to detect other OSes on a set of drives.
 
-PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+PKG_DEPS      += dmraid lvm2 udev util-linux-ng
 
 define PKG_DESCRIPTION
-	The GNU gettext package provides a set of tools and documentation for \
-	producing multi-lingual messages in programs. Tools include a set of \
-	conventions about how programs should be written to support message \
-	catalogs, a directory and file naming organization for the message \
-	catalogs, a runtime library which supports the retrieval of translated \
-	messages, and stand-alone programs for handling the translatable and \
-	the already translated strings. Gettext provides an easy to use \
-	library and tools for creating, using, and modifying natural language \
-	catalogs and is a powerful and simple method for internationalizing \
-	programs.
+	os-prober is a spinoff of debian-installer. One of the installer's features \
+	is that it can probe disks on the system for other operating systems, and \
+	add them to the boot loader, so that installing Debian doesn't make your \
+	other installed OS hard to boot.
 endef
 
-PKG_BUILD_DEPS+= bison
-PKG_DEPS      += libxml2
-
+THISAPP        = $(PKG_NAME)_$(PKG_VER)
 PKG_TARBALL    = $(THISAPP).tar.gz
+DIR_APP        = $(DIR_SRC)/$(PKG_NAME)
 
-CONFIGURE_OPTIONS += \
-	--disable-static \
-	--enable-shared \
-	--disable-rpath
+define STAGE_BUILD
+	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" CC=gcc $(PARALLELISMFLAGS)
+endef
 
+define STAGE_INSTALL
+	-mkdir -pv $(BUILDROOT)/usr/{bin,lib/os-prober,share/os-prober}
+	cd $(DIR_APP) && cp -vf common.sh $(BUILDROOT)/usr/share/os-prober/common.sh
+	cd $(DIR_APP) && cp -vf newns $(BUILDROOT)/usr/lib/os-prober/
+	cd $(DIR_APP) && cp -vrf {linux-boot,os}-probes $(BUILDROOT)/usr/lib/
+	cd $(DIR_APP) && cp -vf {linux-boot,os}-prober $(BUILDROOT)/usr/bin/
+	chmod -v 755 $(BUILDROOT)/usr/bin/{linux-boot,os}-prober
+endef

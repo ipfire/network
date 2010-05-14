@@ -2,6 +2,11 @@
 
 . $(dirname ${0})/common-functions
 
+gzip=gzip
+if [ -x "/usr/bin/pigz" ]; then
+	gzip=pigz
+fi
+
 case "${1}" in
 	adjust)
 		TARGET_PATH=${2}
@@ -55,6 +60,18 @@ case "${1}" in
 		rm -rf ${COMPRESS_PATH}/{info,man,share/{doc,info,locale,man}}
 		rm -rf ${COMPRESS_PATH}/usr/src/*
 
+		# Remove all static libs
+		for i in $(find ${COMPRESS_PATH} -name "*.a"); do
+			grep -q "_nonshared" <<<${i} && continue
+			grep -q "libgcc" <<<${i} && continue
+			rm -rf ${i}
+		done
+		rm -rf ${COMPRESS_PATH}/{lib/pkgconfig,libexec,var}
+
+		for i in $(find ${COMPRESS_PATH} -name "*.la"); do
+			rm -rf ${i}
+		done
+
 		# Strip all files
 		for file in $(find_elf_files ${COMPRESS_PATH}); do
 			strip --strip-debug ${file}
@@ -62,10 +79,10 @@ case "${1}" in
 
 		# Strip executeable files
 		for file in $(find_elf_files ${COMPRESS_PATH}/bin ${COMPRESS_PATH}/*/bin); do
-			strip --stip-all ${file}
+			strip --strip-all ${file}
 		done
 
-		cd ${COMPRESS_PATH} && tar --posix -czf ${target} -p -S * || exit 1
+		cd ${COMPRESS_PATH} && tar --posix -c -p -S * | ${gzip} -9 > ${target}
 
 		cat ${target} > ${TARGET}
 		rm -f ${target}
@@ -75,7 +92,7 @@ case "${1}" in
 		ARCHIVE=${2}
 		TARGET_PATH=${3}
 
-		tar xfz ${ARCHIVE} -C ${TARGET_PATH}
+		${gzip} -d < ${ARCHIVE} | tar x -C ${TARGET_PATH}
 		;;
 
 esac
