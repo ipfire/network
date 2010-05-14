@@ -160,10 +160,6 @@ define STAGE_PREPARE
 	cd $(DIR_APP) && sed -e "s/LDFLAGS-rpath-ORIGIN/LDFLAGS/g" \
 		-i iconvdata/Makefile
 
-	# Copy our customized SUPPORTED file to build localization files
-	# only for supported languages
-	cp -vf $(DIR_SOURCE)/SUPPORTED.locales $(DIR_APP)/localedata/SUPPORTED
-
 	# Use gnu hash style
 	cd $(DIR_APP) && sed -i Makeconfig \
 		-e "s/-Wl,--hash-style=both/-Wl,--hash-style=gnu -Wl,-O1/"
