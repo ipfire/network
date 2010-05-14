@@ -57,9 +57,9 @@ define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && autoconf --force
 endef
 
-define STAGE_TEST
-	cd $(DIR_APP) && make RUN_EXPENSIVE_TESTS=yes check
-endef
+#define STAGE_TEST
+#	cd $(DIR_APP) && make RUN_EXPENSIVE_TESTS=yes check
+#endef
 
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/{bin,etc/profile.d,usr/sbin}
