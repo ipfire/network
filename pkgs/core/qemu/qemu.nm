@@ -45,6 +45,7 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 CFLAGS        := $(filter-out -pipe,$(CFLAGS))
+CFLAGS        := -O1 $(filter-out -O2,$(CFLAGS))
 
 define QUALITY_AGENT_WHITELIST_EXECSTACK
 	/usr/share/qemu/openbios*
@@ -52,6 +53,7 @@ endef
 
 CONFIGURE_OPTIONS += \
 	--enable-kvm \
+	--extra-cflags="$(CFLAGS)" \
 	--disable-strip \
 	--disable-xen
 
