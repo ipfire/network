@@ -34,7 +34,8 @@ PKG_URL        = http://www.perl.org/
 PKG_LICENSE    = GPL+ or Artistic and GPLv2+ or Artistic
 PKG_SUMMARY    = Practical Extraction and Report Language.
 
-PKG_DEPS      += iana-etc zlib
+PKG_BUILD_DEPS+= procps # for testing
+PKG_DEPS      += db gdbm iana-etc zlib
 
 define PKG_DESCRIPTION
 	Perl is a high-level programming language with roots in C, sed, awk \
@@ -65,12 +66,39 @@ define STAGE_BUILD
 							-e "s|LIB\s*= ./zlib-src|LIB = /usr/lib|" \
 							cpan/Compress-Raw-Zlib/config.in
 
-	cd $(DIR_APP) && ./configure.gnu -Dprefix=/usr \
-		-Dman1dir=/usr/share/man/man1 \
-		-Dman3dir=/usr/share/man/man3 \
-		-Dpager="/usr/bin/less -isR"
+	cd $(DIR_APP) && \
+		sh ./Configure -des \
+			-Doptimize="$(CFLAGS)" \
+			-Dprefix=/usr \
+			-Dman1dir=/usr/share/man/man1 \
+			-Dman3dir=/usr/share/man/man3 \
+			-Dpager="/usr/bin/less -isR" \
+			-Dmyhostname=localhost
+			-Duseshrplib \
+			-Dusethreads \
+			-Duseithreads \
+			-Duselargefiles \
+			-Dd_dosuid \
+			-Dd_semctl_semun \
+			-Di_db \
+			-Ui_ndbm \
+			-Di_gdbm \
+			-Di_shadow \
+			-Di_syslog \
+			-Dman3ext=3pm \
+			-Duseperlio \
+			-Dinstallusrbinperl=n \
+			-Ubincompat5005 \
+			-Uversiononly \
+			-Dd_gethostent_r_proto \
+			-Ud_endhostent_r_proto \
+			-Ud_sethostent_r_proto \
+			-Ud_endprotoent_r_proto \
+			-Ud_setprotoent_r_proto \
+			-Ud_endservent_r_proto \
+			-Ud_setservent_r_proto
 
-	cd $(DIR_APP) && make #$(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
 endef
 
 define STAGE_TEST
