@@ -343,6 +343,15 @@ class PackageInfo(object):
 		return self._dependencies("PKG_TOOLCHAIN_DEPENDENCIES", toolchain=True)
 
 	@property
+	def dependencies_reversed(self):
+		deps = []
+		for package in parse_package_info(get_package_names()):
+			if self.name in [dep.name for dep in package.dependencies]:
+				deps.append(package.name)
+
+		return deps
+
+	@property
 	def description(self):
 		return self._data.get("PKG_DESCRIPTION")
 
