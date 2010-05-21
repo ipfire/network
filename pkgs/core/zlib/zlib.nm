@@ -52,6 +52,8 @@ CONFIGURE_ENVIRONMENT += ac_cv_func_working_mktime=yes
 CONFIGURE_OPTIONS += \
 	--libdir=/lib
 
+PARALLELISMFLAGS = # No parallelism
+
 define STAGE_TEST
 	cd $(DIR_APP) && make check
 endef
