@@ -456,14 +456,18 @@ class Package(object):
 
 		self.log.debug("Extracting %s..." % files)
 		util.do("%s --root=%s %s" % (os.path.join(TOOLSDIR, "decompressor"),
-			dest, " ".join(files)), shell=True)
+			dest, " ".join(files)), shell=True, logger=self.log)
 
 	def getEnvironment(self, *args, **kwargs):
 		return chroot.PackageEnvironment(self, *args, **kwargs)
 
 	@property
+	def logfile(self):
+		return os.path.join(LOGDIR, self.repo.name, self.info.id) + ".log"
+
+	@property
 	def log(self):
-		return self.naoki.logging.getBuildLogger(os.path.join(self.repo.name, self.info.id))
+		return self.naoki.logging.getBuildLogger(self)
 
 
 def get_repositories(toolchain=False):
@@ -596,10 +600,10 @@ def report_error_by_mail(package):
 		if config["smtp_user"] and config["smtp_password"]:
 			connection.login(config["smtp_user"], config["smtp_password"])
 
-	except SMTPConnectError, e:
+	except smtplib.SMTPConnectError, e:
 		log.error("Could not establish a connection to the smtp server: %s" % e)
 		return
-	except SMTPAuthenticationError, e:
+	except smtplib.SMTPAuthenticationError, e:
 		log.error("Could not successfully login to the smtp server: %s" % e)
 		return
 
@@ -630,23 +634,25 @@ Sincerely,
 	msg.attach(email.mime.text.MIMEText(body))
 
 	# Read log and append it to mail
-	logfile = os.path.join(LOGDIR, package.id + ".log")
-	if os.path.exists(logfile):
-		log = []
-		f = open(logfile)
+	loglines = []
+	if os.path.exists(package.logfile):
+		f = open(package.logfile)
 		line = f.readline()
 		while line:
-			line = line.rstrip("\n")
+			line = line.rstrip()
 			if line.endswith(LOG_MARKER):
 				# Reset log
-				log = []
+				loglines = []
 
-			log.append(line)
+			loglines.append(line)
 			line = f.readline()
 
 		f.close()
 
-	log = email.mime.text.MIMEText("\n".join(log), _subtype="plain")
+	if not loglines:
+		loglines = ["Logfile wasn't found."]
+
+	log = email.mime.text.MIMEText("\n".join(loglines), _subtype="plain")
 	log.add_header('Content-Disposition', 'attachment',
 		filename="%s.log" % package.id)
 	msg.attach(log)

@@ -64,6 +64,8 @@ else
 	STAGE_DONE = $(ROOT)/.done
 endif
 
+PKG_DEFAULT_FILES = $(wildcard *.default)
+PKG_DEFAULT_FILES += $(wildcard default/*)
 PKG_INIT_FILES = $(wildcard *.init)
 PKG_INIT_FILES += $(wildcard init/*.conf)
 PKG_PAM_FILES = $(wildcard *.pam)

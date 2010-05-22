@@ -26,7 +26,7 @@ define STAGE_INSTALL
 	-mkdir -v $(TOOLS_DIR)/etc
 	touch $(TOOLS_DIR)/etc/ld.so.conf
 
-	cd $(DIR_SRC)/glibc-build && make install
+	cd $(DIR_SRC)/glibc-build && make install localedata/install-locales
 
 	$(TARGET)-gcc -dumpspecs | \
 		sed -e "s@/lib\(64\)\?/ld@$(TOOLS_DIR)&@g" \

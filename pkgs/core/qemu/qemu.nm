@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = qemu-kvm
-PKG_VER        = 0.12.3
+PKG_VER        = 0.12.4
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -45,6 +45,7 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 CFLAGS        := $(filter-out -pipe,$(CFLAGS))
+CFLAGS        := -O1 $(filter-out -O2,$(CFLAGS))
 
 define QUALITY_AGENT_WHITELIST_EXECSTACK
 	/usr/share/qemu/openbios*
@@ -52,6 +53,7 @@ endef
 
 CONFIGURE_OPTIONS += \
 	--enable-kvm \
+	--extra-cflags="$(CFLAGS)" \
 	--disable-strip \
 	--disable-xen
 

@@ -14,6 +14,16 @@ define DO_FILELIST
 	@cd $(BUILDROOT) && find -ls
 endef
 
+define __INSTALL_DEFAULT
+	-mkdir -pv $(BUILDROOT)/etc/default
+	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(1) $(BUILDROOT)/etc/default/$(subst .default,,$(notdir $(1)))
+
+endef
+
+define DO_INSTALL_DEFAULT
+	$(foreach file,$(PKG_DEFAULT_FILES),$(call __INSTALL_DEFAULT,$(file)))
+endef
+
 define __INSTALL_INIT
 	-mkdir -pv $(BUILDROOT)/etc/init
 	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(1) $(BUILDROOT)/etc/init/$(subst .init,.conf,$(notdir $(1)))
@@ -92,6 +102,7 @@ define DO_INSTALL
 
 	$(STAGE_INSTALL)
 
+	$(DO_INSTALL_DEFAULT)
 	$(DO_INSTALL_INIT)
 	$(DO_INSTALL_PAM)
 

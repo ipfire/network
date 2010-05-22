@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = glibc
-PKG_VER        = 2.11.1
+PKG_VER        = 2.12
 PKG_REL        = 0
 
 PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
@@ -159,10 +159,6 @@ define STAGE_PREPARE
 	# Fix a very weird issue with rpath
 	cd $(DIR_APP) && sed -e "s/LDFLAGS-rpath-ORIGIN/LDFLAGS/g" \
 		-i iconvdata/Makefile
-
-	# Copy our customized SUPPORTED file to build localization files
-	# only for supported languages
-	cp -vf $(DIR_SOURCE)/SUPPORTED.locales $(DIR_APP)/localedata/SUPPORTED
 
 	# Use gnu hash style
 	cd $(DIR_APP) && sed -i Makeconfig \

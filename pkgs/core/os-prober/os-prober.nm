@@ -24,36 +24,38 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = memtest86+
-PKG_VER        = 4.10
+PKG_NAME       = os-prober
+PKG_VER        = 1.38
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Base
-PKG_URL        = http://www.memtest.org/
-PKG_LICENSE    = GPLv2
-PKG_SUMMARY    = Stand-alone memory tester for x86 and x86-64 computers.
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://joey.kitenet.net/code/os-prober/
+PKG_LICENSE    = GPL
+PKG_SUMMARY    = Utility to detect other OSes on a set of drives.
+
+PKG_DEPS      += dmraid lvm2 udev util-linux-ng
 
 define PKG_DESCRIPTION
-	Memtest86+ is a thorough stand-alone memory test for x86 and x86-64 \
-	architecture computers. BIOS based memory tests are only a quick \
-	check and often miss many of the failures that are detected by \
-	Memtest86+.
+	os-prober is a spinoff of debian-installer. One of the installer's features \
+	is that it can probe disks on the system for other operating systems, and \
+	add them to the boot loader, so that installing Debian doesn't make your \
+	other installed OS hard to boot.
 endef
 
+THISAPP        = $(PKG_NAME)_$(PKG_VER)
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-CFLAGS        += -fno-builtin -ffreestanding 
+DIR_APP        = $(DIR_SRC)/$(PKG_NAME)
 
 define STAGE_BUILD
-	cd $(DIR_APP) && make CC="gcc -fno-stack-protector -fno-PIE" \
-		CFLAGS="$(CFLAGS)" memtest.bin $(PARALLELISMFLAGS)
+	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" CC=gcc $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/boot
-	cd $(DIR_APP) && cp -vf memtest.bin $(BUILDROOT)/boot/memtest86+
-
-	-mkdir -pv $(BUILDROOT)/etc/grub.d
-	cp -vf $(DIR_SOURCE)/$(PKG_NAME).grub $(BUILDROOT)/etc/grub.d/20_$(PKG_NAME)
+	-mkdir -pv $(BUILDROOT)/usr/{bin,lib/os-prober,share/os-prober}
+	cd $(DIR_APP) && cp -vf common.sh $(BUILDROOT)/usr/share/os-prober/common.sh
+	cd $(DIR_APP) && cp -vf newns $(BUILDROOT)/usr/lib/os-prober/
+	cd $(DIR_APP) && cp -vrf {linux-boot,os}-probes $(BUILDROOT)/usr/lib/
+	cd $(DIR_APP) && cp -vf {linux-boot,os}-prober $(BUILDROOT)/usr/bin/
+	chmod -v 755 $(BUILDROOT)/usr/bin/{linux-boot,os}-prober
 endef
