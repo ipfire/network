@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -24,45 +24,26 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = zlib
-PKG_VER        = 1.2.5
+PKG_NAME       = basesystem
+PKG_VER        =
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://www.gzip.org/zlib/
-PKG_LICENSE    = zlib
-PKG_SUMMARY    = The zlib compression and decompression library.
+PKG_GROUP      = System/Base
+PKG_URL        =
+PKG_LICENSE    = GPLv3+
+PKG_SUMMARY    = Basic system files.
 
 define PKG_DESCRIPTION
-	Zlib is a general-purpose, patent-free, lossless data compression \
-	library which is used by many different programs.
+	This package contains files that are needed to run basic \
+	functions of the system.
 endef
 
-PKG_BUILD_DEPS = glibc
+STAGE_PREPARE = # Nothing to do
+STAGE_BUILD = # Nothing to do
 
-PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
-
-PKG_TARBALL    = $(THISAPP).tar.gz
-
-CFLAGS        += -fPIC -DPIC
-
-CONFIGURE_ENVIRONMENT += ac_cv_func_working_mktime=yes
-
-CONFIGURE_OPTIONS += \
-	--libdir=/lib
-
-PARALLELISMFLAGS = # No parallelism
-
-define STAGE_TEST
-	cd $(DIR_APP) && make check
+define STAGE_INSTALL
+	-mkdir -pv $(BUILDROOT)/etc
+	cp -vf $(DIR_SOURCE)/resolv.conf $(BUILDROOT)/etc/
 endef
 
-define STAGE_INSTALL_CMDS
-	-mkdir -pv $(BUILDROOT)/usr/{include,lib}
-	cd $(DIR_APP) && cp -pfv zconf.h zlib.h $(BUILDROOT)/usr/include
-	rm -vf $(BUILDROOT)/lib/libz.so
-	ln -sfv ../../lib/libz.so.$(PKG_VER) $(BUILDROOT)/usr/lib/libz.so
-
-	mv -v $(BUILDROOT)/lib/pkgconfig $(BUILDROOT)/usr/lib/
-endef
