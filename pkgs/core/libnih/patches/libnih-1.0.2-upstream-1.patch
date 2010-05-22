@@ -1,0 +1,246 @@
+--- libnih-1.0.2.orig/debian/libnih-dbus-dev.install
++++ libnih-1.0.2/debian/libnih-dbus-dev.install
+@@ -0,0 +1,6 @@
++lib/libnih-dbus.a
++lib/libnih-dbus.la
++lib/libnih-dbus.so
++usr/include/libnih-dbus.h
++usr/include/nih-dbus
++usr/lib/pkgconfig/libnih-dbus.pc
+--- libnih-1.0.2.orig/debian/control
++++ libnih-1.0.2/debian/control
+@@ -0,0 +1,65 @@
++Source: libnih
++Section: libs
++Priority: required
++Maintainer: Scott James Remnant <scott@ubuntu.com>
++Standards-Version: 3.8.4.0
++Build-Depends: debhelper (>= 7.3.15), pkg-config (>= 0.22), libdbus-1-dev (>= 1.2.16), libexpat1-dev (>= 2.0.0), dbus (>= 1.2.16)
++
++Package: libnih1
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}
++Description: NIH Utility Library
++ libnih is a light-weight "standard library" of C functions to ease the
++ development of other libraries and applications, especially those
++ normally found in /lib.
++ .
++ This package contains the shared library.
++
++Package: libnih-dev
++Priority: optional
++Section: libdevel
++Architecture: any
++Depends: libnih1 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
++Description: NIH Utility Library (development files)
++ libnih is a light-weight "standard library" of C functions to ease the
++ development of other libraries and applications, especially those
++ normally found in /lib.
++ .
++ This package contains the static library and C header files which are
++ needed for developing software using libnih.
++
++Package: libnih-dbus1
++Architecture: any
++Depends: libnih1 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
++Description: NIH D-Bus Bindings Library
++ libnih-dbus is a D-Bus bindings library that integrates with the main
++ loop provided by libnih.
++ .
++ This package contains the shared library.
++
++Package: libnih-dbus-dev
++Priority: optional
++Section: libdevel
++Architecture: any
++Depends: libnih-dbus1 (= ${binary:Version}), libnih-dev (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
++Recommends: nih-dbus-tool (= ${binary:Version})
++Description: NIH D-Bus Bindings Library (development files)
++ libnih-dbus is a D-Bus bindings library that integrates with the main
++ loop provided by libnih.
++ .
++ This package contains the static library and C header files which are
++ needed for developing software using libnih-dbus.
++
++Package: nih-dbus-tool
++Priority: required
++Section: devel
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}
++Recommends: libnih-dbus-dev (= ${binary:Version})
++Description: NIH D-Bus Binding Tool
++ nih-dbus-tool generates C source code from the D-Bus Introspection XML
++ data provided by most services; either to make implementing the
++ described objects in C programs or to make proxying to the described
++ remote objects easier.
++ .
++ The generated code requires libnih-dbus-dev to be compiled.
+--- libnih-1.0.2.orig/debian/libnih-dev.links
++++ libnih-1.0.2/debian/libnih-dev.links
+@@ -0,0 +1 @@
++usr/share/doc/libnih1 usr/share/doc/libnih-dev
+--- libnih-1.0.2.orig/debian/libnih-dbus1.install
++++ libnih-1.0.2/debian/libnih-dbus1.install
+@@ -0,0 +1 @@
++lib/libnih-dbus.so.*
+--- libnih-1.0.2.orig/debian/nih-dbus-tool.install
++++ libnih-1.0.2/debian/nih-dbus-tool.install
+@@ -0,0 +1,2 @@
++usr/bin/nih-dbus-tool
++usr/share/man/man1/nih-dbus-tool.1
+--- libnih-1.0.2.orig/debian/libnih1.install
++++ libnih-1.0.2/debian/libnih1.install
+@@ -0,0 +1 @@
++lib/libnih.so.*
+--- libnih-1.0.2.orig/debian/libnih-dbus1.symbols
++++ libnih-1.0.2/debian/libnih-dbus1.symbols
+@@ -0,0 +1,2 @@
++libnih-dbus.so.1 libnih-dbus1 #MINVER#
++ *@LIBNIH_DBUS_1_0 1.0.0
+--- libnih-1.0.2.orig/debian/libnih1.symbols
++++ libnih-1.0.2/debian/libnih1.symbols
+@@ -0,0 +1,2 @@
++libnih.so.1 libnih1 #MINVER#
++ *@LIBNIH_1_0 1.0.0
+--- libnih-1.0.2.orig/debian/libnih-dev.install
++++ libnih-1.0.2/debian/libnih-dev.install
+@@ -0,0 +1,7 @@
++lib/libnih.a
++lib/libnih.la
++lib/libnih.so
++usr/include/libnih.h
++usr/include/nih
++usr/lib/pkgconfig/libnih.pc
++usr/share/aclocal/libnih.m4
+--- libnih-1.0.2.orig/debian/compat
++++ libnih-1.0.2/debian/compat
+@@ -0,0 +1 @@
++7
+--- libnih-1.0.2.orig/debian/copyright
++++ libnih-1.0.2/debian/copyright
+@@ -0,0 +1,18 @@
++This is the Ubuntu package of libnih, the NIH Utility Library.
++
++Copyright © 2009 Canonical Ltd.
++Copyright © 2009 Scott James Remnant <scott@netsplit.com>
++
++Licence:
++
++This program is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License version 2, as
++published by the Free Software Foundation.
++
++This program is distributed in the hope that it will be useful, but
++WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++General Public License for more details.
++
++On Ubuntu systems, the complete text of the GNU General Public License
++can be found in ‘/usr/share/common-licenses/GPL’.
+--- libnih-1.0.2.orig/debian/libnih-dbus1.links
++++ libnih-1.0.2/debian/libnih-dbus1.links
+@@ -0,0 +1 @@
++usr/share/doc/libnih1 usr/share/doc/libnih-dbus1
+--- libnih-1.0.2.orig/debian/rules
++++ libnih-1.0.2/debian/rules
+@@ -0,0 +1,35 @@
++#!/usr/bin/make -f
++%:
++	dh $@
++
++
++CFLAGS = -Wall -g -fstack-protector -fPIE
++LDFLAGS = -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -pie
++
++# Disable optimisations if noopt found in $DEB_BUILD_OPTIONS
++ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
++	CFLAGS += -O0
++	LDFLAGS += -Wl,-O0
++else
++	CFLAGS += -Os
++	LDFLAGS += -Wl,-O1
++endif
++
++override_dh_auto_configure:
++	dh_auto_configure -- CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
++		--libdir=/lib
++
++override_dh_makeshlibs:
++	dh_makeshlibs -plibnih1 -V 'libnih1 (>= 1.0.0)'
++	dh_makeshlibs -plibnih-dbus1 -V 'libnih-dbus1 (>= 1.0.0)'
++	dh_makeshlibs -Nlibnih1 -Nlibnih-dbus1
++
++
++# Symlink /usr/share/doc directories together
++override_dh_installdocs:
++	dh_installdocs -Nlibnih-dev -Nlibnih-dbus1 -Nlibnih-dbus-dev \
++		-Nnih-dbus-tool
++
++override_dh_installchangelogs:
++	dh_installchangelogs -Nlibnih-dev -Nlibnih-dbus1 -Nlibnih-dbus-dev \
++		-Nnih-dbus-tool
+--- libnih-1.0.2.orig/debian/libnih1.docs
++++ libnih-1.0.2/debian/libnih1.docs
+@@ -0,0 +1,3 @@
++AUTHORS
++NEWS
++README
+--- libnih-1.0.2.orig/debian/changelog
++++ libnih-1.0.2/debian/changelog
+@@ -0,0 +1,44 @@
++libnih (1.0.2-1) maverick; urgency=low
++
++  * New upstream release:
++    - Rename AC_COPYRIGHT to NIH_COPYRIGHT to avoid conflict with other
++      packages.
++    - Add serial to libnih.m4
++    - Add NIH_WITH_LOCAL_LIBNIH macro.
++
++  * Fix use of ${Source-Version} to be ${binary:Version}
++  * Add debian/source/format with "1.0" to be future compatible.
++  * Bump standards version.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Tue, 27 Apr 2010 10:49:55 -0700
++
++libnih (1.0.1-1) lucid; urgency=low
++
++  * New upstream release:
++    - Add missing __nih_* symbols to linker version script so that we
++      can link Upstart's test suite.
++    - Glibc __abort_msg symbol now only linked as a weak symbol.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Thu, 04 Feb 2010 14:53:26 -0800
++
++libnih (1.0.0-2build1) lucid; urgency=low
++
++  * Rebuild to pick up relaxed dependency on libc6, after checking that
++    __abort_msg is available with the same signature in eglibc 2.11.
++    LP: #508702.
++
++ -- Matthias Klose <doko@ubuntu.com>  Mon, 18 Jan 2010 16:09:13 +0100
++
++libnih (1.0.0-2) lucid; urgency=low
++
++  * debian/control: Add build-dependency on dbus so the test suite can
++    pass on the buildds.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Sat, 28 Nov 2009 23:28:27 +0000
++
++libnih (1.0.0-1) lucid; urgency=low
++
++  * First upstream release.  Previously this code was included in the
++    upstart, mountall and ureadahead source packages.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Sat, 28 Nov 2009 21:14:00 +0000
+--- libnih-1.0.2.orig/debian/nih-dbus-tool.links
++++ libnih-1.0.2/debian/nih-dbus-tool.links
+@@ -0,0 +1 @@
++usr/share/doc/libnih1 usr/share/doc/nih-dbus-tool
+--- libnih-1.0.2.orig/debian/libnih-dbus-dev.links
++++ libnih-1.0.2/debian/libnih-dbus-dev.links
+@@ -0,0 +1 @@
++usr/share/doc/libnih1 usr/share/doc/libnih-dbus-dev
+--- libnih-1.0.2.orig/debian/source/format
++++ libnih-1.0.2/debian/source/format
+@@ -0,0 +1 @@
++1.0

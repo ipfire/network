@@ -34,8 +34,8 @@ PKG_URL        = http://upstart.ubuntu.com/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = An event-driven init system.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += dbus libnih sysvinit
+PKG_BUILD_DEPS+= coreutils pkg-config
+PKG_DEPS      += dbus libnih sysvinit udev
 
 define PKG_DESCRIPTION
 	Upstart is an event-based replacement for the /sbin/init daemon \
@@ -50,6 +50,11 @@ CONFIGURE_OPTIONS += \
 	--sbindir=/sbin \
 	--sysconfdir=/etc \
 	--libdir=/lib
+
+# Testsuite fails
+#define STAGE_TEST
+#	cd $(DIR_APP) && make check
+#endef
 
 define STAGE_INSTALL_CMDS
 	# These binaries are for the compatiblity mode, so we don´t need them
