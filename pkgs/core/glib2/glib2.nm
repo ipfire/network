@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = glib
-PKG_VER        = 2.25.3
+PKG_VER        = 2.25.6
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -48,6 +48,7 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
 CONFIGURE_OPTIONS += \
+	--sysconfdir=/etc \
 	--with-pcre=system
 
 define STAGE_INSTALL_CMDS
