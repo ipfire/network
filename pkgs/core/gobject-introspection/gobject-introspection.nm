@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = gobject-introspection
-PKG_VER        = 0.6.5
+PKG_VER        = 0.6.11
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,7 +34,7 @@ PKG_URL        = http://live.gnome.org/GObjectIntrospection
 PKG_LICENSE    = GPLv2+, LGPLv2+, MIT
 PKG_SUMMARY    = Introspection system for GObject-based libraries.
 
-PKG_BUILD_DEPS+= bison flex pkg-config
+PKG_BUILD_DEPS+= bison cairo flex pkg-config
 PKG_DEPS      += glib2 libffi libtool python
 
 define PKG_DESCRIPTION
@@ -47,3 +47,7 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
 CONFIGURE_OPTIONS += --sbindir=/sbin --disable-static
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
