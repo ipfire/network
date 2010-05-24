@@ -1,58 +1,40 @@
-From ce4539752ed502cb1a5e10fa47890f42db964472 Mon Sep 17 00:00:00 2001
+From de99bb00b0084e8a1862398270278a14e099b22b Mon Sep 17 00:00:00 2001
 From: Nils Philippsen <nils@redhat.com>
-Date: Fri, 26 Feb 2010 18:20:41 +0100
+Date: Wed, 5 May 2010 13:23:40 +0200
 Subject: [PATCH] patch: pkgconfig
 
 Squashed commit of the following:
 
-commit 1f0e85c705a42c7e6ccd938eaad69f531c63f63d
+commit d615848c499842c5923c3274370d2536dc650916
 Author: Nils Philippsen <nils@redhat.com>
 Date:   Fri Feb 26 17:51:14 2010 +0100
 
     pkgconfig file is data
+    (cherry picked from commit 1f0e85c705a42c7e6ccd938eaad69f531c63f63d)
 
-commit 52ef5f47ccc0128c78ab3ad38ac7b7918dd7ac88
+    Signed-off-by: Nils Philippsen <nils@redhat.com>
+
+commit 119d5af1ddd82dac034d0106a1d86b6d7564f25e
 Author: Nils Philippsen <nils@redhat.com>
 Date:   Wed Jun 17 13:09:51 2009 +0200
 
     make sane-config multilib-aware on Linux
+    (cherry picked from commit 52ef5f47ccc0128c78ab3ad38ac7b7918dd7ac88)
 
-commit 7787640dd567b93dd0a458fd5fb662bb7b85ff36
+    Signed-off-by: Nils Philippsen <nils@redhat.com>
+
+commit 7ee1cbef01d851aca95d86145ac5dda02d9e7354
 Author: Nils Philippsen <nils@redhat.com>
-Date:   Fri Jun 5 12:55:39 2009 +0200
+Date:   Wed May 5 10:22:15 2010 +0200
 
     use pkg-config in sane-config
 ---
- configure.in              |    3 ++
- tools/Makefile.am         |   14 +++++++++-
- tools/sane-backends.pc.in |   14 ++++++++++
- tools/sane-config.in      |   64 +++++++++++++++++++++++++++++++++++----------
- 4 files changed, 80 insertions(+), 15 deletions(-)
- create mode 100644 tools/sane-backends.pc.in
+ tools/Makefile.am    |   14 ++++++++++-
+ tools/sane-config.in |   66 ++++++++++++++++++++++++++++++++++++++-----------
+ 2 files changed, 64 insertions(+), 16 deletions(-)
 
-diff --git a/configure.in b/configure.in
-index 126edbf..7199c44 100644
---- a/configure.in
-+++ b/configure.in
-@@ -161,6 +161,8 @@ AC_CHECK_HEADER(resmgr.h,[
- 		rsm_open_device,[
- 			AC_DEFINE(HAVE_RESMGR,1,[define if you have the resmgr library])
- 			LIBS="$LIBS -lresmgr"
-+            RESMGR_LIB="-lresmgr"
-+            AC_SUBST(RESMGR_LIB)
- 		]
- 	)
- ])
-@@ -673,6 +675,7 @@ AC_CONFIG_FILES([Makefile lib/Makefile sanei/Makefile frontend/Makefile \
-   japi/Makefile backend/Makefile include/Makefile doc/Makefile \
-   po/Makefile testsuite/Makefile tools/Makefile doc/doxygen-sanei.conf])
- AC_CONFIG_FILES([tools/sane-config], [chmod a+x tools/sane-config])
-+AC_CONFIG_FILES([tools/sane-backends.pc])
- AC_OUTPUT
- 
- dnl ***********************************************************************
 diff --git a/tools/Makefile.am b/tools/Makefile.am
-index 0932e45..b7fa670 100644
+index f52a39a..ab4e1b7 100644
 --- a/tools/Makefile.am
 +++ b/tools/Makefile.am
 @@ -7,6 +7,10 @@
@@ -90,31 +72,11 @@ index 0932e45..b7fa670 100644
 +
  clean-local:
  	rm -f $(HOTPLUG)
-diff --git a/tools/sane-backends.pc.in b/tools/sane-backends.pc.in
-new file mode 100644
-index 0000000..fb64e3b
---- /dev/null
-+++ b/tools/sane-backends.pc.in
-@@ -0,0 +1,14 @@
-+prefix=@prefix@
-+exec_prefix=@exec_prefix@
-+libdir=@libdir@
-+includedir=@includedir@
-+
-+pc_libs=@RESMGR_LIB@ @DL_LIBS@ @IEEE1284_LIBS@ @PTHREAD_LIBS@ @JPEG_LIBS@ @USB_LIBS@
-+pc_reqs=libusb
-+
-+Name: SANE Backends
-+Description: Backends for SANE, the universal scanner interface
-+Version: @VERSION@
-+Requires: ${pc_reqs}
-+Libs: -L${libdir} -lsane ${pc_libs}
-+Cflags:
 diff --git a/tools/sane-config.in b/tools/sane-config.in
-index 85add1a..c0450d4 100644
+index 22c02b5..a9ce6fb 100644
 --- a/tools/sane-config.in
 +++ b/tools/sane-config.in
-@@ -18,7 +18,7 @@ pkglibdir="@pkglibdir@"
+@@ -19,7 +19,7 @@ pkglibdir="@pkglibdir@"
  includedir="@includedir@"
  mandir="@mandir@"
  infodir="@infodir@"
@@ -123,7 +85,7 @@ index 85add1a..c0450d4 100644
  localstatedir="@localstatedir@"
  sysconfdir="@sysconfdir@"
  datarootdir="@datarootdir@"
-@@ -32,6 +32,30 @@ srcdir="@srcdir@"
+@@ -33,6 +33,30 @@ srcdir="@srcdir@"
  top_srcdir="@top_srcdir@"
  cflags=
  
@@ -154,20 +116,29 @@ index 85add1a..c0450d4 100644
  usage ()
  {
    echo "Usage: "  1>&2
-@@ -85,26 +109,38 @@ if test $# -gt 0; then
+@@ -60,7 +84,7 @@ if test $# -gt 0; then
+       if test $# -eq 1; then
+         usage
+       elif test $# -eq 2; then
+-        case $2 in 
++        case $2 in
+           --cflags)
+             echo "Usage: $0 --cflags"
+             echo "  Print C compiler flags for compiling code that uses SANE."
+@@ -86,26 +110,38 @@ if test $# -gt 0; then
        ;;
      --ldflags)
  
 -      if test -z "$LINKER_RPATH"; then
--        echo "-L${libdir}"
+-        echo "-L${libdir} @LDFLAGS@" 
 +      if test "x$use_pkgconfig" = "x0"; then
 +        if test -z "$LINKER_RPATH"; then
-+          echo "-L${libdir}"
++          echo "-L${libdir} @LDFLAGS@"
 +        else
-+          echo "-L${libdir} ${LINKER_RPATH}${libdir}"
++          echo "-L${libdir} @LDFLAGS@ ${LINKER_RPATH}${libdir}"
 +        fi
        else
--        echo "-L${libdir} ${LINKER_RPATH}${libdir}"
+-        echo "-L${libdir} @LDFLAGS@ ${LINKER_RPATH}${libdir}"
 +        pkg-config --libs-only-L "$pkgconfig_package"
        fi
        ;;
