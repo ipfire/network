@@ -44,7 +44,7 @@ endef
 
 PKG_TARBALL    = $(PKG_NAME)-backends-$(PKG_VER).tar.gz
 
-DIR_APP = /usr/src/$(PKG_NAME)-backends-$(PKG_VER)
+DIR_APP = $(DIR_SRC)/$(PKG_NAME)-backends-$(PKG_VER)
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
