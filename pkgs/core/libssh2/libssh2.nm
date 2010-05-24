@@ -46,7 +46,8 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 CONFIGURE_OPTIONS += \
-	--disable-static
+	--disable-static \
+	--disable-rpath
 
 define STAGE_TEST
 	cd $(DIR_APP) && make check
