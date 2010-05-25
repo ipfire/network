@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = udev
-PKG_VER        = 152
+PKG_VER        = 156
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -67,15 +67,4 @@ define STAGE_INSTALL_CMDS
 		$(BUILDROOT)/usr/lib/ConsoleKit/run-seat.d/udev-acl.ck
 
 	install -m 755 $(DIR_SOURCE)/console_init $(BUILDROOT)/lib/udev/
-
-	# Finally, install some essential devnodes
-	install -dv $(BUILDROOT)/lib/{firmware,udev/devices/{pts,shm}}
-	-mknod -m0600 $(BUILDROOT)/lib/udev/devices/console c 5 1
-	-mknod -m0600 $(BUILDROOT)/lib/udev/devices/kmsg c 1 11
-	-mknod -m0666 $(BUILDROOT)/lib/udev/devices/null c 1 3
-	ln -sfv /proc/self/fd $(BUILDROOT)/lib/udev/devices/fd
-	ln -sfv /proc/self/fd/0 $(BUILDROOT)/lib/udev/devices/stdin
-	ln -sfv /proc/self/fd/1 $(BUILDROOT)/lib/udev/devices/stdout
-	ln -sfv /proc/self/fd/2 $(BUILDROOT)/lib/udev/devices/stderr
-	ln -sfv /proc/kcore $(BUILDROOT)/lib/udev/devices/core
 endef
