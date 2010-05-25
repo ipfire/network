@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = pkg-config
-PKG_VER        = 0.22
+PKG_VER        = 0.24
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,7 +34,8 @@ PKG_URL        = http://pkg-config.freedesktop.org/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = A tool for determining compilation options.
 
-PKG_DEPS      += m4
+PKG_BUILD_DEPS+= m4 sed
+PKG_DEPS      += popt
 
 define PKG_DESCRIPTION
 	The pkgconfig tool determines compilation options. For each required \
@@ -44,7 +45,9 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-# fails
-#define STAGE_TEST
-#	cd $(DIR_APP) && make check
-#endef
+CONFIGURE_OPTIONS += \
+	--with-installed-popt
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
