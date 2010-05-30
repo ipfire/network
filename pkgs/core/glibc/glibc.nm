@@ -203,11 +203,9 @@ define STAGE_BUILD
 		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)"
 endef
 
-#define STAGE_TEST
-#	cd $(DIR_SRC)/glibc-build && cp -vf ../$(THISAPP)/iconvdata/gconv-modules iconvdata
-#	cd $(DIR_SRC)/glibc-build && make -k check 2>&1 | tee glibc-check-log
-#	cd $(DIR_SRC)/glibc-build && grep Error glibc-check-log
-#endef
+define STAGE_TEST
+	cd $(DIR_SRC)/glibc-build && make check
+endef
 
 define STAGE_INSTALL
 	cd $(DIR_SRC)/glibc-build && make install install_root=$(BUILDROOT)
