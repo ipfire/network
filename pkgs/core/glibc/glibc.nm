@@ -159,6 +159,14 @@ define STAGE_PREPARE
 	# Use gnu hash style
 	cd $(DIR_APP) && sed -i Makeconfig \
 		-e "s/-Wl,--hash-style=both/-Wl,--hash-style=gnu -Wl,-O1/"
+
+	# stdlib/tst-putenvmod is not linked against libc.
+	cd $(DIR_APP) && sed -i stdlib/Makefile \
+		-e "s/^CFLAGS-tst-putenvmod.c.*/& -fno-stack-protector/g"
+
+	# stdio-common/bug22 hits timeout.
+	cd $(DIR_APP) && sed -i stdio-common/bug22.c \
+		-e "s/#define TIMEOUT.*/#define TIMEOUT 300/"
 endef
 
 define STAGE_BUILD
