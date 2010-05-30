@@ -17,7 +17,13 @@ define STAGE_BUILD
 			--with-headers=$(TOOLS_DIR)/include \
 			--disable-profile \
 			--enable-add-ons \
-			--enable-kernel=$(OPTIMIZED_KERNEL)
+			--enable-kernel=$(OPTIMIZED_KERNEL) \
+			--with-stack-protector=all \
+			--enable-bind-now \
+			--with-tls \
+			--with-__thread \
+			--enable-experimental-malloc \
+			--without-cvs
 
 	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
 endef
