@@ -156,10 +156,6 @@ define STAGE_PREPARE
 		sed -e "s|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(shell readelf -l /bin/sh | sed -n 's@.*interpret.*$(TOOLS_DIR)\(.*\)]$$@\1@p') -o|" \
 		-i scripts/test-installation.pl
 
-	# Fix a very weird issue with rpath
-	cd $(DIR_APP) && sed -e "s/LDFLAGS-rpath-ORIGIN/LDFLAGS/g" \
-		-i iconvdata/Makefile
-
 	# Use gnu hash style
 	cd $(DIR_APP) && sed -i Makeconfig \
 		-e "s/-Wl,--hash-style=both/-Wl,--hash-style=gnu -Wl,-O1/"
