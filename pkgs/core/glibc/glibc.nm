@@ -183,8 +183,7 @@ define STAGE_BUILD
 			--disable-werror \
 			--enable-bind-now \
 			--enable-stackguard-randomization \
-			--with-stack-protector=all \
-			--enable-omitfp
+			--with-stack-protector=all
 
 	# Our GCC is already passing -fPIC, and that's all we want for the libraries.
 	# LDFLAGS.so is appended to so we don't build shared libraries with
