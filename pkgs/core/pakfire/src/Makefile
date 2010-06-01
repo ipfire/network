@@ -7,7 +7,10 @@ PYTHON_DIR = $(DESTDIR)/usr/lib/python$(PYTHON_MAJ)/site-packages/pakfire
 all: pakfire
 
 pakfire: pakfire.in
-	$(SUBSTITUDE) pakfire.in > pakfire
+	#$(SUBSTITUDE) pakfire.in > pakfire
+
+	# XXX Just for now:
+	cp -vf pakfire.sh pakfire
 
 clean:
 	rm -vf pakfire python/*.py[co]
