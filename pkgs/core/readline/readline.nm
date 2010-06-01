@@ -62,4 +62,6 @@ define STAGE_INSTALL_CMDS
 
 	-mkdir -pv $(BUILDROOT)/etc/profile.d
 	cp -vf $(DIR_SOURCE)/readline.sh $(BUILDROOT)/etc/profile.d/
+
+	cp -vf $(DIR_SOURCE)/inputrc $(BUILDROOT)/etc/
 endef
