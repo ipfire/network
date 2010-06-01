@@ -19,6 +19,9 @@ check() {
 
 		rpath=$(get_rpath ${file})
 		if [ -n "${rpath}" ]; then
+			if [ "${QUALITY_AGENT_RPATH_ALLOW_ORIGIN}" = "yes" ]; then
+				[ "${rpath}" = '$ORIGIN' ] && continue
+			fi
 			if listmatch ${rpath} ${QUALITY_AGENT_WHITELIST_RPATH}; then
 				continue
 			fi

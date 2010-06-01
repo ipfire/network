@@ -28,6 +28,8 @@ define STAGE_BUILD
 	cd $(DIR_SRC)/glibc-build && make PARALLELMFLAGS=$(PARALLELISMFLAGS)
 endef
 
+STAGE_TEST = # No test here.
+
 define STAGE_INSTALL
 	-mkdir -v $(TOOLS_DIR)/etc
 	touch $(TOOLS_DIR)/etc/ld.so.conf
