@@ -69,10 +69,13 @@ CONFIGURE_OPTIONS += \
 #endef
 
 define STAGE_INSTALL_CMDS
-	-mkdir -pv $(BUILDROOT)/{bin,etc/profile.d}
+	-mkdir -pv $(BUILDROOT)/{bin,etc/profile.d,root}
 
 	# Bash startup files
 	cp -avf $(DIR_SOURCE)/{bashrc,profile,shells} $(BUILDROOT)/etc
+	cp -vf $(DIR_SOURCE)/dot_bash_logout $(BUILDROOT)/root/.bash_logout
+	cp -vf $(DIR_SOURCE)/dot_bash_profile $(BUILDROOT)/root/.bash_profile
+	cp -vf $(DIR_SOURCE)/dot_bashrc $(BUILDROOT)/root/.bashrc
 
 	# /etc/profile.d
 	cp -vf $(DIR_SOURCE)/profile.d/* $(BUILDROOT)/etc/profile.d
