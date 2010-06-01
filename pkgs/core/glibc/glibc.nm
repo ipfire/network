@@ -48,7 +48,7 @@ endef
 
 PKG_DEPS = # Has got no dependencies
 
-GLIBC_FLAGS += -DPIC -fno-strict-aliasing -mno-tls-direct-seg-refs
+GLIBC_FLAGS += -fno-strict-aliasing -mno-tls-direct-seg-refs
 
 CFLAGS   += $(GLIBC_FLAGS)
 CXXFLAGS += $(GLIBC_FLAGS)
@@ -229,7 +229,15 @@ define STAGE_BUILD
 			--disable-werror \
 			--enable-bind-now \
 			--enable-stackguard-randomization \
-			--with-stack-protector=all
+			--with-stack-protector=all \
+			--enable-__thread \
+			--enable-tls \
+			--enable-experimental-malloc \
+			--with-gd \
+			--with-nss-crypt
+
+	cd $(DIR_SRC)/glibc-build && sed -i config.make \
+		-e "s/^build-pic-default=.*/build-pic-default=yes/"
 
 	# Our GCC is already passing -fPIC, and that's all we want for the libraries.
 	# LDFLAGS.so is appended to so we don't build shared libraries with
