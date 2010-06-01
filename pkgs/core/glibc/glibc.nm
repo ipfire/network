@@ -120,9 +120,7 @@ PKG_OBJECTS   += $(THISAPP).tar.bz2
 # $(THISAPP)-resolv_response_length.patch
 #	This patch does a check on the buffer size of res_* functions.
 
-###############################################################################
-# Installation Details
-###############################################################################
+QUALITY_AGENT_RPATH_ALLOW_ORIGIN=yes
 
 define STAGE_PREPARE
 	@cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(firstword $(PKG_OBJECTS))
