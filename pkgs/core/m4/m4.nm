@@ -45,6 +45,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-#define STAGE_TEST
-#	cd $(DIR_APP) && make check
-#endef
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
