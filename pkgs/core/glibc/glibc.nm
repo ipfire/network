@@ -258,7 +258,9 @@ define STAGE_BUILD
 endef
 
 define STAGE_TEST
-	cd $(DIR_SRC)/glibc-build && make check
+	cd $(DIR_SRC)/glibc-build && make check \
+		CFLAGS="$(CFLAGS) -fno-stack-protector -U_FORTIFY_SOURCE" \
+		CXXFLAGS="$(CXXFLAGS) -fno-stack-protector -U_FORTIFY_SOURCE"
 endef
 
 define STAGE_INSTALL
