@@ -49,9 +49,9 @@ CONFIGURE_OPTIONS += \
 	--libexecdir=/usr/lib/findutils \
 	--localstatedir=/var/lib/locate
 
-#define STAGE_TEST
-#	cd $(DIR_APP) && make check
-#endef
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
 
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/bin
