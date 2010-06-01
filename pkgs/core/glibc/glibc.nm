@@ -266,4 +266,5 @@ define STAGE_INSTALL
 
 	# Configuration
 	cp -vf $(DIR_SOURCE)/{ld.so.conf,nsswitch.conf} $(BUILDROOT)/etc
+	-mkdir -pv $(BUILDROOT)/etc/ld.so.conf.d
 endef
