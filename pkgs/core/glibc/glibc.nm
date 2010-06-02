@@ -180,6 +180,7 @@ define STAGE_PREPARE
 		-e "s/tst-cancelx5 //g" \
 		-e "s/tst-cancelx10 //g" \
 		-e "s/tst-cancelx18 //g" \
+		-e "s/tst-signal1 //g"
 
 	# These are known to fail on x86:
 	cd $(DIR_APP) && sed -i rt/Makefile \
@@ -205,6 +206,8 @@ define STAGE_PREPARE
 		-e "s/check-localplt //g" \
 		-e "s/check-localplt.out$$//g"
 
+	cd $(DIR_APP) && sed -i signal/Makefile \
+		-e "s/tst-sigset2//g"
 endef
 
 define STAGE_BUILD
