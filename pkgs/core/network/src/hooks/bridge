@@ -1,0 +1,152 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /lib/network/header-zone
+
+HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE MAC MTU"
+
+# Default values
+MAC=$(mac_generate)
+MTU=1500
+STP="on"
+STP_FORWARD_DELAY=0
+STP_HELLO=2
+STP_MAXAGE=20
+
+function _check() {
+	assert ismac MAC
+	assert isbool STP
+	assert isinteger STP_HELLO
+	assert isinteger STP_FORWARD_DELAY
+	assert isinteger MTU
+}
+
+function _parse_cmdline() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--stp=*)
+				STP=${1#--stp=}
+				;;
+			--stp-hello=*)
+				STP_HELLO=${1#--stp-hello=}
+				;;
+			--stp-forward-delay=*)
+				STP_FORWARD_DELAY=${1#--stp-forward-delay=}
+				;;
+			--mtu=*)
+				MTU=${1#--mtu=}
+				;;
+			--mac=*)
+				MAC=${1#--mac=}
+				;;
+			*)
+				warning "Ignoring unknown option '${1}'"
+				;;
+		esac
+		shift
+	done
+}
+
+function _up() {
+	local zone=${1}
+	shift
+
+	config_read ${ZONE_DIR}/${zone}/settings
+
+	if ! device_exists ${zone}; then
+		brctl addbr ${zone}
+	fi
+
+	[ -n "${MAC}" ] && device_set_mac ${zone} ${MAC}
+	[ -n "${MTU}" ] && device_set_mtu ${zone} ${MTU} 
+
+	# Enable STP
+	if enabled STP; then
+		brctl stp ${zone} on
+
+		if [ -n "${STP_FORWARD_DELAY}" ]; then
+			brctl setfd ${zone} ${STP_FORWARD_DELAY}
+		fi
+
+		if [ -n "${STP_HELLO}" ]; then
+			brctl sethello ${zone} ${STP_HELLO}
+		fi
+
+		if [ -n "${STP_MAXAGE}" ]; then
+			brctl setmaxage ${zone} ${STP_MAXAGE}
+		fi
+	else
+		brctl stp ${zone} off
+	fi
+
+	device_set_up ${zone}
+
+	# Bring all ports up
+	zone_ports_up ${zone}
+
+	# XXX Do we need this?
+	# Wait until bridge is forwarding
+	# which is needed by dhcp client
+	#if enabled STP; then
+	#	bridge_is_forwarding ${zone}
+	#fi
+
+	zone_configs_up ${zone}
+
+	event_interface_up ${zone}
+
+	exit $?
+}
+
+function _down() {
+	local zone=${1}
+	shift
+
+	if ! device_is_up ${zone}; then
+		warning "Zone '${zone}' is not up"
+		exit ${EXIT_OK}
+	fi
+
+	event_interface_down ${zone}
+
+	zone_configs_down ${zone}
+	zone_ports_down ${zone}
+
+	device_set_down ${zone}
+	brctl delbr ${zone}
+
+	exit $?
+}
+
+function _addport() {
+	local zone=${1}
+	local hook=${2}
+	shift 2
+
+	if ! hook_exists port ${hook}; then
+		error "Hook does not exist '${hook}'"
+		exit ${EXIT_ERROR}
+	fi
+
+	port_hook ${hook} add ${zone}
+}
+
+run $@

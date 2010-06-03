@@ -1,0 +1,141 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function hook_exists() {
+	local hook=${1}
+
+	[ -d "${HOOKS_DIR}/${hook}" ] && return ${EXIT_ERROR}
+
+	[ -x "${HOOKS_DIR}/${hook}" ]
+}
+
+function hook_port_exists() {
+	local hook_zone=${1}
+	local hook_port=${2}
+
+	hook_exists ${hook_zone} || return ${EXIT_ERROR}
+
+	[ -x "${HOOKS_DIR}/${hook_zone}.ports/${hook_port}" ]
+}
+
+function hook_config_exists() {
+	local hook_zone=${1}
+	local hook_config=${2}
+
+	hook_exists ${hook_zone} || return ${EXIT_ERROR}
+
+	[ -x "${HOOKS_DIR}/${hook_zone}.configs/${hook_config}" ]
+}
+
+function hook_has_ports() {
+	local hook=${1}
+
+	[ -d "${HOOKS_DIR}/${hook}.ports" ]
+}
+
+function hook_has_configs() {
+	local hook=${1}
+
+	[ -d "${HOOKS_DIR}/${hook}.configs" ]
+}
+
+function hook_exec() {
+	local hook=${1}
+	shift
+
+	if ! hook_exists ${hook}; then
+		error "Hook '${hook}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	${SHELL} ${HOOKS_DIR}/${hook} $@
+}
+
+function hook_port_exec() {
+	local hook_zone=${1}
+	local hook_port=${2}
+	shift 2
+
+	if ! hook_exists ${hook_zone}; then
+		error "Hook '${hook_zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! hook_port_exists ${hook_zone} ${hook_port}; then
+		error "Port hook '${hook_port}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	${SHELL} ${HOOKS_DIR}/${hook_zone}.ports/${hook_port} $@
+}
+
+function hook_config_exec() {
+	local hook_zone=${1}
+	local hook_config=${2}
+	shift 2
+
+	if ! hook_exists ${hook_zone}; then
+		error "Hook '${hook_zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! hook_config_exists ${hook_zone} ${hook_config}; then
+		error "Config hook '${hook_config}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	${SHELL} ${HOOKS_DIR}/${hook_zone}.configs/${hook_config} $@
+}
+
+function hooks_get_all() {
+	local type=${1}
+
+	local hook
+	for hook in ${HOOKS_DIR}/*; do
+		hook=$(basename ${hook})
+		hook_exists ${hook} && echo "${hook}"
+	done | sort
+}
+
+function hook_ports_get_all() {
+	local hook=${1}
+
+	if ! hook_exists ${hook}; then
+		error "Hook '${hook}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	local hook
+	for hook in ${HOOKS_DIR}/${zone}.ports/*; do
+		hook=$(basename ${hook})
+		## XXX executeable?
+		echo "${hook}"
+	done | sort
+}
+
+function config_get_hook() {
+	local config=${1}
+
+	(
+		. ${config}
+		echo "${HOOK}"
+	)
+}

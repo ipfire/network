@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2009  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,26 +19,28 @@
 #                                                                             #
 ###############################################################################
 
-RED_RUN=/var/run/network/red
-PPP_SECRETS=/etc/ppp/secrets
-
 function ppp_pre_up() {
 	# Load the ppp_generic module if not already done
-	grep -q ^ppp_generic /proc/modules || modprobe ppp_generic
+	if ! grep -q ^ppp_generic /proc/modules; then
+		modprobe -q ppp_generic
+	fi
 
-	connection --starting --zone=${zone}
+	#connection --starting --zone=${zone}
 }
 
 function ppp_post_up() {
-	: #connection --up --zone=${zone}
+	:
+	#connection --up --zone=${zone}
 }
 
 function ppp_pre_down() {
-	connection --stopping --zone=${zone}
+	:
+	# connection --stopping --zone=${zone}
 }
 
 function ppp_post_down() {
-	: #connection --down --zone=${zone}
+	:
+	#connection --down --zone=${zone}
 }
 
 function ppp_secret() {
@@ -83,13 +85,14 @@ function ppp_linkname_get() {
 	local config=${1}
 	(
 		. ${config}
-		echo "${LINKNAME}"
+		echo "${NAME}"
 	)
 }
 
 function red_defaultroute_update() {
 	local command="ip route replace default"
 
+	local uplink
 	for uplink in ${RED_RUN}/*; do
 		[ -d "${uplink}" ] || continue
 
@@ -102,7 +105,7 @@ function red_defaultroute_update() {
 		fi
 	done
 	$command
-	ip route flush cache
+	#ip route flush cache
 }
 
 function red_dns_update() {

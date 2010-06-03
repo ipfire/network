@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -23,19 +23,20 @@ umask 022
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
 . /lib/network/functions
-. /lib/network/functions.ppp
 
-for config in ${CONFIG_ZONES}/${DEVICE}/*; do
-	if [ "$(ppp_linkname_get ${config})" = "${LINKNAME}" ]; then
-		CONFIG=${config}
-		. ${CONFIG}
-		break
-	fi
-done
+# Zone equals IFNAME
+ZONE=${IFNAME}
 
-if [ -n "${HOOK}" ] && [ -x "${HOOKS_DIR}/${HOOK}.helper" ]; then
-	exec ${HOOKS_DIR}/${HOOK}.helper --config=${CONFIG} \
-		$(basename $0) $@
+if ! zone_exists ${ZONE}; then
+	error "Zone '${ZONE}' does not exist."
+	exit ${EXIT_ERROR}
 fi
 
-exit ${EXIT_ERROR}
+HOOK=$(config_get_hook $(zone_dir ${ZONE})/settings)
+
+if ! hook_exists ${HOOK}; then
+	error "Hook '${HOOK}' does not exist."
+	exit ${EXIT_ERROR}
+fi
+
+hook_exec ${HOOK} $(basename ${0}) ${ZONE}

@@ -21,12 +21,13 @@
 
 . /lib/network/functions
 
-# Parse the command line
+HOOK=$(basename ${0})
+
 while [ $# -gt 0 ]; do
 	case "${1}" in
-		-d|--debug)
-			DEBUG=1
-			log DEBUG "Enabled debugging mode"
+		-*)
+			error "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
 			;;
 		*)
 			action=${1}
@@ -36,38 +37,13 @@ while [ $# -gt 0 ]; do
 	[ -n "${action}" ] && break
 done
 
-# Process the given action
-case "${action}" in
-	config)
-		cli_config $@
-		;;
+function run() {
+	case "${action}" in
+		create|rem|up|down)
+			_${action} $@
+			;;
+	esac
 
-	device)
-		cli_device $@
-		;;
-
-	zone)
-		cli_zone $@
-		;;
-
-	start)
-		cli_start $@
-		;;
-
-	stop)
-		cli_stop $@
-		;;
-
-	show)
-		cli_show $@
-		;;
-
-	""|help)
-		cli_usage root
-		exit ${EXIT_OK}
-		;;
-	*)
-		error "Invalid command given."
-		cli_usage usage
-		exit ${EXIT_CONF_ERROR}
-esac
+	error "Port hook '${HOOK}' didn't exit properly."
+	exit ${EXIT_ERROR}
+}

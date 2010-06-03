@@ -19,55 +19,10 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/functions
-
-# Parse the command line
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		-d|--debug)
-			DEBUG=1
-			log DEBUG "Enabled debugging mode"
-			;;
-		*)
-			action=${1}
-			;;
-	esac
-	shift
-	[ -n "${action}" ] && break
-done
-
-# Process the given action
-case "${action}" in
-	config)
-		cli_config $@
-		;;
-
-	device)
-		cli_device $@
-		;;
-
-	zone)
-		cli_zone $@
-		;;
-
-	start)
-		cli_start $@
-		;;
-
-	stop)
-		cli_stop $@
-		;;
-
-	show)
-		cli_show $@
-		;;
-
-	""|help)
-		cli_usage root
-		exit ${EXIT_OK}
-		;;
-	*)
-		error "Invalid command given."
-		cli_usage usage
-		exit ${EXIT_CONF_ERROR}
-esac
+# Define color for messages
+BOLD="\\033[1;39m"
+DONE="\\033[1;32m"
+SKIP="\\033[1;34m"
+WARN="\\033[1;35m"
+FAIL="\\033[1;31m"
+NORMAL="\\033[0;39m"

@@ -1,0 +1,218 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function cli_config() {
+	if [ -n "${1}" ]; then
+		network_config_set $@
+	else
+		network_config_print
+	fi
+}
+
+function cli_device() {
+	local action=${1}
+	shift
+
+	local device
+	local devices=$@
+
+	if [ -z "${devices}" ]; then
+		devices=$(devices_get_all)
+	fi
+
+	case "${action}" in
+		discover)
+			echo "# XXX need to implement --raw here"
+			for device in ${devices}; do
+				cli_device_discover ${device} $@
+			done
+			;;
+
+		show|"")
+			for device in ${devices}; do
+				cli_device_print ${device}
+			done
+			;;
+		*)
+			cli_usage device
+			;;				
+	esac
+}
+
+function cli_device_print() {
+	local device=${1}
+
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	echo "${device}"
+	echo "  Type: $(device_get_type ${device})"
+	echo "  Addr: $(device_get_address ${device})"
+	echo
+}
+
+function cli_device_discover() {
+	local device=${1}
+	shift
+
+	local device_type=$(device_get_type ${device})
+	if [ "${device_type}" != "real" ]; then
+		return ${EXIT_OK}
+	fi
+
+	local raw
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--raw)
+				raw=1
+				;;
+		esac
+		shift
+	done
+
+	local up
+	device_is_up ${device} && up=1
+	device_set_up ${device}
+
+	enabled raw || echo "${device}"
+
+	local hook
+	local out
+	local ret
+	for hook in $(hooks_get_all); do
+		out=$(hook_exec ${hook} discover ${device})
+		ret=$?
+
+		[ ${ret} -eq ${DISCOVER_NOT_SUPPORTED} ] && continue
+
+		if enabled raw; then
+			case "${ret}" in
+				${DISCOVER_OK})
+					echo "${hook}: OK"
+					local line
+					while read line; do
+						echo "${hook}: ${line}"
+					done <<<"${out}"
+					;;
+
+				${DISCOVER_ERROR})
+					echo "${hook}: FAILED"
+					;;
+			esac
+		else
+			case "${ret}" in
+				${DISCOVER_OK})
+					echo "  ${hook} was successful."
+					local line
+					while read line; do
+						echo "  ${line}"
+					done <<<"${out}"
+					;;
+
+				${DISCOVER_ERROR})
+					echo "  ${hook} failed."
+					;;
+			esac
+		fi
+	done
+
+	echo # New line
+
+	[ "${up}" = "1" ] || device_set_down ${device}
+}
+
+function cli_zone() {
+	local action
+	local zone
+
+	if zone_name_is_valid ${1}; then
+		zone=${1}
+		action=${2}
+		shift 2
+
+		case "${action}" in
+			config|down|edit|port|show|status|up)
+				zone_${action} ${zone} $@
+				;;
+		esac
+	else
+		action=${1}
+		shift
+
+		case "${action}" in
+			create|remove)
+				zone_${action} $@
+				;;
+			*)
+				error "Unrecognized argument: '${action}'"
+				;;
+		esac
+	fi
+}
+
+function cli_start() {
+	local zones=$(zones_get $@)
+
+	local zone
+	for zone in ${zones}; do
+		zone_up ${zone}
+	done
+}
+
+function cli_stop() {
+	local zones=$(zones_get $@)
+
+	local zone
+	for zone in ${zones}; do
+		zone_down ${zone}
+	done
+}
+
+function cli_usage() {
+	local what=${1}
+
+	case "${what}" in
+		root)
+			echo "${0}: [command] <options ...>"
+			echo
+			echo "  start  - ..."
+			echo "  stop   - ..."
+			echo
+			echo "  config - ..."
+			echo
+			echo "  device - ..."
+			echo "  show   - ???"
+			echo "  zone   - ..."
+			echo
+			;;
+		usage)
+			echo
+			echo "  Run '${0} help' to get information how to use this tool."
+			echo
+			;;
+		*)
+			error "No help available for this command '${what}'."
+			;;
+	esac
+}

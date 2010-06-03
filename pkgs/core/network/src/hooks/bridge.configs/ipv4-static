@@ -1,0 +1,135 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /lib/network/header-port
+
+HOOK_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
+
+function _check() {
+	assert isset ADDRESS
+	assert isinteger PREFIX
+
+	if [ ${PREFIX} -gt 30 ]; then
+		error "PREFIX is greater than 30."
+		exit ${EXIT_ERROR}
+	fi
+}
+
+function _create() {
+	local zone=${1}
+	shift
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--address=*)
+				ADDRESS=${1#--address=}
+				;;
+			--netmask=*)
+				NETMASK=${1#--netmask=}
+				;;
+			--prefix=*)
+				PREFIX=${1#--prefix=}
+				;;
+			--gateway=*)
+				GATEWAY=${1#--gateway=}
+				;;
+		esac
+		shift
+	done
+
+	if [ -z "${PREFIX}" -a -n "${NETMASK}" ]; then
+		PREFIX=$(ipv4_mask_to_cidr ${NETMASK})
+	fi
+
+	config_write $(zone_dir ${zone})/config.${HOOK}.$(uuid) ${HOOK_SETTINGS}
+
+	exit ${EXIT_OK}
+}
+
+function _up() {
+	local zone=${1}
+	local config=${2}
+	shift 2
+
+	if ! device_exists ${zone}; then
+		error "Zone '${zone}' doesn't exist."
+		exit ${EXIT_ERROR}
+	fi
+	
+	config_read $(zone_dir ${zone})/${config}
+
+	if ! zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
+		ip addr add ${ADDRESS}/${PREFIX} dev ${zone}
+	else
+		warning "Do not set IPv4 address '${ADDRESS}/${PREFIX}' because it was already configured on zone '${zone}'."
+	fi
+
+	warning "XXX Gateway stuff has to be done."
+	if [ -n "${GATEWAY}" ]; then
+		: # What do we do with the gateway?
+	fi
+
+	exit ${EXIT_OK}
+}
+
+function _down() {
+	local zone=${1}
+	local config=${2}
+	shift 2
+
+	if ! device_exists ${zone}; then
+		error "Zone '${zone}' doesn't exist."
+		exit ${EXIT_ERROR}
+	fi
+	
+	config_read $(zone_dir ${zone})/${config}
+
+	if zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
+		ip addr del ${ADDRESS}/${PREFIX} dev ${zone}
+	fi
+
+	exit ${EXIT_OK}
+}
+
+function ipv4_mask_to_cidr() {
+	local mask=0
+
+	local field
+	for field in $(tr '.' ' ' <<<${1}); do
+		mask=$(( $(( ${mask} << 8 )) | ${field} ))
+	done
+
+	local cidr=0
+	local x=$(( 128 << 24 )) # 0x80000000
+
+	while [ $(( ${x} & ${mask} )) -ne 0 ]; do
+		[ ${mask} -eq ${x} ] && mask=0 || mask=$(( ${mask} << 1 ))
+		cidr=$((${cidr} + 1))
+	done
+
+	if [ $(( ${mask} & 2147483647 )) -ne 0 ]; then # 2147483647 = 0x7fffffff
+		echo "Invalid net mask: $1" >&2
+	else
+		echo ${cidr}
+	fi
+}
+
+run $@

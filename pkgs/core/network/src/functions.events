@@ -1,0 +1,28 @@
+#!/bin/bash
+
+function event_emit() {
+	local event=${1}
+	shift
+
+	log DEBUG "Emitting event '${event}' ($@)"
+
+	initctl emit ${event} $@
+}
+
+function event_firewall_reload() {
+	event_emit firewall-reload
+}
+
+# XXX dunno what this does.
+function event_interface_up() {
+	local iface=${1}
+
+	event_emit network-interface-up IFACE=${iface}
+}
+
+# XXX dunno what this does.
+function event_interface_down() {
+	local iface=${1}
+
+	event_emit network-interface-down IFACE=${iface}
+}

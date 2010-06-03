@@ -1,72 +1,159 @@
-#!/bin/sh
-########################################################################
-# Begin $NETWORK_DEVICES/services/ipv4-static
-#
-# Description : IPV4 Static Boot Script
-#
-# Authors     : Nathan Coulson - nathan@linuxfromscratch.org
-#               Kevin P. Fleming - kpfleming@linuxfromscratch.org
-#
-# Version     : 00.00
-#
-# Notes       :
-#
-########################################################################
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
 
-. /lib/network/hook-header
-. /lib/network/functions.ppp
+. /lib/network/header-zone
 
-HOOK_NAME="pppoe"
-HOOK_TYPE="zone"
+# TODO AC name, service name, sync?
 
-PPPOE_PLUGIN=rp-pppoe.so
+HOOK_SETTINGS="HOOK AUTH LINKNAME USER SECRET PEERDNS DEFAULTROUTE MTU"
+HOOK_SETTINGS="${HOOK_SETTINGS} DEVICE DEVICE_VID DEVICE_TYPE"
 
-case "${action}" in
-	help)
-		;;
+AUTH=
+DEFAULTROUTE=1
+LINKNAME="$(uuid)"
+MTU=1492
+PEERDNS=1
+SECRET=
+USER=
 
-	info)
-		echo "HOOK_NAME=$HOOK_NAME"
-		echo "HOOK_TYPE=$HOOK_TYPE"
-		;;
+PPPOE_ALLOWED_AUTHS="chap pap"
+PPPOE_PLUGIN="rp-pppoe.so"
 
-	status)
-		echo -e "#  ${CLR_BOLD_CYN}PPPoE: ${NAME}${NORMAL}"
-		echo -n "#    pppd's PID: "
-		pid=$(head -n1 /var/run/ppp-${NAME}.pid 2>/dev/null)
-		if [ -n "${pid}" ] && [ -d "/proc/${pid}" ]; then
-			echo -e "${CLR_BOLD_GRN}${pid}${NORMAL}"
-			exit ${EXIT_OK}
-		else
-			echo -e "${CLR_BOLD_RED}${pid-off}${NORMAL}"
-			exit ${EXIT_OK}
-		fi
-		;;
+function _pppoe_real_device() {
+	local device
+	if [ -n "${DEVICE_VID}" ]; then
+		device="${DEVICE_MAC}"
+	else
+		device="${DEVICE}"
+	fi
 
-	pre-up)
-		ppp_pre_up
+	devicify ${device}
+}
 
-		check_config NAME
-		# Creating necessary files
-		[ -d "${RED_RUN}/${NAME}" ] || mkdir -p ${RED_RUN}/${NAME}
+function _check() {
+	assert isset USER
+	assert isset SECRET
+	assert isset LINKNAME
+	assert isset DEFAULTROUTE
+	assert isset PEERDNS
+	assert isset DEVICE
+	assert isset DEVICE_TYPE
 
-		ppp_secret "${USER}" "${SECRET}"
+	assert isbool DEFAULTROUTE
+	assert isbool PEERDNS
+	assert ismac DEVICE
+	assert isoneof DEVICE_TYPE real virtual
 
-		cat <<EOF >${RED_RUN}/${NAME}/options
+	isset AUTH && assert isoneof AUTH ${PPPOE_ALLOWED_AUTHS}
+	isset DEVICE_ID && assert isinteger DEVICE_VID
+}
+
+function _parse_cmdline() {
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			--user=*)
+				USER=${1#--user=}
+				;;
+			--secret=*)
+				SECRET=${1#--secret=}
+				;;
+			--linkname=*)
+				LINKNAME=${1#--name=}
+				;;
+			--mtu=*)
+				MTU=${1#--mtu=}
+				;;
+			--no-defaultroute)
+				DEFAULTROUTE=0
+				;;
+			--no-dns)
+				PEERDNS=0
+				;;
+			--auth=*)
+				AUTH=${1#--auth=}
+				;;
+			--device=*)
+				DEVICE=${1#--device=}
+				;;
+			--device-vid=*)
+				DEVICE_VID=${1#--device-vid=}
+				;;
+			*)
+				echo "Unknown option: $1" >&2
+				exit ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	if ! device_exists $(devicify ${DEVICE}); then
+		error "Device '${DEVICE}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	DEVICE=$(macify ${DEVICE})
+
+	if isset DEVICE_VID; then
+		DEVICE_TYPE="virtual"
+	else
+		DEVICE_TYPE="real"
+	fi
+}
+
+function _up() {
+	local zone=${1}
+	shift
+
+	config_read ${ZONE_DIR}/${zone}/settings
+
+	ppp_pre_up
+
+	# Creating necessary files
+	[ -d "${RED_RUN}/${LINKNAME}" ] || mkdir -p ${RED_RUN}/${LINKNAME}
+
+	# Setting up the device
+	if [ -n "${DEVICE_VID}" ]; then
+		device_create_virtual ${DEVICE} ${DEVICE_VID} ${DEVICE_MAC}
+	else
+		device_set_up ${DEVICE}
+	fi
+
+	ppp_secret "${USER}" "${SECRET}"
+
+	cat <<EOF >${RED_RUN}/${LINKNAME}/options
 # Naming options
-name ${NAME}
-linkname ${NAME}
+ifname ${zone}
+name ${LINKNAME}
+linkname ${LINKNAME}
 
-plugin ${PPPOE_PLUGIN} ${zone}
+plugin ${PPPOE_PLUGIN} $(_pppoe_real_device)
 
 # User configuration
 user ${USER}
 
-$([ "${PEERDNS}" = "1" ] && echo "usepeerdns")
-$([ "${DEFAULTROUTE}" = "1" ] && echo "defaultroute")
+$(enabled PEERDNS && echo "usepeerdns")
+$(enabled DEFAULTROUTE && echo "defaultroute")
 
 noauth
-$([ -n "${AUTH}" ] && echo "require-${AUTH}")
+$(isset AUTH && echo "require-${AUTH}")
 
 noipdefault
 
@@ -75,117 +162,68 @@ mtu ${MTU}
 mru ${MTU}
 
 # Disable the compression
-noaccomp nodeflate nopcomp novj novjccomp nobsdcomp
+noccp noaccomp nodeflate nopcomp novj novjccomp nobsdcomp nomppe
 
 debug
 EOF
-		;;
 
-	post-up)
-		check_config zone NAME
-		MESSAGE="Starting PPP Daemon on interface ${zone}..."
-		if zone_is_forwarding ${zone}; then
-			pppd file ${RED_RUN}/${NAME}/options >/dev/null
-			evaluate_retval
-		else
-			log_failure_msg "Zone ${zone} is not forwaring any traffic..."
-			exit ${EXIT_ERROR}
-		fi
+	pppd file ${RED_RUN}/${LINKNAME}/options >/dev/null
 
-		ppp_post_up
-		;;
+	exit ${EXIT_OK}
+}
 
-	pre-down)
-		ppp_pre_down
+function _down() {
+	local zone=${1}
+	shift
 
-		MESSAGE="Stopping PPP Daemon on interface ${zone}..."
-		pid=$(head -n1 /var/run/ppp-${NAME}.pid 2>/dev/null)
-		if [ -n "${pid}" ]; then
-			kill ${pid} &>/dev/null
-			evaluate_retval
-		fi
-		;;
+	config_read ${ZONE_DIR}/${zone}/settings
 
-	post-down)
-		ppp_post_down
-		;;
+	ppp_pre_down
 
-	add)
-		# A pregenerated connection name
-		NAME=$(</proc/sys/kernel/random/uuid)
-		DEFAULTROUTE=1
-		PEERDNS=1
-		MTU=1492
+	# Kill pppd
+	pid=$(cat /var/run/${zone}.pid 2>/dev/null)
+	if [ -n "${pid}" ]; then
+		kill ${pid} &>/dev/null
+	fi
 
-		while [ $# -gt 0 ]; do
-			case "$1" in
-				--user=*)
-					USER=${1#--user=}
-					;;
-				--secret=*)
-					SECRET=${1#--secret=}
-					;;
-				--name=*)
-					NAME=${1#--name=}
-					;;
-				--mtu=*)
-					MTU=${1#--mtu=}
-					;;
-				--no-defaultroute)
-					DEFAULTROUTE=0
-					;;
-				--no-dns)
-					PEERDNS=0
-					;;
-				--auth=*)
-					AUTH=${1#--auth=}
-					;;
-				*)
-					echo "Unknown option: $1" >&2
-					exit 1
-					;;
-			esac
-			shift
-		done
+	# Pull down device or remove virtual one
+	if [ -n "${DEVICE_VID}" ]; then 
+		device_remove_virtual ${DEVICE_MAC}
+	else
+		device_set_down ${DEVICE}
+	fi
 
-		UUID=$(uuid)
-		cat <<EOF >${CONFIG_UUIDS}/${UUID}
-HOOK="${HOOK_NAME}"
-USER="${USER}"
-SECRET="${SECRET}"
-NAME="${NAME}"
-MTU="${MTU}"
-DEFAULTROUTE="${DEFAULTROUTE}"
-PEERDNS="${PEERDNS}"
-AUTH="${AUTH}"
-EOF
+	exit ${EXIT_OK}
+}
 
-		ln -sf ${CONFIG_UUIDS}/${UUID} \
-			${CONFIG_ZONES}/${zone}/${HOOK_NAME}-${UUID}
+function _discover() {
+	local device=${1}
 
-		exit ${EXIT_OK}
-		;;
-
-	discover)
-		output=$(pppoe-discovery -I ${zone} \
-			-U $(</proc/sys/kernel/random/uuid) 2>&1)
-		if grep -q "Timeout" <<<${output}; then
-			echo "${HOOK_NAME}: FAILED"
-			exit ${EXIT_ERROR}
-		else
-			echo "${HOOK_NAME}: OK"
-			echo "${output}" | while read line; do
-				[ "${line:0:1}" = "A" ] || continue
-				echo "${HOOK_NAME}: ${line}"
-			done
-			exit ${EXIT_OK}
-		fi
-		;;
-	
-	*)
-		echo "Usage: ${0} {config|pre-up|post-up|pre-down|post-down|status} [interface]"
+	if [ "$(device_get_type ${device})" != "real" ]; then
 		exit ${EXIT_ERROR}
-	;;
-esac
+	fi
 
-# End $NETWORK_DEVICES/services/ipv4-static
+	local output
+	output=$(pppoe-discovery -I ${device} -U $(uuid) 2>&1)
+
+	# Exit if there was not output
+	[ -z "${output}" ] && exit ${DISCOVER_ERROR}
+
+	# Exit if PADI timed out
+	grep -q "Timeout" <<<${output} && exit ${DISCOVER_ERROR}
+
+	local ac
+	while read line; do
+		case "${line}" in
+			Access-Concentrator:*)
+				ac="${line#Access-Concentrator: }"
+				;;
+		esac
+	done <<<"${output}"
+
+	echo "ACCESS_CONCENTRATOR=\"$ac\""
+
+	exit ${DISCOVER_OK}
+}
+
+run $@
