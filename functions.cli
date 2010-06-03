@@ -172,6 +172,11 @@ function cli_zone() {
 }
 
 function cli_start() {
+	if cli_help_requested $@; then
+		cli_usage root-start
+		exit ${EXIT_OK}
+	fi
+
 	local zones=$(zones_get $@)
 
 	local zone
@@ -181,12 +186,28 @@ function cli_start() {
 }
 
 function cli_stop() {
+	if cli_help_requested $@; then
+		cli_usage root-stop
+		exit ${EXIT_OK}
+	fi
+
 	local zones=$(zones_get $@)
 
 	local zone
 	for zone in ${zones}; do
 		zone_down ${zone}
 	done
+}
+
+function cli_help_requested() {
+	local argument
+	for argument in $@; do
+		if [ "${argument}" = "help" -o "${argument}" = "-h" -o "${argument}" = "--help" ]; then
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_ERROR}
 }
 
 function cli_usage() {
@@ -206,6 +227,26 @@ function cli_usage() {
 			echo "  zone   - ..."
 			echo
 			;;
+		root-start|root-stop)
+			echo    "${0}: ${what#root-} [--local-only|--remote-only|--all|<zone>...]"
+			echo
+			echo    "  This commands ${what#root-}s all zones by default."
+			echo    "  One can pass several parameters to only process a subset of all"
+			echo    "  available zones:"
+			echo
+			echo -e "    ${BOLD}--local-only${NORMAL}"
+			echo    "    Process all local zones which includes every zone without red."
+			echo
+			echo -e "    ${BOLD}--remote-only${NORMAL}"
+			echo    "    Process all remote zones which means only the red ones."
+			echo
+			echo -e "    ${BOLD}--all${NORMAL}"
+			echo    "    Process all zones. This is the default parameter."
+			echo
+			echo    "    Additionally, you can pass one or more zone names which will"
+			echo    "    be processed."
+			echo
+			;;
 		usage)
 			echo
 			echo "  Run '${0} help' to get information how to use this tool."
@@ -213,6 +254,9 @@ function cli_usage() {
 			;;
 		*)
 			error "No help available for this command '${what}'."
+			echo
 			;;
 	esac
+
+	echo "Network configuration tool. Report all bugs to <http://bugs.ipfire.org>."
 }
