@@ -223,6 +223,19 @@ function _config_show() {
 	_notimplemented _config_show
 }
 
+# These tree functions exit silently
+function _ppp-ip-pre-up() {
+	exit ${EXIT_OK}
+}
+
+function _ppp-ip-up() {
+	exit ${EXIT_OK}
+}
+
+function _ppp-ip-down() {
+	exit ${EXIT_OK}
+}
+
 function run() {
 	case "${action}" in
 		create|discover|down|edit|info|rem|status|up)
@@ -245,6 +258,10 @@ function run() {
 			fi
 
 			_config $@
+			;;
+
+		ppp-ip-pre-up|ppp-ip-up|ppp-ip-down)
+			_${action} $@
 			;;
 
 	esac
