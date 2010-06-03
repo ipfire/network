@@ -40,11 +40,12 @@ define PKG_DESCRIPTION
 	This script installs the IPFire Networking Scripts.
 endef
 
-DIR_APP = $(DIR_SOURCE)/src
-
 PKG_TARBALL    =
 
-STAGE_PREPARE = # Do nothing
+define STAGE_PREPARE
+	cp -vrf $(DIR_SOURCE)/src $(DIR_APP)
+endef
+
 STAGE_BUILD = # Do nothing
 
 define STAGE_INSTALL
