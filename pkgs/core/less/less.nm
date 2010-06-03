@@ -46,4 +46,14 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += --with-secure --with-regex=pcre
+CONFIGURE_OPTIONS += --sysconfdir=/etc --with-regex=pcre
+
+CFLAGS += -D_GNU_SOURCE
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/etc/profile.d
+	install -v -m 755 $(DIR_SOURCE)/less.sh $(BUILDROOT)/etc/profile.d
+
+	-mkdir -pv $(BUILDROOT)/usr/bin
+	install -v -m 755 $(DIR_SOURCE)/lesspipe.sh $(BUILDROOT)/usr/bin
+endef
