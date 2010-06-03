@@ -48,7 +48,7 @@ STAGE_PREPARE = # Do nothing
 STAGE_BUILD = # Do nothing
 
 define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/etc/ppp
+	-mkdir -pv $(BUILDROOT)/etc/{network,ppp}
 	-mkdir -pv $(BUILDROOT)/lib/network
 	-mkdir -pv $(BUILDROOT)/sbin
 	-mkdir -pv $(BUILDROOT)/var/log/network
