@@ -20,11 +20,7 @@
 ###############################################################################
 
 function ppp_pre_up() {
-	# Load the ppp_generic module if not already done
-	if ! grep -q ^ppp_generic /proc/modules; then
-		modprobe -q ppp_generic
-	fi
-
+	:
 	#connection --starting --zone=${zone}
 }
 
