@@ -1,0 +1,198 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# Print a pretty error message
+function error() {
+	echo -e " ${FAIL}ERROR${NORMAL}  : $@" >&2
+}
+
+# Print a pretty warn message
+function warning() {
+	echo -e " ${WARN}WARNING${NORMAL}: $@" >&2
+}
+
+function listsort() {
+	local i
+	for i in $@; do
+		echo "${i}"
+	done | sort | tr "\n" " "
+}
+
+function config_read() {
+	local config_file=${1}
+
+	if [ -e "${config_file}" ]; then
+		. ${config_file}
+		config_check
+	fi
+}
+
+function config_write() {
+	local config_file=${1}
+	shift
+
+	# Check if all values to be written are sane
+	config_check
+
+	> ${config_file}
+
+	local param
+	for param in $(listsort $@); do
+		echo "${param}=\"${!param}\"" >> ${config_file}
+	done
+}
+
+function config_print() {
+	local param
+
+	for param in $(listsort $@); do
+		printf "%-16s = %s\n" "${param}" "${!param}"
+	done
+}
+
+function config_check() {
+	# If there is a function defined that is called __check
+	# we call that function
+	[ -n "$(type -t _check)" ] && _check
+}
+
+function network_config_set() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			*=*)
+				eval ${1}			
+				;;
+			*)
+				warning "Invalid parameter given: ${1}"
+				;;
+		esac
+		shift
+	done
+
+	# Write configuration to disk
+	network_config_write
+}
+
+function network_config_read() {
+	config_read ${CONFIG_FILE}
+}
+
+function network_config_write() {
+	config_write ${CONFIG_FILE} ${CONFIG_FILE_PARAMS}
+}
+
+function network_config_print() {
+	config_print ${CONFIG_FILE_PARAMS}
+}
+
+# Speedup function to avoid a call of the basename binary
+function basename() {
+	echo "${1##*/}"
+}
+
+function enabled() {
+	local param=${1}
+
+	[ "${!param}" = "yes" ] || [ "${!param}" = "on" ] || [ "${!param}" = "1" ]
+}
+
+function mac_generate() {
+	local mac=()
+	for i in $(seq 0 5); do
+	        mac[i]="0x$(uuid | cut -c 1-2)"
+	done
+
+	# Remove multicast bit
+	# and set address is software assigned
+	# XXX must doublecheck if this works
+	mac[0]=$((mac[0] & 0xfe))
+	mac[0]=$((mac[0] | 0x02))
+
+	local output
+	for i in ${mac[*]}; do
+	        if [ -n "${output}" ]; then
+	                output="${output}:"
+	        fi
+	
+	        output="${output}$(printf "%02x" ${i})"
+	done
+
+	# Check if output is valid
+	assert mac_is_valid ${output}
+
+	echo ${output}
+}
+
+function mac_is_valid() {
+	local mac=${1}
+
+	[[ ${mac} =~ ^([0-9a-f]{2}\:){5}[0-9a-f]{2}$ ]]
+}
+
+function uuid() {
+	cat /proc/sys/kernel/random/uuid
+}
+
+function isset() {
+	local var=${1}
+
+	[ -n "${!var}" ]
+}
+
+function isoneof() {
+	local var=${!1}
+	shift
+
+	for i in $@; do
+		[ "${var}" = "${i}" ] && return ${EXIT_OK}
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function isbool() {
+	local var=${1}
+
+	isoneof ${var} 0 1 no yes on off
+}
+
+function isinteger() {
+	local var=${!1}
+
+	[[ ${var} =~ ^[0-9]+$ ]]
+}
+
+function ismac() {
+	local mac=${!1}
+
+	mac_is_valid ${mac}
+}
+
+function assert() {
+	local assertion="$@"
+
+	if ! ${assertion}; then
+		error "Assertion '${assertion}' failed."
+		exit ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}

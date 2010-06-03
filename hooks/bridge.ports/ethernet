@@ -19,55 +19,77 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/functions
+. /lib/network/header-port
 
-# Parse the command line
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		-d|--debug)
-			DEBUG=1
-			log DEBUG "Enabled debugging mode"
-			;;
-		*)
-			action=${1}
-			;;
-	esac
-	shift
-	[ -n "${action}" ] && break
-done
+HOOK_SETTINGS="HOOK DEVICE"
 
-# Process the given action
-case "${action}" in
-	config)
-		cli_config $@
-		;;
+function _check() {
+	assert isset DEVICE
+	assert ismac DEVICE
+}
 
-	device)
-		cli_device $@
-		;;
+function _create() {
+	local zone=${1}
+	local device=${2}
+	shift 2
 
-	zone)
-		cli_zone $@
-		;;
+	if [ -z "${device}" ]; then
+		error "No device given."
+		exit ${EXIT_ERROR}
+	fi
 
-	start)
-		cli_start $@
-		;;
+	if ! device_exists ${device}; then
+		warning "Device does not exist."
+	fi
 
-	stop)
-		cli_stop $@
-		;;
+	DEVICE=$(macify ${device})
 
-	show)
-		cli_show $@
-		;;
+	config_write $(zone_dir ${zone})/port.${HOOK}.$(device_hash ${device}) ${HOOK_SETTINGS}
 
-	""|help)
-		cli_usage root
-		exit ${EXIT_OK}
-		;;
-	*)
-		error "Invalid command given."
-		cli_usage usage
-		exit ${EXIT_CONF_ERROR}
-esac
+	exit ${EXIT_OK}
+}
+
+function _up() {
+	local zone=${1}
+	local port=${2}
+
+	config_read $(zone_dir ${zone})/${port}
+
+	local device=$(devicify ${DEVICE})
+
+	if ! device_exists ${device}; then
+		warning "Device '${DEVICE}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	# Set same MTU to device that the bridge has got
+	device_set_mtu ${device} $(device_get_mtu ${zone})
+
+	device_set_up ${device}
+
+	bridge_attach_device ${zone} ${device}
+
+	exit ${EXIT_OK}
+}
+
+function _down() {
+	local zone=${1}
+	local port=${2}
+
+	config_read $(zone_dir ${zone})/${port}
+
+	local device=$(devicify ${DEVICE})
+
+	if ! device_exists ${device}; then
+		warning "Device '${DEVICE}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	bridge_detach_device ${zone} ${device}
+
+	device_set_down ${device}
+
+	exit ${EXIT_OK}
+}
+
+run $@
