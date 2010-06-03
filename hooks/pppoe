@@ -124,8 +124,6 @@ function _up() {
 
 	config_read ${ZONE_DIR}/${zone}/settings
 
-	ppp_pre_up
-
 	# Creating necessary files
 	[ -d "${RED_RUN}/${LINKNAME}" ] || mkdir -p ${RED_RUN}/${LINKNAME}
 
@@ -177,8 +175,6 @@ function _down() {
 	shift
 
 	config_read ${ZONE_DIR}/${zone}/settings
-
-	ppp_pre_down
 
 	# Kill pppd
 	pid=$(cat /var/run/${zone}.pid 2>/dev/null)
