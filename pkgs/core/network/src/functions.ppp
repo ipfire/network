@@ -19,26 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-function ppp_pre_up() {
-	:
-	#connection --starting --zone=${zone}
-}
-
-function ppp_post_up() {
-	:
-	#connection --up --zone=${zone}
-}
-
-function ppp_pre_down() {
-	:
-	# connection --stopping --zone=${zone}
-}
-
-function ppp_post_down() {
-	:
-	#connection --down --zone=${zone}
-}
-
 function ppp_common_ip_pre_up() {
 	local zone=${1}
 	shift
