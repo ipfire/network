@@ -223,17 +223,46 @@ function _config_show() {
 	_notimplemented _config_show
 }
 
-# These tree functions exit silently
 function _ppp-ip-pre-up() {
-	exit ${EXIT_OK}
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	ppp_common_ip_pre_up ${zone} $@
+
+	exit $?
 }
 
 function _ppp-ip-up() {
-	exit ${EXIT_OK}
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	ppp_common_ip_up ${zone} $@
+
+	exit $?
 }
 
 function _ppp-ip-down() {
-	exit ${EXIT_OK}
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	ppp_common_ip_down ${zone} $@
+
+	exit $?
 }
 
 function run() {

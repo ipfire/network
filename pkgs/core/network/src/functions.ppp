@@ -43,6 +43,51 @@ function ppp_post_down() {
 	#connection --down --zone=${zone}
 }
 
+function ppp_common_ip_pre_up() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	# Request firewall reload
+	event_firewall_reload
+
+	return ${EXIT_OK}
+}
+
+function ppp_common_ip_up() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	# Emit interface-up event
+	event_interface_up ${zone}
+
+	return ${EXIT_OK}
+}
+
+function ppp_common_ip_down() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	# Emit interface-up event
+	event_interface_down ${zone}
+
+	return ${EXIT_OK}
+}
+
 function ppp_secret() {
 	local USER=${1}
 	local SECRET=${2}
