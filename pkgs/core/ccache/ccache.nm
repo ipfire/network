@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = ccache
-PKG_VER        = 3.0pre0
+PKG_VER        = 3.0pre1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -51,8 +51,8 @@ CFLAGS += -DDEFAULT_MAXSIZE=2097152
 CONFIGURE_OPTIONS += \
 	--mandir=/usr/share
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e "s/hash_int(&hash, st.st_mtime);//g" -i ccache.c
+define STAGE_TEST
+	cd $(DIR_APP) && make check
 endef
 
 define STAGE_INSTALL_CMDS

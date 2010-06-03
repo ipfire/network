@@ -142,6 +142,8 @@ class Environment(object):
 		if os.path.exists(self.chrootPath(ccache_path)):
 			env.update({
 				"PATH" : "/%s:%s" % (ccache_path, env["PATH"]),
+				"CCACHE_COMPILERCHECK" : "none",
+				"CCACHE_COMPRESS" : "1",
 				"CCACHE_DIR" : "/usr/src/ccache",
 			})
 
