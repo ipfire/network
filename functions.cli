@@ -20,6 +20,11 @@
 ###############################################################################
 
 function cli_config() {
+	if cli_help_requested $@; then
+		cli_usage root-config
+		exit ${EXIT_OK}
+	fi
+
 	if [ -n "${1}" ]; then
 		network_config_set $@
 	else
@@ -225,6 +230,18 @@ function cli_usage() {
 			echo "  device - ..."
 			echo "  show   - ???"
 			echo "  zone   - ..."
+			echo
+			;;
+		root-config)
+			echo    "${0}: ${what#root-} [KEY=VAL, ...]"
+			echo
+			echo    "  This command allows setting of global configuration parameters."
+			echo
+			echo    "  If no additional arguments are passed it will list the current configuration."
+			echo
+			echo    "  You can overwrite the settings like the following:"
+			echo
+			echo    "    ${0} ${what#root-} DEBUG=1 ..."
 			echo
 			;;
 		root-start|root-stop)
