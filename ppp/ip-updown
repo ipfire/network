@@ -39,4 +39,4 @@ if ! hook_exists ${HOOK}; then
 	exit ${EXIT_ERROR}
 fi
 
-hook_exec ${HOOK} $(basename ${0}) ${ZONE}
+hook_exec ${HOOK} ppp-$(basename ${0}) ${ZONE}
