@@ -58,6 +58,11 @@ case "${action}" in
 		cli_stop $@
 		;;
 
+	restart)
+		cli_stop $@
+		cli_start $@
+		;;
+
 	show)
 		cli_show $@
 		;;
