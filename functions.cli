@@ -148,6 +148,11 @@ function cli_device_discover() {
 }
 
 function cli_zone() {
+	if cli_help_requested $@; then
+		cli_usage root-zone
+		exit ${EXIT_OK}
+	fi
+
 	local action
 	local zone
 
@@ -160,6 +165,11 @@ function cli_zone() {
 			config|down|edit|port|show|status|up)
 				zone_${action} ${zone} $@
 				;;
+			*)
+				error "Unrecognized argument: ${action}"
+				cli_usage root-zone-subcommands
+				exit ${EXIT_ERROR}
+				;;
 		esac
 	else
 		action=${1}
@@ -169,8 +179,14 @@ function cli_zone() {
 			create|remove)
 				zone_${action} $@
 				;;
-			*)
-				error "Unrecognized argument: '${action}'"
+			""|*)
+				if [ -n "${action}" ]; then
+					error "Unrecognized argument: '${action}'"
+					echo
+				fi
+
+				cli_usage root-zone
+				exit ${EXIT_ERROR}
 				;;
 		esac
 	fi
@@ -277,6 +293,24 @@ function cli_usage() {
 			echo
 			echo    "    Additionally, you can pass one or more zone names which will"
 			echo    "    be processed."
+			echo
+			;;
+		root-zone)
+			echo    "${0}: ${what#root-} <create|remove> <zone> [<type> <options...>]"
+			echo
+			echo    "  Create or remove a zone."
+			echo
+			echo -e "    ${BOLD}create <zone> <type> <options>${NORMAL}"
+			echo    "    Create a new zone of type <type> where <zone> is an allowed"
+			echo    "    zone name."
+			echo
+			echo -e "    ${BOLD}remove <zone>${NORMAL}"
+			echo    "    Remove the zone <zone>."
+			echo
+			echo    "  You may also edit the configuration of the zones."
+			echo
+			echo -e "    ${BOLD}<zone> ...${NORMAL}"
+			echo    "    Edit the zone <zone>."
 			echo
 			;;
 		usage)
