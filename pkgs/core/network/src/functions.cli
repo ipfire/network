@@ -213,7 +213,7 @@ function cli_restart() {
 	cli_stop $@
 
 	# Give the system some time to calm down
-	sleep 2
+	sleep ${TIMEOUT_RESTART}
 
 	cli_start $@
 }
