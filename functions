@@ -6,3 +6,8 @@ done
 
 # Reading in network tool configuration
 network_config_read
+
+# Create run dir
+if ! [ -d "${RUN_DIR}" ]; then
+	mkdir ${RUN_DIR}
+fi

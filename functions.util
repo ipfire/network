@@ -24,9 +24,19 @@ function error() {
 	echo -e " ${FAIL}ERROR${NORMAL}  : $@" >&2
 }
 
+function error_log() {
+	error "$@"
+	log ERROR "$@"
+}
+
 # Print a pretty warn message
 function warning() {
 	echo -e " ${WARN}WARNING${NORMAL}: $@" >&2
+}
+
+function warning_log() {
+	warning "$@"
+	log WARNING "$@"
 }
 
 function listsort() {
@@ -51,6 +61,8 @@ function config_write() {
 
 	# Check if all values to be written are sane
 	config_check
+
+	log DEBUG "Writing configuration file ${config_file}."
 
 	> ${config_file}
 
@@ -78,7 +90,8 @@ function network_config_set() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			*=*)
-				eval ${1}			
+				log INFO "Setting configuration option '${1}'".			
+				eval ${1}
 				;;
 			*)
 				warning "Invalid parameter given: ${1}"
