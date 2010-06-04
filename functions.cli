@@ -204,6 +204,20 @@ function cli_stop() {
 	done
 }
 
+function cli_restart() {
+	if cli_help_requested $@; then
+		cli_usage root-restart
+		exit ${EXIT_OK}
+	fi
+
+	cli_stop $@
+
+	# Give the system some time to calm down
+	sleep 2
+
+	cli_start $@
+}
+
 function cli_help_requested() {
 	local argument
 	for argument in $@; do
@@ -224,6 +238,7 @@ function cli_usage() {
 			echo
 			echo "  start  - ..."
 			echo "  stop   - ..."
+			echo "  restart - ..."
 			echo
 			echo "  config - ..."
 			echo
@@ -244,7 +259,7 @@ function cli_usage() {
 			echo    "    ${0} ${what#root-} DEBUG=1 ..."
 			echo
 			;;
-		root-start|root-stop)
+		root-start|root-stop|root-restart)
 			echo    "${0}: ${what#root-} [--local-only|--remote-only|--all|<zone>...]"
 			echo
 			echo    "  This commands ${what#root-}s all zones by default."
