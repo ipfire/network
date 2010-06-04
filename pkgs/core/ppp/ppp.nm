@@ -52,6 +52,9 @@ define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -e "s@^RUNDIR .*@RUNDIR = /var/run/ppp@" \
 		-e "s@^LOGDIR .*@LOGDIR = /var/log/ppp@" \
 		-i linux/Makefile.top
+
+	cd $(DIR_APP) && sed -e "s@^DESTDIR.*@DESTDIR=\$$(INSTROOT)/usr@" \
+		-i pppd/plugins/pppol2tp/Makefile.linux
 endef
 
 define STAGE_BUILD
