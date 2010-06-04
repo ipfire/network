@@ -58,6 +58,9 @@ function ppp_common_ip_down() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Save accounting information
+	ppp_accounting ${zone}
+
 	# Emit interface-up event
 	event_interface_down ${zone}
 
@@ -83,31 +86,12 @@ function ppp_secret() {
 	rm -f ${PPP_SECRETS}.tmp
 }
 
-function ppp_stat() {
-	local name=${1}
-	local time=${2}
-	local rcvd=${3}
-	local sent=${4}
+function ppp_accounting() {
+	local zone=${1}
+	shift
 
-	local file="${LOG_DIR}/ppp_${name}.db"
-	if ! [ -e "${file}" ]; then
-	sqlite3 -batch ${file} <<EOF
-CREATE TABLE connections(date, duration, rcvd, sent);
-EOF
-	fi
-	ppp_stat_init ${file}
-
-	sqlite3 -batch ${file} <<EOF
-INSERT INTO connections(date, duration, rcvd, sent) VALUES('$(date -u '+%s')', '${time}', '${rcvd}', '${sent}');
-EOF
-}
-
-function ppp_linkname_get() {
-	local config=${1}
-	(
-		. ${config}
-		echo "${NAME}"
-	)
+	db_ppp_update ${zone} --duration="${CONNECT_TIME}" \
+		--rcvd="${BYTES_RCVD}" --sent="${BYTES_SENT}"
 }
 
 function red_defaultroute_update() {
