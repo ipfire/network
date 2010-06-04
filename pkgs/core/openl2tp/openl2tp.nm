@@ -1,0 +1,70 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = openl2tp
+PKG_VER        = 1.7
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Networking/PPP
+PKG_URL        = http://www.openl2tp.org/
+PKG_LICENSE    = GPL
+PKG_SUMMARY    = A Linux L2TP solution for enterprise VPN and ISPs.
+
+PKG_BUILD_DEPS+= bison flex tcl
+PKG_DEPS      += readline
+
+define PKG_DESCRIPTION
+	OpenL2TP is an open source L2TP client / server, written specifically \
+	for Linux. It has been designed for use as an enterprise L2TP VPN \
+	server or in commercial, Linux-based, embedded networking products and \
+	is able to support hundreds of sessions, each with different \
+	configuration. It is used by several ISPs to provide L2TP services and \
+	by corporations to implement L2TP VPNs.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CFLAGS        += -fno-strict-aliasing
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/-lfl/&_pic/g" -i Makefile
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make OPT_CFLAGS="$(CFLAGS)" \
+		KERNEL_SRCDIR="/usr" PPPD_VERSION="2.4.5"
+endef
+
+# This doesn't really a good testing
+#define STAGE_TEST
+#	cd $(DIR_APP) && make test
+#endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) \
+		KERNEL_SRCDIR="/usr" PPPD_VERSION="2.4.5"
+endef
