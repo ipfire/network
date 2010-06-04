@@ -154,7 +154,11 @@ function zone_up() {
 		return ${EXIT_ERROR}
 	fi
 
+	zone_db ${zone} starting
+
 	hook_exec ${hook} up ${zone} $@
+	
+	zone_db ${zone} started
 }
 
 function zone_down() {
@@ -178,7 +182,11 @@ function zone_down() {
 		return ${EXIT_ERROR}
 	fi
 
+	zone_db ${zone} stopping
+
 	hook_exec ${hook} down ${zone} $@
+
+	zone_db ${zone} stopped
 }
 
 function zone_status() {
@@ -415,3 +423,14 @@ function zone_has_ipv4() {
 	device_has_ipv4 $@
 }
 
+function zone_db() {
+	local zone=${1}
+	local action=${2}
+	shift 2
+
+	case "${action}" in
+		starting|started|stopping|stopped)
+			db_connection_update ${zone} ${action}
+			;;
+	esac
+}

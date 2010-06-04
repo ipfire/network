@@ -1,0 +1,113 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function db_connection_init() {
+	if [ -e "${DB_CONNECTION_FILE}" ]; then
+		return ${EXIT_OK}
+	fi
+
+	log DEBUG "Creating connection database ${DB_CONNECTION_FILE}."
+
+	sqlite3 -batch ${DB_CONNECTION_FILE} <<EOF
+CREATE TABLE log(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	zone TEXT,
+	time INTEGER,
+	state TEXT
+);
+
+CREATE VIEW current as
+	SELECT zone, time, state FROM log GROUP BY zone;
+
+EOF
+}
+
+function db_connection_update() {
+	local zone=${1}
+	local action=${2}
+	shift 2
+
+	db_connection_init
+
+	log DEBUG "Writing connection to database: zone=${zone} action=${action}."
+
+	sqlite3 -batch ${DB_CONNECTION_FILE} <<EOF
+INSERT INTO log(zone, time, state)
+	VALUES('${zone}', strftime('%s', 'now', 'utc'), '${action}');
+EOF
+}
+
+function db_ppp_init() {
+	local file=${1}
+
+	if [ -e "${file}" ]; then
+		return ${EXIT_OK}
+	fi
+
+	log DEBUG "Creating ppp database ${file}."
+
+	sqlite3 -batch ${file} <<EOF
+CREATE TABLE accounting(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	time INTEGER,
+	duration INTEGER,
+	rcvd INTEGER,
+	sent INTEGER
+);
+EOF
+} 
+
+function db_ppp_update() {
+	local zone=${1}
+	shift
+
+	local rcvd
+	local sent
+	local duration
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--rcvd=*)
+				rcvd=${1#--rcvd=}
+				;;
+			--sent=*)
+				sent=${1#--sent=}
+				;;
+			--duration=*)
+				duration=${1#--duration=}
+				;;
+		esac
+		shift
+	done
+
+	local file="${LOG_DIR}/ppp_${zone}.db"
+
+	db_ppp_init ${file}
+
+	local time=$(( $(date -u +"%s") - ${duration} ))
+
+	log DEBUG "Writing accounting data: time=${time} duration=${duration} rcvd=${rcvd} sent=${sent}."
+
+	sqlite3 -batch ${file} <<EOF
+INSERT INTO accounting(time, duration, rcvd, sent)
+	VALUES('${time}', '${duration}', '${rcvd}', '${sent}');
+EOF
+}
