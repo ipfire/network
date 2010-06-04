@@ -50,7 +50,7 @@ STAGE_BUILD = # Do nothing
 
 define STAGE_INSTALL
 	-mkdir -pv $(BUILDROOT)/etc/{network,ppp}
-	-mkdir -pv $(BUILDROOT)/lib/network
+	-mkdir -pv $(BUILDROOT)/lib/{network,udev/rules.d}
 	-mkdir -pv $(BUILDROOT)/sbin
 	-mkdir -pv $(BUILDROOT)/var/log/network
 
@@ -62,4 +62,6 @@ define STAGE_INSTALL
 	ln -svf ip-updown $(BUILDROOT)/etc/ppp/ip-pre-up
 	ln -svf ip-updown $(BUILDROOT)/etc/ppp/ip-up
 	ln -svf ip-updown $(BUILDROOT)/etc/ppp/ip-down
+
+	cp -vf $(DIR_SOURCE)/60-network.rules $(BUILDROOT)/lib/udev/rules.d/
 endef
