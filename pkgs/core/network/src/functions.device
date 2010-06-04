@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function devicify() { 
+function devicify() {
 	local device=${1}
 
 	if device_exists ${device}; then
@@ -191,7 +191,34 @@ function device_get_address() {
 }
 
 function device_set_address() {
-	device_set_mac $@
+	local device=${1}
+	local addr=${2}
+	
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	log INFO "Setting address of '${device}' to '${addr}' - was $(device_get_address ${device})."
+
+	local up
+	if device_is_up ${device}; then
+		device_set_down ${device}
+		up=1
+	fi
+
+	ip link set ${device} address ${addr}
+	local ret=$?
+
+	if [ "${up}" = "1" ]; then
+		device_set_up ${device}
+	fi
+
+	if [ "${ret}" != "0" ]; then
+		error_log "Could not set address '${addr}' on device '${device}'."
+	fi
+
+	return ${ret}
 }
 
 function devices_get_all() {
@@ -248,8 +275,20 @@ function device_get_free() {
 	echo "${destination}"
 }
 
-# Should be renamed to device_set_name at some time
 function device_rename() {
+	warning_log "Called deprecated function 'device_rename'"
+
+	device_set_name $@
+}
+
+function device_hash() {
+	local device=${1}
+
+	macify ${device} | tr -d ':'
+}
+
+# Give the device a new name
+function device_set_name() {
 	local source=$1
 	local destination=$(device_get_free ${2})
 
@@ -269,17 +308,6 @@ function device_rename() {
 	if [ "${up}" = "1" ]; then
 		ip link set ${destination} up
 	fi
-}
-
-function device_hash() {
-	local device=${1}
-
-	macify ${device} | tr -d ':'
-}
-
-# Give the device a new name
-function device_set_name() {
-	device_rename $@
 }
 
 # Set device up
@@ -306,23 +334,9 @@ function device_set_down() {
 
 # Set new address to a device
 function device_set_mac() {
-	local port=${1}
-	local mac=${2}
+	warning_log "Called deprecated function 'device_set_mac'"
 
-	local up
-	if device_is_up ${port}; then
-		device_set_down ${port}
-		up=1
-	fi
-
-	ip link set ${port} address ${mac}
-	local ret=$?
-
-	if [ "${up}" = "1" ]; then
-		device_set_up ${port}
-	fi
-
-	return ${ret}
+	device_set_address $@
 }
 
 function device_get_mtu() {
@@ -338,20 +352,38 @@ function device_get_mtu() {
 
 # Set mtu to a device
 function device_set_mtu() {
-	local port=${1}
+	local device=${1}
 	local mtu=${2}
 
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+	
+	local oldmtu=$(device_get_mtu ${device})
+
+	if [ "${oldmtu}" = "${mtu}" ]; then
+		# No need to set mtu.
+		return ${EXIT_OK}
+	fi
+
+	log INFO "Setting mtu of '${device}' to '${mtu}' - was ${oldmtu}."
+
 	local up
-	if device_is_up ${port}; then
-		device_set_down ${port}
+	if device_is_up ${device}; then
+		device_set_down ${device}
 		up=1
 	fi
 
-	ip link set ${port} mtu ${mtu}
+	ip link set ${device} mtu ${mtu}
 	local ret=$?
 
 	if [ "${up}" = "1" ]; then
-		device_set_up ${port}
+		device_set_up ${device}
+	fi
+
+	if [ "${ret}" != "0" ]; then
+		error_log "Could not set mtu '${mtu}' on device '${device}'."
 	fi
 
 	return ${ret}
@@ -359,6 +391,8 @@ function device_set_mtu() {
 
 function device_discover() {
 	local device=${1}
+
+	log INFO "Running discovery process on device '${device}'."
 
 	local hook
 	for hook in $(hooks_get_all); do
@@ -381,37 +415,57 @@ function device_virtual_create() {
 		mac=$(mac_generate)
 	fi
 
+	log INFO "Creating virtual device '${newport}' with address '${mac}'."
+
 	# Bring up the parent device
 	# XXX Do we need this here?
 	#device_set_up ${port}
 
 	vconfig set_name_type DEV_PLUS_VID_NO_PAD >/dev/null
 	vconfig add ${port} ${vid} >/dev/null
-	[ $? -ne 0 ] && return ${EXIT_ERROR}
+	
+	if [ $? -ne ${EXIT_OK} ]; then
+		error_log "Could not create virtual device '${newport}'."
+		return ${EXIT_ERROR}
+	fi
 
 	# The device is expected to be named like ${port}.${vid}
 	# and will be renamed to the virtual schema
 	device_set_name ${port}.${vid} ${newport}
 
+	if [ $? -ne ${EXIT_OK} ]; then
+		error_log "Could not set name of virtual device '${newport}'."
+		return ${EXIT_ERROR}
+	fi
+
 	# Setting new mac address
 	device_set_address ${newport} ${mac}
+	
+	if [ $? -ne ${EXIT_OK} ]; then
+		error_log "Could not set address '${mac}' to virtual device '${newport}'."
+		return ${EXIT_ERROR}
+	fi
 
 	# Bring up the new device
 	device_set_up ${newport}
 
-	log DEBUG "Created virtual device ${newport} (${mac})"
 	return ${EXIT_OK}
 }
 
 function device_virtual_remove() {
 	local device=$(devicify ${1})
 
+	log INFO "Removing virtual device '${device}' with address '$(macify ${devive})'."
+
 	device_set_down ${device}
 
 	vconfig rem ${device} >/dev/null
-	[ $? -ne 0 ] && return ${EXIT_ERROR}
 
-	log DEBUG "Removed virtual device ${device}"
+	if [ $? -ne ${EXIT_OK} ]; then
+		error_log "Could not remote virtual device '${newport}'."
+		return ${EXIT_ERROR}
+	fi
+
 	return ${EXIT_OK}
 }
 
@@ -421,6 +475,8 @@ function device_bonding_create() {
 
 	[ -z "${mac}" ] && mac=$(mac_generate)
 
+	log INFO "Creating bonding device '${device}' (${mac})."
+
 	echo "+${device}" > /sys/class/net/bonding_masters
 	device_set_mac ${mac}
 	device_set_up ${device}
@@ -428,6 +484,8 @@ function device_bonding_create() {
 
 function device_bonding_remove() {
 	local device=$(devicify ${1})
+
+	log INFO "Remove bonding device '${device}'."
 
 	device_set_down ${device}
 	echo "-${device}" > /sys/class/net/bonding_masters
@@ -437,12 +495,17 @@ function bonding_set_mode() {
 	local device=${1}
 	local mode=${2}
 
+	log INFO "Setting bonding mode on '${device}' '${mode}'."
+
 	echo "${mode}" > /sys/class/net/${device}/bonding/mode
 }
 
 function bonding_enslave_device() {
 	local device=$(devicify ${1})
 	local slave=$(devicify ${2})
+	shift 2
+
+	log INFO "Enslaving slave '${slave}' to '${device}'."
 
 	device_set_down ${slave}
 	echo "+${slave}" > /sys/class/net/${device}/bonding/slaves
@@ -461,6 +524,8 @@ function bridge_attach_device() {
 		error "Device '${device}' does not exist."
 		return ${EXIT_ERROR}
 	fi
+
+	log INFO "Attaching device '${device}' to bridge '${bridge}'."
 
 	# XXX device_set_up ${device} # Do we need this here?
 
@@ -481,7 +546,9 @@ function bridge_detach_device() {
 		return ${EXIT_ERROR}
 	fi
 
-	brctl delif ${zone} ${device}
+	log INFO "Detaching device '${device}' from bridge '${bridge}'."
+
+	brctl delif ${bridge} ${device}
 
 	device_set_down ${device}
 }
