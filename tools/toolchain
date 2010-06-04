@@ -48,6 +48,15 @@ case "${1}" in
 			mkdir -p ${TARGET_PATH}/usr/lib 2>/dev/null
 			ln -sf ../../$(basename ${TOOLS_DIR})/lib/${i} ${TARGET_PATH}/usr/lib/${i}
 		done
+
+		if ! [ -e "${TARGET_PATH}/lib/cpp" ]; then
+			for path in /usr/bin/cpp $(basename ${TOOLS_DIR})/bin/cpp; do
+				if [ -e "${TARGET_PATH}/${path}" ]; then
+					ln -sf /${path} ${TARGET_PATH}/lib/cpp
+					break
+				fi
+			done
+		fi
 		;;
 
 	compress)
