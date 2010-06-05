@@ -4,6 +4,5 @@ author			"IPFire Team"
 start on started network
 stop on stopping network
 
-exec /usr/sbin/ntpd -4 -c /etc/ntp.conf
-expect daemon
+exec /usr/sbin/ntpd -4 -n -c /etc/ntp.conf
 respawn
