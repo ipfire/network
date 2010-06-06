@@ -203,7 +203,7 @@ function assert() {
 	local assertion="$@"
 
 	if ! ${assertion}; then
-		error "Assertion '${assertion}' failed."
+		error_log "Assertion '${assertion}' failed."
 		exit ${EXIT_ERROR}
 	fi
 
