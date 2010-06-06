@@ -4,6 +4,6 @@ author                  "IPFire Team"
 start on started network
 stop on stopping network
 
-exec /usr/bin/vsftpd
+exec /usr/bin/vsftpd /etc/vsftpd/vsftpd.conf -obackground=NO
 expect daemon
 respawn
