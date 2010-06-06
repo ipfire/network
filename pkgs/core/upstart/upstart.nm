@@ -51,6 +51,11 @@ CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
 	--libdir=/lib
 
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && libtoolize
+	cd $(DIR_APP) && autoreconf --force
+endef
+
 # Testsuite fails
 #define STAGE_TEST
 #	cd $(DIR_APP) && make check
