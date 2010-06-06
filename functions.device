@@ -101,6 +101,12 @@ function device_is_bridge() {
 	[ -d "/sys/class/net/${1}/bridge" ]
 }
 
+function device_is_bridge_attached() {
+	local device=${1}
+
+	[ -d "${SYS_CLASS_NET}/${device}/brport" ]
+}
+
 # Check if the device is a virtual device
 function device_is_virtual() {
 	local device=${1}
@@ -242,12 +248,7 @@ function device_has_carrier() {
 
 # Check if the device is free
 function device_is_free() {
-	local device=${1}
-
-	device_is_used ${device} && \
-		return ${EXIT_ERROR}
-
-	return ${EXIT_OK}
+	! device_is_used $@
 }
 
 # Check if the device is used
@@ -257,6 +258,8 @@ function device_is_used() {
 	device_has_virtuals ${device} && \
 		return ${EXIT_OK}
 	device_is_bonded ${device} && \
+		return ${EXIT_OK}
+	device_is_bridge_attached ${device} && \
 		return ${EXIT_OK}
 
 	return ${EXIT_ERROR}
@@ -323,19 +326,66 @@ function device_set_up() {
 	# Do nothing if device is already up
 	device_is_up ${device} && return ${EXIT_OK}
 
-	log DEBUG "Setting up device $@"
+	device_set_parent_up ${device}
+
+	log DEBUG "Setting up device '${device}'"
+
 	ip link set ${device} up
+}
+
+function device_set_parent_up() {
+	local device=${1}
+	local parent
+
+	if device_is_virtual ${device}; then
+		parent=$(device_virtual_get_parent ${device})
+
+		device_is_up ${parent} && return ${EXIT_OK}
+
+		log DEBUG "Setting up parent device '${parent}' of '${device}'"
+
+		device_set_up ${parent}
+		return $?
+	fi
+
+	return ${EXIT_OK}
 }
 
 # Set device down
 function device_set_down() {
 	local device=$(devicify ${1})
 
-	# Do nothing if device is not up
-	device_is_up ${device} || return ${EXIT_OK}
+	local ret=${EXIT_OK}
 
-	log DEBUG "Tearing down device $@"
-	ip link set ${device} down
+	if device_is_up ${device}; then
+		log DEBUG "Tearing down device '${device}'"
+
+		ip link set ${device} down
+		ret=$?
+	fi
+
+	device_set_parent_down ${device}
+
+	return ${ret}
+}
+
+function device_set_parent_down() {
+	local device=${1}
+	local parent
+
+	if device_is_virtual ${device}; then
+		parent=$(device_virtual_get_parent ${device})
+
+		device_is_up ${parent} || return ${EXIT_OK}
+
+		if device_is_free ${parent}; then
+			log DEBUG "Tearing down parent device '${parent}' of '${device}'"
+
+			device_set_down ${parent}
+		fi
+	fi
+	
+	return ${EXIT_OK}
 }
 
 # Set new address to a device
@@ -501,7 +551,7 @@ function device_virtual_create() {
 function device_virtual_remove() {
 	local device=$(devicify ${1})
 
-	log INFO "Removing virtual device '${device}' with address '$(macify ${devive})'."
+	log INFO "Removing virtual device '${device}' with address '$(macify ${device})'."
 
 	device_set_down ${device}
 
@@ -513,6 +563,19 @@ function device_virtual_remove() {
 	fi
 
 	return ${EXIT_OK}
+}
+
+function device_virtual_get_parent() {
+	local device=${1}
+
+	local parent=$(grep "^${device}" < /proc/net/vlan/config | awk '{ print $NF }')
+
+	if device_exists ${parent}; then
+		echo "${parent}"
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
 }
 
 function device_virtual_get_by_parent_and_vid() {

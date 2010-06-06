@@ -45,7 +45,7 @@ function _check() {
 	done
 }
 
-function _add() {
+function _create() {
 	local zone=${1}
 	local device=${2}
 	shift 2
@@ -96,8 +96,6 @@ function _up() {
 
 	# Set same MTU to device that the bridge has got
 	device_set_mtu ${device} $(device_get_mtu ${zone})
-
-	device_set_up ${device}
 
 	bridge_attach_device ${zone} ${device}
 
