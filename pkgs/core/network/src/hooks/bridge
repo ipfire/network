@@ -75,7 +75,7 @@ function _up() {
 		brctl addbr ${zone}
 	fi
 
-	[ -n "${MAC}" ] && device_set_mac ${zone} ${MAC}
+	[ -n "${MAC}" ] && device_set_address ${zone} ${MAC}
 	[ -n "${MTU}" ] && device_set_mtu ${zone} ${MTU} 
 
 	# Enable STP

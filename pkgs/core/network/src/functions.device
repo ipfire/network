@@ -388,13 +388,6 @@ function device_set_parent_down() {
 	return ${EXIT_OK}
 }
 
-# Set new address to a device
-function device_set_mac() {
-	warning_log "Called deprecated function 'device_set_mac'"
-
-	device_set_address $@
-}
-
 function device_get_mtu() {
 	local device=${1}
 
@@ -606,7 +599,7 @@ function device_bonding_create() {
 	log INFO "Creating bonding device '${device}' (${mac})."
 
 	echo "+${device}" > /sys/class/net/bonding_masters
-	device_set_mac ${mac}
+	device_set_address ${mac}
 	device_set_up ${device}
 }
 
