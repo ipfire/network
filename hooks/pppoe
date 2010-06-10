@@ -167,7 +167,19 @@ EOF
 
 	pppd file ${RED_RUN}/${LINKNAME}/options >/dev/null
 
-	exit ${EXIT_OK}
+	local ret=$?
+
+	# Get exit code from ppp daemon and handle it:
+	case "${ret}" in
+		0)
+			log DEBUG "pppd detached successfully"
+			exit ${EXIT_OK}
+			;;
+	esac
+
+	error_log "pppd exited with unknown exit code '${ret}'"
+
+	exit ${EXIT_ERROR}
 }
 
 function _down() {
