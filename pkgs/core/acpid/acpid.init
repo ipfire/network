@@ -1,0 +1,8 @@
+description		"Start the ACPI daemon"
+author			"IPFire Team"
+
+start on stopped mountfs
+stop on shutdown or reboot
+
+exec /usr/sbin/acpid -f
+respawn
