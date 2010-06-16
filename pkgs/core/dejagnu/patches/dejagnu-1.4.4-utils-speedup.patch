@@ -1,0 +1,20 @@
+--- dejagnu-1.4.4/lib/utils.exp	2009-10-16 12:58:38.000000000 +0200
++++ dejagnu-1.4.4/lib/utils.exp	2010-01-21 21:12:54.144855458 +0100
+@@ -106,7 +106,7 @@ proc find { rootdir pattern } {
+     foreach i $dirs {
+ 	verbose "Looking in $i" 3
+ 	foreach match [glob -nocomplain $i/$pattern] {
+-	    if ![file isdirectory $match] {
++	    if {![file isdirectory $match]} {
+ 		lappend files $match
+ 		verbose "Adding $match to file list" 3
+ 	    }
+@@ -216,7 +216,7 @@ proc prune { list pattern } {
+     set tmp {}
+     foreach i $list {
+ 	verbose "Checking pattern \"$pattern\" against $i" 3
+-	if ![string match $pattern $i] {
++	if {![string match $pattern $i]} {
+ 	    lappend tmp $i
+ 	} else {
+ 	    verbose "Removing element $i from list" 3
