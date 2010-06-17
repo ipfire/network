@@ -155,6 +155,25 @@ function mac_generate() {
 	echo ${output}
 }
 
+function mac_format() {
+	local mac=${1}
+
+	local output
+
+	if [ "${#mac}" = "12" ]; then
+		# Add colons (:) to mac address
+		output=${mac:0:2}
+		local i
+		for i in 2 4 6 8 10; do
+			output="${output}:${mac:${i}:2}"
+		done
+	fi
+
+	assert mac_is_valid ${output}
+
+	echo "${output}"
+}
+
 function mac_is_valid() {
 	local mac=${1}
 
