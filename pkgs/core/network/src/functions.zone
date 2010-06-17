@@ -51,10 +51,13 @@ function zone_name_is_valid() {
 function zone_is_local() {
 	local zone=${1}
 
-	if [[ ${zone} =~ ^red[0-9]{1,5} ]]; then
-		return ${EXIT_ERROR}
-	fi
-	return ${EXIT_OK}
+	! zone_is_nonlocal ${zone}
+}
+
+function zone_is_nonlocal() {
+	local zone=${1}
+
+	[[ ${zone} =~ ^red[0-9]{1,5} ]]
 }
 
 function zone_get_hook() {
@@ -297,7 +300,7 @@ function zones_get_local() {
 function zones_get_nonlocal() {
 	local zone
 	for zone in $(zones_get_all); do
-		zone_is_local ${zone} || echo "${zone}"
+		zone_is_nonlocal ${zone} && echo "${zone}"
 	done
 }
 
@@ -433,4 +436,14 @@ function zone_db() {
 			db_connection_update ${zone} ${action}
 			;;
 	esac
+}
+
+function zone_is_up() {
+	local zone=${1}
+
+	device_is_up ${zone}
+}
+
+function zone_is_down() {
+	! zone_is_up $@
 }
