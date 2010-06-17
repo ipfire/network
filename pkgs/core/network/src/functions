@@ -11,3 +11,19 @@ network_config_read
 if ! [ -d "${RUN_DIR}" ]; then
 	mkdir ${RUN_DIR}
 fi
+
+# Set colour mode
+case "${COLOURS}" in
+	auto)
+		colours_auto_disable
+		;;
+	off|0)
+		colours_disable
+		;;
+	on|1)
+		# Do nothing
+		;;
+	*)
+		warning_log "Unknown parameter given for COLOURS: ${COLOURS}"
+		;;
+esac
