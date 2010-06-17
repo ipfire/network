@@ -48,6 +48,13 @@ function _pppoe_real_device() {
 	devicify ${device}
 }
 
+function pppd_pid() {
+	local zone=${1}
+	shift
+
+	cat /var/run/${zone}.pid 2>/dev/null
+}
+
 function _check() {
 	assert isset USER
 	assert isset SECRET
@@ -189,13 +196,10 @@ function _down() {
 	config_read ${ZONE_DIR}/${zone}/settings
 
 	# Kill pppd
-	pid=$(cat /var/run/${zone}.pid 2>/dev/null)
-	if [ -n "${pid}" ]; then
-		kill ${pid} &>/dev/null
-	fi
+	kill $(pppd_pid ${zone}) &>/dev/null
 
 	# Pull down device or remove virtual one
-	if [ -n "${DEVICE_VID}" ]; then 
+	if [ -n "${DEVICE_VID}" ]; then
 		device_remove_virtual ${DEVICE_MAC}
 	else
 		device_set_down ${DEVICE}
