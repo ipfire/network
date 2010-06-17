@@ -108,6 +108,33 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
+function _status() {
+	local zone=${1}
+	local config=${2}
+	shift 2
+
+	if ! device_exists ${zone}; then
+		error "Zone '${zone}' doesn't exist."
+		exit ${EXIT_ERROR}
+	fi
+	
+	config_read $(zone_dir ${zone})/${config}
+
+	echo -n "        ${HOOK} - ${ADDRESS}/${PREFIX} - "
+	if zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
+		echo -ne "${COLOUR_OK}OK   ${COLOUR_NORMAL}"
+	else
+		echo -ne "${COLOUR_ERROR}ERROR${COLOUR_NORMAL}"
+	fi
+	echo # End line
+
+	if [ -n "${GATEWAY}" ]; then
+		echo "          Gateway: ${GATEWAY}"
+	fi
+
+	exit ${EXIT_OK}
+}
+
 function ipv4_mask_to_cidr() {
 	local mask=0
 
