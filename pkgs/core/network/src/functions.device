@@ -293,7 +293,11 @@ function device_rename() {
 function device_hash() {
 	local device=${1}
 
-	macify ${device} | tr -d ':'
+	# Get mac address of device and remove all colons (:)
+	# that will result in a hash.
+	device=$(macify ${device})
+
+	echo "${device//:/}"
 }
 
 # Give the device a new name
