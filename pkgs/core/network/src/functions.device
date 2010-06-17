@@ -246,6 +246,12 @@ function device_has_carrier() {
 	[ "$(<${SYS_CLASS_NET}/${device}/carrier)" = "1" ]
 }
 
+function device_is_promisc() {
+	local device=${1}
+
+	ip link show ${device} | grep -qE "<.*PROMISC.*>"
+}
+
 # Check if the device is free
 function device_is_free() {
 	! device_is_used $@
