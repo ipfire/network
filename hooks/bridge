@@ -136,6 +136,38 @@ function _down() {
 	exit $?
 }
 
+function _status() {
+	local zone=${1}
+
+	cli_status_headline ${zone}
+
+	# Exit if zone is down
+	if ! zone_is_up ${zone}; then
+		echo # Empty line
+		exit ${EXIT_ERROR}
+	fi
+
+	cli_headline "    Spanning Tree Protocol information:"
+	echo   "        Bridge ID             : $(stp_bridge_id ${zone})"
+	echo   "        Designated root       : $(stp_designated_root ${zone})"
+	echo   "        Path cost             : $(stp_pathcost ${zone})"
+	echo # Empty line
+
+	# Topology information
+	printf "        Topology changing     : %6s\n" $(stp_topology_change ${zone})
+	printf "        Topology change time  : %6s\n" $(stp_topology_change_time ${zone})
+	printf "        Topology change count : %6s\n" $(stp_topology_change_count ${zone})
+
+	cli_headline "    Ports:"
+	zone_ports_cmd status ${zone}
+
+	cli_headline "    Configurations:"
+	zone_configs_cmd status ${zone}
+
+	echo # Empty line
+	exit ${EXIT_OK}
+}
+
 function _addport() {
 	local zone=${1}
 	local hook=${2}

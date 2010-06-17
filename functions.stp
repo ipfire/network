@@ -1,0 +1,253 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# XXX Very slow thing, caching?
+function __rstpctl_cmd() {
+	local command=$@
+
+	local line
+	local key
+	local val
+
+	rstpctl ${command} | \
+		sed -e "s/\t\t\t/\n/g" \
+			-e "s/^ //g" \
+			-e "s/\t\s*/___/g" | \
+	while read line; do
+		[ "${line}" = "${line/___/_}" ] && continue
+
+		key=${line%%___*}
+		key=${key// /_}
+		key=${key^^}
+
+		val=${line#*___}
+
+		echo "${key}=\"${val}\""
+	done
+}
+
+function __rstpctl_showbridge_get() {
+	local bridge=${1}
+	local param=${2^^}
+
+	local line
+	for line in $(__rstpctl_cmd showbridge ${bridge}); do
+		if [ "${line%%=*}" = "${param}" ]; then
+			line="${line##*=}"
+			echo "${line//\"/}"
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function __rstpctl_showportdetail_get() {
+	local bridge=${1}
+	local port=${2}
+	local param=${3^^}
+
+	local line
+	for line in $(__rstpctl_cmd showportdetail ${bridge} ${port}); do
+		if [ "${line%%=*}" = "${param}" ]; then
+			line="${line##*=}"
+			echo "${line//\"/}"
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function __rstp_port_enabled() {
+	local bridge=${1}
+	local port=${2}
+
+	local status=$(__rstpctl_showportdetail_get ${bridge} ${port} enabled)
+
+	if [ "${status}" = "yes" ]; then
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
+}
+
+function __rstp_port_state() {
+	local bridge=${1}
+	local port=${2}
+
+	local output=$(__rstpctl_showportdetail_get ${bridge} ${port} state)
+	echo "${output^^}"
+}
+
+function __rstp_port_pathcost() {
+	local bridge=${1}
+	local port=${2}
+
+	__rstpctl_showportdetail_get ${bridge} ${port} path_cost
+}
+
+function __rstp_port_designated_root() {
+	local bridge=${1}
+	local port=${2}
+
+	__rstpctl_showportdetail_get ${bridge} ${port} designated_root
+}
+
+function __rstp_port_designated_bridge() {
+	local bridge=${1}
+	local port=${2}
+
+	__rstpctl_showportdetail_get ${bridge} ${port} designated_bridge
+}
+
+function __rstp_topology_change() {
+	local bridge=${1}
+
+	local state=$(__rstpctl_showbridge_get ${bridge} topology_change)
+
+	case "${state}" in
+		yes)
+			echo "${state}"
+			return ${EXIT_OK}
+			;;
+		no)
+			echo "${state}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+}
+
+function __rstp_topology_change_count() {
+	local bridge=${1}
+
+	# XXX typo in rstpctl -> toplogy
+	__rstpctl_showbridge_get ${bridge} toplogy_change_count
+}
+
+function __rstp_topology_change_time() {
+	local bridge=${1}
+
+	__rstpctl_showbridge_get ${bridge} time_since_topology_change
+}
+
+function __rstp_bridge_id() {
+	local bridge=${1}
+
+	local id=$(__rstpctl_showbridge_get ${bridge} bridge_id)
+	id=${id:5:12}
+
+	mac_format "${id}"
+}
+
+function __rstp_designated_root() {
+	local bridge=${1}
+
+	local root=$(__rstpctl_showbridge_get ${bridge} designated_root)
+	root=${root:5:12}
+
+	mac_format "${root}"
+}
+
+function __rstp_pathcost() {
+	local bridge=${1}
+
+	__rstpctl_showbridge_get ${bridge} path_cost
+}
+
+function __stp_port_enabled() {
+	: # XXX TBD
+}
+
+function __stp_port_state() {
+	: # XXX TBD
+}
+
+function __stp_port_pathcost() {
+	: # XXX TBD
+}
+
+function __stp_port_designated_root() {
+	: # XXX TBD
+}
+
+function __stp_port_designated_bridge() {
+	: # XXX TBD
+}
+
+function stp_port_enabled() {
+	__stp_wrapper port_enabled $@
+}
+
+function stp_port_state() {
+	__stp_wrapper port_state $@
+}
+
+function stp_port_pathcost() {
+	__stp_wrapper port_pathcost $@
+}
+
+function stp_port_designated_root() {
+	local root=$(__stp_wrapper port_designated_root $@)
+
+	# Cut prefix 8000. and format mac
+	root="${root:5:12}"
+	mac_format "${root}"
+}
+
+function stp_port_designated_bridge() {
+	__stp_wrapper port_designated_bridge $@
+}
+
+function stp_topology_change() {
+	__stp_wrapper topology_change $@
+}
+
+function stp_topology_change_count() {
+	__stp_wrapper topology_change_count $@
+}
+
+function stp_topology_change_time() {
+	__stp_wrapper topology_change_time $@
+}
+
+function stp_bridge_id() {
+	__stp_wrapper bridge_id $@
+}
+
+function stp_designated_root() {
+	__stp_wrapper designated_root $@
+}
+
+function stp_pathcost() {
+	__stp_wrapper pathcost $@
+}
+
+function __stp_wrapper() {
+	local func=${1}
+	shift
+
+	# XXX we will detect what kind of protocol the
+	# bridge is running and process the correct funtions
+	local proto_version="rstp"
+
+	__${proto_version}_${func} $@
+}
