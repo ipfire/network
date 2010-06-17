@@ -17,6 +17,9 @@ function event_interface_up() {
 	local iface=${1}
 
 	event_emit network-interface-up IFACE=${iface}
+
+	# XXX Just for now
+	routing_default_update
 }
 
 function event_interface_down() {
