@@ -28,6 +28,8 @@ function ppp_common_ip_pre_up() {
 		return ${EXIT_ERROR}
 	fi
 
+	red_db_from_ppp ${zone}
+
 	# Request firewall reload
 	event_firewall_reload
 
@@ -42,6 +44,9 @@ function ppp_common_ip_up() {
 		error "Zone '${zone}' does not exist."
 		return ${EXIT_ERROR}
 	fi
+
+	red_db_set ${zone} active 1
+	red_routing_update ${zone}
 
 	# Emit interface-up event
 	event_interface_up ${zone}
@@ -92,27 +97,4 @@ function ppp_accounting() {
 
 	db_ppp_update ${zone} --duration="${CONNECT_TIME}" \
 		--rcvd="${BYTES_RCVD}" --sent="${BYTES_SENT}"
-}
-
-function red_defaultroute_update() {
-	local command="ip route replace default"
-
-	local uplink
-	for uplink in ${RED_RUN}/*; do
-		[ -d "${uplink}" ] || continue
-
-		# Skip if no gateway given
-		[ -e "${uplink}/gateway" ] || continue
-
-		command="${command} nexthop via $(<${uplink}/gateway)"
-		if [ -e "${uplink}/weight" ]; then
-			command="${command} weight $(<${uplink}/weight)"
-		fi
-	done
-	$command
-	#ip route flush cache
-}
-
-function red_dns_update() {
-	: # XXX todo
 }

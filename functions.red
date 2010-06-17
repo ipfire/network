@@ -19,42 +19,79 @@
 #                                                                             #
 ###############################################################################
 
-# Enable colors by default
-COLOURS="auto"
+function red_db_path() {
+	local zone=${1}
 
-BASE_DIR=/lib/network
-CONFIG_DIR=/etc/network
-HOOKS_DIR=${BASE_DIR}/hooks
-LOG_DIR=/var/log/network
-RUN_DIR=/var/run/network
-ZONE_DIR=${CONFIG_DIR}
+	echo "${RED_DB_DIR}/${zone}"
+}
 
-RED_RUN=${RUN_DIR}/red
-PPP_SECRETS=/etc/ppp/secrets
+function red_db_exists() {
+	local zone=${1}
 
-CONFIG_FILE=${CONFIG_DIR}/network_config
-CONFIG_FILE_PARAMS="COLOURS DEBUG SHELL TIMEOUT_RESTART"
+	[ -d "$(red_db_path ${zone})" ]
+}
 
-RED_DB_DIR=${RUN_DIR}/red
+function red_db_create() {
+	local zone=${1}
 
-DB_CONNECTION_FILE="${LOG_DIR}/connections.db"
+	red_db_exists ${zone} && return ${EXIT_OK}
 
-# Proper error codes
-EXIT_OK=0
-EXIT_ERROR=1
-EXIT_CONF_ERROR=2
+	mkdir -p $(red_db_path ${zone})
+}
 
-STATUS_UP=0
-STATUS_DOWN=1
+function red_db_remove() {
+	local zone=${1}
 
-DISCOVER_OK=0
-DISCOVER_ERROR=1
-DISCOVER_NOT_SUPPORTED=2
+	[ -z "${zone}" ] && return ${EXIT_ERROR}
 
-# The user is able to create zones that begin with these names
-VALID_ZONES="green orange red grey"
+	rm -rf ${RED_DB_DIR}
+}
 
-SYS_CLASS_NET="/sys/class/net"
+function red_db_set() {
+	local zone=${1}
+	local parameter=${2}
+	shift 2
 
-# Timeout values
-TIMEOUT_RESTART=2
+	local value="$@"
+
+	red_db_create ${zone}
+
+	echo "${value}" > $(red_db_path ${zone})/${parameter}
+}
+
+function red_db_get() {
+	local zone=${1}
+	local parameter=${2}
+	shift 2
+
+	cat $(red_db_path ${zone})/${parameter} 2>/dev/null
+}
+
+function red_db_from_ppp() {
+	local zone=${1}
+
+	# Save ppp configuration
+	red_db_set ${zone} type "ppp"
+	red_db_set ${zone} local-ip-address ${PPP_IPLOCAL}
+	red_db_set ${zone} remote-ip-address ${PPP_IPREMOTE}
+
+	red_db_set ${zone} dns ${PPP_DNS1} ${PPP_DNS2}
+
+	red_db_set ${zone} remote-address ${PPP_MACREMOTE,,}
+}
+
+function red_routing_update() {
+	local zone=${1}
+
+	local table=${zone}
+
+	# Create routing table if not exists
+	routing_table_create ${table}
+
+	local remote_ip_address=$(red_db_get ${zone} remote-ip-address)
+	local local_ip_address=$(red_db_get ${zone} local-ip-address)
+
+	ip route replace table ${table} default nexthop via ${remote_ip_address}
+
+	ip rule add from ${local_ip_address} lookup ${table}
+}
