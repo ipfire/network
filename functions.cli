@@ -326,3 +326,17 @@ function cli_usage() {
 
 	echo "Network configuration tool. Report all bugs to <http://bugs.ipfire.org>."
 }
+
+function cli_status_headline() {
+	local zone=${1}
+
+	local state="${COLOUR_DOWN}DOWN${COLOUR_NORMAL}"
+	zone_is_up ${zone} && state="${COLOUR_UP}UP${COLOUR_NORMAL}"
+
+	echo -e "${zone} - ${state} - $(zone_get_hook ${zone})"
+}
+
+function cli_headline() {
+	echo
+	echo -e "${COLOUR_BOLD}$@${COLOUR_NORMAL}"
+}
