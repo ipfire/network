@@ -400,7 +400,7 @@ function device_get_mtu() {
 		return ${EXIT_ERROR}
 	fi
 
-	cat ${SYS_CLASS_NET}/${device}/mtu
+	echo $(<${SYS_CLASS_NET}/${device}/mtu)
 }
 
 # Set mtu to a device
