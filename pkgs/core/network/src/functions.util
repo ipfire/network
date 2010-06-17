@@ -130,7 +130,8 @@ function enabled() {
 function mac_generate() {
 	local mac=()
 	for i in $(seq 0 5); do
-	        mac[i]="0x$(uuid | cut -c 1-2)"
+		mac[i]="$(uuid)"
+		mac[i]="0x${mac[i]:0:2}"
 	done
 
 	# Remove multicast bit
@@ -141,11 +142,11 @@ function mac_generate() {
 
 	local output
 	for i in ${mac[*]}; do
-	        if [ -n "${output}" ]; then
-	                output="${output}:"
-	        fi
+		if [ -n "${output}" ]; then
+			output="${output}:"
+		fi
 	
-	        output="${output}$(printf "%02x" ${i})"
+		output="${output}$(printf "%02x" ${i})"
 	done
 
 	# Check if output is valid
