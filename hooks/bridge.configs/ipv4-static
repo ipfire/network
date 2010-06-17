@@ -82,9 +82,8 @@ function _up() {
 		warning "Do not set IPv4 address '${ADDRESS}/${PREFIX}' because it was already configured on zone '${zone}'."
 	fi
 
-	warning "XXX Gateway stuff has to be done."
-	if [ -n "${GATEWAY}" ]; then
-		: # What do we do with the gateway?
+	if zone_is_nonlocal ${zone} && [ -n "${GATEWAY}" ]; then
+		: # XXX to be done
 	fi
 
 	exit ${EXIT_OK}
