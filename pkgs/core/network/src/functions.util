@@ -181,7 +181,7 @@ function mac_is_valid() {
 }
 
 function uuid() {
-	cat /proc/sys/kernel/random/uuid
+	echo $(</proc/sys/kernel/random/uuid)
 }
 
 function isset() {
