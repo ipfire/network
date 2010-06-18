@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = cairo
-PKG_VER        = 1.8.4
+PKG_VER        = 1.8.10
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -45,7 +45,3 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && sed -e "s/libpng12/& libpng14/g" -i configure
-endef
