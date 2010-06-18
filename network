@@ -66,12 +66,14 @@ case "${action}" in
 		cli_status $@
 		;;
 
-	""|help)
+	""|help|--help|-h)
 		cli_usage root
 		exit ${EXIT_OK}
 		;;
+
 	*)
-		error "Invalid command given."
+		error "Invalid command given: ${action}"
 		cli_usage usage
 		exit ${EXIT_CONF_ERROR}
+		;;
 esac
