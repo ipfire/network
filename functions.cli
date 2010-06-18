@@ -234,6 +234,20 @@ function cli_restart() {
 	cli_start $@
 }
 
+function cli_status() {
+	if cli_help_requested $@; then
+		cli_usage root-status
+		exit ${EXIT_OK}
+	fi
+
+	local zones=$(zones_get $@)
+
+	local zone
+	for zone in ${zones}; do
+		zone_status ${zone}
+	done
+}
+
 function cli_help_requested() {
 	local argument
 	for argument in $@; do
@@ -255,11 +269,11 @@ function cli_usage() {
 			echo "  start  - ..."
 			echo "  stop   - ..."
 			echo "  restart - ..."
+			echo "  status - ..."
 			echo
 			echo "  config - ..."
 			echo
 			echo "  device - ..."
-			echo "  show   - ???"
 			echo "  zone   - ..."
 			echo
 			;;
@@ -279,6 +293,26 @@ function cli_usage() {
 			echo    "${0}: ${what#root-} [--local-only|--remote-only|--all|<zone>...]"
 			echo
 			echo    "  This commands ${what#root-}s all zones by default."
+			echo    "  One can pass several parameters to only process a subset of all"
+			echo    "  available zones:"
+			echo
+			echo -e "    ${BOLD}--local-only${NORMAL}"
+			echo    "    Process all local zones which includes every zone without red."
+			echo
+			echo -e "    ${BOLD}--remote-only${NORMAL}"
+			echo    "    Process all remote zones which means only the red ones."
+			echo
+			echo -e "    ${BOLD}--all${NORMAL}"
+			echo    "    Process all zones. This is the default parameter."
+			echo
+			echo    "    Additionally, you can pass one or more zone names which will"
+			echo    "    be processed."
+			echo
+			;;
+		root-status)
+			echo    "${0}: ${what#root-} [--local-only|--remote-only|--all|<zone>...]"
+			echo
+			echo    "  This commands shows status information of all zones by default."
 			echo    "  One can pass several parameters to only process a subset of all"
 			echo    "  available zones:"
 			echo
