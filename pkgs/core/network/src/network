@@ -38,32 +38,8 @@ done
 
 # Process the given action
 case "${action}" in
-	config)
-		cli_config $@
-		;;
-
-	device)
-		cli_device $@
-		;;
-
-	zone)
-		cli_zone $@
-		;;
-
-	start)
-		cli_start $@
-		;;
-
-	stop)
-		cli_stop $@
-		;;
-
-	restart)
-		cli_restart $@
-		;;
-
-	status)
-		cli_status $@
+	config|device|zone|start|stop|restart|status)
+		cli_${action} $@
 		;;
 
 	""|help|--help|-h)
