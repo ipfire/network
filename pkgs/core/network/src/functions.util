@@ -21,7 +21,7 @@
 
 # Print a pretty error message
 function error() {
-	echo -e " ${FAIL}ERROR${NORMAL}  : $@" >&2
+	echo -e " ${COLOUR_ERROR}ERROR${COLOUR_NORMAL}  : $@" >&2
 }
 
 function error_log() {
@@ -31,7 +31,7 @@ function error_log() {
 
 # Print a pretty warn message
 function warning() {
-	echo -e " ${WARN}WARNING${NORMAL}: $@" >&2
+	echo -e " ${COLOUR_WARN}WARNING${COLOUR_NORMAL}: $@" >&2
 }
 
 function warning_log() {
