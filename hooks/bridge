@@ -111,14 +111,6 @@ function _up() {
 
 	# Bring all ports up
 	zone_ports_up ${zone}
-
-	# XXX Do we need this?
-	# Wait until bridge is forwarding
-	# which is needed by dhcp client
-	#if enabled STP; then
-	#	bridge_is_forwarding ${zone}
-	#fi
-
 	zone_configs_up ${zone}
 
 	event_interface_up ${zone}
