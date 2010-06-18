@@ -250,7 +250,7 @@ function cli_status() {
 
 function cli_help_requested() {
 	local argument
-	for argument in $@; do
+	for argument in ${1}; do
 		if [ "${argument}" = "help" -o "${argument}" = "-h" -o "${argument}" = "--help" ]; then
 			return ${EXIT_OK}
 		fi
