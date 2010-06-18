@@ -21,7 +21,8 @@
 
 . /lib/network/header-zone
 
-HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE MAC MTU"
+HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE STP_PRIORITY"
+HOOK_SETTINGS="${HOOK_SETTINGS} MAC MTU"
 
 # Default values
 MAC=$(mac_generate)
@@ -30,12 +31,14 @@ STP="on"
 STP_FORWARD_DELAY=0
 STP_HELLO=2
 STP_MAXAGE=20
+STP_PRIORITY=512 # XXX check out better value
 
 function _check() {
 	assert ismac MAC
 	assert isbool STP
 	assert isinteger STP_HELLO
 	assert isinteger STP_FORWARD_DELAY
+	assert isinteger STP_PRIORITY
 	assert isinteger MTU
 }
 
@@ -50,6 +53,9 @@ function _parse_cmdline() {
 				;;
 			--stp-forward-delay=*)
 				STP_FORWARD_DELAY=${1#--stp-forward-delay=}
+				;;
+			--stp-priority=*)
+				STP_PRIORITY=${1#--stp-priority=}
 				;;
 			--mtu=*)
 				MTU=${1#--mtu=}
@@ -92,6 +98,10 @@ function _up() {
 
 		if [ -n "${STP_MAXAGE}" ]; then
 			brctl setmaxage ${zone} ${STP_MAXAGE}
+		fi
+
+		if [ -n "${STP_PRIORITY}" ]; then
+			brctl setbridgeprio ${zone} ${STP_PRIORITY}
 		fi
 	else
 		brctl stp ${zone} off
@@ -147,6 +157,9 @@ function _status() {
 		exit ${EXIT_ERROR}
 	fi
 
+	# XXX Add bridge stp priority here
+	# brctl does not give any information about that
+
 	cli_headline "    Spanning Tree Protocol information:"
 	echo   "        Bridge ID             : $(stp_bridge_id ${zone})"
 	echo   "        Designated root       : $(stp_designated_root ${zone})"
@@ -155,7 +168,7 @@ function _status() {
 
 	# Topology information
 	printf "        Topology changing     : %6s\n" $(stp_topology_change ${zone})
-	printf "        Topology change time  : %6s\n" $(stp_topology_change_time ${zone})
+	printf "        Topology change time  : %6s\n" $(beautify_time $(stp_topology_change_time ${zone}))
 	printf "        Topology change count : %6s\n" $(stp_topology_change_count ${zone})
 
 	cli_headline "    Ports:"
