@@ -235,3 +235,29 @@ function uppercase() {
 	read input
 	echo "${input^^}"
 }
+
+function beautify_time() {
+	local value=${1}
+
+	local unit
+	local limit
+	for unit in s m h d w; do
+		case "${unit}" in
+			s|m|h)
+				limit=60
+				;;
+			d)
+				limit=24
+				;;
+			w)
+				limit=7
+				;;
+		esac
+
+		[ ${value} -lt ${limit} ] && break
+
+		value=$(( ${value} / ${limit} ))
+	done
+
+	echo "${value}${unit}"
+}
