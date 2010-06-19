@@ -426,6 +426,10 @@ function zone_has_ipv4() {
 	device_has_ipv4 $@
 }
 
+function zone_has_ipv6() {
+	device_has_ipv6 $@
+}
+
 function zone_db() {
 	local zone=${1}
 	local action=${2}

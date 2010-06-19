@@ -732,3 +732,22 @@ function device_has_ipv4() {
 
 	ip addr show ${device} | grep -q -e "inet " -e "${addr}"
 }
+
+function device_has_ipv6() {
+	local device=${1}
+	local addr=${2}
+
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	local prefix=${addr##*/}
+	addr=$(ipv6_implode ${addr%%/*})
+
+	if [ -n "${prefix}" ]; then
+		addr="${addr}/${prefix}"
+	fi
+
+	ip addr show ${device} | grep -q "inet6 ${addr}"
+}
