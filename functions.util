@@ -236,6 +236,20 @@ function uppercase() {
 	echo "${input^^}"
 }
 
+function lowercase() {
+	local input
+	read input
+	echo "${input,,}"
+}
+
+function seq() {
+	if [ $# -eq 2 ]; then
+		eval echo {${1}..${2}}
+	elif [ $# -eq 3 ]; then
+		eval echo {${1}..${3}..${2}}
+	fi
+}
+
 function beautify_time() {
 	local value=${1}
 
