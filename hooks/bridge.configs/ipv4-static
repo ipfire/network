@@ -120,13 +120,13 @@ function _status() {
 	
 	config_read $(zone_dir ${zone})/${config}
 
-	echo -n "        ${HOOK} - ${ADDRESS}/${PREFIX} - "
+	printf "        %10s - " "${HOOK}"
 	if zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
-		echo -ne "${COLOUR_OK}OK   ${COLOUR_NORMAL}"
+		echo -ne "${COLOUR_OK} OK  ${COLOUR_NORMAL}"
 	else
 		echo -ne "${COLOUR_ERROR}ERROR${COLOUR_NORMAL}"
 	fi
-	echo # End line
+	echo " - ${ADDRESS}/${PREFIX}"
 
 	if [ -n "${GATEWAY}" ]; then
 		echo "          Gateway: ${GATEWAY}"
