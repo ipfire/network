@@ -135,17 +135,17 @@ function __portcmd() {
 
 	local hook_zone=$(zone_get_hook ${zone})
 
-	if ! hook_exists ${hook_zone}; then
+	if ! hook_zone_exists ${hook_zone}; then
 		error "Hook '${hook}' does not exist."
 		exit ${EXIT_ERROR}
 	fi
 
-	if ! hook_port_exists ${hook_zone} ${hook_port}; then
+	if ! hook_zone_port_exists ${hook_zone} ${hook_port}; then
 		error "Hook '${hook_port}' is not supported for zone '${zone}'."
 		exit ${EXIT_ERROR}
 	fi
 
-	hook_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} $@
+	hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} $@
 }
 
 function _port_create() {
@@ -194,7 +194,7 @@ function __configcmd() {
 
 	local hook_zone=$(zone_get_hook ${zone})
 
-	if ! hook_exists ${hook_zone}; then
+	if ! hook_zone_exists ${hook_zone}; then
 		error "Hook '${hook}' does not exist."
 		exit ${EXIT_ERROR}
 	fi
@@ -204,7 +204,7 @@ function __configcmd() {
 		exit ${EXIT_ERROR}
 	fi
 
-	hook_config_exec ${hook_zone} ${hook_config} ${cmd} ${zone} $@
+	hook_zone_config_exec ${hook_zone} ${hook_config} ${cmd} ${zone} $@
 }
 
 function _config_create() {
@@ -272,7 +272,7 @@ function run() {
 			;;
 
 		port)
-			if ! hook_has_ports ${HOOK}; then
+			if ! hook_zone_has_ports ${HOOK}; then
 				error "Hook '${HOOK}' does not support ports."
 				exit ${EXIT_ERROR}
 			fi
@@ -281,7 +281,7 @@ function run() {
 			;;
 
 		config)
-			if ! hook_has_configs ${HOOK}; then
+			if ! hook_zone_has_configs ${HOOK}; then
 				error "Hook '${HOOK}' does not support configurations."
 				exit ${EXIT_ERROR}
 			fi

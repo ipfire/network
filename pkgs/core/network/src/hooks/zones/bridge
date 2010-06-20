@@ -178,7 +178,7 @@ function _addport() {
 	local hook=${2}
 	shift 2
 
-	if ! hook_exists port ${hook}; then
+	if ! port_hook_exists ${hook}; then
 		error "Hook does not exist '${hook}'"
 		exit ${EXIT_ERROR}
 	fi

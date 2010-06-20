@@ -19,31 +19,74 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/functions
+. /lib/network/header-port
 
-HOOK=$(basename ${0})
+HOOK_SETTINGS="HOOK DEVICE_MAC DEVICE_NAME MODE SLAVES"
 
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		-*)
-			error "Unrecognized option: ${1}"
-			exit ${EXIT_ERROR}
-			;;
-		*)
-			action=${1}
-			;;
-	esac
-	shift
-	[ -n "${action}" ] && break
-done
+DEVICE_NAME="bond0" # XXX DEVICE_NAME must be unique
+DEVICE_MAC=$(mac_generate)
 
-function run() {
-	case "${action}" in
-		create|rem|up|down|status)
-			_${action} $@
-			;;
-	esac
+function _check() {
+	assert isset DEVICE_MAC
+	assert ismac DEVICE_MAC
+	assert isset DEVICE_NAME
 
-	error "Port hook '${HOOK}' didn't exit properly."
-	exit ${EXIT_ERROR}
+	assert isset SLAVES
 }
+
+function _create() {
+	local zone=${1}
+	shift
+
+	local
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--mac=*)
+				DEVICE_MAC=${1#--mac=}
+				;;
+			--mode=*)
+				MODE=${1#--mode=}
+				;;
+			--slave=*)
+				slave=${1#--slave=}
+				SLAVES="${SLAVES} $(macify ${slave})"
+				;;
+			*)
+				warning "Unknown argument '${1}'"
+				;;
+		esac
+		shift
+	done
+
+	# Remove any whitespace
+	SLAVES=$(echo ${SLAVES})
+
+	_check
+
+	config_write $(zone_dir ${zone})/port.${HOOK}.$(device_hash ${DEVICE_MAC}) ${HOOK_SETTINGS}
+
+	exit ${EXIT_OK}
+}
+
+function _up() {
+	local zone=${1}
+	local port=${2}
+
+	config_read $(zone_dir ${zone})/${port}
+
+	if ! device_exists $(devicify ${DEVICE_MAC}); then
+		device_virtual_create ${DEVICE} ${DEVICE_VID} ${DEVICE_MAC}
+	fi
+
+	local device=$(devicify ${DEVICE_MAC})
+
+	# Set same MTU to device that the bridge has got
+	device_set_mtu ${device} $(device_get_mtu ${zone})
+
+	bridge_attach_device ${zone} ${device}
+
+	exit ${EXIT_OK}
+}
+
+run $@
