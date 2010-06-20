@@ -19,31 +19,44 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/functions
+function bonding_create() {
+	local device=${1}
+	local mac=${2}
 
-HOOK=$(basename ${0})
+	[ -z "${mac}" ] && mac=$(mac_generate)
 
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		-*)
-			error "Unrecognized option: ${1}"
-			exit ${EXIT_ERROR}
-			;;
-		*)
-			action=${1}
-			;;
-	esac
-	shift
-	[ -n "${action}" ] && break
-done
+	log INFO "Creating bonding device '${device}' (${mac})."
 
-function run() {
-	case "${action}" in
-		create|rem|up|down|status)
-			_${action} $@
-			;;
-	esac
+	echo "+${device}" > /sys/class/net/bonding_masters
+	device_set_address ${mac}
+	device_set_up ${device}
+}
 
-	error "Port hook '${HOOK}' didn't exit properly."
-	exit ${EXIT_ERROR}
+function bonding_remove() {
+	local device=$(devicify ${1})
+
+	log INFO "Remove bonding device '${device}'."
+
+	device_set_down ${device}
+	echo "-${device}" > /sys/class/net/bonding_masters
+}
+
+function bonding_set_mode() {
+	local device=${1}
+	local mode=${2}
+
+	log INFO "Setting bonding mode on '${device}' '${mode}'."
+
+	echo "${mode}" > /sys/class/net/${device}/bonding/mode
+}
+
+function bonding_enslave_device() {
+	local device=$(devicify ${1})
+	local slave=$(devicify ${2})
+	shift 2
+
+	log INFO "Enslaving slave '${slave}' to '${device}'."
+
+	device_set_down ${slave}
+	echo "+${slave}" > /sys/class/net/${device}/bonding/slaves
 }

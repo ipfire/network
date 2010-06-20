@@ -454,8 +454,8 @@ function device_discover() {
 	log INFO "Running discovery process on device '${device}'."
 
 	local hook
-	for hook in $(hooks_get_all); do
-		hook_exec ${hook} discover ${device}
+	for hook in $(hook_zone_get_all); do
+		hook_zone_exec ${hook} discover ${device}
 	done
 }
 
@@ -598,48 +598,6 @@ function device_virtual_get_by_parent_and_vid() {
 		done
 
 	return ${EXIT_ERROR}
-}
-
-function device_bonding_create() {
-	local device=${1}
-	local mac=${2}
-
-	[ -z "${mac}" ] && mac=$(mac_generate)
-
-	log INFO "Creating bonding device '${device}' (${mac})."
-
-	echo "+${device}" > /sys/class/net/bonding_masters
-	device_set_address ${mac}
-	device_set_up ${device}
-}
-
-function device_bonding_remove() {
-	local device=$(devicify ${1})
-
-	log INFO "Remove bonding device '${device}'."
-
-	device_set_down ${device}
-	echo "-${device}" > /sys/class/net/bonding_masters
-}
-
-function bonding_set_mode() {
-	local device=${1}
-	local mode=${2}
-
-	log INFO "Setting bonding mode on '${device}' '${mode}'."
-
-	echo "${mode}" > /sys/class/net/${device}/bonding/mode
-}
-
-function bonding_enslave_device() {
-	local device=$(devicify ${1})
-	local slave=$(devicify ${2})
-	shift 2
-
-	log INFO "Enslaving slave '${slave}' to '${device}'."
-
-	device_set_down ${slave}
-	echo "+${slave}" > /sys/class/net/${device}/bonding/slaves
 }
 
 function bridge_attach_device() {

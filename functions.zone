@@ -22,7 +22,7 @@
 function zone_dir() {
 	local zone=${1}
 
-	echo "${ZONE_DIR}/${zone}"
+	echo "${ZONE_DIR}/zones/${zone}"
 }
 
 function zone_exists() {
@@ -81,14 +81,14 @@ function zone_create() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_exists ${hook}; then
+	if ! hook_zone_exists ${hook}; then
 		error "Hook '${hook}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
 	mkdir -p $(zone_dir ${zone})
 
-	hook_exec ${hook} create ${zone} $@
+	hook_zone_exec ${hook} create ${zone} $@
 	local ret=$?
 
 	# Maybe the zone create hook did not exit correctly.
@@ -114,12 +114,12 @@ function zone_edit() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_exists ${hook}; then
+	if ! hook_zone_exists ${hook}; then
 		error "Hook '${hook}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
-	hook_exec ${hook} edit ${zone} $@
+	hook_zone_exec ${hook} edit ${zone} $@
 }
 
 function zone_remove() {
@@ -152,15 +152,15 @@ function zone_up() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_exists ${hook}; then
+	if ! hook_zone_exists ${hook}; then
 		error "Hook '${hook}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
 	zone_db ${zone} starting
 
-	hook_exec ${hook} up ${zone} $@
-	
+	hook_zone_exec ${hook} up ${zone} $@
+
 	zone_db ${zone} started
 }
 
@@ -180,14 +180,14 @@ function zone_down() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_exists ${hook}; then
+	if ! hook_zone_exists ${hook}; then
 		error "Hook '${hook}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
 	zone_db ${zone} stopping
 
-	hook_exec ${hook} down ${zone} $@
+	hook_zone_exec ${hook} down ${zone} $@
 
 	zone_db ${zone} stopped
 }
@@ -208,12 +208,12 @@ function zone_status() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_exists ${hook}; then
+	if ! hook_zone_exists ${hook}; then
 		error "Hook '${hook}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
-	hook_exec ${hook} status ${zone} $@
+	hook_zone_exec ${hook} status ${zone} $@
 }
 
 function zone_port() {
@@ -232,12 +232,12 @@ function zone_port() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_exists ${hook}; then
+	if ! hook_zone_exists ${hook}; then
 		error "Hook '${hook}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
-	hook_exec ${hook} port ${zone} $@
+	hook_zone_exec ${hook} port ${zone} $@
 }
 
 function zone_config() {
@@ -256,12 +256,12 @@ function zone_config() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_exists ${hook}; then
+	if ! hook_zone_exists ${hook}; then
 		error "Hook '${hook}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
-	hook_exec ${hook} config ${zone} $@
+	hook_zone_exec ${hook} config ${zone} $@
 }
 
 function zone_show() {
@@ -282,7 +282,7 @@ function zones_show() {
 
 function zones_get_all() {
 	local zone
-	for zone in ${ZONE_DIR}/*; do
+	for zone in $(zone_dir)/*; do
 		zone=$(basename ${zone})
 		zone_exists ${zone} || continue
 
@@ -375,7 +375,7 @@ function zone_ports_cmd() {
 	for port in $(zone_ports_list ${zone}); do
 		hook_port=$(config_get_hook $(zone_dir ${zone})/${port})
 
-		hook_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} ${port} $@
+		hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} ${port} $@
 	done
 }
 
@@ -410,7 +410,7 @@ function zone_configs_cmd() {
 	for config in $(zone_configs_list ${zone}); do
 		hook_config=$(config_get_hook $(zone_dir ${zone})/${config})
 
-		hook_config_exec ${hook_zone} ${hook_config} ${cmd} ${zone} ${config} $@
+		hook_zone_config_exec ${hook_zone} ${hook_config} ${cmd} ${zone} ${config} $@
 	done
 }
 

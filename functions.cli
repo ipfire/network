@@ -105,8 +105,8 @@ function cli_device_discover() {
 	local hook
 	local out
 	local ret
-	for hook in $(hooks_get_all); do
-		out=$(hook_exec ${hook} discover ${device})
+	for hook in $(hook_zone_get_all); do
+		out=$(hook_zone_exec ${hook} discover ${device})
 		ret=$?
 
 		[ ${ret} -eq ${DISCOVER_NOT_SUPPORTED} ] && continue
