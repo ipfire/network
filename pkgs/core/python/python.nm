@@ -34,8 +34,8 @@ PKG_URL        = http://www.python.org
 PKG_LICENSE    = Python
 PKG_SUMMARY    = An interpreted, interactive, object-oriented programming language.
 
-PKG_BUILD_DEPS+= autoconf automake
-PKG_DEPS      += bzip2 db expat gdbm gmp libffi ncurses openssl pkg-config readline sqlite tar zlib
+PKG_BUILD_DEPS+= autoconf automake pkg-config
+PKG_DEPS      += bzip2 db expat gdbm gmp libffi ncurses openssl readline sqlite tar zlib
 
 define PKG_DESCRIPTION
 	Python is an interpreted, interactive, object-oriented programming \
@@ -47,12 +47,15 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-###############################################################################
-# Installation Details
-###############################################################################
+export CFLAGS  += -D_GNU_SOURCE -fwrapv
+export CPPFLAGS = $(shell pkg-config --cflags-only-I libffi)
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -e "s/#*shared*/*shared*/g" -i Modules/Setup.dist
+
+	# Remove embedded copies of expat, zlib and libffi
+	cd $(DIR_APP) && rm -rf Modules/{expat,zlib}
+	cd $(DIR_APP) && rm -rf Modules/_ctypes/{darwin,libffi,libffi_arm_wince,libffi_msvc,libffi_osx}
 
 	cd $(DIR_APP) && autoreconf
 endef
