@@ -36,6 +36,9 @@ class Naoki(object):
 			self.cli.help()
 			return 1
 
+		if config["nice_level"]:
+			os.nice(int(config["nice_level"]))
+
 		actionmap = {
 			"build" : self.call_build,
 			"toolchain" : self.call_toolchain,

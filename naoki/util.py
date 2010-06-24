@@ -134,9 +134,6 @@ def do(command, shell=False, chrootPath=None, cwd=None, timeout=0, raiseExc=True
 	env = kargs.get("env", None)
 	preexec = ChildPreExec(personality, chrootPath, cwd)
 
-	if config["nice_level"]:
-		command = "nice -n %s %s" % (config["nice_level"], command)
-
 	try:
 		child = None
 		if logger:
