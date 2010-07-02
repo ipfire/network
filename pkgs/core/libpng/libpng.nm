@@ -37,6 +37,8 @@ PKG_SUMMARY    = A library of functions for manipulating PNG image format files.
 PKG_BUILD_DEPS+= pkg-config
 PKG_DEPS      += zlib
 
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
 define PKG_DESCRIPTION
 	The libpng package contains a library of functions for creating and \
 	manipulating PNG (Portable Network Graphics) image format files. \

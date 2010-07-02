@@ -51,9 +51,7 @@ CONFIGURE_OPTIONS += \
 	--enable-pcregrep-libbz2 \
 	--enable-unicode-properties
 
-define STAGE_INSTALL
-	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
+define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/{,usr/}lib
 	mv -v $(BUILDROOT)/usr/lib/libpcre.so.* $(BUILDROOT)/lib/
 	ln -v -sf ../../lib/libpcre.so.0 $(BUILDROOT)/usr/lib/libpcre.so
