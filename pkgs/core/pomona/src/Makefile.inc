@@ -26,6 +26,6 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALLNLSDIR = $(DESTDIR)/usr/share/locale
 
 PYTHONLIBDIR = $(DESTDIR)/usr/lib/pomona
-PYTHONINCLUDE= /usr/include/python2.6/
+PYTHONINCLUDE= /usr/include/python2.7/
 
 CC = $(CROSS)gcc
