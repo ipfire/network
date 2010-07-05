@@ -1,0 +1,25 @@
+diff -urNp autogen-5.9.4.orig/autoopts/autoopts-config.in autogen-5.9.4/autoopts/autoopts-config.in
+--- autogen-5.9.4.orig/autoopts/autoopts-config.in	2007-12-24 02:33:16.000000000 +0530
++++ autogen-5.9.4/autoopts/autoopts-config.in	2008-02-25 00:38:27.000000000 +0530
+@@ -17,17 +17,17 @@
+   includedir="@includedir@"
+  exec_prefix="@exec_prefix@"
+       bindir="@bindir@"
+-      libdir="@libdir@"
+-      ldopts="@AG_LDFLAGS@"
++      libdir=""
++      ldopts=""
+       exeext="@EXEEXT@"
+      version="@AO_CURRENT@:@AO_REVISION@:@AO_AGE@"
+       dotver="@AO_CURRENT@.@AO_REVISION@.@AO_AGE@"
+   pkgdatadir="${datadir}/${package}"
+      autogen="${bindir}/autogen${exeext}"
+-     ldflags="-L${libdir} -lopts"
++     ldflags="-lopts"
+         libs="${ldflags}"
+       libsrc="${pkgdatadir}/libopts-${dotver}.tar.gz"
+- static_libs="${libdir}/libopts.a"
++ static_libs=""
+       cflags="-I${includedir}"
+ test -n "${ldopts}" && ldflags="${ldopts}${libdir} ${ldflags}"
+ test "${includedir}" = "/usr/include" && cflags=""

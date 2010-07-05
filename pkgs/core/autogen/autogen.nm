@@ -1,0 +1,50 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = autogen
+PKG_VER        = 5.9.4
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.gnu.org/software/autogen/
+PKG_LICENSE    = GPLv3
+PKG_SUMMARY    = Automated text file generator.
+
+PKG_DEPS      += guile libxml2
+
+define PKG_DESCRIPTION
+	AutoGen is a tool designed to simplify the creation and maintenance of \
+	programs that contain large amounts of repetitious text. It is especially \
+	valuable in programs that have several blocks of text that must be kept \
+	synchronised.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef
