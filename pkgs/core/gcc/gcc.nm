@@ -39,7 +39,7 @@ define PKG_DESCRIPTION
 	You'll need this package in order to compile C code.
 endef
 
-PKG_BUILD_DEPS =
+PKG_BUILD_DEPS = autogen dejagnu expect
 PKG_DEPS      += binutils cloog glibc gmp kernel-headers libffi mpc mpfr ppl
 
 ifeq "$(MACHINE)" "i586"
@@ -111,9 +111,8 @@ define STAGE_BUILD
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
 endef
 
-# Requires dejagnu
 #define STAGE_TEST
-#	cd $(DIR_SRC)/gcc-build && make -k check
+#	cd $(DIR_SRC)/gcc-build && make check
 #	cd $(DIR_APP) && ./contrib/test_summary
 #endef
 
