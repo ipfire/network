@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = samba
-PKG_VER        = 3.3.5
+PKG_VER        = 3.5.4
 PKG_REL        = 0
 
 PKG_MAINTAINER = Christian Schmidt <christian.schmidt@ipfire.org>
@@ -53,12 +53,8 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 CFLAGS    += -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DLDAP_DEPRECATED
 
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP)/source && sh autogen.sh
-endef
-
 define STAGE_BUILD
-	cd $(DIR_APP)/source && \
+	cd $(DIR_APP)/source3 && \
 		./configure \
 			--prefix=/usr \
 			--localstatedir=/var \
@@ -83,11 +79,11 @@ define STAGE_BUILD
 			--with-winbind \
 			--with-shared-modules=idmap_ad,idmap_rid,idmap_adex,idmap_hash
 
-	cd $(DIR_APP)/source && make pch all modules $(PARALLELISMFLAGS)
+	cd $(DIR_APP)/source3 && make pch all modules $(PARALLELISMFLAGS)
 endef
 
 define STAGE_INSTALL
-	cd $(DIR_APP)/source && make install DESTDIR=$(BUILDROOT)
+	cd $(DIR_APP)/source3 && make install DESTDIR=$(BUILDROOT)
 
 	-mkdir -pv $(BUILDROOT)/etc/samba
 	echo "127.0.0.1 localhost" > $(BUILDROOT)/etc/samba/lmhosts
