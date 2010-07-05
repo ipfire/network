@@ -25730,9 +25730,9 @@ diff -Nur linux-2.6.33.1-vanilla/fs/Makefile linux-2.6.33.1/fs/Makefile
 --- linux-2.6.33.1-vanilla/fs/Makefile	2010-03-15 17:09:39.000000000 +0100
 +++ linux-2.6.33.1/fs/Makefile	2010-04-05 16:54:40.000000000 +0200
 @@ -124,3 +124,4 @@
- obj-$(CONFIG_BTRFS_FS)		+= btrfs/
  obj-$(CONFIG_GFS2_FS)           += gfs2/
  obj-$(CONFIG_EXOFS_FS)          += exofs/
+ obj-$(CONFIG_CEPH_FS)		+= ceph/
 +obj-$(CONFIG_AUFS_FS)           += aufs/
 diff -Nur linux-2.6.33.1-vanilla/fs/namei.c linux-2.6.33.1/fs/namei.c
 --- linux-2.6.33.1-vanilla/fs/namei.c	2010-03-15 17:09:39.000000000 +0100
