@@ -34,7 +34,7 @@ PKG_URL        = http://www.kernel.org/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = The Linux kernel.
 
-PKG_BUILD_DEPS+= module-init-tools
+PKG_BUILD_DEPS+= module-init-tools ncurses
 PKG_DEPS       = # No dependencies
 
 define PKG_DESCRIPTION
@@ -66,32 +66,14 @@ define STAGE_PREPARE_CMDS
 	
 	cd $(DIR_APP) && cp -vf $(DIR_SOURCE)/$(DISTRO_SNAME)_logo.ppm \
 		drivers/video/logo/logo_linux_clut224.ppm
+
+	cd $(DIR_APP) && make mrproper
+
+	# Install configuration file
+	cp -f $(DIR_SOURCE)/config $(DIR_APP)/.config
 endef
 
 define STAGE_BUILD
-	cd $(DIR_APP) && make mrproper
-
-	# Select right optimization for the linux kernel.
-	if [ "$(TARGET)" == "i486" ]; then \
-		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-			-e "s/^# CONFIG_M486 is not set/CONFIG_M486=y/" \
-			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
-	elif [ "$(TARGET)" == "i586" ]; then \
-		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-			-e "s/^# CONFIG_M586TSC is not set/CONFIG_M586TSC=y/" \
-			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
-	elif [ "$(TARGET)" == "via-c7" ]; then \
-		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-			-e "s/^# CONFIG_MVIAC7 is not set/CONFIG_MVIAC7=y/" \
-			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
-	elif [ "$(TARGET)" == "via-c3" ]; then \
-		sed -e "s/^CONFIG_M686=y/# CONFIG_686 is not set/" \
-			-e "s/^# CONFIG_MVIAC3_2 is not set/CONFIG_MVIAC3_2=y/" \
-			< $(DIR_SOURCE)/config > $(DIR_APP)/.config; \
-	else \
-		cp -f $(DIR_SOURCE)/config $(DIR_APP)/.config; \
-	fi
-
 	cd $(DIR_APP) && yes "" | make oldconfig
 	
 	cd $(DIR_APP) && make CC="gcc -nopie" $(PARALLELISMFLAGS)
