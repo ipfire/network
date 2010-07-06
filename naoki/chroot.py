@@ -369,6 +369,11 @@ class PackageEnvironment(Environment):
 	def log(self):
 		return self.package.log
 
+	def shell(self, *args):
+		self.make("prepare")
+		Environment.shell(self, *args)
+		self.clean()
+
 
 class ShellEnvironment(Environment):
 	def chrootPath(self, *args):
