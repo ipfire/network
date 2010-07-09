@@ -21,67 +21,106 @@
 
 . /lib/network/header-port
 
-HOOK_SETTINGS="HOOK DEVICE"
+HOOK_SETTINGS="HOOK DEVICE DEVICE_MAC DEVICE_VID"
+
+DEVICE_MAC=$(mac_generate)
 
 function _check() {
-	assert isset DEVICE_MAC
+	assert isset DEVICE
 	assert ismac DEVICE_MAC
-}
+	assert isinteger DEVICE_VID
 
-function _create() {
-	local zone=${1}
-	local device=${2}
-	shift 2
-
-	if [ -z "${device}" ]; then
-		error "No device given."
+	if [ ${DEVICE_VID} -gt 4096 ]; then
+		error "DEVICE_VID is greater than 4096."
 		exit ${EXIT_ERROR}
 	fi
 
-	if ! device_exists ${device}; then
-		warning "Device does not exist."
-	fi
+	local reserved
+	for reserved in 0 4095; do
+		if [ "${DEVICE_VID}" = "${reserved}" ]; then
+			error "DEVICE_VID=${reserved} is reserved."
+			exit ${EXIT_ERROR}
+		fi
+	done
+}
 
-	DEVICE=$(macify ${device})
+function _create() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--device=*)
+				DEVICE=${1#--device=}
+				;;
+			--mac=*)
+				DEVICE_MAC=${1#--mac=}
+				;;
+			--id=*)
+				DEVICE_VID=${1#--id=}
+				;;
+			*)
+				warning "Unknown argument '${1}'"
+				;;
+		esac
+		shift
+	done
 
-	config_write $(zone_dir ${zone})/port.${HOOK}.$(device_hash ${device}) ${HOOK_SETTINGS}
+	local port="${DEVICE}v${DEVICE_VID}"
+
+	config_write $(port_file ${port}) ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
 
-function _up() {
-	local zone=${1}
-	local port=${2}
+function _edit() {
+	local port=${1}
+	shift
 
-	assert isset zone
 	assert isset port
 
-	assert zone_exists ${zone}
-	assert port_exists ${port}
+	config_read $(port_file ${port})
 
-	port_up ${port}
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--mac=*)
+				DEVICE_MAC=${1#--mac=}
+				;;
+			*)
+				warning "Unknown argument '${1}'"
+				;;
+		esac
+		shift
+	done
 
-	# Set same MTU to device that the bridge has got
-	device_set_mtu ${port} $(device_get_mtu ${zone})
+	config_write $(port_file ${port}) ${HOOK_SETTINGS}
 
-	bridge_attach_device ${zone} ${port}
+	exit ${EXIT_OK}	
+}
+
+function _up() {
+	local port=${1}
+
+	assert isset port
+
+	config_read $(port_file ${port})
+
+	if ! device_exists ${port}; then
+		device_virtual_create ${DEVICE} ${DEVICE_VID} ${DEVICE_MAC}
+	fi
 
 	exit ${EXIT_OK}
 }
 
 function _down() {
-	local zone=${1}
-	local port=${2}
+	local port=${1}
 
-	assert isset zone
 	assert isset port
 
-	assert zone_exists ${zone}
-	assert port_exists ${port}
+	config_read $(port_file ${port})
 
-	bridge_detach_device ${zone} ${port}
+	if ! device_exists ${port}; then
+		exit ${EXIT_OK}
+	fi
 
-	port_down ${port}
+	device_virtual_remove ${port}
 
 	exit ${EXIT_OK}
 }
@@ -90,18 +129,21 @@ function _status() {
 	local zone=${1}
 	local port=${2}
 
-	printf "        %-10s - " "${port}"
-	if ! device_is_up ${port}; then
+config_read $(zone_dir ${zone})/${port}
+
+	local device=$(devicify ${DEVICE_MAC})
+
+	printf "        %-10s - " "${device}"
+	if ! device_is_up ${device}; then
 		echo -ne "${COLOUR_DOWN}   DOWN   ${COLOUR_NORMAL}"
 	else
-		local state=$(stp_port_state ${zone} ${port})
+		local state=$(stp_port_state ${zone} ${device})
 		local colour="COLOUR_STP_${state}"
 		printf "${!colour}%10s${COLOUR_NORMAL}" ${state}
-
-		echo -n " - DSR: $(stp_port_designated_root ${zone} ${port})"
-		echo -n " - Cost: $(stp_port_pathcost ${zone} ${port})"
 	fi
 
+	echo -n " - DSR: $(stp_port_designated_root ${zone} ${device})"
+	echo -n " - Cost: $(stp_port_pathcost ${zone} ${device})"
 	echo
 
 	exit ${EXIT_OK}

@@ -114,8 +114,6 @@ function _up() {
 	zone_configs_up ${zone}
 
 	event_interface_up ${zone}
-
-	exit $?
 }
 
 function _down() {
@@ -164,26 +162,13 @@ function _status() {
 	printf "        Topology change count : %6s\n" $(stp_topology_change_count ${zone})
 
 	cli_headline "    Ports:"
-	zone_ports_cmd status ${zone}
+	zone_ports_status ${zone}
 
 	cli_headline "    Configurations:"
 	zone_configs_cmd status ${zone}
 
 	echo # Empty line
 	exit ${EXIT_OK}
-}
-
-function _addport() {
-	local zone=${1}
-	local hook=${2}
-	shift 2
-
-	if ! port_hook_exists ${hook}; then
-		error "Hook does not exist '${hook}'"
-		exit ${EXIT_ERROR}
-	fi
-
-	port_hook ${hook} add ${zone}
 }
 
 run $@

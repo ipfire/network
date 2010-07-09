@@ -22,6 +22,8 @@
 function devicify() {
 	local device=${1}
 
+	assert isset device
+
 	if device_exists ${device}; then
 		echo "${device}"
 		return ${EXIT_OK}
@@ -40,6 +42,8 @@ function devicify() {
 
 function macify() {
 	local device=${1}
+
+	assert isset device
 
 	if mac_is_valid ${device}; then
 		echo "${device}"
@@ -80,20 +84,9 @@ function device_is_bonding() {
 
 # Check if the device bonded in a bonding device
 function device_is_bonded() {
-	local dev
-	for dev in /sys/class/net/*; do
-		# Skip crappy files
-		[ -d "${dev}" ] || continue
+	local device=${1}
 
-		# Continue if not a bonding device
-		device_is_bonding "${dev##*/}" || continue
-
-		if grep -q "\<${1}\>" ${dev}/bonding/slaves; then
-			return 0
-		fi
-	done
-
-	return 1
+	[ -d "${SYS_CLASS_NET}/${device}/master" ]
 }
 
 # Check if the device is a bridge
@@ -196,6 +189,26 @@ function device_get_type() {
 	fi
 }
 
+function device_get_status() {
+	local device=${1}
+
+	assert isset device
+
+	local status=${STATUS_UNKNOWN}
+
+	if ! device_has_carrier ${device}; then
+		status=${STATUS_NOCARRIER}
+	elif device_is_up ${device}; then
+		status=${STATUS_UP}
+	elif device_is_down ${device}; then
+		status=${STATUS_DOWN}
+	fi
+
+	assert isset status
+
+	echo "${status}"
+}
+
 function device_get_address() {
 	local device=${1}
 
@@ -233,11 +246,40 @@ function device_set_address() {
 	return ${ret}
 }
 
+function device_get() {
+	local from_config
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--from-config)
+				from_config=1
+				;;
+			--no-config)
+				from_config=0
+				;;
+		esac
+		shift
+	done
+
+	local devices
+
+	if [ "${from_config}" != "0" ]; then
+		devices="${devices} $(device_config_list)"
+	fi
+
+	if [ "${from_config}" != "1" ]; then
+		local device
+		for device in ${SYS_CLASS_NET}/*; do
+			devices="${devices} $(basename ${device})"
+		done
+	fi
+
+	echo ${devices}
+	return ${EXIT_OK}
+}
+
 function devices_get_all() {
-	local device
-	for device in ${SYS_CLASS_NET}/*; do
-		echo "$(basename ${device})"
-	done | sort
+	device_get
 }
 
 # Check if a device has a cable plugged in
@@ -332,6 +374,9 @@ function device_set_name() {
 # Set device up
 function device_set_up() {
 	local device=$(devicify ${1})
+
+	# Silently fail if device was not found
+	[ -z "${device}" ] && return ${EXIT_ERROR}
 
 	# Do nothing if device is already up
 	device_is_up ${device} && return ${EXIT_OK}
@@ -469,7 +514,7 @@ function device_virtual_create() {
 	local vid=${2}
 	local mac=${3}
 	local newport=${port}v${vid}
-	
+
 	if [ -z "${mac}" ]; then
 		mac=$(mac_generate)
 	fi
@@ -585,6 +630,9 @@ function device_virtual_get_by_parent_and_vid() {
 	local parent=${1}
 	local vid=${2}
 
+	assert isset parent
+	assert isset vid
+
 	local v_port
 	local v_id
 	local v_parent
@@ -603,15 +651,16 @@ function device_virtual_get_by_parent_and_vid() {
 function bridge_attach_device() {
 	local bridge=${1}
 	local device=${2}
-	
-	if ! device_exists ${bridge}; then
-		error "Bridge '${bridge}' does not exist."
-		return ${EXIT_ERROR}
-	fi
 
-	if ! device_exists ${device}; then
-		error "Device '${device}' does not exist."
-		return ${EXIT_ERROR}
+	assert isset bridge
+	assert isset device
+
+	assert device_exists ${bridge}
+	assert device_exists ${device}
+
+	# If device is already attached, exit silently
+	if listmatch ${device} $(bridge_get_members ${bridge}); then
+		return ${EXIT_OK}
 	fi
 
 	log INFO "Attaching device '${device}' to bridge '${bridge}'."
@@ -625,6 +674,9 @@ function bridge_detach_device() {
 	local bridge=${1}
 	local device=${2}
 
+	assert isset bridge
+	assert isset device
+	
 	if ! device_exists ${bridge}; then
 		error "Bridge '${bridge}' does not exist."
 		return ${EXIT_ERROR}
@@ -639,7 +691,21 @@ function bridge_detach_device() {
 
 	brctl delif ${bridge} ${device}
 
-	device_set_down ${device}
+	#device_set_down ${device}
+}
+
+function bridge_get_members() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	local member
+	for member in ${SYS_CLASS_NET}/${bridge}/brif/*; do
+		member=$(basename ${master})
+		if device_exists ${member}; then
+			echo "${member}"
+		fi
+	done
 }
 
 function bridge_is_forwarding() {
@@ -708,4 +774,149 @@ function device_has_ipv6() {
 	fi
 
 	ip addr show ${device} | grep -q "inet6 ${addr}"
+}
+
+function device_config_list() {
+	local device
+	for device in ${CONFIG_DIR}/devices/*; do
+		device=$(basename ${device})
+		if device_config_exists ${device}; then
+			echo "${device}"
+		fi
+	done
+}
+
+function device_config_exists() {
+	local device=${1}
+
+	[ -e "${CONFIG_DIR}/devices/${device}" ]
+}
+
+function device_config_write() {
+	local device=${1}
+	shift
+
+	config_write ${CONFIG_DIR}/devices/${device} $@
+}
+
+function device_config_read() {
+	local device=${1}
+
+	config_read ${CONFIG_DIR}/devices/${device}
+}
+
+function device_create() {
+	local hook=${1}
+	shift
+
+	if ! hook_exists device ${hook}; then
+		error "Hook '${hook}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	hook_exec device ${hook} create $@
+}
+
+# XXX to be fixed
+function device_up() {
+	local device=${1}
+	shift
+
+	if ! device_config_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	local hook=$(config_get_hook ${CONFIG_DIR}/devices/${device})
+
+	if ! hook_exists device ${hook}; then
+		error "Hook '${hook}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	hook_exec device ${hook} up ${device} $@
+}
+
+# XXX to be fixed
+function device_down() {
+	local device=${1}
+	shift
+
+	if ! device_config_exists ${device}; then
+                error "Device '${device}' does not exist."
+                return ${EXIT_ERROR}
+        fi
+
+	local hook=$(config_get_hook ${CONFIG_DIR}/devices/${device})
+
+	if ! hook_exists device ${hook}; then
+		error "Hook '${hook}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	hook_exec device ${hook} down ${device} $@
+}
+
+function device_print() {
+	local device=${1}
+	local type=$(device_get_type ${device})
+
+	echo "${device}"
+	printf "${DEVICE_PRINT_LINE1}" "Type:" "${type}"
+
+	#device_config_exists ${device}
+	#local has_config=$?
+
+	# XXX need something is_function() method here
+	if [ -n "$(type -t ${type}_device_print)" ]; then
+		${type}_device_print ${device}
+	fi
+
+	echo # Empty line
+}
+
+function __device_get_file() {
+	local device=${1}
+	local file=${2}
+
+	assert isset device
+	assert isset file
+
+	cat ${SYS_CLASS_NET}/${device}/${file}
+}
+
+function device_get_rx_bytes() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/rx_bytes
+}
+
+function device_get_tx_bytes() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/tx_bytes
+}
+
+function device_get_rx_packets() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/rx_packets
+}
+
+function device_get_tx_packets() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/tx_packets
+}
+
+function device_get_rx_errors() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/rx_errors
+}
+
+function device_get_tx_errors() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/tx_errors
 }

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
@@ -22,21 +22,33 @@
 umask 022
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
+exec &>/tmp/network.$(basename $0)
+
+# Give the variables we get passed by pppd an own namespace
+for i in IFNAME IPLOCAL IPREMOTE DNS1 DNS2 MACREMOTE; do
+	export PPP_${i}=${!i}
+	unset ${i}
+done
+
 . /lib/network/functions
 
 # Zone equals IFNAME
-ZONE=${IFNAME}
+ZONE=${PPP_IFNAME}
+
+assert isset ZONE
 
 if ! zone_exists ${ZONE}; then
 	error "Zone '${ZONE}' does not exist."
 	exit ${EXIT_ERROR}
 fi
 
-HOOK=$(config_get_hook $(zone_dir ${ZONE})/settings)
+HOOK=$(zone_get_hook ${ZONE})
 
-if ! hook_exists ${HOOK}; then
+assert isset HOOK
+
+if ! hook_zone_exists ${HOOK}; then
 	error "Hook '${HOOK}' does not exist."
 	exit ${EXIT_ERROR}
 fi
 
-hook_exec ${HOOK} ppp-$(basename ${0}) ${ZONE}
+hook_zone_exec ${HOOK} ppp-$(basename ${0}) ${ZONE}

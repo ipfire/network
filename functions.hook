@@ -46,7 +46,7 @@ function hook_exec() {
 		return ${EXIT_ERROR}
 	fi
 
-	${SHELL} $(hook_dir ${type})/${hook} $@
+	exec_cmd $(hook_dir ${type})/${hook} $@
 }
 
 function config_get_hook() {
@@ -88,6 +88,10 @@ function hook_zone_has_ports() {
 	[ -d "$(hook_dir zone)/${hook}.ports" ]
 }
 
+function hook_zone_port_exists() {
+	: # XXX WANTED
+}
+
 function hook_zone_has_configs() {
 	local hook=${1}
 
@@ -113,7 +117,7 @@ function hook_zone_port_exec() {
 		return ${EXIT_ERROR}
 	fi
 
-	${SHELL} $(hook_dir zone)/${hook_zone}.ports/${hook_port} $@
+	exec_cmd $(hook_dir zone)/${hook_zone}.ports/${hook_port} $@
 }
 
 function hook_zone_config_exec() {
@@ -131,7 +135,7 @@ function hook_zone_config_exec() {
 		return ${EXIT_ERROR}
 	fi
 
-	${SHELL} $(hook_dir zone)/${hook_zone}.configs/${hook_config} $@
+	exec_cmd $(hook_dir zone)/${hook_zone}.configs/${hook_config} $@
 }
 
 function hook_zone_get_all() {
@@ -152,10 +156,14 @@ function hook_zone_ports_get_all() {
 		return ${EXIT_ERROR}
 	fi
 
-	local hook
-	for hook in $(hook_dir zone)/${zone}.ports/*; do
-		hook=$(basename ${hook})
+	local h
+	for h in $(hook_dir zone)/${hook}.ports/*; do
+		h=$(basename ${h})
 		## XXX executeable?
-		echo "${hook}"
+		echo "${h}"
 	done | sort
+}
+
+function hook_device_exists() {
+	hook_exists device $@
 }

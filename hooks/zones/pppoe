@@ -23,8 +23,7 @@
 
 # TODO AC name, service name, sync?
 
-HOOK_SETTINGS="HOOK AUTH LINKNAME USER SECRET PEERDNS DEFAULTROUTE MTU"
-HOOK_SETTINGS="${HOOK_SETTINGS} DEVICE DEVICE_VID DEVICE_TYPE"
+HOOK_SETTINGS="HOOK AUTH LINKNAME USER SECRET PEERDNS DEFAULTROUTE MTU PORTS"
 
 AUTH=
 DEFAULTROUTE=1
@@ -35,18 +34,8 @@ SECRET=
 USER=
 
 PPPOE_ALLOWED_AUTHS="chap pap"
+PPPOE_ALLOWED_PORTS="bonding ethernet virtual"
 PPPOE_PLUGIN="rp-pppoe.so"
-
-function _pppoe_real_device() {
-	local device
-	if [ -n "${DEVICE_VID}" ]; then
-		device="${DEVICE_MAC}"
-	else
-		device="${DEVICE}"
-	fi
-
-	devicify ${device}
-}
 
 function pppd_pid() {
 	local zone=${1}
@@ -61,19 +50,24 @@ function _check() {
 	assert isset LINKNAME
 	assert isset DEFAULTROUTE
 	assert isset PEERDNS
-	assert isset DEVICE
-	assert isset DEVICE_TYPE
+	#assert isset DEVICE
+	#assert isset DEVICE_TYPE
 
 	assert isbool DEFAULTROUTE
 	assert isbool PEERDNS
-	assert ismac DEVICE
-	assert isoneof DEVICE_TYPE real virtual
+	#assert ismac DEVICE
+	#assert isoneof DEVICE_TYPE real virtual
+
+	local ports_num=$(listlength ${PORTS})
+	assert isoneof ports_num 0 1
 
 	isset AUTH && assert isoneof AUTH ${PPPOE_ALLOWED_AUTHS}
 	isset DEVICE_ID && assert isinteger DEVICE_VID
 }
 
 function _parse_cmdline() {
+	local value
+
 	while [ $# -gt 0 ]; do
 		case "$1" in
 			--user=*)
@@ -88,20 +82,24 @@ function _parse_cmdline() {
 			--mtu=*)
 				MTU=${1#--mtu=}
 				;;
-			--no-defaultroute)
-				DEFAULTROUTE=0
+			--defaultroute=*)
+				value=${1#--defaultroute=}
+				if enabled value; then
+					DEFAULTROUTE=1
+				else
+					DEFAULTROUTE=0
+				fi
 				;;
-			--no-dns)
-				PEERDNS=0
+			--dns=*)
+				value=${1#--dns=}
+				if enabled value; then
+					PEERDNS=1
+				else
+					PEERDNS=0
+				fi
 				;;
 			--auth=*)
 				AUTH=${1#--auth=}
-				;;
-			--device=*)
-				DEVICE=${1#--device=}
-				;;
-			--device-vid=*)
-				DEVICE_VID=${1#--device-vid=}
 				;;
 			*)
 				echo "Unknown option: $1" >&2
@@ -110,38 +108,31 @@ function _parse_cmdline() {
 		esac
 		shift
 	done
-
-	if ! device_exists $(devicify ${DEVICE}); then
-		error "Device '${DEVICE}' does not exist."
-		exit ${EXIT_ERROR}
-	fi
-
-	DEVICE=$(macify ${DEVICE})
-
-	if isset DEVICE_VID; then
-		DEVICE_TYPE="virtual"
-	else
-		DEVICE_TYPE="real"
-	fi
 }
 
 function _up() {
 	local zone=${1}
 	shift
 
-	config_read ${ZONE_DIR}/${zone}/settings
+	assert isset zone
+
+	zone_config_read ${zone}
+
+	if ! isset PORTS || ! port_exists ${PORTS}; then
+		error_log "Parent device '${PORTS}' does not exist. Cannot bring up zone '${zone}'."
+		exit ${EXIT_ERROR}
+	fi
 
 	# Creating necessary files
+	# XXX must be PPP_RUN
 	[ -d "${RED_RUN}/${LINKNAME}" ] || mkdir -p ${RED_RUN}/${LINKNAME}
 
 	# Setting up the device
-	if [ -n "${DEVICE_VID}" ]; then
-		device_create_virtual ${DEVICE} ${DEVICE_VID} ${DEVICE_MAC}
-	else
-		device_set_up ${DEVICE}
-	fi
+	port_up ${PORTS}
 
 	ppp_secret "${USER}" "${SECRET}"
+
+	# XXX AC and service on plugin command line
 
 	cat <<EOF >${RED_RUN}/${LINKNAME}/options
 # Naming options
@@ -149,7 +140,7 @@ ifname ${zone}
 name ${LINKNAME}
 linkname ${LINKNAME}
 
-plugin ${PPPOE_PLUGIN} $(_pppoe_real_device)
+plugin ${PPPOE_PLUGIN} ${PORTS}
 
 # User configuration
 user ${USER}
@@ -172,7 +163,7 @@ noccp noaccomp nodeflate nopcomp novj novjccomp nobsdcomp nomppe
 updetach debug
 EOF
 
-	pppd file ${RED_RUN}/${LINKNAME}/options >/dev/null
+	pppd_exec file ${RED_RUN}/${LINKNAME}/options
 
 	local ret=$?
 
@@ -193,17 +184,13 @@ function _down() {
 	local zone=${1}
 	shift
 
-	config_read ${ZONE_DIR}/${zone}/settings
+	zone_config_read ${zone}
 
 	# Kill pppd
+	# XXX very ugly
 	kill $(pppd_pid ${zone}) &>/dev/null
 
-	# Pull down device or remove virtual one
-	if [ -n "${DEVICE_VID}" ]; then
-		device_remove_virtual ${DEVICE_MAC}
-	else
-		device_set_down ${DEVICE}
-	fi
+	port_down ${PORTS}
 
 	exit ${EXIT_OK}
 }
@@ -241,13 +228,29 @@ function _discover() {
 function _status() {
 	local zone=${1}
 
+	assert isset zone
+
 	cli_status_headline ${zone}
+
+	zone_config_read ${zone}
+
+	cli_headline "  Configuration:"
+	printf "${DEVICE_PRINT_LINE1}" "User:" "${USER}"
+	printf "${DEVICE_PRINT_LINE1}" "Secret:" "<hidden>"
+	echo
+	printf "${DEVICE_PRINT_LINE1}" "MTU:" "${MTU}"
+	printf "${DEVICE_PRINT_LINE1}" "Use default route?" "$(enabled DEFAULTROUTE && echo "enabled" || echo "disabled")"
+	printf "${DEVICE_PRINT_LINE1}" "Use peer DNS?" "$(enabled PEERDNS && echo "enabled" || echo "disabled")"
+	echo
+	printf "${DEVICE_PRINT_LINE1}" "Port:" "${PORTS:-none}"
 
 	# Exit if zone is down
 	if ! zone_is_up ${zone}; then
 		echo # Empty line
 		exit ${EXIT_ERROR}
 	fi
+
+	# XXX display time since connection started
 
 	cli_headline "    Point-to-Point-over-Ethernet protocol:"
 	echo "        IP-Address            : $(red_db_get ${zone} local-ip-address)"
@@ -258,6 +261,33 @@ function _status() {
 	echo
 	echo "        MTU                   : $(device_get_mtu ${zone})"
 	echo # Empty line
+	exit ${EXIT_OK}
+}
+
+function _port_add() {
+	local zone=${1}
+	local port=${2}
+	shift 2
+
+	assert isset zone
+	assert isset port
+	assert port_exists ${port}
+
+	zone_config_read ${zone}
+
+	if isset PORTS; then
+		warning "There is already a port defined: '${PORTS}'."
+		warning "Will overwrite current configuration."
+	fi
+
+	if ! listmatch $(port_get_hook ${port}) ${PPPOE_ALLOWED_PORTS}; then
+		error "You can only add ports to this hook that are of type '${PPPOE_ALLOWED_PORTS}'."
+		exit ${EXIT_ERROR}
+	fi
+
+	PORTS="${port}"
+	zone_config_write ${zone}
+
 	exit ${EXIT_OK}
 }
 

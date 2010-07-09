@@ -1,0 +1,203 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /lib/network/header-port
+
+HOOK_SETTINGS="HOOK DEVICE_MAC MIIMON MODE SLAVES"
+
+DEVICE_MAC=$(mac_generate)
+MIIMON=100
+
+function _check() {
+	assert isset DEVICE_MAC
+	assert ismac DEVICE_MAC
+
+	#assert isset SLAVES
+	assert isinteger MIIMON
+}
+
+function _create() {
+	_edit $@
+}
+
+function _edit() {
+	local port=${1}
+	shift
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--mac=*)
+				DEVICE_MAC=${1#--mac=}
+				;;
+			--miimon=*)
+				MIIMON=${1#--miimon=}
+				;;
+			--mode=*)
+				MODE=${1#--mode=}
+				;;
+			--slave=*)
+				slave=${1#--slave=}
+				SLAVES="${SLAVES} $(macify ${slave})"
+				;;
+			*)
+				warning "Unknown argument '${1}'"
+				;;
+		esac
+		shift
+	done
+
+	DEVICE=${port}
+
+	# XXX think this must move to _check()
+	if ! isset DEVICE; then
+		error "You must set a device name."
+		exit ${EXIT_ERROR}
+	fi
+
+	if ! isset SLAVES; then
+		error "You need to specify at least one slave port (e.g. --slave=port0)."
+		exit ${EXIT_ERROR}
+	fi
+
+	local slave
+	for slave in ${SLAVES}; do
+		if ! device_is_real $(devicify ${slave}); then
+			error "Slave device '${slave}' is not an ethernet device."
+			exit ${EXIT_ERROR}
+		fi
+	done
+
+	# Remove any whitespace
+	SLAVES=$(echo ${SLAVES})
+
+	config_write $(port_file ${port}) ${HOOK_SETTINGS}
+
+	exit ${EXIT_OK}
+}
+
+function _up() {
+	local device=${1}
+
+	config_read $(port_file ${device})
+
+	if device_exists ${device}; then
+		log DEBUG "Bonding device '${device}' does already exist."
+
+		device_set_address ${DEVICE_MAC}
+		device_set_up ${device}
+
+		exit ${EXIT_OK}
+	fi
+
+	bonding_create ${device} ${DEVICE_MAC}
+
+	if [ -n "${MODE}" ]; then
+		bonding_set_mode ${device} ${MODE}
+	fi
+
+	bonding_set_miimon ${device} ${MIIMON}
+
+	local slave
+	for slave in ${SLAVES}; do
+		if ! device_exists $(devicify ${slave}); then
+			warning_log "${device}: configured slave '${slave}' is not available."
+			continue
+		fi
+		
+		slave=$(devicify ${slave})
+		assert isset slave
+
+		bonding_enslave_device ${device} ${slave}
+	done
+
+	exit ${EXIT_OK}
+}
+
+function _down() {
+	local device=${1}
+
+	bonding_remove ${device}
+
+	local slave
+	for slave in ${SLAVES}; do
+		device_set_down ${slave}
+	done
+
+	exit ${EXIT_OK}
+}
+
+function _status() {
+        local port=${1}
+        shift
+
+        assert isset port
+
+        echo "${port}"
+
+        local status=$(device_get_status ${port})
+        printf "${DEVICE_PRINT_LINE1}" "Status:" "$(echo -ne ${STATUS_COLOUR[${status}]}${STATUS_TEXT[${status}]}${COLOUR_NORMAL})"
+
+        cli_headline "  Ethernet information:"
+        printf "${DEVICE_PRINT_LINE1}" "Address:" $(device_get_address ${port})
+        printf "${DEVICE_PRINT_LINE1}" "MTU:" $(device_get_mtu ${port})
+        printf "${DEVICE_PRINT_LINE1}" "Promisc mode:" $(device_is_promisc ${port} && echo "yes" || echo "no")
+
+        if device_is_bonded ${port}; then
+                cli_headline "  Bonding information:"
+
+                local master=$(bonding_slave_get_master ${port})
+                printf "${DEVICE_PRINT_LINE1}" "Master:" "${master}"
+
+                local active
+                if [ "$(bonding_get_active_slave ${master})" = "${port}" ]; then
+                        active="yes"
+                else
+                        active="no"
+                fi
+                printf "${DEVICE_PRINT_LINE1}" "Active slave:" "${active}"
+        fi
+
+	if device_is_bonding ${port}; then
+		cli_headline "  Bonding information:"
+
+		printf "${DEVICE_PRINT_LINE1}" "Mode:" "$(bonding_get_mode ${port})"
+		# XXX lacp rate
+		echo
+
+		local slave
+		local slave_active=$(bonding_get_active_slave ${port})
+		for slave in $(bonding_get_slaves ${port}); do
+			printf "${DEVICE_PRINT_LINE1}" "Slave$([ "${slave}" = "${slave_active}" ] && echo " (active)"):" "${slave}"
+		done
+	fi
+
+        cli_headline "  Statistics:"
+        printf "${DEVICE_PRINT_LINE1}" "Received:" \
+                "$(beautify_bytes $(device_get_rx_bytes ${port})) ($(device_get_rx_packets ${port}) packets)"
+        printf "${DEVICE_PRINT_LINE1}" "Sent:" \
+                "$(beautify_bytes $(device_get_tx_bytes ${port})) ($(device_get_tx_packets ${port}) packets)"
+
+        echo
+
+        exit ${EXIT_OK}
+}
+
+run $@
