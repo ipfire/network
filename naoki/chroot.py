@@ -53,6 +53,7 @@ class Environment(object):
 			PACKAGESDIR,
 			self.chrootPath("bin"),
 			self.chrootPath("etc"),
+			self.chrootPath("lib"),
 			self.chrootPath("proc"),
 			self.chrootPath("root"),
 			self.chrootPath("sbin"),
