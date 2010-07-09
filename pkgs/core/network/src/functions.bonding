@@ -19,21 +19,34 @@
 #                                                                             #
 ###############################################################################
 
+function bonding_init() {
+	if ! grep -q "^bonding" /proc/modules; then
+		modprobe bonding
+
+		bonding_remove bond0
+	fi
+}
+
 function bonding_create() {
 	local device=${1}
 	local mac=${2}
+
+	# Make sure the bonding is initialized
+	bonding_init
 
 	[ -z "${mac}" ] && mac=$(mac_generate)
 
 	log INFO "Creating bonding device '${device}' (${mac})."
 
 	echo "+${device}" > /sys/class/net/bonding_masters
-	device_set_address ${mac}
+	device_set_address ${device} ${mac}
 	device_set_up ${device}
 }
 
 function bonding_remove() {
 	local device=$(devicify ${1})
+
+	assert isset device
 
 	log INFO "Remove bonding device '${device}'."
 
@@ -50,13 +63,79 @@ function bonding_set_mode() {
 	echo "${mode}" > /sys/class/net/${device}/bonding/mode
 }
 
+function bonding_get_mode() {
+	local device=${1}
+
+	local mode mode_num
+	read mode mode_num < ${SYS_CLASS_NET}/${device}/bonding/mode
+	echo "${mode}"
+}
+
 function bonding_enslave_device() {
 	local device=$(devicify ${1})
 	local slave=$(devicify ${2})
 	shift 2
 
+	assert isset device
+	assert isset slave
+
 	log INFO "Enslaving slave '${slave}' to '${device}'."
 
 	device_set_down ${slave}
 	echo "+${slave}" > /sys/class/net/${device}/bonding/slaves
+}
+
+function bonding_get_slaves() {
+	local device=${1}
+
+	cat ${SYS_CLASS_NET}/${device}/bonding/slaves
+}
+
+function bonding_get_active_slave() {
+	local device=${1}
+
+	cat ${SYS_CLASS_NET}/${device}/bonding/active_slave
+}
+
+# XXX function bonding_get_lacp_rate?
+
+function bonding_get_miimon() {
+	local device=${1}
+
+	cat ${SYS_CLASS_NET}/${device}/bonding/miimon
+}
+
+function bonding_set_miimon() {
+	local device=${1}
+	local miimon=${2}
+
+	echo "${miimon}" > ${SYS_CLASS_NET}/${device}/bonding/miimon
+}
+
+function bonding_device_print() {
+	local device=${1}
+
+	ethernet_device_print ${device}
+
+	echo # Empty line
+
+	printf "${DEVICE_PRINT_LINE1}" "Mode:" "$(bonding_get_mode ${device})"
+	printf "${DEVICE_PRINT_LINE1}" "Slaves:" "$(bonding_get_slaves ${device})"
+}
+
+function bonding_slave_get_master() {
+	local slave=${1}
+
+	assert isset slave
+	assert device_is_bonded ${slave}
+
+	local device
+	for device in $(devices_get_all); do
+		if device_is_bonding ${device} && listmatch ${slave} $(bonding_get_slaves ${device}); then
+			echo "${device}"
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_ERROR}
 }

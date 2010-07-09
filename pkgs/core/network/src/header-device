@@ -19,92 +19,31 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/header-port
+. /lib/network/functions
 
-HOOK_SETTINGS="HOOK DEVICE"
+HOOK=$(basename ${0})
 
-function _check() {
-	assert isset DEVICE_MAC
-	assert ismac DEVICE_MAC
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		-*)
+			error "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
+			;;
+		*)
+			action=${1}
+			;;
+	esac
+	shift
+	[ -n "${action}" ] && break
+done
+
+function run() {
+	case "${action}" in
+		create|rem|up|down|status)
+			_${action} $@
+			;;
+	esac
+
+	error "Port hook '${HOOK}' didn't exit properly."
+	exit ${EXIT_ERROR}
 }
-
-function _create() {
-	local zone=${1}
-	local device=${2}
-	shift 2
-
-	if [ -z "${device}" ]; then
-		error "No device given."
-		exit ${EXIT_ERROR}
-	fi
-
-	if ! device_exists ${device}; then
-		warning "Device does not exist."
-	fi
-
-	DEVICE=$(macify ${device})
-
-	config_write $(zone_dir ${zone})/port.${HOOK}.$(device_hash ${device}) ${HOOK_SETTINGS}
-
-	exit ${EXIT_OK}
-}
-
-function _up() {
-	local zone=${1}
-	local port=${2}
-
-	assert isset zone
-	assert isset port
-
-	assert zone_exists ${zone}
-	assert port_exists ${port}
-
-	port_up ${port}
-
-	# Set same MTU to device that the bridge has got
-	device_set_mtu ${port} $(device_get_mtu ${zone})
-
-	bridge_attach_device ${zone} ${port}
-
-	exit ${EXIT_OK}
-}
-
-function _down() {
-	local zone=${1}
-	local port=${2}
-
-	assert isset zone
-	assert isset port
-
-	assert zone_exists ${zone}
-	assert port_exists ${port}
-
-	bridge_detach_device ${zone} ${port}
-
-	port_down ${port}
-
-	exit ${EXIT_OK}
-}
-
-function _status() {
-	local zone=${1}
-	local port=${2}
-
-	printf "        %-10s - " "${port}"
-	if ! device_is_up ${port}; then
-		echo -ne "${COLOUR_DOWN}   DOWN   ${COLOUR_NORMAL}"
-	else
-		local state=$(stp_port_state ${zone} ${port})
-		local colour="COLOUR_STP_${state}"
-		printf "${!colour}%10s${COLOUR_NORMAL}" ${state}
-
-		echo -n " - DSR: $(stp_port_designated_root ${zone} ${port})"
-		echo -n " - Cost: $(stp_port_pathcost ${zone} ${port})"
-	fi
-
-	echo
-
-	exit ${EXIT_OK}
-}
-
-run $@

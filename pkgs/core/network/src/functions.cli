@@ -33,47 +33,44 @@ function cli_config() {
 }
 
 function cli_device() {
-	local action=${1}
-	shift
+	if device_config_exists ${1}; then
+		local device=${1}
+		local action=${2}
+		shift 2
 
-	local device
-	local devices=$@
+		case "${action}" in
+			down|up)
+				device_${action} ${device} $@
+				;;
+		esac
+	else
+		local action=${1}
+		shift
 
-	if [ -z "${devices}" ]; then
-		devices=$(devices_get_all)
+		case "${action}" in
+			create)
+				device_${action} $@
+				;;
+
+			discover)
+				echo "# XXX need to implement --raw here"
+				local device
+				for device in ${devices}; do
+					cli_device_discover ${device} $@
+				done
+				;;
+
+			show|"")
+				local device
+				for device in $(device_get $@); do
+					device_print ${device}
+				done
+				;;
+			*)
+				cli_usage device
+				;;				
+		esac
 	fi
-
-	case "${action}" in
-		discover)
-			echo "# XXX need to implement --raw here"
-			for device in ${devices}; do
-				cli_device_discover ${device} $@
-			done
-			;;
-
-		show|"")
-			for device in ${devices}; do
-				cli_device_print ${device}
-			done
-			;;
-		*)
-			cli_usage device
-			;;				
-	esac
-}
-
-function cli_device_print() {
-	local device=${1}
-
-	if ! device_exists ${device}; then
-		error "Device '${device}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	echo "${device}"
-	echo "  Type: $(device_get_type ${device})"
-	echo "  Addr: $(device_get_address ${device})"
-	echo
 }
 
 function cli_device_discover() {
@@ -147,6 +144,58 @@ function cli_device_discover() {
 	[ "${up}" = "1" ] || device_set_down ${device}
 }
 
+function cli_port() {
+	if cli_help_requested $@; then
+		cli_usage root-port
+		exit ${EXIT_OK}
+	fi
+
+	local action
+	local port
+
+	if port_exists ${1}; then
+		port=${1}
+		action=${2}
+		shift 2
+
+		# Action aliases
+		case "${action}" in
+			start)
+				action="up"
+				;;
+			stop)
+				action="down"
+				;;
+			show)
+				action="status"
+				;;
+		esac
+
+		case "${action}" in
+			edit|up|down|status)
+				port_${action} ${port} $@
+				;;
+			*)
+				error "Unrecognized argument: ${action}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	else
+		action=${1}
+		shift
+
+		case "${action}" in
+			create|destroy)
+				port_${action} $@
+				;;
+			*)
+				error "Unrecognized argument: ${action}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	fi
+}
+
 function cli_zone() {
 	if cli_help_requested $@; then
 		cli_usage root-zone
@@ -161,8 +210,21 @@ function cli_zone() {
 		action=${2}
 		shift 2
 
+		# Action aliases
 		case "${action}" in
-			config|down|edit|port|show|status|up)
+			start)
+				action="up"
+				;;
+			stop)
+				action="down"
+				;;
+			show)
+				action="status"
+				;;
+		esac
+
+		case "${action}" in
+			config|down|edit|port|status|up)
 				zone_${action} ${zone} $@
 				;;
 			*)

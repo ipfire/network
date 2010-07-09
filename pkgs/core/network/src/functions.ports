@@ -1,0 +1,130 @@
+#!/bin/bash
+# XXX header missing
+
+function port_dir() {
+	echo "${CONFIG_DIR}/ports"
+}
+
+function port_file() {
+	local port=${1}
+
+	assert isset port
+
+	echo "$(port_dir)/${port}"
+}
+
+function port_exists() {
+	local port=${1}
+
+	[ -f "${CONFIG_DIR}/ports/${port}" ]
+}
+
+function port_get_hook() {
+	local port=${1}
+
+	assert isset port
+
+	config_get_hook $(port_file ${port})
+}
+
+function port_is_attached() {
+	local port=${1}
+	shift
+
+	assert isset port
+
+	local zone
+	for zone in $(zones_get_all); do
+
+		assert isset zone
+		assert zone_exists ${zone}
+
+		if listmatch ${port} $(zone_get_ports ${zone}); then
+			echo "${zone}"
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function port_create() {
+	#local port=${1}
+	#shift
+	#
+	#if port_exists ${port}; then
+	#	error "Port '${port}' does already exist."
+	#	return ${EXIT_ERROR}
+	#fi
+
+	local hook=${1}
+	shift
+
+	if ! hook_exists port ${hook}; then
+		error "Port hook '${hook}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	#port_edit ${port} ${hook} $@
+	#
+	#if [ $? -ne ${EXIT_OK} ]; then
+	#	port_destroy ${port}
+	#fi
+
+	hook_exec port ${hook} create $@
+}
+
+function port_destroy() {
+	local port=${1}
+
+	assert isset port
+
+	port_exists ${port} || return ${EXIT_OK}
+
+	local attached_zone=$(port_is_attached ${port})
+
+	if [ -n "${attached_zone}" ]; then
+		error "Cannot destroy port '${port}' which is attached to zone '${attached_zone}'."
+		return ${EXIT_ERROR}
+	fi
+
+	port_down ${port}
+
+	rm -f $(port_file ${port})
+}
+
+function port_edit() {
+	port_cmd edit $@
+}
+
+# XXX? Compatibility function
+function port_show() {
+	port_status $@
+}
+
+function port_up() {
+	port_cmd up $@
+}
+
+function port_down() {
+	port_cmd down $@
+}
+
+function port_status() {
+	port_cmd status $@
+}
+
+function port_cmd() {
+	local cmd=${1}
+	local port=${2}
+	shift 2
+
+	assert isset cmd
+	assert isset port
+
+	local hook=$(port_get_hook ${port})
+
+	assert isset hook
+
+	hook_exec port ${hook} ${cmd} ${port} $@
+}

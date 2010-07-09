@@ -39,11 +39,37 @@ function warning_log() {
 	log WARNING "$@"
 }
 
+# XXX uses tr
 function listsort() {
 	local i
 	for i in $@; do
 		echo "${i}"
 	done | sort | tr "\n" " "
+}
+
+function listmatch() {
+	local match=${1}
+	shift
+
+	assert isset match
+
+	local i
+	for i in $@; do
+		[ "${match}" = "${i}" ] && return ${EXIT_OK}
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function listlength() {
+	local length=0
+
+	local i
+	for i in $@; do
+		length=$(( ${length} + 1 ))
+	done
+
+	echo "${length}"
 }
 
 function config_read() {
@@ -219,15 +245,49 @@ function ismac() {
 	mac_is_valid ${mac}
 }
 
+function backtrace() {
+	local start=1
+
+	echo # Empty line
+	error_log "Backtrace (most recent call in first line):"
+
+	local i
+	for i in $(seq ${start} ${#BASH_SOURCE[*]}); do
+		[ -z "${FUNCNAME[${i}]}" ] && continue
+		[ "${FUNCNAME[${i}]}" == "main" ] && continue
+
+		error_log "  $(printf "%20s" "'${FUNCNAME[${i}]}'") called from ${BASH_SOURCE[$(( ${i} + 1 ))]}:${BASH_LINENO[${i}]}"
+	done
+}
+
 function assert() {
 	local assertion="$@"
 
 	if ! ${assertion}; then
 		error_log "Assertion '${assertion}' failed."
+		backtrace
 		exit ${EXIT_ERROR}
 	fi
 
 	return ${EXIT_OK}
+}
+
+function exec_cmd() {
+	local cmd=$@
+
+	log DEBUG "Running command: ${cmd}"
+
+	${SHELL} ${cmd}
+	local ret=$?
+
+	#log DEBUG "Returned with code '${ret}'"
+
+	if [ ${ret} -eq ${EXIT_ERROR_ASSERT} ]; then
+		error_log "Stopping parent process due to assertion error in child process: ${cmd}"
+		exit ${EXIT_ERROR_ASSERT}
+	fi
+
+	return ${ret}
 }
 
 function uppercase() {
@@ -270,6 +330,19 @@ function beautify_time() {
 
 		[ ${value} -lt ${limit} ] && break
 
+		value=$(( ${value} / ${limit} ))
+	done
+
+	echo "${value}${unit}"
+}
+
+function beautify_bytes() {
+	local value=${1}
+
+	local unit
+	local limit=1024
+	for unit in B k M G T; do
+		[ ${value} -lt ${limit} ] && break
 		value=$(( ${value} / ${limit} ))
 	done
 

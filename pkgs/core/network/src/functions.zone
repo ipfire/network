@@ -22,11 +22,15 @@
 function zone_dir() {
 	local zone=${1}
 
+	#assert isset zone
+
 	echo "${ZONE_DIR}/zones/${zone}"
 }
 
 function zone_exists() {
 	local zone=${1}
+
+	assert isset zone
 
 	[ -d "$(zone_dir ${zone})" ]
 }
@@ -45,6 +49,8 @@ function zone_match() {
 function zone_name_is_valid() {
 	local zone=${1}
 
+	assert isset zone
+
 	[[ ${zone} =~ $(zone_match) ]]
 }
 
@@ -57,11 +63,15 @@ function zone_is_local() {
 function zone_is_nonlocal() {
 	local zone=${1}
 
+	assert isset zone
+
 	[[ ${zone} =~ ^red[0-9]{1,5} ]]
 }
 
 function zone_get_hook() {
 	local zone=${1}
+
+	assert isset zone
 
 	config_get_hook $(zone_dir ${zone})/settings
 }
@@ -216,6 +226,7 @@ function zone_status() {
 	hook_zone_exec ${hook} status ${zone} $@
 }
 
+# XXX deprecated
 function zone_port() {
 	local zone=${1}
 	shift
@@ -238,6 +249,130 @@ function zone_port() {
 	fi
 
 	hook_zone_exec ${hook} port ${zone} $@
+}
+
+function zone_port() {
+	local zone=${1}
+	local action=${2}
+	shift 2
+
+	assert isset zone
+	assert isset action
+	assert zone_exists ${zone}
+
+	case "${action}" in
+		add|remove|edit)
+			zone_port_${action} ${zone} $@
+			;;
+	esac
+}
+
+function zone_port_add() {
+	local zone=${1}
+	local port=${2}
+	shift 2
+
+	assert isset zone
+	assert isset port
+	assert zone_exists ${zone}
+
+	local hook_port=$(port_get_hook ${port})
+
+	assert isset hook_port
+
+	if ! listmatch ${hook_port} $(zone_get_supported_hooks ${zone}); then
+		error "Zone '${zone}' does not support ports with hook '${hook_port}'."
+		return ${EXIT_ERROR}
+	fi
+
+	# XXX does this already exist?
+
+	# XXX I would rather like a relative symlink
+	ln -sf $(port_file ${port}) $(zone_dir ${zone})/port.${port}
+}
+
+function zone_port_add() {
+	local zone=${1}
+	shift
+
+	assert isset zone
+
+	local hook=$(zone_get_hook ${zone})
+
+	assert isset hook
+
+	hook_zone_exec ${hook} port_add ${zone} $@
+}
+
+function zone_port_edit() {
+	local zone=${1}
+	local port=${2}
+	shift 2
+
+	assert isset zone
+	assert isset port
+
+	port_edit ${port} $@
+}
+
+function zone_port_remove() {
+	local zone=${1}
+	local port=${2}
+	shift 2
+
+	assert isset zone
+	assert isset port
+
+	rm -f $(zone_dir ${zone})/port.${port}
+}
+
+function zone_port_cmd() {
+	local cmd=${1}
+	local zone=${2}
+	local port=${3}
+	shift 3
+
+	assert isset zone
+	assert isset port
+
+	local hook_zone=$(zone_get_hook ${zone})
+	local hook_port=$(port_get_hook ${port})
+
+	assert isset hook_zone
+	assert isset hook_port
+
+	assert hook_zone_port_exists ${hook_zone} ${hook_port}
+
+	hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} ${port} $@
+}
+
+function zone_port_cmd() {
+	error_log "UNSUPPORTED FUNCTION CALLED: zone_port_cmd"
+	backtrace
+}
+
+function zone_port_up() {
+	zone_port_cmd up $@
+}
+
+function zone_port_down() {
+	zone_port_cmd down $@
+}
+
+function zone_get_ports() {
+	local zone=${1}
+
+	assert isset zone
+
+	local port
+	for port in $(zone_dir ${zone})/port.*; do
+		port=$(basename ${port})
+		port=${port#port.}
+
+		if port_exists ${port}; then
+			echo "${port}"
+		fi
+	done
 }
 
 function zone_config() {
@@ -368,23 +503,30 @@ function zone_ports_cmd() {
 	local zone=${2}
 	shift 2
 
-	local hook_zone=$(config_get_hook $(zone_dir ${zone})/settings)
+	assert isset cmd
+	assert isset zone
 
-	local hook_port
+	assert zone_exists ${zone}
+
+	local hook=$(zone_get_hook ${zone})
+
 	local port
-	for port in $(zone_ports_list ${zone}); do
-		hook_port=$(config_get_hook $(zone_dir ${zone})/${port})
-
-		hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} ${port} $@
+	for port in $(zone_get_ports ${zone}); do
+		#zone_port_cmd ${cmd} ${zone} ${port} $@
+		hook_zone_exec ${hook} ${cmd} ${zone} ${port} $@
 	done
 }
 
 function zone_ports_up() {
-	zone_ports_cmd up $@
+	zone_ports_cmd port_up $@
 }
 
 function zone_ports_down() {
-	zone_ports_cmd down $@
+	zone_ports_cmd port_down $@
+}
+
+function zone_ports_status() {
+	zone_ports_cmd port_status $@
 }
 
 function zone_configs_list() {
@@ -450,4 +592,54 @@ function zone_is_up() {
 
 function zone_is_down() {
 	! zone_is_up $@
+}
+
+function zone_get_supported_hooks() {
+	local zone=${1}
+
+	local hook=$(zone_get_hook ${zone})
+
+	hook_zone_ports_get_all ${hook}
+}
+
+function zone_file() {
+	local zone=${1}
+
+	assert isset zone
+
+	echo "$(zone_dir ${zone})/settings"
+}
+
+function zone_config_read() {
+	local zone=${1}
+
+	assert isset zone
+
+	config_read $(zone_file ${zone})
+}
+
+function zone_config_write() {
+	local zone=${1}
+
+	assert isset zone
+
+	config_write $(zone_file ${zone}) ${HOOK_SETTINGS}
+}
+
+function zone_config_set() {
+	local zone=${1}
+	shift
+	local args="$@"
+
+	assert isset zone
+
+	(
+		zone_config_read ${zone}
+
+		for arg in ${args}; do
+			eval "${arg}"
+		done
+	
+		zone_config_write ${zone}
+	)
 }

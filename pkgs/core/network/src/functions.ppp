@@ -19,6 +19,10 @@
 #                                                                             #
 ###############################################################################
 
+function ppp_init() {
+	mkdir -p /var/run/ppp 2>/dev/null
+}
+
 function ppp_common_ip_pre_up() {
 	local zone=${1}
 	shift
@@ -97,4 +101,12 @@ function ppp_accounting() {
 
 	db_ppp_update ${zone} --duration="${CONNECT_TIME}" \
 		--rcvd="${BYTES_RCVD}" --sent="${BYTES_SENT}"
+}
+
+function pppd_exec() {
+	ppp_init
+
+	log DEBUG "Running pppd with parameters '$@'."
+
+	pppd $@ > /dev/null
 }
