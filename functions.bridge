@@ -52,8 +52,12 @@ function bridge_detach_device() {
 	fi
 
 	if ! device_exists ${device}; then
-		error "Device '${device}' does not exist."
-		return ${EXIT_ERROR}
+		return ${EXIT_OK}
+	fi
+
+	# If device is not attached, exit silently
+	if ! listmatch ${device} $(bridge_get_members ${bridge}); then
+		return ${EXIT_OK}
 	fi
 
 	log INFO "Detaching device '${device}' from bridge '${bridge}'."
