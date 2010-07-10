@@ -114,6 +114,8 @@ function _up() {
 	zone_configs_up ${zone}
 
 	event_interface_up ${zone}
+
+	exit ${EXIT_OK}
 }
 
 function _down() {
@@ -133,7 +135,7 @@ function _down() {
 	device_set_down ${zone}
 	brctl delbr ${zone}
 
-	exit $?
+	exit ${EXIT_OK}
 }
 
 function _status() {
