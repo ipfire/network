@@ -667,8 +667,6 @@ function bridge_attach_device() {
 
 	log INFO "Attaching device '${device}' to bridge '${bridge}'."
 
-	# XXX device_set_up ${device} # Do we need this here?
-
 	brctl addif ${bridge} ${device}
 }
 
@@ -692,8 +690,6 @@ function bridge_detach_device() {
 	log INFO "Detaching device '${device}' from bridge '${bridge}'."
 
 	brctl delif ${bridge} ${device}
-
-	#device_set_down ${device}
 }
 
 function bridge_get_members() {
@@ -703,7 +699,7 @@ function bridge_get_members() {
 
 	local member
 	for member in ${SYS_CLASS_NET}/${bridge}/brif/*; do
-		member=$(basename ${master})
+		member=$(basename ${member})
 		if device_exists ${member}; then
 			echo "${member}"
 		fi
