@@ -68,6 +68,30 @@ function _edit() {
 	_add $@
 }
 
+function _rem() {
+	local zone=${1}
+	local port=${2}
+
+	assert isset zone
+	assert isset port
+
+	assert zone_exists ${zone}
+
+	if ! listmatch ${port} $(zone_get_ports ${zone}); then
+		error "Port '${port}' does not belong to '${zone}'."
+		error "Won't remove anything."
+		exit ${EXIT_ERROR}
+	fi
+
+	if port_exists ${port}; then
+		( _down ${zone} ${port} )
+	fi
+
+	rm -f $(zone_dir ${zone})/ports/${port}
+
+	exit ${EXIT_OK}
+}
+
 function _up() {
 	local zone=${1}
 	local port=${2}
