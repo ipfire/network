@@ -98,6 +98,9 @@ function zone_create() {
 
 	mkdir -p $(zone_dir ${zone})
 
+	# Create directory for ports
+	mkdir -p $(zone_dir ${zone})/ports
+
 	hook_zone_exec ${hook} create ${zone} $@
 	local ret=$?
 
@@ -226,31 +229,6 @@ function zone_status() {
 	hook_zone_exec ${hook} status ${zone} $@
 }
 
-# XXX deprecated
-function zone_port() {
-	local zone=${1}
-	shift
-
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	local hook=$(config_get_hook $(zone_dir ${zone})/settings)
-
-	if [ -z "${hook}" ]; then
-		error "Config file did not provide any hook."
-		return ${EXIT_ERROR}
-	fi
-
-	if ! hook_zone_exists ${hook}; then
-		error "Hook '${hook}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	hook_zone_exec ${hook} port ${zone} $@
-}
-
 function zone_port() {
 	local zone=${1}
 	local action=${2}
@@ -260,35 +238,23 @@ function zone_port() {
 	assert isset action
 	assert zone_exists ${zone}
 
+	# Aliases
 	case "${action}" in
-		add|remove|edit)
-			zone_port_${action} ${zone} $@
+		del|delete|remove)
+			action="rem"
 			;;
 	esac
-}
 
-function zone_port_add() {
-	local zone=${1}
-	local port=${2}
-	shift 2
-
-	assert isset zone
-	assert isset port
-	assert zone_exists ${zone}
-
-	local hook_port=$(port_get_hook ${port})
-
-	assert isset hook_port
-
-	if ! listmatch ${hook_port} $(zone_get_supported_hooks ${zone}); then
-		error "Zone '${zone}' does not support ports with hook '${hook_port}'."
-		return ${EXIT_ERROR}
-	fi
-
-	# XXX does this already exist?
-
-	# XXX I would rather like a relative symlink
-	ln -sf $(port_file ${port}) $(zone_dir ${zone})/port.${port}
+	case "${action}" in
+		add|edit|rem)
+			zone_port_${action} ${zone} $@
+			;;
+		*)
+			error "Unrecognized argument: ${action}"
+			cli_usage root-zone-port-subcommands
+			exit ${EXIT_ERROR}
+			;;		
+	esac
 }
 
 function zone_port_add() {
@@ -305,25 +271,11 @@ function zone_port_add() {
 }
 
 function zone_port_edit() {
-	local zone=${1}
-	local port=${2}
-	shift 2
-
-	assert isset zone
-	assert isset port
-
-	port_edit ${port} $@
+	zone_port_cmd edit $@
 }
 
-function zone_port_remove() {
-	local zone=${1}
-	local port=${2}
-	shift 2
-
-	assert isset zone
-	assert isset port
-
-	rm -f $(zone_dir ${zone})/port.${port}
+function zone_port_rem() {
+	zone_port_cmd rem $@
 }
 
 function zone_port_cmd() {
@@ -346,11 +298,6 @@ function zone_port_cmd() {
 	hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} ${port} $@
 }
 
-function zone_port_cmd() {
-	error_log "UNSUPPORTED FUNCTION CALLED: zone_port_cmd"
-	backtrace
-}
-
 function zone_port_up() {
 	zone_port_cmd up $@
 }
@@ -365,9 +312,8 @@ function zone_get_ports() {
 	assert isset zone
 
 	local port
-	for port in $(zone_dir ${zone})/port.*; do
+	for port in $(zone_dir ${zone})/ports/*; do
 		port=$(basename ${port})
-		port=${port#port.}
 
 		if port_exists ${port}; then
 			echo "${port}"

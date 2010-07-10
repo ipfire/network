@@ -22,12 +22,19 @@
 function hook_dir() {
 	local type=${1}
 
-	echo "${HOOKS_DIR}/${type}s"
+	if [ -n "${type}" ]; then
+		type="/${type}s"
+	fi
+
+	echo "${HOOKS_DIR}${type}"
 }
 
 function hook_exists() {
 	local type=${1}
 	local hook=${2}
+
+	assert isset type
+	assert isset hook
 
 	local hook_dir=$(hook_dir ${type})
 
@@ -41,6 +48,9 @@ function hook_exec() {
 	local hook=${2}
 	shift 2
 
+	assert isset type
+	assert isset hook
+
 	if ! hook_exists ${type} ${hook}; then
 		error "Hook '${hook}' does not exist."
 		return ${EXIT_ERROR}
@@ -51,6 +61,8 @@ function hook_exec() {
 
 function config_get_hook() {
 	local config=${1}
+
+	assert isset config
 
 	(
 		. ${config}

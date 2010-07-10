@@ -21,9 +21,9 @@
 
 . /lib/network/header-zone
 
-# TODO AC name, service name, sync?
+# TODO XXX AC name, service name, sync?
 
-HOOK_SETTINGS="HOOK AUTH LINKNAME USER SECRET PEERDNS DEFAULTROUTE MTU PORTS"
+HOOK_SETTINGS="HOOK AUTH LINKNAME USER SECRET PEERDNS DEFAULTROUTE MTU"
 
 AUTH=
 DEFAULTROUTE=1
@@ -34,7 +34,6 @@ SECRET=
 USER=
 
 PPPOE_ALLOWED_AUTHS="chap pap"
-PPPOE_ALLOWED_PORTS="bonding ethernet virtual"
 PPPOE_PLUGIN="rp-pppoe.so"
 
 function pppd_pid() {
@@ -118,8 +117,12 @@ function _up() {
 
 	zone_config_read ${zone}
 
-	if ! isset PORTS || ! port_exists ${PORTS}; then
-		error_log "Parent device '${PORTS}' does not exist. Cannot bring up zone '${zone}'."
+	local port=$(zone_get_ports ${zone})
+
+	assert isset port
+
+	if ! port_exists ${port}; then
+		error_log "Parent device '${port}' does not exist. Cannot bring up zone '${zone}'."
 		exit ${EXIT_ERROR}
 	fi
 
@@ -128,7 +131,7 @@ function _up() {
 	[ -d "${RED_RUN}/${LINKNAME}" ] || mkdir -p ${RED_RUN}/${LINKNAME}
 
 	# Setting up the device
-	port_up ${PORTS}
+	zone_ports_up ${zone}
 
 	ppp_secret "${USER}" "${SECRET}"
 
@@ -140,7 +143,7 @@ ifname ${zone}
 name ${LINKNAME}
 linkname ${LINKNAME}
 
-plugin ${PPPOE_PLUGIN} ${PORTS}
+plugin ${PPPOE_PLUGIN} ${port}
 
 # User configuration
 user ${USER}
@@ -184,13 +187,11 @@ function _down() {
 	local zone=${1}
 	shift
 
-	zone_config_read ${zone}
-
 	# Kill pppd
 	# XXX very ugly
 	kill $(pppd_pid ${zone}) &>/dev/null
 
-	port_down ${PORTS}
+	zone_ports_down ${zone}
 
 	exit ${EXIT_OK}
 }
@@ -242,7 +243,11 @@ function _status() {
 	printf "${DEVICE_PRINT_LINE1}" "Use default route?" "$(enabled DEFAULTROUTE && echo "enabled" || echo "disabled")"
 	printf "${DEVICE_PRINT_LINE1}" "Use peer DNS?" "$(enabled PEERDNS && echo "enabled" || echo "disabled")"
 	echo
-	printf "${DEVICE_PRINT_LINE1}" "Port:" "${PORTS:-none}"
+	cli_headline "  Ports:"
+	zone_ports_status ${zone}
+	if [ -z "$(zone_get_ports ${zone})" ]; then
+		echo -e "    ${COLOUR_WARN}No ports attached. Won't be able to start.${COLOUR_NORMAL}"
+	fi
 
 	# Exit if zone is down
 	if ! zone_is_up ${zone}; then
@@ -269,24 +274,13 @@ function _port_add() {
 	local port=${2}
 	shift 2
 
-	assert isset zone
-	assert isset port
-	assert port_exists ${port}
-
-	zone_config_read ${zone}
-
-	if isset PORTS; then
-		warning "There is already a port defined: '${PORTS}'."
-		warning "Will overwrite current configuration."
-	fi
-
-	if ! listmatch $(port_get_hook ${port}) ${PPPOE_ALLOWED_PORTS}; then
-		error "You can only add ports to this hook that are of type '${PPPOE_ALLOWED_PORTS}'."
+	if [ $(listlength $(zone_get_ports ${zone})) -ge 1 ]; then
+		error "This hook only supports one port at a time."
+		error "Please remove any existant port(s) and try again."
 		exit ${EXIT_ERROR}
 	fi
 
-	PORTS="${port}"
-	zone_config_write ${zone}
+	_port_cmd add ${zone} ${port} $@
 
 	exit ${EXIT_OK}
 }

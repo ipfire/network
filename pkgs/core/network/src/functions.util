@@ -216,6 +216,7 @@ function isset() {
 	[ -n "${!var}" ]
 }
 
+# XXX Nearly same as listmatch
 function isoneof() {
 	local var=${!1}
 	shift
@@ -347,4 +348,13 @@ function beautify_bytes() {
 	done
 
 	echo "${value}${unit}"
+}
+
+function module_load() {
+	local module=${1}
+
+	if ! grep -q "^${module}" /proc/modules; then
+		log DEBUG "Loading module '${module}'."
+		modprobe ${module}
+	fi
 }
