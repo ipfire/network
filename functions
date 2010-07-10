@@ -1,5 +1,18 @@
 #!/bin/bash
 
+INIT_FUNCTIONS=""
+
+function init_register() {
+	INIT_FUNCTIONS="${INIT_FUNCTIONS} $@"
+}
+
+function init_run() {
+	local init
+	for init in ${INIT_FUNCTIONS}; do
+		${init}
+	done
+}
+
 for file in /lib/network/functions.*; do
 	. ${file}
 done
@@ -27,3 +40,7 @@ case "${COLOURS}" in
 		warning_log "Unknown parameter given for COLOURS: ${COLOURS}"
 		;;
 esac
+
+if [ "$(basename ${0})" = "network" ]; then
+	init_run
+fi
