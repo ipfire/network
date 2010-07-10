@@ -1,0 +1,438 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function cli_config() {
+	if cli_help_requested $@; then
+		cli_usage root-config
+		exit ${EXIT_OK}
+	fi
+
+	if [ -n "${1}" ]; then
+		network_config_set $@
+	else
+		network_config_print
+	fi
+}
+
+function cli_device() {
+	if device_config_exists ${1}; then
+		local device=${1}
+		local action=${2}
+		shift 2
+
+		case "${action}" in
+			down|up)
+				device_${action} ${device} $@
+				;;
+		esac
+	else
+		local action=${1}
+		shift
+
+		case "${action}" in
+			create)
+				device_${action} $@
+				;;
+
+			discover)
+				echo "# XXX need to implement --raw here"
+				local device
+				for device in ${devices}; do
+					cli_device_discover ${device} $@
+				done
+				;;
+
+			show|"")
+				local device
+				for device in $(device_get $@); do
+					device_print ${device}
+				done
+				;;
+			*)
+				cli_usage device
+				;;				
+		esac
+	fi
+}
+
+function cli_device_discover() {
+	local device=${1}
+	shift
+
+	local device_type=$(device_get_type ${device})
+	if [ "${device_type}" != "real" ]; then
+		return ${EXIT_OK}
+	fi
+
+	local raw
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--raw)
+				raw=1
+				;;
+		esac
+		shift
+	done
+
+	local up
+	device_is_up ${device} && up=1
+	device_set_up ${device}
+
+	enabled raw || echo "${device}"
+
+	local hook
+	local out
+	local ret
+	for hook in $(hook_zone_get_all); do
+		out=$(hook_zone_exec ${hook} discover ${device})
+		ret=$?
+
+		[ ${ret} -eq ${DISCOVER_NOT_SUPPORTED} ] && continue
+
+		if enabled raw; then
+			case "${ret}" in
+				${DISCOVER_OK})
+					echo "${hook}: OK"
+					local line
+					while read line; do
+						echo "${hook}: ${line}"
+					done <<<"${out}"
+					;;
+
+				${DISCOVER_ERROR})
+					echo "${hook}: FAILED"
+					;;
+			esac
+		else
+			case "${ret}" in
+				${DISCOVER_OK})
+					echo "  ${hook} was successful."
+					local line
+					while read line; do
+						echo "  ${line}"
+					done <<<"${out}"
+					;;
+
+				${DISCOVER_ERROR})
+					echo "  ${hook} failed."
+					;;
+			esac
+		fi
+	done
+
+	echo # New line
+
+	[ "${up}" = "1" ] || device_set_down ${device}
+}
+
+function cli_port() {
+	if cli_help_requested $@; then
+		cli_usage root-port
+		exit ${EXIT_OK}
+	fi
+
+	local action
+	local port
+
+	if port_exists ${1}; then
+		port=${1}
+		action=${2}
+		shift 2
+
+		# Action aliases
+		case "${action}" in
+			start)
+				action="up"
+				;;
+			stop)
+				action="down"
+				;;
+			show)
+				action="status"
+				;;
+		esac
+
+		case "${action}" in
+			edit|up|down|status)
+				port_${action} ${port} $@
+				;;
+			*)
+				error "Unrecognized argument: ${action}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	else
+		action=${1}
+		shift
+
+		case "${action}" in
+			create|destroy)
+				port_${action} $@
+				;;
+			*)
+				error "Unrecognized argument: ${action}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	fi
+}
+
+function cli_zone() {
+	if cli_help_requested $@; then
+		cli_usage root-zone
+		exit ${EXIT_OK}
+	fi
+
+	local action
+	local zone
+
+	if zone_name_is_valid ${1}; then
+		zone=${1}
+		action=${2}
+		shift 2
+
+		# Action aliases
+		case "${action}" in
+			start)
+				action="up"
+				;;
+			stop)
+				action="down"
+				;;
+			show)
+				action="status"
+				;;
+		esac
+
+		case "${action}" in
+			config|down|edit|port|status|up)
+				zone_${action} ${zone} $@
+				;;
+			*)
+				error "Unrecognized argument: ${action}"
+				cli_usage root-zone-subcommands
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	else
+		action=${1}
+		shift
+
+		case "${action}" in
+			create|remove)
+				zone_${action} $@
+				;;
+			""|*)
+				if [ -n "${action}" ]; then
+					error "Unrecognized argument: '${action}'"
+					echo
+				fi
+
+				cli_usage root-zone
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	fi
+}
+
+function cli_start() {
+	if cli_help_requested $@; then
+		cli_usage root-start
+		exit ${EXIT_OK}
+	fi
+
+	local zones=$(zones_get $@)
+
+	local zone
+	for zone in ${zones}; do
+		zone_up ${zone}
+	done
+}
+
+function cli_stop() {
+	if cli_help_requested $@; then
+		cli_usage root-stop
+		exit ${EXIT_OK}
+	fi
+
+	local zones=$(zones_get $@)
+
+	local zone
+	for zone in ${zones}; do
+		zone_down ${zone}
+	done
+}
+
+function cli_restart() {
+	if cli_help_requested $@; then
+		cli_usage root-restart
+		exit ${EXIT_OK}
+	fi
+
+	cli_stop $@
+
+	# Give the system some time to calm down
+	sleep ${TIMEOUT_RESTART}
+
+	cli_start $@
+}
+
+function cli_status() {
+	if cli_help_requested $@; then
+		cli_usage root-status
+		exit ${EXIT_OK}
+	fi
+
+	local zones=$(zones_get $@)
+
+	local zone
+	for zone in ${zones}; do
+		zone_status ${zone}
+	done
+}
+
+function cli_help_requested() {
+	local argument
+	for argument in ${1}; do
+		if [ "${argument}" = "help" -o "${argument}" = "-h" -o "${argument}" = "--help" ]; then
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function cli_usage() {
+	local what=${1}
+
+	case "${what}" in
+		root)
+			echo "${0}: [command] <options ...>"
+			echo
+			echo "  start  - ..."
+			echo "  stop   - ..."
+			echo "  restart - ..."
+			echo "  status - ..."
+			echo
+			echo "  config - ..."
+			echo
+			echo "  device - ..."
+			echo "  zone   - ..."
+			echo
+			;;
+		root-config)
+			echo    "${0}: ${what#root-} [KEY=VAL, ...]"
+			echo
+			echo    "  This command allows setting of global configuration parameters."
+			echo
+			echo    "  If no additional arguments are passed it will list the current configuration."
+			echo
+			echo    "  You can overwrite the settings like the following:"
+			echo
+			echo    "    ${0} ${what#root-} DEBUG=1 ..."
+			echo
+			;;
+		root-start|root-stop|root-restart)
+			echo    "${0}: ${what#root-} [--local-only|--remote-only|--all|<zone>...]"
+			echo
+			echo    "  This commands ${what#root-}s all zones by default."
+			echo    "  One can pass several parameters to only process a subset of all"
+			echo    "  available zones:"
+			echo
+			echo -e "    ${COLOUR_BOLD}--local-only${COLOUR_NORMAL}"
+			echo    "    Process all local zones which includes every zone without red."
+			echo
+			echo -e "    ${COLOUR_BOLD}--remote-only${COLOUR_NORMAL}"
+			echo    "    Process all remote zones which means only the red ones."
+			echo
+			echo -e "    ${COLOUR_BOLD}--all${COLOUR_NORMAL}"
+			echo    "    Process all zones. This is the default parameter."
+			echo
+			echo    "    Additionally, you can pass one or more zone names which will"
+			echo    "    be processed."
+			echo
+			;;
+		root-status)
+			echo    "${0}: ${what#root-} [--local-only|--remote-only|--all|<zone>...]"
+			echo
+			echo    "  This commands shows status information of all zones by default."
+			echo    "  One can pass several parameters to only process a subset of all"
+			echo    "  available zones:"
+			echo
+			echo -e "    ${COLOUR_BOLD}--local-only${COLOUR_NORMAL}"
+			echo    "    Process all local zones which includes every zone without red."
+			echo
+			echo -e "    ${COLOUR_BOLD}--remote-only${COLOUR_NORMAL}"
+			echo    "    Process all remote zones which means only the red ones."
+			echo
+			echo -e "    ${COLOUR_BOLD}--all${COLOUR_NORMAL}"
+			echo    "    Process all zones. This is the default parameter."
+			echo
+			echo    "    Additionally, you can pass one or more zone names which will"
+			echo    "    be processed."
+			echo
+			;;
+		root-zone)
+			echo    "${0}: ${what#root-} <create|remove> <zone> [<type> <options...>]"
+			echo
+			echo    "  Create or remove a zone."
+			echo
+			echo -e "    ${COLOUR_BOLD}create <zone> <type> <options>${COLOUR_NORMAL}"
+			echo    "    Create a new zone of type <type> where <zone> is an allowed"
+			echo    "    zone name."
+			echo
+			echo -e "    ${COLOUR_BOLD}remove <zone>${COLOUR_NORMAL}"
+			echo    "    Remove the zone <zone>."
+			echo
+			echo    "  You may also edit the configuration of the zones."
+			echo
+			echo -e "    ${COLOUR_BOLD}<zone> ...${COLOUR_NORMAL}"
+			echo    "    Edit the zone <zone>."
+			echo
+			;;
+		usage)
+			echo
+			echo "  Run '${0} help' to get information how to use this tool."
+			echo
+			;;
+		*)
+			error "No help available for this command '${what}'."
+			echo
+			;;
+	esac
+
+	echo "Network configuration tool. Report all bugs to <http://bugs.ipfire.org>."
+}
+
+function cli_status_headline() {
+	local zone=${1}
+
+	local state="${COLOUR_DOWN}DOWN${COLOUR_NORMAL}"
+	zone_is_up ${zone} && state="${COLOUR_UP}UP${COLOUR_NORMAL}"
+
+	echo -e "${zone} - ${state} - $(zone_get_hook ${zone})"
+}
+
+function cli_headline() {
+	echo
+	echo -e "${COLOUR_BOLD}$@${COLOUR_NORMAL}"
+}

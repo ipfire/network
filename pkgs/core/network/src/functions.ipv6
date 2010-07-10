@@ -1,0 +1,229 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function ipv6_device_autoconf_enable() {
+	local device=${1}
+
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	echo 1 > /proc/sys/net/ipv6/conf/${device}/autoconf
+}
+
+function ipv6_device_autoconf_disable() {
+	local device=${1}
+
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	echo 0 > /proc/sys/net/ipv6/conf/${device}/autoconf
+}
+
+function ipv6_is_valid() {
+	local address=${1}
+
+	# Check length
+	[ ${#address} -gt 39 ] && return ${EXIT_ERROR}
+
+	# XXX find :: twice?
+	# XXX check for documentation prefix?
+
+	# Check for bad characters
+	local char
+	for char in 0 1 2 3 4 5 6 7 8 9 a b c d e f :; do
+		address=${address//${char}/}
+	done
+	[ -n "${address}" ] && return ${EXIT_ERROR}
+
+	return ${EXIT_OK}
+}
+
+function ipv6_implode() {
+	local address=${1}
+
+	if ! ipv6_is_valid ${address}; then
+		error "IPv6 address is invalid: ${address}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Make proper address in exploded format
+	address=$(ipv6_explode ${address})
+
+	local block
+	local char
+	local i
+
+	local address_new
+	local block_new
+
+	for block in ${address//:/\ }; do
+		block_new=
+		for i in $(seq 0 ${#block}); do
+			char="${block:${i}:1}"
+
+			[ -z "${char}" ] && continue
+
+			if [ -z "${block_new}" ] && [ "${char}" = "0" ]; then
+				continue
+			fi
+
+			block_new="${block_new}${char}"
+		done
+
+		[ -z "${block_new}" ] && block_new="0"
+
+		address_new="${address_new}:${block_new}"
+	done
+
+	# Cut first colon (:)
+	address="${address_new:1:${#address_new}}"
+
+	local match
+	local matches=()
+	local pattern
+	local pos_start
+	local pos_next
+	for pos_start in $(seq 0 ${#address}); do
+		matches["${pos_start}"]=0
+
+		for pos_next in $(seq ${pos_start} 2 ${#address}); do
+			case "${pos_start}" in
+				0)
+					match="${address:${pos_next}:2}"
+					pattern="0:"
+					;;
+				*)
+					match="${address:${pos_next}:2}"
+					pattern=":0"
+					;;
+			esac
+
+			[ -z "${match}" ] && continue
+
+			if [ "${match}" = "${pattern}" ]; then
+				matches[${pos_start}]=$(( matches[${pos_start}] + 1))
+			else
+				break
+			fi
+		done
+	done
+
+	local pos_best
+	local pos_best_val=0
+	for i in $(seq 0 ${#matches[@]}); do
+		[ -z "${matches[${i}]}" ] && continue
+
+		if [ ${matches[${i}]} -gt ${pos_best_val} ]; then
+			pos_best=${i}
+			pos_best_val=${matches[${i}]}
+		fi
+	done
+
+	if [ -n "${pos_best}" ]; then
+		address_new="${address:0:${pos_best}}::"
+
+		local pos_end=$(( ${pos_best_val} * 2 + ${pos_best} + 1))
+		
+		if [ "${pos_best}" = "0" ]; then
+			pos_end=$(( ${pos_end} - 1 ))
+		fi
+
+		address="${address_new}${address:${pos_end}:${#address}}"
+	fi
+
+	assert ipv6_is_valid ${address}
+
+	echo "${address}"
+}
+
+function ipv6_explode() {
+	local address=${1}
+
+	if [ ${#address} -eq 39 ]; then
+		echo "${address}"
+		return ${EXIT_OK}	
+	fi
+
+	address=${address//::/:X:}
+
+	local block
+	local block_count=0
+	local block_id
+	local block_max=8
+	local blocks=()
+
+	for block in ${address//:/\ }; do
+		blocks[${block_count}]=${block}
+		
+		block_count=$(( ${block_count} + 1 ))
+	done
+
+	if [ ${#blocks[@]} -lt ${block_max} ]; then
+		for block_id in $(seq ${#blocks[@]} -1 0); do
+			block=${blocks[${block_id}]}
+
+			[ -z "${block}" ] && continue
+
+			if [ "${block}" = "X" ]; then
+				blocks[${block_id}]="0000"
+				break
+			fi
+
+			blocks[$(( ${block_max} - ${block_count} + ${block_id} ))]=${block}
+			blocks[${block_id}]="0000"
+		done
+	fi
+
+	for block_id in $(seq 0 ${#blocks[@]}); do
+		block=${blocks[${block_id}]}
+
+		[ -z "${block}" ] && block="0000"
+
+		while [ "${#block}" -lt 4 ]; do
+			block="0${block}"
+		done
+
+		blocks[${block_id}]=${block}
+	done
+
+	address=
+	for block in ${blocks[@]}; do
+		address="${address}:${block}"
+	done
+	address=${address:1:39}
+
+	assert ipv6_is_valid ${address}
+
+	echo "${address}"
+}
+
+function ipv6_hash() {
+	local address=${1}
+
+	# Explode address
+	address=$(ipv6_explode ${address})
+
+	echo "${address//:/}"
+}

@@ -19,36 +19,31 @@
 #                                                                             #
 ###############################################################################
 
-umask 022
-export PATH=/usr/sbin:/sbin:/usr/bin:/bin
-
-exec &>/tmp/network.$(basename $0)
-
-# Give the variables we get passed by pppd an own namespace
-for i in IFNAME IPLOCAL IPREMOTE DNS1 DNS2 MACREMOTE; do
-	export PPP_${i}=${!i}
-	unset ${i}
-done
-
 . /lib/network/functions
 
-# Zone equals IFNAME
-ZONE=${PPP_IFNAME}
+HOOK=$(basename ${0})
 
-assert isset ZONE
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		-*)
+			error "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
+			;;
+		*)
+			action=${1}
+			;;
+	esac
+	shift
+	[ -n "${action}" ] && break
+done
 
-if ! zone_exists ${ZONE}; then
-	error "Zone '${ZONE}' does not exist."
+function run() {
+	case "${action}" in
+		create|rem|up|down|status)
+			_${action} $@
+			;;
+	esac
+
+	error "Port hook '${HOOK}' didn't exit properly."
 	exit ${EXIT_ERROR}
-fi
-
-HOOK=$(zone_get_hook ${ZONE})
-
-assert isset HOOK
-
-if ! hook_zone_exists ${HOOK}; then
-	error "Hook '${HOOK}' does not exist."
-	exit ${EXIT_ERROR}
-fi
-
-hook_zone_exec ${HOOK} ppp-$(basename ${0}) ${ZONE}
+}

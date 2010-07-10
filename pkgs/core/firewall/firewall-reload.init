@@ -1,0 +1,8 @@
+description		"Reloads the firewall"
+author			"IPFire Team"
+
+start on firewall-reload and started firewall
+
+script
+	firewall restart
+end script

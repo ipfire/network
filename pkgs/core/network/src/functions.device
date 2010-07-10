@@ -1,0 +1,582 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function devicify() {
+	local device=${1}
+
+	assert isset device
+
+	if device_exists ${device}; then
+		echo "${device}"
+		return ${EXIT_OK}
+	fi
+
+	local d
+	for d in $(devices_get_all); do
+		if [ "$(device_get_address ${d})" = "${device}" ]; then
+			echo "${d}"
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function macify() {
+	local device=${1}
+
+	assert isset device
+
+	if mac_is_valid ${device}; then
+		echo "${device}"
+		return ${EXIT_OK}
+	fi
+
+	if device_exists ${device}; then
+		device_get_address ${device}
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
+}
+
+# Check if the device exists
+function device_exists() {
+	local device=${1}
+
+	# If device name was not found, exit.
+	[ -n "${device}" ] || return ${EXIT_ERROR}
+
+	[ -d "${SYS_CLASS_NET}/${device}" ]
+}
+
+# Check if the device is up
+function device_is_up() {
+	local device=${1}
+
+	device_exists ${device} || return ${EXIT_ERROR}
+
+	ip link show ${device} 2>/dev/null | grep -qE "<.*UP.*>"
+}
+
+# Check if the device is a bonding device
+function device_is_bonding() {
+	[ -d "/sys/class/net/${1}/bonding" ]
+}
+
+# Check if the device bonded in a bonding device
+function device_is_bonded() {
+	local device=${1}
+
+	[ -d "${SYS_CLASS_NET}/${device}/master" ]
+}
+
+# Check if the device is a bridge
+function device_is_bridge() {
+	[ -d "/sys/class/net/${1}/bridge" ]
+}
+
+function device_is_bridge_attached() {
+	local device=${1}
+
+	[ -d "${SYS_CLASS_NET}/${device}/brport" ]
+}
+
+# Check if the device is a virtual device
+function device_is_virtual() {
+	local device=${1}
+
+	[ -e "/proc/net/vlan/${device}" ]
+}
+
+# Check if the device has virtual devices
+function device_has_virtuals() {
+	local device=${1}
+
+	if device_is_virtual ${device}; then
+		return 1
+	fi
+
+	if [ ! -e "/proc/net/vlan/config" ]; then
+		return 1
+	fi
+	grep -q "${1}$" /proc/net/vlan/config
+}
+
+function device_is_vlan() { # XXX Compat function
+	log DEBUG "Deprecated function device_is_vlan() was used."
+
+	device_is_virtual $@
+}
+
+# Check if the device is a ppp device
+function device_is_ppp() {
+	local device=${1}
+
+	ip link show ${device} 2>/dev/null | grep -qE "<.*POINTOPOINT.*>"
+}
+
+# Check if the device is a loopback device
+function device_is_loopback() {
+	local device=$(devicify ${1})
+	[ "${device}" = "lo" ]
+}
+
+# Check if the device is a physical network interface
+function device_is_real() {
+	local device=${1}
+
+	device_is_loopback ${device} && \
+		return ${EXIT_ERROR}
+
+	device_is_bonding ${device} &&  \
+		return ${EXIT_ERROR}
+
+	device_is_bridge ${device} && \
+		return ${EXIT_ERROR}
+
+	device_is_ppp ${device} && \
+		return ${EXIT_ERROR}
+
+	device_is_virtual ${device} && \
+		return ${EXIT_ERROR}
+
+	return ${EXIT_OK}
+}
+
+# Get the device type
+function device_get_type() {
+	local device=$(devicify ${1})
+
+	if device_is_vlan ${device}; then
+		echo "vlan"
+
+	elif device_is_bonding ${device}; then
+		echo "bonding"
+
+	elif device_is_bridge ${device}; then
+		echo "bridge"
+
+	elif device_is_ppp ${device}; then
+		echo "ppp"
+
+	elif device_is_loopback ${device}; then
+		echo "loopback"
+
+	elif device_is_real ${device}; then
+		echo "real"
+
+	else
+		echo "unknown"
+	fi
+}
+
+function device_get_status() {
+	local device=${1}
+
+	assert isset device
+
+	local status=${STATUS_UNKNOWN}
+
+	if ! device_has_carrier ${device}; then
+		status=${STATUS_NOCARRIER}
+	elif device_is_up ${device}; then
+		status=${STATUS_UP}
+	elif device_is_down ${device}; then
+		status=${STATUS_DOWN}
+	fi
+
+	assert isset status
+
+	echo "${status}"
+}
+
+function device_get_address() {
+	local device=${1}
+
+	cat ${SYS_CLASS_NET}/${device}/address 2>/dev/null
+}
+
+function device_set_address() {
+	local device=${1}
+	local addr=${2}
+	
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	log INFO "Setting address of '${device}' to '${addr}' - was $(device_get_address ${device})."
+
+	local up
+	if device_is_up ${device}; then
+		device_set_down ${device}
+		up=1
+	fi
+
+	ip link set ${device} address ${addr}
+	local ret=$?
+
+	if [ "${up}" = "1" ]; then
+		device_set_up ${device}
+	fi
+
+	if [ "${ret}" != "0" ]; then
+		error_log "Could not set address '${addr}' on device '${device}'."
+	fi
+
+	return ${ret}
+}
+
+function device_get() {
+	local from_config
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--from-config)
+				from_config=1
+				;;
+			--no-config)
+				from_config=0
+				;;
+		esac
+		shift
+	done
+
+	local devices
+
+	if [ "${from_config}" != "0" ]; then
+		devices="${devices} $(device_config_list)"
+	fi
+
+	if [ "${from_config}" != "1" ]; then
+		local device
+		for device in ${SYS_CLASS_NET}/*; do
+			devices="${devices} $(basename ${device})"
+		done
+	fi
+
+	echo ${devices}
+	return ${EXIT_OK}
+}
+
+function devices_get_all() {
+	device_get
+}
+
+# Check if a device has a cable plugged in
+function device_has_carrier() {
+	local device=$(devicify ${1})
+	[ "$(<${SYS_CLASS_NET}/${device}/carrier)" = "1" ]
+}
+
+function device_is_promisc() {
+	local device=${1}
+
+	ip link show ${device} | grep -qE "<.*PROMISC.*>"
+}
+
+# Check if the device is free
+function device_is_free() {
+	! device_is_used $@
+}
+
+# Check if the device is used
+function device_is_used() {
+	local device=$(devicify ${1})
+
+	device_has_virtuals ${device} && \
+		return ${EXIT_OK}
+	device_is_bonded ${device} && \
+		return ${EXIT_OK}
+	device_is_bridge_attached ${device} && \
+		return ${EXIT_OK}
+
+	return ${EXIT_ERROR}
+}
+
+# XXX to be removed I think
+function device_get_free() {
+	local destination=${1}
+
+	# Replace + by a valid number
+	if grep -q "+$" <<<${destination}; then
+		local number=0
+		destination=$(sed -e "s/+//" <<<$destination)
+		while [ "${number}" -le "100" ]; do
+			if ! device_exists "${destination}${number}"; then
+				destination="${destination}${number}"
+				break
+			fi
+			number=$(($number + 1))
+		done
+	fi
+	echo "${destination}"
+}
+
+function device_rename() {
+	warning_log "Called deprecated function 'device_rename'"
+
+	device_set_name $@
+}
+
+function device_hash() {
+	local device=${1}
+
+	# Get mac address of device and remove all colons (:)
+	# that will result in a hash.
+	device=$(macify ${device})
+
+	echo "${device//:/}"
+}
+
+# Give the device a new name
+function device_set_name() {
+	local source=$1
+	local destination=$(device_get_free ${2})
+
+	# Check if devices exists
+	if ! device_exists ${source} || device_exists ${destination}; then
+		return 4
+	fi
+
+	local up
+	if device_is_up ${source}; then
+		ip link set ${source} down
+		up=1
+	fi
+
+	ip link set ${source} name ${destination}
+
+	if [ "${up}" = "1" ]; then
+		ip link set ${destination} up
+	fi
+}
+
+# Set device up
+function device_set_up() {
+	local device=$(devicify ${1})
+
+	# Silently fail if device was not found
+	[ -z "${device}" ] && return ${EXIT_ERROR}
+
+	# Do nothing if device is already up
+	device_is_up ${device} && return ${EXIT_OK}
+
+	device_set_parent_up ${device}
+
+	log DEBUG "Setting up device '${device}'"
+
+	ip link set ${device} up
+}
+
+function device_set_parent_up() {
+	local device=${1}
+	local parent
+
+	if device_is_virtual ${device}; then
+		parent=$(device_virtual_get_parent ${device})
+
+		device_is_up ${parent} && return ${EXIT_OK}
+
+		log DEBUG "Setting up parent device '${parent}' of '${device}'"
+
+		device_set_up ${parent}
+		return $?
+	fi
+
+	return ${EXIT_OK}
+}
+
+# Set device down
+function device_set_down() {
+	local device=$(devicify ${1})
+
+	local ret=${EXIT_OK}
+
+	if device_is_up ${device}; then
+		log DEBUG "Tearing down device '${device}'"
+
+		ip link set ${device} down
+		ret=$?
+	fi
+
+	device_set_parent_down ${device}
+
+	return ${ret}
+}
+
+function device_set_parent_down() {
+	local device=${1}
+	local parent
+
+	if device_is_virtual ${device}; then
+		parent=$(device_virtual_get_parent ${device})
+
+		device_is_up ${parent} || return ${EXIT_OK}
+
+		if device_is_free ${parent}; then
+			log DEBUG "Tearing down parent device '${parent}' of '${device}'"
+
+			device_set_down ${parent}
+		fi
+	fi
+	
+	return ${EXIT_OK}
+}
+
+function device_get_mtu() {
+	local device=${1}
+
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	echo $(<${SYS_CLASS_NET}/${device}/mtu)
+}
+
+# Set mtu to a device
+function device_set_mtu() {
+	local device=${1}
+	local mtu=${2}
+
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+	
+	local oldmtu=$(device_get_mtu ${device})
+
+	if [ "${oldmtu}" = "${mtu}" ]; then
+		# No need to set mtu.
+		return ${EXIT_OK}
+	fi
+
+	log INFO "Setting mtu of '${device}' to '${mtu}' - was ${oldmtu}."
+
+	local up
+	if device_is_up ${device}; then
+		device_set_down ${device}
+		up=1
+	fi
+
+	ip link set ${device} mtu ${mtu}
+	local ret=$?
+
+	if [ "${up}" = "1" ]; then
+		device_set_up ${device}
+	fi
+
+	if [ "${ret}" != "0" ]; then
+		error_log "Could not set mtu '${mtu}' on device '${device}'."
+	fi
+
+	return ${ret}
+}
+
+function device_discover() {
+	local device=${1}
+
+	log INFO "Running discovery process on device '${device}'."
+
+	local hook
+	for hook in $(hook_zone_get_all); do
+		hook_zone_exec ${hook} discover ${device}
+	done
+}
+
+function device_has_ipv4() {
+	local device=${1}
+	local addr=${2}
+
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	ip addr show ${device} | grep -q -e "inet " -e "${addr}"
+}
+
+function device_has_ipv6() {
+	local device=${1}
+	local addr=${2}
+
+	if ! device_exists ${device}; then
+		error "Device '${device}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	local prefix=${addr##*/}
+	addr=$(ipv6_implode ${addr%%/*})
+
+	if [ -n "${prefix}" ]; then
+		addr="${addr}/${prefix}"
+	fi
+
+	ip addr show ${device} | grep -q "inet6 ${addr}"
+}
+
+function __device_get_file() {
+	local device=${1}
+	local file=${2}
+
+	assert isset device
+	assert isset file
+
+	cat ${SYS_CLASS_NET}/${device}/${file}
+}
+
+function device_get_rx_bytes() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/rx_bytes
+}
+
+function device_get_tx_bytes() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/tx_bytes
+}
+
+function device_get_rx_packets() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/rx_packets
+}
+
+function device_get_tx_packets() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/tx_packets
+}
+
+function device_get_rx_errors() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/rx_errors
+}
+
+function device_get_tx_errors() {
+	local device=${1}
+
+	__device_get_file ${device} statistics/tx_errors
+}

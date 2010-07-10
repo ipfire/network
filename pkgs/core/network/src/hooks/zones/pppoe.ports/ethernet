@@ -19,94 +19,97 @@
 #                                                                             #
 ###############################################################################
 
-function ppp_init() {
-	mkdir -p /var/run/ppp 2>/dev/null
-}
+. /lib/network/header-port
 
-function ppp_common_ip_pre_up() {
+function _add() {
 	local zone=${1}
-	shift
+	local port=${2}
+	shift 2
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
+	assert isset zone
+	assert isset port
+
+	if ! port_exists ${port}; then
+		error "Port '${port}' does not exist."
+		exit ${EXIT_ERROR}
 	fi
 
-	red_db_from_ppp ${zone}
+	touch $(zone_dir ${zone})/ports/${port}
 
-	# Request firewall reload
-	event_firewall_reload
-
-	return ${EXIT_OK}
+	exit ${EXIT_OK}
 }
 
-function ppp_common_ip_up() {
-	local zone=${1}
-	shift
+function _edit() {
+	_add $@
+}
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
+function _rem() {
+	local zone=${1}
+	local port=${2}
+	shift 2
+
+	assert isset zone
+	assert isset port
+
+	if ! listmatch ${port} $(zone_get_ports ${zone}); then
+		error "Port '${port}' does not belong to '${zone}'."
+		error "Won't remove anything."
+		exit ${EXIT_ERROR}
 	fi
 
-	red_db_set ${zone} active 1
-	red_routing_update ${zone}
+	warning "Removing port '${port}' from '${zone}' will shutdown the zone."
 
-	# Emit interface-up event
-	event_interface_up ${zone}
+	# Shut down this zone
+	zone_down ${zone}
 
-	return ${EXIT_OK}
+	rm -f $(zone_dir ${zone})/ports/${port}
+
+	exit ${EXIT_OK}
 }
 
-function ppp_common_ip_down() {
+function _up() {
 	local zone=${1}
-	shift
+	local port=${2}
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
+	assert isset zone
+	assert isset port
+
+	assert zone_exists ${zone}
+	assert port_exists ${port}
+
+	port_up ${port}
+
+	exit ${EXIT_OK}
+}
+
+function _down() {
+	local zone=${1}
+	local port=${2}
+
+	assert isset zone
+	assert isset port
+
+	assert zone_exists ${zone}
+	assert port_exists ${port}
+
+	port_down ${port}
+
+	exit ${EXIT_OK}
+}
+
+function _status() {
+	local zone=${1}
+	local port=${2}
+
+	printf "        %-10s - " "${port}"
+	if device_is_up ${port}; then
+		echo -ne "${COLOUR_UP}    UP    ${COLOUR_NORMAL}"
+	else
+		echo -ne "${COLOUR_DOWN}   DOWN   ${COLOUR_NORMAL}"
 	fi
+	echo
 
-	# Save accounting information
-	ppp_accounting ${zone}
-
-	# Emit interface-up event
-	event_interface_down ${zone}
-
-	return ${EXIT_OK}
+	exit ${EXIT_OK}
 }
 
-function ppp_secret() {
-	local USER=${1}
-	local SECRET=${2}
-	local a
-	local secret
-	local user
-
-	# Updateing secret file
-	> ${PPP_SECRETS}.tmp
-	while read user a secret; do
-		if [ "'${USER}'" != "${user}" ]; then
-			echo "${user} ${a} ${secret}" >> ${PPP_SECRETS}.tmp
-		fi
-	done < ${PPP_SECRETS}
-	echo "'${USER}' * '${SECRET}'" >> ${PPP_SECRETS}.tmp
-	cat ${PPP_SECRETS}.tmp > ${PPP_SECRETS}
-	rm -f ${PPP_SECRETS}.tmp
-}
-
-function ppp_accounting() {
-	local zone=${1}
-	shift
-
-	db_ppp_update ${zone} --duration="${CONNECT_TIME}" \
-		--rcvd="${BYTES_RCVD}" --sent="${BYTES_SENT}"
-}
-
-function pppd_exec() {
-	ppp_init
-
-	log DEBUG "Running pppd with parameters '$@'."
-
-	pppd $@ > /dev/null
-}
+run $@

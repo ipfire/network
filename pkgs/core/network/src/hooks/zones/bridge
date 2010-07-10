@@ -1,0 +1,176 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /lib/network/header-zone
+
+HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE STP_PRIORITY"
+HOOK_SETTINGS="${HOOK_SETTINGS} MAC MTU"
+
+# Default values
+MAC=$(mac_generate)
+MTU=1500
+STP="on"
+STP_FORWARD_DELAY=0
+STP_HELLO=2
+STP_MAXAGE=20
+STP_PRIORITY=512 # XXX check out better value
+
+function _check() {
+	assert ismac MAC
+	assert isbool STP
+	assert isinteger STP_HELLO
+	assert isinteger STP_FORWARD_DELAY
+	assert isinteger STP_PRIORITY
+	assert isinteger MTU
+}
+
+function _parse_cmdline() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--stp=*)
+				STP=${1#--stp=}
+				;;
+			--stp-hello=*)
+				STP_HELLO=${1#--stp-hello=}
+				;;
+			--stp-forward-delay=*)
+				STP_FORWARD_DELAY=${1#--stp-forward-delay=}
+				;;
+			--stp-priority=*)
+				STP_PRIORITY=${1#--stp-priority=}
+				;;
+			--mtu=*)
+				MTU=${1#--mtu=}
+				;;
+			--mac=*)
+				MAC=${1#--mac=}
+				;;
+			*)
+				warning "Ignoring unknown option '${1}'"
+				;;
+		esac
+		shift
+	done
+}
+
+function _up() {
+	local zone=${1}
+	shift
+
+	config_read ${ZONE_DIR}/${zone}/settings
+
+	if ! device_exists ${zone}; then
+		brctl addbr ${zone}
+	fi
+
+	[ -n "${MAC}" ] && device_set_address ${zone} ${MAC}
+	[ -n "${MTU}" ] && device_set_mtu ${zone} ${MTU} 
+
+	# Enable STP
+	if enabled STP; then
+		brctl stp ${zone} on
+
+		if [ -n "${STP_FORWARD_DELAY}" ]; then
+			brctl setfd ${zone} ${STP_FORWARD_DELAY}
+		fi
+
+		if [ -n "${STP_HELLO}" ]; then
+			brctl sethello ${zone} ${STP_HELLO}
+		fi
+
+		if [ -n "${STP_MAXAGE}" ]; then
+			brctl setmaxage ${zone} ${STP_MAXAGE}
+		fi
+
+		if [ -n "${STP_PRIORITY}" ]; then
+			brctl setbridgeprio ${zone} ${STP_PRIORITY}
+		fi
+	else
+		brctl stp ${zone} off
+	fi
+
+	device_set_up ${zone}
+
+	# Bring all ports up
+	zone_ports_up ${zone}
+	zone_configs_up ${zone}
+
+	event_interface_up ${zone}
+
+	exit ${EXIT_OK}
+}
+
+function _down() {
+	local zone=${1}
+	shift
+
+	if ! device_is_up ${zone}; then
+		warning "Zone '${zone}' is not up"
+		exit ${EXIT_OK}
+	fi
+
+	event_interface_down ${zone}
+
+	zone_configs_down ${zone}
+	zone_ports_down ${zone}
+
+	device_set_down ${zone}
+	brctl delbr ${zone}
+
+	exit ${EXIT_OK}
+}
+
+function _status() {
+	local zone=${1}
+
+	cli_status_headline ${zone}
+
+	# Exit if zone is down
+	if ! zone_is_up ${zone}; then
+		echo # Empty line
+		exit ${EXIT_ERROR}
+	fi
+
+	# XXX Add bridge stp priority here
+	# brctl does not give any information about that
+
+	cli_headline "    Spanning Tree Protocol information:"
+	echo   "        Bridge ID             : $(stp_bridge_id ${zone})"
+	echo   "        Designated root       : $(stp_designated_root ${zone})"
+	echo   "        Path cost             : $(stp_pathcost ${zone})"
+	echo # Empty line
+
+	# Topology information
+	printf "        Topology changing     : %6s\n" $(stp_topology_change ${zone})
+	printf "        Topology change time  : %6s\n" $(beautify_time $(stp_topology_change_time ${zone}))
+	printf "        Topology change count : %6s\n" $(stp_topology_change_count ${zone})
+
+	cli_headline "    Ports:"
+	zone_ports_status ${zone}
+
+	cli_headline "    Configurations:"
+	zone_configs_cmd status ${zone}
+
+	echo # Empty line
+	exit ${EXIT_OK}
+}
+
+run $@

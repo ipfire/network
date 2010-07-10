@@ -1,0 +1,21 @@
+#!/bin/bash
+
+LOG_FACILITY="network"
+LOG_LEVEL="DEBUG"
+
+function log() {
+	local level=${1}
+	shift
+	local message="$@"
+
+	if [ -z "${DEBUG}" ] && [ "${level}" = "DEBUG" ]; then
+		return
+	fi
+
+	# Set a prefix if we are in a hook.
+	if [ -n "${HOOK}" ]; then
+		message="${HOOK}: ${message}"
+	fi
+
+	logger -t ${LOG_FACILITY} "${message}"
+}

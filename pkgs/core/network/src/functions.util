@@ -1,0 +1,360 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# Print a pretty error message
+function error() {
+	echo -e " ${COLOUR_ERROR}ERROR${COLOUR_NORMAL}  : $@" >&2
+}
+
+function error_log() {
+	error "$@"
+	log ERROR "$@"
+}
+
+# Print a pretty warn message
+function warning() {
+	echo -e " ${COLOUR_WARN}WARNING${COLOUR_NORMAL}: $@" >&2
+}
+
+function warning_log() {
+	warning "$@"
+	log WARNING "$@"
+}
+
+# XXX uses tr
+function listsort() {
+	local i
+	for i in $@; do
+		echo "${i}"
+	done | sort | tr "\n" " "
+}
+
+function listmatch() {
+	local match=${1}
+	shift
+
+	assert isset match
+
+	local i
+	for i in $@; do
+		[ "${match}" = "${i}" ] && return ${EXIT_OK}
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function listlength() {
+	local length=0
+
+	local i
+	for i in $@; do
+		length=$(( ${length} + 1 ))
+	done
+
+	echo "${length}"
+}
+
+function config_read() {
+	local config_file=${1}
+
+	if [ -e "${config_file}" ]; then
+		. ${config_file}
+		config_check
+	fi
+}
+
+function config_write() {
+	local config_file=${1}
+	shift
+
+	# Check if all values to be written are sane
+	config_check
+
+	log DEBUG "Writing configuration file ${config_file}."
+
+	> ${config_file}
+
+	local param
+	for param in $(listsort $@); do
+		echo "${param}=\"${!param}\"" >> ${config_file}
+	done
+}
+
+function config_print() {
+	local param
+
+	for param in $(listsort $@); do
+		printf "%-16s = %s\n" "${param}" "${!param}"
+	done
+}
+
+function config_check() {
+	# If there is a function defined that is called __check
+	# we call that function
+	[ -n "$(type -t _check)" ] && _check
+}
+
+function network_config_set() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			*=*)
+				log INFO "Setting configuration option '${1}'".			
+				eval ${1}
+				;;
+			*)
+				warning "Invalid parameter given: ${1}"
+				;;
+		esac
+		shift
+	done
+
+	# Write configuration to disk
+	network_config_write
+}
+
+function network_config_read() {
+	config_read ${CONFIG_FILE}
+}
+
+function network_config_write() {
+	config_write ${CONFIG_FILE} ${CONFIG_FILE_PARAMS}
+}
+
+function network_config_print() {
+	config_print ${CONFIG_FILE_PARAMS}
+}
+
+# Speedup function to avoid a call of the basename binary
+function basename() {
+	echo "${1##*/}"
+}
+
+function enabled() {
+	local param=${1}
+
+	[ "${!param}" = "yes" ] || [ "${!param}" = "on" ] || [ "${!param}" = "1" ]
+}
+
+function mac_generate() {
+	local mac=()
+	for i in $(seq 0 5); do
+		mac[i]="$(uuid)"
+		mac[i]="0x${mac[i]:0:2}"
+	done
+
+	# Remove multicast bit
+	# and set address is software assigned
+	# XXX must doublecheck if this works
+	mac[0]=$((mac[0] & 0xfe))
+	mac[0]=$((mac[0] | 0x02))
+
+	local output
+	for i in ${mac[*]}; do
+		if [ -n "${output}" ]; then
+			output="${output}:"
+		fi
+	
+		output="${output}$(printf "%02x" ${i})"
+	done
+
+	# Check if output is valid
+	assert mac_is_valid ${output}
+
+	echo ${output}
+}
+
+function mac_format() {
+	local mac=${1}
+
+	local output
+
+	if [ "${#mac}" = "12" ]; then
+		# Add colons (:) to mac address
+		output=${mac:0:2}
+		local i
+		for i in 2 4 6 8 10; do
+			output="${output}:${mac:${i}:2}"
+		done
+	fi
+
+	assert mac_is_valid ${output}
+
+	echo "${output}"
+}
+
+function mac_is_valid() {
+	local mac=${1}
+
+	[[ ${mac} =~ ^([0-9a-f]{2}\:){5}[0-9a-f]{2}$ ]]
+}
+
+function uuid() {
+	echo $(</proc/sys/kernel/random/uuid)
+}
+
+function isset() {
+	local var=${1}
+
+	[ -n "${!var}" ]
+}
+
+# XXX Nearly same as listmatch
+function isoneof() {
+	local var=${!1}
+	shift
+
+	for i in $@; do
+		[ "${var}" = "${i}" ] && return ${EXIT_OK}
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function isbool() {
+	local var=${1}
+
+	isoneof ${var} 0 1 no yes on off
+}
+
+function isinteger() {
+	local var=${!1}
+
+	[[ ${var} =~ ^[0-9]+$ ]]
+}
+
+function ismac() {
+	local mac=${!1}
+
+	mac_is_valid ${mac}
+}
+
+function backtrace() {
+	local start=1
+
+	echo # Empty line
+	error_log "Backtrace (most recent call in first line):"
+
+	local i
+	for i in $(seq ${start} ${#BASH_SOURCE[*]}); do
+		[ -z "${FUNCNAME[${i}]}" ] && continue
+		[ "${FUNCNAME[${i}]}" == "main" ] && continue
+
+		error_log "  $(printf "%20s" "'${FUNCNAME[${i}]}'") called from ${BASH_SOURCE[$(( ${i} + 1 ))]}:${BASH_LINENO[${i}]}"
+	done
+}
+
+function assert() {
+	local assertion="$@"
+
+	if ! ${assertion}; then
+		error_log "Assertion '${assertion}' failed."
+		backtrace
+		exit ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+function exec_cmd() {
+	local cmd=$@
+
+	log DEBUG "Running command: ${cmd}"
+
+	${SHELL} ${cmd}
+	local ret=$?
+
+	#log DEBUG "Returned with code '${ret}'"
+
+	if [ ${ret} -eq ${EXIT_ERROR_ASSERT} ]; then
+		error_log "Stopping parent process due to assertion error in child process: ${cmd}"
+		exit ${EXIT_ERROR_ASSERT}
+	fi
+
+	return ${ret}
+}
+
+function uppercase() {
+	local input
+	read input
+	echo "${input^^}"
+}
+
+function lowercase() {
+	local input
+	read input
+	echo "${input,,}"
+}
+
+function seq() {
+	if [ $# -eq 2 ]; then
+		eval echo {${1}..${2}}
+	elif [ $# -eq 3 ]; then
+		eval echo {${1}..${3}..${2}}
+	fi
+}
+
+function beautify_time() {
+	local value=${1}
+
+	local unit
+	local limit
+	for unit in s m h d w; do
+		case "${unit}" in
+			s|m|h)
+				limit=60
+				;;
+			d)
+				limit=24
+				;;
+			w)
+				limit=7
+				;;
+		esac
+
+		[ ${value} -lt ${limit} ] && break
+
+		value=$(( ${value} / ${limit} ))
+	done
+
+	echo "${value}${unit}"
+}
+
+function beautify_bytes() {
+	local value=${1}
+
+	local unit
+	local limit=1024
+	for unit in B k M G T; do
+		[ ${value} -lt ${limit} ] && break
+		value=$(( ${value} / ${limit} ))
+	done
+
+	echo "${value}${unit}"
+}
+
+function module_load() {
+	local module=${1}
+
+	if ! grep -q "^${module}" /proc/modules; then
+		log DEBUG "Loading module '${module}'."
+		modprobe ${module}
+	fi
+}

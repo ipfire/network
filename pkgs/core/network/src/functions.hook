@@ -1,0 +1,181 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function hook_dir() {
+	local type=${1}
+
+	if [ -n "${type}" ]; then
+		type="/${type}s"
+	fi
+
+	echo "${HOOKS_DIR}${type}"
+}
+
+function hook_exists() {
+	local type=${1}
+	local hook=${2}
+
+	assert isset type
+	assert isset hook
+
+	local hook_dir=$(hook_dir ${type})
+
+	[ -d "${hook_dir}/${hook}" ] && return ${EXIT_ERROR}
+
+	[ -x "${hook_dir}/${hook}" ]
+}
+
+function hook_exec() {
+	local type=${1}
+	local hook=${2}
+	shift 2
+
+	assert isset type
+	assert isset hook
+
+	if ! hook_exists ${type} ${hook}; then
+		error "Hook '${hook}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	exec_cmd $(hook_dir ${type})/${hook} $@
+}
+
+function config_get_hook() {
+	local config=${1}
+
+	assert isset config
+
+	(
+		. ${config}
+		echo "${HOOK}"
+	)
+}
+
+## Wrappers around the hook functions for zones
+
+function hook_zone_exists() {
+	hook_exists zone $@
+}
+
+function hook_zone_port_exists() {
+	local hook_zone=${1}
+	local hook_port=${2}
+
+	hook_zone_exists ${hook_zone} || return ${EXIT_ERROR}
+
+	[ -x "$(hook_dir zone)/${hook_zone}.ports/${hook_port}" ]
+}
+
+function hook_zone_config_exists() {
+	local hook_zone=${1}
+	local hook_config=${2}
+
+	hook_zone_exists ${hook_zone} || return ${EXIT_ERROR}
+
+	[ -x "$(hook_dir zone)/${hook_zone}.configs/${hook_config}" ]
+}
+
+function hook_zone_has_ports() {
+	local hook=${1}
+
+	[ -d "$(hook_dir zone)/${hook}.ports" ]
+}
+
+function hook_zone_port_exists() {
+	: # XXX WANTED
+}
+
+function hook_zone_has_configs() {
+	local hook=${1}
+
+	[ -d "$(hook_dir zone)/${hook}.configs" ]
+}
+
+function hook_zone_exec() {
+	hook_exec zone $@
+}
+
+function hook_zone_port_exec() {
+	local hook_zone=${1}
+	local hook_port=${2}
+	shift 2
+
+	if ! hook_exists zone ${hook_zone}; then
+		error "Hook '${hook_zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! hook_zone_port_exists ${hook_zone} ${hook_port}; then
+		error "Port hook '${hook_port}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	exec_cmd $(hook_dir zone)/${hook_zone}.ports/${hook_port} $@
+}
+
+function hook_zone_config_exec() {
+	local hook_zone=${1}
+	local hook_config=${2}
+	shift 2
+
+	if ! hook_zone_exists ${hook_zone}; then
+		error "Hook '${hook_zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! hook_zone_config_exists ${hook_zone} ${hook_config}; then
+		error "Config hook '${hook_config}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	exec_cmd $(hook_dir zone)/${hook_zone}.configs/${hook_config} $@
+}
+
+function hook_zone_get_all() {
+	local type=${1}
+
+	local hook
+	for hook in $(hook_dir zone)/*; do
+		hook=$(basename ${hook})
+		hook_zone_exists ${hook} && echo "${hook}"
+	done | sort
+}
+
+function hook_zone_ports_get_all() {
+	local hook=${1}
+
+	if ! hook_exists zone ${hook}; then
+		error "Hook '${hook}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	local h
+	for h in $(hook_dir zone)/${hook}.ports/*; do
+		h=$(basename ${h})
+		## XXX executeable?
+		echo "${h}"
+	done | sort
+}
+
+function hook_device_exists() {
+	hook_exists device $@
+}

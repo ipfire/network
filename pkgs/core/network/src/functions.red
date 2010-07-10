@@ -19,94 +19,79 @@
 #                                                                             #
 ###############################################################################
 
-function ppp_init() {
-	mkdir -p /var/run/ppp 2>/dev/null
-}
-
-function ppp_common_ip_pre_up() {
+function red_db_path() {
 	local zone=${1}
-	shift
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	red_db_from_ppp ${zone}
-
-	# Request firewall reload
-	event_firewall_reload
-
-	return ${EXIT_OK}
+	echo "${RED_DB_DIR}/${zone}"
 }
 
-function ppp_common_ip_up() {
+function red_db_exists() {
 	local zone=${1}
-	shift
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	red_db_set ${zone} active 1
-	red_routing_update ${zone}
-
-	# Emit interface-up event
-	event_interface_up ${zone}
-
-	return ${EXIT_OK}
+	[ -d "$(red_db_path ${zone})" ]
 }
 
-function ppp_common_ip_down() {
+function red_db_create() {
 	local zone=${1}
-	shift
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
+	red_db_exists ${zone} && return ${EXIT_OK}
 
-	# Save accounting information
-	ppp_accounting ${zone}
-
-	# Emit interface-up event
-	event_interface_down ${zone}
-
-	return ${EXIT_OK}
+	mkdir -p $(red_db_path ${zone})
 }
 
-function ppp_secret() {
-	local USER=${1}
-	local SECRET=${2}
-	local a
-	local secret
-	local user
-
-	# Updateing secret file
-	> ${PPP_SECRETS}.tmp
-	while read user a secret; do
-		if [ "'${USER}'" != "${user}" ]; then
-			echo "${user} ${a} ${secret}" >> ${PPP_SECRETS}.tmp
-		fi
-	done < ${PPP_SECRETS}
-	echo "'${USER}' * '${SECRET}'" >> ${PPP_SECRETS}.tmp
-	cat ${PPP_SECRETS}.tmp > ${PPP_SECRETS}
-	rm -f ${PPP_SECRETS}.tmp
-}
-
-function ppp_accounting() {
+function red_db_remove() {
 	local zone=${1}
-	shift
 
-	db_ppp_update ${zone} --duration="${CONNECT_TIME}" \
-		--rcvd="${BYTES_RCVD}" --sent="${BYTES_SENT}"
+	[ -z "${zone}" ] && return ${EXIT_ERROR}
+
+	rm -rf ${RED_DB_DIR}
 }
 
-function pppd_exec() {
-	ppp_init
+function red_db_set() {
+	local zone=${1}
+	local parameter=${2}
+	shift 2
 
-	log DEBUG "Running pppd with parameters '$@'."
+	local value="$@"
 
-	pppd $@ > /dev/null
+	red_db_create ${zone}
+
+	echo "${value}" > $(red_db_path ${zone})/${parameter}
+}
+
+function red_db_get() {
+	local zone=${1}
+	local parameter=${2}
+	shift 2
+
+	cat $(red_db_path ${zone})/${parameter} 2>/dev/null
+}
+
+function red_db_from_ppp() {
+	local zone=${1}
+
+	# Save ppp configuration
+	red_db_set ${zone} type "ppp"
+	red_db_set ${zone} local-ip-address ${PPP_IPLOCAL}
+	red_db_set ${zone} remote-ip-address ${PPP_IPREMOTE}
+
+	red_db_set ${zone} dns ${PPP_DNS1} ${PPP_DNS2}
+
+	red_db_set ${zone} remote-address ${PPP_MACREMOTE,,}
+}
+
+function red_routing_update() {
+	local zone=${1}
+
+	local table=${zone}
+
+	# Create routing table if not exists
+	routing_table_create ${table}
+
+	local remote_ip_address=$(red_db_get ${zone} remote-ip-address)
+	local local_ip_address=$(red_db_get ${zone} local-ip-address)
+
+	ip route replace table ${table} default nexthop via ${remote_ip_address}
+
+	ip rule add from ${local_ip_address} lookup ${table}
 }

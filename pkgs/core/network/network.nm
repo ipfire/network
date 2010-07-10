@@ -34,30 +34,34 @@ PKG_URL        = http://www.ipfire.org/
 PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = The IPFire Networking Scripts.
 
-PKG_DEPS      += dhcp iproute2 ppp sqlite vlan
+PKG_DEPS      += bash brctl coreutils dhcp grep iproute2 ppp sqlite upstart vlan
 
 define PKG_DESCRIPTION
 	This script installs the IPFire Networking Scripts.
 endef
 
-DIR_APP = $(DIR_SOURCE)/src
-
 PKG_TARBALL    =
 
-STAGE_PREPARE = # Do nothing
+define STAGE_PREPARE
+	cp -vrf $(DIR_SOURCE)/src $(DIR_APP)
+endef
+
 STAGE_BUILD = # Do nothing
 
 define STAGE_INSTALL
-	-mkdir -pv $(BUILDROOT)/etc/ppp
-	-mkdir -pv $(BUILDROOT)/lib/network
+	-mkdir -pv $(BUILDROOT)/etc/{network,ppp}
+	-mkdir -pv $(BUILDROOT)/lib/{network,udev/rules.d}
 	-mkdir -pv $(BUILDROOT)/sbin
 	-mkdir -pv $(BUILDROOT)/var/log/network
 
 	install -m 755 -v $(DIR_APP)/network $(BUILDROOT)/sbin
 
-	cp -rfv $(DIR_APP)/{hooks,hook-header,functions*,zone} $(BUILDROOT)/lib/network/
+	cp -rfv $(DIR_APP)/{hooks,header*,functions*} $(BUILDROOT)/lib/network/
 
 	install -m 755 -v $(DIR_APP)/ppp/ip-updown $(BUILDROOT)/etc/ppp
+	ln -svf ip-updown $(BUILDROOT)/etc/ppp/ip-pre-up
 	ln -svf ip-updown $(BUILDROOT)/etc/ppp/ip-up
 	ln -svf ip-updown $(BUILDROOT)/etc/ppp/ip-down
+
+	cp -vf $(DIR_SOURCE)/60-network.rules $(BUILDROOT)/lib/udev/rules.d/
 endef

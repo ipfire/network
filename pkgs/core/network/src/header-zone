@@ -1,0 +1,300 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+#
+# Notes:
+#   - All functions in this scope must start with an underline (_) to not
+#     conflict with any functions that were defined somewhere else.
+#
+
+. /lib/network/functions
+
+HOOK=$(basename ${0})
+
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		-*)
+			error "Unrecognized option: ${1}"
+			exit ${EXIT_ERROR}
+			;;
+		*)
+			action=${1}
+			;;
+	esac
+	shift
+
+	# If action argument was given, we will exit.
+	[ -n "${action}" ] && break
+done
+
+# _notimplemented
+#   Returns a soft error if a function was not implemented, yet.
+#
+function _notimplemented() {
+	warning "'$@' was not implemented."
+	exit ${EXIT_CONF_ERROR}
+}
+
+function _info() {
+	echo "HOOK=\"${HOOK}\""
+}
+
+function _create() {
+	local zone=${1}
+	shift
+
+	config_read ${ZONE_DIR}/${zone}/settings
+
+	_parse_cmdline $@
+
+	config_write ${ZONE_DIR}/${zone}/settings ${HOOK_SETTINGS}
+
+	exit ${EXIT_OK}
+}
+
+function _edit() {
+	_create $@
+}
+
+function _rem() {
+	_notimplemented _rem
+}
+
+function _status() {
+	local zone=${1}
+
+	if device_is_up ${zone}; then
+		exit ${STATUS_UP}
+	fi
+
+	exit ${STATUS_DOWN}
+}
+
+function _up() {
+	_notimplemented _up
+}
+
+function _down() {
+	_notimplemented _down
+}
+
+function _discover() {
+	# This hook does not support a discovery
+	exit ${DISCOVER_NOT_SUPPORTED}
+}
+
+# Do nothing
+function _parse_cmdline() {
+	return ${EXIT_OK}
+}
+
+function _port() {
+	local zone=${1}
+	local action=${2}
+	shift 2
+
+	local ret
+
+	case "${action}" in
+		create|edit|rem|show)
+			_port_${action} ${zone} $@
+			ret=$?
+			;;
+		*)
+			error "Unrecognized argument: '${action}'"
+			exit ${EXIT_ERROR}
+			;;
+	esac
+
+	exit ${ret}
+}
+
+# This function is not a public one
+function __portcmd() {
+	local cmd=${1}
+	local zone=${2}
+	local hook_port=${3}
+	shift 3
+
+	local hook_zone=$(zone_get_hook ${zone})
+
+	if ! hook_zone_exists ${hook_zone}; then
+		error "Hook '${hook}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	if ! hook_zone_port_exists ${hook_zone} ${hook_port}; then
+		error "Hook '${hook_port}' is not supported for zone '${zone}'."
+		exit ${EXIT_ERROR}
+	fi
+
+	hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} $@
+}
+
+function _port_create() {
+	__portcmd create $@
+}
+
+function _port_edit() {
+	__portcmd edit $@
+}
+
+function _port_rem() {
+	_notimplemented _port_rem
+}
+
+function _port_show() {
+	_notimplemented _port_show
+}
+
+function _config() {
+	local zone=${1}
+	local action=${2}
+	shift 2
+
+	local ret
+
+	case "${action}" in
+		create|edit|rem|show)
+			_config_${action} ${zone} $@
+			ret=$?
+			;;
+		*)
+			error "Unrecognized argument: '${action}'"
+			exit ${EXIT_ERROR}
+			;;
+	esac
+
+	exit ${ret}
+}
+
+# This function is not a public one
+function __configcmd() {
+	local cmd=${1}
+	local zone=${2}
+	local hook_config=${3}
+	shift 3
+
+	local hook_zone=$(zone_get_hook ${zone})
+
+	if ! hook_zone_exists ${hook_zone}; then
+		error "Hook '${hook}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	if ! hook_config_exists ${hook_zone} ${hook_config}; then
+		error "Hook '${hook_config}' is not supported for zone '${zone}'."
+		exit ${EXIT_ERROR}
+	fi
+
+	hook_zone_config_exec ${hook_zone} ${hook_config} ${cmd} ${zone} $@
+}
+
+function _config_create() {
+	__configcmd create $@
+}
+
+function _config_edit() {
+	__configcmd edit $@
+}
+
+function _config_rem() {
+	_notimplemented _config_rem
+}
+
+function _config_show() {
+	_notimplemented _config_show
+}
+
+function _ppp-ip-pre-up() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	ppp_common_ip_pre_up ${zone} $@
+
+	exit $?
+}
+
+function _ppp-ip-up() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	ppp_common_ip_up ${zone} $@
+
+	exit $?
+}
+
+function _ppp-ip-down() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	ppp_common_ip_down ${zone} $@
+
+	exit $?
+}
+
+function run() {
+	case "${action}" in
+		create|discover|down|edit|info|rem|status|up)
+			_${action} $@
+			;;
+
+		port)
+			if ! hook_zone_has_ports ${HOOK}; then
+				error "Hook '${HOOK}' does not support ports."
+				exit ${EXIT_ERROR}
+			fi
+
+			_port $@
+			;;
+
+		config)
+			if ! hook_zone_has_configs ${HOOK}; then
+				error "Hook '${HOOK}' does not support configurations."
+				exit ${EXIT_ERROR}
+			fi
+
+			_config $@
+			;;
+
+		ppp-ip-pre-up|ppp-ip-up|ppp-ip-down)
+			_${action} $@
+			;;
+
+	esac
+
+	error "Hook did not exit properly."
+	exit ${EXIT_ERROR}
+}

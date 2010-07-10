@@ -19,36 +19,32 @@
 #                                                                             #
 ###############################################################################
 
-umask 022
-export PATH=/usr/sbin:/sbin:/usr/bin:/bin
+COLOUR_GREEN="\\033[1;32m"
+COLOUR_RED="\\033[1;31m"
+COLOUR_NORMAL="\\033[0;39m"
+COLOUR_YELLOW="\\033[1;35m"
 
-exec &>/tmp/network.$(basename $0)
+COLOUR_BOLD="\\033[1;39m"
+COLOUR_DOWN=${COLOUR_RED}
+COLOUR_ERROR=${COLOUR_RED}
+COLOUR_OK=${COLOUR_GREEN}
+COLOUR_UP=${COLOUR_GREEN}
+COLOUR_WARN=${COLOUR_YELLOW}
 
-# Give the variables we get passed by pppd an own namespace
-for i in IFNAME IPLOCAL IPREMOTE DNS1 DNS2 MACREMOTE; do
-	export PPP_${i}=${!i}
-	unset ${i}
-done
+COLOUR_STP_FORWARDING=${COLOUR_GREEN}
+COLOUR_STP_DISCARDING=${COLOUR_RED}
+COLOUR_STP_LEARNING=${COLOUR_YELLOW}
+COLOUR_STP_BLOCKING=${COLOUR_YELLOW}
 
-. /lib/network/functions
+function colours_disable() {
+	local line
+	for line in $(set | grep "^COLOUR_"); do
+		unset ${line%%=*}
+	done
+}
 
-# Zone equals IFNAME
-ZONE=${PPP_IFNAME}
-
-assert isset ZONE
-
-if ! zone_exists ${ZONE}; then
-	error "Zone '${ZONE}' does not exist."
-	exit ${EXIT_ERROR}
-fi
-
-HOOK=$(zone_get_hook ${ZONE})
-
-assert isset HOOK
-
-if ! hook_zone_exists ${HOOK}; then
-	error "Hook '${HOOK}' does not exist."
-	exit ${EXIT_ERROR}
-fi
-
-hook_zone_exec ${HOOK} ppp-$(basename ${0}) ${ZONE}
+function colours_auto_disable() {
+	if [ "${TERM}" = "dumb" ]; then
+		colours_disable
+	fi
+}

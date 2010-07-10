@@ -1,0 +1,288 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /lib/network/header-zone
+
+# TODO XXX AC name, service name, sync?
+
+HOOK_SETTINGS="HOOK AUTH LINKNAME USER SECRET PEERDNS DEFAULTROUTE MTU"
+
+AUTH=
+DEFAULTROUTE=1
+LINKNAME="$(uuid)"
+MTU=1492
+PEERDNS=1
+SECRET=
+USER=
+
+PPPOE_ALLOWED_AUTHS="chap pap"
+PPPOE_PLUGIN="rp-pppoe.so"
+
+function pppd_pid() {
+	local zone=${1}
+	shift
+
+	cat /var/run/${zone}.pid 2>/dev/null
+}
+
+function _check() {
+	assert isset USER
+	assert isset SECRET
+	assert isset LINKNAME
+	assert isset DEFAULTROUTE
+	assert isset PEERDNS
+	#assert isset DEVICE
+	#assert isset DEVICE_TYPE
+
+	assert isbool DEFAULTROUTE
+	assert isbool PEERDNS
+	#assert ismac DEVICE
+	#assert isoneof DEVICE_TYPE real virtual
+
+	local ports_num=$(listlength ${PORTS})
+	assert isoneof ports_num 0 1
+
+	isset AUTH && assert isoneof AUTH ${PPPOE_ALLOWED_AUTHS}
+	isset DEVICE_ID && assert isinteger DEVICE_VID
+}
+
+function _parse_cmdline() {
+	local value
+
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			--user=*)
+				USER=${1#--user=}
+				;;
+			--secret=*)
+				SECRET=${1#--secret=}
+				;;
+			--linkname=*)
+				LINKNAME=${1#--name=}
+				;;
+			--mtu=*)
+				MTU=${1#--mtu=}
+				;;
+			--defaultroute=*)
+				value=${1#--defaultroute=}
+				if enabled value; then
+					DEFAULTROUTE=1
+				else
+					DEFAULTROUTE=0
+				fi
+				;;
+			--dns=*)
+				value=${1#--dns=}
+				if enabled value; then
+					PEERDNS=1
+				else
+					PEERDNS=0
+				fi
+				;;
+			--auth=*)
+				AUTH=${1#--auth=}
+				;;
+			*)
+				echo "Unknown option: $1" >&2
+				exit ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+}
+
+function _up() {
+	local zone=${1}
+	shift
+
+	assert isset zone
+
+	zone_config_read ${zone}
+
+	local port=$(zone_get_ports ${zone})
+
+	assert isset port
+
+	if ! port_exists ${port}; then
+		error_log "Parent device '${port}' does not exist. Cannot bring up zone '${zone}'."
+		exit ${EXIT_ERROR}
+	fi
+
+	# Creating necessary files
+	# XXX must be PPP_RUN
+	[ -d "${RED_RUN}/${LINKNAME}" ] || mkdir -p ${RED_RUN}/${LINKNAME}
+
+	# Setting up the device
+	zone_ports_up ${zone}
+
+	ppp_secret "${USER}" "${SECRET}"
+
+	# XXX AC and service on plugin command line
+
+	cat <<EOF >${RED_RUN}/${LINKNAME}/options
+# Naming options
+ifname ${zone}
+name ${LINKNAME}
+linkname ${LINKNAME}
+
+plugin ${PPPOE_PLUGIN} ${port}
+
+# User configuration
+user ${USER}
+
+$(enabled PEERDNS && echo "usepeerdns")
+$(enabled DEFAULTROUTE && echo "defaultroute")
+
+noauth
+$(isset AUTH && echo "require-${AUTH}")
+
+noipdefault
+
+# Maximum transmission/receive unit
+mtu ${MTU}
+mru ${MTU}
+
+# Disable the compression
+noccp noaccomp nodeflate nopcomp novj novjccomp nobsdcomp nomppe
+
+updetach debug
+EOF
+
+	pppd_exec file ${RED_RUN}/${LINKNAME}/options
+
+	local ret=$?
+
+	# Get exit code from ppp daemon and handle it:
+	case "${ret}" in
+		0)
+			log DEBUG "pppd detached successfully"
+			exit ${EXIT_OK}
+			;;
+	esac
+
+	error_log "pppd exited with unknown exit code '${ret}'"
+
+	exit ${EXIT_ERROR}
+}
+
+function _down() {
+	local zone=${1}
+	shift
+
+	# Kill pppd
+	# XXX very ugly
+	kill $(pppd_pid ${zone}) &>/dev/null
+
+	zone_ports_down ${zone}
+
+	exit ${EXIT_OK}
+}
+
+function _discover() {
+	local device=${1}
+
+	if [ "$(device_get_type ${device})" != "real" ]; then
+		exit ${EXIT_ERROR}
+	fi
+
+	local output
+	output=$(pppoe-discovery -I ${device} -U $(uuid) 2>&1)
+
+	# Exit if there was not output
+	[ -z "${output}" ] && exit ${DISCOVER_ERROR}
+
+	# Exit if PADI timed out
+	grep -q "Timeout" <<<${output} && exit ${DISCOVER_ERROR}
+
+	local ac
+	while read line; do
+		case "${line}" in
+			Access-Concentrator:*)
+				ac="${line#Access-Concentrator: }"
+				;;
+		esac
+	done <<<"${output}"
+
+	echo "ACCESS_CONCENTRATOR=\"$ac\""
+
+	exit ${DISCOVER_OK}
+}
+
+function _status() {
+	local zone=${1}
+
+	assert isset zone
+
+	cli_status_headline ${zone}
+
+	zone_config_read ${zone}
+
+	cli_headline "  Configuration:"
+	printf "${DEVICE_PRINT_LINE1}" "User:" "${USER}"
+	printf "${DEVICE_PRINT_LINE1}" "Secret:" "<hidden>"
+	echo
+	printf "${DEVICE_PRINT_LINE1}" "MTU:" "${MTU}"
+	printf "${DEVICE_PRINT_LINE1}" "Use default route?" "$(enabled DEFAULTROUTE && echo "enabled" || echo "disabled")"
+	printf "${DEVICE_PRINT_LINE1}" "Use peer DNS?" "$(enabled PEERDNS && echo "enabled" || echo "disabled")"
+	echo
+	cli_headline "  Ports:"
+	zone_ports_status ${zone}
+	if [ -z "$(zone_get_ports ${zone})" ]; then
+		echo -e "    ${COLOUR_WARN}No ports attached. Won't be able to start.${COLOUR_NORMAL}"
+	fi
+
+	# Exit if zone is down
+	if ! zone_is_up ${zone}; then
+		echo # Empty line
+		exit ${EXIT_ERROR}
+	fi
+
+	# XXX display time since connection started
+
+	cli_headline "    Point-to-Point-over-Ethernet protocol:"
+	echo "        IP-Address            : $(red_db_get ${zone} local-ip-address)"
+	echo "        Gateway               : $(red_db_get ${zone} remote-ip-address)"
+	echo "        DNS-Server            : $(red_db_get ${zone} dns)"
+	echo
+	echo "        MAC-Remote            : $(red_db_get ${zone} remote-address)"
+	echo
+	echo "        MTU                   : $(device_get_mtu ${zone})"
+	echo # Empty line
+	exit ${EXIT_OK}
+}
+
+function _port_add() {
+	local zone=${1}
+	local port=${2}
+	shift 2
+
+	if [ $(listlength $(zone_get_ports ${zone})) -ge 1 ]; then
+		error "This hook only supports one port at a time."
+		error "Please remove any existant port(s) and try again."
+		exit ${EXIT_ERROR}
+	fi
+
+	_port_cmd add ${zone} ${port} $@
+
+	exit ${EXIT_OK}
+}
+
+run $@

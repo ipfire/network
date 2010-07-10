@@ -19,94 +19,72 @@
 #                                                                             #
 ###############################################################################
 
-function ppp_init() {
-	mkdir -p /var/run/ppp 2>/dev/null
+function routing_has_default() {
+	ip route | grep -q "^default"
 }
 
-function ppp_common_ip_pre_up() {
-	local zone=${1}
-	shift
+function routing_default_update() {
+	local zone
+	local routes
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
+	local gateway
+	local weight
 
-	red_db_from_ppp ${zone}
+	log INFO "Updating default route."
 
-	# Request firewall reload
-	event_firewall_reload
+	for zone in $(zones_get_nonlocal); do
+		# Skip if zone is not up
+		red_db_exists ${zone} || continue
 
-	return ${EXIT_OK}
-}
+		if [ "$(red_db_get ${zone} active)" = "1" ]; then
+			gateway=$(red_db_get ${zone} remote-ip-address)
+			weight=$(red_db_get ${zone} weight)
 
-function ppp_common_ip_up() {
-	local zone=${1}
-	shift
-
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	red_db_set ${zone} active 1
-	red_routing_update ${zone}
-
-	# Emit interface-up event
-	event_interface_up ${zone}
-
-	return ${EXIT_OK}
-}
-
-function ppp_common_ip_down() {
-	local zone=${1}
-	shift
-
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	# Save accounting information
-	ppp_accounting ${zone}
-
-	# Emit interface-up event
-	event_interface_down ${zone}
-
-	return ${EXIT_OK}
-}
-
-function ppp_secret() {
-	local USER=${1}
-	local SECRET=${2}
-	local a
-	local secret
-	local user
-
-	# Updateing secret file
-	> ${PPP_SECRETS}.tmp
-	while read user a secret; do
-		if [ "'${USER}'" != "${user}" ]; then
-			echo "${user} ${a} ${secret}" >> ${PPP_SECRETS}.tmp
+			routes="${routes} nexthop via ${gateway}"
+			
+			if [ -n "${weight}" ]; then
+				routes="${routes} weight ${weight}"
+			fi
+		else
+			log DEBUG "Ignoring zone '${zone}' which is not active."
 		fi
-	done < ${PPP_SECRETS}
-	echo "'${USER}' * '${SECRET}'" >> ${PPP_SECRETS}.tmp
-	cat ${PPP_SECRETS}.tmp > ${PPP_SECRETS}
-	rm -f ${PPP_SECRETS}.tmp
+	done
+
+	if [ -z "${routes}" ]; then
+		if routing_has_default; then
+			ip route del default
+		fi
+		return ${EXIT_OK}
+	fi
+
+	ip route replace default ${routes}
 }
 
-function ppp_accounting() {
+function routing_table_exists() {
 	local zone=${1}
-	shift
 
-	db_ppp_update ${zone} --duration="${CONNECT_TIME}" \
-		--rcvd="${BYTES_RCVD}" --sent="${BYTES_SENT}"
+	grep -q "${zone}$" < /etc/iproute2/rt_tables
 }
 
-function pppd_exec() {
-	ppp_init
+function routing_table_create() {
+	local zone=${1}
 
-	log DEBUG "Running pppd with parameters '$@'."
+	if ! zone_is_nonlocal ${zone}; then
+		error_log "Can only create routing tables for non-local zones."
+		return ${EXIT_ERROR}
+	fi
 
-	pppd $@ > /dev/null
+	if routing_table_exists ${zone}; then
+		return ${EXIT_OK}
+	fi
+
+	log INFO "Creating routing table for zone '${zone}'"
+
+	local id=$(( ${zone#red} + 1 ))
+
+	echo "${id}	${zone}" >> /etc/iproute2/rt_tables
+}
+
+function routing_table_remove() {
+	: # XXX do we need this?
 }
