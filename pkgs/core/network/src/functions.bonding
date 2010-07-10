@@ -27,12 +27,11 @@ function bonding_init() {
 	fi
 }
 
+init_register bonding_init
+
 function bonding_create() {
 	local device=${1}
 	local mac=${2}
-
-	# Make sure the bonding is initialized
-	bonding_init
 
 	[ -z "${mac}" ] && mac=$(mac_generate)
 
