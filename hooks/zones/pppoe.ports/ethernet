@@ -21,17 +21,6 @@
 
 . /lib/network/header-port
 
-HOOK_SETTINGS="COST PRIORITY"
-
-function _check() {
-	local i
-	for i in COST PRIORITY; do
-		if isset ${i}; then
-			assert isinteger ${i}
-		fi
-	done
-}
-
 function _add() {
 	local zone=${1}
 	local port=${2}
@@ -45,27 +34,37 @@ function _add() {
 		exit ${EXIT_ERROR}
 	fi
 
-	config_read $(zone_dir ${zone})/ports/${port}
-
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--priority=*)
-				PRIORITY=${1#--priority=}
-				;;
-			--cost=*)
-				COST=${1#--cost=}
-				;;
-		esac
-		shift
-	done
-
-	config_write $(zone_dir ${zone})/ports/${port} ${HOOK_SETTINGS}
+	touch $(zone_dir ${zone})/ports/${port}
 
 	exit ${EXIT_OK}
 }
 
 function _edit() {
 	_add $@
+}
+
+function _rem() {
+	local zone=${1}
+	local port=${2}
+	shift 2
+
+	assert isset zone
+	assert isset port
+
+	if ! listmatch ${port} $(zone_get_ports ${zone}); then
+		error "Port '${port}' does not belong to '${zone}'."
+		error "Won't remove anything."
+		exit ${EXIT_ERROR}
+	fi
+
+	warning "Removing port '${port}' from '${zone}' will shutdown the zone."
+
+	# Shut down this zone
+	zone_down ${zone}
+
+	rm -f $(zone_dir ${zone})/ports/${port}
+
+	exit ${EXIT_OK}
 }
 
 function _up() {
@@ -80,13 +79,6 @@ function _up() {
 
 	port_up ${port}
 
-	# Set same MTU to device that the bridge has got
-	device_set_mtu ${port} $(device_get_mtu ${zone})
-
-	bridge_attach_device ${zone} ${port}
-
-	# XXX must set cost and prio here
-
 	exit ${EXIT_OK}
 }
 
@@ -100,8 +92,6 @@ function _down() {
 	assert zone_exists ${zone}
 	assert port_exists ${port}
 
-	bridge_detach_device ${zone} ${port}
-
 	port_down ${port}
 
 	exit ${EXIT_OK}
@@ -112,17 +102,11 @@ function _status() {
 	local port=${2}
 
 	printf "        %-10s - " "${port}"
-	if ! device_is_up ${port}; then
-		echo -ne "${COLOUR_DOWN}   DOWN   ${COLOUR_NORMAL}"
+	if device_is_up ${port}; then
+		echo -ne "${COLOUR_UP}    UP    ${COLOUR_NORMAL}"
 	else
-		local state=$(stp_port_state ${zone} ${port})
-		local colour="COLOUR_STP_${state}"
-		printf "${!colour}%10s${COLOUR_NORMAL}" ${state}
-
-		echo -n " - DSR: $(stp_port_designated_root ${zone} ${port})"
-		echo -n " - Cost: $(stp_port_pathcost ${zone} ${port})"
+		echo -ne "${COLOUR_DOWN}   DOWN   ${COLOUR_NORMAL}"
 	fi
-
 	echo
 
 	exit ${EXIT_OK}

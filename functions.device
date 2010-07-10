@@ -637,6 +637,8 @@ function device_virtual_get_by_parent_and_vid() {
 	local v_id
 	local v_parent
 
+	assert [ -e "/proc/net/vlan/config" ]
+
 	fgrep '|' < /proc/net/vlan/config | tr -d '|' | \
 		while read v_port v_id v_parent; do
 			if [ "${v_parent}" = "${parent}" ] && [ "${v_id}" = "${vid}" ]; then
