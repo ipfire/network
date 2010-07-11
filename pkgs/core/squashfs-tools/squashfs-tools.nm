@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = squashfs-tools
-PKG_VER        = 4.0
+PKG_VER        = 4.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,25 +34,22 @@ PKG_URL        = http://squashfs.sf.net/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Utility for the creation of squashfs filesystems.
 
-PKG_BUILD_DEPS+= zlib
+PKG_DEPS      += xz zlib
 
 define PKG_DESCRIPTION
 	Squashfs is a highly compressed read-only filesystem for Linux.
 endef
 
-PKG_BUILD_DEPS += zlib
+PKG_TARBALL    = squashfs-$(PKG_VER).tar.gz
 
-PKG_TARBALL    = squashfs$(PKG_VER).tar.gz
+DIR_APP        = $(DIR_SRC)/squashfs/squashfs-tools
 
 define STAGE_BUILD
-		mv /usr/src/squashfs4.0 $(DIR_APP)
-		cd $(DIR_APP)/$(PKG_NAME) && sed -e "s/^CFLAGS := /& $(CFLAGS) /" -i Makefile
-		$(DO_FIX_LIBTOOL)
-		cd $(DIR_APP)/$(PKG_NAME) && make $(PARALLELISMFLAGS)
+		cd $(DIR_APP) && make $(PARALLELISMFLAGS) RPM_OPT_FLAGS="$(CFLAGS)"
 endef
 
 define STAGE_INSTALL
 		-mkdir -pv $(BUILDROOT)/usr/bin
-		cd $(DIR_APP)/$(PKG_NAME) && install -m 755 mksquashfs $(BUILDROOT)/usr/bin
-		cd $(DIR_APP)/$(PKG_NAME) && install -m 755 unsquashfs $(BUILDROOT)/usr/bin
+		cd $(DIR_APP) && install -m 755 mksquashfs $(BUILDROOT)/usr/bin
+		cd $(DIR_APP) && install -m 755 unsquashfs $(BUILDROOT)/usr/bin
 endef
