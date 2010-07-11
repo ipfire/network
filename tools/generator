@@ -56,7 +56,7 @@ install_kernel() {
 		return 1
 	fi
 
-	cp -f /boot/${DISTRO_SNAME}kernel-${release} ${dest}/${DISTRO_SNAME}0
+	cp -f /boot/vmlinuz-${release} ${dest}/${DISTRO_SNAME}0
 
 	# Create liveramfs
 	${MKLIVERAMFS} -v --with-net -f ${dest}/initrd0 ${release}
