@@ -60,11 +60,11 @@ function _create() {
 	local zone=${1}
 	shift
 
-	config_read ${ZONE_DIR}/${zone}/settings
+	config_read $(zone_dir ${zone})/settings
 
 	_parse_cmdline $@
 
-	config_write ${ZONE_DIR}/${zone}/settings ${HOOK_SETTINGS}
+	config_write $(zone_dir ${zone})/settings ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
@@ -113,7 +113,7 @@ function _port() {
 	local ret
 
 	case "${action}" in
-		create|edit|rem|show)
+		add|create|edit|rem|show)
 			_port_${action} ${zone} $@
 			ret=$?
 			;;
@@ -126,42 +126,58 @@ function _port() {
 	exit ${ret}
 }
 
-# This function is not a public one
-function __portcmd() {
-	local cmd=${1}
-	local zone=${2}
-	local hook_port=${3}
-	shift 3
-
-	local hook_zone=$(zone_get_hook ${zone})
-
-	if ! hook_zone_exists ${hook_zone}; then
-		error "Hook '${hook}' does not exist."
-		exit ${EXIT_ERROR}
-	fi
-
-	if ! hook_zone_port_exists ${hook_zone} ${hook_port}; then
-		error "Hook '${hook_port}' is not supported for zone '${zone}'."
-		exit ${EXIT_ERROR}
-	fi
-
-	hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} $@
-}
-
-function _port_create() {
-	__portcmd create $@
+function _port_add() {
+	_port_cmd add $@
 }
 
 function _port_edit() {
-	__portcmd edit $@
+	_port_cmd edit $@
 }
 
 function _port_rem() {
-	_notimplemented _port_rem
+	_port_cmd rem $@
 }
 
 function _port_show() {
 	_notimplemented _port_show
+}
+
+function _port_status() {
+	_port_cmd status $@
+}
+
+function _port_cmd() {
+	local cmd=${1}
+	local zone=${2}
+	local port=${3}
+	shift 3
+
+	assert isset cmd
+	assert isset zone
+	assert isset port
+
+	local hook_zone=$(zone_get_hook ${zone})
+	local hook_port=$(port_get_hook ${port})
+
+	assert isset hook_zone
+	assert isset hook_port
+
+	if ! listmatch ${hook_port} $(zone_get_supported_hooks ${zone}); then
+		error_log "Zone '${zone}' does not support port of type '${hook_port}'."
+		exit ${EXIT_ERROR}
+	fi
+
+	hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} ${port} $@
+
+	exit $?
+}
+
+function _port_up() {
+	_port_cmd up $@
+}
+
+function _port_down() {
+	_port_cmd down $@
 }
 
 function _config() {
@@ -266,8 +282,11 @@ function _ppp-ip-down() {
 }
 
 function run() {
+	# Replace all dashes by an underscore
+	#action=${action//-/_}
+
 	case "${action}" in
-		create|discover|down|edit|info|rem|status|up)
+		create|discover|down|edit|info|rem|status|up|port_add|port_rem|port_up|port_down|port_status)
 			_${action} $@
 			;;
 

@@ -39,11 +39,11 @@ done
 
 function run() {
 	case "${action}" in
-		create|rem|up|down|status)
+		add|create|rem|up|down|status)
 			_${action} $@
 			;;
 	esac
 
-	error "Port hook '${HOOK}' didn't exit properly."
+	error "Device hook '${HOOK}' didn't exit properly."
 	exit ${EXIT_ERROR}
 }
