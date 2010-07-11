@@ -89,6 +89,7 @@ make_installer() {
 	done
 	install -dv -m 1777 tmp var/tmp
 
+	# XXX add -comp lzma here when kernel supports it
 	mksquashfs * ${dest}/installer.sfs -no-progress
 
 	popd
