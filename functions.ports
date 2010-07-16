@@ -93,6 +93,10 @@ function port_destroy() {
 	rm -f $(port_file ${port})
 }
 
+function port_remove() {
+	port_destroy $@
+}
+
 function port_edit() {
 	port_cmd edit $@
 }
@@ -127,4 +131,14 @@ function port_cmd() {
 	assert isset hook
 
 	hook_exec port ${hook} ${cmd} ${port} $@
+}
+
+function ports_get() {
+	local port
+	for port in $(port_dir)/*; do
+		port=$(basename ${port})
+		if port_exists ${port}; then
+			echo "${port}"
+		fi
+	done
 }
