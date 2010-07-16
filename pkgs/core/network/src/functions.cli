@@ -310,6 +310,49 @@ function cli_status() {
 	done
 }
 
+function cli_reset() {
+	if cli_help_requested $@; then
+		cli_usage root-reset
+		exit ${EXIT_OK}
+	fi
+
+	warning_log "Will reset the whole network configuration!!!"
+
+	# Force mode is disabled by default
+	local force=0
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--force|-f)
+				force=1
+				;;
+		esac
+		shift
+	done 
+
+	# If we are not running in force mode, we ask the user if he does know
+	# what he is doing.
+	if ! enabled force; then
+		if ! cli_yesno "Do you really want to reset the whole network configuration?"; then
+			exit ${EXIT_ERROR}
+		fi
+	fi
+
+	local zone
+	for zone in $(zones_get --all); do
+		zone_remove ${zone}
+	done
+
+	local port
+	for port in $(ports_get --all); do
+		port_remove ${port}
+	done
+
+	# XXX recreate ethernet ports
+
+	exit ${EXIT_OK}
+}
+
 function cli_help_requested() {
 	local argument
 	for argument in ${1}; do
@@ -349,6 +392,16 @@ function cli_usage() {
 			echo    "  You can overwrite the settings like the following:"
 			echo
 			echo    "    ${0} ${what#root-} DEBUG=1 ..."
+			echo
+			;;
+		root-reset)
+			echo    "${0}: ${what#root-} [--force | -f]"
+			echo
+			echo    "  This command resets the network configuration."
+			echo
+			echo    "  Will delete all zones and ports."
+			echo
+			echo -e "  ${COLOUR_RED}USE WITH CAUTION!${COLOUR_NORMAL}"
 			echo
 			;;
 		root-start|root-stop|root-restart)
@@ -435,4 +488,19 @@ function cli_status_headline() {
 function cli_headline() {
 	echo
 	echo -e "${COLOUR_BOLD}$@${COLOUR_NORMAL}"
+}
+
+function cli_yesno() {
+	local message="$@ [y/N] "
+	local yesno
+
+	echo
+	echo -ne "${message}"
+	read yesno
+
+	if listmatch ${yesno} y Y j J yes YES Yes; then
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
 }
