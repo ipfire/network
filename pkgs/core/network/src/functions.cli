@@ -354,12 +354,13 @@ function cli_reset() {
 }
 
 function cli_help_requested() {
-	local argument
-	for argument in ${1}; do
-		if [ "${argument}" = "help" -o "${argument}" = "-h" -o "${argument}" = "--help" ]; then
+	local argument="${1}"
+
+	if [ -n "${argument}" ]; then
+		if listmatch ${argument} help -h --help; then
 			return ${EXIT_OK}
 		fi
-	done
+	fi
 
 	return ${EXIT_ERROR}
 }
