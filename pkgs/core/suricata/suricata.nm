@@ -54,6 +54,6 @@ CONFIGURE_OPTIONS += \
 
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/etc/logrotate.d/
-	cp -vf $(DIR_SOURCE)/suricata.logrotate $(BUILDROOT)/etc/logrotate.d/	
+	cp -vf $(DIR_SOURCE)/suricata.logrotate $(BUILDROOT)/etc/logrotate.d/$(PKG_NAME)
 endef
 
