@@ -35,7 +35,9 @@ PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = Open Source Next Generation Intrusion Detection and Prevention Engine.
 
 PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += libnfnetlink libnetfilter_queue libnet libpcap libyaml pcre
+PKG_DEPS      += libcap-ng libnfnetlink libnetfilter_queue libnet libpcap libyaml pcre
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 define PKG_DESCRIPTION
 	The suricata engine is not intended to just replace or emulate the \
@@ -49,3 +51,9 @@ CONFIGURE_OPTIONS += \
 	--enable-gccprotect \
 	--enable-nfqueue \
 	--disable-static
+
+define STAGE_INSTALL_CMDS
+	-mkdir -pv $(BUILDROOT)/etc/logrotate.d/
+	cp -vf $(DIR_SOURCE)/suricata.logrotate $(BUILDROOT)/etc/logrotate.d/	
+endef
+
