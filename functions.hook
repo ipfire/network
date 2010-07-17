@@ -157,7 +157,7 @@ function hook_zone_get_all() {
 	for hook in $(hook_dir zone)/*; do
 		hook=$(basename ${hook})
 		hook_zone_exists ${hook} && echo "${hook}"
-	done | sort
+	done
 }
 
 function hook_zone_ports_get_all() {
@@ -173,9 +173,11 @@ function hook_zone_ports_get_all() {
 		h=$(basename ${h})
 		## XXX executeable?
 		echo "${h}"
-	done | sort
+	done
 }
 
 function hook_device_exists() {
+	warning_log "Deprecated function called hook_device_exists"
+
 	hook_exists device $@
 }
