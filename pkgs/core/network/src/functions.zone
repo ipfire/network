@@ -98,8 +98,8 @@ function zone_create() {
 
 	mkdir -p $(zone_dir ${zone})
 
-	# Create directory for ports
-	mkdir -p $(zone_dir ${zone})/ports
+	# Create directories for configs and ports
+	mkdir -p $(zone_dir ${zone})/{configs,ports}
 
 	hook_zone_exec ${hook} create ${zone} $@
 	local ret=$?
@@ -321,6 +321,7 @@ function zone_get_ports() {
 	done
 }
 
+# XXX overwritten some lines below
 function zone_config() {
 	local zone=${1}
 	shift
@@ -343,6 +344,47 @@ function zone_config() {
 	fi
 
 	hook_zone_exec ${hook} config ${zone} $@
+}
+
+function zone_config() {
+	local zone=${1}
+	local action=${2}
+	shift 2
+
+	assert isset zone
+	assert isset action
+	assert zone_exists ${zone}
+
+	# Aliases
+	case "${action}" in
+		del|delete|remove)
+			action="rem"
+			;;
+	esac
+
+	case "${action}" in
+		create|edit|rem)
+			zone_config_${action} ${zone} $@
+			;;
+		*)
+			error "Unrecognized argument: ${action}"
+			cli_usage root-zone-config-subcommands
+			exit ${EXIT_ERROR}
+			;;
+	esac
+}
+
+function zone_config_create() {
+	local zone=${1}
+	shift
+
+	assert isset zone
+
+	local hook=$(zone_get_hook ${zone})
+
+	assert isset hook
+
+	hook_zone_exec ${hook} config_create ${zone} $@
 }
 
 function zone_show() {
@@ -437,7 +479,7 @@ function zone_ports_list() {
 	local zone=${1}
 
 	local port
-	for port in $(zone_dir ${zone})/port.*; do
+	for port in $(zone_dir ${zone})/ports/*; do
 		[ -e "${port}" ] || continue
 
 		echo $(basename ${port})
@@ -479,7 +521,7 @@ function zone_configs_list() {
 	local zone=${1}
 
 	local config
-	for config in $(zone_dir ${zone})/config.*; do
+	for config in $(zone_dir ${zone})/configs/*; do
 		[ -e "${config}" ] || continue
 
 		echo $(basename ${config})
@@ -496,7 +538,7 @@ function zone_configs_cmd() {
 	local hook_config
 	local config
 	for config in $(zone_configs_list ${zone}); do
-		hook_config=$(config_get_hook $(zone_dir ${zone})/${config})
+		hook_config=$(config_get_hook $(zone_dir ${zone})/configs/${config})
 
 		hook_zone_config_exec ${hook_zone} ${hook_config} ${cmd} ${zone} ${config} $@
 	done
@@ -508,6 +550,10 @@ function zone_configs_up() {
 
 function zone_configs_down() {
 	zone_configs_cmd down $@
+}
+
+function zone_configs_status() {
+	zone_configs_cmd config_status $@
 }
 
 function zone_has_ipv4() {
@@ -540,12 +586,20 @@ function zone_is_down() {
 	! zone_is_up $@
 }
 
-function zone_get_supported_hooks() {
+function zone_get_supported_port_hooks() {
 	local zone=${1}
 
 	local hook=$(zone_get_hook ${zone})
 
 	hook_zone_ports_get_all ${hook}
+}
+
+function zone_get_supported_config_hooks() {
+	local zone=${1}
+
+	local hook=$(zone_get_hook ${zone})
+
+	hook_zone_configs_get_all ${hook}
 }
 
 function zone_file() {

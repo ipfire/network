@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/header-port
+. /lib/network/header-config
 
 HOOK_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
 
@@ -59,7 +59,8 @@ function _create() {
 		PREFIX=$(ipv4_mask_to_cidr ${NETMASK})
 	fi
 
-	config_write $(zone_dir ${zone})/config.${HOOK}.$(uuid) ${HOOK_SETTINGS}
+	# XXX maybe we can add some hashing to identify a configuration again
+	config_write $(zone_dir ${zone})/configs/${HOOK}.$(uuid) ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
@@ -73,8 +74,8 @@ function _up() {
 		error "Zone '${zone}' doesn't exist."
 		exit ${EXIT_ERROR}
 	fi
-	
-	config_read $(zone_dir ${zone})/${config}
+
+	config_read $(zone_dir ${zone})/configs/${config}
 
 	if ! zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
 		ip addr add ${ADDRESS}/${PREFIX} dev ${zone}
@@ -99,7 +100,7 @@ function _down() {
 		exit ${EXIT_ERROR}
 	fi
 	
-	config_read $(zone_dir ${zone})/${config}
+	config_read $(zone_dir ${zone})/configs/${config}
 
 	if zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
 		ip addr del ${ADDRESS}/${PREFIX} dev ${zone}
@@ -118,13 +119,13 @@ function _status() {
 		exit ${EXIT_ERROR}
 	fi
 	
-	config_read $(zone_dir ${zone})/${config}
+	config_read $(zone_dir ${zone})/configs/${config}
 
 	printf "        %10s - " "${HOOK}"
 	if zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
-		echo -ne "${COLOUR_OK} OK  ${COLOUR_NORMAL}"
+		echo -ne "${COLOUR_ENABLED}ENABLED ${COLOUR_NORMAL}"
 	else
-		echo -ne "${COLOUR_ERROR}ERROR${COLOUR_NORMAL}"
+		echo -ne "${COLOUR_DISABLED}DISABLED${COLOUR_NORMAL}"
 	fi
 	echo " - ${ADDRESS}/${PREFIX}"
 

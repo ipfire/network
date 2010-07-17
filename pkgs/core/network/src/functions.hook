@@ -63,6 +63,7 @@ function config_get_hook() {
 	local config=${1}
 
 	assert isset config
+	assert [ -e "${config}" ]
 
 	(
 		. ${config}
@@ -137,6 +138,9 @@ function hook_zone_config_exec() {
 	local hook_config=${2}
 	shift 2
 
+	assert isset hook_zone
+	assert isset hook_config
+
 	if ! hook_zone_exists ${hook_zone}; then
 		error "Hook '${hook_zone}' does not exist."
 		return ${EXIT_ERROR}
@@ -168,10 +172,40 @@ function hook_zone_ports_get_all() {
 		return ${EXIT_ERROR}
 	fi
 
+	# If the zone hook has got no ports we exit silently
+	if ! hook_zone_has_ports ${hook}; then
+		return ${EXIT_OK}
+	fi
+
 	local h
 	for h in $(hook_dir zone)/${hook}.ports/*; do
 		h=$(basename ${h})
-		## XXX executeable?
-		echo "${h}"
+		if hook_zone_port_exists ${hook} ${h}; then
+			echo "${h}"
+		fi
 	done
+}
+
+function hook_zone_configs_get_all() {
+	local hook=${1}
+
+	if ! hook_exists zone ${hook}; then
+		error "Hook '${hook}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	# If the zone hook has got no configurations we exit silently
+	if ! hook_zone_has_configs ${hook}; then
+		return ${EXIT_OK}
+	fi
+
+	local h
+	for h in $(hook_dir zone)/${hook}.configs/*; do
+		h=$(basename ${h})
+		if hook_zone_config_exists ${hook} ${h}; then
+			echo "${h}"
+		fi
+	done
+
+	return ${EXIT_OK}
 }

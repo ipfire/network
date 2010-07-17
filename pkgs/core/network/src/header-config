@@ -39,11 +39,11 @@ done
 
 function run() {
 	case "${action}" in
-		add|create|rem|up|down|status)
+		edit|create|rem|up|down|status)
 			_${action} $@
 			;;
 	esac
 
-	error "Device hook '${HOOK}' didn't exit properly."
+	error "Config hook '${HOOK}' didn't exit properly."
 	exit ${EXIT_ERROR}
 }

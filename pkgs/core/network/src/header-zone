@@ -162,7 +162,7 @@ function _port_cmd() {
 	assert isset hook_zone
 	assert isset hook_port
 
-	if ! listmatch ${hook_port} $(zone_get_supported_hooks ${zone}); then
+	if ! listmatch ${hook_port} $(zone_get_supported_port_hooks ${zone}); then
 		error_log "Zone '${zone}' does not support port of type '${hook_port}'."
 		exit ${EXIT_ERROR}
 	fi
@@ -224,7 +224,25 @@ function __configcmd() {
 }
 
 function _config_create() {
-	__configcmd create $@
+	local zone=${1}
+	local hook_config=${2}
+	shift 2
+
+	assert isset zone
+	assert isset hook_config
+	assert zone_exists ${zone}
+
+	if ! listmatch ${hook_config} $(zone_get_supported_config_hooks ${zone}); then
+		error_log "Zone '${zone}' does not support configuration of type '${hook_config}'."
+		exit ${EXIT_ERROR}
+	fi
+
+	local hook_zone=$(zone_get_hook ${zone})
+	assert isset hook_zone
+
+	hook_zone_config_exec ${hook_zone} ${hook_config} create ${zone} $@
+
+	exit $?
 }
 
 function _config_edit() {
@@ -286,32 +304,29 @@ function run() {
 	#action=${action//-/_}
 
 	case "${action}" in
-		create|discover|down|edit|info|rem|status|up|port_add|port_rem|port_up|port_down|port_status)
+		# Main functions
+		create|discover|down|edit|info|rem|status|up)
 			_${action} $@
 			;;
 
-		port)
-			if ! hook_zone_has_ports ${HOOK}; then
-				error "Hook '${HOOK}' does not support ports."
-				exit ${EXIT_ERROR}
-			fi
-
-			_port $@
+		# Port callbacks
+		port_add|port_rem|port_up|port_down|port_status)
+			_${action} $@
 			;;
 
-		config)
-			if ! hook_zone_has_configs ${HOOK}; then
-				error "Hook '${HOOK}' does not support configurations."
-				exit ${EXIT_ERROR}
-			fi
-
-			_config $@
+		# Configuration callbacks
+		config_create)
+			_${action} $@
 			;;
 
+		# ppp daemon callbacks
 		ppp-ip-pre-up|ppp-ip-up|ppp-ip-down)
 			_${action} $@
 			;;
 
+		*)
+			error "Unknown action: ${action}"
+			;;		
 	esac
 
 	error "Hook did not exit properly."
