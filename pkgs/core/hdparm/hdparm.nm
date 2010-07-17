@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = hdparm
-PKG_VER        = 9.27
+PKG_VER        = 9.29
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -42,16 +42,9 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_BUILD
-	# fix sgio.c failur
-	cd $(DIR_APP) && mv sgio.c sgio.c.orig
-	cd $(DIR_APP) && grep -v "#include <scsi/scsi.h>" sgio.c.orig > sgio.c
-	cd $(DIR_APP) && sed -i -e "s/-O2/$(CFLAGS)/g" Makefile
-	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
+	$(DO_FIX_LIBTOOL)
+	cd $(DIR_APP) && CFLAGS="$(CFLAGS)" make $(PARALELLIAMFLAGS) LDFLAGS= 
 endef
 
 define STAGE_INSTALL
