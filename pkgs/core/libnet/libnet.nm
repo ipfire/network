@@ -1,0 +1,48 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = libnet
+PKG_VER        = 1.1.4
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.sourceforge.net/projects/libnet-dev/
+PKG_LICENSE    = BSD
+PKG_SUMMARY    = C library for portable packet creation and injection.
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+define PKG_DESCRIPTION
+Libnet is an API to help with the construction and handling of \
+	network packets. It provides a portable framework for low-level \
+	network packet writing and handling (use libnet in conjunction \
+	with libpcap and you can write some really cool stuff). Libnet \
+	includes packet creation at the IP layer and at the link layer \
+	as well as a host of supplementary and complementary functionality. 
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz

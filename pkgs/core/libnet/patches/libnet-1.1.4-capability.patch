@@ -1,0 +1,45 @@
+Patch by Robert Scheck <robert@fedoraproject.org> for libnet >= 1.1.4, which backports
+capability support instead of explicitly checking for UID 0. Further information can be
+found at the following links:
+
+ - https://bugzilla.redhat.com/show_bug.cgi?id=589770
+ - http://github.com/sam-github/libnet/commit/671742244c20804c9e935326e3649dac3382f17a
+
+--- libnet-1.1.4/src/libnet_init.c			2009-06-05 02:31:44.000000000 +0200
++++ libnet-1.1.4/src/libnet_init.c.capability		2010-07-09 22:57:10.000000000 +0200
+@@ -44,14 +44,7 @@
+ {
+     libnet_t *l = NULL;
+ 
+-#if !defined(__WIN32__)
+-    if (getuid() && geteuid())
+-    {
+-        snprintf(err_buf, LIBNET_ERRBUF_SIZE,
+-                "%s(): UID or EUID of 0 required\n", __func__);
+-        goto bad;
+-    }
+-#else
++#if defined(__WIN32__)
+     WSADATA wsaData;
+ 
+     if ((WSAStartup(0x0202, &wsaData)) != 0)
+--- libnet-1.1.4/src/libnet_link_linux.c		2009-06-05 02:31:44.000000000 +0200
++++ libnet-1.1.4/src/libnet_link_linux.c.capability	2010-07-09 22:58:33.000000000 +0200
+@@ -90,8 +90,15 @@
+ 
+     if (ioctl(l->fd, SIOCGIFHWADDR, &ifr) < 0 )
+     {
+-        snprintf(l->err_buf, LIBNET_ERRBUF_SIZE,
+-                "SIOCGIFHWADDR: %s", strerror(errno));
++        if (errno == EPERM) {
++            snprintf(l->err_buf, LIBNET_ERRBUF_SIZE,
++                     "%s(): UID/EUID 0 or capability CAP_NET_RAW required",
++                     __func__);
++
++        } else {
++            snprintf(l->err_buf, LIBNET_ERRBUF_SIZE,
++                     "socket: %s", strerror(errno));
++        }
+         goto bad;
+     }
+ 
