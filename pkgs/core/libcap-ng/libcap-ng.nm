@@ -24,36 +24,30 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = suricata
-PKG_VER        = 1.0.0
+PKG_NAME       = libcap-ng
+PKG_VER        = 0.6.4
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = Networking/IDS
-PKG_URL        = http://www.openinfosecfoundation.org/
-PKG_LICENSE    = GPLv2
-PKG_SUMMARY    = Open Source Next Generation Intrusion Detection and Prevention Engine.
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://people.redhat.com/sgrubb/libcap-ng
+PKG_LICENSE    = LGPLv2+
+PKG_SUMMARY    = An alternate posix capabilities library.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += libcap-ng libnfnetlink libnetfilter_queue libnet libpcap libyaml pcre
+PKG_DEPS      += attr kernel-headers python
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 define PKG_DESCRIPTION
-	The suricata engine is not intended to just replace or emulate the \
-	existing tools in the industry, but provides new ideas and \
-	technologies. 
+	Libcap-ng is a library that makes using posix capabilities \
+	easier. 
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += \
-	--enable-gccprotect \
-	--enable-nfqueue \
-	--disable-static
+#CONFIGURE_OPTIONS += \
 
-define STAGE_INSTALL_CMDS
-	-mkdir -pv $(BUILDROOT)/etc/logrotate.d/
-	cp -vf $(DIR_SOURCE)/suricata.logrotate $(BUILDROOT)/etc/logrotate.d/	
-endef
-
+# XXX Testsuite is broken by the package developers
+#define STAGE_TEST
+#	cd $(DIR_APP) && make check
+#endef
