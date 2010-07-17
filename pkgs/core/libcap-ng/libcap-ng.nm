@@ -1,0 +1,53 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = libcap-ng
+PKG_VER        = 0.6.4
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://people.redhat.com/sgrubb/libcap-ng
+PKG_LICENSE    = LGPLv2+
+PKG_SUMMARY    = An alternate posix capabilities library.
+
+PKG_DEPS      += attr kernel-headers python
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+define PKG_DESCRIPTION
+	Libcap-ng is a library that makes using posix capabilities \
+	easier. 
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+#CONFIGURE_OPTIONS += \
+
+# XXX Testsuite is broken by the package developers
+#define STAGE_TEST
+#	cd $(DIR_APP) && make check
+#endef
