@@ -22,8 +22,6 @@
 umask 022
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
-exec &>/tmp/network.$(basename $0)
-
 # Give the variables we get passed by pppd an own namespace
 for i in IFNAME IPLOCAL IPREMOTE DNS1 DNS2 MACREMOTE; do
 	export PPP_${i}=${!i}
@@ -36,19 +34,11 @@ done
 ZONE=${PPP_IFNAME}
 
 assert isset ZONE
-
-if ! zone_exists ${ZONE}; then
-	error "Zone '${ZONE}' does not exist."
-	exit ${EXIT_ERROR}
-fi
+assert zone_exists ${ZONE}
 
 HOOK=$(zone_get_hook ${ZONE})
 
 assert isset HOOK
-
-if ! hook_zone_exists ${HOOK}; then
-	error "Hook '${HOOK}' does not exist."
-	exit ${EXIT_ERROR}
-fi
+assert hook_zone_exists ${HOOK}
 
 hook_zone_exec ${HOOK} ppp-$(basename ${0}) ${ZONE}
