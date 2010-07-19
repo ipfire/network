@@ -24,25 +24,41 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = libjpeg
-PKG_VER        = 8a
+PKG_NAME       = libjpeg-turbo
+PKG_VER        = 1.0.0
 PKG_REL        = 0
 
 PKG_MAINTAINER =
 PKG_GROUP      = System/Libraries
-PKG_URL        = http://www.ijg.org
-PKG_LICENSE    = IJG
-PKG_SUMMARY    = A library for manipulating JPEG image format files.
+PKG_URL        = http://sourceforge.net/projects/libjpeg-turbo
+PKG_LICENSE    = wxWidgets
+PKG_SUMMARY    = A MMX/SSE2 accelerated library for manipulating JPEG image files.
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+PKG_BUILD_DEPS+= autoconf automake libtool nasm
 
 define PKG_DESCRIPTION
-	The libjpeg package contains a library of functions for manipulating \
-	JPEG images, as well as simple client programs for accessing the \
-	libjpeg functions.
+	The libjpeg-turbo-utils package contains simple client programs for \
+	accessing the libjpeg functions. It contains cjpeg, djpeg, jpegtran,\
+	rdjpgcom and wrjpgcom. Cjpeg compresses an image file into JPEG format. \
+	Djpeg decompresses a JPEG file into a regular image file. Jpegtran \
+	can perform various useful transformations on JPEG files. Rdjpgcom \
+	displays any text comments included in a JPEG file. Wrjpgcom inserts \
+	text comments into a JPEG file.
 endef
 
-PKG_TARBALL    = jpegsrc.v$(PKG_VER).tar.gz
-
-DIR_APP        = /usr/src/jpeg-$(PKG_VER)
+PKG_TARBALL    = $(PKG_NAME)-$(PKG_VER).tar.gz
 
 CONFIGURE_OPTIONS += \
 	--enable-shared
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && autoreconf -vfi
+endef
+
+define STAGE_INSTALL_CMDS
+	# Remove non-versioned libjpegturbo.
+	rm -vf $(BUILDROOT)/usr/include/turbojpeg.h
+	rm -vf $(BUILDROOT)/usr/lib/libturbojpeg.so
+endef
