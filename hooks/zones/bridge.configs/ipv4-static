@@ -84,7 +84,13 @@ function _up() {
 	fi
 
 	if zone_is_nonlocal ${zone} && [ -n "${GATEWAY}" ]; then
-		: # XXX to be done
+		# Save configuration
+		red_db_set ${zone} type "${HOOK}"
+		red_db_set ${zone} local-ip-address ${ADDRESS}/${PREFIX}
+		red_db_set ${zone} remote-ip-address ${GATEWAY}
+		
+		red_db_set ${zone} active 1
+		red_routing_update ${zone}
 	fi
 
 	exit ${EXIT_OK}
