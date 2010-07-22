@@ -1,14 +1,12 @@
-# Begin ~/.bashrc
+# .bashrc
 
-# Personal aliases and functions.
+# User specific aliases and functions
 
-# Personal environment variables and startup programs should go in
-# ~/.bash_profile.  System wide environment variables and startup
-# programs are in /etc/profile.  System wide aliases and functions are
-# in /etc/bashrc.
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
 
-if [ -f "/etc/bashrc" ] ; then
-  source /etc/bashrc
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
 fi
-
-# End ~/.bashrc
