@@ -247,32 +247,17 @@ function device_set_address() {
 }
 
 function device_get() {
-	local from_config
-
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--from-config)
-				from_config=1
-				;;
-			--no-config)
-				from_config=0
-				;;
-		esac
-		shift
-	done
-
+	local device
 	local devices
 
-	if [ "${from_config}" != "0" ]; then
-		devices="${devices} $(device_config_list)"
-	fi
+	for device in ${SYS_CLASS_NET}/*; do
+		device=$(basename ${device})
 
-	if [ "${from_config}" != "1" ]; then
-		local device
-		for device in ${SYS_CLASS_NET}/*; do
-			devices="${devices} $(basename ${device})"
-		done
-	fi
+		# bonding_masters is no device
+		[ "${device}" = "bonding_masters" ] && continue
+
+		devices="${devices} ${device}"
+	done
 
 	echo ${devices}
 	return ${EXIT_OK}

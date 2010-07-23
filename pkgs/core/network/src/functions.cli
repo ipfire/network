@@ -348,7 +348,8 @@ function cli_reset() {
 		port_remove ${port}
 	done
 
-	# XXX recreate ethernet ports
+	# Re-run the initialization functions
+	init_run
 
 	exit ${EXIT_OK}
 }
