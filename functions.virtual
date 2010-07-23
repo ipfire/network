@@ -21,6 +21,17 @@
 
 function virtual_init() {
 	module_load 8021q
+
+	ebtables-restore <<EOF
+*filter
+:INPUT ACCEPT
+:FORWARD ACCEPT
+:OUTPUT ACCEPT
+
+*broute
+:BROUTING ACCEPT
+-A BROUTING -p 802_1Q -j DROP
+EOF
 }
 
 init_register virtual_init

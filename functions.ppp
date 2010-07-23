@@ -23,7 +23,7 @@ function ppp_init() {
 	mkdir -p /var/run/ppp 2>/dev/null
 }
 
-register_init ppp_init
+init_register ppp_init
 
 function ppp_common_ip_pre_up() {
 	local zone=${1}
