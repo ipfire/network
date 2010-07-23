@@ -19,6 +19,15 @@
 #                                                                             #
 ###############################################################################
 
+function stp_init() {
+	module_load stp
+
+	assert binary_exists brctl
+	assert binary_exists rstpctl
+}
+
+init_register stp_init
+
 # XXX Very slow thing, caching?
 function __rstpctl_cmd() {
 	local command=$@
@@ -250,4 +259,40 @@ function __stp_wrapper() {
 	local proto_version="rstp"
 
 	__${proto_version}_${func} $@
+}
+
+function stp_mode() {
+	: # XXX wanted
+}
+
+function stp_enable() {
+	local bridge=${1}
+
+	assert isset bridge
+	assert zone_exists ${bridge}
+
+	brctl stp ${bridge} on
+
+	local mode=$(zone_config_get ${bridge} STP_MODE)
+
+	case "${mode}" in
+		stp)
+			rstpctl setforcevers ${bridge} slow
+			;;
+		rstp)
+			rstpctl setforcevers ${bridge} normal
+			;;
+		*)
+			error_log "Unknown protocol version: ${mode}."
+			;;
+	esac
+}
+
+function stp_disable() {
+	local bridge=${1}
+
+	assert isset bridge
+	assert zone_exists ${bridge}
+
+	brctl stp ${bridge} off
 }
