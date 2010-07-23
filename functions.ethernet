@@ -1,15 +1,2 @@
 #!/bin/bash
 # XXX header missing
-
-function ethernet_device_print() {
-	local device=${1}
-
-	printf "${DEVICE_PRINT_LINE1}" "Address:" "$(device_get_address ${device})"
-	printf "${DEVICE_PRINT_LINE1}" "MTU:"     "$(device_get_mtu ${device})"
-}
-
-function real_device_print() {
-	warning_log "Deprecated function called: real_device_print"
-
-	ethernet_device_print $@
-}
