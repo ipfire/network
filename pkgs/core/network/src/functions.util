@@ -376,3 +376,13 @@ function module_load() {
 		modprobe ${module}
 	fi
 }
+
+function binary_exists() {
+	local binary=${1}
+
+	if [ -n "$(type -p ${binary})" ]; then
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
+}
