@@ -121,12 +121,6 @@ function device_has_virtuals() {
 	grep -q "${1}$" /proc/net/vlan/config
 }
 
-function device_is_vlan() { # XXX Compat function
-	log DEBUG "Deprecated function device_is_vlan() was used."
-
-	device_is_virtual $@
-}
-
 # Check if the device is a ppp device
 function device_is_ppp() {
 	local device=${1}
@@ -166,7 +160,7 @@ function device_is_real() {
 function device_get_type() {
 	local device=$(devicify ${1})
 
-	if device_is_vlan ${device}; then
+	if device_is_virtual ${device}; then
 		echo "vlan"
 
 	elif device_is_bonding ${device}; then
@@ -317,12 +311,6 @@ function device_get_free() {
 	echo "${destination}"
 }
 
-function device_rename() {
-	warning_log "Called deprecated function 'device_rename'"
-
-	device_set_name $@
-}
-
 function device_hash() {
 	local device=${1}
 
@@ -378,7 +366,7 @@ function device_set_parent_up() {
 	local parent
 
 	if device_is_virtual ${device}; then
-		parent=$(device_virtual_get_parent ${device})
+		parent=$(virtual_get_parent ${device})
 
 		device_is_up ${parent} && return ${EXIT_OK}
 
@@ -414,7 +402,7 @@ function device_set_parent_down() {
 	local parent
 
 	if device_is_virtual ${device}; then
-		parent=$(device_virtual_get_parent ${device})
+		parent=$(virtual_get_parent ${device})
 
 		device_is_up ${parent} || return ${EXIT_OK}
 

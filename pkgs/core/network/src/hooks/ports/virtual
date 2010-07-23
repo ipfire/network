@@ -103,7 +103,7 @@ function _up() {
 	config_read $(port_file ${port})
 
 	if ! device_exists ${port}; then
-		device_virtual_create ${DEVICE} ${DEVICE_VID} ${DEVICE_MAC}
+		virtual_create ${DEVICE} ${DEVICE_VID} ${DEVICE_MAC}
 	fi
 
 	exit ${EXIT_OK}
@@ -120,7 +120,7 @@ function _down() {
 		exit ${EXIT_OK}
 	fi
 
-	device_virtual_remove ${port}
+	virtual_remove ${port}
 
 	exit ${EXIT_OK}
 }
