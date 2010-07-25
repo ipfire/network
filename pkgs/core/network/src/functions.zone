@@ -643,3 +643,17 @@ function zone_config_set() {
 		zone_config_write ${zone}
 	)
 }
+
+function zone_config_get() {
+	local zone=${1}
+	local key=${2}
+
+	assert isset zone
+	assert isset key
+
+	(
+		zone_config_read ${zone}
+
+		echo "${!key}"
+	)
+}

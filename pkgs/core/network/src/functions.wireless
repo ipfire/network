@@ -1,0 +1,296 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+PHY_DIR="/sys/class/ieee80211"
+
+function phy_dir() {
+	local phy=${1}
+
+	echo "${PHY_DIR}/${phy}"
+}
+
+function phy_exists() {
+	local phy=${1}
+
+	[ -d "$(phy_dir ${phy})" ]
+}
+
+function phy_list() {
+	local phy
+	for phy in $(phy_dir)/*; do
+		phy=$(basename ${phy})
+		echo "${phy}"
+	done
+}
+
+function phy_get() {
+	local info=${1}
+
+	local phy
+
+	if listmatch ${info} $(phy_list); then
+		phy="${info}"
+	elif device_exists ${info}; then
+		info=$(device_get_address ${info})
+	fi
+
+	if [ -z "${phy}" ] && mac_is_valid ${info}; then
+		local i
+		for i in $(phy_list); do
+			if [ "${info}" = "$(phy_get_address ${i})" ]; then
+				phy=${i}
+				break
+			fi
+		done
+	fi
+
+	if [ -z "${phy}" ]; then
+		return ${EXIT_ERROR}
+	fi
+
+	echo "${phy}"
+	return ${EXIT_OK}
+}
+
+function phy_get_address() {
+	local phy=${1}
+
+	assert isset phy
+
+	cat $(phy_dir ${phy})/macaddress 2>/dev/null
+}
+
+function wireless_create() {
+	local device=${1}
+	local phy=$(phy_get ${2})
+	local type=${3}
+	local mac=${4}
+
+	assert isset device
+	assert isset phy
+	assert isset type
+
+	isset mac || mac=$(mac_generate)
+
+	assert phy_exists ${phy}
+	assert isoneof type managed __ap
+
+	iw phy ${phy} interface add ${device} type ${type}
+
+	if device_exists ${device}; then
+		device_set_address ${device} ${mac}
+	fi
+
+	device_set_up ${device}
+}
+
+function wireless_remove() {
+	local device=${1}
+
+	assert device_exists ${device}
+
+	device_set_down ${device}
+
+	iw dev ${device} del
+}
+
+function wireless_set_channel() {
+	local device=${1}
+	local channel=${2}
+
+	assert isset device
+	assert device_exists ${device}
+	assert isset channel
+
+	iw dev ${device} set channel ${channel} $@
+}
+
+function hostapd_init() {
+	mkdir -p $(hostapd_config_dir)
+}
+
+init_register hostapd_init
+
+function hostapd_config_dir() {
+	local device=${1}
+	
+	echo "${RUN_DIR}/hostapd/${device}"
+}
+
+function hostapd_config_write() {
+	local device=${1}
+	shift
+
+	assert device_exists ${device}
+
+	local broadcast_ssid
+	local channel
+	local country_code
+	local mode
+	local ssid
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--broadcast-ssid=*)
+				broadcast_ssid=${1#--broadcast-ssid=}
+				;;
+			--channel=*)
+				channel=${1#--channel=}
+				;;
+			--country-code=*)
+				country_code=${1#--country-code=}
+				;;
+			--mode=*)
+				mode=${1#--mode=}
+				;;
+			--ssid=*)
+				ssid=${1#--ssid=}
+				;;
+			*)
+				warning_log "Ignoring unknown argument '${1}'."
+				;;			
+		esac
+		shift
+	done
+
+	assert isset broadcast_ssid
+	assert isbool broadcast_ssid
+
+	assert isset channel
+	assert isinteger channel
+
+	assert isset country_code
+	assert isset mode
+	assert isset ssid
+
+	local ignore_broadcast_ssid
+	if enabled broadcast_ssid; then
+		ignore_broadcast_ssid="0"
+	else
+		ignore_broadcast_ssid="1"
+	fi
+
+	cat <<EOF
+### Hostapd configuration for ${device}
+
+# Interface configuration
+driver=nl80211
+interface=${device}
+
+# Wireless configuration
+channel=${channel}
+country_code=${country_code}
+hw_mode=${mode}
+ignore_broadcast_ssid=${ignore_broadcast_ssid}
+ssid=${ssid}
+
+# Logging options
+logger_syslog=-1
+logger_syslog_level=2
+logger_stdout=-1
+logger_stdout_level=2
+
+# Dump file
+dump_file=$(hostapd_config_dir ${device}/dump
+
+ctrl_interface=/var/run/hostapd
+ctrl_interface_group=0
+EOF
+
+	return ${EXIT_OK}
+}
+
+function hostapd_start() {
+	local device=${1}
+	shift
+
+	assert isset device
+
+	local config_dir=$(hostapd_config_dir ${device})
+	mkdir -p ${config_dir}
+
+	local config_file=${config_dir}/config
+	hostapd_config_write ${device} $@ > ${config_file}
+
+	hostapd -dd -B -P ${config_dir}/pid ${config_file}
+	local ret=$?
+
+	case "${ret}" in
+		0)
+			log DEBUG "Hostapd was successfully started for '${device}'."
+			return ${EXIT_OK}
+			;;
+		1)
+			error_log "Could not start hostapd properly for '${device}'."
+			
+			error_log "Configuration file dump:"
+			local line
+			while read line; do
+				error_log "  ${line}"
+			done < ${config_file}
+
+			return ${EXIT_ERROR}
+			;;
+	esac
+}
+
+function hostapd_stop() {
+	local device=${1}
+
+	assert isset device
+
+	local pid=$(hostapd_get_pid ${device})
+
+	if isset pid; then
+		process_kill ${pid}
+	else
+		warning_log "Could not find pid file for hostapd process running for ${device}."
+	fi
+
+	rm -rf $(hostapd_config_dir ${device})
+}
+
+function hostapd_get_pid() {
+	local device=${1}
+
+	assert isset device
+
+	local pid_file="$(hostapd_config_dir ${device})/pid"
+
+	[ -e "${pid_file}" ] || return ${EXIT_ERROR}
+
+	cat ${pid_file} 2>/dev/null
+	return ${EXIT_OK}
+}
+
+function hostapd_is_running() {
+	local device=${1}
+
+	assert isset device
+
+	local pid=$(hostapd_get_pid ${device})
+
+	if isset pid && [ -d "/proc/${pid}" ]; then
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
+}

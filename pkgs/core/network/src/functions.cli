@@ -506,3 +506,12 @@ function cli_yesno() {
 
 	return ${EXIT_ERROR}
 }
+
+function cli_get_key() {
+	local key="${1%%=*}"
+	echo "${key/--/}"
+}
+
+function cli_get_val() {
+	echo "${1##*=}"
+}
