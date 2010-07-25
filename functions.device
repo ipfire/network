@@ -292,25 +292,6 @@ function device_is_used() {
 	return ${EXIT_ERROR}
 }
 
-# XXX to be removed I think
-function device_get_free() {
-	local destination=${1}
-
-	# Replace + by a valid number
-	if grep -q "+$" <<<${destination}; then
-		local number=0
-		destination=$(sed -e "s/+//" <<<$destination)
-		while [ "${number}" -le "100" ]; do
-			if ! device_exists "${destination}${number}"; then
-				destination="${destination}${number}"
-				break
-			fi
-			number=$(($number + 1))
-		done
-	fi
-	echo "${destination}"
-}
-
 function device_hash() {
 	local device=${1}
 
@@ -324,7 +305,7 @@ function device_hash() {
 # Give the device a new name
 function device_set_name() {
 	local source=$1
-	local destination=$(device_get_free ${2})
+	local destination=${2}
 
 	# Check if devices exists
 	if ! device_exists ${source} || device_exists ${destination}; then
