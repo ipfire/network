@@ -158,3 +158,21 @@ function ports_init() {
 }
 
 init_register ports_init
+
+function port_find_free() {
+	local pattern=${1}
+
+	assert isset pattern
+
+	local port
+	local i=0
+
+	while [ ${i} -lt 99 ]; do
+		port=${pattern//N/${i}}
+		if ! port_exists ${port} && ! device_exists ${port}; then
+			echo "${port}"
+			break
+		fi
+		i=$(( ${i} + 1 ))
+	done
+}
