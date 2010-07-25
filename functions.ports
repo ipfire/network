@@ -99,10 +99,34 @@ function port_destroy() {
 
 	port_exists ${port} || return ${EXIT_OK}
 
-	local attached_zone=$(port_is_attached ${port})
+	# Check if the port is attached to any zone and don't delete it.
+	local ok=${EXIT_OK}
 
+	local attached_zone=$(port_is_attached ${port})
 	if [ -n "${attached_zone}" ]; then
-		error "Cannot destroy port '${port}' which is attached to zone '${attached_zone}'."
+		error_log "Cannot destroy port '${port}' which is attached to zone '${attached_zone}'."
+		ok=${EXIT_ERROR}
+	fi
+
+	# Check if the port is linked to any other port and don't allow the user
+	# to delete it.
+	local other_port
+	for other_port in $(ports_get); do
+		[ "${other_port}" = "${port}" ] && continue
+
+		if listmatch ${port} $(port_get_parents ${other_port}); then
+			error_log "Cannot destroy port '${port}' which is a parent port to '${other_port}'."
+			ok=${EXIT_ERROR}
+		fi
+
+		if listmatch ${port} $(port_get_children ${other_port}); then
+			error_log "Cannot destroy port '${port}' which is child of port '${other_port}'."
+			ok=${EXIT_ERROR}
+		fi
+	done
+
+	# If ok says we are not okay --> exit
+	if [ ${ok} -ne ${EXIT_OK} ]; then
 		return ${EXIT_ERROR}
 	fi
 
@@ -134,6 +158,10 @@ function port_down() {
 
 function port_status() {
 	port_cmd status $@
+}
+
+function port_info() {
+	port_cmd info $@
 }
 
 function port_cmd() {
@@ -193,4 +221,30 @@ function port_find_free() {
 		fi
 		i=$(( ${i} + 1 ))
 	done
+}
+
+function port_get_info() {
+	local port=${1}
+	local key=${2}
+
+	assert isset port
+	assert port_exists ${port}
+	assert isset key
+
+	(
+		eval $(port_info ${port})
+		echo "${!key}"
+	)
+}
+
+function port_get_parents() {
+	local port=${1}
+
+	port_get_info ${port} PORT_PARENTS
+}
+
+function port_get_children() {
+	local port=${1}
+
+	port_get_info ${port} PORT_CHILDREN
 }
