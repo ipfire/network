@@ -386,3 +386,22 @@ function binary_exists() {
 
 	return ${EXIT_ERROR}
 }
+
+function process_kill() {
+	local process=${1}
+
+	if ! isinteger process; then
+		process=$(pidof ${process})
+	fi
+
+	local pid
+	local sig
+	for pid in ${process}; do
+		for sig in 15 9; do
+			[ -d "/proc/${pid}" ] || break
+
+			kill -${sig} ${pid}
+			sleep 1
+		done
+	done
+}
