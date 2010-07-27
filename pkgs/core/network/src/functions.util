@@ -376,3 +376,32 @@ function module_load() {
 		modprobe ${module}
 	fi
 }
+
+function binary_exists() {
+	local binary=${1}
+
+	if [ -n "$(type -p ${binary})" ]; then
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
+}
+
+function process_kill() {
+	local process=${1}
+
+	if ! isinteger process; then
+		process=$(pidof ${process})
+	fi
+
+	local pid
+	local sig
+	for pid in ${process}; do
+		for sig in 15 9; do
+			[ -d "/proc/${pid}" ] || break
+
+			kill -${sig} ${pid}
+			sleep 1
+		done
+	done
+}

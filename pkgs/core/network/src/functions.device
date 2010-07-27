@@ -121,12 +121,6 @@ function device_has_virtuals() {
 	grep -q "${1}$" /proc/net/vlan/config
 }
 
-function device_is_vlan() { # XXX Compat function
-	log DEBUG "Deprecated function device_is_vlan() was used."
-
-	device_is_virtual $@
-}
-
 # Check if the device is a ppp device
 function device_is_ppp() {
 	local device=${1}
@@ -166,7 +160,7 @@ function device_is_real() {
 function device_get_type() {
 	local device=$(devicify ${1})
 
-	if device_is_vlan ${device}; then
+	if device_is_virtual ${device}; then
 		echo "vlan"
 
 	elif device_is_bonding ${device}; then
@@ -247,32 +241,17 @@ function device_set_address() {
 }
 
 function device_get() {
-	local from_config
-
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--from-config)
-				from_config=1
-				;;
-			--no-config)
-				from_config=0
-				;;
-		esac
-		shift
-	done
-
+	local device
 	local devices
 
-	if [ "${from_config}" != "0" ]; then
-		devices="${devices} $(device_config_list)"
-	fi
+	for device in ${SYS_CLASS_NET}/*; do
+		device=$(basename ${device})
 
-	if [ "${from_config}" != "1" ]; then
-		local device
-		for device in ${SYS_CLASS_NET}/*; do
-			devices="${devices} $(basename ${device})"
-		done
-	fi
+		# bonding_masters is no device
+		[ "${device}" = "bonding_masters" ] && continue
+
+		devices="${devices} ${device}"
+	done
 
 	echo ${devices}
 	return ${EXIT_OK}
@@ -313,31 +292,6 @@ function device_is_used() {
 	return ${EXIT_ERROR}
 }
 
-# XXX to be removed I think
-function device_get_free() {
-	local destination=${1}
-
-	# Replace + by a valid number
-	if grep -q "+$" <<<${destination}; then
-		local number=0
-		destination=$(sed -e "s/+//" <<<$destination)
-		while [ "${number}" -le "100" ]; do
-			if ! device_exists "${destination}${number}"; then
-				destination="${destination}${number}"
-				break
-			fi
-			number=$(($number + 1))
-		done
-	fi
-	echo "${destination}"
-}
-
-function device_rename() {
-	warning_log "Called deprecated function 'device_rename'"
-
-	device_set_name $@
-}
-
 function device_hash() {
 	local device=${1}
 
@@ -351,7 +305,7 @@ function device_hash() {
 # Give the device a new name
 function device_set_name() {
 	local source=$1
-	local destination=$(device_get_free ${2})
+	local destination=${2}
 
 	# Check if devices exists
 	if ! device_exists ${source} || device_exists ${destination}; then
@@ -393,7 +347,7 @@ function device_set_parent_up() {
 	local parent
 
 	if device_is_virtual ${device}; then
-		parent=$(device_virtual_get_parent ${device})
+		parent=$(virtual_get_parent ${device})
 
 		device_is_up ${parent} && return ${EXIT_OK}
 
@@ -429,7 +383,7 @@ function device_set_parent_down() {
 	local parent
 
 	if device_is_virtual ${device}; then
-		parent=$(device_virtual_get_parent ${device})
+		parent=$(virtual_get_parent ${device})
 
 		device_is_up ${parent} || return ${EXIT_OK}
 

@@ -71,7 +71,7 @@ define STAGE_INSTALL_CMDS
 
 	cd $(DIR_APP) && install -m 4755 src/su $(BUILDROOT)/bin
 
-	# Dump /etc/dircolors.
-	dircolors -p > $(BUILDROOT)/etc/dircolors
-	cp -vf $(DIR_SOURCE)/profile.d/dircolors.sh $(BUILDROOT)/etc/profile.d
+	# Dump /etc/DIR_COLORS
+	dircolors -p > $(BUILDROOT)/etc/DIR_COLORS
+	cp -vf $(DIR_SOURCE)/profile.d/* $(BUILDROOT)/etc/profile.d/
 endef

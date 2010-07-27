@@ -21,14 +21,20 @@
 
 function virtual_init() {
 	module_load 8021q
+
+	ebtables-restore <<EOF
+*filter
+:INPUT ACCEPT
+:FORWARD ACCEPT
+:OUTPUT ACCEPT
+
+*broute
+:BROUTING ACCEPT
+-A BROUTING -p 802_1Q -j DROP
+EOF
 }
 
 init_register virtual_init
-
-function device_create_virtual() {
-	log WARN "Called deprecated function device_create_virtual"
-	device_virtual_create $@
-}
 
 function virtual_create() {
 	local port=$(devicify ${1})
@@ -169,24 +175,4 @@ function virtual_get_by_parent_and_vid() {
 		done
 
 	return ${EXIT_ERROR}
-}
-
-function device_virtual_create() {
-	log WARN "Called deprecated function device_virtual_create"
-	virtual_create $@
-}
-
-function device_virtual_remove() {
-	log WARN "Called deprecated function device_virtual_remove"
-	virtual_remove $@
-}
-
-function device_virtual_get_parent() {
-	log WARN "Called deprecated function device_virtual_get_parent"
-	virtual_get_parent $@
-}
-
-function device_virtual_get_by_parent_and_vid() {
-	log WARN "Called deprecated function device_virtual_get_by_parent_and_vid"
-	virtual_get_by_parent_and_vid $@
 }

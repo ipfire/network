@@ -38,6 +38,10 @@ done
 
 # Process the given action
 case "${action}" in
+	init)
+		init_run
+		;;
+
 	config|port|device|zone|start|stop|restart|status|reset)
 		cli_${action} $@
 		;;

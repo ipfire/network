@@ -1,0 +1,8 @@
+description		"Control the networking"
+author			"IPFire Team"
+
+start on stopped mountfs
+
+pre-start script
+	network init
+end script

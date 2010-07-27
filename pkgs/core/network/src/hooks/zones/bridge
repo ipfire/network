@@ -21,13 +21,14 @@
 
 . /lib/network/header-zone
 
-HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE STP_PRIORITY"
-HOOK_SETTINGS="${HOOK_SETTINGS} MAC MTU"
+HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE STP_MODE"
+HOOK_SETTINGS="${HOOK_SETTINGS} STP_PRIORITY MAC MTU"
 
 # Default values
 MAC=$(mac_generate)
 MTU=1500
 STP="on"
+STP_MODE="rstp"
 STP_FORWARD_DELAY=0
 STP_HELLO=2
 STP_MAXAGE=20
@@ -36,6 +37,7 @@ STP_PRIORITY=512 # XXX check out better value
 function _check() {
 	assert ismac MAC
 	assert isbool STP
+	assert isoneof STP_MODE stp rstp
 	assert isinteger STP_HELLO
 	assert isinteger STP_FORWARD_DELAY
 	assert isinteger STP_PRIORITY
@@ -47,6 +49,9 @@ function _parse_cmdline() {
 		case "${1}" in
 			--stp=*)
 				STP=${1#--stp=}
+				;;
+			--stp-mode=*)
+				STP_MODE=${1#--stp-mode=}
 				;;
 			--stp-hello=*)
 				STP_HELLO=${1#--stp-hello=}
@@ -86,7 +91,7 @@ function _up() {
 
 	# Enable STP
 	if enabled STP; then
-		brctl stp ${zone} on
+		stp_enable ${zone}
 
 		if [ -n "${STP_FORWARD_DELAY}" ]; then
 			brctl setfd ${zone} ${STP_FORWARD_DELAY}
@@ -104,7 +109,7 @@ function _up() {
 			brctl setbridgeprio ${zone} ${STP_PRIORITY}
 		fi
 	else
-		brctl stp ${zone} off
+		stp_disable ${zone}
 	fi
 
 	device_set_up ${zone}

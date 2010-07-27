@@ -21,49 +21,68 @@
 
 . /lib/network/header-port
 
-HOOK_SETTINGS="HOOK DEVICE DEVICE_MAC DEVICE_VID"
+DEVICE_PATTERN="wifiN"
 
-DEVICE_MAC=$(mac_generate)
+HOOK_SETTINGS="HOOK ADDRESS BROADCAST_SSID COUNTRY_CODE MODE PHY SSID"
+
+ADDRESS=$(mac_generate)
+BROADCAST_SSID=on
+CHANNEL=1
+COUNTRY_CODE="US"
+MODE="g"
+SSID=
 
 function _check() {
-	assert isset DEVICE
-	assert ismac DEVICE_MAC
-	assert isinteger DEVICE_VID
-
-	if [ ${DEVICE_VID} -gt 4096 ]; then
-		error "DEVICE_VID is greater than 4096."
-		exit ${EXIT_ERROR}
-	fi
-
-	local reserved
-	for reserved in 0 4095; do
-		if [ "${DEVICE_VID}" = "${reserved}" ]; then
-			error "DEVICE_VID=${reserved} is reserved."
-			exit ${EXIT_ERROR}
-		fi
-	done
+	assert isset ADDRESS
+	assert ismac ADDRESS
+	assert isset BROADCAST_SSID
+	assert isbool BROADCAST_SSID
+	assert isset CHANNEL
+	assert isset COUNTRY_CODE
+	assert isset MODE
+	assert isoneof MODE b g
+	assert isset PHY
+	assert ismac PHY
+	assert isset SSID
 }
 
 function _create() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--device=*)
-				DEVICE=${1#--device=}
+			--broadcast-ssid=*)
+				BROADCAST_SSID=$(cli_get_val ${1})
+				;;
+			--channel=*)
+				CHANNEL=$(cli_get_val ${1})
+				;;
+			--country-code=*)
+				COUNTRY_CODE=$(cli_get_val ${1})
 				;;
 			--mac=*)
-				DEVICE_MAC=${1#--mac=}
+				ADDRESS=$(cli_get_val ${1})
 				;;
-			--id=*)
-				DEVICE_VID=${1#--id=}
+			--mode=*)
+				MODE=$(cli_get_val ${1})
+				;;
+			--phy=*)
+				PHY=$(cli_get_val ${1})
+				;;
+			--ssid=*)
+				SSID=$(cli_get_val ${1})
 				;;
 			*)
-				warning "Unknown argument '${1}'"
+				warning "Ignoring unknown argument '${1}'"
 				;;
 		esac
 		shift
 	done
 
-	local port="${DEVICE}v${DEVICE_VID}"
+	# Save address of phy do identify it again
+	PHY=$(phy_get ${PHY})
+	PHY=$(phy_get_address ${PHY})
+
+	local port=$(port_find_free ${DEVICE_PATTERN})
+	assert isset port
 
 	config_write $(port_file ${port}) ${HOOK_SETTINGS}
 
@@ -80,8 +99,20 @@ function _edit() {
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--mac=*)
-				DEVICE_MAC=${1#--mac=}
+			--broadcast-ssid=*)
+				BROADCAST_SSID=$(cli_get_val ${1})
+				;;
+			--channel=*)
+				CHANNEL=$(cli_get_val ${1})
+				;;
+			--country-code=*)
+				COUNTRY_CODE=$(cli_get_val ${1})
+				;;
+			--ssid=*)
+				SSID=$(cli_get_val ${1})
+				;;
+			--mode=*)
+				MODE=$(cli_get_val ${1})
 				;;
 			*)
 				warning "Unknown argument '${1}'"
@@ -103,7 +134,24 @@ function _up() {
 	config_read $(port_file ${port})
 
 	if ! device_exists ${port}; then
-		virtual_create ${DEVICE} ${DEVICE_VID} ${DEVICE_MAC}
+		wireless_create ${port} ${PHY} __ap ${ADDRESS}
+	fi
+
+	if ! hostapd_is_running ${port}; then
+		hostapd_start ${port} \
+			--broadcast-ssid="${BROADCAST_SSID}" \
+			--channel="${CHANNEL}" \
+			--country-code="${COUNTRY_CODE}" \
+			--mode="${MODE}" \
+			--ssid="${SSID}"
+
+		local ret=$?
+
+		if [ ${ret} -eq ${EXIT_ERROR} ]; then
+			error_log "Could not start '${port}' because hostapd crashed previously."
+			( _down ${port} )
+			exit ${EXIT_ERROR}
+		fi
 	fi
 
 	exit ${EXIT_OK}
@@ -120,7 +168,8 @@ function _down() {
 		exit ${EXIT_OK}
 	fi
 
-	virtual_remove ${port}
+	hostapd_stop ${port}
+	wireless_remove ${port}
 
 	exit ${EXIT_OK}
 }

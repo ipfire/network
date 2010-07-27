@@ -23,6 +23,8 @@ function ppp_init() {
 	mkdir -p /var/run/ppp 2>/dev/null
 }
 
+init_register ppp_init
+
 function ppp_common_ip_pre_up() {
 	local zone=${1}
 	shift
@@ -104,8 +106,6 @@ function ppp_accounting() {
 }
 
 function pppd_exec() {
-	ppp_init
-
 	log DEBUG "Running pppd with parameters '$@'."
 
 	pppd $@ > /dev/null

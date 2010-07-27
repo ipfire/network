@@ -13,6 +13,8 @@ define STAGE_BUILD
 	cd $(DIR_APP)/gettext-tools && make -C src msgfmt
 endef
 
+STAGE_TEST = # Do nothing
+
 define STAGE_INSTALL
 	cd $(DIR_APP)/gettext-tools && cp -v src/msgfmt $(TOOLS_DIR)/bin
 endef

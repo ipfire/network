@@ -348,7 +348,8 @@ function cli_reset() {
 		port_remove ${port}
 	done
 
-	# XXX recreate ethernet ports
+	# Re-run the initialization functions
+	init_run
 
 	exit ${EXIT_OK}
 }
@@ -504,4 +505,13 @@ function cli_yesno() {
 	fi
 
 	return ${EXIT_ERROR}
+}
+
+function cli_get_key() {
+	local key="${1%%=*}"
+	echo "${key/--/}"
+}
+
+function cli_get_val() {
+	echo "${1##*=}"
 }
