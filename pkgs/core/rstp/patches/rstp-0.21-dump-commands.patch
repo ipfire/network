@@ -1,0 +1,270 @@
+diff --git a/ctl_main.c b/ctl_main.c
+index dd041d7..49dfaf9 100644
+--- a/ctl_main.c
++++ b/ctl_main.c
+@@ -443,6 +443,236 @@ static int cmd_debuglevel(int argc, char *const *argv)
+ 	return CTL_set_debug_level(getuint(argv[1]));
+ }
+ 
++#define DUMP_FMT(br_name, key) "%-8s %-26s ", br_name, key
++
++static int do_dumpbridge(const char *br_name) {
++	STP_BridgeStatus s;
++
++	int br_index = get_index_die(br_name, "bridge", 0);
++	if (br_index < 0)
++		return -1;
++
++	int r = CTL_get_bridge_status(br_index, &s);
++	if (r)
++		return -1;
++
++	/* bridge forward delay */
++	printf(DUMP_FMT(br_name, "bridge_forward_delay"));
++	printf("%u\n", s.bridge_forward_delay);
++
++	/* bridge hello time */
++	printf(DUMP_FMT(br_name, "bridge_hello_time"));
++	printf("%u\n", s.bridge_hello_time);
++
++	/* bridge max age */
++	printf(DUMP_FMT(br_name, "bridge_max_age"));
++	printf("%u\n", s.bridge_max_age);
++
++	/* designated root */
++	printf(DUMP_FMT(br_name, "designated_root"));
++	printf(BR_ID_FMT "\n", BR_ID_ARGS(s.designated_root));
++
++	/* enabled */
++	printf(DUMP_FMT(br_name, "enabled"));
++	printf("%s\n", BOOL_STR(s.enabled));
++
++	/* forward delay */
++	printf(DUMP_FMT(br_name, "forward_delay"));
++	printf("%u\n", s.forward_delay);
++
++	/* hello time */
++	printf(DUMP_FMT(br_name, "hello_time"));
++	printf("%u\n", s.hello_time);
++
++	/* id */
++	printf(DUMP_FMT(br_name, "id"));
++	printf(BR_ID_FMT "\n", BR_ID_ARGS(s.bridge_id));
++
++	/* max age */
++	printf(DUMP_FMT(br_name, "max_age"));
++	printf("%u\n", s.max_age);
++
++	/* root path cost */
++	printf(DUMP_FMT(br_name, "root_path_cost"));
++	printf("%u\n", s.root_path_cost);
++
++	/* root port */
++	printf(DUMP_FMT(br_name, "root_port"));
++	printf("%u\n", s.root_port);
++
++	/* time since topology change */
++	printf(DUMP_FMT(br_name, "time_since_topology_change"));
++	printf("%u\n", s.time_since_topology_change);
++
++	/* topology change */
++	printf(DUMP_FMT(br_name, "topology_change"));
++	printf("%u\n", s.topology_change);
++
++	/* topology change count */
++	printf(DUMP_FMT(br_name, "topology_change_count"));
++	printf("%u\n", s.topology_change_count);
++
++	/* tx hold count */
++	printf(DUMP_FMT(br_name, "tx_hold_count"));
++	printf("%u\n", s.tx_hold_count);
++
++	return 0;
++}
++
++static int do_dumpbridgeport(int br_index, const char *pt_name) {
++	STP_PortStatus p;
++	int r = 0;
++	int port_index = get_index_die(pt_name, "port", 0);
++	if (port_index < 0)
++		return -1;
++
++	r = CTL_get_port_status(br_index, port_index, &p);
++	if (r) {
++		fprintf(stderr, "Failed to get port state for port %d\n", port_index);
++		return -1;
++	}
++
++	/* admin edge port */
++	printf(DUMP_FMT(pt_name, "admin_edge_port"));
++	printf("%s\n", BOOL_STR(p.admin_edge_port));
++
++	/* admin point to point */
++	printf(DUMP_FMT(pt_name, "admin_point_to_point"));
++	printf("%s\n", BOOL_STR(p.admin_p2p));
++
++	/* auto edge port */
++	printf(DUMP_FMT(pt_name, "auto_edge_port"));
++	printf("%s\n", BOOL_STR(p.auto_edge_port));
++
++	/* path cost */
++	printf(DUMP_FMT(pt_name, "admin_path_cost"));
++	printf("%d\n", p.admin_path_cost);
++
++	/* designated bridge */
++	printf(DUMP_FMT(pt_name, "designated_bridge"));
++	printf(BR_ID_FMT "\n", BR_ID_ARGS(p.designated_bridge));
++
++	/* designated cost */
++	printf(DUMP_FMT(pt_name, "designated_cost"));
++	printf("%d\n", p.designated_cost);
++
++	/* designated port */
++	printf(DUMP_FMT(pt_name, "designated_port"));
++	printf("%0x\n", p.designated_port);
++
++	/* designated root */
++	printf(DUMP_FMT(pt_name, "designated_root"));
++	printf(BR_ID_FMT "\n", BR_ID_ARGS(p.designated_root));
++
++	/* enabled */
++	printf(DUMP_FMT(pt_name, "enabled"));
++	printf("%s\n", BOOL_STR(p.enabled));
++
++	/* id */
++	printf(DUMP_FMT(pt_name, "id"));
++	printf("%u\n", p.id & 0xfff);
++
++	/* oper edge port */
++	printf(DUMP_FMT(pt_name, "oper_edge_port"));
++	printf("%s\n", BOOL_STR(p.oper_edge_port));
++
++	/* path cost */
++	printf(DUMP_FMT(pt_name, "path_cost"));
++	printf("%d\n", p.path_cost);
++
++	/* point to point */
++	printf(DUMP_FMT(pt_name, "point_to_point"));
++	printf("%s\n", BOOL_STR(p.oper_p2p));
++
++	/* state */
++	printf(DUMP_FMT(pt_name, "state"));
++	printf(STATE_STR(p.state));
++	printf("\n");
++
++	/* topology change ack */
++	printf(DUMP_FMT(pt_name, "topology_change_ack"));
++	printf("%s\n", BOOL_STR(p.tc_ack));
++
++	return 0;
++}
++
++static int cmd_dumpbridge(int argc, char *const *argv)
++{
++	int i, count = 0;
++	int r = 0;
++	struct dirent **namelist;
++
++	if (argc > 1) {
++		count = argc - 1;
++	} else {
++		count =
++		    scandir(SYSFS_CLASS_NET, &namelist, isbridge, alphasort);
++		if (count < 0) {
++			fprintf(stderr, "Error getting list of all bridges\n");
++			return -1;
++		}
++	}
++
++	for (i = 0; i < count; i++) {
++		const char *name;
++		if (argc > 1)
++			name = argv[i + 1];
++		else
++			name = namelist[i]->d_name;
++
++		int err = do_dumpbridge(name);
++		if (err)
++			r = err;
++	}
++
++	if (argc <= 1) {
++		for (i = 0; i < count; i++)
++			free(namelist[i]);
++		free(namelist);
++	}
++
++	return r;
++}
++
++static int cmd_dumpbridgeports(int argc, char *const *argv)
++{
++	int r = 0;
++
++	int br_index = get_index(argv[1], "bridge");
++
++	int i, count = 0;
++	struct dirent **namelist;
++
++	if (argc > 2) {
++		count = argc - 2;
++	} else {
++		char buf[SYSFS_PATH_MAX];
++		snprintf(buf, sizeof(buf), SYSFS_CLASS_NET "/%s/brif", argv[1]);
++		count = scandir(buf, &namelist, not_dot_dotdot, alphasort);
++		if (count < 0) {
++			fprintf(stderr,
++				"Error getting list of all ports of bridge %s\n",
++				argv[1]);
++			return -1;
++		}
++	}
++
++	for (i = 0; i < count; i++) {
++		const char *name;
++		name = namelist[i]->d_name;
++
++		int err = do_dumpbridgeport(br_index, name);
++		if (err)
++			r = err;
++	}
++
++	for (i = 0; i < count; i++)
++		free(namelist[i]);
++	free(namelist);
++
++	return r;
++}
++
+ struct command {
+ 	int nargs;
+ 	int optargs;
+@@ -483,6 +713,10 @@ static const struct command commands[] = {
+ 	{2, 0, "portmcheck", cmd_portmcheck,
+ 	 "<bridge> <port>\ttry to get back from STP to RSTP mode"},
+ 	{1, 0, "debuglevel", cmd_debuglevel, "<level>\t\tLevel of verbosity"},
++	{0, 32, "dumpbridge", cmd_dumpbridge,
++	 "Dump all information about a bridge in machine parseable format"},
++	{1, 0, "dumpports", cmd_dumpbridgeports,
++	 "Dump all port information in machine parseable format"},
+ };
+ 
+ const struct command *command_lookup(const char *cmd)
+diff --git a/rstpctl.8 b/rstpctl.8
+index ca72eaf..f827c85 100644
+--- a/rstpctl.8
++++ b/rstpctl.8
+@@ -115,6 +115,13 @@ switch back to RSTP mode.
+ .B rstpctl debuglevel <level>
+ sets the level of verbosity of rstpd's logging.
+ 
++.B rstpctl dumpbridge [<bridge> ...]
++dumps all informational parameters to the console. This is needed to
++parse the output in shell scripts for example.
++
++.B rstpctl dumpports <bridge> [<port> ...]
++like dumpbridge but prints information about the ports of a bridge.
++
+ .SH NOTES
+ TODO: Indicate lack of persistence of configuration across restarts of
+ daemon.
