@@ -1,8 +1,8 @@
 diff --git a/ctl_main.c b/ctl_main.c
-index dd041d7..49dfaf9 100644
+index dd041d7..7382d97 100644
 --- a/ctl_main.c
 +++ b/ctl_main.c
-@@ -443,6 +443,236 @@ static int cmd_debuglevel(int argc, char *const *argv)
+@@ -443,6 +443,240 @@ static int cmd_debuglevel(int argc, char *const *argv)
  	return CTL_set_debug_level(getuint(argv[1]));
  }
  
@@ -54,6 +54,10 @@ index dd041d7..49dfaf9 100644
 +	/* max age */
 +	printf(DUMP_FMT(br_name, "max_age"));
 +	printf("%u\n", s.max_age);
++
++	/* protocol version */
++	printf(DUMP_FMT(br_name, "protocol_version"));
++	printf("%d\n", s.protocol_version);
 +
 +	/* root path cost */
 +	printf(DUMP_FMT(br_name, "root_path_cost"));
@@ -239,7 +243,7 @@ index dd041d7..49dfaf9 100644
  struct command {
  	int nargs;
  	int optargs;
-@@ -483,6 +713,10 @@ static const struct command commands[] = {
+@@ -483,6 +717,10 @@ static const struct command commands[] = {
  	{2, 0, "portmcheck", cmd_portmcheck,
  	 "<bridge> <port>\ttry to get back from STP to RSTP mode"},
  	{1, 0, "debuglevel", cmd_debuglevel, "<level>\t\tLevel of verbosity"},
