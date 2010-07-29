@@ -1,0 +1,141 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function aiccu_init() {
+	log INFO "Initializing aiccu."
+	mkdir -p $(aiccu_config_dir)
+}
+
+init_register aiccu_init
+
+function aiccu_config_dir() {
+	local device=${1}
+
+	echo "${RUN_DIR}/aiccu/${device}"
+}
+
+function aiccu_start() {
+	local device=${1}
+	shift
+
+	assert isset device
+
+	local config_dir=$(aiccu_config_dir ${device})
+	mkdir -p ${config_dir}
+
+	local config_file=${config_dir}/config
+	aiccu_configure ${device} $@ > ${config_file}
+
+	aiccu start ${config_file} &>/dev/null
+	local ret=$?
+
+	case "${ret}" in
+		0)
+			log DEBUG "Aiccu was successfully started for '${device}'."
+			return ${EXIT_OK}
+			;;
+		*)
+			error_log "Could not start aiccu properly for '${device}'."
+			
+			error_log "Configuration file dump:"
+			local line
+			while read line; do
+				error_log "  ${line}"
+			done < ${config_file}
+
+			return ${EXIT_ERROR}
+			;;
+	esac
+}
+
+function aiccu_stop() {
+	local device=${1}
+
+	assert isset device
+
+	aiccu stop $(aiccu_config_dir ${device})/config
+
+	rm -rf $(aiccu_config_dir ${device})
+}
+
+function aiccu_configure() {
+	local device=${1}
+
+	assert isset device
+
+	local user
+	local secret
+	local server
+	local protocol="tic"
+	local tunnel_id
+
+	while [ $# -gt  0 ]; do
+		case "${1}" in
+			--user=*)
+				user=$(cli_get_val ${1})
+				;;
+			--secret=*)
+				secret=$(cli_get_val ${1})
+				;;
+			--server=*)
+				server=$(cli_get_val ${1})
+				;;
+			--protocol=*)
+				protocol=$(cli_get_val ${1})
+				;;
+			--tunnel-id=*)
+				tunnel_id=$(cli_get_val ${1})
+				;;
+		esac
+		shift
+	done
+
+	assert isset user
+	assert isset secret
+	assert isset server
+	assert isset protocol
+	assert isoneof protocol tic tsp l2tp
+
+cat <<EOF
+## AICCU configuration for ${zone}
+
+username ${user}
+password ${secret}
+
+server ${server}
+protocol ${protocol}
+
+$(isset tunnel_id && echo "tunnel_id ${tunnel_id}")
+
+ipv6_interface ${device}
+
+verbose true
+daemonize true
+automatic true
+
+pidfile $(aiccu_config_dir ${zone})/pid
+
+#setupscript /tmp/aiccu.sh
+
+EOF
+
+	return ${EXIT_OK}
+}
