@@ -28,40 +28,19 @@ function stp_init() {
 
 init_register stp_init
 
-# XXX Very slow thing, caching?
-function __rstpctl_cmd() {
-	local command=$@
+function __rstpctl_bridge_get() {
+	local bridge=${1}
+	local param=${2}
 
-	local line
+	assert isset bridge
+	assert isset param
+
 	local key
 	local val
-
-	rstpctl ${command} | \
-		sed -e "s/\t\t\t/\n/g" \
-			-e "s/^ //g" \
-			-e "s/\t\s*/___/g" | \
-	while read line; do
-		[ "${line}" = "${line/___/_}" ] && continue
-
-		key=${line%%___*}
-		key=${key// /_}
-		key=${key^^}
-
-		val=${line#*___}
-
-		echo "${key}=\"${val}\""
-	done
-}
-
-function __rstpctl_showbridge_get() {
-	local bridge=${1}
-	local param=${2^^}
-
-	local line
-	for line in $(__rstpctl_cmd showbridge ${bridge}); do
-		if [ "${line%%=*}" = "${param}" ]; then
-			line="${line##*=}"
-			echo "${line//\"/}"
+	rstpctl dumpbridge ${bridge} | \
+		while read bridge key val; do
+		if [ "${key}" = "${param}" ]; then
+			echo "${val}"
 			return ${EXIT_OK}
 		fi
 	done
@@ -69,200 +48,26 @@ function __rstpctl_showbridge_get() {
 	return ${EXIT_ERROR}
 }
 
-function __rstpctl_showportdetail_get() {
+function __rstpctl_port_get() {
 	local bridge=${1}
 	local port=${2}
-	local param=${3^^}
+	local param=${3}
 
-	local line
-	for line in $(__rstpctl_cmd showportdetail ${bridge} ${port}); do
-		if [ "${line%%=*}" = "${param}" ]; then
-			line="${line##*=}"
-			echo "${line//\"/}"
+	assert isset bridge
+	assert isset port
+	assert isset param
+
+	local key
+	local val
+	rstpctl dumpports ${bridge} | \
+		while read por key val; do
+		if [ "${port}" = "${por}" -a "${key}" = "${param}" ]; then
+			echo "${val}"
 			return ${EXIT_OK}
 		fi
 	done
 
 	return ${EXIT_ERROR}
-}
-
-function __rstp_port_enabled() {
-	local bridge=${1}
-	local port=${2}
-
-	local status=$(__rstpctl_showportdetail_get ${bridge} ${port} enabled)
-
-	if [ "${status}" = "yes" ]; then
-		return ${EXIT_OK}
-	fi
-
-	return ${EXIT_ERROR}
-}
-
-function __rstp_port_state() {
-	local bridge=${1}
-	local port=${2}
-
-	local output=$(__rstpctl_showportdetail_get ${bridge} ${port} state)
-	echo "${output^^}"
-}
-
-function __rstp_port_pathcost() {
-	local bridge=${1}
-	local port=${2}
-
-	__rstpctl_showportdetail_get ${bridge} ${port} path_cost
-}
-
-function __rstp_port_designated_root() {
-	local bridge=${1}
-	local port=${2}
-
-	__rstpctl_showportdetail_get ${bridge} ${port} designated_root
-}
-
-function __rstp_port_designated_bridge() {
-	local bridge=${1}
-	local port=${2}
-
-	__rstpctl_showportdetail_get ${bridge} ${port} designated_bridge
-}
-
-function __rstp_topology_change() {
-	local bridge=${1}
-
-	local state=$(__rstpctl_showbridge_get ${bridge} topology_change)
-
-	case "${state}" in
-		yes)
-			echo "${state}"
-			return ${EXIT_OK}
-			;;
-		no)
-			echo "${state}"
-			return ${EXIT_ERROR}
-			;;
-	esac
-}
-
-function __rstp_topology_change_count() {
-	local bridge=${1}
-
-	# XXX typo in rstpctl -> toplogy
-	__rstpctl_showbridge_get ${bridge} toplogy_change_count
-}
-
-function __rstp_topology_change_time() {
-	local bridge=${1}
-
-	__rstpctl_showbridge_get ${bridge} time_since_topology_change
-}
-
-function __rstp_bridge_id() {
-	local bridge=${1}
-
-	local id=$(__rstpctl_showbridge_get ${bridge} bridge_id)
-	id=${id:5:12}
-
-	mac_format "${id}"
-}
-
-function __rstp_designated_root() {
-	local bridge=${1}
-
-	local root=$(__rstpctl_showbridge_get ${bridge} designated_root)
-	root=${root:5:12}
-
-	mac_format "${root}"
-}
-
-function __rstp_pathcost() {
-	local bridge=${1}
-
-	__rstpctl_showbridge_get ${bridge} path_cost
-}
-
-function __stp_port_enabled() {
-	: # XXX TBD
-}
-
-function __stp_port_state() {
-	: # XXX TBD
-}
-
-function __stp_port_pathcost() {
-	: # XXX TBD
-}
-
-function __stp_port_designated_root() {
-	: # XXX TBD
-}
-
-function __stp_port_designated_bridge() {
-	: # XXX TBD
-}
-
-function stp_port_enabled() {
-	__stp_wrapper port_enabled $@
-}
-
-function stp_port_state() {
-	__stp_wrapper port_state $@
-}
-
-function stp_port_pathcost() {
-	__stp_wrapper port_pathcost $@
-}
-
-function stp_port_designated_root() {
-	local root=$(__stp_wrapper port_designated_root $@)
-
-	# Cut prefix 8000. and format mac
-	root="${root:5:12}"
-	mac_format "${root}"
-}
-
-function stp_port_designated_bridge() {
-	__stp_wrapper port_designated_bridge $@
-}
-
-function stp_topology_change() {
-	__stp_wrapper topology_change $@
-}
-
-function stp_topology_change_count() {
-	__stp_wrapper topology_change_count $@
-}
-
-function stp_topology_change_time() {
-	__stp_wrapper topology_change_time $@
-}
-
-function stp_bridge_id() {
-	__stp_wrapper bridge_id $@
-}
-
-function stp_designated_root() {
-	__stp_wrapper designated_root $@
-}
-
-function stp_pathcost() {
-	__stp_wrapper pathcost $@
-}
-
-function __stp_wrapper() {
-	local func=${1}
-	shift
-
-	# XXX we will detect what kind of protocol the
-	# bridge is running and process the correct funtions
-	local proto_version="rstp"
-
-	__${proto_version}_${func} $@
-}
-
-function stp_mode() {
-	: # XXX wanted
 }
 
 function stp_enable() {
@@ -295,4 +100,369 @@ function stp_disable() {
 	assert zone_exists ${bridge}
 
 	brctl stp ${bridge} off
+}
+
+function stp_bridge_get_protocol() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	local mode=$(__rstpctl_bridge_get ${bridge} protocol_version)
+
+	case "${mode}" in
+		0)
+			echo "stp"
+			;;
+		2)
+			echo "rstp"
+			;;		
+	esac
+}
+
+function stp_bridge_set_protocol() {
+	: XXX WANTED
+}
+
+function stp_bridge_get_id() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_bridge_get ${bridge} "id"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "bridge/bridge_id"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_bridge_get_forward_delay() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_bridge_get ${bridge} "bridge_forward_delay"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "bridge/forward_delay"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_bridge_get_hello_time() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_bridge_get ${bridge} "bridge_hello_time"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "bridge/hello_time"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_bridge_get_max_age() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_bridge_get ${bridge} "bridge_max_age"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "bridge/max_age"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_bridge_get_designated_root() {
+	local bridge=${1}
+	local output
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			output=$(__rstpctl_bridge_get ${bridge} "designated_root")
+			;;
+		stp)
+			output=$(__device_get_file ${bridge} "bridge/root_id")
+			;;
+	esac
+
+	if ! isset output; then
+		return ${EXIT_ERROR}
+	fi
+
+	mac_format "${output:5:12}"
+
+	return ${EXIT_OK}
+}
+
+function stp_bridge_get_root_path_cost() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_bridge_get ${bridge} "root_path_cost"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "bridge/root_path_cost"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_bridge_get_root_port_id() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_bridge_get ${bridge} "root_port"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "bridge/root_port"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_bridge_get_root_port() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	local id=$(stp_bridge_get_root_port_id ${bridge})
+
+	local member
+	local member_id
+	for member in $(bridge_get_members ${bridge}); do
+		member_id=$(stp_port_get_id ${bridge} ${member})
+
+		if [ "${id}" = "${member_id}" ]; then
+			echo "${member}"
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function stp_bridge_is_root() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	[ -n "$(stp_bridge_get_root_port ${bridge})" ]
+}
+
+function stp_bridge_get_priority() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			local output=$(__rstpctl_bridge_get ${bridge} "root_path_cost")
+			dec "${output:0:4}"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "bridge/priority"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_bridge_get_topology_change_count() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_bridge_get ${bridge} "topology_change_count"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "bridge/topology_change"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_bridge_get_topology_change_timer() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_bridge_get ${bridge} "time_since_topology_change"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "bridge/topology_change_timer"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_bridge_get_topology_change_detected() {
+	local bridge=${1}
+
+	assert isset bridge
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_bridge_get ${bridge} "topology_change"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "bridge/topology_change_detected"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+# STP states
+STP_STATE[0]="disabled"
+STP_STATE[1]="listening"
+STP_STATE[2]="learning"
+STP_STATE[3]="forwarding"
+STP_STATE[4]="blocking"
+
+function stp_port_get_state() {
+	local bridge=${1}
+	local port=${2}
+	local output
+
+	assert isset bridge
+	assert isset port
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			output=$(__rstpctl_port_get ${bridge} ${port} "state")
+			;;
+		stp)
+			output=$(__device_get_file ${bridge} "brif/${port}/state")
+
+			# Translate int to name
+			output="${STP_STATE[${output}]}"
+			;;
+	esac
+
+	if ! isset output; then
+		return ${EXIT_ERROR}
+	fi
+
+	echo "${output^^}"
+
+	return ${EXIT_OK}
+}
+
+function stp_port_get_id() {
+	local bridge=${1}
+	local port=${2}
+
+	assert isset bridge
+	assert isset port
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_port_get ${bridge} ${port} "id"
+			return ${EXIT_OK}
+			;;
+		stp)
+			dec $(__device_get_file ${bridge} "brif/${port}/port_no")
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_port_get_cost() {
+	local bridge=${1}
+	local port=${2}
+
+	assert isset bridge
+	assert isset port
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			__rstpctl_port_get ${bridge} ${port} "path_cost"
+			return ${EXIT_OK}
+			;;
+		stp)
+			__device_get_file ${bridge} "brif/${port}/path_cost"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function stp_port_get_designated_root() {
+	local bridge=${1}
+	local port=${2}
+	local output
+
+	assert isset bridge
+	assert isset port
+
+	case "$(stp_bridge_get_protocol ${bridge})" in
+		rstp)
+			output=$(__rstpctl_port_get ${bridge} ${port} "designated_root")
+			;;
+		stp)
+			output=$(__device_get_file ${bridge} "brif/${port}/designated_root")
+			;;
+	esac
+
+	mac_format ${output:5:12}
+
+	return ${EXIT_ERROR}
 }
