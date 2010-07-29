@@ -405,3 +405,13 @@ function process_kill() {
 		done
 	done
 }
+
+function dec() {
+	local hex=${1}
+
+	if [ "${hex:0:2}" != "0x" ]; then
+		hex="0x${hex}"
+	fi
+
+	printf "%d\n" "${hex}"
+}
