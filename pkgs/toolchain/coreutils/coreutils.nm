@@ -3,6 +3,8 @@ PKG_TOOLCHAIN_DEPS += acl attr gcc glibc ncurses
 
 include ../../core/coreutils/coreutils.nm
 
+STAGE_PREPARE_CMDS = # We need to autoreconf here
+
 define STAGE_BUILD
 	cd $(DIR_APP) && \
 		gl_cv_func_printf_directive_n=no \
