@@ -47,8 +47,7 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i Makefile \
 		-e "s/install -o root -m 555 pptp/install -m 755 pptp/" \
-		-e "s/^OPTIMIZE=.*/OPTIMIZE=$(CFLAGS)/" \
-		-e "s/pptp_compat.o//g"
+		-e "s/^OPTIMIZE=.*/OPTIMIZE=$(CFLAGS)/"
 endef
 
 define STAGE_BUILD
