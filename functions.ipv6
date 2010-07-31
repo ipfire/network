@@ -19,30 +19,126 @@
 #                                                                             #
 ###############################################################################
 
+function ipv6_init() {
+	log INFO "Initializing IPv6 networking."
+
+	# Enable forwarding on all devices
+	ipv6_device_forwarding_disable all
+	ipv6_device_forwarding_disable default
+
+	# Disable autoconfiguration on all devices per default
+	ipv6_device_autoconf_disable all
+	ipv6_device_autoconf_disable default
+
+	# XXX do we need this?
+	#local device
+	#for device in $(devices_get_all); do
+	#	ipv6_device_forwarding_disable ${device}
+	#	ipv6_device_autoconf_disable ${device}
+	#done
+}
+
+init_register ipv6_init
+
 function ipv6_device_autoconf_enable() {
 	local device=${1}
 
-	if ! device_exists ${device}; then
-		error "Device '${device}' does not exist."
-		return ${EXIT_ERROR}
+	assert isset device
+
+	# Allow setting default and all settings
+	if ! isoneof device all default; then
+		assert device_exists ${device}
 	fi
 
-	echo 1 > /proc/sys/net/ipv6/conf/${device}/autoconf
+	local val
+	for val in accept_ra accept_redirects; do
+		echo 1 > /proc/sys/net/ipv6/conf/${device}/${val}
+	done
 }
 
 function ipv6_device_autoconf_disable() {
 	local device=${1}
 
-	if ! device_exists ${device}; then
-		error "Device '${device}' does not exist."
-		return ${EXIT_ERROR}
+	assert isset device
+
+	# Allow setting default and all settings
+	if ! isoneof device all default; then
+		assert device_exists ${device}
 	fi
 
-	echo 0 > /proc/sys/net/ipv6/conf/${device}/autoconf
+	local val
+	for val in accept_ra accept_redirects; do
+		echo 0 > /proc/sys/net/ipv6/conf/${device}/${val}
+	done
+}
+
+function ipv6_device_forwarding_enable() {
+	local device=${1}
+
+	assert isset device
+
+	# Allow setting default and all settings
+	if ! isoneof device all default; then
+		assert device_exists ${device}
+	fi
+
+	echo 1 > /proc/sys/net/ipv6/conf/${device}/forwarding
+}
+
+function ipv6_device_forwarding_disable() {
+	local device=${1}
+
+	assert isset device
+
+	# Allow setting default and all settings
+	if ! isoneof device all default; then
+		assert device_exists ${device}
+	fi
+
+	echo 0 > /proc/sys/net/ipv6/conf/${device}/forwarding
+}
+
+# Enable IPv6 RFC3041 privacy extensions if desired
+function ipv6_device_privacy_extensions_enable() {
+	local device=${1}
+	local type=${2}
+
+	assert isset device
+	assert device_exists ${device}
+
+	# Default value is rfc3041
+	if [ -z "${type}" ]; then
+		type="rfc3041"
+	fi
+
+	assert isset type
+
+	case "${type}" in
+		rfc3041)
+			echo 2 > /proc/sys/net/ipv6/conf/${device}/use_tempaddr
+			;;
+		*)
+			error_log "Given type '${type}' is not supported."
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function ipv6_device_privacy_extensions_disable() {
+	local device=${1}
+
+	assert isset device
+	assert device_exists ${device}
+
+	echo 0 > /proc/sys/net/ipv6/conf/${device}/use_tempaddr
 }
 
 function ipv6_is_valid() {
 	local address=${1}
+
+	assert isset address
 
 	# Check length
 	[ ${#address} -gt 39 ] && return ${EXIT_ERROR}
@@ -62,6 +158,8 @@ function ipv6_is_valid() {
 
 function ipv6_implode() {
 	local address=${1}
+
+	assert isset address
 
 	if ! ipv6_is_valid ${address}; then
 		error "IPv6 address is invalid: ${address}"
@@ -161,6 +259,8 @@ function ipv6_implode() {
 function ipv6_explode() {
 	local address=${1}
 
+	assert isset address
+
 	if [ ${#address} -eq 39 ]; then
 		echo "${address}"
 		return ${EXIT_OK}	
@@ -221,6 +321,8 @@ function ipv6_explode() {
 
 function ipv6_hash() {
 	local address=${1}
+
+	assert isset address
 
 	# Explode address
 	address=$(ipv6_explode ${address})
