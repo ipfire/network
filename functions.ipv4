@@ -61,10 +61,10 @@ function ipv4_detect_duplicate() {
 
 	if ! arping -q -c 2 -w 3 -D -I ${device} ${address}; then
 		log DEBUG "Detected duplicate address '${address}' on device '${device}'."
-		return ${EXIT_ERROR}
+		return ${EXIT_OK}
 	fi
 
-	return ${EXIT_OK}
+	return ${EXIT_ERROR}
 }
 
 function ipv4_update_neighbours() {
