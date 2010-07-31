@@ -79,7 +79,7 @@ function _up() {
 
 	if ! zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
 		if ipv4_detect_duplicate ${zone} ${ADDRESS}; then
-			error_log "Duplicate address detected on zone '${zone}' (${address})."
+			error_log "Duplicate address detected on zone '${zone}' (${ADDRESS})."
 			error_log "Cannot continue."
 			exit ${EXIT_ERROR}
 		fi
