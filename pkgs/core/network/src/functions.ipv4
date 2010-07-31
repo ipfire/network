@@ -1,0 +1,76 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function ipv4_split_prefix() {
+	ip_split_prefix $@
+}
+
+function ipv4_is_valid() {
+	local address=${1}
+
+	assert isset address
+
+	# Cut the /24 if there is one given
+	address=$(ipv4_split_prefix ${address})
+
+	local IFS="."
+	local octet
+	local count
+	for octet in ${address}; do
+		if [ ${octet} -ge 0 ] && [ ${octet} -le 255 ]; then
+			count=$(( ${count} + 1 ))
+			continue
+		fi
+
+		# If we get here the address was not valid
+		break
+	done
+
+	if [ ${count} -eq 4 ]; then
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
+}
+
+function ipv4_detect_duplicate() {
+	local device=${1}
+	local address=${2}
+
+	assert isset address
+	assert isset device
+	assert device_exists ${device}
+
+	if ! arping -q -c 2 -w 3 -D -I ${device} ${address}; then
+		log DEBUG "Detected duplicate address '${address}' on device '${device}'."
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+function ipv4_update_neighbours() {
+	local device=${1}
+	local address=${2}
+
+	arping -q -A -c 1 -I ${device} ${address}
+	( sleep 2; arping -q -U -c 1 -I ${device} ${address} ) >/dev/null 2>&1 </dev/null &
+}
