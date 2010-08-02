@@ -24,31 +24,27 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = cpio
-PKG_VER        = 2.10
+PKG_NAME       = bootchart2
+PKG_VER        = 0.12.2
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Packaging
-PKG_URL        = http://www.gnu.org/software/cpio/
-PKG_LICENSE    = GPLv3+
-PKG_SUMMARY    = A GNU archiving program.
+PKG_GROUP      = System/Statistics
+PKG_URL        = http://github.com/mmeeks/bootchart
+PKG_LICENSE    = GPLv2
+PKG_SUMMARY    = Graphs the boot process.
 
 define PKG_DESCRIPTION
-	GNU cpio copies files into or out of a cpio or tar archive. Archives \
-	are files which contain a collection of other files plus information \
-	about them, such as their file name, owner, timestamps, and access \
-	permissions. The archive can be another file on the disk, a magnetic \
-	tape, or a pipe.
+	Graphs the boot process of the system and lets the user see what \
+	consumes the most time and cpu power or I/O performance.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-CONFIGURE_OPTIONS += \
-	--bindir=/bin \
-	--libexecdir=/tmp \
-	--with-rmt=/usr/sbin/rmt
+define STAGE_BUILD
+	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" $(PARALLELISMFLAGS)
+endef
 
-define STAGE_TEST
-        cd $(DIR_APP) && make check
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install-collector DESTDIR=$(BUILDROOT)
 endef

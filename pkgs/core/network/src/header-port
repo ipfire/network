@@ -22,6 +22,7 @@
 . /lib/network/functions
 
 HOOK=$(basename ${0})
+INFO_SETTINGS="HOOK PORT_PARENTS PORT_CHILDREN"
 
 while [ $# -gt 0 ]; do
 	case "${1}" in
@@ -39,11 +40,34 @@ done
 
 function run() {
 	case "${action}" in
-		edit|add|create|rem|up|down|status)
+		edit|add|create|rem|up|down|status|info)
 			_${action} $@
 			;;
 	esac
 
 	error "Port hook '${HOOK}' didn't exit properly."
 	exit ${EXIT_ERROR}
+}
+
+function _info() {
+	local port=${1}
+	shift
+
+	assert isset port
+
+	config_read $(port_file ${port})
+
+	local key
+	local val
+	for key in PORT_PARENTS PORT_CHILDREN; do
+		val="${key}_VAR"
+		val=${!val}
+		eval "${key}=\"${!val}\""
+	done
+
+	for key in ${INFO_SETTINGS}; do
+		echo "${key}=\"${!key}\""
+	done
+
+	exit ${ERROR_OK}
 }

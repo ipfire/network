@@ -21,24 +21,26 @@
 
 . /lib/network/header-port
 
-HOOK_SETTINGS="HOOK DEVICE DEVICE_MAC DEVICE_VID"
+HOOK_SETTINGS="HOOK ADDRESS PARENT TAG"
 
-DEVICE_MAC=$(mac_generate)
+PORT_PARENTS_VAR="PARENT"
+
+ADDRESS=$(mac_generate)
 
 function _check() {
-	assert isset DEVICE
-	assert ismac DEVICE_MAC
-	assert isinteger DEVICE_VID
+	assert isset PARENT
+	assert ismac ADDRESS
+	assert isinteger TAG
 
-	if [ ${DEVICE_VID} -gt 4096 ]; then
-		error "DEVICE_VID is greater than 4096."
+	if [ ${TAG} -gt 4096 ]; then
+		error "TAG is greater than 4096."
 		exit ${EXIT_ERROR}
 	fi
 
 	local reserved
 	for reserved in 0 4095; do
-		if [ "${DEVICE_VID}" = "${reserved}" ]; then
-			error "DEVICE_VID=${reserved} is reserved."
+		if [ "${TAG}" = "${reserved}" ]; then
+			error "TAG=${reserved} is reserved."
 			exit ${EXIT_ERROR}
 		fi
 	done
@@ -48,13 +50,13 @@ function _create() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--device=*)
-				DEVICE=${1#--device=}
+				PARENT=${1#--device=}
 				;;
 			--mac=*)
-				DEVICE_MAC=${1#--mac=}
+				ADDRESS=${1#--mac=}
 				;;
 			--id=*)
-				DEVICE_VID=${1#--id=}
+				TAG=${1#--id=}
 				;;
 			*)
 				warning "Unknown argument '${1}'"
@@ -63,7 +65,7 @@ function _create() {
 		shift
 	done
 
-	local port="${DEVICE}v${DEVICE_VID}"
+	local port="${PARENT}v${TAG}"
 
 	config_write $(port_file ${port}) ${HOOK_SETTINGS}
 
@@ -81,7 +83,7 @@ function _edit() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--mac=*)
-				DEVICE_MAC=${1#--mac=}
+				ADDRESS=${1#--mac=}
 				;;
 			*)
 				warning "Unknown argument '${1}'"
@@ -103,7 +105,7 @@ function _up() {
 	config_read $(port_file ${port})
 
 	if ! device_exists ${port}; then
-		virtual_create ${DEVICE} ${DEVICE_VID} ${DEVICE_MAC}
+		virtual_create ${PARENT} ${TAG} ${ADDRESS}
 	fi
 
 	exit ${EXIT_OK}
@@ -129,9 +131,9 @@ function _status() {
 	local zone=${1}
 	local port=${2}
 
-config_read $(zone_dir ${zone})/${port}
+	config_read $(zone_dir ${zone})/${port}
 
-	local device=$(devicify ${DEVICE_MAC})
+	local device=$(devicify ${ADDRESS})
 
 	printf "        %-10s - " "${device}"
 	if ! device_is_up ${device}; then

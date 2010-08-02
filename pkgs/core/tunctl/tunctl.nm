@@ -24,31 +24,37 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = cpio
-PKG_VER        = 2.10
+PKG_NAME       = tunctl
+PKG_VER        = 1.5
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Packaging
-PKG_URL        = http://www.gnu.org/software/cpio/
-PKG_LICENSE    = GPLv3+
-PKG_SUMMARY    = A GNU archiving program.
+PKG_GROUP      = Networking/Tools
+PKG_URL        = http://tunctl.sourceforge.net/
+PKG_LICENSE    = GPL+
+PKG_SUMMARY    = Create and remove virtual network interfaces.
 
 define PKG_DESCRIPTION
-	GNU cpio copies files into or out of a cpio or tar archive. Archives \
-	are files which contain a collection of other files plus information \
-	about them, such as their file name, owner, timestamps, and access \
-	permissions. The archive can be another file on the disk, a magnetic \
-	tape, or a pipe.
+	tunctl is a tool to set up and maintain persistent TUN/TAP network \
+	interfaces, enabling user applications access to the wire side of a \
+	virtual nework interface. Such interfaces is useful for connecting VPN \
+	software, virtualization, emulation and a number of other similar \
+	applications to the network stack.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
 
-CONFIGURE_OPTIONS += \
-	--bindir=/bin \
-	--libexecdir=/tmp \
-	--with-rmt=/usr/sbin/rmt
+# XXX needs docbook for man page
 
-define STAGE_TEST
-        cd $(DIR_APP) && make check
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/^CFLAGS.*/CFLAGS = $(CFLAGS)/" -i Makefile
+endef
+
+define STAGE_BUILD
+	cd $(DIR_APP) && make tunctl CC=gcc
+endef
+
+define STAGE_INSTALL
+	-mkdir -pv $(BUILDROOT)/usr/sbin
+	cd $(DIR_APP) && install -m 755 tunctl $(BUILDROOT)/usr/sbin
 endef
