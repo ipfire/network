@@ -1,7 +1,7 @@
 
 include ../gcc-static/gcc-static.nm
 
-PKG_TOOLCHAIN_DEPS += binutils glibc
+PKG_TOOLCHAIN_DEPS += binutils elfutils glibc
 
 define STAGE_PREPARE_CMDS2
 	cd $(DIR_APP) && sed \
@@ -33,6 +33,7 @@ define STAGE_BUILD
 			--enable-threads=posix \
 			--enable-__cxa_atexit \
 			--enable-languages=c,c++ \
+			--enable-lto \
 			--disable-libstdcxx-pch \
 			--disable-multilib \
 			--disable-libssp \
