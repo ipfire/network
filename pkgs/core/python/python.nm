@@ -57,7 +57,9 @@ define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && rm -rf Modules/{expat,zlib}
 	cd $(DIR_APP) && rm -rf Modules/_ctypes/{darwin,libffi,libffi_arm_wince,libffi_msvc,libffi_osx}
 
-	cd $(DIR_APP) && autoreconf
+	# Remove autoconf version check and reconfigure
+	cd $(DIR_APP) && sed -e "s/^version_required.*//" -i configure.in
+	cd $(DIR_APP) && autoreconf --force
 endef
 
 define STAGE_BUILD
