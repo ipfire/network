@@ -47,6 +47,8 @@ define STAGE_BUILD
 			--disable-shared \
 			--disable-nls \
 			--enable-esp \
+			--without-cloog \
+			--without-ppl \
 			$(CONFIGURE_ARGS)
 
 	cd $(DIR_SRC)/gcc-build && make #$(PARALLELISMFLAGS)
