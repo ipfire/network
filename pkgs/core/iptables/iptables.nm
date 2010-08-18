@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = iptables
-PKG_VER        = 1.4.8
+PKG_VER        = 1.4.9.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -79,7 +79,7 @@ define STAGE_INSTALL_CMDS
 	ln -svf ../../lib/libip4tc.so.0 $(BUILDROOT)/usr/lib/libip4tc.so
 	ln -svf ../../lib/libip6tc.so.0 $(BUILDROOT)/usr/lib/libip6tc.so
 	ln -svf ../../lib/libipq.so.0 $(BUILDROOT)/usr/lib/libipq.so
-	ln -svf ../../lib/libxtables.so.4 $(BUILDROOT)/usr/lib/libxtables.so
+	ln -svf ../../lib/libxtables.so.5 $(BUILDROOT)/usr/lib/libxtables.so
 
 	# Replace absolute symlink
 	ln -svf ../sbin/iptables-multi $(BUILDROOT)/bin/iptables-xml
