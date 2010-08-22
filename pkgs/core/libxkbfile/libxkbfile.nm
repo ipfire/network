@@ -24,31 +24,29 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = pixman
-PKG_VER        = 0.18.4
+PKG_NAME       = libxkbfile
+PKG_VER        = 1.0.6
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://xorg.freedesktop.org/archive/individual/lib/
+PKG_GROUP      = X/Libraries
+PKG_URL        = http://www.x.org
 PKG_LICENSE    = MIT
-PKG_SUMMARY    = Pixel manipulation library.
+PKG_SUMMARY    = X.Org X11 libxkbfile runtime library.
 
-PKG_BUILD_DEPS+= pkg-config
+PKG_BUILD_DEPS+= pkg-config xorg-x11-proto-devel
+PKG_DEPS      += libX11
 
 define PKG_DESCRIPTION
-	Pixman is a pixel manipulation library for X and cairo.
+	The flex program generates scanners. Scanners are programs which can \
+	recognize lexical patterns in text. Flex takes pairs of regular \
+	expressions and C code as input and generates a C source file as \
+	output.  The output file is compiled and linked with a library to \
+	produce an executable.  The executable searches through its input for \
+	occurrences of the regular expressions. When a match is found, it \
+	executes the corresponding C code. Flex was designed to work with \
+	both Yacc and Bison, and is used by many programs as part of their \
+	build process.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-# XXX double check this later on
-ifeq "$(TARGET)" "via-c7"
-	CONFIGURE_OPTIONS += --enable-mmx #--enable-sse2
-else
-ifeq "$(TARGET)" "atom"
-	CONFIGURE_OPTIONS += --enable-mmx --enable-sse2
-else
-	CONFIGURE_OPTIONS += --disable-mmx --disable-sse2
-endif
-endif

@@ -1,0 +1,25 @@
+From 04bd8e2fa6be557f58a0e417b0f3befc56f5ef59 Mon Sep 17 00:00:00 2001
+From: Fedora X Ninjas <x@fedoraproject.org>
+Date: Thu, 1 Jul 2010 15:45:03 +1000
+Subject: [PATCH] Build libxf86config with -fPIC.
+
+---
+ hw/xfree86/parser/Makefile.am |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/xfree86/parser/Makefile.am b/hw/xfree86/parser/Makefile.am
+index caf7079..655e73f 100644
+--- a/hw/xfree86/parser/Makefile.am
++++ b/hw/xfree86/parser/Makefile.am
+@@ -32,7 +32,7 @@ libxf86config_internal_la_SOURCES = \
+ 
+ libxf86config_a_SOURCES = \
+ 	$(INTERNAL_SOURCES)
+-libxf86config_a_CFLAGS = $(AM_CFLAGS)
++libxf86config_a_CFLAGS = $(AM_CFLAGS) -fPIC -fvisibility=hidden
+ 
+ AM_CFLAGS = $(DIX_CFLAGS) $(XORG_CFLAGS) \
+ 	-DSYSCONFDIR=\"$(sysconfdir)\" \
+-- 
+1.7.1
+

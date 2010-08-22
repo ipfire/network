@@ -1,0 +1,909 @@
+From deab888bb3bb2a56963da50ff551bd66fbd858a1 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Tue, 29 Jun 2010 13:49:27 +1000
+Subject: [PATCH 1/5] xkb: Mark switch case fallthrough with comment.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ xkb/xkbActions.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/xkb/xkbActions.c b/xkb/xkbActions.c
+index 4c7bce2..6a7f36d 100644
+--- a/xkb/xkbActions.c
++++ b/xkb/xkbActions.c
+@@ -625,6 +625,8 @@ _XkbFilterPointerBtn(	XkbSrvInfoPtr	xkbi,
+ 		    break;
+ 		}
+ 		xkbi->lockedPtrButtons&= ~(1<<button);
++
++		/* fallthrough */
+ 	    case XkbSA_PtrBtn:
+ 		XkbDDXFakeDeviceButton(xkbi->device, 0, button);
+ 		break;
+-- 
+1.7.1
+
+From 50b6311dbd2594acc36d6856fdde8623459f1374 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Tue, 29 Jun 2010 12:12:53 +1000
+Subject: [PATCH 2/5] xkb: merge lockedPtrButtons state from all attached SDs.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Problem:
+lockedPtrButtons keeps the state of the buttons locked by a PointerKeys button
+press. Unconditionally clearing the bits may cause stuck buttons in this
+sequence of events:
+
+1. type Shift + NumLock to enable PointerKeys
+2. type 0/Ins on keypad to emulate Button 1 press
+        → button1 press event to client
+3. press and release button 1 on physical mouse
+        → button1 release event to client
+
+Button 1 on the MD is now stuck and cannot be released.
+
+Cause:
+XKB PointerKeys button events are posted through the XTEST pointer device.
+Once a press is generated, the XTEST device's button is down. The DIX merges
+the button state of all attached SDs, hence the MD will have a button down
+while the XTEST device has a button down.
+
+PointerKey button events are only generated on the master device to avoid
+duplicate events (see XkbFakeDeviceButton()). If the MD has the
+lockedPtrButtons bit cleared by a release event on a physical device, no
+such event is generated when a keyboard device triggers the PointerKey
+ButtonRelease trigger. Since the event - if generated - is posted through
+the XTEST pointer device, lack of a generated ButtonRelease event on the
+XTEST pointer device means the button is never released, resulting in the
+stuck button observed above.
+
+Solution:
+This patch merges the MD's lockedPtrButtons with the one of all attached
+slave devices on release events. Thus, as long as one attached keyboard has
+a lockedPtrButtons bit set, this bit is kept in the MD. Once a PointerKey
+button is released on all keyboards, the matching release event is emulated
+from the MD through the XTEST pointer device, thus also releasing the button
+in the DIX.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ include/xkbsrv.h |    3 +++
+ xkb/xkbAccessX.c |   18 +++++++++++++++++-
+ xkb/xkbActions.c |    8 ++++++++
+ xkb/xkbUtils.c   |   26 ++++++++++++++++++++++++++
+ 4 files changed, 54 insertions(+), 1 deletions(-)
+
+diff --git a/include/xkbsrv.h b/include/xkbsrv.h
+index c0cd501..f0db0e4 100644
+--- a/include/xkbsrv.h
++++ b/include/xkbsrv.h
+@@ -933,6 +933,9 @@ extern int XkbGetEffectiveGroup(
+         XkbStatePtr             /* xkbstate */,
+         CARD8                   /* keycode */);
+ 
++extern void XkbMergeLockedPtrBtns(
++        DeviceIntPtr            /* master */);
++
+ #include "xkbfile.h"
+ #include "xkbrules.h"
+ 
+diff --git a/xkb/xkbAccessX.c b/xkb/xkbAccessX.c
+index be1dcee..e3fdc06 100644
+--- a/xkb/xkbAccessX.c
++++ b/xkb/xkbAccessX.c
+@@ -707,8 +707,24 @@ DeviceEvent     *event = &ev->device_event;
+ 	    changed |= XkbPointerButtonMask;
+     }
+     else if (event->type == ET_ButtonRelease) {
+-	if (xkbi)
++	if (xkbi) {
+ 	    xkbi->lockedPtrButtons&= ~(1 << (event->detail.key & 0x7));
++
++            /* Merge this MD's lockedPtrButtons with the one of all
++             * attached slave devices.
++             * The DIX uses a merged button state for MDs, not
++             * releasing buttons until the last SD has released
++             * thenm. If we unconditionally clear the
++             * lockedPtrButtons bit on the MD, a PointerKeys button
++             * release on the SD keyboard won't generate the required fake button
++             * event on the XTEST pointer, thus never processing the
++             * button event in the DIX and the XTEST pointer's
++             * buttons stay down - result is a stuck button.
++             */
++	    if (IsMaster(dev))
++                XkbMergeLockedPtrBtns(dev);
++	}
++
+ 	changed |= XkbPointerButtonMask;
+     }
+ 
+diff --git a/xkb/xkbActions.c b/xkb/xkbActions.c
+index 6a7f36d..ab52b6a 100644
+--- a/xkb/xkbActions.c
++++ b/xkb/xkbActions.c
+@@ -626,6 +626,14 @@ _XkbFilterPointerBtn(	XkbSrvInfoPtr	xkbi,
+ 		}
+ 		xkbi->lockedPtrButtons&= ~(1<<button);
+ 
++		if (IsMaster(xkbi->device))
++		{
++		    XkbMergeLockedPtrBtns(xkbi->device);
++                    /* One SD still has lock set, don't post event */
++		    if ((xkbi->lockedPtrButtons & (1 << button)) != 0)
++			break;
++		}
++
+ 		/* fallthrough */
+ 	    case XkbSA_PtrBtn:
+ 		XkbDDXFakeDeviceButton(xkbi->device, 0, button);
+diff --git a/xkb/xkbUtils.c b/xkb/xkbUtils.c
+index b1e0e55..d7d1935 100644
+--- a/xkb/xkbUtils.c
++++ b/xkb/xkbUtils.c
+@@ -2190,3 +2190,29 @@ XkbGetEffectiveGroup(XkbSrvInfoPtr xkbi, XkbStatePtr xkbState, CARD8 keycode)
+ 
+     return effectiveGroup;
+ }
++
++/* Merge the lockedPtrButtons from all attached SDs for the given master
++ * device into the MD's state.
++ */
++void
++XkbMergeLockedPtrBtns(DeviceIntPtr master)
++{
++    DeviceIntPtr d = inputInfo.devices;
++    XkbSrvInfoPtr xkbi = NULL;
++
++    if (!IsMaster(master))
++        return;
++
++    if (!master->key)
++        return;
++
++    xkbi = master->key->xkbInfo;
++    xkbi->lockedPtrButtons = 0;
++
++    for (; d; d = d->next) {
++        if (IsMaster(d) || GetMaster(d, MASTER_KEYBOARD) != master || !d->key)
++            continue;
++
++        xkbi->lockedPtrButtons |= d->key->xkbInfo->lockedPtrButtons;
++    }
++}
+-- 
+1.7.1
+
+From 4a4224f5d786035af88c251a9ee177217e8f77fd Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Wed, 14 Apr 2010 10:54:29 +1000
+Subject: [PATCH 3/5] xkb: rename XkbFakeDeviceButton and XkbFakeDeviceMotion, move into xkbActions.c
+
+The name XkbDDXFakeDeviceButton and XkbDDXFakeDeviceMotion is somewhat
+misleading, there's no DDX involved in the game at all anymore.
+
+This removes XkbFakeDeviceMotion and XkbFakeDeviceButton from the API where
+it arguably shouldn't have been in the first place.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+Reviewed-by: Dan Nicholson <dbn.lists@gmail.com>
+---
+ include/xkbsrv.h |   13 -------
+ xkb/Makefile.am  |    4 +--
+ xkb/ddxDevBtn.c  |   69 --------------------------------------
+ xkb/ddxFakeMtn.c |   64 -----------------------------------
+ xkb/xkbActions.c |   97 ++++++++++++++++++++++++++++++++++++++++++++++-------
+ 5 files changed, 85 insertions(+), 162 deletions(-)
+ delete mode 100644 xkb/ddxDevBtn.c
+ delete mode 100644 xkb/ddxFakeMtn.c
+
+diff --git a/include/xkbsrv.h b/include/xkbsrv.h
+index f0db0e4..d1cbd1a 100644
+--- a/include/xkbsrv.h
++++ b/include/xkbsrv.h
+@@ -768,19 +768,6 @@ extern _X_EXPORT void XkbDDXUpdateDeviceIndicators(
+ 	CARD32			/* newState */
+ );
+ 
+-extern _X_EXPORT void XkbDDXFakePointerMotion(
+-	DeviceIntPtr	/* dev */,
+- 	unsigned int	/* flags */,
+-	int		/* x */,
+-	int		/* y */
+-);
+-
+-extern _X_EXPORT void XkbDDXFakeDeviceButton(
+-	DeviceIntPtr	/* dev */,
+-	Bool		/* press */,
+-	int		/* button */
+-);
+-
+ extern _X_EXPORT int XkbDDXTerminateServer(
+ 	DeviceIntPtr	/* dev */,
+ 	KeyCode		/* key */,
+diff --git a/xkb/Makefile.am b/xkb/Makefile.am
+index e54ce59..fb3ccbf 100644
+--- a/xkb/Makefile.am
++++ b/xkb/Makefile.am
+@@ -5,11 +5,9 @@ AM_CFLAGS = $(DIX_CFLAGS)
+ DDX_SRCS = \
+         ddxBeep.c \
+         ddxCtrls.c \
+-        ddxFakeMtn.c \
+         ddxLEDs.c \
+         ddxLoad.c \
+-        ddxList.c \
+-        ddxDevBtn.c
++        ddxList.c
+ 
+ DIX_SRCS = \
+         xkb.c \
+diff --git a/xkb/ddxDevBtn.c b/xkb/ddxDevBtn.c
+deleted file mode 100644
+index b8a1255..0000000
+--- a/xkb/ddxDevBtn.c
++++ /dev/null
+@@ -1,69 +0,0 @@
+-/************************************************************
+-Copyright (c) 1995 by Silicon Graphics Computer Systems, Inc.
+-
+-Permission to use, copy, modify, and distribute this
+-software and its documentation for any purpose and without
+-fee is hereby granted, provided that the above copyright
+-notice appear in all copies and that both that copyright
+-notice and this permission notice appear in supporting
+-documentation, and that the name of Silicon Graphics not be 
+-used in advertising or publicity pertaining to distribution 
+-of the software without specific prior written permission.
+-Silicon Graphics makes no representation about the suitability 
+-of this software for any purpose. It is provided "as is"
+-without any express or implied warranty.
+-
+-SILICON GRAPHICS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS 
+-SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY 
+-AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL SILICON
+-GRAPHICS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL 
+-DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, 
+-DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE 
+-OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION  WITH
+-THE USE OR PERFORMANCE OF THIS SOFTWARE.
+-
+-********************************************************/
+-
+-#ifdef HAVE_DIX_CONFIG_H
+-#include <dix-config.h>
+-#endif
+-
+-#include "inputstr.h"
+-#include <xkbsrv.h>
+-#include "mi.h"
+-
+-void
+-XkbDDXFakeDeviceButton(DeviceIntPtr dev,Bool press,int button)
+-{
+-    EventListPtr        events;
+-    int                 nevents, i;
+-    DeviceIntPtr        ptr;
+-
+-    /* If dev is a slave device, and the SD is attached, do nothing. If we'd
+-     * post through the attached master pointer we'd get duplicate events.
+-     *
+-     * if dev is a master keyboard, post through the XTEST device
+-     *
+-     * if dev is a floating slave, post through the device itself.
+-     */
+-
+-    if (IsMaster(dev))
+-        ptr = GetXTestDevice(GetMaster(dev, MASTER_POINTER));
+-    else if (!dev->u.master)
+-        ptr = dev;
+-    else
+-        return;
+-
+-    events = InitEventList(GetMaximumEventsNum());
+-    OsBlockSignals();
+-    nevents = GetPointerEvents(events, ptr,
+-                               press ? ButtonPress : ButtonRelease, button,
+-                               0 /* flags */, 0 /* first */,
+-                               0 /* num_val */, NULL);
+-    OsReleaseSignals();
+-
+-    for (i = 0; i < nevents; i++)
+-        mieqProcessDeviceEvent(ptr, (InternalEvent*)events[i].event, NULL);
+-
+-    FreeEventList(events, GetMaximumEventsNum());
+-}
+diff --git a/xkb/ddxFakeMtn.c b/xkb/ddxFakeMtn.c
+deleted file mode 100644
+index b383716..0000000
+--- a/xkb/ddxFakeMtn.c
++++ /dev/null
+@@ -1,64 +0,0 @@
+-/************************************************************
+-Copyright (c) 1993 by Silicon Graphics Computer Systems, Inc.
+-
+-Permission to use, copy, modify, and distribute this
+-software and its documentation for any purpose and without
+-fee is hereby granted, provided that the above copyright
+-notice appear in all copies and that both that copyright
+-notice and this permission notice appear in supporting
+-documentation, and that the name of Silicon Graphics not be 
+-used in advertising or publicity pertaining to distribution 
+-of the software without specific prior written permission.
+-Silicon Graphics makes no representation about the suitability 
+-of this software for any purpose. It is provided "as is"
+-without any express or implied warranty.
+-
+-SILICON GRAPHICS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS 
+-SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY 
+-AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL SILICON
+-GRAPHICS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL 
+-DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, 
+-DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE 
+-OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION  WITH
+-THE USE OR PERFORMANCE OF THIS SOFTWARE.
+-
+-********************************************************/
+-
+-#ifdef HAVE_DIX_CONFIG_H
+-#include <dix-config.h>
+-#endif
+-
+-#include "inputstr.h"
+-#include <xkbsrv.h>
+-#include "mi.h"
+-
+-void
+-XkbDDXFakePointerMotion(DeviceIntPtr dev, unsigned flags,int x,int y)
+-{
+-    EventListPtr        events;
+-    int                 nevents, i;
+-    DeviceIntPtr        ptr;
+-    int                 gpe_flags = 0;
+-
+-    if (!dev->u.master)
+-        ptr = dev;
+-    else
+-        ptr = GetXTestDevice(GetMaster(dev, MASTER_POINTER));
+-
+-    if (flags & XkbSA_MoveAbsoluteX || flags & XkbSA_MoveAbsoluteY)
+-        gpe_flags = POINTER_ABSOLUTE;
+-    else
+-        gpe_flags = POINTER_RELATIVE;
+-
+-    events = InitEventList(GetMaximumEventsNum());
+-    OsBlockSignals();
+-    nevents = GetPointerEvents(events, ptr,
+-                               MotionNotify, 0,
+-                               gpe_flags, 0, 2, (int[]){x, y});
+-    OsReleaseSignals();
+-
+-    for (i = 0; i < nevents; i++)
+-        mieqProcessDeviceEvent(ptr, (InternalEvent*)events[i].event, NULL);
+-
+-    FreeEventList(events, GetMaximumEventsNum());
+-}
+diff --git a/xkb/xkbActions.c b/xkb/xkbActions.c
+index ab52b6a..2817e39 100644
+--- a/xkb/xkbActions.c
++++ b/xkb/xkbActions.c
+@@ -40,11 +40,15 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ #include <xkbsrv.h>
+ #include "xkb.h"
+ #include <ctype.h>
++#include "mi.h"
+ #define EXTENSION_EVENT_BASE 64
+ 
+ static int xkbDevicePrivateKeyIndex;
+ DevPrivateKey xkbDevicePrivateKey = &xkbDevicePrivateKeyIndex;
+ 
++static void XkbFakeDeviceButton(DeviceIntPtr dev,Bool press,int button);
++static void XkbFakePointerMotion(DeviceIntPtr dev, unsigned flags,int x,int y);
++
+ void
+ xkbUnwrapProc(DeviceIntPtr device, DeviceHandleProc proc,
+                    pointer data)
+@@ -479,7 +483,7 @@ int		dx,dy;
+ 	dx= xkbi->mouseKeysDX;
+ 	dy= xkbi->mouseKeysDY;
+     }
+-    XkbDDXFakePointerMotion(xkbi->device, xkbi->mouseKeysFlags,dx,dy);
++    XkbFakePointerMotion(xkbi->device, xkbi->mouseKeysFlags,dx,dy);
+     return xkbi->desc->ctrls->mk_interval;
+ }
+ 
+@@ -507,7 +511,7 @@ Bool	accel;
+ 	accel= ((pAction->ptr.flags&XkbSA_NoAcceleration)==0);
+ 	x= XkbPtrActionX(&pAction->ptr);
+ 	y= XkbPtrActionY(&pAction->ptr);
+-	XkbDDXFakePointerMotion(xkbi->device, pAction->ptr.flags,x,y);
++	XkbFakePointerMotion(xkbi->device, pAction->ptr.flags,x,y);
+ 	AccessXCancelRepeatKey(xkbi,keycode);
+ 	xkbi->mouseKeysAccel= accel&&
+ 		(xkbi->desc->ctrls->enabled_ctrls&XkbMouseKeysAccelMask);
+@@ -554,7 +558,7 @@ _XkbFilterPointerBtn(	XkbSrvInfoPtr	xkbi,
+ 			((pAction->btn.flags&XkbSA_LockNoLock)==0)) {
+ 		    xkbi->lockedPtrButtons|= (1<<button);
+ 		    AccessXCancelRepeatKey(xkbi,keycode);
+-		    XkbDDXFakeDeviceButton(xkbi->device, 1, button);
++		    XkbFakeDeviceButton(xkbi->device, 1, button);
+ 		    filter->upAction.type= XkbSA_NoAction;
+ 		}
+ 		break;
+@@ -565,12 +569,12 @@ _XkbFilterPointerBtn(	XkbSrvInfoPtr	xkbi,
+ 		    if (pAction->btn.count>0) {
+ 			nClicks= pAction->btn.count;
+ 			for (i=0;i<nClicks;i++) {
+-			    XkbDDXFakeDeviceButton(xkbi->device, 1, button);
+-			    XkbDDXFakeDeviceButton(xkbi->device, 0, button);
++			    XkbFakeDeviceButton(xkbi->device, 1, button);
++			    XkbFakeDeviceButton(xkbi->device, 0, button);
+ 			}
+ 			filter->upAction.type= XkbSA_NoAction;
+ 		    }
+-		    else XkbDDXFakeDeviceButton(xkbi->device, 1, button);
++		    else XkbFakeDeviceButton(xkbi->device, 1, button);
+ 		}
+ 		break;
+ 	    case XkbSA_SetPtrDflt:
+@@ -636,7 +640,7 @@ _XkbFilterPointerBtn(	XkbSrvInfoPtr	xkbi,
+ 
+ 		/* fallthrough */
+ 	    case XkbSA_PtrBtn:
+-		XkbDDXFakeDeviceButton(xkbi->device, 0, button);
++		XkbFakeDeviceButton(xkbi->device, 0, button);
+ 		break;
+ 	}
+ 	filter->active = 0;
+@@ -974,7 +978,7 @@ int		button;
+ 		if ((pAction->devbtn.flags&XkbSA_LockNoLock)||
+ 		    BitIsOn(dev->button->down, button))
+ 		    return 0;
+-		XkbDDXFakeDeviceButton(dev,TRUE,button);
++		XkbFakeDeviceButton(dev,TRUE,button);
+ 		filter->upAction.type= XkbSA_NoAction;
+ 		break;
+ 	    case XkbSA_DeviceBtn:
+@@ -982,12 +986,12 @@ int		button;
+ 		    int nClicks,i;
+ 		    nClicks= pAction->btn.count;
+ 		    for (i=0;i<nClicks;i++) {
+-			XkbDDXFakeDeviceButton(dev,TRUE,button);
+-			XkbDDXFakeDeviceButton(dev,FALSE,button);
++			XkbFakeDeviceButton(dev,TRUE,button);
++			XkbFakeDeviceButton(dev,FALSE,button);
+ 		    }
+ 		    filter->upAction.type= XkbSA_NoAction;
+ 		}
+-		else XkbDDXFakeDeviceButton(dev,TRUE,button);
++		else XkbFakeDeviceButton(dev,TRUE,button);
+ 		break;
+ 	}
+     }
+@@ -1006,10 +1010,10 @@ int		button;
+ 		if ((filter->upAction.devbtn.flags&XkbSA_LockNoUnlock)||
+ 		    !BitIsOn(dev->button->down, button))
+ 		    return 0;
+-		XkbDDXFakeDeviceButton(dev,FALSE,button);
++		XkbFakeDeviceButton(dev,FALSE,button);
+ 		break;
+ 	    case XkbSA_DeviceBtn:
+-		XkbDDXFakeDeviceButton(dev,FALSE,button);
++		XkbFakeDeviceButton(dev,FALSE,button);
+ 		break;
+ 	}
+ 	filter->active = 0;
+@@ -1326,3 +1330,70 @@ xkbStateNotify	sn;
+     return;
+ }
+ 
++static void
++XkbFakePointerMotion(DeviceIntPtr dev, unsigned flags,int x,int y)
++{
++    EventListPtr        events;
++    int                 nevents, i;
++    DeviceIntPtr        ptr;
++    int                 gpe_flags = 0;
++
++    if (!dev->u.master)
++        ptr = dev;
++    else
++        ptr = GetXTestDevice(GetMaster(dev, MASTER_POINTER));
++
++    if (flags & XkbSA_MoveAbsoluteX || flags & XkbSA_MoveAbsoluteY)
++        gpe_flags = POINTER_ABSOLUTE;
++    else
++        gpe_flags = POINTER_RELATIVE;
++
++    events = InitEventList(GetMaximumEventsNum());
++    OsBlockSignals();
++    nevents = GetPointerEvents(events, ptr,
++                               MotionNotify, 0,
++                               gpe_flags, 0, 2, (int[]){x, y});
++    OsReleaseSignals();
++
++    for (i = 0; i < nevents; i++)
++        mieqProcessDeviceEvent(ptr, (InternalEvent*)events[i].event, NULL);
++
++    FreeEventList(events, GetMaximumEventsNum());
++}
++
++static void
++XkbFakeDeviceButton(DeviceIntPtr dev,Bool press,int button)
++{
++    EventListPtr        events;
++    int                 nevents, i;
++    DeviceIntPtr        ptr;
++
++    /* If dev is a slave device, and the SD is attached, do nothing. If we'd
++     * post through the attached master pointer we'd get duplicate events.
++     *
++     * if dev is a master keyboard, post through the XTEST device
++     *
++     * if dev is a floating slave, post through the device itself.
++     */
++
++    if (IsMaster(dev))
++        ptr = GetXTestDevice(GetMaster(dev, MASTER_POINTER));
++    else if (!dev->u.master)
++        ptr = dev;
++    else
++        return;
++
++    events = InitEventList(GetMaximumEventsNum());
++    OsBlockSignals();
++    nevents = GetPointerEvents(events, ptr,
++                               press ? ButtonPress : ButtonRelease, button,
++                               0 /* flags */, 0 /* first */,
++                               0 /* num_val */, NULL);
++    OsReleaseSignals();
++
++
++    for (i = 0; i < nevents; i++)
++        mieqProcessDeviceEvent(ptr, (InternalEvent*)events[i].event, NULL);
++
++    FreeEventList(events, GetMaximumEventsNum());
++}
+-- 
+1.7.1
+
+From dcb46252f959893f1934232698e2ae26390a8a5b Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Tue, 29 Jun 2010 15:24:51 +1000
+Subject: [PATCH 4/5] xkb: emulate PointerKeys events only on the master device.
+
+This patch replicates the behaviour for button events. Only generate a
+PointerKeys motion event on the master device, not on the slave device.
+Fixes the current issue of PointerKey motion events generating key events as
+well.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ xkb/xkbActions.c |    9 ++++-----
+ 1 files changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/xkb/xkbActions.c b/xkb/xkbActions.c
+index 2817e39..391c375 100644
+--- a/xkb/xkbActions.c
++++ b/xkb/xkbActions.c
+@@ -496,9 +496,6 @@ _XkbFilterPointerMove(	XkbSrvInfoPtr	xkbi,
+ int	x,y;
+ Bool	accel;
+ 
+-    if (xkbi->device == inputInfo.keyboard)
+-        return 0;
+-
+     if (filter->keycode==0) {		/* initial press */
+ 	filter->keycode = keycode;
+ 	filter->active = 1;
+@@ -1338,10 +1335,12 @@ XkbFakePointerMotion(DeviceIntPtr dev, unsigned flags,int x,int y)
+     DeviceIntPtr        ptr;
+     int                 gpe_flags = 0;
+ 
+-    if (!dev->u.master)
++    if (IsMaster(dev))
++        ptr = GetXTestDevice(GetMaster(dev, MASTER_POINTER));
++    else if (!dev->u.master)
+         ptr = dev;
+     else
+-        ptr = GetXTestDevice(GetMaster(dev, MASTER_POINTER));
++        return;
+ 
+     if (flags & XkbSA_MoveAbsoluteX || flags & XkbSA_MoveAbsoluteY)
+         gpe_flags = POINTER_ABSOLUTE;
+-- 
+1.7.1
+
+From 40941fb2e9ae763add7b74850e8a0471ac754db6 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 1 Jul 2010 12:44:57 +1000
+Subject: [PATCH 5/5] xkb: release XTEST pointer buttons on physical releases. (#28808)
+
+If a button release event is posted for the MD pointer, post a release event
+through the matching XTEST device. This way, a client who posts a button
+press through the XTEST extension cannot inadvertedly lock the button.
+
+This behaviour is required for historical reasons, until server 1.7 the core
+pointer would release a button press on physical events, regardless of the
+XTEST state. Clients seem to rely on this behaviour, causing seemingly stuck
+grabs.
+
+The merged behaviour is kept for multiple keyboard PointerKey events, if two
+physical keyboards hold the button down as a result of PointerKey actions,
+the button is not released until the last keyboard releases the button.
+
+X.Org Bug 28808 <http://bugs.freedesktop.org/show_bug.cgi?id=28808>
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ include/xkbsrv.h |    6 ++++++
+ xkb/xkbAccessX.c |   23 ++++++++++-------------
+ xkb/xkbActions.c |    4 ++--
+ 3 files changed, 18 insertions(+), 15 deletions(-)
+
+diff --git a/include/xkbsrv.h b/include/xkbsrv.h
+index d1cbd1a..a96ca56 100644
+--- a/include/xkbsrv.h
++++ b/include/xkbsrv.h
+@@ -923,6 +923,12 @@ extern int XkbGetEffectiveGroup(
+ extern void XkbMergeLockedPtrBtns(
+         DeviceIntPtr            /* master */);
+ 
++extern void XkbFakeDeviceButton(
++        DeviceIntPtr            /* dev */,
++        int                     /* press */,
++        int                     /* button */);
++
++
+ #include "xkbfile.h"
+ #include "xkbrules.h"
+ 
+diff --git a/xkb/xkbAccessX.c b/xkb/xkbAccessX.c
+index e3fdc06..d3f9652 100644
+--- a/xkb/xkbAccessX.c
++++ b/xkb/xkbAccessX.c
+@@ -710,19 +710,16 @@ DeviceEvent     *event = &ev->device_event;
+ 	if (xkbi) {
+ 	    xkbi->lockedPtrButtons&= ~(1 << (event->detail.key & 0x7));
+ 
+-            /* Merge this MD's lockedPtrButtons with the one of all
+-             * attached slave devices.
+-             * The DIX uses a merged button state for MDs, not
+-             * releasing buttons until the last SD has released
+-             * thenm. If we unconditionally clear the
+-             * lockedPtrButtons bit on the MD, a PointerKeys button
+-             * release on the SD keyboard won't generate the required fake button
+-             * event on the XTEST pointer, thus never processing the
+-             * button event in the DIX and the XTEST pointer's
+-             * buttons stay down - result is a stuck button.
+-             */
+-	    if (IsMaster(dev))
+-                XkbMergeLockedPtrBtns(dev);
++            if (IsMaster(dev))
++            {
++                DeviceIntPtr source;
++                int rc;
++                rc = dixLookupDevice(&source, event->sourceid, serverClient, DixWriteAccess);
++                if (rc != Success)
++                    ErrorF("[xkb] bad sourceid '%d' on button release event.\n", event->sourceid);
++                else if (!IsXTestDevice(source, GetMaster(dev, MASTER_POINTER)))
++                    XkbFakeDeviceButton(dev, FALSE, event->detail.key);
++            }
+ 	}
+ 
+ 	changed |= XkbPointerButtonMask;
+diff --git a/xkb/xkbActions.c b/xkb/xkbActions.c
+index 391c375..5d40199 100644
+--- a/xkb/xkbActions.c
++++ b/xkb/xkbActions.c
+@@ -46,7 +46,7 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ static int xkbDevicePrivateKeyIndex;
+ DevPrivateKey xkbDevicePrivateKey = &xkbDevicePrivateKeyIndex;
+ 
+-static void XkbFakeDeviceButton(DeviceIntPtr dev,Bool press,int button);
++void XkbFakeDeviceButton(DeviceIntPtr dev,Bool press,int button);
+ static void XkbFakePointerMotion(DeviceIntPtr dev, unsigned flags,int x,int y);
+ 
+ void
+@@ -1360,7 +1360,7 @@ XkbFakePointerMotion(DeviceIntPtr dev, unsigned flags,int x,int y)
+     FreeEventList(events, GetMaximumEventsNum());
+ }
+ 
+-static void
++void
+ XkbFakeDeviceButton(DeviceIntPtr dev,Bool press,int button)
+ {
+     EventListPtr        events;
+-- 
+1.7.1
+
+From 7273832bcdc6f43e9a5a8fdbb56844466efb710a Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Fri, 23 Jul 2010 11:46:30 +1000
+Subject: [PATCH 1/3] xkb: post-fix PointerKeys button events with a DeviceChangedEvent.
+
+commit 14327858391ebe929b806efb53ad79e789361883
+    xkb: release XTEST pointer buttons on physical releases. (#28808)
+revealed a bug with the XTEST/PointerKeys interaction.
+
+Events resulting from PointerKeys are injected into the event processing
+stream, not appended to the event queue. The events generated for the fake
+button press include a DeviceChangedEvent (DCE), a raw button event and the
+button event itself. The DCE causes the master to switch classes to the
+attached XTEST pointer device.
+
+Once the fake button is processed, normal event processing continues with
+events in the EQ. The master still contains the XTEST classes, causing some
+events to be dropped if e.g. the number of valuators of the event in the
+queue exceeds the XTEST device's number of valuators.
+
+Example: the EQ contains the following events, processed one-by-one, left to
+right.
+
+[DCE (dev)][Btn down][Btn up][Motion][Motion][...]
+                  ^ XkbFakeDeviceButton injects [DCE (XTEST)][Btn up]
+
+Thus the event sequence processed looks like this:
+
+[DCE (dev)][Btn down][Btn up][DCE (XTEST)][Btn up][Motion][Motion][...]
+
+The first DCE causes the master to switch to the device. The button up event
+injects a DCE to the XTEST device, causing the following Motion events to be
+processed with the master still being on XTEST classes.
+
+This patch post-fixes the injected event sequence with a DCE to restore the
+classes of the original slave device, resulting in an event sequence like
+this:
+[DCE (dev)][Btn down][Btn up][DCE (XTEST)][Btn up][DCE (dev)][Motion][Motion]
+
+Note that this is a simplified description. The event sequence injected by
+the PointerKeys code is injected for the master device only and the matching
+slave device that caused the injection has already finished processing on
+the slave. Furthermore, the injection happens as part of the the XKB layer,
+before the unwrapping of the processInputProc takes us into the DIX where
+the DCE is actually handled.
+
+Bug reproducible with a device that reports more than 2 valuators. Simply
+cause button releases on the device and wait for a "too many valuators"
+warning message.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ xkb/xkbActions.c |   26 +++++++++++++++++++-------
+ 1 files changed, 19 insertions(+), 7 deletions(-)
+
+diff --git a/xkb/xkbActions.c b/xkb/xkbActions.c
+index 5d40199..2afd46d 100644
+--- a/xkb/xkbActions.c
++++ b/xkb/xkbActions.c
+@@ -1365,34 +1365,46 @@ XkbFakeDeviceButton(DeviceIntPtr dev,Bool press,int button)
+ {
+     EventListPtr        events;
+     int                 nevents, i;
+-    DeviceIntPtr        ptr;
++    DeviceIntPtr        ptr, mpointer, lastSlave;
+ 
+     /* If dev is a slave device, and the SD is attached, do nothing. If we'd
+      * post through the attached master pointer we'd get duplicate events.
+      *
+      * if dev is a master keyboard, post through the XTEST device
+-     *
+      * if dev is a floating slave, post through the device itself.
++     *
++     * The event is injected into the event processing, not the EQ. Thus,
++     * ensure that we restore the master after the event sequence to the
++     * original set of classes. Otherwise, the master remains on the XTEST
++     * classes and drops events that don't fit into the XTEST layout (e.g.
++     * events with more than 2 valuators).
++     * To do so, we remember the lastSlave that posted through the master
++     * and add a DeviceChangedEvent to the end of the list.
+      */
+ 
+-    if (IsMaster(dev))
+-        ptr = GetXTestDevice(GetMaster(dev, MASTER_POINTER));
+-    else if (!dev->u.master)
++    if (IsMaster(dev)) {
++        mpointer = GetMaster(dev, MASTER_POINTER);
++        lastSlave = mpointer->u.lastSlave;
++        ptr = GetXTestDevice(mpointer);
++    } else if (!dev->u.master)
+         ptr = dev;
+     else
+         return;
+ 
+-    events = InitEventList(GetMaximumEventsNum());
++    events = InitEventList(GetMaximumEventsNum() + 1);
+     OsBlockSignals();
+     nevents = GetPointerEvents(events, ptr,
+                                press ? ButtonPress : ButtonRelease, button,
+                                0 /* flags */, 0 /* first */,
+                                0 /* num_val */, NULL);
++    if (IsMaster(dev) && (lastSlave && lastSlave != ptr))
++        CreateClassesChangedEvent(&events[nevents++], mpointer,
++                                  lastSlave, DEVCHANGE_POINTER_EVENT);
+     OsReleaseSignals();
+ 
+ 
+     for (i = 0; i < nevents; i++)
+         mieqProcessDeviceEvent(ptr, (InternalEvent*)events[i].event, NULL);
+ 
+-    FreeEventList(events, GetMaximumEventsNum());
++    FreeEventList(events, GetMaximumEventsNum() + 1);
+ }
+-- 
+1.7.2
+
+From 817e031a996a5f5aa16fc789d7e570cc589d96cb Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Wed, 28 Jul 2010 14:24:59 +1000
+Subject: [PATCH 3/3] Xi: reset the unused classes pointer after copying
+
+After copying the unused_classes into the device, reset the original
+pointer. Otherwise we have two pointers pointing to the same field and both
+get freed on device removal.
+
+Some classes already have this behaviour since 51c8fd69.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ Xi/exevents.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/Xi/exevents.c b/Xi/exevents.c
+index 566b0ef..a6160dd 100644
+--- a/Xi/exevents.c
++++ b/Xi/exevents.c
+@@ -227,6 +227,7 @@ DeepCopyFeedbackClasses(DeviceIntPtr from, DeviceIntPtr to)
+             classes = dixLookupPrivate(&to->devPrivates,
+                                        UnusedClassesPrivateKey);
+             to->intfeed = classes->intfeed;
++            classes->intfeed = NULL;
+         }
+ 
+         i = &to->intfeed;
+@@ -263,6 +264,7 @@ DeepCopyFeedbackClasses(DeviceIntPtr from, DeviceIntPtr to)
+             classes = dixLookupPrivate(&to->devPrivates,
+                                        UnusedClassesPrivateKey);
+             to->stringfeed = classes->stringfeed;
++            classes->stringfeed = NULL;
+         }
+ 
+         s = &to->stringfeed;
+@@ -299,6 +301,7 @@ DeepCopyFeedbackClasses(DeviceIntPtr from, DeviceIntPtr to)
+             classes = dixLookupPrivate(&to->devPrivates,
+                                        UnusedClassesPrivateKey);
+             to->bell = classes->bell;
++            classes->bell = NULL;
+         }
+ 
+         b = &to->bell;
+@@ -336,6 +339,7 @@ DeepCopyFeedbackClasses(DeviceIntPtr from, DeviceIntPtr to)
+             classes = dixLookupPrivate(&to->devPrivates,
+                                        UnusedClassesPrivateKey);
+             to->leds = classes->leds;
++            classes->leds = NULL;
+         }
+ 
+         l = &to->leds;
+@@ -387,6 +391,7 @@ DeepCopyKeyboardClasses(DeviceIntPtr from, DeviceIntPtr to)
+             to->kbdfeed = classes->kbdfeed;
+             if (!to->kbdfeed)
+                 InitKeyboardDeviceStruct(to, NULL, NULL, NULL);
++            classes->kbdfeed = NULL;
+         }
+ 
+         k = &to->kbdfeed;
+@@ -517,6 +522,7 @@ DeepCopyPointerClasses(DeviceIntPtr from, DeviceIntPtr to)
+             classes = dixLookupPrivate(&to->devPrivates,
+                                        UnusedClassesPrivateKey);
+             to->ptrfeed = classes->ptrfeed;
++            classes->ptrfeed = NULL;
+         }
+ 
+         p = &to->ptrfeed;
+-- 
+1.7.2
+
