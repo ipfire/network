@@ -1,0 +1,104 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = xorg-server
+PKG_VER        = 1.8.2
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = X/Server
+PKG_URL        = http://www.x.org
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = X.Org X11 X server.
+
+PKG_BUILD_DEPS+= autoconf automake pkg-config \
+	xorg-x11-font-utils \
+	xorg-x11-util-macros xorg-x11-proto-devel xorg-x11-xtrans-devel
+PKG_DEPS      += libX11 libXau libXfont libpciaccess libxcb libxkbfile pixman udev
+
+define PKG_DESCRIPTION
+	X.org X11 is an open source implementation of the X Window System. \
+	It provides the basic low level functionality which full fledged \
+	graphical user interfaces (GUIs) such as GNOME and KDE are designed \
+	upon.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CFLAGS        += -Wstrict-overflow -rdynamic
+
+CONFIGURE_OPTIONS += \
+	--enable-xvfb \
+	--disable-xnest \
+	--enable-kdrive \
+	--disable-xephyr \
+	--disable-xsdl \
+	--disable-xfake \
+	--disable-xfbdev \
+	--enable-xorg \
+	--disable-static \
+	--with-pic \
+	--with-int10=x86emu \
+	--with-default-font-path="catalogue:/etc/X11/fontpath.d,built-ins" \
+	--with-module-dir=/usr/lib/xorg/modules \
+	--with-builderstring="Build ID: $(PKG_NAME) $(PKG_VER)-$(PKG_REL)" \
+	--with-os-name="$(hostname -s) $(uname -r)" \
+	--with-xkb-output=/var/lib/xkb \
+	--enable-install-libxf86config \
+	--localstatedir=/var \
+	--disable-aiglx \
+	--disable-composite \
+	--disable-xdmcp \
+	--disable-xdm-auth-1 \
+	--disable-glx \
+	--disable-screensaver \
+	--disable-dri \
+	--disable-dri2 \
+	--disable-xinerama \
+	--disable-dbe \
+	--disable-config-dbus \
+	--disable-config-hal \
+	--disable-xquartz \
+	--enable-config-udev \
+	--with-vendor-name="$(DISTRO_NAME) Project"
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && autoreconf -vfi
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) \
+		moduledir=/usr/lib/xorg/modules
+
+	rm -vf $(BUILDROOT)/usr/lib/xorg/modules/libxf8_16bpp.so
+	rm -vrf $(BUILDROOT)/var/log
+
+	-mkdir -pv $(BUILDROOT)/etc/X11/xorg.conf.d $(BUILDROOT)/usr/share/xorg
+	cd $(DIR_APP) && install -m 0444 hw/xfree86/common/{vesa,extra}modes \
+		$(BUILDROOT)/usr/share/xorg/
+	cd $(DIR_APP) && install -m 644 $(DIR_SOURCE)/10-quirks.conf \
+		$(BUILDROOT)/usr/share/X11/xorg.conf.d
+endef

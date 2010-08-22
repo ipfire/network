@@ -1,0 +1,115 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = xorg-x11-fonts
+PKG_VER        = 7.2
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = X/Fonts
+PKG_URL        = http://www.x.org/
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = X.Org X11 fonts.
+
+PKG_BUILD_DEPS+= pkg-config xorg-x11-font-utils
+PKG_DEPS      += fontconfig
+ 
+define PKG_DESCRIPTION
+	This package contains misc bitmap Chinese, Japanese, Korean, Indic, and \
+	Arabic fonts for use with X Window System.	
+endef
+
+# Add all development headers to the package
+# Don't remove empty lines in the defined MACROS!
+
+SRC_PACKAGES = \
+	encodings-1.0.3 \
+	font-alias-1.0.2 \
+	font-adobe-100dpi-1.0.1 \
+	font-adobe-75dpi-1.0.1 \
+	font-adobe-utopia-100dpi-1.0.2 \
+	font-adobe-utopia-75dpi-1.0.2 \
+	font-adobe-utopia-type1-1.0.2 \
+	font-arabic-misc-1.0.1 \
+	font-bh-100dpi-1.0.1 \
+	font-bh-75dpi-1.0.1 \
+	font-bh-lucidatypewriter-100dpi-1.0.1 \
+	font-bh-lucidatypewriter-75dpi-1.0.1 \
+	font-bitstream-100dpi-1.0.1 \
+	font-bitstream-75dpi-1.0.1 \
+	font-bitstream-type1-1.0.1 \
+	font-cronyx-cyrillic-1.0.1 \
+	font-cursor-misc-1.0.1 \
+	font-daewoo-misc-1.0.1 \
+	font-dec-misc-1.0.1 \
+	font-isas-misc-1.0.1 \
+	font-jis-misc-1.0.1 \
+	font-micro-misc-1.0.1 \
+	font-misc-cyrillic-1.0.1 \
+	font-misc-misc-1.1.0 \
+	font-mutt-misc-1.0.1 \
+	font-schumacher-misc-1.1.0 \
+	font-screen-cyrillic-1.0.2 \
+	font-sony-misc-1.0.1 \
+	font-sun-misc-1.0.1 \
+	font-winitzki-cyrillic-1.0.1 \
+	font-xfree86-type1-1.0.2
+
+PKG_OBJECTS += $(foreach package,$(SRC_PACKAGES),$(package).tar.bz2)
+
+define STAGE_PREPARE
+	for object in $(PKG_OBJECTS); do \
+		cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$${object}; \
+	done
+endef
+
+define MACRO_BUILD
+	cd $(DIR_SRC)/$(1) && ./configure \
+		--prefix=/usr \
+		--with-fontrootdir=/usr/share/X11/fonts \
+		--disable-iso8859-3 \
+		--disable-iso8859-4 \
+		--disable-iso8859-6 \
+		--disable-iso8859-10 \
+		--disable-iso8859-11 \
+		--disable-iso8859-12 \
+		--disable-iso8859-13 \
+		--disable-iso8859-16
+
+	cd $(DIR_SRC)/$(1) && make $(PARALLELISMFLAGS)
+
+endef
+
+STAGE_BUILD = $(foreach package,$(SRC_PACKAGES),$(call MACRO_BUILD,$(package)))
+
+define MACRO_INSTALL
+	cd $(DIR_SRC)/$(1) && make install DESTDIR=$(BUILDROOT)
+
+endef
+
+STAGE_INSTALL = $(foreach package,$(SRC_PACKAGES),$(call MACRO_INSTALL,$(package)))
+
+

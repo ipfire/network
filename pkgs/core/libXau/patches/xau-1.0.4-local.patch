@@ -1,0 +1,22 @@
+diff --git a/AuGetBest.c b/AuGetBest.c
+index ae2b748..5d92dad 100644
+--- a/AuGetBest.c
++++ b/AuGetBest.c
+@@ -120,7 +120,8 @@ XauGetBestAuthByAddr (
+ 	 * Match when:
+ 	 *   either family or entry->family are FamilyWild or
+ 	 *    family and entry->family are the same and
+-	 *     address and entry->address are the same
++	 *     address and entry->address are the same or
++	 *     family is FamilyLocal
+ 	 *  and
+ 	 *   either number or entry->number are empty or
+ 	 *    number and entry->number are the same
+@@ -139,6 +140,7 @@ XauGetBestAuthByAddr (
+ 	     	binaryEqual (entry->address, fully_qual_address,
+ 		    (int) fully_qual_address_length))
+ #endif
++	     || (family == FamilyLocal)
+ 	    ))) &&
+ 	    (number_length == 0 || entry->number_length == 0 ||
+ 	     (number_length == entry->number_length &&

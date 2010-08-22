@@ -24,31 +24,23 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = pixman
-PKG_VER        = 0.18.4
+PKG_NAME       = xcb-proto
+PKG_VER        = 1.6
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://xorg.freedesktop.org/archive/individual/lib/
+PKG_GROUP      = X/Headers
+PKG_URL        = http://xcb.freedesktop.org/
 PKG_LICENSE    = MIT
-PKG_SUMMARY    = Pixel manipulation library.
+PKG_SUMMARY    = XCB protocol descriptions.
 
-PKG_BUILD_DEPS+= pkg-config
+PKG_BUILD_DEPS+= pkg-config python
 
 define PKG_DESCRIPTION
-	Pixman is a pixel manipulation library for X and cairo.
+	XCB is a project to enable efficient language bindings to the X11 \
+	protocol. This package contains the protocol descriptions themselves. \
+	Language bindings use these protocol descriptions to generate code for \
+	marshalling the protocol.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-# XXX double check this later on
-ifeq "$(TARGET)" "via-c7"
-	CONFIGURE_OPTIONS += --enable-mmx #--enable-sse2
-else
-ifeq "$(TARGET)" "atom"
-	CONFIGURE_OPTIONS += --enable-mmx --enable-sse2
-else
-	CONFIGURE_OPTIONS += --disable-mmx --disable-sse2
-endif
-endif

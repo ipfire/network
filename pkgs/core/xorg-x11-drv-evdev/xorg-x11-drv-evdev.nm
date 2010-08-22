@@ -24,31 +24,25 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = pixman
-PKG_VER        = 0.18.4
+PKG_NAME       = xorg-x11-drv-evdev
+PKG_VER        = 2.4.99.901
 PKG_REL        = 0
 
 PKG_MAINTAINER =
-PKG_GROUP      = System/Libraries
-PKG_URL        = http://xorg.freedesktop.org/archive/individual/lib/
+PKG_GROUP      = X/Driver
+PKG_URL        = http://www.x.org/
 PKG_LICENSE    = MIT
-PKG_SUMMARY    = Pixel manipulation library.
+PKG_SUMMARY    = Xorg X11 evdev input driver.
 
-PKG_BUILD_DEPS+= pkg-config
+PKG_DEPS      += libxbkfile xkeyboard-config xorg-server
 
 define PKG_DESCRIPTION
-	Pixman is a pixel manipulation library for X and cairo.
+	X.Org X11 evdev input driver.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.gz
+PKG_TARBALL    = xf86-input-evdev-$(PKG_VER).tar.bz2
 
-# XXX double check this later on
-ifeq "$(TARGET)" "via-c7"
-	CONFIGURE_OPTIONS += --enable-mmx #--enable-sse2
-else
-ifeq "$(TARGET)" "atom"
-	CONFIGURE_OPTIONS += --enable-mmx --enable-sse2
-else
-	CONFIGURE_OPTIONS += --disable-mmx --disable-sse2
-endif
-endif
+DIR_APP        = $(DIR_SRC)/xf86-input-evdev-$(PKG_VER)
+
+CONFIGURE_OPTIONS += \
+	--disable-static
