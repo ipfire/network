@@ -24,19 +24,21 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = xorg-server
+PKG_NAME       = xorg-x11-server
 PKG_VER        = 1.8.2
 PKG_REL        = 0
 
-PKG_MAINTAINER =
+PKG_MAINTAINER = Stefan Schantl <stefan.schantl@ipfire.org>
 PKG_GROUP      = X/Server
 PKG_URL        = http://www.x.org
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = X.Org X11 X server.
 
-PKG_BUILD_DEPS+= autoconf automake pkg-config \
-	xorg-x11-font-utils \
-	xorg-x11-util-macros xorg-x11-proto-devel xorg-x11-xtrans-devel
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+PKG_BUILD_DEPS+= autoconf automake pkg-config xorg-x11-font-utils \
+	xorg-x11-util-macros xorg-x11-proto-devel \
+	xorg-x11-xtrans-devel
 PKG_DEPS      += libX11 libXau libXfont libpciaccess libxcb libxkbfile pixman udev
 
 define PKG_DESCRIPTION
@@ -46,9 +48,11 @@ define PKG_DESCRIPTION
 	upon.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = xorg-server-$(PKG_VER).tar.bz2
 
 CFLAGS        += -Wstrict-overflow -rdynamic
+
+DIR_APP        = $(DIR_SRC)/xorg-server-$(PKG_VER)
 
 CONFIGURE_OPTIONS += \
 	--enable-xvfb \
@@ -66,6 +70,7 @@ CONFIGURE_OPTIONS += \
 	--with-module-dir=/usr/lib/xorg/modules \
 	--with-builderstring="Build ID: $(PKG_NAME) $(PKG_VER)-$(PKG_REL)" \
 	--with-os-name="$(hostname -s) $(uname -r)" \
+	-with-vendor-name="$(DISTRO_NAME) Project" \
 	--with-xkb-output=/var/lib/xkb \
 	--enable-install-libxf86config \
 	--localstatedir=/var \
@@ -83,7 +88,6 @@ CONFIGURE_OPTIONS += \
 	--disable-config-hal \
 	--disable-xquartz \
 	--enable-config-udev \
-	--with-vendor-name="$(DISTRO_NAME) Project"
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && autoreconf -vfi
@@ -101,4 +105,6 @@ define STAGE_INSTALL
 		$(BUILDROOT)/usr/share/xorg/
 	cd $(DIR_APP) && install -m 644 $(DIR_SOURCE)/10-quirks.conf \
 		$(BUILDROOT)/usr/share/X11/xorg.conf.d
+	cd $(DIR_APP) && install -m 644 $(DIR_SOURCE)/xorg.conf \
+                $(BUILDROOT)/etc/X11/
 endef
