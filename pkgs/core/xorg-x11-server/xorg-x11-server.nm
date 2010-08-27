@@ -34,9 +34,11 @@ PKG_URL        = http://www.x.org
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = X.Org X11 X server.
 
-PKG_BUILD_DEPS+= autoconf automake pkg-config \
-	xorg-x11-font-utils \
-	xorg-x11-util-macros xorg-x11-proto-devel xorg-x11-xtrans-devel
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+PKG_BUILD_DEPS+= autoconf automake pkg-config xorg-x11-font-utils \
+	xorg-x11-util-macros xorg-x11-proto-devel \
+	xorg-x11-xtrans-devel
 PKG_DEPS      += libX11 libXau libXfont libpciaccess libxcb libxkbfile pixman udev
 
 define PKG_DESCRIPTION
@@ -68,6 +70,7 @@ CONFIGURE_OPTIONS += \
 	--with-module-dir=/usr/lib/xorg/modules \
 	--with-builderstring="Build ID: $(PKG_NAME) $(PKG_VER)-$(PKG_REL)" \
 	--with-os-name="$(hostname -s) $(uname -r)" \
+	-with-vendor-name="$(DISTRO_NAME) Project" \
 	--with-xkb-output=/var/lib/xkb \
 	--enable-install-libxf86config \
 	--localstatedir=/var \
@@ -85,7 +88,6 @@ CONFIGURE_OPTIONS += \
 	--disable-config-hal \
 	--disable-xquartz \
 	--enable-config-udev \
-	--with-vendor-name="$(DISTRO_NAME) Project"
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && autoreconf -vfi
