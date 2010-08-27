@@ -24,7 +24,7 @@
 
 include $(PKGROOT)/Include
 
-PKG_NAME       = xorg-server
+PKG_NAME       = xorg-x11-server
 PKG_VER        = 1.8.2
 PKG_REL        = 0
 
@@ -46,9 +46,11 @@ define PKG_DESCRIPTION
 	upon.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = xorg-server-$(PKG_VER).tar.bz2
 
 CFLAGS        += -Wstrict-overflow -rdynamic
+
+DIR_APP        = $(DIR_SRC)/xorg-server-$(PKG_VER)
 
 CONFIGURE_OPTIONS += \
 	--enable-xvfb \
