@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = libassuan
-PKG_VER        = 1.0.5
+PKG_VER        = 2.0.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,8 +34,7 @@ PKG_URL        = http://www.gnupg.org/
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = GnuPG IPC library.
 
-PKG_BUILD_DEPS+= autoconf automake libtool
-PKG_DEPS      += pth
+PKG_DEPS      += libgpg-error pth
 
 define PKG_DESCRIPTION
 	The Libassuan package contains an IPC library used by some of the other \
@@ -47,7 +46,3 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
-
-define STAGE_PREPARE_CMDS
-	cd $(DIR_APP) && autoreconf --install
-endef
