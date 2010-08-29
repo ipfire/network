@@ -6,6 +6,7 @@ import struct
 import sys
 import termios
 
+import arches
 from constants import *
 
 class ParsingError(Exception):
@@ -262,7 +263,7 @@ class Commandline(object):
 		self.naoki.logging.debug(args.debug)
 
 		# Set architecture
-		arches.set(args.arch)
+		arches.set_default(args.arch)
 
 	def __parse(self):
 		parser = Parser(sys.argv[0],
@@ -272,16 +273,19 @@ class Commandline(object):
 				Option("quiet", ["-q", "--quiet"], help="Set quiet mode"),
 				Option("debug", ["-d", "--debug"], help="Set debugging mode"),
 				Choice("arch",  ["-a", "--arch"], help="Set architecture",
-					choices=[arch for arch in arches.all]),
+					choices=[arch.name for arch in arches.all()]),
 			],
 			parsers=[
 				# Build
 				Parser("build",
 					help="Primary build command",
 					arguments=[
+						Option("all", ["--all"], help="Build all packages"),
 						Option("withdeps", ["--with-deps"], help="Build all dependencies first if needed"),
 						Option("onlydeps", ["--only-deps"], help="Build only dependencies that belong to a package"),
 						Option("shell", ["-s", "--shell"], help="Change into a chroot environment"),
+						Option("ignore_dependency_errors", ["-i", "--ignore-dependency-errors"],
+							help="Ignore dependency errors."),
 						List("packages", help="Give a list of packages to build or say 'all'"),
 					]),
 

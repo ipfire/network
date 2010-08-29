@@ -210,7 +210,7 @@ def download(files, logger=None):
 class PackageInfo(object):
 	__data = {}
 
-	def __init__(self, name, repo=None, arch=arches.current["name"]):
+	def __init__(self, name, repo=None, arch="i686"):
 		self._name = name
 		self.repo = repo
 

@@ -8,8 +8,10 @@ import sys
 import time
 
 import backend
+import build
 import chroot
 import logger
+import repo
 import terminal
 import util
 
@@ -79,64 +81,19 @@ class Naoki(object):
 		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True, naoki=self))
 
 	def call_build(self, args):
-		force = True
+		builder = build.Builder()
 
-		if args.packages == ["all"]:
-			force = False
-			package_names = backend.get_package_names()
+		if args.all:
+			raise Exception, "XXX to be implemented"
 		else:
-			package_names = args.packages
+			for name in args.packages:
+				p = repo.find_source_package(name)
+				if not p:
+					raise Exception, "Could not find package: %s" % name
 
-		packages = []
-		for package in backend.parse_package(package_names, naoki=self):
-			if not force and package.built:
-				self.log.warn("Skipping %s which was already built" % package.name)
-				continue
+				builder.add(p)
 
-			if not args.onlydeps:
-				packages.append(package)
-
-			if args.withdeps or args.onlydeps:
-				deps = []
-				for dep in package.dependencies_all:
-					if not dep.built:
-						deps.append(dep.name)
-
-				packages.extend(backend.parse_package(deps, naoki=self))
-
-		if len(packages) >= 2:
-			packages_sorted = backend.depsort(packages)
-			if packages_sorted != packages:
-				self.log.warn("Packages were resorted for build: %s" % packages_sorted)
-				packages = packages_sorted
-
-		for i in range(0, len(packages)):
-			package = packages[i]
-			if not package.buildable:
-				for dep in package.dependencies_unbuilt:
-					if not dep in packages[:i]:
-						self.log.error("%s is currently not buildable" % package.name)
-						self.log.error("  The package requires these packages to be built first: %s" \
-							% [dep.name for dep in package.dependencies_unbuilt])
-						return
-
-		self.log.info("Going on to build %d packages in order: %s" \
-			% (len(packages), [package.name for package in packages]))
-
-		for package in packages:
-			environ = package.getEnvironment()
-
-			if not environ.toolchain.exists:
-				self.log.error("You need to build or download a toolchain first.")
-				continue
-
-			if args.shell:
-				environ.init(clean=False)
-				return environ.shell([])
-
-			environ.init()
-
-			environ.build()
+		return builder.run(ignore_dependency_errors=args.ignore_dependency_errors)
 
 	def call_package(self, args):
 		if not args.has_key("action"):

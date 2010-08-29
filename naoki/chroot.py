@@ -9,6 +9,7 @@ import shutil
 import stat
 import time
 
+import arches
 import backend
 import util
 from constants import *
@@ -18,7 +19,7 @@ from logger import getLog
 class Environment(object):
 	kernel_version = os.uname()[2]
 
-	def __init__(self, naoki, arch=arches.current):
+	def __init__(self, naoki, arch="i686"):
 		self.arch = arch
 		self.config = config
 		self.naoki = naoki

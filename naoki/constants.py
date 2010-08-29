@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import ConfigParser
+from ConfigParser import ConfigParser, DEFAULTSECT
 import math
 import os
 import socket
@@ -48,8 +48,22 @@ class Config(object):
 	_items = {
 		"toolchain" : False,
 		"mandatory_packages" : [
-			"core/ccache",
-			"core/glibc",
+			"bash",
+			"bzip2",
+			"ccache",
+			"coreutils",
+			"cpio",
+			"diffutils",
+			"file",
+			"findutils",
+			"gawk",
+			"grep",
+			"gzip",
+			"make",
+			"patch",
+			"sed",
+			"tar",
+			"xz",
 		],
 		"nice_level" : 0,
 		"parallelism" : calc_parallelism(),
@@ -88,11 +102,11 @@ class Config(object):
 		self.read([CONFIGFILE, os.path.join(BASEDIR, ".config")])
 
 	def read(self, files):
-		parser = ConfigParser.ConfigParser()
+		parser = ConfigParser()
 		parser.read(files)
 
 		config = {}
-		for key, val in parser.items(ConfigParser.DEFAULTSECT):
+		for key, val in parser.items(DEFAULTSECT):
 			config[key] = val
 
 		for section in parser.sections():
@@ -138,42 +152,42 @@ class Config(object):
 		return ret
 
 
-class Architectures(object):
-	def __init__(self, configfile):
-		parser = ConfigParser.ConfigParser()
-		parser.read(configfile)
-
-		arches = {}
-		for arch in parser.sections():
-			arches[arch] = { "name" : arch }
-			for key, val in parser.items(arch):
-				arches[arch][key] = val
-
-		self._arches = arches
-		self.__current = None
-
-	def set(self, arch):
-		self.__current = arch
-
-	@property
-	def all(self):
-		return self._arches
-
-	@property
-	def default(self):
-		return self._arches.get("i686")
-
-	@property
-	def current(self):
-		if not self.__current:
-			return self.default
-		return self._arches[self.__current]
-
-	def __getitem__(self, key):
-		return self._arches[key]
-
+#class Architectures(object):
+#	def __init__(self, configfile):
+#		parser = ConfigParser.ConfigParser()
+#		parser.read(configfile)
+#
+#		arches = {}
+#		for arch in parser.sections():
+#			arches[arch] = { "name" : arch }
+#			for key, val in parser.items(arch):
+#				arches[arch][key] = val
+#
+#		self._arches = arches
+#		self.__current = None
+#
+#	def set(self, arch):
+#		self.__current = arch
+#
+#	@property
+#	def all(self):
+#		return self._arches
+#
+#	@property
+#	def default(self):
+#		return self._arches.get("i686")
+#
+#	@property
+#	def current(self):
+#		if not self.__current:
+#			return self.default
+#		return self._arches[self.__current]
+#
+#	def __getitem__(self, key):
+#		return self._arches[key]
+#
 
 # Create a globally useable instance of the configuration
 config = Config()
 
-arches = Architectures(config["architecture_config"])
+#arches = Architectures(config["architecture_config"])

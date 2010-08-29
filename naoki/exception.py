@@ -30,3 +30,7 @@ class commandTimeoutExpired(Error):
 
 class DownloadError(Exception):
 	pass
+
+
+class DependencyResolutionError(Error):
+	pass
