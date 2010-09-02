@@ -34,7 +34,8 @@ PKG_URL        = http://www.gnupg.org/
 PKG_LICENSE    = LGPLv2.1+
 PKG_SUMMARY    = A general-purpose cryptography library.
 
-PKG_DEPS      += libgpg-error
+PKG_BUILD_DEPS+= gcc-c++ libgpg-error-devel
+#PKG_DEPS-$(PKG_NAME)-devel += libgpg-error-devel # XXX
 
 define PKG_DESCRIPTION
 	Libgcrypt is a general purpose crypto library based on the code used \
@@ -42,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--libdir=/lib \
