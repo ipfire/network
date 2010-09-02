@@ -41,3 +41,7 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+PKG_FILES-$(PKG_NAME_REAL)-devel += /usr/lib/libffi-$(PKG_VER)
