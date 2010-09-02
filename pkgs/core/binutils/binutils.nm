@@ -39,8 +39,7 @@ define PKG_DESCRIPTION
 	tools for the manipulation of object code in various object file formats.
 endef
 
-PKG_BUILD_DEPS = glibc dejagnu
-PKG_DEPS      += zlib
+PKG_BUILD_DEPS+= dejagnu texinfo zlib-devel
 
 PKG_TARBALL   += $(THISAPP).tar.bz2
 
