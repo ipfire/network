@@ -34,8 +34,7 @@ PKG_URL        = http://www.cloog.org
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = The Chunky Loop Generator.
 
-PKG_BUILD_DEPS+= autoconf automake m4
-PKG_DEPS      += gmp ppl
+PKG_BUILD_DEPS+= autoconf automake gmp-devel m4 ppl-devel
 
 define PKG_DESCRIPTION
 	CLooG is a software which generates loops for scanning Z-polyhedra. That is, \
@@ -45,6 +44,9 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(PKG_NAME)-ppl-$(PKG_VER).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
 DIR_APP        = $(DIR_SRC)/$(PKG_NAME)-ppl-$(PKG_VER)
 
 CONFIGURE_OPTIONS += \
