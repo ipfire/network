@@ -34,7 +34,7 @@ PKG_URL        = https://fedorahosted.org/elfutils/
 PKG_LICENSE    = GPLv2 with exceptions
 PKG_SUMMARY    = A collection of utilities and DSOs to handle compiled objects.
 
-PKG_DEPS      += bzip2 xz zlib
+PKG_BUILD_DEPS+= bzip2-devel m4 xz-devel zlib-devel
 
 define PKG_DESCRIPTION
 	Elfutils is a collection of utilities, including ld (a linker), \
@@ -45,6 +45,10 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
+
+PKG_DEPS-$(PKG_NAME)-devel = $(PKG_NAME)-libs
 
 CONFIGURE_OPTIONS += \
 	--program-prefix=eu-
