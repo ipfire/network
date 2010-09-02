@@ -34,7 +34,8 @@ PKG_URL        = http://sourceforge.net/projects/cracklib/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = A password-checking library.
 
-PKG_DEPS      += python
+PKG_BUILD_DEPS+= python
+PKG_DEPS      += cracklib-dicts
 
 define PKG_DESCRIPTION
 	CrackLib tests passwords to determine whether they match certain \
@@ -48,6 +49,18 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 PKG_OBJECTS   += cracklib-words-20080507.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-dicts $(PKG_NAME)-devel python-$(PKG_NAME)
+
+### We build an extra python package with the bindings for it.
+PKG_DESCRIPTION-python-cracklib = Python bindings for $(THISAPP).
+PKG_SUMMARY-python-cracklib     = Python bindings for $(THISAPP).
+PKG_FILES-python-cracklib       = /usr/lib/python*
+
+### We build an extra package with the dictionaries.
+PKG_DESCRIPTION-cracklib-dicts = Dictionaries for $(THISAPP).
+PKG_SUMMARY-cracklib-dicts     = Dictionaries for $(THISAPP).
+PKG_FILES-cracklib-dicts       = /lib/cracklib /usr/share/dict*
 
 CONFIGURE_OPTIONS += \
 	--with-default-dict=/lib/cracklib/pw_dict \
