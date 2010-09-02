@@ -34,7 +34,7 @@ PKG_URL        = http://www.sqlite.org/
 PKG_LICENSE    = PublicDomain
 PKG_SUMMARY    = A small an versative Database, that uses simple text files.
 
-PKG_DEPS      += readline
+PKG_BUILD_DEPS+= readline-devel
 
 define PKG_DESCRIPTION
 	SQLite is a in-process library that implements a self-contained, \
@@ -46,6 +46,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define STAGE_PREPARE_CMDS
 	-mkdir -pv $(DIR_SRC)/sqlite-build
