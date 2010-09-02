@@ -45,11 +45,10 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
+PKG_PACKAGES  += $(PKG_NAME)-devel
+
 PARALLELISMFLAGS = # No parallel build
 
-###############################################################################
-# Installation Details
-###############################################################################
 CONFIGURE_OPTIONS += \
 	--disable-static \
 	--mandir=/usr/share/man
