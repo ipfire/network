@@ -41,6 +41,8 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
 CONFIGURE_OPTIONS += --libdir=/lib
 
 define STAGE_INSTALL_CMDS
