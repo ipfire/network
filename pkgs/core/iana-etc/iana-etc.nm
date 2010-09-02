@@ -34,6 +34,9 @@ PKG_URL        = http://www.iana.org/
 PKG_LICENSE    =
 PKG_SUMMARY    = The Internet Assigned Numbers Authority.
 
+PKG_BUILD_DEPS = # EMPTY
+PKG_DEPS       =
+
 define PKG_DESCRIPTION
 	The Internet Assigned Numbers Authority (IANA) is responsible for the \
 	global coordination of the DNS Root, IP addressing, and other Internet \
@@ -41,10 +44,6 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
-
-###############################################################################
-# Installation Details
-###############################################################################
 
 define STAGE_BUILD
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
