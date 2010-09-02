@@ -34,7 +34,7 @@ PKG_URL        = http://asg.web.cmu.edu/sasl/sasl-library.html
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = The Cyrus SASL library.
 
-PKG_DEPS      += db openssl pam
+PKG_BUILD_DEPS+= db-devel openssl-devel pam-devel
 
 define PKG_DESCRIPTION
 	The cyrus-sasl package contains the Cyrus implementation of SASL. \
@@ -43,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
