@@ -34,7 +34,7 @@ PKG_URL        = http://www.oberhumer.com/opensource/lzo/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Data compression library with very fast (de)compression.
 
-PKG_DEPS      += zlib
+PKG_BUILD_DEPS+= zlib-devel
 
 define PKG_DESCRIPTION
 	LZO is a portable lossless data compression library written in ANSI C. \
@@ -45,5 +45,7 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += --disable-static --enable-shared
