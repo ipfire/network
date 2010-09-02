@@ -34,8 +34,10 @@ PKG_URL        = http://flex.sourceforge.net/
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = A tool for creating scanners (text pattern recognizers).
 
-PKG_BUILD_DEPS+= bison
+PKG_BUILD_DEPS+= bison m4
 PKG_DEPS      += m4
+
+# XXX possibly we can remove libfl_pic and things in /usr/include
 
 define PKG_DESCRIPTION
 	The flex program generates scanners. Scanners are programs which can \
