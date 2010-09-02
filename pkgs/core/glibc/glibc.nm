@@ -46,7 +46,7 @@ define PKG_DESCRIPTION
 	Linux system will not function.
 endef
 
-PKG_DEPS = # Has got no dependencies
+PKG_BUILD_DEPS = kernel-headers
 
 GLIBC_FLAGS += -fno-strict-aliasing -mno-tls-direct-seg-refs
 
@@ -150,9 +150,9 @@ define STAGE_PREPARE
 	cat $(DIR_SOURCE)/$(PKG_NAME)-stack_chk_fail.c \
 		> $(DIR_APP)/debug/stack_chk_fail.c
 
-	cd $(DIR_APP) && \
-		sed -e "s|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(shell readelf -l /bin/sh | sed -n 's@.*interpret.*$(TOOLS_DIR)\(.*\)]$$@\1@p') -o|" \
-		-i scripts/test-installation.pl
+	#cd $(DIR_APP) && \
+	#	sed -e "s|libs -o|libs -L/usr/lib -Wl,-dynamic-linker=$(shell readelf -l /bin/sh | sed -n 's@.*interpret.*$(TOOLS_DIR)\(.*\)]$$@\1@p') -o|" \
+	#	-i scripts/test-installation.pl
 
 	# Use gnu hash style
 	cd $(DIR_APP) && sed -i Makeconfig \
@@ -260,11 +260,11 @@ define STAGE_BUILD
 		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)"
 endef
 
-define STAGE_TEST
-	cd $(DIR_SRC)/glibc-build && TIMEOUTFACTOR=16 make check \
-		CFLAGS="$(CFLAGS) -fno-stack-protector -U_FORTIFY_SOURCE" \
-		CXXFLAGS="$(CXXFLAGS) -fno-stack-protector -U_FORTIFY_SOURCE"
-endef
+#define STAGE_TEST
+#	cd $(DIR_SRC)/glibc-build && TIMEOUTFACTOR=16 make check \
+#		CFLAGS="$(CFLAGS) -fno-stack-protector -U_FORTIFY_SOURCE" \
+#		CXXFLAGS="$(CXXFLAGS) -fno-stack-protector -U_FORTIFY_SOURCE"
+#endef
 
 define STAGE_INSTALL
 	cd $(DIR_SRC)/glibc-build && make install install_root=$(BUILDROOT)
