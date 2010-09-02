@@ -34,7 +34,7 @@ PKG_URL        = http://www.openssh.com/portable.html
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = An open source implementation of SSH protocol versions 1 and 2.
 
-PKG_DEPS      += openssl pam
+PKG_BUILD_DEPS+= openssl-devel pam-devel
 
 define PKG_DESCRIPTION
 	SH (Secure SHell) is a program for logging into and executing \
