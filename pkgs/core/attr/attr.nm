@@ -34,16 +34,19 @@ PKG_URL        = http://oss.sgi.com/projects/xfs/
 PKG_LICENSE    = GPLv2+ LGPLv2+
 PKG_SUMMARY    = Tools for extended attribute support.
 
-PKG_BUILD_DEPS+= gettext gzip libtool make sed
-
-PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
-
 define PKG_DESCRIPTION
 	A set of tools for manipulating extended attributes on filesystem \
 	objects.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_BUILD_DEPS+= gettext libtool
+
+PKG_PACKAGES   = libattr libattr-devel
+
+PKG_FILES-libattr       = $(PKG_FILES-$(PKG_NAME_REAL)-libs)
+PKG_FILES-libattr-devel = $(PKG_FILES-$(PKG_NAME_REAL)-devel)
 
 CONFIGURE_OPTIONS += \
 	--bindir=/bin \
