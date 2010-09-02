@@ -1,0 +1,37 @@
+
+###############################################################################
+#
+# Template definitions of the naoki build system
+#
+###############################################################################
+
+
+###############################################################################
+# Devel template
+###############################################################################
+
+PKG_DESCRIPTION-$(PKG_NAME_REAL)-devel = Development files of $(THISAPP).
+PKG_SUMMARY-$(PKG_NAME_REAL)-devel = $(PKG_DESCRIPTION-$(PKG_NAME_REAL)-devel)
+
+PKG_DEPS-$(PKG_NAME_REAL)-devel = $(foreach dep,$(PKG_BUILD_DEPS),$(if $(findstring -devel,$(dep)),$(dep)))
+
+define PKG_FILES-$(PKG_NAME_REAL)-devel
+	/usr/bin/*-config
+	/usr/include
+	/usr/lib/pkgconfig
+	/usr/share/aclocal
+	*/lib/*.so
+endef
+
+
+###############################################################################
+# Library template
+###############################################################################
+
+PKG_DESCRIPTION-$(PKG_NAME_REAL)-libs  = Library files of $(THISAPP).
+PKG_SUMMARY-$(PKG_NAME_REAL)-libs = $(PKG_DESCRIPTION-$(PKG_NAME_REAL)-libs)
+
+define PKG_FILES-$(PKG_NAME_REAL)-libs
+	/lib/lib*.so.*
+	/usr/lib/lib*.so.*
+endef
