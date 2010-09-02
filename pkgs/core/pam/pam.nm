@@ -34,8 +34,7 @@ PKG_URL        = http://www.us.kernel.org/pub/linux/libs/pam/index.html
 PKG_LICENSE    = BSD and GPLv2+ and BSD with advertising
 PKG_SUMMARY    = An extensible library which provides authentication for applications.
 
-PKG_BUILD_DEPS+= bison flex
-PKG_DEPS      += cracklib
+PKG_BUILD_DEPS+= bison cracklib-devel flex
 
 define PKG_DESCRIPTION
 	PAM (Pluggable Authentication Modules) is a system security tool that \
@@ -45,9 +44,7 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-###############################################################################
-# Installation Details
-###############################################################################
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 define STAGE_BUILD
 	cd $(DIR_APP) && \
