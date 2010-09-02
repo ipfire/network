@@ -34,7 +34,7 @@ PKG_URL        = http://www.gnu.org/software/gnutls/
 PKG_LICENSE    = LGPLv2.1+
 PKG_SUMMARY    = A general-purpose cryptography library.
 
-PKG_DEPS      += libgcrypt lzo
+PKG_BUILD_DEPS+= libgcrypt-devel lzo-devel
 
 define PKG_DESCRIPTION
 	GnuTLS is a project that aims to develop a library which provides \
@@ -44,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--with-included-libcfg \
