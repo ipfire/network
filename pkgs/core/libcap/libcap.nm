@@ -41,7 +41,7 @@ define PKG_DESCRIPTION
 	draft 15 capabilities.
 endef
 
-PKG_DEPS      += attr pam
+PKG_BUILD_DEPS+= libattr-devel pam-devel perl
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
