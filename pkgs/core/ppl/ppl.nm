@@ -34,8 +34,7 @@ PKG_URL        = http://www.cs.unipr.it/ppl/
 PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = The Parma Polyhedra Library: a library of numerical abstractions.
 
-PKG_BUILD_DEPS+= autoconf automake m4
-PKG_DEPS      += gmp
+PKG_BUILD_DEPS+= autoconf automake gmp-devel m4
 
 define PKG_DESCRIPTION
 	The Parma Polyhedra Library (PPL) is a library for the manipulation of \
@@ -52,6 +51,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 CONFIGURE_OPTIONS += \
 	--enable-interfaces="c cxx" \
