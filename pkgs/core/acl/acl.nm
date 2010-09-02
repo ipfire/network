@@ -34,19 +34,19 @@ PKG_URL        = http://oss.sgi.com/projects/xfs/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Access control list utilities.
 
-PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
-
 define PKG_DESCRIPTION
 	This package contains the getfacl and setfacl utilities needed for \
 	manipulating access control lists.
 endef
 
-PKG_BUILD_DEPS+= gettext libtool make
-PKG_DEPS      += attr libnfsidmap
+PKG_BUILD_DEPS+= gettext libattr-devel libnfsidmap-devel libtool
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-STAGE_BUILD_TARGETS += LIBTOOL="libtool --tag=CC"
+PKG_PACKAGES  += libacl libacl-devel
+
+PKG_FILES-libacl       = $(PKG_FILES-$(PKG_NAME_REAL)-libs)
+PKG_FILES-libacl-devel = $(PKG_FILES-$(PKG_NAME_REAL)-devel)
 
 CONFIGURE_OPTIONS += \
 	--bindir=/bin \
