@@ -39,7 +39,9 @@ PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 PKG_BUILD_DEPS+= autoconf automake pkg-config xorg-x11-font-utils \
 	xorg-x11-util-macros xorg-x11-proto-devel \
 	xorg-x11-xtrans-devel
-PKG_DEPS      += libX11 libXau libXfont libpciaccess libxcb libxkbfile pixman udev
+PKG_DEPS      += libX11 libXau libXdmcp libXext libXfixes libXfont \
+	libXmu libXrender libXres libXt libdrm libfontenc libpciaccess \
+	libxcb libxkbfile mesa pixman udev
 
 define PKG_DESCRIPTION
 	X.org X11 is an open source implementation of the X Window System. \
@@ -56,38 +58,30 @@ DIR_APP        = $(DIR_SRC)/xorg-server-$(PKG_VER)
 
 CONFIGURE_OPTIONS += \
 	--enable-xvfb \
-	--disable-xnest \
-	--enable-kdrive \
-	--disable-xephyr \
-	--disable-xsdl \
-	--disable-xfake \
-	--disable-xfbdev \
+	--enable-xsdl \
+	--enable-xfake \
+	--enable-xfbdev \
 	--enable-xorg \
 	--disable-static \
+	--disable-xnest \
+	--disable-xdmx \
+	--disable-xephyr \
 	--with-pic \
+	--enable-maintainer-mode \
 	--with-int10=x86emu \
 	--with-default-font-path="catalogue:/etc/X11/fontpath.d,built-ins" \
 	--with-module-dir=/usr/lib/xorg/modules \
 	--with-builderstring="Build ID: $(PKG_NAME) $(PKG_VER)-$(PKG_REL)" \
 	--with-os-name="$(hostname -s) $(uname -r)" \
-	-with-vendor-name="$(DISTRO_NAME) Project" \
+	--with-vendor-name="$(DISTRO_NAME) Project" \
+	--with-vendor-web="http://www.ipfire.org" \
 	--with-xkb-output=/var/lib/xkb \
 	--enable-install-libxf86config \
 	--localstatedir=/var \
-	--disable-aiglx \
-	--disable-composite \
-	--disable-xdmcp \
-	--disable-xdm-auth-1 \
-	--disable-glx \
 	--disable-screensaver \
-	--disable-dri \
-	--disable-dri2 \
-	--disable-xinerama \
-	--disable-dbe \
 	--disable-config-dbus \
 	--disable-config-hal \
-	--disable-xquartz \
-	--enable-config-udev \
+	--enable-config-udev
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && autoreconf -vfi
