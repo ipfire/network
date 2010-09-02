@@ -34,8 +34,7 @@ PKG_URL        = http://www.openssl.org/
 PKG_LICENSE    = OpenSSL
 PKG_SUMMARY    = A general purpose cryptography library with TLS implementation. 
 
-PKG_BUILD_DEPS+= bc perl
-PKG_DEPS      += gnutls zlib
+PKG_BUILD_DEPS+= bc gnutls-devel perl zlib-devel
 
 define PKG_DESCRIPTION
 	The OpenSSL toolkit provides support for secure communications between \
@@ -44,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 ifneq "$(MACHINE)" "i686"
 	SSL_ARCH = no-asm 386 # 386 implies no-sse2
