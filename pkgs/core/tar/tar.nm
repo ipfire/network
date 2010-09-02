@@ -34,8 +34,7 @@ PKG_URL        = http://www.gnu.org/software/tar/
 PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = A GNU file archiving program.
 
-PKG_BUILD_DEPS+= autoconf automake
-PKG_DEPS      += acl attr
+PKG_BUILD_DEPS+= autoconf automake libacl-devel libattr-devel
 
 define PKG_DESCRIPTION
 	The GNU tar program saves many files together in one archive \
