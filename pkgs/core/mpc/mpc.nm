@@ -34,7 +34,7 @@ PKG_URL        = http://www.multiprecision.org/
 PKG_LICENSE    = LGPLv2.1+
 PKG_SUMMARY    = Mpc is a C library for the arithmetic of complex numbers.
 
-PKG_DEPS      += gmp mpfr
+PKG_BUILD_DEPS+= gmp-devel mpfr-devel
 
 define PKG_DESCRIPTION
 	Mpc is a C library for the arithmetic of complex numbers with \
@@ -43,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 define STAGE_TEST
 	cd $(DIR_APP) && make check
