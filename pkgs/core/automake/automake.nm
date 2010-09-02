@@ -34,7 +34,8 @@ PKG_URL        = http://www.gnu.org/software/automake/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = A GNU tool for automatically configuring source code.
 
-PKG_DEPS      += autoconf perl
+PKG_BUILD_DEPS+= autoconf perl
+PKG_DEPS      += autoconf
 
 define PKG_DESCRIPTION
 	Automake is a tool for automatically generating Makefile.in \
