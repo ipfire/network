@@ -34,8 +34,7 @@ PKG_URL        = http://www.curl.haxx.se/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = A utility for getting files from remote servers (FTP, HTTP, and others).
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += libidn openldap libssh2 openssh openssl zlib
+PKG_BUILD_DEPS+= libidn-devel libssh2-devel openldap-devel openssl-devel pkg-config zlib-devel
 
 define PKG_DESCRIPTION
 	cURL is a tool for getting files from HTTP, FTP, FILE, LDAP, LDAPS, \
@@ -46,6 +45,18 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += libcurl libcurl-devel
+
+PKG_DEPS-libcurl = $(PKG_DEPS-$(PKG_NAME)-libs)
+PKG_BUILD_DEPS-libcurl = $(PKG_BUILD_DEPS-$(PKG_NAME)-libs)
+PKG_SUMMARY-libcurl = $(PKG_SUMMARY-$(PKG_NAME)-libs)
+PKG_FILES-libcurl = $(PKG_FILES-$(PKG_NAME)-libs)
+
+PKG_DEPS-libcurl-devel = $(PKG_DEPS-$(PKG_NAME)-devel)
+PKG_BUILD_DEPS-libcurl-devel = $(PKG_BUILD_DEPS-$(PKG_NAME)-devel)
+PKG_SUMMARY-libcurl-devel = $(PKG_SUMMARY-$(PKG_NAME)-devel)
+PKG_FILES-libcurl-devel = $(PKG_FILES-$(PKG_NAME)-devel)
 
 CONFIGURE_OPTIONS += \
 	--disable-static \
