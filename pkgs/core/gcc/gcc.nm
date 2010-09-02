@@ -39,8 +39,9 @@ define PKG_DESCRIPTION
 	You'll need this package in order to compile C code.
 endef
 
-PKG_BUILD_DEPS = autogen dejagnu expect
-PKG_DEPS      += binutils cloog glibc gmp kernel-headers libffi mpc mpfr ppl
+PKG_BUILD_DEPS+= autogen cloog-devel dejagnu elfutils-devel expect gmp-devel \
+	libffi-devel mpc-devel mpfr-devel ppl-devel
+PKG_DEPS-gcc  += binutils libgcc-devel
 
 ifeq "$(MACHINE)" "i586"
 	CONFIGURE_ARGS = --disable-decimal-float
@@ -54,9 +55,38 @@ endif
 
 PKG_TARBALL   += $(THISAPP).tar.bz2
 
-###############################################################################
-# Installation Details
-###############################################################################
+# A package for C++
+PKG_PACKAGES += $(PKG_NAME)-c++
+PKG_DEPS-$(PKG_NAME)-c++ = gcc libstdc++-devel
+define PKG_FILES-$(PKG_NAME)-c++
+	/usr/bin/*++
+	/usr/lib/gcc/*/*/cc1plus
+	/usr/share/man/man*/*++*
+endef
+
+# libgcc
+PKG_PACKAGES += libgcc
+define PKG_FILES-libgcc
+	/usr/lib/libgcc*.so.*
+endef
+
+PKG_PACKAGES += libgcc-devel
+define PKG_FILES-libgcc-devel
+	/usr/lib/libgcc*.so
+endef
+
+# libstdc++
+PKG_PACKAGES += libstdc++
+define PKG_FILES-libstdc++
+	/usr/lib/libstdc++*.so.*
+endef
+
+PKG_PACKAGES += libstdc++-devel
+define PKG_FILES-libstdc++-devel
+	/usr/include/c++
+	/usr/lib/libstdc++*.so
+endef
+
 
 define STAGE_PREPARE_CMDS
 	-mkdir -v $(DIR_SRC)/gcc-build
