@@ -36,7 +36,7 @@ PKG_SUMMARY    = A library for editing typed command lines.
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
-PKG_DEPS      += ncurses
+PKG_BUILD_DEPS+= ncurses-devel
 
 define PKG_DESCRIPTION
 	The Readline library provides a set of functions that allow users to \
