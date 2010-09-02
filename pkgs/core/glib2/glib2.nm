@@ -34,8 +34,7 @@ PKG_URL        = http://www.gtk.org
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = A library of handy utility functions.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += pcre
+PKG_BUILD_DEPS+= gettext pcre-devel pkg-config zlib-devel
 
 define PKG_DESCRIPTION
 	GLib is the low-level core library that forms the basis \
@@ -46,6 +45,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
