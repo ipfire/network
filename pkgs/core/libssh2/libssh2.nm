@@ -36,7 +36,7 @@ PKG_SUMMARY    = A library implementing the SSH2 protocol.
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
-PKG_DEPS      += openssl zlib
+PKG_BUILD_DEPS+= openssl-devel zlib-devel
 
 define PKG_DESCRIPTION
 	libssh2 is a library implementing the SSH2 protocol as defined by \
