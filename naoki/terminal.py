@@ -289,14 +289,6 @@ class Commandline(object):
 						List("packages", help="Give a list of packages to build or say 'all'"),
 					]),
 
-				# Toolchain
-				Parser("toolchain",
-					parsers=[
-						Parser("download", help="Download a toolchain"),
-						Parser("build", help="Build the toolchain"),
-						Parser("tree", help="Show package tree of toolchain"),
-					]),
-
 				# Package
 				Parser("package",
 					parsers=[
