@@ -34,11 +34,11 @@ PKG_URL        = http://www.mpfr.org/
 PKG_LICENSE    = LGPLv2+ and GPLv2+ and GFDL
 PKG_SUMMARY    = A C library for multiple-precision floating-point computations.
 
-PKG_DEPS      += gmp
+PKG_BUILD_DEPS+= gmp-devel
 
 define PKG_DESCRIPTION
 	The MPFR library is a C library for multiple-precision floating-point \
-	computations with "correct rounding". The MPFR is efficient and \
+	computations with correct rounding. The MPFR is efficient and \
 	also has a well-defined semantics. It copies the good ideas from the \
 	ANSI/IEEE-754 standard for double-precision floating-point arithmetic \
 	(53-bit mantissa). MPFR is based on the GMP multiple-precision \
@@ -46,6 +46,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 ifeq "$(MACHINE)" "x86_64"
 	ABI = 64
