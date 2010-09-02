@@ -25,7 +25,9 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = db
-PKG_VER        = 4.7.25
+PKG_VER_MAJ    = 4.7
+PKG_VER_MIN    = 25
+PKG_VER        = $(PKG_VER_MAJ).$(PKG_VER_MIN)
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,6 +36,8 @@ PKG_URL        = http://www.oracle.com/technology/products/berkeley-db/
 PKG_LICENSE    = Proprietary
 PKG_SUMMARY    = Berkeley DB is a library that provides an embedded database.
 
+PKG_BUILD_DEPS+= gcc-c++
+
 define PKG_DESCRIPTION
 	Berkeley DB (BDB) is a computer software library that provides \
 	a high-performance embedded database.
@@ -41,9 +45,12 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+PKG_PACKAGES   = $(PKG_NAME)-devel $(PKG_NAME)-utils $(PKG_NAME) $(PKG_NAME)-cxx
+
+PKG_FILES                   = /usr/lib/libdb-$(PKG_VER_MAJ).so
+PKG_FILES-$(PKG_NAME)-cxx   = /usr/lib/libdb_cxx-$(PKG_VER_MAJ).so
+PKG_FILES-$(PKG_NAME)-devel = /usr/include /usr/lib
+PKG_FILES-$(PKG_NAME)-utils = /usr/bin
 
 define STAGE_BUILD
 	cd $(DIR_APP)/build_unix && \
