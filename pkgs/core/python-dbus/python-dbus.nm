@@ -34,7 +34,7 @@ PKG_URL        = http://www.freedesktop.org/software/dbus/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = Dbus Python Bindings.
 
-PKG_DEPS      += dbus-glib python
+PKG_BUILD_DEPS+= dbus-glib-devel pkg-config python
 
 define PKG_DESCRIPTION
 	D-Bus python bindings for use with python programs.
