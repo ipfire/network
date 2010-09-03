@@ -9,6 +9,20 @@ include $(PKGROOT)/gmsl
 
 DO_PACKAGE_FILENAME = $(1)$(PKG_SUFFIX)
 
+define DO_PACKAGE
+	@echo "#####################################################################"
+	@echo "# $(1) - Package build started"
+	@echo "#####################################################################"
+
+	@$(foreach var,$(PKG_VARIABLES),$(if $($(var)-$(1)),$(var)="$(strip $($(var)-$(1)))",$(var)="$(strip $($(var)))")) \
+		$(DIR_TOOLS)/packager $(1) $(DIR_PACKAGES)/$(call DO_PACKAGE_FILENAME,$(1))
+
+	@echo "#####################################################################"
+	@echo "# $(1) - Package build finished"
+	@echo "#####################################################################"
+
+endef
+
 define DO_FILELIST
 	@echo "# Filelist dump"
 	@cd $(BUILDROOT) && find -ls
@@ -112,9 +126,8 @@ define DO_INSTALL
 	@echo "# $(PKG_NAME) - Install finished"
 	@echo "#####################################################################"
 
-	$(if $(TOOLCHAIN),,$(DO_QUALITY_AGENT))
-
-	$(if $(TOOLCHAIN),,$(DO_FILELIST))
+	$(DO_QUALITY_AGENT)
+	$(DO_FILELIST)
 endef
 
 define STAGE_PREPARE
@@ -144,7 +157,7 @@ endef
 STAGE_INSTALL_TARGETS = install
 
 define STAGE_INSTALL
-	cd $(DIR_APP) && make $(STAGE_INSTALL_TARGETS) $(if $(TOOLCHAIN),,DESTDIR=$(BUILDROOT))
+	cd $(DIR_APP) && make $(STAGE_INSTALL_TARGETS) DESTDIR=$(BUILDROOT)
 
 	$(STAGE_INSTALL_CMDS)
 endef
