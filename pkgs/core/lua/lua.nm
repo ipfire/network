@@ -34,8 +34,7 @@ PKG_URL        = http://www.lua.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = Powerful light-weight programming language.
 
-PKG_BUILD_DEPS+= autoconf automake libtool
-PKG_DEPS      += ncurses readline
+PKG_BUILD_DEPS+= autoconf automake libtool ncurses-devel readline-devel
 
 define PKG_DESCRIPTION
 	Lua is a powerful light-weight programming language designed for \
@@ -49,6 +48,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && chmod u+x autogen.sh config.guess config.sub configure \
