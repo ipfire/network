@@ -34,7 +34,7 @@ PKG_URL        = http://xmlsoft.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = Library providing XML and HTML support.
 
-PKG_DEPS      += zlib
+PKG_BUILD_DEPS+= zlib-devel
 
 define PKG_DESCRIPTION
 	This library allows to manipulate XML files. It includes support \
@@ -49,3 +49,5 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
