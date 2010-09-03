@@ -34,7 +34,7 @@ PKG_URL        = http://powerdns.com/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = A modern, advanced and high performance recursing nameserver.
 
-PKG_DEPS      += boost lua
+PKG_BUILD_DEPS+= gcc-c++ boost-devel lua-devel
 
 define PKG_DESCRIPTION
 	PowerDNS Recursor is a non authoritative/recursing DNS server. Use this \
