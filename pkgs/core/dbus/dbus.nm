@@ -46,6 +46,8 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
+PKG_FILES-$(PKG_NAME)-devel += /usr/lib/dbus-1.0
+
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
 	--localstatedir=/var \
