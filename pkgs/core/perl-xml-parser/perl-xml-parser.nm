@@ -34,7 +34,8 @@ PKG_URL        = http://search.cpan.org/dist/XML-Parser/
 PKG_LICENSE    = GPL+ or Artistic
 PKG_SUMMARY    = Perl module for parsing XML files.
 
-PKG_DEPS      += expat perl
+PKG_BUILD_DEPS+= expat-devel perl
+PKG_DEPS      += perl
 
 define PKG_DESCRIPTION
 	This module provides ways to parse XML documents. It is built on \
