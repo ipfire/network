@@ -34,7 +34,8 @@ PKG_URL        = ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = A userspace implementation of devfs.
 
-PKG_DEPS      += acl glib2 gperf kbd libusb-compat pciutils usbutils util-linux-ng
+PKG_BUILD_DEPS+= glib2-devel gperf kbd libacl-devel libusb-compat-devel \
+	pciutils pkg-config usbutils util-linux-ng-devel
 
 define PKG_DESCRIPTION
 	The udev package contains an implementation of devfs in userspace using \
@@ -42,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += libudev libudev-devel
 
 CONFIGURE_OPTIONS += \
 	--exec-prefix="" \
