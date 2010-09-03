@@ -34,8 +34,7 @@ PKG_URL        = http://www.linux-usb.org/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = Tool to provide and enhance USB support in Linux.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += libusb-compat zlib
+PKG_BUILD_DEPS+= libusb-compat-devel pkg-config zlib-devel
 
 define PKG_DESCRIPTION
 	A set of tools to configure list USB Devices.
