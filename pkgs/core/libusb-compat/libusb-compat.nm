@@ -34,13 +34,15 @@ PKG_URL        = http://sourceforge.net/projects/libusb/
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = A library which allows userspace access to USB devices.
 
-PKG_BUILD_DEPS+= pkg-config
+PKG_BUILD_DEPS+= gcc-c++ pkg-config
 
 define PKG_DESCRIPTION
 	This package provides a way for applications to access USB devices.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-compat-devel
 
 CONFIGURE_OPTIONS += \
 	--libdir=/lib \
