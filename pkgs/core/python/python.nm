@@ -78,4 +78,7 @@ define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
 
 	rm -rf $(BUILDROOT)/usr/lib/python*/test/
+
+	# All *.py files don't need to be executeable...
+	find $(BUILDROOT)/usr/lib/python*/ -name "*.py" | xargs chmod a-x -v
 endef
