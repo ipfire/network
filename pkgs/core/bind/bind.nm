@@ -34,7 +34,7 @@ PKG_URL        = http://www.isc.org/products/BIND/
 PKG_LICENSE    = Proprietary
 PKG_SUMMARY    = BIND provides tools for the DNS.
 
-PKG_DEPS      += db openssl
+PKG_BUILD_DEPS+= db-devel openssl-devel
 
 define PKG_DESCRIPTION
 	BIND (Berkeley Internet Name Domain or named) is the most commonly used \
@@ -42,6 +42,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES   = bind-utils
 
 define STAGE_BUILD
 	cd $(DIR_APP) && \
