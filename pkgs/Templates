@@ -21,6 +21,7 @@ define PKG_FILES-$(PKG_NAME_REAL)-devel
 	/usr/lib/pkgconfig
 	/usr/share/aclocal
 	*/lib/*.so
+	/usr/share/*/cmake
 endef
 
 
@@ -35,3 +36,13 @@ define PKG_FILES-$(PKG_NAME_REAL)-libs
 	/lib/lib*.so.*
 	/usr/lib/lib*.so.*
 endef
+
+# Another naming scheme template...
+PKG_DESCRIPTION-lib$(PKG_NAME_REAL)  = $(PKG_DESCRIPTION-$(PKG_NAME_REAL)-libs)
+PKG_SUMMARY-lib$(PKG_NAME_REAL)      = $(PKG_SUMMARY-$(PKG_NAME_REAL)-libs)
+PKG_FILES-lib$(PKG_NAME_REAL)        = $(PKG_FILES-$(PKG_NAME_REAL)-libs)
+
+PKG_DESCRIPTION-lib$(PKG_NAME_REAL)-devel = $(PKG_DESCRIPTION-$(PKG_NAME_REAL)-devel)
+PKG_SUMMARY-lib$(PKG_NAME_REAL)-devel     = $(PKG_SUMMARY-$(PKG_NAME_REAL)-devel)
+PKG_FILES-lib$(PKG_NAME_REAL)-devel       = $(PKG_FILES-$(PKG_NAME_REAL)-devel) blah
+PKG_BUILD_DEPS-lib$(PKG_NAME_REAL)-devel  = $(PKG_BUILD_DEPS-$(PKG_NAME_REAL)-devel)
