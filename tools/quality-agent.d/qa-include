@@ -1,18 +1,18 @@
 #!/bin/bash
 
 # Include additional functions
-. $(dirname ${0})/qa-functions
+. $(dirname ${0})/../common-functions
 
 function debug() {
-	[ "${NAOKI_DEBUG}" = "1" ]
+	[ "${NAOKI_DEBUG}" = "1" ] || [ "${DEBUG}" = "1" ]
 }
 
-function log() {
-	local facility=${1}
-	shift
-
-	printf " %-7s %s\n" "${facility}" "$@"
-}
+#function log() {
+#	local facility=${1}
+#	shift
+#
+#	printf " %-7s %s\n" "${facility}" "$@"
+#}
 
 function log_debug() {
 	debug && log DEBUG "$@"
@@ -62,7 +62,7 @@ function qa_find() {
 	log_debug "Running qa_find with command ${command} in ${filetype}"
 
 	local file
-	for file in $(find_elf_files ${!filetype}); do
+	for file in $(find_elf_files --prefix=${BUILDROOT} ${!filetype}); do
 		${command} ${file}
 	done
 }

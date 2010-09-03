@@ -8,7 +8,7 @@ for file in $(find ${BUILDROOT}/{bin,lib,sbin}/* 2>/dev/null); do
 	[ -f "${file}" ] || continue
 	log "  ${file}"
 
-	interpreter=$(get_interpreter ${file})
+	interpreter=$(file_get_interpreter ${file})
 	if [ ! -e "${interpreter}" ]; then
 		log "  SKIPPED because interpreter is not available"
 		continue

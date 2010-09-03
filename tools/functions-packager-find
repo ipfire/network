@@ -1,0 +1,110 @@
+#!/bin/bash
+
+# A function that finds needed libraries and interpreters.
+#
+function find_requires() {
+	local dir
+	local dirs=$@
+
+	# Find interpreters of all files in the dirs and skip those we provide
+	# ourself.
+	local interpreter
+	local interpreters
+	for interpreter in $(find_interpreters ${dirs}); do
+		local found=0
+		for dir in ${dirs}; do
+			if [ -e "${dir}/${interpreter}" ]; then
+				found=1
+				break
+			fi
+		done
+
+		[ "${found}" = "0" ] && interpreters="${interpreters} ${interpreter}"
+	done
+
+	# Get provides, because packages should not depend on features they provide
+	# by themselves.
+	local provides=$(find_provides ${dirs})
+
+	# Find NEEDED libs and add them to a list if they are not provided by any
+	# other file in dirs.
+	local neededs
+	for file in $(find_elf_files ${dirs}); do
+		for needed in $(file_get_soname ${file}); do
+			if ! listmatch ${needed} ${provides}; then
+				neededs="${neededs} ${needed}"
+			fi
+		done
+	done
+
+	# Find all symlink destinations
+	local links=$(find_symlink_destinations ${dirs})
+
+	# Return a sorted and unique(!) list
+	listsort ${interpreters} ${neededs} ${links}
+}
+
+function find_provides() {
+	local dirs=$@
+
+	local file
+	local sonames
+	for file in $(find_elf_files ${dirs}); do
+		sonames="${sonames} $(file_get_soname ${file})"
+	done
+	sonames=$(listsort ${sonames})
+
+	echo "${sonames}"
+}
+
+function find_interpreters() {
+	local dirs=$@
+
+	log DEBUG "Searching for interpreters in ${dirs}"
+
+	local file
+	local interpreter
+	local interpreters
+	for file in $(find ${dirs} -type f 2>/dev/null); do
+		# Get interpreter information from file.
+		interpreter=$(file_get_interpreter ${file})
+
+		# Skip the file silently if the result was empty.
+		[ -z "${interpreter}" ] && continue
+
+		# Skip invalid interpreters that don't start with a slash.
+		if [ "${interpreter:0:1}" != "/" ]; then
+			log WARNING "Skipping invalid interpreter \"${interpreter}\" from \"${file}\"."
+			continue
+		fi
+
+		if ! listmatch ${interpreter} ${INTERPRETERS_TO_BE_SKIPPED}; then
+			interpreters="${interpreters} ${interpreter}"
+		fi
+	done
+
+	interpreters=$(listsort ${interpreters})
+
+	log DEBUG "find_interpreters ${dirs}: ${interpreters}"
+
+	echo "${interpreters}"
+}
+
+# Find the destinations of all symlinks and adds a dependency for that.
+#
+function find_symlink_destinations() {
+        local dir=$@
+
+        local link
+        local links
+        for link in $(find ${dir} -type l 2>/dev/null); do
+                link="$(readlink -m ${link})"
+                [ -e "${link}" ] && continue
+
+                link="${link#${dir}}"
+                links="${links} ${link}"
+        done
+
+        echo ${links}
+}
+

@@ -9,20 +9,20 @@ check() {
 
 	local file
 	local soname
-	for file in $(find_elf_files ${LIBARY_PATHS}); do
+	for file in $(find_elf_files --prefix=${BUILDROOT} ${LIBARY_PATHS}); do
 		if ! grep -q "\.so" <<<${file}; then
 			continue
 		fi
 
-		if ! is_shared_object ${file}; then
+		if ! file_is_shared_object ${file}; then
 			continue
 		fi
 
-		if ! has_interpreter ${file}; then
+		if ! file_has_interpreter ${file}; then
 			continue
 		fi
 
-		soname=$(get_soname ${file})
+		soname=$(file_get_soname ${file})
 		if [ -z "${soname}" ]; then
 			log_error "  File lacks soname attribute: ${file}"
 			failed=1

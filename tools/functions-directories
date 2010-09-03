@@ -1,0 +1,24 @@
+#!/bin/bash
+
+function dir_is_empty() {
+	[ "$(ls -A $@ 2>/dev/null | wc -l)" = "0" ]
+}
+
+function directory_remove_orphans() {
+	local basedir=${1}
+
+	log DEBUG "Removing orphans in ${basedir}"
+
+	local dir
+	for dir in ${ORPHAN_CANDIDATES}; do
+		dir="${basedir}/${dir}"
+
+		[ -d "${dir}" ] || continue
+
+		if dir_is_empty ${dir}; then
+			log DEBUG "  Found orphaned directory: ${dir}"
+			rm -rf ${dir}
+		fi
+	done
+}
+

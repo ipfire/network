@@ -1,0 +1,229 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010 Michael Tremer & Christian Schmidt                       #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+## XXX SYMLINK DEPENDENCIES
+
+BASEDIR=$(dirname ${0})
+
+PACKAGER_HASH_ALGORITHMS="md5 sha1 sha256 sha512"
+PACKAGER_VERSION="1"
+
+TAR_OPTIONS="--posix --acls --no-recursion --sparse --xz"
+
+. ${BASEDIR}/common-functions
+
+# Create an alias for PKG_ORIGIN to track which source package has built this
+# binary package.
+PKG_ORIGIN=${PKG_NAME}
+
+### MAIN ###
+
+if [ $# -ne 2 ]; then
+	echo "${0}: Wrong number of arguments: $# - $@" >&2
+	exit 2
+fi
+	
+PKG_NAME=${1}
+PKG_TARGET=${2}
+
+
+### Function definitions ###
+
+function create_metafile() {
+	local files=${1}
+
+	cat <<EOF
+### ${PKG_NAME} package
+
+VERSION="${PACKAGER_VERSION}"
+
+BUILD_HOST="${BUILD_HOST}"
+BUILD_DATE="$(date -u)"
+
+# Version info
+PKG_NAME="${PKG_NAME}"
+PKG_VER="${PKG_VER}"
+PKG_REL="${PKG_REL}"
+PKG_GROUP="${PKG_GROUP}"
+PKG_ARCH="${PKG_ARCH}"
+PKG_ORIGIN="${PKG_ORIGIN}"
+
+PKG_MAINTAINER="${PKG_MAINTAINER}"
+PKG_LICENSE="${PKG_LICENSE}"
+
+PKG_SUMMARY="${PKG_SUMMARY}"
+PKG_DESCRIPTION="${PKG_DESCRIPTION}"
+
+# Dependency info
+PKG_DEPS="${PKG_DEPS} $(find_requires ${files})"
+PKG_PROVIDES="$(find_provides ${files})"
+
+PKG_DATA_SIZE="$(du -cb ${files} | tail -n1 | awk '{ print $1 }')"
+
+###
+EOF
+}
+
+function create_controlfile() {
+	cat <<EOF
+#!/bin/sh
+
+function prein() {
+${CONTROL_PREIN}
+}
+
+function preun() {
+${CONTROL_PREUN}
+}
+
+function postin() {
+${CONTROL_POSTIN}
+}
+
+function postun() {
+${CONTROL_POSTUN}
+}
+
+###
+EOF
+}
+
+function __filelist() {
+	local paths
+
+	# Disable globbing
+	set -f
+
+	local path
+	for path in ${PKG_FILES}; do
+		if [ "${path:0:1}" != "/" ]; then
+			path="/${path}"
+		fi
+
+		path="${BUILDROOT}${path}"
+		paths="${paths} ${path}"
+	done
+
+	# Enable globbing again
+	set +f
+
+	# If not paths were found take all files
+	[ -z "${paths}" ] && paths="${BUILDROOT}"
+
+	for file in $(find ${paths} 2>/dev/null | sort); do
+		# Remove ${BUILDROOT}
+		file="${file#${BUILDROOT}}"
+
+		# Remove all leading slashes
+		while [ "${file:0:1}" = "/" ]; do
+			file="${file:1:${#file}}"
+		done
+
+		echo "${file}"
+	done
+}
+
+function create_dataimg() {
+	local dir=${1}
+	local img=${2}
+
+	# First, remove all crappy directories
+	directory_remove_orphans ${BUILDROOT}
+
+	# Generate the filelist.
+	local filelist=$(mktemp)
+	__filelist > ${filelist}
+
+	if [ "${DEBUG}" = "1" ]; then
+		cat ${filelist} >&2
+	fi
+
+	# Create the tarball
+	#  Prints the filelist on fd 2.
+	cd ${BUILDROOT} && \
+		tar ${TAR_OPTIONS} \
+			--create -vv \
+			--file=${img} \
+			--files-from=${filelist} >&2
+
+	# Untar the tarball for further investigation
+	cd ${dir} && \
+		tar ${TAR_OPTIONS} \
+			--extract \
+			--file=${img}
+
+	local file
+
+	# Remove the just copied files
+	while read file; do
+		[ -z "${file}" ] && continue
+
+		rm -rf ${BUILDROOT}/${file}
+	done < ${filelist}
+
+	# Return the filelist
+	cd ${dir} && \
+		for file in $(find . -not -type d); do
+			echo "${file:1:${#file}}"
+		done
+}
+
+function create_package() {
+	local target_file=${1}
+
+	# Create temporary directory where to put in all files that will go into
+	# the package.
+	local tmp=$(mktemp -d)
+
+	# A place where to copy the package files for further processing.
+	local files=$(mktemp -d)
+
+	# Create the package content
+	create_dataimg ${files} ${tmp}/data.img > ${tmp}/filelist
+	create_metafile ${files} > ${tmp}/info
+	create_controlfile > ${tmp}/control
+
+	# Calculate hash sums of the package files
+	log DEBUG "Calculating hash sums."
+	local algorithm
+	local file
+	local files=$(cd ${tmp} && ls)
+	for algorithm in ${PACKAGER_HASH_ALGORITHMS}; do
+		log DEBUG "  Algorithm: ${algorithm}"
+		for file in ${files}; do
+			log DEBUG "    ${file}"
+			echo "${algorithm}	$(cd ${tmp} && ${algorithm}sum ${file})" \
+				>> ${tmp}/sums
+		done
+	done
+
+	# Create the package
+	cd ${tmp} && \
+		find . | cpio -o -H newc --quiet > ${target_file}
+
+	# Cleanup
+	rm -rf ${tmp} ${files}
+}
+
+create_package ${PKG_TARGET}
+
+exit $?
+

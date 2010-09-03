@@ -12,12 +12,12 @@ check() {
 
 	local file
 	local rpath
-	for file in $(find_elf_files ${BINARY_PATHS}); do
+	for file in $(find_elf_files --prefix=${BUILDROOT} ${BINARY_PATHS}); do
 		if filtered ${file}; then
 			continue
 		fi
 
-		rpath=$(get_rpath ${file})
+		rpath=$(file_get_rpath ${file})
 		if [ -n "${rpath}" ]; then
 			if [ "${QUALITY_AGENT_RPATH_ALLOW_ORIGIN}" = "yes" ]; then
 				[ "${rpath}" = '$ORIGIN' ] && continue

@@ -9,16 +9,16 @@ check() {
 
 	local file
 	local needed
-	for file in $(find_elf_files ${LIBARY_PATHS}); do
-		if ! is_shared_object ${file}; then
+	for file in $(find_elf_files --prefix=${BUILDROOT} ${LIBARY_PATHS}); do
+		if ! file_is_shared_object ${file}; then
 			continue
 		fi
 
-		if ! has_interpreter ${file}; then
+		if ! file_has_interpreter ${file}; then
 			continue
 		fi
 
-		needed=$(get_needed ${file})
+		needed=$(file_get_needed ${file})
 		if [ -z "${needed}" ]; then
 			log_error "  File lacks needed attribute: ${file}"
 			failed=1
