@@ -34,8 +34,7 @@ PKG_URL        = http://www.freedesktop.org/software/dbus/
 PKG_LICENSE    = GPLv2+ AFL
 PKG_SUMMARY    = Glib bindings for D-Bus.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += dbus glib2 expat
+PKG_BUILD_DEPS+= dbus dbus-devel expat-devel gettext glib2-devel pkg-config
 
 define PKG_DESCRIPTION
 	D-Bus add-on library to integrate the standard D-Bus library with \
@@ -43,6 +42,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
