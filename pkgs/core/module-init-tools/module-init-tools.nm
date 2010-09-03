@@ -34,7 +34,7 @@ PKG_URL        = http://ftp.kernel.org/pub/linux/utils/kernel/module-init-tools/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Kernel module management utilities.
 
-PKG_DEPS      += zlib
+PKG_BUILD_DEPS+= zlib-devel
 
 define PKG_DESCRIPTION
 	The module-init-tools package includes various programs needed \
