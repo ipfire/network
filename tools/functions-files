@@ -45,6 +45,9 @@ function _file_get_elf_interpreter() {
 function _file_get_script_interpreter() {
 	local file=${1}
 
+	# If the file is not executeable, no interpreter will be needed
+	[ -x "${file}" ] || return
+
 	local first_line=$(head -n1 ${file})
 
 	first_line="${first_line:2:${#first_line}}"
