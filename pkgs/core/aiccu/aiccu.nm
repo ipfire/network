@@ -34,7 +34,7 @@ PKG_URL        = http://www.sixxs.net/tools/aiccu/
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = Automatic IPv6 Connectivity Client Utility for SixXS tunnels.
 
-PKG_DEPS      += gnutls
+PKG_BUILD_DEPS+= gnutls-devel
 
 define PKG_DESCRIPTION
 	This client automatically gives one IPv6 connectivity without having \
