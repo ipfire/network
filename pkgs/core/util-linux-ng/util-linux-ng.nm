@@ -34,8 +34,7 @@ PKG_URL        = ftp://ftp.kernel.org/pub/linux/utils/util-linux-ng
 PKG_LICENSE    = GPLv2 and GPLv2+ and BSD with advertising and Public Domain
 PKG_SUMMARY    = A collection of basic system utilities.
 
-PKG_BUILD_DEPS+= libcap
-PKG_DEPS      += ncurses pam zlib
+PKG_BUILD_DEPS+= gettext libcap-devel ncurses-devel pam-devel zlib-devel
 
 define PKG_DESCRIPTION
 	The util-linux-ng package contains a large variety of low-level system \
@@ -45,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CFLAGS        += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
@@ -83,7 +84,10 @@ define STAGE_INSTALL_CMDS
 	touch $(BUILDROOT)/var/log/lastlog
 
 	# Remove deprecated commands
-	rm -fv $(BUILDROOT)/{sbin,usr/share/man/man*}/{fsck,mkfs}.{bfs,minix}*
+	rm -fv $(BUILDROOT)/{sbin,usr/share/man/man*}/{fsck,mkfs}.{bfs,minix}* \
+		$(BUILDROOT)/usr/bin/chkdupexe $(BUILDROOT)/usr/bin/vi{gr,pw} \
+		$(BUILDROOT)/sbin/{sln,shutdown} $(BUILDROOT)/bin/{line,newgrp,pg}
+	rm -fv $(BUILDROOT)/usr/share/getopt/*.tcsh
 
 	# Set capabilities
 	chmod -v -s $(BUILDROOT)/bin/mount
