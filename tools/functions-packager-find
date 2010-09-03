@@ -30,7 +30,7 @@ function find_requires() {
 	# other file in dirs.
 	local neededs
 	for file in $(find_elf_files ${dirs}); do
-		for needed in $(file_get_soname ${file}); do
+		for needed in $(file_get_needed ${file}); do
 			if ! listmatch ${needed} ${provides}; then
 				neededs="${neededs} ${needed}"
 			fi
