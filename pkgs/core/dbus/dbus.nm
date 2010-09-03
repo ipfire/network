@@ -34,7 +34,7 @@ PKG_URL        = http://www.freedesktop.org/software/dbus/
 PKG_LICENSE    = GPLv2+ AFL
 PKG_SUMMARY    = D-BUS message bus.
 
-PKG_DEPS      += expat
+PKG_BUILD_DEPS+= expat-devel
 
 define PKG_DESCRIPTION
 	D-BUS is a system for sending messages between applications. It is \
@@ -43,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
