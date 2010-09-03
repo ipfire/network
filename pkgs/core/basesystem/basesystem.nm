@@ -34,6 +34,15 @@ PKG_URL        =
 PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = Basic system files.
 
+PKG_BUILD_DEPS = # There are no build dependencies
+
+# This is a package that pulls lots of other dependencies to always have a
+# useable system.
+PKG_DEPS      += /bin/sh /sbin/init \
+	coreutils file findutils gawk grep iana-etc initscripts kbd kernel less \
+	module-init-tools network pakfire passwd procps psmisc sed shadow \
+	system-release tar udev util-linux-ng vim
+
 define PKG_DESCRIPTION
 	This package contains files that are needed to run basic \
 	functions of the system.
@@ -46,4 +55,3 @@ define STAGE_INSTALL
 	-mkdir -pv $(BUILDROOT)/etc
 	cp -vf $(DIR_SOURCE)/resolv.conf $(BUILDROOT)/etc/
 endef
-
