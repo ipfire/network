@@ -34,7 +34,7 @@ PKG_URL        = http://www.cmake.org
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = Cross-platform make system.
 
-PKG_DEPS      += curl expat ncurses zlib
+PKG_BUILD_DEPS+= expat-devel gcc-c++ libcurl-devel ncurses-devel zlib-devel
 
 define PKG_DESCRIPTION
 	CMake is used to control the software compilation process using simple \
