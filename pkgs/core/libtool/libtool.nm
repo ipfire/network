@@ -44,3 +44,10 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+# Overwrite filelist for -devel so /usr/share/aclocal will be in main package
+define PKG_FILES-$(PKG_NAME)-devel
+	/usr/include
+	/usr/lib/lib*.so
+	/usr/share/libtool/libltdl
+endef
