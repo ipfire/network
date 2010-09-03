@@ -40,7 +40,7 @@ define PKG_DESCRIPTION
 	them in the po files.
 endef
 
-PKG_DEPS      += expat gettext perl-xml-parser
+PKG_BUILD_DEPS+= expat-devel gettext perl-xml-parser
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
