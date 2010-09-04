@@ -34,8 +34,9 @@ PKG_URL        = http://upstart.ubuntu.com/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = An event-driven init system.
 
-PKG_BUILD_DEPS+= coreutils pkg-config
-PKG_DEPS      += dbus libnih sysvinit udev
+PKG_BUILD_DEPS+= autoconf automake coreutils dbus-devel libnih-devel libtool \
+	libudev-devel pkg-config
+PKG_DEPS      += sysvinit
 
 define PKG_DESCRIPTION
 	Upstart is an event-based replacement for the /sbin/init daemon \
