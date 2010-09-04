@@ -34,7 +34,7 @@ PKG_URL        = http://www.tcpdump.org/
 PKG_LICENSE    = BSD with advertising
 PKG_SUMMARY    = A system-independent interface for user-level packet capture.
 
-PKG_BUILD_DEPS+= bison flex libnl
+PKG_BUILD_DEPS+= bison flex libnl-devel
 
 define PKG_DESCRIPTION
 	Libpcap provides a portable framework for low-level network \
@@ -47,6 +47,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define STAGE_INSTALL
 	-mkdir -pv $(BUILDROOT)/usr/bin
