@@ -34,7 +34,7 @@ PKG_URL        = http://www.ntp.org/
 PKG_LICENSE    = MIT, BSD and GPLv2
 PKG_SUMMARY    = The NTP daemon and utilities.
 
-PKG_DEPS      += openssl readline
+PKG_BUILD_DEPS+= openssl-devel readline-devel
 
 define PKG_DESCRIPTION
 	The Network Time Protocol (NTP) is used to synchronize a computer's \
