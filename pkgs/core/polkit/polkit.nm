@@ -34,8 +34,8 @@ PKG_URL        = http://www.freedesktop.org/wiki/Software/PolicyKit
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = PolicyKit Authorization Framework.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += eggdbus expat intltool glib2 pam perl-xml-parser
+PKG_BUILD_DEPS+= eggdbus-devel expat-devel intltool glib2-devel pam-devel \
+	perl-xml-parser pkg-config
 
 define PKG_DESCRIPTION
 	PolicyKit is a toolkit for defining and handling authorizations. \
@@ -44,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
