@@ -34,8 +34,7 @@ PKG_URL        = https://fedorahosted.org/libuser/
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = A user and group account administration library.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += glib2 openldap popt python
+PKG_BUILD_DEPS+= glib2-devel openldap-devel pkg-config popt-devel python-devel
 
 define PKG_DESCRIPTION
 	The libuser library implements a standardized interface for \
@@ -44,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
