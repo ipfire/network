@@ -34,7 +34,7 @@ PKG_URL        = ftp://ftp.samba.org/pub/ppp/
 PKG_LICENSE    = BSD and LGPLv2+ and GPLv2+ and Public Domain
 PKG_SUMMARY    = The PPP (Point-to-Point Protocol) daemon.
 
-PKG_DEPS      += libpcap linux-atm pam
+PKG_BUILD_DEPS+= libpcap-devel linux-atm-devel pam-devel
 
 define PKG_DESCRIPTION
 	The ppp package contains the PPP (Point-to-Point Protocol) daemon and \
@@ -45,6 +45,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -e "s/^LIBS =/LIBS=-lutil/" -i pppd/Makefile.linux
