@@ -42,8 +42,7 @@ define PKG_DESCRIPTION
 	and third extended (ext2/ext3) filesystems.
 endef
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += util-linux-ng
+PKG_BUILD_DEPS+= pkg-config util-linux-ng-devel
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
