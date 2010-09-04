@@ -34,17 +34,13 @@ PKG_URL        = http://www.gentoo.org/proj/en/hardened/pax-utils.xml
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Utilities for checking PaX features.
 
-PKG_DEPS      += libcap
+PKG_BUILD_DEPS+= libcap-devel
 
 define PKG_DESCRIPTION
 	This package contains several utilities for checking PaX features.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
-
-###############################################################################
-# Installation Details
-###############################################################################
 
 define STAGE_BUILD
 	cd $(DIR_APP) && make CFLAGS="$(CFLAGS)" USE_CAP=yes $(PARALLELISMFLAGS)
