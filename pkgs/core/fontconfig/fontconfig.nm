@@ -34,8 +34,7 @@ PKG_URL        = http://fontconfig.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = Font configuration and customization library.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += freetype libxml2
+PKG_BUILD_DEPS+= freetype-devel libxml2-devel pkg-config
 
 define PKG_DESCRIPTION
 	Fontconfig is designed to locate fonts within the \
@@ -44,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
