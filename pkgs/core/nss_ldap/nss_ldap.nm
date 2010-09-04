@@ -34,7 +34,7 @@ PKG_URL        = http://www.padl.com/
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = NSS library and PAM module for LDAP.
 
-PKG_DEPS      += cyrus-sasl openldap
+PKG_BUILD_DEPS+= cyrus-sasl-devel openldap-devel
 
 define PKG_DESCRIPTION
 	This package includes two LDAP access clients: nss_ldap and \
@@ -45,6 +45,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS = \
 	--prefix=/ \
