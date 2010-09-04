@@ -22,21 +22,14 @@ info:
 	@echo "PKG_REL=\"$(PKG_REL)\""
 	@echo "PKG_SUMMARY=\"$(strip $(PKG_SUMMARY))\""
 	@echo "PKG_URL=\"$(PKG_URL)\""
-	@echo "PKG_TOOLCHAIN_DEPENDENCIES=\"$(PKG_TOOLCHAIN_DEPS)\""
 
 $(OBJECTS):
 	@echo "Object file \"$@\" is required." >&2
 	@exit 1
 
-%.ipk: $(STAGE_DONE)
-	@echo "$(strip $(PKG_FILES_$(patsubst %$(PKG_SUFFIX),%,$@)))" \
-		> $(DIR_TMP)/filelist_$(patsubst %$(PKG_SUFFIX),%,$@)
-	@$(DIR_TOOLS)/compressor $(DIR_PACKAGES)/$@ \
-		--root=$(BUILDROOT) $(if $(PKG_FILES_$(patsubst %$(PKG_SUFFIX),%,$@)), \
-		--regexes=$(DIR_TMP)/filelist_$(patsubst %$(PKG_SUFFIX),%,$@))
-
 .PHONY: package
-package: $(if $(TOOLCHAIN),$(STAGE_DONE),$$(STAGE_PACKAGE_TARGETS))
+package: $(STAGE_DONE)
+	$(foreach package,$(call reverse,$(PKG_PACKAGES)),$(call DO_PACKAGE,$(package)))
 
 .PHONY: shell
 shell: $(OBJECTS)

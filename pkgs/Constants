@@ -5,6 +5,9 @@
 #
 ###############################################################################
 
+PKG_VARIABLES = PKG_BUILD_DEPS PKG_DEPS PKG_DESCRIPTION PKG_FILES PKG_GROUP \
+	PKG_MAINTAINER PKG_LICENSE PKG_REL PKG_SUMMARY PKG_URL PKG_VER
+
 ifeq "$(CHROOT)" "1"
 	BASEDIR = /usr/src
 endif
@@ -17,7 +20,7 @@ DIR_PATCHES = $(DIR_SOURCE)/patches
 DIR_SRC = $(ROOT)/usr/src
 DIR_TMP = /tmp
 DIR_SOURCE = $(CURDIR)
-DIR_PACKAGES = /usr/src/packages
+DIR_PACKAGES = /usr/src/packages/$(PKG_ARCH)
 DIR_TOOLS = $(BASEDIR)/tools
 DIR_LOGS = $(BASEDIR)/logs
 
@@ -39,15 +42,8 @@ DO_EXTRACT = $(DIR_TOOLS)/extractor
 DO_PATCHES = cd $(DIR_APP) && $(DIR_TOOLS)/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
 DO_QUALITY_AGENT = $(DIR_TOOLS)/quality-agent
 
-PKG_DESCRIPTION_$(PKG_NAME_REAL)-devel = Development files of $(THISAPP).
-
-define PKG_FILES_$(PKG_NAME_REAL)-devel
-	/usr/include
-	*/lib/*.so
-endef
-
-PKG_BUILD_DEPS += kernel-headers
-PKG_DEPS += glibc
+PKG_BUILD_DEPS += gcc glibc-devel kernel-headers
+PKG_DEPS +=
 
 CONFIGURE_OPTIONS = --prefix=/usr
 
