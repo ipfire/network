@@ -34,8 +34,8 @@ PKG_URL        = http://www.samba.org/
 PKG_LICENSE    = GPLv3+ and LGPLv3+
 PKG_SUMMARY    = Server and Client software to interoperate with Windows machines.
 
-PKG_BUILD_DEPS+= autoconf automake which
-PKG_DEPS      += cups gawk ncurses libcap2 openldap openssl pam popt readline 
+PKG_BUILD_DEPS+= autoconf automake cups-devel ncurses-devel libcap-devel \
+	openldap-devel openssl-devel pam-devel popt-devel readline-devel which
 
 define PKG_DESCRIPTION
 	Samba is the suite of programs by which a lot of PC-related machines \
@@ -50,6 +50,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 CFLAGS    += -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DLDAP_DEPRECATED
 
