@@ -34,7 +34,7 @@ PKG_URL        = http://www.gnu.org/software/screen
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = A screen manager that supports multiple logins on one terminal.
 
-PKG_DEPS      += ncurses pam
+PKG_BUILD_DEPS+= ncurses-devel pam-devel
 
 define PKG_DESCRIPTION
 	The screen utility allows you to have multiple logins on just one \
@@ -45,9 +45,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
 CONFIGURE_OPTIONS += \
 	--with-socket-dir=/var/run/screen \
 	--with-sys-screenrc=/etc/screenrc \
