@@ -34,9 +34,8 @@ PKG_URL        = http://hal.freedesktop.org/releases/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Power Management Service.
 
-PKG_BUILD_DEPS+= bison
-PKG_DEPS      += dbus dbus-glib dosfstools e2fsprogs glib2 libatasmart lvm2 \
-	mdadm parted polkit sg3-utils udev util-linux-ng xfsprogs
+PKG_BUILD_DEPS+= bison dbus-devel dbus-glib-devel glib2-devel
+PKG_DEPS      += udev util-linux-ng
 
 define PKG_DESCRIPTION
 	udisks provides a daemon, D-Bus API and command line tools \
