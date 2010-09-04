@@ -34,7 +34,9 @@ PKG_URL        = http://cups.org/software.php
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = The common UNIX printing system.
 
-PKG_DEPS      += cyrus-sasl ghostscript libjpeg libpng libtiff openldap pam perl python zlib
+PKG_BUILD_DEPS+= cyrus-sasl-devel gcc-c++ ghostscript libjpeg-devel libpng-devel \
+	 libtiff-devel openldap-devel pam-devel perl python zlib-devel
+PKG_DEPS      += ghostscript
 
 define PKG_DESCRIPTION
 	CUPS is the standards-based, open source printing system developed \
@@ -42,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP)-source.tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
