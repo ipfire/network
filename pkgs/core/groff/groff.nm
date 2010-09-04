@@ -34,7 +34,7 @@ PKG_URL        = http://groff.ffii.org/
 PKG_LICENSE    = GPLv2 and GFDL
 PKG_SUMMARY    = A document formatting system.
 
-PKG_BUILD_DEPS+= bison
+PKG_BUILD_DEPS+= bison gcc-c++ perl
 
 define PKG_DESCRIPTION
 	Groff is a document formatting system. Groff takes standard text and \
@@ -50,10 +50,6 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 export PAGE=A4
 CONFIGURE_OPTIONS += --enable-multibyte
 PARALLELISMFLAGS =
-
-###############################################################################
-# Installation Details
-###############################################################################
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && sed -i \
