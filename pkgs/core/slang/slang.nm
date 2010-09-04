@@ -34,7 +34,7 @@ PKG_URL        = http://www.jedsoft.org/slang/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Shared library for the S-Lang extension language.
 
-PKG_DEPS      += ncurses pcre
+PKG_BUILD_DEPS+= ncurses-devel pcre-devel
 
 define PKG_DESCRIPTION
 	S-Lang is an interpreted language and a programming library. \
@@ -45,6 +45,12 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
+PKG_PACKAGES  += $(PKG_NAME)-devel
+
 CONFIGURE_OPTIONS += --sysconfdir=/etc
 
 PARALLELISMFLAGS = # off
+
+define STAGE_INSTALL_CMDS
+	rm -rvf $(BUILDROOT)/usr/share/slsh
+endef
