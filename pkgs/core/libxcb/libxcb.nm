@@ -1,0 +1,54 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = libxcb
+PKG_VER        = 1.7
+PKG_REL        = 0
+
+PKG_MAINTAINER = Stefan Schantl <stefan.schantl@ipfire.org>
+PKG_GROUP      = X/Libraries
+PKG_URL        = http://xcb.freedesktop.org/
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = A C binding to the X11 protocol.
+
+PKG_BUILD_DEPS+= autoconf automake pkg-config xcb-proto xorg-x11-proto-devel
+PKG_DEPS      += libXau libxslt python
+
+define PKG_DESCRIPTION
+	The X protocol C-language Binding (XCB) is a replacement for Xlib \
+	featuring a small footprint, latency hiding, direct access to the \
+	protocol, improved threading support, and extensibility.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+CONFIGURE_OPTIONS += \
+	--disable-static
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/pthread-stubs//g" -i configure.ac
+	cd $(DIR_APP) && autoreconf -f --install
+endef

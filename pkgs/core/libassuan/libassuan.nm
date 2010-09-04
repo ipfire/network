@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = libassuan
-PKG_VER        = 1.0.5
+PKG_VER        = 2.0.1
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -46,9 +46,12 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+<<<<<<< HEAD
 
 PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && autoreconf --install
 endef
+=======
+>>>>>>> x-fixes

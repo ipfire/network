@@ -1,0 +1,19 @@
+diff -up PyQt-x11-gpl-4.5.2/configure.py.QT_SHARED PyQt-x11-gpl-4.5.2/configure.py
+--- PyQt-x11-gpl-4.5.2/configure.py.QT_SHARED	2009-07-16 08:34:48.419358104 -0500
++++ PyQt-x11-gpl-4.5.2/configure.py	2009-07-16 08:34:54.260358064 -0500
+@@ -1679,11 +1679,11 @@ int main(int, char **)
+ 
+     out << QLibraryInfo::licensee() << '\\n';
+ 
+-#if defined(QT_SHARED) || defined(QT_DLL)
++//#if defined(QT_SHARED) || defined(QT_DLL)
+     out << "shared\\n";
+-#else
+-    out << "\\n";
+-#endif
++//#else
++//    out << "\\n";
++//#endif
+ 
+     // Determine which features should be disabled.
+ 

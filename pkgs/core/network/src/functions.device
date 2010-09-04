@@ -153,6 +153,9 @@ function device_is_real() {
 	device_is_virtual ${device} && \
 		return ${EXIT_ERROR}
 
+	[ "$(__device_get_file ${device} type)" != "1" ] && \
+		return ${EXIT_ERROR}
+
 	return ${EXIT_OK}
 }
 

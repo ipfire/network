@@ -1,0 +1,106 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = qt
+PKG_VER        = 4.7.0-beta2
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://www.qtsoftware.com/
+PKG_LICENSE    = LGPLv2 with exceptions or GPLv3 with exceptions
+PKG_SUMMARY    = Qt toolkit.
+
+PKG_BUILD_DEPS+= coreutils pkg-config xorg-x11-proto-devel
+PKG_DEPS      += fontconfig libjpeg libpng libtiff libX11 libXext pcre zlib
+
+define PKG_DESCRIPTION
+	Qt is a software toolkit for developing applications.
+endef
+
+PKG_TARBALL    = $(PKG_NAME)-everywhere-opensource-src-$(PKG_VER).tar.gz
+
+CONFIGURE_OPTIONS = -v \
+	-prefix /usr \
+	-confirm-license \
+	-opensource \
+	-optimized-qmake \
+	-shared \
+	-release \
+	-largefile \
+	-reduce-relocations \
+	-openssl-linked \
+	-fontconfig \
+	-no-rpath \
+	-no-pch \
+	-no-qt3support \
+	-no-multimedia \
+	-no-audio-backend \
+	-no-phonon \
+	-no-phonon-backend \
+	-no-svg \
+	-no-javascript-jit \
+	-no-cups \
+	-no-gtkstyle \
+	-no-nas-sound \
+	-no-opengl \
+	-no-openvg \
+	-no-xinerama \
+	-no-sql-mysql \
+	-no-sql-odbc \
+	-no-sql-sqlite \
+	-no-sql-tds \
+	-no-webkit \
+	-no-script\
+	-no-scripttools \
+	-no-gif \
+	-no-libmng \
+	-no-separate-debug-info \
+	-no-sm \
+	-no-xshape \
+	-no-xvideo \
+	-no-xsync \
+	-no-mmx \
+	-no-sse \
+	-no-sse2 \
+	-no-3dnow \
+	-system-libpng \
+	-system-libjpeg \
+	-system-libtiff \
+	-system-zlib \
+	-nomake demos \
+	-nomake examples \
+	-nomake docs
+
+DIR_APP = $(DIR_SRC)/$(PKG_NAME)-everywhere-opensource-src-$(PKG_VER)
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/-O2/$(CFLAGS)/g" -i mkspecs/*/qmake.conf
+endef
+
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install INSTALL_ROOT=$(BUILDROOT)
+endef

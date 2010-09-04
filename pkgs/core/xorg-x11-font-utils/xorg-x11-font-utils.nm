@@ -1,0 +1,80 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = xorg-x11-font-utils
+PKG_VER        = 7.4
+PKG_REL        = 0
+
+PKG_MAINTAINER = Stefan Schantl <stefan.schantl@ipfire.org>
+PKG_GROUP      = X/Fonts
+PKG_URL        = http://www.x.org/
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = X.Org X11 font utilities.
+
+PKG_BUILD_DEPS+= autoconf pkg-config
+PKG_DEPS      += freetype libX11 libXfont libfontenc zlib
+ 
+define PKG_DESCRIPTION
+	X.Org X11 font utilities required for font installation, conversion, \
+	and generation.
+endef
+
+SRC_PACKAGES = \
+	bdftopcf-1.0.1 \
+	fonttosfnt-1.0.3 \
+	mkfontdir-1.0.5 \
+	mkfontscale-1.0.7 \
+	font-util-1.1.0
+
+PKG_OBJECTS += $(foreach package,$(SRC_PACKAGES),$(package).tar.bz2)
+
+define STAGE_PREPARE
+	for object in $(PKG_OBJECTS); do \
+		cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$${object}; \
+	done
+endef
+
+define MACRO_BUILD
+	cd $(DIR_SRC)/$(1) && autoconf
+	cd $(DIR_SRC)/$(1) && \
+		./configure \
+			--prefix=/usr \
+			--with-mapdir=/usr/share/x11/fonts/util
+
+	cd $(DIR_SRC)/$(1) && make $(PARALLELISMFLAGS)
+
+endef
+
+STAGE_BUILD = $(foreach package,$(SRC_PACKAGES),$(call MACRO_BUILD,$(package)))
+
+define MACRO_INSTALL
+	cd $(DIR_SRC)/$(1) && make install DESTDIR=$(BUILDROOT)
+
+endef
+
+STAGE_INSTALL = $(foreach package,$(SRC_PACKAGES),$(call MACRO_INSTALL,$(package)))
+
+

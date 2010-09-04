@@ -1,6 +1,8 @@
 #!/bin/bash
 
-for patch in $@; do
+. $(dirname ${0})/common-functions
+
+for patch in $(listsort $@); do
 	echo "Applying file ${patch}..."
 
 	patch -Np1 -i ${patch}

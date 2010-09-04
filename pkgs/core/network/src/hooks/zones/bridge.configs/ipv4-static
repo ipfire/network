@@ -78,9 +78,16 @@ function _up() {
 	config_read $(zone_dir ${zone})/configs/${config}
 
 	if ! zone_has_ipv4 ${zone} ${ADDRESS}/${PREFIX}; then
+		if ipv4_detect_duplicate ${zone} ${ADDRESS}; then
+			error_log "Duplicate address detected on zone '${zone}' (${ADDRESS})."
+			error_log "Cannot continue."
+			exit ${EXIT_ERROR}
+		fi
+
 		ip addr add ${ADDRESS}/${PREFIX} dev ${zone}
-	else
-		warning "Do not set IPv4 address '${ADDRESS}/${PREFIX}' because it was already configured on zone '${zone}'."
+
+		# Announce our new address to the neighbours
+		ipv4_update_neighbours ${zone} ${ADDRESS}
 	fi
 
 	if zone_is_nonlocal ${zone} && [ -n "${GATEWAY}" ]; then

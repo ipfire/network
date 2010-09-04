@@ -1,0 +1,63 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = libdrm
+PKG_VER        = 2.4.21
+PKG_REL        = 0
+
+PKG_MAINTAINER = Stefan Schantl <stefan.schantl@ipfire.org>
+PKG_GROUP      = X/Libraries
+PKG_URL        = http://dri.freedesktop.org/libdrm/
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = Direct Rendering Manager runtime library.
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+PKG_BUILD_DEPS+= automake autoconf libtool pkg-config
+PKG_DEPS      += libxcb udev
+
+define PKG_DESCRIPTION
+	Direct Rendering Manager runtime library.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.bz2
+
+CONFIGURE_OPTIONS += \
+	--enable-udev \
+	--enable-libkms \
+	--disable-static
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && sed -e "s/pthread-stubs//g" -i configure.ac
+	cd $(DIR_APP) && sed -e "s/PKG_CHECK_MODULES(PTHREADSTUBS, )//g" -i configure.ac
+	cd $(DIR_APP) && autoreconf -v --install
+endef
+
+define STAGE_INSTALL_CMDS
+	mkdir -pv $(BUILDROOT)/lib/udev/rules.d/
+	cd $(DIR_APP) && install -m 644 $(DIR_SOURCE)/91-drm-modeset.rules\
+		$(BUILDROOT)/lib/udev/rules.d/
+endef
