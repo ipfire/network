@@ -34,8 +34,8 @@ PKG_URL        = http://netfilter.org/projects/ulogd/index.html
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = The userspace logging daemon for netfilter.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += libnfnetlink libnetfilter_conntrack libnetfilter_log libpcap sqlite
+PKG_BUILD_DEPS+= libnfnetlink-devel libnetfilter_conntrack-devel \
+	libnetfilter_log-devel libpcap-devel pkg-config sqlite-devel
 
 define PKG_DESCRIPTION
 	This package contains utilities for configuring the linux ethernet \
