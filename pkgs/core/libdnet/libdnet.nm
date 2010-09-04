@@ -34,6 +34,8 @@ PKG_URL        = http://code.google.com/p/libdnet/
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = Simple portable interface to lowlevel networking routines.
 
+PKG_BUILD_DEPS+= gcc-c++
+
 define PKG_DESCRIPTION
 	libdnet provides a simplified, portable interface to several \
 	low-level networking routines, including network address \
@@ -44,6 +46,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tgz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--sbindir=/sbin \
