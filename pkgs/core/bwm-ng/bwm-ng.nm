@@ -34,7 +34,7 @@ PKG_URL        = http://www.gropp.org/?id=projects&sub=bwm-ng
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = A bandwidth monitor for the shell.
 
-PKG_DEPS      += ncurses
+PKG_BUILD_DEPS+= ncurses-devel
 
 define PKG_DESCRIPTION
 	bwm-ng diplays the traffic passing by on all interfaces.
