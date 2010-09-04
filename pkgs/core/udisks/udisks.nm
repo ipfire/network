@@ -34,9 +34,10 @@ PKG_URL        = http://www.freedesktop.org/wiki/Software/udisks
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Storage Management Service.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += dbus dbus-glib dosfstools e2fsprogs glib2 libatasmart lvm2 \
-	mdadm parted polkit sg3-utils udev util-linux-ng xfsprogs
+PKG_BUILD_DEPS+= dbus-devel dbus-glib-devel e2fsprogs-devel glib2-devel \
+	libatasmart-devel libdevmapper-devel parted-devel polkit-devel pkg-config
+PKG_DEPS      += dosfstools e2fsprogs mdadm parted sg3-utils udev \
+	util-linux-ng xfsprogs
 
 define PKG_DESCRIPTION
 	udisks provides a daemon, D-Bus API and command line tools \
