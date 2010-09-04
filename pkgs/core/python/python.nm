@@ -48,6 +48,8 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tgz
 
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
 export CFLAGS  += -D_GNU_SOURCE -fwrapv
 export CPPFLAGS = $(shell pkg-config --cflags-only-I libffi)
 
