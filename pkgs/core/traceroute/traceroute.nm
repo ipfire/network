@@ -46,10 +46,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && echo "CFLAGS += $(CFLAGS)" >> Make.defines
 endef
