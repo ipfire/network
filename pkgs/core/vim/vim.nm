@@ -34,7 +34,7 @@ PKG_URL        = http://flex.sourceforge.net/
 PKG_LICENSE    = PublicDomain/Charityware
 PKG_SUMMARY    = Very feature- and powerful editor.
 
-PKG_DEPS      += acl ncurses
+PKG_BUILD_DEPS+= libacl-devel ncurses-devel
 
 define PKG_DESCRIPTION
 	Vim is a highly configurable text editor built to enable efficient \
@@ -47,10 +47,6 @@ PKG_TARBALL    = $(THISAPP).tar.bz2
 DIR_APP        = $(DIR_SRC)/$(PKG_NAME)72
 
 CONFIGURE_OPTIONS += --enable-multibyte
-
-###############################################################################
-# Installation Details
-###############################################################################
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
