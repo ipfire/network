@@ -34,7 +34,8 @@ PKG_URL        = http://gnu.org/software/gdb/
 PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = A GNU source-level debugger for C, C++, Java and other languages.
 
-PKG_DEPS      += python readline zlib 
+PKG_BUILD_DEPS+= ncurses-devel readline-devel zlib-devel
+PKG_DEPS      += python
 
 define PKG_DESCRIPTION
 	GDB, the GNU debugger, allows you to debug programs written in C, C++, \
