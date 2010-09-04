@@ -34,7 +34,7 @@ PKG_URL        = http://git.fedorahosted.org/git/?p=pyblock.git;a=summary
 PKG_LICENSE    = GPLv2 or GPLv3
 PKG_SUMMARY    = Python modules for dealing with block devices.
 
-PKG_DEPS      += dmraid lvm2 python python-parted
+PKG_BUILD_DEPS+= dmraid-devel libdevmapper-devel python-devel python-parted
 
 define PKG_DESCRIPTION
 	The pyblock contains Python modules for dealing with block devices.
