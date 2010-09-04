@@ -34,8 +34,8 @@ PKG_URL        = http://oss.oetiker.ch/rrdtool/
 PKG_LICENSE    = GPLv2+ with exceptions
 PKG_SUMMARY    = Round Robin Database Tool to store and display time-series data.
 
-PKG_BUILD_DEPS+= gettext groff libtool pkg-config
-PKG_DEPS      += cairo libxml2 pango python
+PKG_BUILD_DEPS+= cairo-devel gettext groff libtool libxml2-devel pango-devel \
+	pkg-config python-devel
 
 define PKG_DESCRIPTION
 	RRD is the Acronym for Round Robin Database. RRD is a system to \
@@ -46,6 +46,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 CONFIGURE_OPTIONS += \
 	--disable-rrdcgi \
