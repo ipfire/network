@@ -34,8 +34,7 @@ PKG_URL        = http://christophe.varoqui.free.fr/
 PKG_LICENSE    = GPL+
 PKG_SUMMARY    = Tools to manage multipath devices using device-mapper.
 
-PKG_BUILD_DEPS+= gzip
-PKG_DEPS      += libaio lvm2 ncurses readline
+PKG_BUILD_DEPS+= gzip libaio-devel libdevmapper-devel ncurses-devel readline-devel
 
 define PKG_DESCRIPTION
 	This package provides tools to manage multipath devices by \
@@ -43,6 +42,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(PKG_NAME)-091027.tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 DIR_APP = $(DIR_SRC)/$(PKG_NAME)
 
