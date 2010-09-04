@@ -34,7 +34,7 @@ PKG_URL        = http://www.gnu.org/software/jwhois/
 PKG_LICENSE    = GPLv3
 PKG_SUMMARY    = Internet whois/nicname client.
 
-PKG_DEPS      += gdbm
+PKG_BUILD_DEPS+= gdbm-devel
 
 define PKG_DESCRIPTION
 	A whois client that accepts both traditional and finger-style queries.
