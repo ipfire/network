@@ -34,7 +34,7 @@ PKG_URL        = http://pax.grsecurity.net/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = Application to control PaX flags.
 
-PKG_DEPS      += m4
+PKG_BUILD_DEPS+= m4
 
 define PKG_DESCRIPTION
 	paxctl may be used to control PaX flags on a per-binary basis. PaX \
@@ -42,10 +42,6 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-###############################################################################
-# Installation Details
-###############################################################################
 
 define STAGE_BUILD
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS) CFLAGS="$(CFLAGS)"
