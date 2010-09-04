@@ -34,8 +34,7 @@ PKG_URL        = http://oss.sgi.com/projects/xfs/
 PKG_LICENSE    = GPL+ and LGPLv2+
 PKG_SUMMARY    = Utilities for managing the XFS filesystem
 
-PKG_BUILD_DEPS+= libtool gettext make
-PKG_DEPS      += acl e2fsprogs readline
+PKG_BUILD_DEPS+= libacl-devel e2fsprogs-devel libtool gettext readline-devel
 
 define PKG_DESCRIPTION
 	A set of commands to use the XFS filesystem, including mkfs.xfs.
@@ -43,9 +42,7 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define STAGE_BUILD
 	cd $(DIR_APP) && \
