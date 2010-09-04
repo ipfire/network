@@ -34,8 +34,9 @@ PKG_URL        = http://www.lichteblau.com/ldapvi/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = An interactive LDAP client.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += glib2 libxslt ncurses openldap openssl popt readline
+PKG_BUILD_DEPS+= glib2-devel ncurses-devel openldap-devel openssl-devel \
+	pkg-config popt-devel readline-devel
+PKG_DEPS      += vim
 
 define PKG_DESCRIPTION
 	ldapvi is an interactive LDAP client for Unix terminals. Using it, you can \
