@@ -34,8 +34,7 @@ PKG_URL        = http://www.linuxwireless.org/en/users/Documentation/iw
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = A nl80211 based wireless configuration tool.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += libnl
+PKG_BUILD_DEPS+= libnl-devel pkg-config
 
 define PKG_DESCRIPTION
 	iw is a new nl80211 based CLI configuration utility for wireless \
