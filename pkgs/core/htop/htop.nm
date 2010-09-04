@@ -34,7 +34,7 @@ PKG_URL        = http://htop.sourceforge.net/
 PKG_LICENSE    = GPL+
 PKG_SUMMARY    = Interactive process viewer.
 
-PKG_DEPS      += ncurses
+PKG_BUILD_DEPS+= ncurses-devel
 
 define PKG_DESCRIPTION
 	htop is an interactive text-mode process viewer for Linux, similar to \
