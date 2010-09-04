@@ -34,8 +34,7 @@ PKG_URL        = http://fedorahosted.org/pyparted
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Python module for GNU parted.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += parted python python-decorator
+PKG_BUILD_DEPS+= parted-devel pkg-config python-decorator python-devel
 
 define PKG_DESCRIPTION
 	Python module for the parted library. It is used for manipulating \
