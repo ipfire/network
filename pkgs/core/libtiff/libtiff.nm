@@ -34,7 +34,7 @@ PKG_URL        = http://www.libtiff.org
 PKG_LICENSE    = libtiff ( own )
 PKG_SUMMARY    = Library of functions for manipulating TIFF format image files.
 
-PKG_BUILD_DEPS+= libjpeg
+PKG_BUILD_DEPS+= gcc-c++ libjpeg-devel
 
 define PKG_DESCRIPTION
 	The libtiff package contains a library of functions for manipulating \
@@ -44,5 +44,7 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = tiff-$(PKG_VER).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 DIR_APP = /usr/src/tiff-$(PKG_VER)
