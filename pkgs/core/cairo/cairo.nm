@@ -36,8 +36,8 @@ PKG_SUMMARY    = A 2D graphics library.
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += fontconfig freetype libpng pixman zlib
+PKG_BUILD_DEPS+= fontconfig-devel freetype-devel libpng-devel pixman-devel \
+	pkg-config zlib-devel
 
 define PKG_DESCRIPTION
 	Cairo is a 2D graphics library designed to provide high-quality display \
@@ -45,3 +45,5 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
