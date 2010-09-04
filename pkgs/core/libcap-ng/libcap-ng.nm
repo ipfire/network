@@ -34,7 +34,7 @@ PKG_URL        = http://people.redhat.com/sgrubb/libcap-ng
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = An alternate posix capabilities library.
 
-PKG_DEPS      += attr kernel-headers python
+PKG_BUILD_DEPS+= libattr-devel python
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
@@ -44,8 +44,6 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
-
-#CONFIGURE_OPTIONS += \
 
 # XXX Testsuite is broken by the package developers
 #define STAGE_TEST
