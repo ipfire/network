@@ -34,7 +34,7 @@ PKG_URL        = http://www.squid-cache.org/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = The Squid proxy caching server.
 
-PKG_DEPS      += libxml2 openssl openldap
+PKG_BUILD_DEPS+= gcc-c++ libxml2-devel openssl-devel openldap-devel
 
 define PKG_DESCRIPTION
 	Squid is a high-performance proxy caching server for Web clients, \
