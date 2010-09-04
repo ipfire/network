@@ -36,7 +36,7 @@ class Dependency(object):
 			return DEP_FILE
 		elif ".so" in self.identifier:
 			return DEP_LIBRARY
-		elif re.match("^[A-Za-z0-9\-\+]+$", self.identifier):
+		elif re.match("^[A-Za-z0-9\-\+_]+$", self.identifier):
 			return DEP_PACKAGE
 
 		return DEP_INVALID
