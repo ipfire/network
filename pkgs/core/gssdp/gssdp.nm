@@ -34,11 +34,12 @@ PKG_URL        = http://www.gupnp.org
 PKG_LICENSE    = LGPL
 PKG_SUMMARY    = Resource discovery and announcement over SSDP.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += glib2 libsoup 
+PKG_BUILD_DEPS+= glib2-devel libsoup-devel pkg-config
 
 define PKG_DESCRIPTION
 	GSSDP implements resource discovery and announcement over SSDP.
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
