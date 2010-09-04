@@ -34,7 +34,7 @@ PKG_URL        = http://www.freetype.org/
 PKG_LICENSE    = FTL GPLv2+
 PKG_SUMMARY    = A free and portable font rendering engine.
 
-PKG_DEPS      += zlib
+PKG_BUILD_DEPS+= zlib-devel
 
 define PKG_DESCRIPTION
 	The FreeType engine is a free and portable font rendering \
@@ -46,6 +46,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && \
