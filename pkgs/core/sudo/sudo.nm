@@ -34,7 +34,8 @@ PKG_URL        =
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = Allows restricted root access for specified users.
 
-PKG_DEPS      += cyrus-sasl openldap pam vim
+PKG_BUILD_DEPS+= cyrus-sasl-devel openldap-devel pam-devel
+PKG_DEPS      += vim
 
 define PKG_DESCRIPTION
 	Sudo (superuser do) allows a system administrator to give certain \
