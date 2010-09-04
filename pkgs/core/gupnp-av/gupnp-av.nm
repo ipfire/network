@@ -34,7 +34,7 @@ PKG_URL        = http://www.gupnp.org
 PKG_LICENSE    = LGPL
 PKG_SUMMARY    = gupnp audio/video helpers.
 
-PKG_DEPS      += gssdp gupnp
+PKG_BUILD_DEPS+= gssdp-devel gupnp-devel pkg-config
 
 define PKG_DESCRIPTION
 	GUPnP-AV is a collection of helpers for building AV (audio/video) \
@@ -42,6 +42,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
         --without-gnome
