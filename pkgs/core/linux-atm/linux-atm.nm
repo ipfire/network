@@ -34,7 +34,7 @@ PKG_URL        = http://linux-atm.sourceforge.net/
 PKG_LICENSE    = BSD and GPLv2 and GPLv2+ and LGPLv2+ and MIT
 PKG_SUMMARY    = Tools to support ATM networking under Linux.
 
-PKG_BUILD_DEPS+= flex kernel-headers
+PKG_BUILD_DEPS+= flex kernel-headers perl
 
 define PKG_DESCRIPTION
 	This package contains header files and libraries for development \
@@ -42,6 +42,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
