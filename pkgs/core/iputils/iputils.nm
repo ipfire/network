@@ -34,8 +34,7 @@ PKG_URL        = http://www.skbuff.net/iputils
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = Network monitoring tools including ping.
 
-PKG_BUILD_DEPS+= libcap
-PKG_DEPS      += libidn
+PKG_BUILD_DEPS+= libcap-devel libidn-devel
 
 define PKG_DESCRIPTION
 	The iputils package contains basic utilities for monitoring a network, \
@@ -58,10 +57,6 @@ PKG_PATCHES   += $(THISAPP)-rh.patch
 PKG_PATCHES   += $(THISAPP)-traffic_class.patch
 PKG_PATCHES   += $(THISAPP)-warnings.patch
 PKG_PATCHES   += $(THISAPP)-output.patch
-
-###############################################################################
-# Installation Details
-###############################################################################
 
 define STAGE_BUILD
 	cd $(DIR_APP) && make $(PARALLELISMFLAGS)
