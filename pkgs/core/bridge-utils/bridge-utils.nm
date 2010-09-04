@@ -52,3 +52,7 @@ CONFIGURE_OPTIONS += \
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && autoconf
 endef
+
+define STAGE_INSTALL_CMDS
+	rm -rvf $(BUILDROOT)/usr/include
+endef
