@@ -34,7 +34,7 @@ PKG_URL        = http://www.directfb.org/
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = Graphics abstraction library for the Linux Framebuffer Device.
 
-PKG_DEPS      += freetype libjpeg sysfsutils zlib
+PKG_BUILD_DEPS+= freetype-devel libjpeg-devel perl sysfsutils-devel zlib-devel
 
 define PKG_DESCRIPTION
 	DirectFB is a thin library that provides hardware graphics acceleration, \
@@ -44,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 # XXX Needs a double check
 ifneq "$(TARGET)" "i686"
