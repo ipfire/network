@@ -34,7 +34,7 @@ PKG_URL        = http://www.gnu.org/software/guile/
 PKG_LICENSE    = GPLv2+ and LGPLv2+ and GFDL and OFSFDL
 PKG_SUMMARY    = A GNU implementation of Scheme for application extensibility.
 
-PKG_DEPS      += gmp libtool
+PKG_BUILD_DEPS+= gmp-devel libtool-devel
 
 define PKG_DESCRIPTION
 	GUILE (GNU's Ubiquitous Intelligent Language for Extension) is a library \
@@ -44,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 QUALITY_AGENT_WHITELIST_RPATH = /usr/lib
 
