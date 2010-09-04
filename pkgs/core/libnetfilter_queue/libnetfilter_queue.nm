@@ -34,8 +34,7 @@ PKG_URL        = http://www.netfilter.org/projects/libnetfilter_queue/downloads.
 PKG_LICENSE    = GPL
 PKG_SUMMARY    = The libnetfilter_queue userspace library.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += libnfnetlink
+PKG_BUILD_DEPS+= libnfnetlink-devel pkg-config
 
 define PKG_DESCRIPTION
 	libnetfilter_queue is a userspace library that provides an API \
@@ -45,3 +44,5 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
