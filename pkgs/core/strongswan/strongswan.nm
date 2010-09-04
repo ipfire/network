@@ -34,8 +34,8 @@ PKG_URL        = http://www.strongswan.org/
 PKG_LICENSE    = GPL
 PKG_SUMMARY    = IPsec and IKEv1 implementation for Linux 2.4 and 2.6 kernels.
 
-PKG_BUILD_DEPS+= bison flex gperf perl
-PKG_DEPS      += curl gcrypt gmp libcap openldap sqlite
+PKG_BUILD_DEPS+= bison flex gmp-devel gperf libcap-devel libcurl-devel \
+	libgcrypt-devel openldap-devel perl sqlite-devel
 
 define PKG_DESCRIPTION
 	StrongSwan is a complete IPsec and IKEv1 implementation for \
