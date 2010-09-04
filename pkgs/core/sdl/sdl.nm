@@ -34,8 +34,7 @@ PKG_URL        = http://www.libsdl.org/
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = A cross-platform multimedia library.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += directfb libusb-compat
+PKG_BUILD_DEPS+= directfb-devel libusb-compat-devel pkg-config
 
 define PKG_DESCRIPTION
 	Simple DirectMedia Layer (SDL) is a cross-platform multimedia library \
@@ -44,3 +43,5 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
