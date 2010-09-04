@@ -34,7 +34,7 @@ PKG_URL        = http://cgit.freedesktop.org/~david/eggdbus
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = Experimental D-Bus bindings for GObject.
 
-PKG_DEPS      += dbus dbus-glib glib2
+PKG_BUILD_DEPS+= dbus-devel dbus-glib-devel glib2-devel pkg-config
 
 define PKG_DESCRIPTION
 	Experimental D-Bus bindings for GObject.
