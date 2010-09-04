@@ -34,7 +34,7 @@ PKG_URL        = http://www.gnu.org/software/parted
 PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = The GNU disk partition manipulation program.
 
-PKG_DEPS      += lvm2 readline util-linux-ng
+PKG_BUILD_DEPS+= libdevmapper-devel readline-devel util-linux-ng-devel
 
 define PKG_DESCRIPTION
 	The GNU Parted program allows you to create, destroy, resize, move, \
@@ -44,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--libdir=/lib
