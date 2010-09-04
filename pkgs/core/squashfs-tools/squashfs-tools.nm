@@ -34,7 +34,7 @@ PKG_URL        = http://squashfs.sf.net/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Utility for the creation of squashfs filesystems.
 
-PKG_DEPS      += xz zlib
+PKG_BUILD_DEPS+= libattr-devel xz-devel zlib-devel
 
 define PKG_DESCRIPTION
 	Squashfs is a highly compressed read-only filesystem for Linux.
