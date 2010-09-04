@@ -34,7 +34,7 @@ PKG_URL        = http://procps.sourceforge.net/
 PKG_LICENSE    = GPLv2+ and LGPLv2+
 PKG_SUMMARY    = System and process monitoring utilities.
 
-PKG_DEPS      += ncurses
+PKG_BUILD_DEPS+= ncurses-devel
 
 define PKG_DESCRIPTION
 	The procps package contains a set of system utilities that provide \
