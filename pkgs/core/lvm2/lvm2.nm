@@ -34,8 +34,7 @@ PKG_URL        = http://sources.redhat.com/lvm2/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = Userland logical volume management tools.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += module-init-tools ncurses readline
+PKG_BUILD_DEPS+= pkg-config ncurses-devel readline-devel
 
 define PKG_DESCRIPTION
 	LVM2 includes all of the support for handling read/write operations on \
@@ -47,6 +46,11 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tgz
+
+PKG_PACKAGES  += libdevmapper libdevmapper-devel
+
+PKG_FILES-libdevmapper = $(PKG_FILES-$(PKG_NAME_REAL)-libs)
+PKG_FILES-libdevmapper-devel = $(PKG_FILES-$(PKG_NAME_REAL)-devel)
 
 THISAPP        = $(PKG_NAME).$(PKG_VER)
 
