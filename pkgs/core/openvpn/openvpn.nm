@@ -34,7 +34,8 @@ PKG_URL        = http://openvpn.net/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = A full-featured SSL VPN solution.
 
-PKG_DEPS      += iproute2 lzo openssl pam
+PKG_BUILD_DEPS+= lzo-devel openssl-devel pam-devel
+PKG_DEPS      += iproute2
 
 define PKG_DESCRIPTION
 	OpenVPN is a robust and highly flexible tunneling application that uses all \
