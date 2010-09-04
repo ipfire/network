@@ -34,7 +34,7 @@ PKG_URL        = https://fedorahosted.org/releases/n/e/newt/
 PKG_LICENSE    = LGPLv2
 PKG_SUMMARY    = A library for text mode user interfaces.
 
-PKG_DEPS      += popt python slang
+PKG_BUILD_DEPS+= popt-devel python-devel slang-devel
 
 define PKG_DESCRIPTION
 	Newt is a programming library for color text mode, widget based user \
@@ -47,6 +47,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--without-gpm-support \
