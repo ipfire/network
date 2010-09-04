@@ -34,7 +34,8 @@ PKG_URL        = http://nmap.org/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Network exploration tool and security scanner.
 
-PKG_DEPS      += libdnet libpcap lua openssl pcre
+PKG_BUILD_DEPS+= gcc-c++ libdnet-devel libpcap-devel lua-devel openssl-devel \
+	pcre-devel
 
 define PKG_DESCRIPTION
 	Nmap is a utility for network exploration or security auditing. \
