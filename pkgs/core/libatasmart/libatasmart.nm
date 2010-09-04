@@ -34,8 +34,7 @@ PKG_URL        = http://git.0pointer.de/?p=libatasmart.git;a=summary
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = ATA S.M.A.R.T. Disk Health Monitoring Library.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += udev
+PKG_BUILD_DEPS+= libudev-devel pkg-config
 
 define PKG_DESCRIPTION
 	A scmall and lightweight parser library for ATA S.M.A.R.T. hard disk \
@@ -43,6 +42,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--libdir=/lib
