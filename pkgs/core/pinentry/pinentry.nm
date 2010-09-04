@@ -34,7 +34,7 @@ PKG_URL        = http://www.gnupg.org
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = Collection of simple PIN or passphrase entry dialogs.
 
-PKG_DEPS      += libgpg-error ncurses
+PKG_BUILD_DEPS+= libgpg-error-devel ncurses-devel
 
 define PKG_DESCRIPTION
 	Pinentry is a collection of simple PIN or passphrase entry dialogs which \
