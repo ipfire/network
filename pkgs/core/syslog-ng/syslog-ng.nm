@@ -34,8 +34,7 @@ PKG_URL        = http://www.balabit.com/network-security/syslog-ng/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Syslog-ng is a daemon that handles the logging stuff.
 
-PKG_BUILD_DEPS+= pkg-config which
-PKG_DEPS      += eventlog glib2
+PKG_BUILD_DEPS+= eventlog-devel glib2-devel pkg-config which
 
 define PKG_DESCRIPTION
 	The syslog-ng application can operate in server or agent mode, and - \
@@ -46,9 +45,6 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-###############################################################################
-# Installation Details
-###############################################################################
 CONFIGURE_OPTIONS += \
 	--sbindir=/sbin \
 	--libexecdir=/usr/lib \
