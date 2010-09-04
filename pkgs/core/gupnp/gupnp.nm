@@ -34,8 +34,8 @@ PKG_URL        = http://www.gupnp.org
 PKG_LICENSE    = LGPL
 PKG_SUMMARY    = An UPNP framework.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += glib2 gssdp libsoup libxml2 util-linux-ng
+PKG_BUILD_DEPS+= glib2-devel gssdp-devel libsoup-devel libxml2-devel \
+	pkg-config util-linux-ng-devel
 
 define PKG_DESCRIPTION
 	GUPnP is an object-oriented open source framework for creating UPnP\
@@ -44,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
         --without-gnome
