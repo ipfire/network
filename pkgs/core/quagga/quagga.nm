@@ -34,7 +34,7 @@ PKG_URL        = http://www.quagga.net/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Quagga is a rounting daemon.
 
-PKG_DEPS      += pam
+PKG_BUILD_DEPS+= pam-devel
 
 define PKG_DESCRIPTION
 	Quagga is a free software that manages TCP/IP based routing \
@@ -44,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 define STAGE_BUILD
 	# ac_cv_have_decl_TCP_MD5SIG=no was set to work around a bug
