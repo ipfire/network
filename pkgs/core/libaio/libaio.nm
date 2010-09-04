@@ -37,7 +37,7 @@ PKG_SUMMARY    = Linux-native asynchronous I/O access library.
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 define PKG_DESCRIPTION
-	The Linux-native asynchronous I/O facility ("async I/O", or "aio") \
+	The Linux-native asynchronous I/O facility (async I/O, or aio) \
 	has a richer API and capability set than the simple POSIX async I/O \
 	facility. This library, libaio, provides the Linux-native API for \
 	async I/O. The POSIX async I/O facility requires this library in \
@@ -45,7 +45,7 @@ define PKG_DESCRIPTION
 	applications which require the Linux-native async I/O API. 
 endef
 
-PKG_BUILD_DEPS+= e2fsprogs
+PKG_BUILD_DEPS+= e2fsprogs-devel
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
