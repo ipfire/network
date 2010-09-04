@@ -34,7 +34,7 @@ PKG_URL        = http://www.gnugp.org
 PKG_LICENSE    = GPLv3
 PKG_SUMMARY    = X.509 Library.
 
-PKG_DEPS      += libgpg-error
+PKG_BUILD_DEPS+= libgpg-error-devel
 
 define PKG_DESCRIPTION
 	KSBA is a library designed to build software based on the X.509 and \
@@ -42,3 +42,5 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
