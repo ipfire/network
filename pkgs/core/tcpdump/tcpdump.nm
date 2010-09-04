@@ -34,7 +34,7 @@ PKG_URL        = http://www.tcpdump.org/
 PKG_LICENSE    = BSD with advertising
 PKG_SUMMARY    = A network traffic monitoring tool.
 
-PKG_DEPS      += libpcap openssl
+PKG_BUILD_DEPS+= libpcap-devel openssl-devel
 
 define PKG_DESCRIPTION
 	Tcpdump is a command-line tool for monitoring network traffic. \
