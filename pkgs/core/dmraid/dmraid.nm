@@ -34,7 +34,7 @@ PKG_URL        = http://people.redhat.com/heinzm/sw/dmraid
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Device-mapper RAID tool and library.
 
-PKG_DEPS      += lvm2
+PKG_BUILD_DEPS+= libdevmapper-devel
 
 define PKG_DESCRIPTION
 	DMRAID supports RAID device discovery, RAID set activation, creation, \
@@ -43,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 DIR_APP        = $(DIR_SRC)/$(PKG_NAME)/$(PKG_VER)
 
