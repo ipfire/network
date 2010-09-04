@@ -42,10 +42,6 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 DIR_APP        = $(DIR_SRC)/$(PKG_NAME)
 
-###############################################################################
-# Installation Details
-###############################################################################
-
 define STAGE_BUILD
 	cd $(DIR_APP) && make purge vconfig CCFLAGS="$(CFLAGS)"
 endef
