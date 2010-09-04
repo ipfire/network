@@ -34,8 +34,7 @@ PKG_URL        = https://launchpad.net/libnih
 PKG_LICENSE    = GPL2+
 PKG_SUMMARY    = Small library with advanced functions.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += dbus
+PKG_BUILD_DEPS+= dbus-devel pkg-config
 
 define PKG_DESCRIPTION
 	libnih is a small library for C application development containing \
@@ -44,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
         --libdir=/lib
