@@ -34,8 +34,7 @@ PKG_URL        = http://www.pango.org/
 PKG_LICENSE    = LGPLv2+
 PKG_SUMMARY    = System for layout and rendering of internationalized text.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += cairo fontconfig glib2
+PKG_BUILD_DEPS+= cairo-devel fontconfig-devel glib2-devel perl pkg-config
 
 define PKG_DESCRIPTION
 	Pango is a library for laying out and rendering of text, with an \
@@ -43,6 +42,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc
