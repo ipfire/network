@@ -34,10 +34,9 @@ PKG_URL        = http://www.libpng.org/pub/png/
 PKG_LICENSE    = zlib
 PKG_SUMMARY    = A library of functions for manipulating PNG image format files.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += zlib
+PKG_BUILD_DEPS+= pkg-config zlib-devel
 
-PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define PKG_DESCRIPTION
 	The libpng package contains a library of functions for creating and \
