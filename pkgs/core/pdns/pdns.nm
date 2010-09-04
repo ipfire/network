@@ -34,7 +34,7 @@ PKG_URL        = http://powerdns.com/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = A modern, advanced and high performance authoritative-only nameserver.
 
-PKG_DEPS      += boost openldap sqlite zlib
+PKG_BUILD_DEPS+= boost-devel gcc-c++ openldap-devel sqlite-devel zlib-devel
 
 define PKG_DESCRIPTION
 	The PowerDNS Nameserver is a modern, advanced and high performance \
