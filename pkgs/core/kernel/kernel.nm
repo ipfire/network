@@ -34,8 +34,8 @@ PKG_URL        = http://www.kernel.org/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = The Linux kernel.
 
-PKG_BUILD_DEPS+= module-init-tools ncurses
-PKG_DEPS       = # No dependencies
+PKG_BUILD_DEPS+= module-init-tools ncurses-devel perl
+PKG_DEPS-kernel= dracut
 
 define PKG_DESCRIPTION
 	The kernel package contains the Linux kernel (vmlinuz), the core of any \
@@ -52,9 +52,11 @@ FULLVER        = $(PKG_VER)$(LOCALVERSION)
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
 
-###############################################################################
-# Installation Details
-###############################################################################
+PKG_PACKAGES  += kernel-headers
+
+PKG_SUMMARY-kernel-headers     = Header files if the kernel release $(FULLVER).
+PKG_DESCRIPTION-kernel-headers = $(PKG_SUMMARY-kernel-headers)
+PKG_FILES-kernel-headers       = /usr/include
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && echo "$(LOCALVERSION)" > localversion-$(DISTRO_SNAME)
@@ -75,7 +77,10 @@ endef
 
 define STAGE_BUILD
 	cd $(DIR_APP) && yes "" | make oldconfig
-	
+
+	# Check headers
+	cd $(DIR_APP) && make ARCH=x86 headers_check
+
 	cd $(DIR_APP) && make CC="gcc -nopie" $(PARALLELISMFLAGS)
 endef
 
@@ -89,4 +94,16 @@ define STAGE_INSTALL
 	-mkdir -pv $(BUILDROOT)/lib/modules/$(FULLVER)/extra
 
 	rm -vf $(BUILDROOT)/lib/modules/$(FULLVER)/{build,source}
+
+	# Install the header files
+	cd $(DIR_APP) && make ARCH=x86 INSTALL_HDR_PATH=dest headers_install
+	-mkdir -pv $(BUILDROOT)/usr/include
+	cd $(DIR_APP) && find dest/include \( -name .install -o -name ..install.cmd \) -delete
+	cd $(DIR_APP) && cp -rv dest/include/* $(BUILDROOT)/usr/include
+
+	# Glibc provides these headers
+	rm -rfv $(BUILDROOT)/usr/include/scsi \
+		$(BUILDROOT)/usr/include/asm*/atomic.h \
+		$(BUILDROOT)/usr/include/asm*/io.h \
+		$(BUILDROOT)/usr/include/asm*/irq.h
 endef
