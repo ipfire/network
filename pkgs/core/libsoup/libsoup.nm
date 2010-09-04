@@ -34,8 +34,7 @@ PKG_URL        = http://ftp.gnome.org/pub/gnome/sources/libsoup/
 PKG_LICENSE    = GPL
 PKG_SUMMARY    = HTTP client/server library for GNOME.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += glib2 libxml2 openssl
+PKG_BUILD_DEPS+= glib2-devel libxml2-devel openssl-devel pkg-config
 
 define PKG_DESCRIPTION
 	libsoup is an HTTP client/server library for GNOME. It uses GObjects \
@@ -44,6 +43,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 CONFIGURE_OPTIONS += \
         --without-gnome
