@@ -34,7 +34,8 @@ PKG_URL        = http://pptpclient.sourceforge.net/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Point-to-Point Tunneling Protocol (PPTP) Client.
 
-PKG_DEPS      += iproute2 ppp
+PKG_BUILD_DEPS+= perl ppp-devel
+PKG_DEPS      += iproute2
 
 define PKG_DESCRIPTION
 	Client for the proprietary Microsoft Point-to-Point Tunneling \
