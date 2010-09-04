@@ -34,7 +34,7 @@ PKG_URL        = http://cvs.linux-atm.sourceforge.net/viewcvs.py/linux-atm/linux
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Utilities for configuring an ATM/ethernet bridge.
 
-PKG_DEPS      += linux-atm
+PKG_BUILD_DEPS+= linux-atm-devel
 
 define PKG_DESCRIPTION
 	Utility for configuring RFC 2684 ATM/Ethernet bridging \
