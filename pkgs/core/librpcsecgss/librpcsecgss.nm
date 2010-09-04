@@ -34,8 +34,7 @@ PKG_URL        = http://www.citi.umich.edu/projects/nfsv4/linux/librpcsecgss/
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = A Library for secure rpc communication.
 
-PKG_BUILD_DEPS+= pkg-config 
-PKG_DEPS      += libgssglue
+PKG_BUILD_DEPS+= libgssglue-devel pkg-config 
 
 define PKG_DESCRIPTION
 	rpcsecgss allows secure rpc communication using the rpcsec_gss \
@@ -44,4 +43,4 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-CFLAGS    += -fPIC
+PKG_PACKAGES  += $(PKG_NAME)-devel
