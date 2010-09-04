@@ -34,7 +34,8 @@ PKG_URL        = http://joey.kitenet.net/code/os-prober/
 PKG_LICENSE    = GPL
 PKG_SUMMARY    = Utility to detect other OSes on a set of drives.
 
-PKG_DEPS      += dmraid lvm2 udev util-linux-ng
+PKG_BUILD_DEPS+= dmraid-devel libdevmapper-devel libudev-devel \
+	util-linux-ng-devel
 
 define PKG_DESCRIPTION
 	os-prober is a spinoff of debian-installer. One of the installer's features \
