@@ -34,8 +34,8 @@ PKG_URL        = http://www.openinfosecfoundation.org/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = Open Source Next Generation Intrusion Detection and Prevention Engine.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += libcap-ng libnfnetlink libnetfilter_queue libnet libpcap libyaml pcre
+PKG_BUILD_DEPS+= libcap-ng-devel libnfnetlink-devel libnetfilter_queue-devel \
+	libnet-devel libpcap-devel libyaml-devel pcre-devel pkg-config zlib-devel
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
