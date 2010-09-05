@@ -40,7 +40,7 @@ define PKG_DESCRIPTION
 endef
 
 PKG_BUILD_DEPS+= autogen cloog-devel dejagnu elfutils-devel expect gmp-devel \
-	libffi-devel mpc-devel mpfr-devel ppl-devel
+	libffi-devel mpc-devel mpfr-devel pkg-config ppl-devel zlib-devel
 PKG_DEPS-gcc  += binutils libgcc-devel
 
 ifeq "$(MACHINE)" "i586"
@@ -121,6 +121,8 @@ endef
 
 define STAGE_BUILD
 	cd $(DIR_SRC)/gcc-build && \
+		XCFLAGS="$(CFLAGS)" \
+		TCFLAGS="$(CFLAGS)" \
 		../$(THISAPP)/configure \
 			$(CONFIG_CPU) \
 			--prefix=/usr \
@@ -131,11 +133,14 @@ define STAGE_BUILD
 			--enable-threads=posix \
 			--enable-__cxa_atexit \
 			--enable-clocale=gnu \
-			--enable-languages=c,c++ \
-			--disable-bootstrap \
+			--enable-languages=c,c++,lto \
+			--enable-bootstrap \
+			--enable-checking=release \
 			--disable-werror \
 			--disable-libssp \
 			--disable-static \
+			--with-system-zlib \
+			--with-bugurl=http://bugtracker.ipfire.org \
 			$(CONFIGURE_ARGS)
 
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)
