@@ -44,6 +44,8 @@ endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
+
 PARALLELISMFLAGS = # No parallel build
 
 CONFIGURE_OPTIONS += \
