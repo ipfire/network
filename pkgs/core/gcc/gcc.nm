@@ -87,6 +87,27 @@ define PKG_FILES-libstdc++-devel
 	/usr/lib/libstdc++*.so
 endef
 
+# libgomp
+PKG_PACKAGES += libgomp
+define PKG_FILES-libgomp
+	/usr/lib/libgomp*.so.*
+endef
+
+PKG_PACKAGES += libgomp-devel
+define PKG_FILES-libgomp-devel
+	/usr/lib/libgomp*.so
+endef
+
+# libmudflap
+PKG_PACKAGES += libmudflap
+define PKG_FILES-libmudflap
+	/usr/lib/libmudflap*.so.*
+endef
+
+PKG_PACKAGES += libmudflap-devel
+define PKG_FILES-libmudflap-devel
+	/usr/lib/libmudflap*.so
+endef
 
 define STAGE_PREPARE_CMDS
 	-mkdir -v $(DIR_SRC)/gcc-build
