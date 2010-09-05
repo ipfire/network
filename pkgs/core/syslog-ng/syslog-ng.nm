@@ -58,7 +58,6 @@ CONFIGURE_OPTIONS += \
 
 define STAGE_INSTALL_CMDS
 	-mkdir -pv $(BUILDROOT)/etc/syslog-ng
-	cp -vf $(DIR_SOURCE)/$(PKG_NAME).conf $(BUILDROOT)/etc/$(PKG_NAME)/$(PKG_NAME).conf
-	-mkdir -pv $(BUILDROOT)/usr/sbin
-	install -v -m 755 $(DIR_SOURCE)/ids-block $(BUILDROOT)/usr/sbin/ids-block
+	cp -vf $(DIR_SOURCE)/$(PKG_NAME).conf \
+		$(BUILDROOT)/etc/$(PKG_NAME)/$(PKG_NAME).conf
 endef
