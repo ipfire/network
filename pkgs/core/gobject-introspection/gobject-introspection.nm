@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = gobject-introspection
-PKG_VER        = 0.6.11
+PKG_VER        = 0.9.3
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -34,8 +34,8 @@ PKG_URL        = http://live.gnome.org/GObjectIntrospection
 PKG_LICENSE    = GPLv2+, LGPLv2+, MIT
 PKG_SUMMARY    = Introspection system for GObject-based libraries.
 
-PKG_BUILD_DEPS+= bison cairo flex pkg-config
-PKG_DEPS      += glib2 libffi libtool python
+PKG_BUILD_DEPS+= bison cairo-devel flex glib2-devel libffi-devel libtool \
+	pkg-config python-devel
 
 define PKG_DESCRIPTION
 	GObject Introspection can scan C header and source files in order \
@@ -44,7 +44,9 @@ define PKG_DESCRIPTION
 	other things.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.bz2
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 CONFIGURE_OPTIONS += --sbindir=/sbin --disable-static
 
