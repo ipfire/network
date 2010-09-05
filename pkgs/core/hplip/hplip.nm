@@ -34,8 +34,8 @@ PKG_URL        = http://hplipopensource.com/hplip-web/index.html
 PKG_LICENSE    = GPLv2*
 PKG_SUMMARY    = HP Printer/Scanner Library (full version).
 
-PKG_BUILD_DEPS+= autoconf automake libtool
-PKG_DEPS      += cups dbus libjpeg libusb-compat net-snmp python sane
+PKG_BUILD_DEPS+= autoconf automake cups-devel dbus-devel libjpeg-devel \
+	libtool libusb-compat-devel net-snmp-devel python-devel sane-devel
 
 define PKG_DESCRIPTION
 	HPLIP (Hewlett-Packard Linux Imaging & Printing) is an HP-developed \
