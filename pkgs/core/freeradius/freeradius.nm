@@ -34,8 +34,8 @@ PKG_URL        = http://www.freeradius.org
 PKG_LICENSE    = GPLv2+ and LGPLv2+
 PKG_SUMMARY    = High-performance and highly configurable free RADIUS server.
 
-PKG_BUILD_DEPS+= libtool
-PKG_DEPS      += gdbm libpcap openssl perl
+PKG_BUILD_DEPS+= gdbm-devel libpcap-devel libtool libtool-devel openssl-devel \
+	perl
 
 define PKG_DESCRIPTION
 	The FreeRADIUS Server Project is a high performance and highly \
