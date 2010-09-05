@@ -22,26 +22,33 @@ function find_requires() {
 		[ "${found}" = "0" ] && interpreters="${interpreters} ${interpreter}"
 	done
 
-	# Get provides, because packages should not depend on features they provide
-	# by themselves.
-	local provides=$(find_provides ${dirs})
-
 	# Find NEEDED libs and add them to a list if they are not provided by any
 	# other file in dirs.
 	local neededs
 	for file in $(find_elf_files ${dirs}); do
 		for needed in $(file_get_needed ${file}); do
-			if ! listmatch ${needed} ${provides}; then
-				neededs="${neededs} ${needed}"
-			fi
+			neededs="${neededs} ${needed}"
 		done
 	done
 
 	# Find all symlink destinations
 	local links=$(find_symlink_destinations ${dirs})
 
+	# Others
+	local others=$(find_python_requires ${dirs})
+
+	# Get provides, because packages should not depend on features they provide
+	# by themselves.
+	local provides=$(find_provides ${dirs})
+
 	# Return a sorted and unique(!) list
-	listsort ${interpreters} ${neededs} ${links}
+	local require
+	local requires
+	for require in $(listsort ${interpreters} ${neededs} ${links} ${others}); do
+		listmatch ${require} ${provides} || requires="${requires} ${require}"
+	done
+
+	echo ${requires}
 }
 
 function find_provides() {
@@ -54,7 +61,10 @@ function find_provides() {
 	done
 	sonames=$(listsort ${sonames})
 
-	echo "${sonames}"
+	# Others
+	local others=$(find_python_provides ${dirs})
+
+	listsort ${sonames} ${others}
 }
 
 function find_interpreters() {
@@ -108,3 +118,33 @@ function find_symlink_destinations() {
         echo ${links}
 }
 
+function find_python_provides() {
+	local dir=${1}
+
+	local file
+	for file in $(find ${dir}/usr/bin/python* 2>/dev/null); do
+		file=$(basename ${file})
+		file=${file#python}
+
+		if [ -n "${file}" ]; then
+			echo "python-api-${file}"
+		fi
+	done
+}
+
+function find_python_requires() {
+	local dir=${1}
+
+	local file
+	for file in $(find ${dir}/usr/lib -maxdepth 1 2>/dev/null); do
+		file=$(basename ${file})
+
+		if [ "${file:0:6}" = "python" ]; then
+			file=${file#python}
+
+			if [ -n "${file}" ]; then
+				echo "python-api-${file}"
+			fi
+		fi
+	done
+}
