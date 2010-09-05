@@ -34,7 +34,8 @@ PKG_URL        = http://hal.freedesktop.org/releases/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Power Management Service.
 
-PKG_BUILD_DEPS+= bison dbus-devel dbus-glib-devel glib2-devel
+PKG_BUILD_DEPS+= bison dbus-devel dbus-glib-devel glib2-devel gettext intltool \
+	perl-xml-parser pkg-config polkit-devel
 PKG_DEPS      += udev util-linux-ng
 
 define PKG_DESCRIPTION
@@ -43,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 CONFIGURE_OPTIONS += \
 	--sysconfdir=/etc \
