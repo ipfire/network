@@ -44,7 +44,6 @@ class Naoki(object):
 
 		actionmap = {
 			"build" : self.call_build,
-			"toolchain" : self.call_toolchain,
 			"package" : self.call_package,
 			"source" : self.call_source,
 			"shell" : self.call_shell,
@@ -54,32 +53,6 @@ class Naoki(object):
 		}
 
 		return actionmap[args.action.name](args.action)
-
-	def call_toolchain(self, args):
-		if not args.has_key("action"):
-			self.cli.help()
-			return 1
-
-		actionmap = {
-			"build" : self.call_toolchain_build,
-			"download" : self.call_toolchain_download,
-			"tree" : self.call_toolchain_tree,
-		}
-
-		return actionmap[args.action.name](args.action)
-
-	def call_toolchain_build(self, args):
-		toolchain = chroot.Toolchain(arches.current["name"])
-
-		return toolchain.build(naoki=self)
-
-	def call_toolchain_download(self, args):
-		toolchain = chroot.Toolchain(arches.current["name"])
-
-		return toolchain.download()
-
-	def call_toolchain_tree(self, args):
-		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True, naoki=self))
 
 	def call_build(self, args):
 		builder = build.Builder()
