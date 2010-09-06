@@ -110,7 +110,7 @@ class DependencySet(object):
 	def resolve(self):
 		logging.debug("Resolving %s" % self)
 
-		self.reset()
+		#self.reset()
 
 		# Always add the default packages
 		_dependencies = [Dependency(i) for i in config["mandatory_packages"]]

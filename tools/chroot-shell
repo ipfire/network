@@ -16,6 +16,9 @@ EOF
 export PS1="naoki-chroot \w> "
 
 # Change to directory the user will most likely work in
-cd /usr/src
+if [ -z "${SOURCE_DIR}" ]; then
+	SOURCE_DIR="/usr/src"
+fi
+cd "${SOURCE_DIR}"
 
 exec /bin/bash --login

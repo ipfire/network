@@ -349,14 +349,8 @@ class Commandline(object):
 				# Shell
 				Parser("shell",
 					help="Shell environment",
-					parsers=[
-						Parser("clean", help="Cleanup the environment"),
-						Parser("extract",
-							help="Extract packages",
-							arguments=[
-								List("packages", help="Give a list of packages")
-							]),
-						Parser("enter", help="Enter into environment"),
+					arguments=[
+						Argument("package", help="Package to process."),
 					]),
 
 				# Repository

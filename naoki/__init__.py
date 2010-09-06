@@ -10,6 +10,7 @@ import time
 import backend
 import build
 import chroot
+import environ
 import logger
 import repo
 import terminal
@@ -225,32 +226,13 @@ Release       : %(release)s
 			os.remove(os.path.join(TARBALLDIR, file))
 
 	def call_shell(self, args):
-		environ = chroot.ShellEnvironment(naoki=self)
+		p = repo.find_source_package(args.package)
+		if not p:
+			raise Exception, "Could not find package: %s" % args.package
 
-		actionmap = {
-			"clean" : self.call_shell_clean,
-			"extract" : self.call_shell_extract,
-			"enter" : self.call_shell_enter,
-		}
+		build_set = build.BuildSet(p)
 
-		if args.action.name in ("enter", "execute"):
-			environ.init(clean=False)
-
-		return actionmap[args.action.name](environ, args.action)
-
-	def call_shell_clean(self, environ, args):
-		return environ.clean()
-
-	def call_shell_extract(self, environ, args):
-		if args.packages == ["all"]:
-			args.packages = backend.get_package_names()
-
-		packages = backend.parse_package(args.packages, naoki=self)
-		for package in backend.depsolve(packages, recursive=True):
-			package.getPackage(self).extract(environ.chrootPath())
-
-	def call_shell_enter(self, environ, args):
-		return environ.shell()
+		return build_set.shell()
 
 	def call_repository(self, args):
 		actionmap = {

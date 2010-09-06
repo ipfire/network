@@ -65,6 +65,11 @@ class Config(object):
 			"tar",
 			"xz",
 		],
+		"shell_packages" : [
+			"/bin/bash",
+			"less",
+			"vim",
+		],
 		"nice_level" : 0,
 		"parallelism" : calc_parallelism(),
 		#

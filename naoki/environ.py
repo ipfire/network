@@ -301,3 +301,34 @@ class Environment(object):
 			"mount -n -t tmpfs naoki_chroot_shmfs %s" % self.chrootPath("dev", "shm")])
 
 		return ret
+
+
+class Shell(Environment):
+	def shell(self, args=[]):
+		self.extract()
+
+		# Preparing source...
+		self.make("prepare")
+
+		command = "chroot %s /usr/src/tools/chroot-shell %s" % \
+			(self.chrootPath(), " ".join(args))
+
+		for key, val in self.environ.items():
+			command = "%s=\"%s\" " % (key, val) + command
+
+		if self.package.source_dir:
+			command = "SOURCE_DIR=%s %s" % (self.package.source_dir, command)
+
+		logging.debug("Shell command: %s" % command)
+
+		try:
+			self._mountall()
+
+			shell = os.system(command)
+			return os.WEXITSTATUS(shell)
+
+		finally:
+			self._umountall()
+
+			# Clean up the environment
+			self.clean()
