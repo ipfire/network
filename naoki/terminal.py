@@ -297,7 +297,6 @@ class Commandline(object):
 							arguments=[
 								Option("long", ["-l", "--long"], help="Show long list of information"),
 								Option("machine", ["--machine"], help="Output in machine parseable format"),
-								Option("wiki", ["--wiki"], help="Output in wiki format"),
 								List("packages"),
 							]),
 						Parser("tree", help="Show package tree"),
@@ -310,9 +309,7 @@ class Commandline(object):
 							]),
 						Parser("groups",
 							help="Show package groups",
-							arguments=[
-								Option("wiki", ["--wiki"], help="Output in wiki format"),
-							]),
+							),
 					]),
 
 				# Source

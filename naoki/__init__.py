@@ -85,22 +85,6 @@ class Naoki(object):
 
 	def call_package_info(self, args):
 		for package in backend.parse_package_info(args.packages):
-			if args.wiki:
-				print package.fmtstr("""\
-====== %(name)s ======
-| **Version:**  | %(version)s  |
-| **Release:**  | %(release)s  |
-| **Group:**  | %(group)s  |
-| **License:**  | %(license)s  |
-| **Maintainer:**  | %(maintainer)s |
-| **Dependencies:** | %(deps)s |
-| **Build dependencies:** | %(build_deps)s |
-| %(summary)s ||
-| %(description)s ||
-| **Website:**  | %(url)s  |
-""")
-				continue
-
 			if args.long:
 				print package.fmtstr("""\
 --------------------------------------------------------------------------------
@@ -152,18 +136,7 @@ Release       : %(release)s
 
 	def call_package_groups(self, args):
 		groups = backend.get_group_names()
-		if args.wiki:
-			print "====== All available groups of packages ======"
-			for group in groups:
-				print "===== %s =====" % group
-				for package in backend.parse_package_info(backend.get_package_names()):
-					if not package.group == group:
-						continue
-
-					print package.fmtstr("  * [[.package:%(name)s|%(name)s]] - %(summary)s")
-
-		else:
-			print "\n".join(groups)
+		print "\n".join(groups)
 
 	def call_source(self, args):
 		if not args.has_key("action"):
