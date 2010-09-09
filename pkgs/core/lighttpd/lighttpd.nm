@@ -34,8 +34,8 @@ PKG_URL        = http://www.lighttpd.net/
 PKG_LICENSE    = BSD
 PKG_SUMMARY    = Lightning fast webserver with light system requirements.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += bzip2 gdbm openldap openssl pcre zlib
+PKG_BUILD_DEPS+= bzip2-devel gdbm-devel openldap-devel openssl-devel pcre-devel \
+	pkg-config zlib-devel
 
 define PKG_DESCRIPTION
 	Secure, fast, compliant and very flexible web-server which has been optimized \

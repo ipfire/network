@@ -40,7 +40,7 @@ define PKG_DESCRIPTION
 endef
 
 PKG_BUILD_DEPS+= autogen cloog-devel dejagnu elfutils-devel expect gmp-devel \
-	libffi-devel mpc-devel mpfr-devel ppl-devel
+	libffi-devel mpc-devel mpfr-devel pkg-config ppl-devel zlib-devel
 PKG_DEPS-gcc  += binutils libgcc-devel
 
 ifeq "$(MACHINE)" "i586"
@@ -87,6 +87,27 @@ define PKG_FILES-libstdc++-devel
 	/usr/lib/libstdc++*.so
 endef
 
+# libgomp
+PKG_PACKAGES += libgomp
+define PKG_FILES-libgomp
+	/usr/lib/libgomp*.so.*
+endef
+
+PKG_PACKAGES += libgomp-devel
+define PKG_FILES-libgomp-devel
+	/usr/lib/libgomp*.so
+endef
+
+# libmudflap
+PKG_PACKAGES += libmudflap
+define PKG_FILES-libmudflap
+	/usr/lib/libmudflap*.so.*
+endef
+
+PKG_PACKAGES += libmudflap-devel
+define PKG_FILES-libmudflap-devel
+	/usr/lib/libmudflap*.so
+endef
 
 define STAGE_PREPARE_CMDS
 	-mkdir -v $(DIR_SRC)/gcc-build
@@ -121,6 +142,8 @@ endef
 
 define STAGE_BUILD
 	cd $(DIR_SRC)/gcc-build && \
+		XCFLAGS="$(CFLAGS)" \
+		TCFLAGS="$(CFLAGS)" \
 		../$(THISAPP)/configure \
 			$(CONFIG_CPU) \
 			--prefix=/usr \
@@ -131,12 +154,14 @@ define STAGE_BUILD
 			--enable-threads=posix \
 			--enable-__cxa_atexit \
 			--enable-clocale=gnu \
-			--enable-languages=c,c++ \
-			--enable-lto \
-			--disable-bootstrap \
+			--enable-languages=c,c++,lto \
+			--enable-bootstrap \
+			--enable-checking=release \
 			--disable-werror \
 			--disable-libssp \
 			--disable-static \
+			--with-system-zlib \
+			--with-bugurl=http://bugtracker.ipfire.org \
 			$(CONFIGURE_ARGS)
 
 	cd $(DIR_SRC)/gcc-build && make $(PARALLELISMFLAGS)

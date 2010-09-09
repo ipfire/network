@@ -35,9 +35,9 @@ PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Storage Management Service.
 
 PKG_BUILD_DEPS+= dbus-devel dbus-glib-devel e2fsprogs-devel glib2-devel \
-	libatasmart-devel libdevmapper-devel parted-devel polkit-devel pkg-config
-PKG_DEPS      += dosfstools e2fsprogs mdadm parted sg3-utils udev \
-	util-linux-ng xfsprogs
+	intltool libatasmart-devel libdevmapper-devel parted-devel polkit-devel \
+	pkg-config sg3-utils-devel
+PKG_DEPS      += dosfstools e2fsprogs mdadm parted udev util-linux-ng xfsprogs
 
 define PKG_DESCRIPTION
 	udisks provides a daemon, D-Bus API and command line tools \

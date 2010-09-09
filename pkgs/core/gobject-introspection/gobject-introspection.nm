@@ -1,8 +1,7 @@
-#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2007, 2008, 2009 Michael Tremer & Christian Schmidt           #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,44 +18,38 @@
 #                                                                             #
 ###############################################################################
 
-import os
-import sys
-import re
+###############################################################################
+# Definitions
+###############################################################################
 
-from IPy import IP
+include $(PKGROOT)/Include
 
-#os.system('modprobe ipt_recent ip_list_tot=1000')
+PKG_NAME       = gobject-introspection
+PKG_VER        = 0.9.3
+PKG_REL        = 0
 
-def main():
-	while 1:
-		data = sys.stdin.readline()
-		# need to extract the ip adress from the whole log line to get
-		# this working as expected,IPy just only returns a valid address
-		if not data: break
-		try:
-			ip = IP(data)
-		except AttributeError:
-			#f = open("/tmp/testfile","w")
-			#f.write("Wrong value given")
-			#f.close()
-			sys.stderr.write("Wrong attribute given.\n")
-			break
-		except KeyError:
-			sys.stderr.write("Not enough parameters given.\n")
-			break
-		except ValueError:
-			sys.stderr.write("Given value is not a valid ip address.\n")
-			#f = open("/tmp/testfile","w")
-			#f.write("This does not match - %s\n" % data )
-			#f.close()
-			break
-		try:
-			#f = open("/tmp/testfile", "w")
-			f = open("/proc/net/ipt_recent/BLOCK", "w")
-			f.write("%s\n" % ip)
-			f.close()
-		except:
-			sys.stderr.write("Cannot write ip \"%s\" to file.\n" % ip)
-			break
-main()
-sys.exit(0)
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Libraries 
+PKG_URL        = http://live.gnome.org/GObjectIntrospection
+PKG_LICENSE    = GPLv2+, LGPLv2+, MIT
+PKG_SUMMARY    = Introspection system for GObject-based libraries.
+
+PKG_BUILD_DEPS+= bison cairo-devel flex glib2-devel libffi-devel libtool \
+	pkg-config python-devel
+
+define PKG_DESCRIPTION
+	GObject Introspection can scan C header and source files in order \
+	to generate introspection "typelib" files. It also provides an API to \
+	examine typelib files, useful for creating language bindings among \
+	other things.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
+
+CONFIGURE_OPTIONS += --sbindir=/sbin --disable-static
+
+define STAGE_TEST
+	cd $(DIR_APP) && make check
+endef

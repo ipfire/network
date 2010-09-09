@@ -45,11 +45,11 @@ define PKG_DESCRIPTION
 endef
 
 PKG_BUILD_DEPS+= dbus-devel dbus-glib-devel gcc-c++ gettext libdaemon-devel \
-	intltool perl perl-xml-parser pkg-config python python-dbus
+	intltool perl perl-xml-parser pkg-config python-devel python-dbus
 
 PKG_TARBALL    = $(THISAPP).tar.gz
 
-PKG_PACKAGES  += $(PKG_NAME)-devel
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 CONFIGURE_OPTIONS += \
 	--bindir=/bin \

@@ -36,7 +36,7 @@ PKG_SUMMARY    = SANE - Scanner Access Now Easy.
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
-PKG_DEPS      += libjpeg libtiff libusb
+PKG_BUILD_DEPS+= libjpeg-devel libtiff-devel libusb-devel
 
 define PKG_DESCRIPTION
 	sane-backends - includes: backends (scanner drivers), \
@@ -45,6 +45,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(PKG_NAME)-backends-$(PKG_VER).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel $(PKG_NAME)-libs
 
 DIR_APP = $(DIR_SRC)/$(PKG_NAME)-backends-$(PKG_VER)
 
