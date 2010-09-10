@@ -52,9 +52,13 @@ endef
 
 PKG_TARBALL    = xorg-server-$(PKG_VER).tar.bz2
 
-CFLAGS        += -Wstrict-overflow -rdynamic
+CFLAGS        += -Wstrict-overflow -rdynamic -Wl,-z,lazy
 
 DIR_APP        = $(DIR_SRC)/xorg-server-$(PKG_VER)
+
+export LDFLAGS
+
+STAGE_BUILD_TARGETS = V=1
 
 CONFIGURE_OPTIONS += \
 	--enable-xvfb \
