@@ -103,6 +103,4 @@ define STAGE_INSTALL
 		$(BUILDROOT)/usr/share/xorg/
 	cd $(DIR_APP) && install -m 644 $(DIR_SOURCE)/10-quirks.conf \
 		$(BUILDROOT)/usr/share/X11/xorg.conf.d
-	cd $(DIR_APP) && install -m 644 $(DIR_SOURCE)/xorg.conf \
-                $(BUILDROOT)/etc/X11/
 endef
