@@ -46,5 +46,7 @@ DIR_APP        = $(DIR_SRC)/xf86-input-evdev-$(PKG_VER)
 
 CFLAGS       += -Wl,-z,lazy
 
+QUALITY_AGENT_PERMIT_NOT_FULL_RELRO = yes
+
 CONFIGURE_OPTIONS += \
 	--disable-static

@@ -47,6 +47,8 @@ DIR_APP        = $(DIR_SRC)/Mesa-$(PKG_VER)
 
 CFLAGS        += -Wl,-z,lazy
 
+QUALITY_AGENT_PERMIT_NOT_FULL_RELRO = yes
+
 CONFIGURE_OPTIONS += \
 	--enable-pic \
 	--with-driver=dri \
