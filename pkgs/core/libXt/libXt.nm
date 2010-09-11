@@ -34,8 +34,10 @@ PKG_URL        = http://www.x.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = X.Org X11 libXt runtime library.
 
-PKG_BUILD_DEPS+= pkg-config xorg-x11-proto-devel
-PKG_DEPS      += libSM libIce libX11
+PKG_BUILD_DEPS+= libICE-devel libSM-devel libX11-devel pkg-config\
+	 xorg-x11-proto-devel
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define PKG_DESCRIPTION
 	X.Org X11 libXt runtime library.
