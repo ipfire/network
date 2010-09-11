@@ -34,8 +34,10 @@ PKG_URL        = http://www.x.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    =  X.Org X11 libXfont runtime library.
 
-PKG_BUILD_DEPS+= pkg-config xorg-x11-xtrans-devel
-PKG_DEPS      += freetype libfontenc
+PKG_BUILD_DEPS+= freetype-devel libfontenc-devel pkg-config\
+	xorg-x11-xtrans-devel
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define PKG_DESCRIPTION
 	X.Org X11 libXfont development package.
