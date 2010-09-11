@@ -10,6 +10,7 @@ import time
 import backend
 import build
 import chroot
+import environ
 import logger
 import repo
 import terminal
@@ -43,7 +44,6 @@ class Naoki(object):
 
 		actionmap = {
 			"build" : self.call_build,
-			"toolchain" : self.call_toolchain,
 			"package" : self.call_package,
 			"source" : self.call_source,
 			"shell" : self.call_shell,
@@ -53,32 +53,6 @@ class Naoki(object):
 		}
 
 		return actionmap[args.action.name](args.action)
-
-	def call_toolchain(self, args):
-		if not args.has_key("action"):
-			self.cli.help()
-			return 1
-
-		actionmap = {
-			"build" : self.call_toolchain_build,
-			"download" : self.call_toolchain_download,
-			"tree" : self.call_toolchain_tree,
-		}
-
-		return actionmap[args.action.name](args.action)
-
-	def call_toolchain_build(self, args):
-		toolchain = chroot.Toolchain(arches.current["name"])
-
-		return toolchain.build(naoki=self)
-
-	def call_toolchain_download(self, args):
-		toolchain = chroot.Toolchain(arches.current["name"])
-
-		return toolchain.download()
-
-	def call_toolchain_tree(self, args):
-		print backend.deptree(backend.parse_package(backend.get_package_names(toolchain=True), toolchain=True, naoki=self))
 
 	def call_build(self, args):
 		builder = build.Builder()
@@ -111,22 +85,6 @@ class Naoki(object):
 
 	def call_package_info(self, args):
 		for package in backend.parse_package_info(args.packages):
-			if args.wiki:
-				print package.fmtstr("""\
-====== %(name)s ======
-| **Version:**  | %(version)s  |
-| **Release:**  | %(release)s  |
-| **Group:**  | %(group)s  |
-| **License:**  | %(license)s  |
-| **Maintainer:**  | %(maintainer)s |
-| **Dependencies:** | %(deps)s |
-| **Build dependencies:** | %(build_deps)s |
-| %(summary)s ||
-| %(description)s ||
-| **Website:**  | %(url)s  |
-""")
-				continue
-
 			if args.long:
 				print package.fmtstr("""\
 --------------------------------------------------------------------------------
@@ -178,18 +136,7 @@ Release       : %(release)s
 
 	def call_package_groups(self, args):
 		groups = backend.get_group_names()
-		if args.wiki:
-			print "====== All available groups of packages ======"
-			for group in groups:
-				print "===== %s =====" % group
-				for package in backend.parse_package_info(backend.get_package_names()):
-					if not package.group == group:
-						continue
-
-					print package.fmtstr("  * [[.package:%(name)s|%(name)s]] - %(summary)s")
-
-		else:
-			print "\n".join(groups)
+		print "\n".join(groups)
 
 	def call_source(self, args):
 		if not args.has_key("action"):
@@ -225,32 +172,13 @@ Release       : %(release)s
 			os.remove(os.path.join(TARBALLDIR, file))
 
 	def call_shell(self, args):
-		environ = chroot.ShellEnvironment(naoki=self)
+		p = repo.find_source_package(args.package)
+		if not p:
+			raise Exception, "Could not find package: %s" % args.package
 
-		actionmap = {
-			"clean" : self.call_shell_clean,
-			"extract" : self.call_shell_extract,
-			"enter" : self.call_shell_enter,
-		}
+		build_set = build.BuildSet(p)
 
-		if args.action.name in ("enter", "execute"):
-			environ.init(clean=False)
-
-		return actionmap[args.action.name](environ, args.action)
-
-	def call_shell_clean(self, environ, args):
-		return environ.clean()
-
-	def call_shell_extract(self, environ, args):
-		if args.packages == ["all"]:
-			args.packages = backend.get_package_names()
-
-		packages = backend.parse_package(args.packages, naoki=self)
-		for package in backend.depsolve(packages, recursive=True):
-			package.getPackage(self).extract(environ.chrootPath())
-
-	def call_shell_enter(self, environ, args):
-		return environ.shell()
+		return build_set.shell()
 
 	def call_repository(self, args):
 		actionmap = {

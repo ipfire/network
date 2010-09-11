@@ -87,6 +87,10 @@ class SourcePackage(Package):
 	def summary(self):
 		return self._info["PKG_SUMMARY"]
 
+	@property
+	def source_dir(self):
+		return self._info.get("SOURCE_DIR", "")
+
 
 class BinaryPackage(Package):
 	def __init__(self, filename):

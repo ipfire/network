@@ -5,6 +5,7 @@ import logging
 import deps
 import environ
 
+from constants import *
 from exception import *
 
 class BuildSet(object):
@@ -18,6 +19,15 @@ class BuildSet(object):
 	def __repr__(self):
 		return "<%s %s>" % (self.__class__.__name__, self.package.name)
 
+	def _resolve(self, ignore_errors=False):
+		try:
+			self.dependency_set.resolve()
+		except DependencyResolutionError, e:
+			if ignore_errors:
+				logging.warning("Ignoring dependency errors: %s" % e)
+			else:
+				raise
+
 	@property
 	def arch(self):
 		return self.package.arch
@@ -27,20 +37,31 @@ class BuildSet(object):
 		logging.info("    %s" % self.package.summary)
 		logging.info("")
 
-	def run(self, ignore_dependency_errors=False):
+	def build(self, ignore_dependency_errors=False):
 		logging.debug("Running build process for %s" % self)
 		self.print_info()
 
-		try:
-			self.dependency_set.resolve()
-		except DependencyResolutionError, e:
-			if ignore_dependency_errors:
-				logging.warning("Ignoring dependency errors: %s" % e)
-			else:
-				raise
+		self._resolve(ignore_errors=ignore_dependency_errors)
 
 		env = environ.Environment(self)
 		env.build()
+
+	run = build
+
+	def shell(self):
+		logging.debug("Running shell for %s" % self)
+		self.print_info()
+
+		# Add some packages that are kind of nice in a shell
+		# like an editor and less...
+		for dependency in [deps.Dependency(d) for d in config["shell_packages"]]:
+			logging.debug("Adding shell dependency: %s" % dependency)
+			self.dependency_set.add_dependency(dependency)
+
+		self._resolve()
+
+		env = environ.Shell(self)
+		env.shell()
 
 
 class Builder(object):
@@ -66,3 +87,4 @@ class Builder(object):
 
 			# Run the actual build
 			i.run(*args, **kwargs)
+
