@@ -34,8 +34,9 @@ PKG_URL        = http://www.x.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = X-Resource extension client library.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += libXext
+PKG_BUILD_DEPS+= libXext-devel pkg-config
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define PKG_DESCRIPTION
 	X-Resource is an extension that allows a client to query \
