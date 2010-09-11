@@ -36,6 +36,8 @@ PKG_SUMMARY    = X.Org X11 libICE runtime library.
 
 PKG_BUILD_DEPS+= pkg-config xorg-x11-proto-devel xorg-x11-xtrans-devel
 
+PKG_PACKAGES  += $(PKG_NAME)-devel
+
 define PKG_DESCRIPTION
 	X.Org X11 libICE development package.
 endef
