@@ -36,6 +36,8 @@ PKG_SUMMARY    = Sample Authorization Protocol for X.
 
 PKG_BUILD_DEPS+= pkg-config xorg-x11-proto-devel
 
+PKG_PACKAGES  += $(PKG_NAME)-devel
+
 define PKG_DESCRIPTION
 	This is a very simple mechanism for providing individual access \
 	to an X Window System display.It uses existing core protocol and \
