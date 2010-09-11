@@ -36,12 +36,15 @@ PKG_SUMMARY    = X.Org X11 X server.
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
-PKG_BUILD_DEPS+= autoconf automake pkg-config xorg-x11-font-utils \
-	xorg-x11-util-macros xorg-x11-proto-devel \
+PKG_BUILD_DEPS+= autoconf automake libX11-devel libXau-devel libXdmcp-devel\
+	libXext-devel libXfixes-devel libXfont-devel libXmu-devel libXrender-devel\
+	libXres-devel libXt-devel libdrm-devel libfontenc-devel libpciaccess-devel\
+	libtool libudev-devel libxcb-devel libxkbfile-devel mesa-devel pixman-devel\
+	pkg-config xorg-x11-font-utils-devel xorg-x11-util-macros xorg-x11-proto-devel\
 	xorg-x11-xtrans-devel
-PKG_DEPS      += libX11 libXau libXdmcp libXext libXfixes libXfont \
-	libXmu libXrender libXres libXt libdrm libfontenc libpciaccess \
-	libxcb libxkbfile mesa pixman udev
+PKG_DEPS      += pixman udev xkeyboard-config
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define PKG_DESCRIPTION
 	X.org X11 is an open source implementation of the X Window System. \
@@ -57,8 +60,6 @@ CFLAGS        += -Wstrict-overflow -rdynamic -Wl,-z,lazy
 QUALITY_AGENT_PERMIT_NOT_FULL_RELRO = yes
 
 DIR_APP        = $(DIR_SRC)/xorg-server-$(PKG_VER)
-
-STAGE_BUILD_TARGETS = V=1
 
 CONFIGURE_OPTIONS += \
 	--enable-xvfb \
