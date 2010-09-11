@@ -52,9 +52,13 @@ endef
 
 PKG_TARBALL    = xorg-server-$(PKG_VER).tar.bz2
 
-CFLAGS        += -Wstrict-overflow -rdynamic
+CFLAGS        += -Wstrict-overflow -rdynamic -Wl,-z,lazy
+
+QUALITY_AGENT_PERMIT_NOT_FULL_RELRO = yes
 
 DIR_APP        = $(DIR_SRC)/xorg-server-$(PKG_VER)
+
+STAGE_BUILD_TARGETS = V=1
 
 CONFIGURE_OPTIONS += \
 	--enable-xvfb \
@@ -99,6 +103,4 @@ define STAGE_INSTALL
 		$(BUILDROOT)/usr/share/xorg/
 	cd $(DIR_APP) && install -m 644 $(DIR_SOURCE)/10-quirks.conf \
 		$(BUILDROOT)/usr/share/X11/xorg.conf.d
-	cd $(DIR_APP) && install -m 644 $(DIR_SOURCE)/xorg.conf \
-                $(BUILDROOT)/etc/X11/
 endef

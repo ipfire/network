@@ -45,10 +45,13 @@ PKG_TARBALL    = MesaLib-$(PKG_VER).tar.bz2
 
 DIR_APP        = $(DIR_SRC)/Mesa-$(PKG_VER)
 
+CFLAGS        += -Wl,-z,lazy
+
+QUALITY_AGENT_PERMIT_NOT_FULL_RELRO = yes
+
 CONFIGURE_OPTIONS += \
 	--enable-pic \
 	--with-driver=dri \
-	--with-dri-driverdir=/usr/lib/dri \
 	--with-state-tracker=dri,glx \
 	--disable-glw \
 	--disable-glu \
@@ -59,9 +62,5 @@ CONFIGURE_OPTIONS += \
 	--disable-gallium-svga \
 	--disable-gallium-radeon \
 	--disable-gallium-nouveau \
-	--disable-egl
-
-# Disable CPU extensions
-define STAGE_CONFIGURE_CMDS
-	cd $(DIR_APP) && sed -e "s/^ASM_FLAGS.*/ASM_FLAGS=/g" -i configs/current
-endef
+	--disable-egl \
+	--without-demos
