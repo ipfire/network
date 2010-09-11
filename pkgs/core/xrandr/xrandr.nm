@@ -34,7 +34,7 @@ PKG_URL        = http://www.x.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = Primitive command line interface to RandR extension.
 
-PKG_DEPS      += libX11 libXrandr libXrender
+PKG_BUILD_DEPS+= libX11-devel libXrandr-devel libXrender-devel pkg-config
 
 define PKG_DESCRIPTION
 	Xrandr is used to set the screen size, orientation and/or \
@@ -42,3 +42,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.bz2
+
+# Remove xkeystone, it has a bad interpreter and we don't need it.
+define STAGE_INSTALL_CMDS
+	rm -vf $(BUILDROOT)/usr/bin/xkeystone
+endef
