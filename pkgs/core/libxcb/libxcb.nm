@@ -34,8 +34,11 @@ PKG_URL        = http://xcb.freedesktop.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = A C binding to the X11 protocol.
 
-PKG_BUILD_DEPS+= autoconf automake pkg-config xcb-proto xorg-x11-proto-devel
-PKG_DEPS      += libXau libxslt python
+PKG_BUILD_DEPS+= autoconf automake libtool pkg-config libXau-devel \
+	libxslt-devel python-devel xcb-proto xorg-x11-proto-devel
+PKG_DEPS      += libXau libxslt
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define PKG_DESCRIPTION
 	The X protocol C-language Binding (XCB) is a replacement for Xlib \
