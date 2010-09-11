@@ -34,8 +34,10 @@ PKG_URL        = http://www.x.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = X.Org X11 font utilities.
 
-PKG_BUILD_DEPS+= autoconf pkg-config
-PKG_DEPS      += freetype libX11 libXfont libfontenc zlib
+PKG_BUILD_DEPS+= autoconf freetype-devel libX11-devel libXfont-devel libfontenc-devel\
+	pkg-config zlib-devel
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
  
 define PKG_DESCRIPTION
 	X.Org X11 font utilities required for font installation, conversion, \
