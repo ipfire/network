@@ -34,8 +34,9 @@ PKG_URL        = http://www.x.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = X11 protocol client library.
 
-PKG_BUILD_DEPS+= pkg-config xorg-x11-proto-devel xorg-x11-xtrans-devel
-PKG_DEPS      += libxcb
+PKG_BUILD_DEPS+= libxcb-devel pkg-config xorg-x11-proto-devel xorg-x11-xtrans-devel
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define PKG_DESCRIPTION
 	Client library for X.org X11 protocol. 
