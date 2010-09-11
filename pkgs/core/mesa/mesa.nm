@@ -34,8 +34,10 @@ PKG_URL        = http://www.mesa3d.org
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = Mesa graphics libraries.
 
-PKG_BUILD_DEPS+= pkg-config 
-PKG_DEPS      += libX11 libXcb libXdamage libXext libXxf86vm libdrm
+PKG_BUILD_DEPS+= pkg-config libX11-devel libXdamage-devel libXext-devel\
+	libXxf86vm-devel libdrm-devel libxcb-devel 
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define PKG_DESCRIPTION
 	Mesa libGL runtime libraries and DRI drivers.
