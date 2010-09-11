@@ -34,10 +34,9 @@ PKG_URL        = http://dri.freedesktop.org/libdrm/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = Direct Rendering Manager runtime library.
 
-PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+PKG_BUILD_DEPS+= automake autoconf libtool libxcb-devel pkg-config libudev-devel
 
-PKG_BUILD_DEPS+= automake autoconf libtool pkg-config
-PKG_DEPS      += libxcb udev
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
 define PKG_DESCRIPTION
 	Direct Rendering Manager runtime library.
