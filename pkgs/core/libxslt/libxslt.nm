@@ -34,8 +34,9 @@ PKG_URL        = http://xmlsoft.org/XSLT/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = Library providing the Gnome XSLT engine.
 
-PKG_BUILD_DEPS+= pkg-config
-PKG_DEPS      += libgcrypt libxml2 python
+PKG_BUILD_DEPS+= libgcrypt-devel libxml2-devel pkg-config
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define PKG_DESCRIPTION
 	This C library allows to transform XML files into other XML files \
