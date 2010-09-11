@@ -34,9 +34,8 @@ PKG_URL        = http://xcb.freedesktop.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = A C binding to the X11 protocol.
 
-PKG_BUILD_DEPS+= autoconf automake libtool pkg-config libXau-devel \
-	libxslt-devel python-devel xcb-proto xorg-x11-proto-devel
-PKG_DEPS      += libXau libxslt
+PKG_BUILD_DEPS+= autoconf automake libtool libXau-devel libxslt-devel \
+	pkg-config python-devel xcb-proto xorg-x11-proto-devel
 
 PKG_PACKAGES  += $(PKG_NAME)-devel
 
