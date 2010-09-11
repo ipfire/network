@@ -34,8 +34,9 @@ PKG_URL        = http://www.x.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = X.Org X11 libXmu/libXmuu runtime libraries.
 
-PKG_BUILD_DEPS+= pkg-config xorg-x11-util-macros
-PKG_DEPS      += libX11 libXext libXt
+PKG_BUILD_DEPS+= libX11-devel libXext-devel libXt-devel pkg-config xorg-x11-util-macros
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define PKG_DESCRIPTION
 	X.Org X11 libXmu/libXmuu runtime libraries.
