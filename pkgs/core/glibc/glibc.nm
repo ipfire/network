@@ -46,8 +46,6 @@ define PKG_DESCRIPTION
 	Linux system will not function.
 endef
 
-PKG_BUILD_DEPS = kernel-headers
-
 GLIBC_FLAGS += -fno-strict-aliasing -mno-tls-direct-seg-refs
 
 CFLAGS   += $(GLIBC_FLAGS)
