@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = expect
-PKG_VER        = 5.44.1.15
+PKG_VER        = 5.43
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -44,27 +44,22 @@ define PKG_DESCRIPTION
 	control another program and interact with it.
 endef
 
-PKG_TARBALL    = $(THISAPP).tar.gz
-
-QUALITY_AGENT_WHITELIST_RPATH = /usr/lib
+PKG_TARBALL    = $(THISAPP).0.tar.gz
 
 CONFIGURE_OPTIONS = \
 	--mandir=/usr/share/man \
 	--with-tcl=/usr/lib \
 	--with-tclinclude=/usr/include/ \
 	--with-x=no \
-	--without-tk
-
-define STAGE_CONFIGURE_CMDS
-	# Disable stubs
-	cd $(DIR_APP) && sed -e "s/tclstub/tcl/g" -i Makefile
-endef
+	--enable-shared
 
 define STAGE_TEST
 	cd $(DIR_APP) && make test
 endef
 
-define STAGE_INSTALL_CMDS
+define STAGE_INSTALL
+	cd $(DIR_APP) && make install INSTALL_ROOT=$(BUILDROOT)
+	
 	# remove cryptdir/decryptdir, as Linux has no crypt command
 	rm -f $(BUILDROOT)/usr/bin/{cryptdir,decryptdir} 
 	rm -f $(BUILDROOT)/usr/share/man1/{cryptdir,decryptdir}.1*
