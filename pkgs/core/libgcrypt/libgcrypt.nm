@@ -26,7 +26,7 @@ include $(PKGROOT)/Include
 
 PKG_NAME       = libgcrypt
 PKG_VER        = 1.4.6
-PKG_REL        = 0
+PKG_REL        = 1
 
 PKG_MAINTAINER =
 PKG_GROUP      = System/Libraries
@@ -35,7 +35,6 @@ PKG_LICENSE    = LGPLv2.1+
 PKG_SUMMARY    = A general-purpose cryptography library.
 
 PKG_BUILD_DEPS+= gcc-c++ libgpg-error-devel
-#PKG_DEPS-$(PKG_NAME)-devel += libgpg-error-devel # XXX
 
 define PKG_DESCRIPTION
 	Libgcrypt is a general purpose crypto library based on the code used \
