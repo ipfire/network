@@ -6,10 +6,10 @@ import os
 import stat
 
 import logger
+import mail
 import util
 
 from constants import *
-
 
 # XXX to be moved to somewhere else
 ENVIRONMENT_ARGS = ["PATH", "PWD" ]
@@ -26,37 +26,26 @@ def set(e):
 
 	return env
 
-class Environment(object):
+
+class _Environment(object):
 	kernel_version = os.uname()[2]
 
-	def __init__(self, buildset):
-		self.buildset = buildset
+	def __init__(self, arch):
+		self.arch = arch
 
 		logging.debug("Successfully initialized %s" % self)
 
 		# XXX check if already locked
 		self.prepare()
 
-	@property
-	def arch(self):
-		return self.buildset.arch	
-
-	@property
-	def package(self):
-		return self.buildset.package
-
-	@property
-	def logger(self):
-		return logging.getLogger() # XXX just for now
-
 	def chrootPath(self, *args):
-		return os.path.join(BUILDDIR, "environments", self.package.id, *args)
+		raise NotImplementedError
 
 	def clean(self):
 		logging.debug("Cleaning environment %s" % self)
 		if os.path.exists(self.chrootPath()):
 			util.rm(self.chrootPath())
-
+	
 	def prepare(self):
 		self.clean()
 
@@ -168,15 +157,12 @@ class Environment(object):
 		f.write("127.0.0.1 localhost\n")
 		f.close()
 
-	@property
-	def buildroot(self):
-		if not hasattr(self, "__buildroot"):
-			self.__buildroot = "buildroot.%s" % util.random_string()
+	def extract(self, package, *args):
+		logging.info("Extracting %s" % package)
 
-		return self.__buildroot
+		package.extract(self.chrootPath(*args))
 
-	@property
-	def environ(self):
+	def variables(self):
 		env = set({
 			"HOME"           : "/root",
 			"PATH"           : "/sbin:/bin:/usr/sbin:/usr/bin",
@@ -184,7 +170,6 @@ class Environment(object):
 			"PKGROOT"        : "/usr/src/pkgs",
 			"TARGET"         : "%s-ipfire-linux-gnu" % self.arch.machine,
 			"TARGET_MACHINE" : self.arch.machine,
-			"BUILDROOT"      : "/%s" % self.buildroot,
 			"CHROOT"         : "1", # XXX to be removed
 			"CFLAGS"         : self.arch.cflags,
 			"CXXFLAGS"       : self.arch.cxxflags,
@@ -204,7 +189,7 @@ class Environment(object):
 	def doChroot(self, command, shell=True, *args, **kwargs):
 		ret = None
 		try:
-			env = self.environ
+			env = self.variables()
 
 			if kwargs.has_key("env"):
 				env.update(kwargs.pop("env"))
@@ -225,32 +210,6 @@ class Environment(object):
 			self._umountall()
 
 		return ret
-
-	def extract(self):
-		logging.debug("Extracting all packages and tools")
-		for i in self.buildset.dependency_set.packages:
-			i.extract(self.chrootPath())
-
-	def build(self, *args, **kwargs):
-		# Extract all packages and tools
-		self.extract()
-
-		try:
-			self.make("package")
-		except:
-			if config["cleanup_on_failure"]:
-				self.clean()
-			# XXX send email report
-			raise
-
-		if config["cleanup_on_success"]:
-			self.clean()
-
-	def make(self, target):
-		file = "/usr/src%s" % self.package.filename[len(BASEDIR):]
-
-		return self.doChroot("make -C %s -f %s %s" % \
-			(os.path.dirname(file), file, target), shell=True)
 
 	def _mountall(self):
 		logging.debug("Mounting environment")
@@ -302,18 +261,66 @@ class Environment(object):
 
 		return ret
 
+	@property
+	def logger(self):
+		return logging.getLogger()
 
-class Shell(Environment):
+
+class Build(_Environment):
+	def __init__(self, package):
+		self.package = package
+
+		_Environment.__init__(self, self.package.arch)
+
+	@property
+	def logger(self):
+		return logging.getLogger() # XXX just for now
+
+	def chrootPath(self, *args):
+		return os.path.join(BUILDDIR, "environments", self.package.id, *args)
+
+	@property
+	def buildroot(self):
+		if not hasattr(self, "__buildroot"):
+			self.__buildroot = "buildroot.%s" % util.random_string()
+
+		return self.__buildroot
+
+	def variables(self):
+		v = _Environment.variables(self)
+		v.update({ "BUILDROOT" : "/%s" % self.buildroot })
+		return v
+
+	def build(self, *args, **kwargs):
+		try:
+			self.make("package")
+		except:
+			if config["cleanup_on_failure"]:
+				self.clean()
+
+			# Send email report about an error
+			mail.report_error(self.package)
+			raise
+
+		if config["cleanup_on_success"]:
+			self.clean()
+
+	def make(self, target):
+		file = "/usr/src%s" % self.package.filename[len(BASEDIR):]
+
+		return self.doChroot("make -C %s -f %s %s" % \
+			(os.path.dirname(file), file, target), shell=True)
+
+
+class Shell(Build):
 	def shell(self, args=[]):
-		self.extract()
-
 		# Preparing source...
 		self.make("prepare")
 
 		command = "chroot %s /usr/src/tools/chroot-shell %s" % \
 			(self.chrootPath(), " ".join(args))
 
-		for key, val in self.environ.items():
+		for key, val in self.variables().items():
 			command = "%s=\"%s\" " % (key, val) + command
 
 		if self.package.source_dir:

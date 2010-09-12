@@ -1,13 +1,31 @@
-#!/bin/bash -x
+#!/bin/bash
 
 BOOTLOADER_DIR=/usr/src/src/bootloader
 IMAGES_DIR=/usr/src/images
 
-MKLIVERAMFS=$(dirname ${0})/mkliveramfs
-
 ISO_FILENAME=${DISTRO_SNAME}-${DISTRO_VERSION}-${TARGET}.iso
 
-install_config() {
+. $(dirname ${0})/common-functions
+
+function find_latest_kernel_release() {
+	local i
+	for i in /lib/modules/*; do
+		i=$(basename ${i})
+	done
+
+	echo "${i}"
+}
+
+KERNEL_RELEASE=$(find_latest_kernel_release)
+
+function installer_image() {
+	local file=${1}
+	local dir=${2}
+
+	cd ${dir} && mksquashfs * ${file} -no-progress -e boot
+}
+
+function install_config() {
 	local src=${1}
 	local dest=${2}
 
@@ -16,10 +34,11 @@ install_config() {
 		-e "s/@SNAME@/${DISTRO_SNAME}/g" \
 		-e "s/@VERSION@/${DISTRO_VERSION}/g" \
 		-e "s/@SLOGAN@/${DISTRO_SLOGAN}/g" \
+		-e "s/@KERNEL@/${KERNEL_RELEASE}/g" \
 	< ${src} > ${dest}
 }
 
-install_isolinux() {
+function install_isolinux() {
 	local dest=${1}
 
 	mkdir -p ${dest} 2>/dev/null
@@ -35,87 +54,43 @@ install_isolinux() {
 	install_kernel ${dest}
 }
 
-install_kernel() {
+function install_kernel() {
 	local dest=${1}
 
 	mkdir -p ${dest} 2>/dev/null
 
-	local release
-	local releases
-	for release in /lib/modules/*; do
-		[ ! -d "${release}" ] && continue
-		releases="${releases} $(basename ${release})"
-	done
-	releases=$(echo ${releases})
-
-	# Grab first release
-	release=$(awk '{ print $1 }' <<<${releases})
-
-	if [ -z "${release}" ]; then
-		echo "No kernel image installed" >&2
-		return 1
-	fi
-
-	cp -f /boot/vmlinuz-${release} ${dest}/${DISTRO_SNAME}0
-
-	# Create liveramfs
-	${MKLIVERAMFS} -v --with-net -f ${dest}/initrd0 ${release}
-}
-
-copy_packages() {
-	local dest=${1}
-
-	mkdir -p ${dest} 2>/dev/null
-
-	for i in ${ALL_PACKAGES}; do
-		cp -f /usr/src/packages/${i} ${dest}/
+	local file
+	for file in vmlinuz-${KERNEL_RELEASE} initrd-${KERNEL_RELEASE}.img; do
+		cp -f /boot/${file} ${dest}/${file}
 	done
 }
 
-make_installer() {
-	local dest=${1}
-
-	mkdir -p ${dest} 2>/dev/null
-
-	pushd /installer
-
-	# Copy installer overlay	
-	cp -prf /usr/src/src/install/* .
-
-	rm -rf /installer/usr/include
-
-	for dir in dev proc sys; do
-		mkdir -p ${dir} 2>/dev/null
-	done
-	install -dv -m 1777 tmp var/tmp
-
-	# XXX add -comp lzma here when kernel supports it
-	mksquashfs * ${dest}/installer.sfs -no-progress
-
-	popd
-}
-
-## main ##
-
-type=${1}
-
-case "${type}" in
+case "${1}" in
 	iso)
-		mkdir /iso
-		cd /iso
+		log DEBUG "Creating ISO image..."
 
-		copy_packages packages
+		ISO_DIR=$(mktemp -d)
+		ISO_FILE=$(mktemp)
 
-		make_installer /iso
-		install_isolinux /iso/isolinux
+		# Copy installer image to ISO
+		installer_image ${ISO_DIR}/installer.sfs /installer
 
-		cd /iso && \
+		# Install bootloader
+		install_isolinux ${ISO_DIR}/isolinux
+
+		# "Copy" packages
+		mv /packages ${ISO_DIR}/Packages
+
+		cd ${ISO_DIR} && \
 			mkisofs -J -r -V "${DISTRO_NAME}_${DISTRO_VERSION}" \
 				-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot \
-				-boot-load-size 4 -boot-info-table . > ${IMAGES_DIR}/${ISO_FILENAME}
+				-boot-load-size 4 -boot-info-table . > ${ISO_FILE}
+
+		cat ${ISO_FILE} > ${IMAGES_DIR}/${ISO_FILENAME}
 		;;
 
-	"")
+	*)
+		log ERROR "Unknown type of image: ${1}"
 		exit 1
 		;;
 esac

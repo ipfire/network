@@ -4,14 +4,14 @@ import logging
 import os
 import re
 
-import arches
-import paks
-import repo
+import architectures
+import repositories
+import packages
 
-from constants import *
 from exception import *
 
 DEP_INVALID, DEP_FILE, DEP_LIBRARY, DEP_PACKAGE = range(4)
+
 
 class Dependency(object):
 	def __init__(self, identifier, origin=None):
@@ -27,7 +27,6 @@ class Dependency(object):
 			s += " by %s" % self.origin.name
 			s += "(%s)" % os.path.basename(self.origin.filename)
 		s += ">"
-
 		return s
 
 	@property
@@ -51,16 +50,27 @@ class Provides(Dependency):
 
 
 class DependencySet(object):
-	def __init__(self, package):
-		self.package = package
+	def __init__(self, dependencies=[], arch=None):
+		if not arch:
+			arches = architectures.Architectures()
+			arch = arches.get_default()
+		self.arch = arch
 
-		self.repo_bin = repo.BinaryRepository(self.arch.name)
+		self.repo = repositories.BinaryRepository(self.arch)
+
+		# initialize package lists
+		self._dependencies = []
+		self._items = []
+		self._provides = []
+
+		# add all provided dependencies
+		for dependency in dependencies:
+			self.add_dependency(dependency)
 
 		logging.debug("Successfully initialized %s" % self)
-		self.reset()
 
 	def __repr__(self):
-		return "<%s %s>" % (self.__class__.__name__, self.package.id)
+		return "<%s>" % (self.__class__.__name__)
 
 	def add_dependency(self, item):
 		assert isinstance(item, Dependency)
@@ -78,7 +88,7 @@ class DependencySet(object):
 			logging.debug("Added new dependency %s" % item)
 
 	def add_package(self, item):
-		assert isinstance(item, paks.BinaryPackage)
+		assert isinstance(item, packages.BinaryPackage)
 
 		if item in self._items:
 			return
@@ -101,30 +111,13 @@ class DependencySet(object):
 		self._provides.append(item)
 		self._provides.sort()
 
-	def reset(self):
-		self._dependencies = []
-		self._items = []
-		self._provides = []
-		logging.debug("Reset %s" % self)
-
 	def resolve(self):
 		logging.debug("Resolving %s" % self)
-
-		#self.reset()
-
-		# Always add the default packages
-		_dependencies = [Dependency(i) for i in config["mandatory_packages"]]
-
-		# Add build dependencies from package
-		_dependencies += self.package.get_dependencies("build")
-		
-		for dependency in _dependencies:
-			self.add_dependency(dependency)
 
 		# Safe for endless loop
 		counter = 1000
 
-		while self.dependencies:
+		while self._dependencies:
 			counter -= 1
 			if not counter:
 				logging.debug("Maximum count of dependency loop was reached")
@@ -135,21 +128,21 @@ class DependencySet(object):
 			logging.debug("Processing dependency: %s" % dependency.identifier)
 
 			if dependency.type == DEP_PACKAGE:
-				package = self.repo_bin.find_package_by_name(dependency.identifier)
+				package = self.repo.find_package_by_name(dependency.identifier)
 				if package:
 					# Found a package and add this
 					self.add_package(package)
 					continue
 
 			elif dependency.type == DEP_LIBRARY:
-				for package in self.repo_bin.list():
+				for package in self.repo.all:
 					for provides in package.get_provides():
 						if provides.match(dependency):
 							self.add_package(package)
 							break
 
 			elif dependency.type == DEP_FILE:
-				package = self.repo_bin.find_package_by_file(dependency.identifier)
+				package = self.repo.find_package_by_file(dependency.identifier)
 				if package:
 					self.add_package(package)
 					continue
@@ -170,10 +163,6 @@ class DependencySet(object):
 			raise DependencyResolutionError, "%s" % self.dependencies
 
 	@property
-	def arch(self):
-		return self.package.arch
-
-	@property
 	def dependencies(self):
 		return sorted(self._dependencies)
 
@@ -191,3 +180,13 @@ class DependencySet(object):
 	@property
 	def provides(self):
 		return self._provides
+
+
+if __name__ == "__main__":
+	import architectures
+	arches = architectures.Architectures()
+
+	ds = DependencySet(arch=arches.get("i686"))
+	ds.add_dependency(Dependency("/bin/bash"))
+	ds.resolve()
+	print ds.packages

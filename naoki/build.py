@@ -1,90 +1,104 @@
 #!/usr/bin/python
 
 import logging
+import uuid
 
-import deps
+import dependencies
 import environ
 
 from constants import *
 from exception import *
 
-class BuildSet(object):
+
+class Build(object):
 	def __init__(self, package):
 		self.package = package
 
-		self.dependency_set = deps.DependencySet(self.package)
+		# Generate a random, but unique id
+		self.id = uuid.uuid4()
 
-		logging.debug("Successfully created BuildSet for %s" % self.package)
+		# Create dependency set
+		self.dependency_set = dependencies.DependencySet(arch=self.arch)
+
+		# Add all mandatory packages and build dependencies
+		deps = [dependencies.Dependency(p) for p in config["mandatory_packages"]]
+		deps += self.package.get_dependencies("build")
+		for package in deps:
+			self.dependency_set.add_dependency(package)
+
+		self.settings = {
+			"ignore_dependency_errors" : False,
+		}
 
 	def __repr__(self):
-		return "<%s %s>" % (self.__class__.__name__, self.package.name)
-
-	def _resolve(self, ignore_errors=False):
-		try:
-			self.dependency_set.resolve()
-		except DependencyResolutionError, e:
-			if ignore_errors:
-				logging.warning("Ignoring dependency errors: %s" % e)
-			else:
-				raise
+		return "<%s %s-%s:%s>" % \
+			(self.__class__.__name__, self.id, self.package.name, self.arch.name)
 
 	@property
 	def arch(self):
 		return self.package.arch
 
-	def print_info(self):
-		logging.info("Building: %s" % self.package.id)
+	def build(self, **settings):
+		self.settings.update(settings)
+
+		logging.info("Building: %s (%s)" % (self.package.id, self.id))
+		logging.info("")
 		logging.info("    %s" % self.package.summary)
 		logging.info("")
 
-	def build(self, ignore_dependency_errors=False):
-		logging.debug("Running build process for %s" % self)
-		self.print_info()
+		# Resolve the dependencies
+		try:
+			self.dependency_set.resolve()
+		except DependencyResolutionError, e:
+			if self.settings["ignore_dependency_errors"]:
+				logging.warning("Ignoring dependency errors: %s" % e)
+			else:
+				raise
 
-		self._resolve(ignore_errors=ignore_dependency_errors)
+		e = environ.Build(self.package)
 
-		env = environ.Environment(self)
-		env.build()
+		# Extract all tools
+		for package in self.dependency_set.packages:
+			e.extract(package)
 
-	run = build
-
-	def shell(self):
-		logging.debug("Running shell for %s" % self)
-		self.print_info()
-
-		# Add some packages that are kind of nice in a shell
-		# like an editor and less...
-		for dependency in [deps.Dependency(d) for d in config["shell_packages"]]:
-			logging.debug("Adding shell dependency: %s" % dependency)
-			self.dependency_set.add_dependency(dependency)
-
-		self._resolve()
-
-		env = environ.Shell(self)
-		env.shell()
+		# Build :D
+		e.build()
 
 
-class Builder(object):
+class Jobs(object):
 	def __init__(self):
-		self._items = []
-		
-		logging.debug("Successfully created Builder instance")
+		self.__jobs = []
+		self.__error_jobs = []
 
-	def add(self, i):
-		self._items.append(BuildSet(i))
-		logging.debug("Added %s to %s" % (i, self))
+		logging.debug("Initialized jobs queue")
 
-	def _reorder(self):
-		logging.debug("Reordering BuildSets")
+	def __len__(self):
+		return len(self.__jobs)
 
-	def run(self, *args, **kwargs):
-		self._reorder()
+	def add(self, job):
+		assert isinstance(job, Build)
 
-		logging.info("Running build process")
+		self.__jobs.append(job)
 
-		while self._items:
-			i = self._items.pop(0)
+	@property
+	def all(self):
+		return self.__jobs[:]
 
-			# Run the actual build
-			i.run(*args, **kwargs)
+	@property
+	def has_jobs(self):
+		return self.__jobs != []
 
+	def process_next(self):
+		if not self.__jobs:
+			return
+
+		job = self.__jobs[0]
+
+		try:
+			job.build()
+		finally:
+			self.__jobs.remove(job)
+
+
+class PackageShell(environ.Shell):
+	pass

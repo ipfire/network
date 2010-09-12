@@ -7,12 +7,12 @@ import random
 import sys
 import time
 
-import backend
+import architectures
 import build
-import chroot
 import environ
+import generators
 import logger
-import repo
+import repositories
 import terminal
 import util
 
@@ -47,27 +47,40 @@ class Naoki(object):
 			"package" : self.call_package,
 			"source" : self.call_source,
 			"shell" : self.call_shell,
-			"repository" : self.call_repository,
 			"generate" : self.call_generate,
 			"batch" : self.call_batch,
 		}
 
 		return actionmap[args.action.name](args.action)
 
+	def _get_source_repos(self, arch=None):
+		if not arch:
+			arches = architectures.Architectures()
+			arch = arches.get_default()
+
+		return repositories.SourceRepositories(arch=arch)
+
 	def call_build(self, args):
-		builder = build.Builder()
+		# Source repository
+		repo = self._get_source_repos()
+
+		# Initialize job queue
+		jobs = build.Jobs()
 
 		if args.all:
 			raise Exception, "XXX to be implemented"
 		else:
 			for name in args.packages:
-				p = repo.find_source_package(name)
+				p = repo.find_package_by_name(name)
 				if not p:
 					raise Exception, "Could not find package: %s" % name
 
-				builder.add(p)
+				p = build.Build(p)
+				jobs.add(p)
 
-		return builder.run(ignore_dependency_errors=args.ignore_dependency_errors)
+		#return builder.run(ignore_dependency_errors=args.ignore_dependency_errors)
+		while jobs.has_jobs:
+			jobs.process_next()
 
 	def call_package(self, args):
 		if not args.has_key("action"):
@@ -77,14 +90,16 @@ class Naoki(object):
 		actionmap = {
 			"info" : self.call_package_info,
 			"list" : self.call_package_list,
-			"tree" : self.call_package_tree,
 			"groups" : self.call_package_groups,
 		}
 
 		return actionmap[args.action.name](args.action)
 
 	def call_package_info(self, args):
-		for package in backend.parse_package_info(args.packages):
+		# Source repositories
+		repo = self._get_source_repos()
+
+		for package in repo.packages:
 			if args.long:
 				print package.fmtstr("""\
 --------------------------------------------------------------------------------
@@ -117,13 +132,15 @@ Release       : %(release)s
 """)
 
 	def call_package_list(self, args):
-		for package in backend.parse_package_info(backend.get_package_names()):
+		repo = self._get_source_repos()
+
+		for package in repo.packages:
 			# Skip unbuilt packages if we want built packages
-			if args.built and not package.built:
+			if args.built and not package.is_built:
 				continue
 
 			# Skip built packages if we want unbuilt only
-			if args.unbuilt and package.built:
+			if args.unbuilt and package.is_built:
 				continue
 
 			if args.long:
@@ -131,12 +148,11 @@ Release       : %(release)s
 			else:
 				print package.name
 
-	def call_package_tree(self, args):
-		print backend.deptree(backend.parse_package(backend.get_package_names(), naoki=self))
-
 	def call_package_groups(self, args):
-		groups = backend.get_group_names()
-		print "\n".join(groups)
+		# XXX
+		#groups = backend.get_group_names()
+		#print "\n".join(groups)
+		pass
 
 	def call_source(self, args):
 		if not args.has_key("action"):
@@ -146,69 +162,50 @@ Release       : %(release)s
 		actionmap = {
 			"download" : self.call_source_download,
 			"upload" : self.call_source_upload,
-			"clean" : self.call_source_clean,
 		}
 
 		return actionmap[args.action.name](args.action)
 
 	def call_source_download(self, args):
-		for package in backend.parse_package(args.packages or \
-				backend.get_package_names(), naoki=self):
-			package.download()
+		repo = self._get_source_repos()
+
+		for package in repo.packages:
+			if args.packages:
+				if not package.name in args.packages:
+					continue
+
+			package.source_donwload()
 
 	def call_source_upload(self, args):
 		pass # TODO
 
-	def call_source_clean(self, args):
-		self.log.info("Remove all unused files")
-		files = os.listdir(TARBALLDIR)
-		for package in backend.parse_package_info(backend.get_package_names()):
-			for object in package.objects:
-				if object in files:
-					files.remove(object)
-
-		for file in sorted(files):
-			self.log.info("Removing %s..." % file)
-			os.remove(os.path.join(TARBALLDIR, file))
-
 	def call_shell(self, args):
-		p = repo.find_source_package(args.package)
+		# Load architecture set
+		arches = architectures.Architectures()
+
+		# Choose default architecture
+		arch = arches.get_default()
+
+		# Load all source packages
+		repo = repositories.SourceRepositories(arch=arch)
+
+		# Pick the one we need
+		p = repo.find_package_by_name(args.package)
 		if not p:
 			raise Exception, "Could not find package: %s" % args.package
 
-		build_set = build.BuildSet(p)
+		# Initialize and run the shell
+		shell = build.PackageShell(p)
 
-		return build_set.shell()
-
-	def call_repository(self, args):
-		actionmap = {
-			"clean" : self.call_repository_clean,
-			"build" : self.call_repository_build,
-		}
-
-		return actionmap[args.action.name](args.action)
-
-	def call_repository_clean(self, repo, args):
-		if args.names == ["all"]:
-			args.names = [r.name for r in backend.get_repositories()]
-
-		for name in args.names:
-			repo = backend.BinaryRepository(name, naoki=self)
-			repo.clean()
-
-	def call_repository_build(self, args):
-		if args.names == ["all"]:
-			args.names = [r.name for r in backend.get_repositories()]
-
-		for name in args.names:
-			repo = backend.BinaryRepository(name, naoki=self)
-			repo.build()
+		return shell.shell()
 
 	def call_generate(self, args):
 		if not args.type in ("iso",):
 			return
 
-		gen = chroot.Generator(self, arches.current, args.type)
+		arch = architectures.Architectures().get_default()
+
+		gen = generators.Generator(args.type, arch)
 		return gen.run()
 
 	def call_batch(self, args):
@@ -230,31 +227,35 @@ Release       : %(release)s
 		return actionmap[args.action.name](args.action)
 
 	def call_batch_cron(self, args):
-		packages = []
-		packages_may = []
-		for package in backend.parse_package_info(backend.get_package_names()):
-			if not package.built and package.buildable:
-				packages.append(package)
-				continue
+		pkgs = []
+		candidates = []
 
-			# If package was altered since last build
-			if package.last_change >= package.last_build:
-				packages.append(package)
-				continue
+		# Choose architecture
+		arches = architectures.Architectures()
+		arch = arches.get_default()
 
-			if package.buildable:
-				packages_may.append(package)
+		repo = repositories.SourceRepositories(arch=arch)
+		for package in repo.packages:
+			if not package.is_built:
+				pkgs.append(package)
+			else:
+				candidates.append(package)
 
-		packages_may = sorted(packages_may, key=lambda p: p.last_build)
+		# Initialize a job queue
+		jobs = build.Jobs()
 
-		while len(packages) < 10 and packages_may:
-			package = packages_may.pop(0)
-			packages.append(package)
+		# Add all unbuilt packages to the job queue
+		for package in pkgs:
+			package = build.Build(package)
+			jobs.add(package)
 
-		# Bad hack because we lack a _build method
-		args.packages = [p.name for p in packages]
-		args.onlydeps = False
-		args.withdeps = False
-		args.shell = False
+		# If we have less than ten packages in the queue we add some random
+		# ones
+		need_counter = 10 - len(jobs)
+		if need_counter >= 0:
+			for candidate in random.sample(candidates, need_counter):
+				candidate = build.Build(candidate)
+				jobs.add(candidate)
 
-		self.call_build(args)
+		while jobs.has_jobs:
+			jobs.process_next()

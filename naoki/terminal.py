@@ -6,8 +6,10 @@ import struct
 import sys
 import termios
 
-import arches
+import architectures
 from constants import *
+
+arches = architectures.Architectures()
 
 class ParsingError(Exception):
 	pass
@@ -273,7 +275,7 @@ class Commandline(object):
 				Option("quiet", ["-q", "--quiet"], help="Set quiet mode"),
 				Option("debug", ["-d", "--debug"], help="Set debugging mode"),
 				Choice("arch",  ["-a", "--arch"], help="Set architecture",
-					choices=[arch.name for arch in arches.all()]),
+					choices=[arch.name for arch in arches.all]),
 			],
 			parsers=[
 				# Build
@@ -326,7 +328,6 @@ class Commandline(object):
 							arguments=[
 								List("packages"),
 							]),
-						Parser("clean", help="Cleanup unused tarballs"),
 					]),
 
 				# Check
@@ -348,22 +349,6 @@ class Commandline(object):
 					help="Shell environment",
 					arguments=[
 						Argument("package", help="Package to process."),
-					]),
-
-				# Repository
-				Parser("repository",
-					help="Repository commands",
-					parsers=[
-						Parser("clean",
-							help="Cleanup the repository",
-							arguments=[
-								List("names", help="List of repositories"),
-							]),
-						Parser("build",
-							help="Build the repository",
-							arguments=[
-								List("names", help="List of repositories"),
-							]),
 					]),
 
 				# Generator

@@ -12,6 +12,7 @@ CACHEDIR = os.path.join(BASEDIR, "cache")
 CCACHEDIR = os.path.join(BASEDIR, "ccache")
 CONFIGDIR = os.path.join(BASEDIR, "config")
 DOCDIR = os.path.join(BASEDIR, "doc")
+GENDIR = os.path.join(BUILDDIR, "generators")
 IMAGESDIR = os.path.join(BUILDDIR, "images")
 LOGDIR = os.path.join(BASEDIR, "logs")
 PKGSDIR = os.path.join(BASEDIR, "pkgs")
@@ -22,6 +23,8 @@ TOOLSDIR = os.path.join(BASEDIR, "tools")
 TARBALLDIR = os.path.join(CACHEDIR, "tarballs")
 TOOLCHAINSDIR = os.path.join(CACHEDIR, "toolchains")
 PATCHESDIR = os.path.join(CACHEDIR, "patches")
+
+ARCHES_DEFAULT = os.path.join(CONFIGDIR, "architectures.conf")
 
 CONFIGFILE = os.path.join(CONFIGDIR, "naoki.conf")
 
@@ -63,6 +66,7 @@ class Config(object):
 			"patch",
 			"sed",
 			"tar",
+			"which",
 			"xz",
 		],
 		"shell_packages" : [
@@ -157,42 +161,6 @@ class Config(object):
 		return ret
 
 
-#class Architectures(object):
-#	def __init__(self, configfile):
-#		parser = ConfigParser.ConfigParser()
-#		parser.read(configfile)
-#
-#		arches = {}
-#		for arch in parser.sections():
-#			arches[arch] = { "name" : arch }
-#			for key, val in parser.items(arch):
-#				arches[arch][key] = val
-#
-#		self._arches = arches
-#		self.__current = None
-#
-#	def set(self, arch):
-#		self.__current = arch
-#
-#	@property
-#	def all(self):
-#		return self._arches
-#
-#	@property
-#	def default(self):
-#		return self._arches.get("i686")
-#
-#	@property
-#	def current(self):
-#		if not self.__current:
-#			return self.default
-#		return self._arches[self.__current]
-#
-#	def __getitem__(self, key):
-#		return self._arches[key]
-#
-
 # Create a globally useable instance of the configuration
 config = Config()
 
-#arches = Architectures(config["architecture_config"])

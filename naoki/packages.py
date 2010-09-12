@@ -3,10 +3,9 @@
 import logging
 import os
 import re
-import tarfile
 
-import arches
-import deps
+import architectures
+import dependencies
 import environ
 import io
 import util
@@ -14,13 +13,17 @@ import util
 from constants import *
 
 class Package(object):
-	def __init__(self, name, arch):
-		self.name = name
-		self.arch = arches.get(arch)
-
 	def __repr__(self):
 		return "<%s %s:%s>" % \
 			(self.__class__.__name__, self.name, self.arch.name)
+
+	#@property
+	#def arch(self):
+	#	raise NotImplementedError
+
+	@property
+	def name(self):
+		return self._info["PKG_NAME"]
 
 	@property
 	def id(self):
@@ -37,16 +40,14 @@ class Package(object):
 
 
 class SourcePackage(Package):
-	def __init__(self, name, repo, arch):
-		Package.__init__(self, name, arch)
-		self.repo = repo
+	def __init__(self, filename, repo, arch):
+		self.arch = arch
+		self.filename = filename
+		self.repository = repo
 
 		self.init()
-		logging.debug("Successfully initialized %s" % self)
 
-	@property
-	def filename(self):
-		return os.path.join(self.repo.path, self.name, self.name + ".nm")
+		logging.debug("Successfully initialized %s" % self)
 
 	def init(self):
 		self._info = {}
@@ -56,9 +57,9 @@ class SourcePackage(Package):
 			"PKGROOT" : PKGSDIR,
 		})
 
-		output = util.do("make -f %s" % self.filename,
+		output = util.do("make -f %s" % os.path.basename(self.filename),
 			shell=True,
-			cwd=os.path.join(self.repo.path, self.name),
+			cwd=os.path.dirname(self.filename),
 			returnOutput=1,
 			env=env)
 
@@ -73,6 +74,7 @@ class SourcePackage(Package):
 			key, val = m.groups()
 			self._info[key] = val.strip("\"")
 
+	# XXX should return a dependencyset
 	def get_dependencies(self, type=""):
 		type2var = {
 			"" : "PKG_DEPENDENCIES",
@@ -81,15 +83,28 @@ class SourcePackage(Package):
 
 		type = type2var[type]
 
-		return [deps.Dependency(d, origin=self) for d in self._info[type].split()]
+		return [dependencies.Dependency(d, origin=self) for d in self._info[type].split()]
+
+	@property
+	def source_dir(self):
+		return self._info.get("SOURCE_DIR", "")
 
 	@property
 	def summary(self):
 		return self._info["PKG_SUMMARY"]
 
 	@property
-	def source_dir(self):
-		return self._info.get("SOURCE_DIR", "")
+	def binary_files(self):
+		return self._info.get("PKG_PACKAGES_FILES").split()
+
+	@property
+	def is_built(self):
+		for file in self.binary_files:
+			file = os.path.join(PACKAGESDIR, self.arch.name, file)
+			if not os.path.exists(file):
+				return False
+
+		return True
 
 
 class BinaryPackage(Package):
@@ -116,7 +131,6 @@ class BinaryPackage(Package):
 
 		f.close()
 		return ret
-
 
 	def init(self):
 		self._info = {}
@@ -145,7 +159,15 @@ class BinaryPackage(Package):
 
 	@property
 	def arch(self):
-		return arches.get(self._info.get("PKG_ARCH", arches.get_default()))
+		arches = architectures.Architectures()
+
+		arch = self._info.get("PKG_ARCH", None)
+		if arch:
+			arch = arches.get(arch)
+		else:
+			arch = arches.get_default()
+
+		return arch
 
 	@property
 	def name(self):
@@ -157,10 +179,10 @@ class BinaryPackage(Package):
 		# Compatibility to older package format
 		objects += self._info.get("PKG_REQUIRES", "").split()
 
-		return [deps.Dependency(o, origin=self) for o in objects]
+		return [dependencies.Dependency(o, origin=self) for o in objects]
 
 	def get_provides(self):
-		return [deps.Provides(p, origin=self) \
+		return [dependencies.Provides(p, origin=self) \
 			for p in self._info.get("PKG_PROVIDES", "").split()]
 
 	@property
