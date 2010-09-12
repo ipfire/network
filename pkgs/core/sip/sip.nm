@@ -34,7 +34,7 @@ PKG_URL        = http://www.riverbankcomputing.com/software/sip/intro
 PKG_LICENSE    = GPLv2 or GPLv3
 PKG_SUMMARY    = SIP - Python/C++ Bindings Generator.
 
-PKG_DEPS      += python
+PKG_BUILD_DEPS+= gcc-c++ python-devel
 
 define PKG_DESCRIPTION
 	SIP is a tool for generating bindings for C++ classes so that they can be \
@@ -44,6 +44,8 @@ define PKG_DESCRIPTION
 endef
 
 PKG_TARBALL    = $(THISAPP).tar.gz
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
 
 define STAGE_BUILD
 	cd $(DIR_APP) && python configure.py \
