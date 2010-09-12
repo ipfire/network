@@ -34,7 +34,8 @@ PKG_URL        = http://www.curl.haxx.se/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = A utility for getting files from remote servers (FTP, HTTP, and others).
 
-PKG_BUILD_DEPS+= libidn-devel libssh2-devel openldap-devel openssl-devel pkg-config zlib-devel
+PKG_BUILD_DEPS+= autoconf automake libidn-devel libssh2-devel libtool \
+	openldap-devel openssl-devel pkg-config zlib-devel
 
 define PKG_DESCRIPTION
 	cURL is a tool for getting files from HTTP, FTP, FILE, LDAP, LDAPS, \
@@ -66,6 +67,10 @@ CONFIGURE_OPTIONS += \
 	--with-nss \
 	--enable-ldaps \
 	--enable-ipv6
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && autoreconf -vfi
+endef
 
 # Doesn't work
 #define STAGE_TEST
