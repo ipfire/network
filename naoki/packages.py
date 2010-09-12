@@ -4,6 +4,9 @@ import logging
 import os
 import re
 
+import urlgrabber
+import urlgrabber.progress
+
 import architectures
 import dependencies
 import environ
@@ -11,6 +14,7 @@ import io
 import util
 
 from constants import *
+
 
 class Package(object):
 	def __repr__(self):
@@ -105,6 +109,27 @@ class SourcePackage(Package):
 				return False
 
 		return True
+
+	@property
+	def source_files(self):
+		return self._info.get("PKG_OBJECTS").split()
+
+	def source_download(self):
+		g = urlgrabber.grabber.URLGrabber(
+			prefix = config["sources_download_url"],
+			progress_obj = urlgrabber.progress.TextMeter(),
+			quote=0,
+		)
+
+		for file in self.source_files:
+			file = os.path.join(CACHEDIR, file)
+
+			if os.path.exists(file):
+				continue
+
+			util.mkdir(CACHEDIR)
+
+			g.urlgrab(os.path.basename(file), filename=file)
 
 
 class BinaryPackage(Package):

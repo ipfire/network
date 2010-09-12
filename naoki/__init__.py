@@ -174,7 +174,7 @@ Release       : %(release)s
 				if not package.name in args.packages:
 					continue
 
-			package.source_donwload()
+			package.source_download()
 
 	def call_source_upload(self, args):
 		pass # TODO

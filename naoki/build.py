@@ -46,6 +46,9 @@ class Build(object):
 		logging.info("    %s" % self.package.summary)
 		logging.info("")
 
+		# Download the source tarballs
+		self.package.source_download()
+
 		# Resolve the dependencies
 		try:
 			self.dependency_set.resolve()

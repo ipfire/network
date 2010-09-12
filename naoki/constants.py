@@ -20,10 +20,6 @@ PACKAGESDIR = os.path.join(BUILDDIR, "packages")
 REPOSDIR = os.path.join(BUILDDIR, "repositories")
 TOOLSDIR = os.path.join(BASEDIR, "tools")
 
-TARBALLDIR = os.path.join(CACHEDIR, "tarballs")
-TOOLCHAINSDIR = os.path.join(CACHEDIR, "toolchains")
-PATCHESDIR = os.path.join(CACHEDIR, "patches")
-
 ARCHES_DEFAULT = os.path.join(CONFIGDIR, "architectures.conf")
 
 CONFIGFILE = os.path.join(CONFIGDIR, "naoki.conf")
