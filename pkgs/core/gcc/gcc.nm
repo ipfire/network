@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = gcc
-PKG_VER        = 4.5.0
+PKG_VER        = 4.5.1
 PKG_REL        = 0
 
 PKG_MAINTAINER = Michael Tremer <michael.tremer@ipfire.org>
@@ -53,7 +53,7 @@ else
 	CONFIG_CPU = --with-cpu=$(TARGET_MACHINE) --with-arch=$(TARGET_MACHINE)
 endif
 
-PKG_TARBALL   += $(THISAPP).tar.bz2
+PKG_TARBALL   += $(THISAPP).tar.gz
 
 # A package for C++
 PKG_PACKAGES += $(PKG_NAME)-c++

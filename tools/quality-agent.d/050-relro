@@ -17,8 +17,12 @@ function check() {
 		fi
 
 		if ! file_is_relro_full ${file}; then
-			log_error "  Is not full relro: ${file}"
-			failed=1
+			if [ "${QUALITY_AGENT_PERMIT_NOT_FULL_RELRO}" = "yes" ]; then
+				log_warning "  Is not full relro: ${file}"
+			else
+				log_error "  Is not relro: ${file}"
+				failed=1
+			fi
 		fi
 	done
 

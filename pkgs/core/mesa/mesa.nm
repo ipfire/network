@@ -1,0 +1,68 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = mesa
+PKG_VER        = 7.8.2
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Tools
+PKG_URL        = http://www.mesa3d.org
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = Mesa graphics libraries.
+
+PKG_BUILD_DEPS+= pkg-config libX11-devel libXdamage-devel libXext-devel\
+	libXxf86vm-devel libdrm-devel libxcb-devel 
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
+
+define PKG_DESCRIPTION
+	Mesa libGL runtime libraries and DRI drivers.
+endef
+
+PKG_TARBALL    = MesaLib-$(PKG_VER).tar.bz2
+
+DIR_APP        = $(DIR_SRC)/Mesa-$(PKG_VER)
+
+CFLAGS        += -Wl,-z,lazy
+
+QUALITY_AGENT_PERMIT_NOT_FULL_RELRO = yes
+
+CONFIGURE_OPTIONS += \
+	--enable-pic \
+	--with-driver=dri \
+	--with-state-tracker=dri,glx \
+	--disable-glw \
+	--disable-glu \
+	--disable-glut \
+	--disable-gl-osmesa \
+	--disable-gallium \
+	--disable-gallium-intel \
+	--disable-gallium-svga \
+	--disable-gallium-radeon \
+	--disable-gallium-nouveau \
+	--disable-egl \
+	--without-demos

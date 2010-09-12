@@ -1,0 +1,46 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = xcb-proto
+PKG_VER        = 1.6
+PKG_REL        = 0
+
+PKG_MAINTAINER = Stefan Schantl <stefan.schantl@ipfire.org>
+PKG_GROUP      = X/Headers
+PKG_URL        = http://xcb.freedesktop.org/
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = XCB protocol descriptions.
+
+PKG_BUILD_DEPS+= pkg-config python-devel
+
+define PKG_DESCRIPTION
+	XCB is a project to enable efficient language bindings to the X11 \
+	protocol. This package contains the protocol descriptions themselves. \
+	Language bindings use these protocol descriptions to generate code for \
+	marshalling the protocol.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
