@@ -34,7 +34,8 @@ PKG_URL        = http://www.gnupg.org/
 PKG_LICENSE    = GPLv3+
 PKG_SUMMARY    = Utility for secure communication and data storage.
 
-PKG_DEPS      += curl libassuan libgcrypt libksba pinentry pth
+PKG_BUILD_DEPS+= libassuan-devel libcurl-devel libgcrypt-devel libksba-devel \
+	pinentry pth-devel
 
 define PKG_DESCRIPTION
 	The GnuPG 2 package is GNU's tool for secure communication and data \
