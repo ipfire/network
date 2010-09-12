@@ -115,7 +115,7 @@ class SourceRepository(Repository):
 
 	@property
 	def packages(self):
-		return os.listdir(self.path)
+		return sorted(os.listdir(self.path))
 
 	@property
 	def completely_built(self):
@@ -160,7 +160,7 @@ class SourceRepositories(object):
 		self.find_all()
 
 	def find_all(self):
-		for repo in os.listdir(PKGSDIR):
+		for repo in sorted(os.listdir(PKGSDIR)):
 			# Skip all non-directories
 			if not os.path.isdir(os.path.join(PKGSDIR, repo)):
 				continue
