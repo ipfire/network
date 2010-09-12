@@ -34,8 +34,7 @@ PKG_URL        = http://pkg-config.freedesktop.org/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = A tool for determining compilation options.
 
-PKG_BUILD_DEPS+= m4 sed
-PKG_DEPS      += popt
+PKG_BUILD_DEPS+= m4 popt-devel sed
 
 define PKG_DESCRIPTION
 	The pkgconfig tool determines compilation options. For each required \
