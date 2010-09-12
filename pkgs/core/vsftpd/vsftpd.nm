@@ -45,6 +45,11 @@ PKG_TARBALL    = $(THISAPP).tar.gz
 
 CFLAGS += -Wall -W -Wshadow -fstack-protector -fpie -Wextra -Werror
 
+define STAGE_PREPARE_CMDS
+	# Fix an issue with DSO
+	cd $(DIR_APP) && sed -e "s/-lssl/& -lcrypto/" -i Makefile
+endef
+
 define STAGE_BUILD
 	cd $(DIR_APP) && make CFLAGS='$(CFLAGS)' $(PARALLELISMFLAGS)
 endef
