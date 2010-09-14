@@ -130,6 +130,9 @@ define DO_INSTALL
 	$(DO_FILELIST)
 endef
 
+STAGE_PACKAGE_TARGETS = $(call reverse,$(PKG_PACKAGES_FILES))
+STAGE_DONE = $(ROOT)/.done
+
 define STAGE_PREPARE
 	$(if $(PKG_TARBALL),cd $(DIR_SRC) && $(DO_EXTRACT) $(DIR_DL)/$(PKG_TARBALL))
 

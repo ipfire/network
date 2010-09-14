@@ -5,80 +5,141 @@
 #
 ###############################################################################
 
-PKG_VARIABLES = PKG_BUILD_DEPS PKG_DEPS PKG_DESCRIPTION PKG_FILES PKG_GROUP \
-	PKG_MAINTAINER PKG_LICENSE PKG_PROVIDES PKG_REL PKG_SUMMARY PKG_URL \
-	PKG_VER
-
+# If we are running in a chroot, we map all directories to $(BASEDIR), otherwise
+# BASEDIR will be the absolute path (for gathering information from the source
+# packages)
 ifeq "$(CHROOT)" "1"
 	BASEDIR = /usr/src
 endif
 
-THISAPP    = $(PKG_NAME)-$(PKG_VER)
-
-DIR_APP = $(DIR_SRC)/$(THISAPP)
-DIR_DL  = $(BASEDIR)/cache
-DIR_PATCHES = $(DIR_SOURCE)/patches
-DIR_SRC = $(ROOT)/usr/src
-DIR_TMP = /tmp
-DIR_SOURCE = $(CURDIR)
+# Set default directories
+DIR_APP      = $(DIR_SRC)/$(THISAPP)
+DIR_DL       = $(BASEDIR)/cache
 DIR_PACKAGES = /usr/src/packages/$(PKG_ARCH)
-DIR_TOOLS = $(BASEDIR)/tools
-DIR_LOGS = $(BASEDIR)/logs
+DIR_PATCHES  = $(DIR_SOURCE)/patches
+DIR_SRC      = /usr/src
+DIR_TMP      = /tmp
+DIR_SOURCE   = $(CURDIR)
+DIR_TOOLS    = $(BASEDIR)/tools
 
-BUILD_HOST ?= $(shell cat /proc/sys/kernel/hostname)
+# Directory where to search for object files
+VPATH        = $(DIR_DL)
 
-VPATH = $(DIR_DL)
-
-PKG_OBJECTS = $(PKG_TARBALL)
-PKG_PATCHES = $(foreach patch,$(wildcard $(DIR_SOURCE)/patches/*.patch),$(notdir $(patch)))
-OBJECTS = $(PKG_OBJECTS)
-
-PKG_NAME_REAL = $(notdir $(CURDIR))
-PKG_PACKAGES = $(PKG_NAME_REAL)
-PKG_PACKAGES_FILES = $(foreach package,$(PKG_PACKAGES),$(call DO_PACKAGE_FILENAME,$(package)))
-
-PKG_SUFFIX = -$(PKG_VER)-$(DISTRO_SNAME)$(DISTRO_EPOCH)-$(PKG_ARCH).$(PKG_REL).ipk
-
-DO_EXTRACT = $(DIR_TOOLS)/extractor
-DO_PATCHES = cd $(DIR_APP) && $(DIR_TOOLS)/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
+# Paths to scripts
+DO_EXTRACT       = $(DIR_TOOLS)/extractor
 DO_QUALITY_AGENT = $(DIR_TOOLS)/quality-agent
 
-PKG_BUILD_DEPS += gcc glibc-devel kernel-headers
-PKG_DEPS +=
+###############################################################################
+#
+# Build environment
+#
+###############################################################################
 
-CONFIGURE_OPTIONS = --prefix=/usr
+# Export CFLAGS + CXXFLAGS
+export CFLAGS
+export CXXFLAGS
 
-ifeq "$(TARGET_MACHINE)" "x86_64"
-	LINKER = /lib64/ld-linux-x86-64.so.2
-else
-	LINKER = /lib/ld-linux.so.2
-endif
+# Options that get passed to configure by default
+CONFIGURE_OPTIONS = \
+	--prefix=/usr
 
-STAGE_PACKAGE_TARGETS = $(call reverse,$(PKG_PACKAGES_FILES))
-ifeq "$(TOOLCHAIN)" "1"
-	STAGE_DONE = $(ROOT)/$(PKG_NAME_REAL)
-else
-	STAGE_DONE = $(ROOT)/.done
-endif
+###############################################################################
+#
+# Packager variables
+#
+###############################################################################
+# Variables that get exported (and expanded for the sub-packages) to the
+# packager process
+PKG_VARIABLES = \
+	CONTROL_PREIN \
+	CONTROL_PREUN \
+	CONTROL_POSTIN \
+	CONTROL_POSTUN \
+	\
+	PKG_ARCH \
+	PKG_BUILD_DEPS \
+	PKG_DEPS \
+	PKG_DESCRIPTION \
+	PKG_FILES \
+	PKG_GROUP \
+	PKG_MAINTAINER \
+	PKG_LICENSE \
+	PKG_PROVIDES \
+	PKG_REL \
+	PKG_SUMMARY \
+	PKG_URL \
+	PKG_VER
 
-PKG_DEFAULT_FILES = $(wildcard *.default)
+# Variables that exported to the packager process
+# These reflect settings from the build system
+export BUILD_DATE ?= $(shell date -u)
+export BUILD_HOST ?= $(shell cat /proc/sys/kernel/hostname)
+
+###############################################################################
+#
+# Package variables
+#
+###############################################################################
+#
+# Constants
+#
+
+# The suffix of the package name
+PKG_SUFFIX = -$(PKG_VER)-$(DISTRO_SNAME)$(DISTRO_EPOCH)-$(PKG_ARCH).$(PKG_REL).ipk
+
+#
+# Variables
+#
+
+# The actual package name (the name of the directory)
+PKG_NAME_REAL  = $(notdir $(CURDIR))
+PKG_NAME       = $(PKG_NAME_REAL)
+
+# Shortcut to package name + version
+THISAPP        = $(PKG_NAME)-$(PKG_VER)
+
+#  All packages depend on gcc and headers by default.
+PKG_BUILD_DEPS+= gcc glibc-devel kernel-headers
+PKG_DEPS      +=
+
+# All PKG_OBJECTS are downloaded. This is in most cases the tarball.
+PKG_OBJECTS   = $(PKG_TARBALL)
+OBJECTS       = $(PKG_OBJECTS)
+
+# List of packages to build
+PKG_PACKAGES  = $(PKG_NAME_REAL)
+
+#
+# Macros
+#
+
+# Abstract variable that translates the package names to a list of filenames
+PKG_PACKAGES_FILES = $(foreach package,$(PKG_PACKAGES),$(call DO_PACKAGE_FILENAME,$(package)))
+
+# Automatically detect all patches in "patches"
+PKG_PATCHES = \
+	$(foreach patch,$(wildcard $(DIR_PATCHES)/*.patch),$(notdir $(patch)))
+
+# Dynamic command that applies all patches
+DO_PATCHES = cd $(DIR_APP) && $(DIR_TOOLS)/patch $(foreach patch,$(PKG_PATCHES),$(DIR_PATCHES)/$(patch))
+
+# Get a list of files that are installed automatically
+PKG_DEFAULT_FILES  = $(wildcard *.default)
 PKG_DEFAULT_FILES += $(wildcard default/*)
-PKG_INIT_FILES = $(wildcard *.init)
-PKG_INIT_FILES += $(wildcard init/*.conf)
-PKG_PAM_FILES = $(wildcard *.pam)
-PKG_PAM_FILES += $(wildcard pam.d/*)
+PKG_INIT_FILES     = $(wildcard *.init)
+PKG_INIT_FILES    += $(wildcard init/*.conf)
+PKG_PAM_FILES      = $(wildcard *.pam)
+PKG_PAM_FILES     += $(wildcard pam.d/*)
 
-export CFLAGS CXXFLAGS BUILD_HOST
+###############################################################################
+#
+# Quality agent
+#
+###############################################################################
 
-export PKG_NAME PKG_VER PKG_REL PKG_MAINTAINER PKG_GROUP PKG_URL PKG_LICENSE
-export PKG_SUMMARY PKG_DESCRIPTION=$(strip $(PKG_DESCRIPTION))
-export PKG_DEPS PKG_BUILD_DEPS
-
-export CONTROL_PREIN CONTROL_PREUN CONTROL_POSTIN CONTROL_POSTUN
-
+export QUALITY_AGENT_PERMIT_NOT_FULL_RELRO
 export QUALITY_AGENT_RPATH_ALLOW_ORIGIN
 export QUALITY_AGENT_WHITELIST_EXECSTACK
 export QUALITY_AGENT_WHITELIST_NX
 export QUALITY_AGENT_WHITELIST_RPATH
 export QUALITY_AGENT_WHITELIST_SONAME
-export QUALITY_AGENT_PERMIT_NOT_FULL_RELRO
