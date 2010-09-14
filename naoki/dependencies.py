@@ -93,6 +93,11 @@ class DependencySet(object):
 		if item in self._items:
 			return
 
+		# Packages conflict
+		if item.name in [i.name for i in self._items]:
+			logging.debug("Cannot add package with same name but different version: %s" % item)
+			return
+
 		for provides in item.get_provides():
 			self.add_provides(provides)
 

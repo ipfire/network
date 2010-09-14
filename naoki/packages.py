@@ -15,6 +15,27 @@ import util
 
 from constants import *
 
+def version_compare_epoch(e1, e2):
+	return cmp(e1, e2)
+
+def version_compare_version(v1, v2):
+	return cmp(v1, v2)
+
+def version_compare_release(r1, r2):
+	return cmp(r1, r2)
+
+def version_compare((e1, v1, r1), (e2, v2, r2)):
+
+	ret = version_compare_epoch(e1, e2)
+	if not ret == 0:
+		return ret
+
+	ret = version_compare_version(v1, v2)
+	if not ret == 0:
+		return ret
+
+	return version_compare_release(r1, r2)
+
 
 class Package(object):
 	def __repr__(self):
@@ -24,6 +45,10 @@ class Package(object):
 	#@property
 	#def arch(self):
 	#	raise NotImplementedError
+
+	@property
+	def epoch(self):
+		return int(self._info.get("PKG_EPOCH", 0))
 
 	@property
 	def name(self):
@@ -140,11 +165,30 @@ class BinaryPackage(Package):
 		logging.debug("Successfully initialized %s" % self)
 
 	def __repr__(self):
-		return "<%s %s-%s-%s>" % \
-			(self.__class__.__name__, self.name, self.version, self.release)
+		return "<%s %s:%s-%s-%s>" % \
+			(self.__class__.__name__, self.epoch, self.name, self.version,
+			self.release)
 
 	def __cmp__(self, other):
-		return cmp(self.id, other.id)
+		# Packages are equal
+		if self.id == other.id:
+			return 0
+
+		# if packages differ names return in alphabetical order
+		if not self.name == other.name:
+			return cmp(self.name, other.name)
+
+		ret = version_compare((self.epoch, self.version, self.release),
+			(other.epoch, other.version, other.release))
+
+		if ret == 0:
+			logging.debug("%s is equal to %s" % (self, other))
+		elif ret < 0:
+			logging.debug("%s is more recent than %s" % (other, self))
+		elif ret > 0:
+			logging.debug("%s is more recent than %s" % (self, other))
+
+		return ret
 
 	def _readfile(self, name):
 		f = io.CpioArchive(self.filename)
