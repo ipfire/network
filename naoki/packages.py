@@ -156,6 +156,10 @@ class SourcePackage(Package):
 
 			g.urlgrab(os.path.basename(file), filename=file)
 
+	def print_raw_info(self):
+		for k, v in self._info.items():
+			print "%s=\"%s\"" % (k, v)
+
 
 class BinaryPackage(Package):
 	def __init__(self, filename):

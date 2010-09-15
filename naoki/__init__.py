@@ -91,6 +91,7 @@ class Naoki(object):
 			"info" : self.call_package_info,
 			"list" : self.call_package_list,
 			"groups" : self.call_package_groups,
+			"raw"  : self.call_package_raw,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -153,6 +154,15 @@ Release       : %(release)s
 		#groups = backend.get_group_names()
 		#print "\n".join(groups)
 		pass
+
+	def call_package_raw(self, args):
+		repo = self._get_source_repos()
+
+		p = repo.find_package_by_name(args.package)
+		if not p:
+			raise Exception, "Could not find package: %s" % args.package
+
+		p.print_raw_info()
 
 	def call_source(self, args):
 		if not args.has_key("action"):
