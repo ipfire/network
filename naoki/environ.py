@@ -267,8 +267,9 @@ class _Environment(object):
 
 
 class Build(_Environment):
-	def __init__(self, package):
+	def __init__(self, package, build_id=None):
 		self.package = package
+		self.build_id = build_id
 
 		_Environment.__init__(self, self.package.arch)
 
@@ -288,7 +289,10 @@ class Build(_Environment):
 
 	def variables(self):
 		v = _Environment.variables(self)
-		v.update({ "BUILDROOT" : "/%s" % self.buildroot })
+		v.update({
+			"BUILDROOT" : "/%s" % self.buildroot,
+			"BUILD_ID"  : self.build_id or "",
+		})
 		return v
 
 	def build(self, *args, **kwargs):

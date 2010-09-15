@@ -58,7 +58,7 @@ class Build(object):
 			else:
 				raise
 
-		e = environ.Build(self.package)
+		e = environ.Build(self.package, build_id="%s" % self.id)
 
 		# Extract all tools
 		for package in self.dependency_set.packages:
