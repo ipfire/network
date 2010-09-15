@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2008  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -18,14 +18,35 @@
 #                                                                             #
 ###############################################################################
 
-DESTDIR=$(INSTALLER_DIR)
+###############################################################################
+# Definitions
+###############################################################################
 
-INSTALL = install -c
-INSTALL_PROGRAM = ${INSTALL}
-INSTALL_DATA = ${INSTALL} -m 644
-INSTALLNLSDIR = $(DESTDIR)/usr/share/locale
+include $(PKGROOT)/Include
 
-PYTHONLIBDIR = $(DESTDIR)/usr/lib/pomona
-PYTHONINCLUDE= /usr/include/python2.7/
+PKG_NAME       = pyaspects
+PKG_VER        = 0.4.1
+PKG_REL        = 0
 
-CC = $(CROSS)gcc
+PKG_MAINTAINER =
+PKG_GROUP      = Development/Languages 
+PKG_URL        = http://github.com/baris/pyaspects/downloads 
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Module to provide aspect-oriented programming.
+
+PKG_DEPS      += python
+
+define PKG_DESCRIPTION
+	PyAspects is a project to ease aspect-oriented programming \
+	in Python language.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+define STAGE_BUILD
+	cd $(DIR_APP) && python setup.py build
+endef
+
+define STAGE_INSTALL	
+	cd $(DIR_APP) && python setup.py install --root=$(BUILDROOT)
+endef
