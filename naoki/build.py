@@ -11,7 +11,7 @@ from exception import *
 
 
 class Build(object):
-	def __init__(self, package):
+	def __init__(self, package, **kwargs):
 		self.package = package
 
 		# Generate a random, but unique id
@@ -29,6 +29,8 @@ class Build(object):
 		self.settings = {
 			"ignore_dependency_errors" : False,
 		}
+
+		self.settings.update(kwargs)
 
 	def __repr__(self):
 		return "<%s %s-%s:%s>" % \

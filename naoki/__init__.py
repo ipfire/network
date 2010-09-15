@@ -75,7 +75,7 @@ class Naoki(object):
 				if not p:
 					raise Exception, "Could not find package: %s" % name
 
-				p = build.Build(p)
+				p = build.Build(p, ignore_dependency_errors=args.ignore_dependency_errors)
 				jobs.add(p)
 
 		#return builder.run(ignore_dependency_errors=args.ignore_dependency_errors)
