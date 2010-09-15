@@ -34,8 +34,7 @@ PKG_URL        = http://www.x.org
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = X.Org X11 X Window System xinit startup scripts.
 
-PKG_BUILD_DEPS+= autoconf automake pkg-config
-PKG_DEPS      += libX11
+PKG_BUILD_DEPS+= autoconf automake libX11-devel pkg-config
 
 define PKG_DESCRIPTION
 	X.Org X11 X Window System xinit startup scripts.
