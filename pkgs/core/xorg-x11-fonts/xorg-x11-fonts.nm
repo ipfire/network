@@ -34,7 +34,7 @@ PKG_URL        = http://www.x.org/
 PKG_LICENSE    = MIT
 PKG_SUMMARY    = X.Org X11 fonts.
 
-PKG_BUILD_DEPS+= pkg-config xorg-x11-font-utils
+PKG_BUILD_DEPS+= /usr/bin/mkfontscale perl pkg-config xorg-x11-font-utils-devel
 PKG_DEPS      += fontconfig
  
 define PKG_DESCRIPTION
