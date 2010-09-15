@@ -101,33 +101,36 @@ class Naoki(object):
 		repo = self._get_source_repos()
 
 		for package in repo.packages:
+			if args.packages:
+				if not package.name in args.packages:
+					continue
+
 			if args.long:
 				print package.fmtstr("""\
 --------------------------------------------------------------------------------
-Name          : %(name)s
-Version       : %(version)s
-Release       : %(release)s
+Name          : %(PKG_NAME)s
+Version       : %(PKG_VER)s
+Release       : %(PKG_REL)s
 
-  %(summary)s
+  %(PKG_SUMMARY)s
 
-%(description)s
+%(PKG_DESCRIPTION)s
 
-Maintainer    : %(maintainer)s
-License       : %(license)s
+Maintainer    : %(PKG_MAINTAINER)s
+License       : %(PKG_LICENSE)s
 
-Files         : %(files)s
-Objects       : %(objects)s
-Patches       : %(patches)s
+Objects       : %(PKG_OBJECTS)s
+Patches       : %(PKG_PATCHES)s
 --------------------------------------------------------------------------------\
 """)
 			else:
 				print package.fmtstr("""\
 --------------------------------------------------------------------------------
-Name          : %(name)s
-Version       : %(version)s
-Release       : %(release)s
+Name          : %(PKG_NAME)s
+Version       : %(PKG_VER)s
+Release       : %(PKG_REL)s
 
-  %(summary)s
+  %(PKG_SUMMARY)s
 
 --------------------------------------------------------------------------------\
 """)
@@ -145,7 +148,7 @@ Release       : %(release)s
 				continue
 
 			if args.long:
-				print package.fmtstr("%(name)-32s | %(version)-15s | %(summary)s")
+				print package.fmtstr("%(PKG_NAME)-32s | %(PKG_VER)-15s | %(PKG_SUMMARY)s")
 			else:
 				print package.name
 

@@ -160,6 +160,9 @@ class SourcePackage(Package):
 		for k, v in self._info.items():
 			print "%s=\"%s\"" % (k, v)
 
+	def fmtstr(self, s):
+		return s % self._info
+
 
 class BinaryPackage(Package):
 	def __init__(self, filename):
