@@ -36,6 +36,7 @@ function find_requires() {
 
 	# Others
 	local others=$(find_python_requires ${dirs})
+	others="${others} $(find_weak_symbols_requires ${dirs})"
 
 	# Get provides, because packages should not depend on features they provide
 	# by themselves.
@@ -45,6 +46,7 @@ function find_requires() {
 	local require
 	local requires
 	for require in $(listsort ${interpreters} ${neededs} ${links} ${others}); do
+		[ "${require:0:3}" = "ld-" ] && continue
 		listmatch ${require} ${provides} || requires="${requires} ${require}"
 	done
 
@@ -63,6 +65,7 @@ function find_provides() {
 
 	# Others
 	local others=$(find_python_provides ${dirs})
+	others="${others} $(find_weak_symbols_provides ${dirs})"
 
 	listsort ${sonames} ${others}
 }
@@ -147,4 +150,45 @@ function find_python_requires() {
 			fi
 		fi
 	done
+}
+
+function find_weak_symbols_provides() {
+	local dirs=$@
+
+	local file
+	local soname
+	local symbol
+	for file in $(find_elf_files ${dirs}); do
+		soname=$(file_get_soname ${file})
+		[ -z "${soname}" ] && continue
+
+		for symbol in $(objdump -p ${file} | grep -E "^[0-9]+" | awk '{ print $4 }'); do
+			[ "${symbol}" = "${soname}" ] && continue
+
+			echo "${soname}(${symbol})"
+		done
+	done | sort -u
+}
+
+function find_weak_symbols_requires() {
+	local dirs=$@
+
+	local file
+	for file in $(find_elf_files ${dirs}); do
+	    objdump -p ${file} | awk 'BEGIN { START=0; LIBNAME=""; }
+			/^$/ { START=0; }
+			/^Dynamic Section:$/ { START=1; }
+			(START==1) && /NEEDED/ {
+				print $2;
+			}
+			(START==2) && /^[A-Za-z]/ { START=3; }
+			/^Version References:$/ { START=2; }
+			(START==2) && /required from/ {
+			    sub(/:/, "", $3);
+			    LIBNAME=$3;
+			}
+			(START==2) && (LIBNAME!="") && ($4!="") && (($4~/^GLIBC_*/) || ($4~/^GCC_*/)) {
+			    print LIBNAME "(" $4 ")";
+			}'
+	done | sort -u
 }
