@@ -7,9 +7,11 @@
 
 .PHONY: info
 info:
+	@echo "PKG_ARCH=\"$(PKG_ARCH)\""
 	@echo "PKG_BUILD_DEPENDENCIES=\"$(PKG_BUILD_DEPS)\""
 	@echo "PKG_DEPENDENCIES=\"$(PKG_DEPS)\""
 	@echo "PKG_DESCRIPTION=\"$(strip $(PKG_DESCRIPTION))\""
+	@echo "PKG_EPOCH=\"$(PKG_EPOCH)\""
 	@echo "PKG_GROUP=\"$(PKG_GROUP)\""
 	@echo "PKG_LICENSE=\"$(PKG_LICENSE)\""
 	@echo "PKG_MAINTAINER=\"$(PKG_MAINTAINER)\""
