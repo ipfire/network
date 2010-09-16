@@ -207,6 +207,9 @@ function create_package() {
 	create_metafile ${files} > ${tmp}/info
 	create_controlfile > ${tmp}/control
 
+	# Add an empty file to hold place for the signature
+	touch ${tmp}/signature
+
 	# Calculate hash sums of the package files
 	log DEBUG "Calculating hash sums."
 	local algorithm
