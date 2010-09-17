@@ -1,0 +1,63 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = xorg-x11-drv-synaptics
+PKG_VER        = 1.3.0
+PKG_REL        = 0
+
+PKG_MAINTAINER = Stefan Schantl <stefan.schantl@ipfire.org>
+PKG_GROUP      = X/Driver
+PKG_URL        = http://www.x.org/
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = Xorg X11 synaptics input driver.
+
+PKG_BUILD_DEPS += libX11-devel libXi-devel pkg-config xorg-x11-server-devel\
+	xorg-x11-util-macros
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
+
+define PKG_DESCRIPTION
+	This is the Synaptics touchpad driver for the X.Org X server.
+endef
+
+PKG_TARBALL    = xf86-input-synaptics-$(PKG_VER).tar.bz2
+
+DIR_APP = $(DIR_SRC)/xf86-input-synaptics-$(PKG_VER)
+
+QUALITY_AGENT_PERMIT_NOT_FULL_RELRO = yes
+
+CONFIGURE_OPTIONS += \
+	--disable-static
+
+# Disable BIND_NOW for the X server module
+define STAGE_CONFIGURE_CMDS
+	cd $(DIR_APP) && sed -e "s/^CFLAGS.*/& -Wl,-z,lazy/" -i src/Makefile
+endef
+
+define STAGE_INSTALL_CMDS
+	install -Dm 0664 $(DIR_SOURCE)/50-synaptics.conf $(BUILDROOT)/etc/X11/xorg.conf.d/50-synaptics.conf
+	install -Dm 0664 $(DIR_SOURCE)/70-touchpad-quirks.rules $(BUILDROOT)/lib/udev/rules.d/70-touchpad-quirks.rules
+endef
