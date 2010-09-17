@@ -67,6 +67,13 @@ class Package(object):
 	def version(self):
 		return self._info["PKG_VER"]
 
+	def print_raw_info(self):
+		for k in sorted(self._info.keys()):
+			print "%s=\"%s\"" % (k, self._info.get(k))
+
+	def fmtstr(self, s):
+		return s % self._info
+
 
 class SourcePackage(Package):
 	def __init__(self, filename, repo, arch):
@@ -155,13 +162,6 @@ class SourcePackage(Package):
 			util.mkdir(CACHEDIR)
 
 			g.urlgrab(os.path.basename(file), filename=file)
-
-	def print_raw_info(self):
-		for k, v in self._info.items():
-			print "%s=\"%s\"" % (k, v)
-
-	def fmtstr(self, s):
-		return s % self._info
 
 
 class BinaryPackage(Package):

@@ -12,6 +12,7 @@ import build
 import environ
 import generators
 import logger
+import packages
 import repositories
 import terminal
 import util
@@ -159,11 +160,16 @@ Release       : %(PKG_REL)s
 		pass
 
 	def call_package_raw(self, args):
-		repo = self._get_source_repos()
+		filename = args.package
 
-		p = repo.find_package_by_name(args.package)
-		if not p:
-			raise Exception, "Could not find package: %s" % args.package
+		if os.path.exists(filename):
+			p = packages.BinaryPackage(filename)
+		else:
+			repo = self._get_source_repos()
+
+			p = repo.find_package_by_name(args.package)
+			if not p:
+				raise Exception, "Could not find package: %s" % args.package
 
 		p.print_raw_info()
 
