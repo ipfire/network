@@ -25,7 +25,7 @@
 include $(PKGROOT)/Include
 
 PKG_NAME       = dracut
-PKG_VER        = 005
+PKG_VER        = 007
 PKG_REL        = 0
 
 PKG_MAINTAINER =
@@ -46,6 +46,12 @@ PKG_TARBALL    = $(THISAPP).tar.bz2
 define STAGE_PREPARE_CMDS
 	# All check scripts must be executeable
 	cd $(DIR_APP) && chmod 0755 modules.d/*/check
+
+	# Remove all man pages.
+	# XXX requires docbook
+	cd $(DIR_APP) && sed -i Makefile \
+		-e "s/^all:.*/all: \$$(targets)/" \
+		-e "/.*man.*/d"
 endef
 
 define STAGE_BUILD
