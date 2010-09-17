@@ -60,8 +60,8 @@ function install_kernel() {
 	mkdir -p ${dest} 2>/dev/null
 
 	local file
-	for file in vmlinuz-${KERNEL_RELEASE} initrd-${KERNEL_RELEASE}.img; do
-		cp -f /boot/${file} ${dest}/${file}
+	for file in vmlinuz initrd; do
+		cp -f /boot/${file}-${KERNEL_RELEASE}* ${dest}/${file}
 	done
 }
 
