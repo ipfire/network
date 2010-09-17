@@ -154,7 +154,10 @@ class SourcePackage(Package):
 
 			util.mkdir(CACHEDIR)
 
-			g.urlgrab(os.path.basename(file), filename=file)
+			try:
+				g.urlgrab(os.path.basename(file), filename=file)
+			except urlgrabber.grabber.URLGrabError,e :
+				raise DownloadError, "%s %s" % (os.path.basename(file), e)
 
 	def print_raw_info(self):
 		for k, v in self._info.items():

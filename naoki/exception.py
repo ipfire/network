@@ -28,7 +28,7 @@ class commandTimeoutExpired(Error):
 		self.resultcode = 10
 
 
-class DownloadError(Exception):
+class DownloadError(Error):
 	pass
 
 
