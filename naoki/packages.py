@@ -55,6 +55,10 @@ class Package(object):
 		return self._info["PKG_NAME"]
 
 	@property
+	def group(self):
+		return self._info["PKG_GROUP"]
+
+	@property
 	def id(self):
 		return "%s-%s-%s.%s" % \
 			(self.name, self.version, self.release, self.arch.name)

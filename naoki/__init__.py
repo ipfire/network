@@ -154,10 +154,16 @@ Release       : %(PKG_REL)s
 				print package.name
 
 	def call_package_groups(self, args):
-		# XXX
-		#groups = backend.get_group_names()
-		#print "\n".join(groups)
-		pass
+		groups = []
+
+		repo = self._get_source_repos()
+
+		for package in repo.packages:
+			group = package.group
+			if not group in groups:
+				groups.append(group)
+
+		print "\n".join(sorted(groups))
 
 	def call_package_raw(self, args):
 		filename = args.package
