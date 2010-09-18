@@ -62,4 +62,7 @@ endef
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) WITH_SWITCH_ROOT=1 \
 		sbindir=/sbin sysconfdir=/etc mandir=/usr/share/man
+
+	# Remove unneeded modules
+	rm -rfv $(BUILDROOT)/usr/share/dracut/modules.d/*selinux
 endef
