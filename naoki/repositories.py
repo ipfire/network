@@ -45,7 +45,7 @@ class BinaryRepository(Repository):
 			if package.name == name:
 				pkgs.append(package)
 
-		return sorted(pkgs, key=operator.attrgetter("release"), reverse=True)
+		return sorted(pkgs, reverse=True)
 
 	@property
 	def all(self):
@@ -79,7 +79,22 @@ class BinaryRepository(Repository):
 			if filename in package.filelist:
 				pkgs.append(package)
 
-		return sorted(pkgs, key=operator.attrgetter("release"), reverse=True)
+		return sorted(pkgs, reverse=True)
+
+	def find_package_by_provides(self, provides):
+		pkgs = self.find_packages_by_provides(provides)
+
+		if pkgs:
+			return pkgs[0]
+
+	def find_packages_by_provides(self, provides):
+		pkgs = []
+
+		for package in self.all:
+			if provides in package.get_provides():
+				pkgs.append(package)
+
+		return sorted(pkgs, reverse=True)
 
 
 class SourceRepository(Repository):
