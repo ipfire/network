@@ -48,7 +48,10 @@ class Package(object):
 
 	@property
 	def epoch(self):
-		return int(self._info.get("PKG_EPOCH", 0))
+		epoch = self._info.get("PKG_EPOCH", None)
+		if not epoch:
+			epoch = 0
+		return int(epoch)
 
 	@property
 	def name(self):
