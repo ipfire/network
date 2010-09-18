@@ -283,12 +283,9 @@ class Commandline(object):
 					help="Primary build command",
 					arguments=[
 						Option("all", ["--all"], help="Build all packages"),
-						Option("withdeps", ["--with-deps"], help="Build all dependencies first if needed"),
-						Option("onlydeps", ["--only-deps"], help="Build only dependencies that belong to a package"),
-						Option("shell", ["-s", "--shell"], help="Change into a chroot environment"),
 						Option("ignore_dependency_errors", ["-i", "--ignore-dependency-errors"],
 							help="Ignore dependency errors."),
-						List("packages", help="Give a list of packages to build or say 'all'"),
+						List("packages", help="Give a list of packages to build."),
 					]),
 
 				# Package
@@ -301,7 +298,6 @@ class Commandline(object):
 								Option("machine", ["--machine"], help="Output in machine parseable format"),
 								List("packages"),
 							]),
-						Parser("tree", help="Show package tree"),
 						Parser("list",
 							help="Show package list",
 							arguments=[
@@ -316,6 +312,11 @@ class Commandline(object):
 							help="Show package information in a machine parseable format.",
 							arguments=[
 								Argument("package", help="Name of the package."),
+							]),
+						Parser("provides",
+							help="Find packages which provide a specific thing.",
+							arguments=[
+								Argument("provides", help="Pattern to search for."),
 							]),
 					]),
 

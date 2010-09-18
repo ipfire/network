@@ -30,6 +30,8 @@ LOCK_BATCH = os.path.join(BUILDDIR, ".batch")
 
 LOG_MARKER = "### LOG MARKER ###"
 
+DEP_INVALID, DEP_FILE, DEP_LIBRARY, DEP_PACKAGE = range(4)
+
 def calc_parallelism():
 	"""
 		Calculate how many processes to run

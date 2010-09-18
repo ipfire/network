@@ -8,18 +8,13 @@ import architectures
 import repositories
 import packages
 
+from constants import *
 from exception import *
-
-DEP_INVALID, DEP_FILE, DEP_LIBRARY, DEP_PACKAGE = range(4)
-
 
 class Dependency(object):
 	def __init__(self, identifier, origin=None):
 		self.identifier = identifier
 		self.origin = origin
-
-	def __cmp__(self, other):
-		return cmp(self.identifier, other.identifier)
 
 	def __repr__(self):
 		s = "<%s %s" % (self.__class__.__name__, self.identifier)
@@ -44,6 +39,8 @@ class Dependency(object):
 		return self.type == other.type \
 			and self.identifier == other.identifier
 
+	__eq__ = match
+
 
 class Provides(Dependency):
 	pass
@@ -61,7 +58,6 @@ class DependencySet(object):
 		# initialize package lists
 		self._dependencies = []
 		self._items = []
-		self._provides = []
 
 		# add all provided dependencies
 		for dependency in dependencies:
@@ -98,23 +94,8 @@ class DependencySet(object):
 			logging.debug("Cannot add package with same name but different version: %s" % item)
 			return
 
-		for provides in item.get_provides():
-			self.add_provides(provides)
-
-		for dependency in item.get_dependencies():
-			self.add_dependency(dependency)
-
 		self._items.append(item)
 		logging.debug("Added new package %s" % item)
-
-	def add_provides(self, item):
-		assert isinstance(item, Provides)
-
-		if item in self._provides:
-			return
-
-		self._provides.append(item)
-		self._provides.sort()
 
 	def resolve(self):
 		logging.debug("Resolving %s" % self)
@@ -122,13 +103,13 @@ class DependencySet(object):
 		# Safe for endless loop
 		counter = 1000
 
-		while self._dependencies:
+		while self.unresolved_dependencies:
 			counter -= 1
 			if not counter:
 				logging.debug("Maximum count of dependency loop was reached")
 				break
 
-			dependency = self._dependencies.pop(0)
+			dependency = self.unresolved_dependencies.pop(0)
 
 			logging.debug("Processing dependency: %s" % dependency.identifier)
 
@@ -140,11 +121,10 @@ class DependencySet(object):
 					continue
 
 			elif dependency.type == DEP_LIBRARY:
-				for package in self.repo.all:
-					for provides in package.get_provides():
-						if provides.match(dependency):
-							self.add_package(package)
-							break
+				package = self.repo.find_package_by_provides(dependency)
+				if package:
+					self.add_package(package)
+					continue
 
 			elif dependency.type == DEP_FILE:
 				package = self.repo.find_package_by_file(dependency.identifier)
@@ -159,32 +139,60 @@ class DependencySet(object):
 				logging.warning("Dropping invalid dependency %s" % dependency.identifier)
 				continue
 
-			# Found not solution, push it to the end
+			# Found not solution
 			logging.debug("No match found: %s" % dependency)
-			self.add_dependency(dependency)
 
-		if self.dependencies:
+		if self.unresolved_dependencies:
 			#logging.error("Unresolveable dependencies: %s" % self.dependencies)
-			raise DependencyResolutionError, "%s" % self.dependencies
+			raise DependencyResolutionError, "%s" % self.unresolved_dependencies
+
+	@property
+	def unresolved_dependencies(self):
+		dependencies = []
+
+		# XXX These are not so nice because they possibly check all packages
+		# and do not break after the first match
+		for dependency in self._dependencies + self.dependencies:
+			found = False
+			for item in self._items:
+				if item.does_provide(dependency):
+					found = True
+					break
+
+			if found:
+				continue
+
+			for provide in self.provides:
+				if dependency.match(provide):
+					found = True
+					break
+
+			if found:
+				continue
+
+			dependencies.append(dependency)
+
+		return dependencies
 
 	@property
 	def dependencies(self):
-		return sorted(self._dependencies)
+		dependencies = []
+		for item in self._items:
+			dependencies += item.get_dependencies()
 
-	@property
-	def items(self):
-		#if not self._items:
-		#	self.resolve()
-
-		return self._items
+		return list(set(dependencies))
 
 	@property
 	def packages(self):
-		return sorted(self.items)
+		return sorted(self._items)
 
 	@property
 	def provides(self):
-		return self._provides
+		provides = []
+		for item in self._items:
+			provides += item.get_provides()
+
+		return list(set(provides))
 
 
 if __name__ == "__main__":
