@@ -14,6 +14,7 @@ import io
 import util
 
 from constants import *
+from exception import *
 
 def version_compare_epoch(e1, e2):
 	return cmp(e1, e2)
