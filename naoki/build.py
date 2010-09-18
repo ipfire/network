@@ -105,5 +105,37 @@ class Jobs(object):
 			self.__jobs.remove(job)
 
 
-class PackageShell(environ.Shell):
-	pass
+class PackageShell(Build):
+	def __init__(self, *args, **kwargs):
+		Build.__init__(self, *args, **kwargs)
+
+		# Add shell packages to have a little bit more
+		# comfort in here...
+		for dependency in config["shell_packages"]:
+			dependency = dependencies.Dependency(dependency)
+			self.dependency_set.add_dependency(dependency)
+
+	def shell(self, **settings):
+		# Resolve the dependencies
+		try:
+			self.dependency_set.resolve()
+		except DependencyResolutionError, e:
+			if self.settings["ignore_dependency_errors"]:
+				logging.warning("Ignoring dependency errors: %s" % e)
+			else:
+				raise
+
+		e = environ.Build(self.package, build_id="%s" % self.id)
+
+		# Extract all tools
+		for package in self.dependency_set.packages:
+			e.extract(package)
+
+		# Download the source tarballs
+		self.package.source_download()
+
+		# Preparing source...
+		e.make("prepare")
+
+		# Run the shell
+		e.shell()
