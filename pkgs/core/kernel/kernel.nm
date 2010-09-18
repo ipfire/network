@@ -34,7 +34,8 @@ PKG_URL        = http://www.kernel.org/
 PKG_LICENSE    = GPLv2
 PKG_SUMMARY    = The Linux kernel.
 
-PKG_BUILD_DEPS+= dracut module-init-tools ncurses-devel perl
+PKG_BUILD_DEPS+= module-init-tools ncurses-devel perl
+PKG_DEPS-kernel= dracut
 
 define PKG_DESCRIPTION
 	The kernel package contains the Linux kernel (vmlinuz), the core of any \
@@ -91,9 +92,6 @@ define STAGE_INSTALL
 	cd $(DIR_APP) && cp -v System.map $(BUILDROOT)/boot/System.map-$(FULLVER)
 
 	-mkdir -pv $(BUILDROOT)/lib/modules/$(FULLVER)/extra
-
-	dracut -v --kmoddir $(BUILDROOT)/lib/modules/$(FULLVER) \
-		$(BUILDROOT)/boot/initrd-$(FULLVER).img $(FULLVER)
 
 	rm -vf $(BUILDROOT)/lib/modules/$(FULLVER)/{build,source}
 
