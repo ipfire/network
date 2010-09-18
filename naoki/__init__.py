@@ -12,6 +12,7 @@ import build
 import environ
 import generators
 import logger
+import packages
 import repositories
 import terminal
 import util
@@ -153,17 +154,28 @@ Release       : %(PKG_REL)s
 				print package.name
 
 	def call_package_groups(self, args):
-		# XXX
-		#groups = backend.get_group_names()
-		#print "\n".join(groups)
-		pass
+		groups = []
 
-	def call_package_raw(self, args):
 		repo = self._get_source_repos()
 
-		p = repo.find_package_by_name(args.package)
-		if not p:
-			raise Exception, "Could not find package: %s" % args.package
+		for package in repo.packages:
+			group = package.group
+			if not group in groups:
+				groups.append(group)
+
+		print "\n".join(sorted(groups))
+
+	def call_package_raw(self, args):
+		filename = args.package
+
+		if os.path.exists(filename):
+			p = packages.BinaryPackage(filename)
+		else:
+			repo = self._get_source_repos()
+
+			p = repo.find_package_by_name(args.package)
+			if not p:
+				raise Exception, "Could not find package: %s" % args.package
 
 		p.print_raw_info()
 

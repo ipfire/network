@@ -48,11 +48,18 @@ class Package(object):
 
 	@property
 	def epoch(self):
-		return int(self._info.get("PKG_EPOCH", 0))
+		epoch = self._info.get("PKG_EPOCH", None)
+		if not epoch:
+			epoch = 0
+		return int(epoch)
 
 	@property
 	def name(self):
 		return self._info["PKG_NAME"]
+
+	@property
+	def group(self):
+		return self._info["PKG_GROUP"]
 
 	@property
 	def id(self):
@@ -66,6 +73,13 @@ class Package(object):
 	@property
 	def version(self):
 		return self._info["PKG_VER"]
+
+	def print_raw_info(self):
+		for k in sorted(self._info.keys()):
+			print "%s=\"%s\"" % (k, self._info.get(k))
+
+	def fmtstr(self, s):
+		return s % self._info
 
 
 class SourcePackage(Package):
@@ -158,13 +172,6 @@ class SourcePackage(Package):
 				g.urlgrab(os.path.basename(file), filename=file)
 			except urlgrabber.grabber.URLGrabError,e :
 				raise DownloadError, "%s %s" % (os.path.basename(file), e)
-
-	def print_raw_info(self):
-		for k, v in self._info.items():
-			print "%s=\"%s\"" % (k, v)
-
-	def fmtstr(self, s):
-		return s % self._info
 
 
 class BinaryPackage(Package):

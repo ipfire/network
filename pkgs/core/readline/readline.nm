@@ -26,7 +26,7 @@ include $(PKGROOT)/Include
 
 PKG_NAME       = readline
 PKG_VER        = 6.1
-PKG_REL        = 0
+PKG_REL        = 1
 
 PKG_MAINTAINER =
 PKG_GROUP      = System/Libraries
@@ -55,6 +55,9 @@ CONFIGURE_OPTIONS += \
 	--libdir=/lib \
 
 define STAGE_INSTALL_CMDS
+	# Remove a bunch of *.c files
+	rm -rfv $(BUILDROOT)/usr/share/readline
+
 	-mkdir -pv $(BUILDROOT)/usr/lib
 	rm -fv $(BUILDROOT)/lib/lib{readline,history}.so
 	ln -sfv ../../lib/libreadline.so.6 $(BUILDROOT)/usr/lib/libreadline.so
