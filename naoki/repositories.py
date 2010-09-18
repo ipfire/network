@@ -91,7 +91,7 @@ class BinaryRepository(Repository):
 		pkgs = []
 
 		for package in self.all:
-			if provides in package.get_provides():
+			if package.does_provide(provides):
 				pkgs.append(package)
 
 		return sorted(pkgs, reverse=True)
