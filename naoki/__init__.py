@@ -12,6 +12,7 @@ import build
 import environ
 import generators
 import logger
+import packages
 import repositories
 import terminal
 import util
@@ -91,6 +92,7 @@ class Naoki(object):
 			"info" : self.call_package_info,
 			"list" : self.call_package_list,
 			"groups" : self.call_package_groups,
+			"raw"  : self.call_package_raw,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -100,33 +102,36 @@ class Naoki(object):
 		repo = self._get_source_repos()
 
 		for package in repo.packages:
+			if args.packages:
+				if not package.name in args.packages:
+					continue
+
 			if args.long:
 				print package.fmtstr("""\
 --------------------------------------------------------------------------------
-Name          : %(name)s
-Version       : %(version)s
-Release       : %(release)s
+Name          : %(PKG_NAME)s
+Version       : %(PKG_VER)s
+Release       : %(PKG_REL)s
 
-  %(summary)s
+  %(PKG_SUMMARY)s
 
-%(description)s
+%(PKG_DESCRIPTION)s
 
-Maintainer    : %(maintainer)s
-License       : %(license)s
+Maintainer    : %(PKG_MAINTAINER)s
+License       : %(PKG_LICENSE)s
 
-Files         : %(files)s
-Objects       : %(objects)s
-Patches       : %(patches)s
+Objects       : %(PKG_OBJECTS)s
+Patches       : %(PKG_PATCHES)s
 --------------------------------------------------------------------------------\
 """)
 			else:
 				print package.fmtstr("""\
 --------------------------------------------------------------------------------
-Name          : %(name)s
-Version       : %(version)s
-Release       : %(release)s
+Name          : %(PKG_NAME)s
+Version       : %(PKG_VER)s
+Release       : %(PKG_REL)s
 
-  %(summary)s
+  %(PKG_SUMMARY)s
 
 --------------------------------------------------------------------------------\
 """)
@@ -144,15 +149,35 @@ Release       : %(release)s
 				continue
 
 			if args.long:
-				print package.fmtstr("%(name)-32s | %(version)-15s | %(summary)s")
+				print package.fmtstr("%(PKG_NAME)-32s | %(PKG_VER)-15s | %(PKG_SUMMARY)s")
 			else:
 				print package.name
 
 	def call_package_groups(self, args):
-		# XXX
-		#groups = backend.get_group_names()
-		#print "\n".join(groups)
-		pass
+		groups = []
+
+		repo = self._get_source_repos()
+
+		for package in repo.packages:
+			group = package.group
+			if not group in groups:
+				groups.append(group)
+
+		print "\n".join(sorted(groups))
+
+	def call_package_raw(self, args):
+		filename = args.package
+
+		if os.path.exists(filename):
+			p = packages.BinaryPackage(filename)
+		else:
+			repo = self._get_source_repos()
+
+			p = repo.find_package_by_name(args.package)
+			if not p:
+				raise Exception, "Could not find package: %s" % args.package
+
+		p.print_raw_info()
 
 	def call_source(self, args):
 		if not args.has_key("action"):

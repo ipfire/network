@@ -19,8 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-## XXX SYMLINK DEPENDENCIES
-
 BASEDIR=$(dirname ${0})
 
 PACKAGER_HASH_ALGORITHMS="md5 sha1 sha256 sha512"
@@ -60,10 +58,16 @@ BUILD_DATE="${BUILD_DATE}"
 BUILD_HOST="${BUILD_HOST}"
 BUILD_ID="${BUILD_ID}"
 
-# Version info
+# Distribution information
+DISTRO_NAME="${DISTRO_NAME}"
+DISTRO_EPOCH="${DISTRO_EPOCH}"
+
+# Package information
 PKG_NAME="${PKG_NAME}"
 PKG_VER="${PKG_VER}"
 PKG_REL="${PKG_REL}"
+PKG_EPOCH="${PKG_EPOCH}"
+
 PKG_GROUP="${PKG_GROUP}"
 PKG_ARCH="${PKG_ARCH}"
 PKG_ORIGIN="${PKG_ORIGIN}"
@@ -202,6 +206,9 @@ function create_package() {
 	create_dataimg ${files} ${tmp}/data.img > ${tmp}/filelist
 	create_metafile ${files} > ${tmp}/info
 	create_controlfile > ${tmp}/control
+
+	# Add an empty file to hold place for the signature
+	touch ${tmp}/signature
 
 	# Calculate hash sums of the package files
 	log DEBUG "Calculating hash sums."

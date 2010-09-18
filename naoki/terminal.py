@@ -312,6 +312,11 @@ class Commandline(object):
 						Parser("groups",
 							help="Show package groups",
 							),
+						Parser("raw",
+							help="Show package information in a machine parseable format.",
+							arguments=[
+								Argument("package", help="Name of the package."),
+							]),
 					]),
 
 				# Source

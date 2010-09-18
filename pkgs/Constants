@@ -60,6 +60,7 @@ PKG_VARIABLES = \
 	PKG_BUILD_DEPS \
 	PKG_DEPS \
 	PKG_DESCRIPTION \
+	PKG_EPOCH \
 	PKG_FILES \
 	PKG_GROUP \
 	PKG_MAINTAINER \
@@ -95,6 +96,9 @@ PKG_SUFFIX = -$(PKG_VER)-$(DISTRO_SNAME)$(DISTRO_EPOCH)-$(PKG_ARCH).$(PKG_REL).i
 # The actual package name (the name of the directory)
 PKG_NAME_REAL  = $(notdir $(CURDIR))
 PKG_NAME       = $(PKG_NAME_REAL)
+
+# Set default epoch
+PKG_EPOCH      = 0
 
 # Shortcut to package name + version
 THISAPP        = $(PKG_NAME)-$(PKG_VER)

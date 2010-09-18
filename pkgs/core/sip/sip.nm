@@ -26,7 +26,7 @@ include $(PKGROOT)/Include
 
 PKG_NAME       = sip
 PKG_VER        = 4.10.5
-PKG_REL        = 0
+PKG_REL        = 1
 
 PKG_MAINTAINER =
 PKG_GROUP      = Development/Tools
@@ -46,6 +46,8 @@ endef
 PKG_TARBALL    = $(THISAPP).tar.gz
 
 PKG_PACKAGES  += $(PKG_NAME)-devel
+
+PKG_DEPS-$(PKG_NAME_REAL)-devel = sip
 
 define STAGE_BUILD
 	cd $(DIR_APP) && python configure.py \
