@@ -316,8 +316,8 @@ class Build(_Environment):
 			(os.path.dirname(file), file, target), shell=True)
 
 	def shell(self, args=[]):
-		command = "chroot %s /usr/src/tools/chroot-shell %s" % \
-			(self.chrootPath(), " ".join(args))
+		command = "%s chroot %s /usr/src/tools/chroot-shell %s" % \
+			(self.arch.personality, self.chrootPath(), " ".join(args))
 
 		for key, val in self.variables().items():
 			command = "%s=\"%s\" " % (key, val) + command
