@@ -9,6 +9,7 @@ import time
 
 import architectures
 import build
+import dependencies
 import environ
 import generators
 import logger
@@ -93,6 +94,7 @@ class Naoki(object):
 			"list" : self.call_package_list,
 			"groups" : self.call_package_groups,
 			"raw"  : self.call_package_raw,
+			"provides" : self.call_package_provides,
 		}
 
 		return actionmap[args.action.name](args.action)
@@ -178,6 +180,15 @@ Release       : %(PKG_REL)s
 				raise Exception, "Could not find package: %s" % args.package
 
 		p.print_raw_info()
+
+	def call_package_provides(self, args):
+		provides = dependencies.Provides(args.provides)
+
+		arch = architectures.Architectures().get_default()
+		repo = repositories.BinaryRepository(arch)
+
+		for package in repo.find_packages_by_provides(provides):
+			print package.fmtstr("%(PKG_NAME)s	%(PKG_VER)s-%(PKG_REL)s	%(PKG_SUMMARY)s")
 
 	def call_source(self, args):
 		if not args.has_key("action"):

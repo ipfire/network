@@ -34,8 +34,9 @@ PKG_URL        = http://sourceforge.net/apps/trac/dracut/wiki
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Initramfs generator using udev.
 
-PKG_DEPS      += bash bzip2 cpio coreutils dmraid e2fsprogs gzip iproute2 kbd \
-	less lvm2 mdadm multipath-tools sysvinit udev util-linux-ng which
+PKG_DEPS      += bash bzip2 cpio coreutils dmraid e2fsprogs gzip iproute2 \
+	iputils kbd less lvm2 mdadm multipath-tools sysvinit udev \
+	util-linux-ng which
 
 define PKG_DESCRIPTION
 	dracut is a new, event-driven initramfs infrastructure based around udev.
@@ -61,4 +62,7 @@ endef
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT) WITH_SWITCH_ROOT=1 \
 		sbindir=/sbin sysconfdir=/etc mandir=/usr/share/man
+
+	# Remove unneeded modules
+	rm -rfv $(BUILDROOT)/usr/share/dracut/modules.d/*selinux
 endef

@@ -14,6 +14,7 @@ import io
 import util
 
 from constants import *
+from exception import *
 
 def version_compare_epoch(e1, e2):
 	return cmp(e1, e2)
@@ -286,3 +287,20 @@ class BinaryPackage(Package):
 				self._filelist.append(file)
 
 		return self._filelist
+
+	def does_provide(self, what):
+		if what.type == DEP_PACKAGE:
+			return what.identifier == self.name
+
+		elif what.type == DEP_FILE:
+			return what.identifier in self.filelist
+
+		elif what.type in (DEP_LIBRARY,):
+			for provide in self.get_provides():
+				if provide.match(what):
+					return True
+
+			return False
+
+		# For invalid dependencies alsways return false
+		return False

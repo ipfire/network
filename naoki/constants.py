@@ -30,6 +30,8 @@ LOCK_BATCH = os.path.join(BUILDDIR, ".batch")
 
 LOG_MARKER = "### LOG MARKER ###"
 
+DEP_INVALID, DEP_FILE, DEP_LIBRARY, DEP_PACKAGE = range(4)
+
 def calc_parallelism():
 	"""
 		Calculate how many processes to run
@@ -140,7 +142,7 @@ class Config(object):
 		ret = {
 			"HOME"           : os.environ.get("HOME", "/root"),
 			"TERM"           : os.environ.get("TERM", ""),
-			"PS1"            : os.environ.get("PS1", "\u:\w\$ "),
+			"PS1"            : "\u:\w\$ ",
 			#
 			"DISTRO_NAME"    : self["distro_name"],
 			"DISTRO_SNAME"   : self["distro_sname"],
