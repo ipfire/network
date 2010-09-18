@@ -90,9 +90,12 @@ class DependencySet(object):
 			return
 
 		# Packages conflict
-		if item.name in [i.name for i in self._items]:
-			logging.debug("Cannot add package with same name but different version: %s" % item)
-			return
+		for package in self._items:
+			if package.name == item.name:
+				if item > package:
+					logging.update("Replacing package %s by %s" % (package, item))
+					self._items.remove(package)
+					break
 
 		self._items.append(item)
 		logging.debug("Added new package %s" % item)
@@ -153,6 +156,9 @@ class DependencySet(object):
 		# XXX These are not so nice because they possibly check all packages
 		# and do not break after the first match
 		for dependency in self._dependencies + self.dependencies:
+			if dependency.type == DEP_INVALID:
+				continue
+
 			found = False
 			for item in self._items:
 				if item.does_provide(dependency):
