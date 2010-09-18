@@ -317,6 +317,11 @@ class Commandline(object):
 							arguments=[
 								Argument("package", help="Name of the package."),
 							]),
+						Parser("provides",
+							help="Find packages which provide a specific thing.",
+							arguments=[
+								Argument("provides", help="Pattern to search for."),
+							]),
 					]),
 
 				# Source
