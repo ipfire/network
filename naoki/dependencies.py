@@ -112,7 +112,6 @@ class DependencySet(object):
 			dependency = self.unresolved_dependencies.pop(0)
 
 			logging.debug("Processing dependency: %s" % dependency.identifier)
-			print "Processing dependency: %s" % dependency.identifier
 
 			if dependency.type == DEP_PACKAGE:
 				package = self.repo.find_package_by_name(dependency.identifier)
