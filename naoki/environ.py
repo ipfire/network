@@ -315,12 +315,7 @@ class Build(_Environment):
 		return self.doChroot("make -C %s -f %s %s" % \
 			(os.path.dirname(file), file, target), shell=True)
 
-
-class Shell(Build):
 	def shell(self, args=[]):
-		# Preparing source...
-		self.make("prepare")
-
 		command = "chroot %s /usr/src/tools/chroot-shell %s" % \
 			(self.chrootPath(), " ".join(args))
 
