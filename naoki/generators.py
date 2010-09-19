@@ -13,7 +13,7 @@ from environ import _Environment
 
 class Generator(_Environment):
 	def __init__(self, type, arch=None):
-		_Environment.__init__(self, arch)
+		_Environment.__init__(self, arch, enable_loop=True)
 
 		self.type = type
 

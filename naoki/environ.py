@@ -30,8 +30,13 @@ def set(e):
 class _Environment(object):
 	kernel_version = os.uname()[2]
 
-	def __init__(self, arch):
+	def __init__(self, arch, **settings):
 		self.arch = arch
+
+		self._settings = {
+			"enable_loop" : False,
+		}
+		self._settings.update(settings)
 
 		logging.debug("Successfully initialized %s" % self)
 
@@ -106,6 +111,10 @@ class _Environment(object):
 			(stat.S_IFCHR | 0666, os.makedev(5, 0), "dev/tty"),
 			(stat.S_IFCHR | 0600, os.makedev(5, 1), "dev/console")
 		]
+
+		if self._settings["enable_loop"]:
+			for i in range(0, 7):
+				devNodes.append((stat.S_IFBLK | 0660, os.makedev(7, i), "dev/loop%d" % i))
 
 		# make device node for el4 and el5
 		if self.kernel_version < "2.6.19":
