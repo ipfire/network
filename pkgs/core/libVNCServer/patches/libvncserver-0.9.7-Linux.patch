@@ -1,0 +1,16 @@
+Index: configure.ac
+===================================================================
+--- a/configure.ac.orig
++++ b/configure.ac
+@@ -636,9 +636,10 @@ fi
+ AC_CHECK_LIB(cygipc,shmget)
+ AM_CONDITIONAL(CYGIPC, test "$HAVE_CYGIPC" = "true")
+ 
+ # Check if /dev/vcsa1 exists, if so, define LINUX
+-AM_CONDITIONAL(LINUX, test -c /dev/vcsa1)
++dnl AM_CONDITIONAL(LINUX, test -c /dev/vcsa1)
++AM_CONDITIONAL(LINUX, test `uname` = Linux)
+ 
+ # Check for OS X specific header
+ AC_CHECK_HEADER(ApplicationServices/ApplicationServices.h, HAVE_OSX="true")
+ AM_CONDITIONAL(OSX, test "$HAVE_OSX" = "true")

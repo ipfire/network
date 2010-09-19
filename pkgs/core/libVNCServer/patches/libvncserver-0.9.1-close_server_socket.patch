@@ -1,0 +1,11 @@
+diff -up LibVNCServer-0.9.1/libvncclient/vncviewer.c~ LibVNCServer-0.9.1/libvncclient/vncviewer.c
+--- LibVNCServer-0.9.1/libvncclient/vncviewer.c~	2007-02-01 17:05:56.000000000 +0200
++++ LibVNCServer-0.9.1/libvncclient/vncviewer.c	2009-05-20 22:26:35.000000000 +0300
+@@ -316,6 +316,7 @@ void rfbClientCleanup(rfbClient* client)
+ #endif
+ #endif
+ 
++  if (client->sock > 0) close(client->sock);
+   free(client->desktopName);
+   free(client->serverHost);
+   free(client);

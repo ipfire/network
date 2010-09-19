@@ -1,0 +1,52 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = libVNCServer
+PKG_VER        = 0.9.7
+PKG_REL        = 0
+
+PKG_MAINTAINER = 
+PKG_GROUP      = System/Libraries
+PKG_URL        = http://libvncserver.sourceforge.net/
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = Library to make writing a vnc server easy.
+
+PKG_BUILD_DEPS+= libjpeg-devel zlib-devel
+
+PKG_PACKAGES  += $(PKG_NAME)-devel
+
+define PKG_DESCRIPTION
+	LibVNCServer makes writing a VNC server (or more correctly, a program\
+	exporting a framebuffer via the Remote Frame Buffer protocol) easy.
+endef
+
+PKG_TARBALL    = LibVNCServer-$(PKG_VER).tar.gz
+
+DIR_APP        = $(DIR_SRC)/LibVNCServer-$(PKG_VER)
+
+CONFIGURE_OPTIONS += \
+	--disable-static \
+	--without-tightvnc-filetransfer
