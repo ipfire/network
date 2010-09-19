@@ -1,0 +1,51 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = eject
+PKG_VER        = 2.1.5
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = System/Base
+PKG_URL        = http://www.pobox.com/~tranter
+PKG_LICENSE    = GPLv2+
+PKG_SUMMARY    = A program that ejects removable media using software control.
+
+PKG_BUILD_DEPS+= gettext libtool
+
+define PKG_DESCRIPTION
+	The eject program allows the user to eject removable media (typically \
+	CD-ROMs, floppy disks or Iomega Jaz or Zip disks) using software \
+	control. Eject can also control some multi-disk CD changers and even \
+	some devices' auto-eject features.
+endef
+
+PKG_TARBALL    = $(THISAPP).tar.gz
+
+DIR_APP        = $(DIR_SRC)/$(PKG_NAME)
+
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man
