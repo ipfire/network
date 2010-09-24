@@ -7,7 +7,7 @@ IMAGES_DIR=/usr/src/images
 FSSIZE=2
 FSTYPE=ext4
 
-ISO_FILENAME=${DISTRO_SNAME}-${DISTRO_VERSION}-${TARGET}.iso
+ISO_FILENAME=${DISTRO_SNAME}-${DISTRO_VERSION}.${PKG_ARCH}.iso
 
 . $(dirname ${0})/common-functions
 
@@ -207,6 +207,7 @@ function install_kernel() {
 case "${1}" in
 	iso)
 		log DEBUG "Creating ISO image..."
+		set
 
 		ISO_DIR=$(mktemp -d)
 		ISO_FILE=$(mktemp)
