@@ -27,8 +27,12 @@ class Generator(_Environment):
 		deps = [
 			"basesystem",
 			"dracut",
+			"e2fsprogs",
+			"kernel",
 			"squashfs-tools",
 			"syslinux",
+			"util-linux-ng",
+			"/sbin/dmsetup",
 			"/usr/bin/mkisofs",
 		]
 		for dep in deps:

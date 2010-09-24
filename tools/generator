@@ -1,7 +1,11 @@
-#!/bin/bash
+#!/bin/bash -x
 
 BOOTLOADER_DIR=/usr/src/src/bootloader
 IMAGES_DIR=/usr/src/images
+
+# Size of the ext filesystem in gigabytes
+FSSIZE=2
+FSTYPE=ext4
 
 ISO_FILENAME=${DISTRO_SNAME}-${DISTRO_VERSION}-${TARGET}.iso
 
@@ -19,10 +23,143 @@ function find_latest_kernel_release() {
 KERNEL_RELEASE=$(find_latest_kernel_release)
 
 function installer_image() {
+	local target=${1}
+	local dir=${2}
+
+	# Create target directory if not existant
+	mkdir -p ${target} 2>/dev/null
+
+	# Create installer images:
+	#  (1) osmin.img (minimal cow image)
+	#  (2) squashfs.img (installer)
+
+	local i
+	for i in dev proc sys; do
+		mkdir -p ${dir}/${i} 2>/dev/null
+	done
+
+	cp -vfr /usr/src/src/install/* ${dir}
+
+	_installer_image_ext3fs \
+		${target}/$(basename ${target})/ext3fs.img /installer
+	_installer_image_osmin \
+		${target}/osmin.img \
+		${target}/$(basename ${target})/ext3fs.img
+
+	cd ${target}
+	mksquashfs * ${target}/squashfs.img -no-progress
+	rm -fr $(basename ${target})
+}
+
+function _installer_image_osmin() {
+	local file=${1}
+	local image=${2}
+
+	local tmp=$(mktemp -d)
+
+	local image_loop=$(losetup -f)
+
+	# Setting up loop for image
+	losetup ${image_loop} ${image}
+
+	# Setting up loop for an empty 64byte sparse file
+	sparse=${tmp}/osmin
+	sparse_loop=$(losetup -f)
+
+	dd if=/dev/zero of=${sparse} bs=1 count=0 seek=64M
+	losetup ${sparse_loop} ${sparse}
+
+	# Create a DM snapshot device...
+	local name="imgcreate-$$"
+	local size=$(stat --format="%s" ${image})
+	size=$(( ${size} / 512 ))
+
+	dmsetup create ${name} \
+		--table "0 ${size} snapshot ${image_loop} ${sparse_loop} p 8"
+
+	# ...and resize it to its minimal size
+	_ext3fs_resize /dev/mapper/${name}
+
+	# Get size of the bytes used by the cow image
+	local cow_size=( $(dmsetup status | grep "^${name}") )
+	cow_size=${cow_size[4]}
+	cow_size=$(awk -F"/" '{ print $1 }' <<<${cow_size})
+
+	sleep 2
+	dmsetup remove ${name}
+
+	# ... and truncate it to its minimal size
+	truncate -s ${cow_size} ${sparse}
+
+	losetup -d ${sparse_loop}
+	losetup -d ${image_loop}
+
+	rm -f ${file}
+	( cd ${tmp} && \
+		mksquashfs * ${file} -no-progress )
+}
+
+function _ext3fs_blocks() {
+	local device=${1}
+
+	dumpe2fs -h ${device} 2>/dev/null | \
+		grep "Block count" | awk '{ print $NF }'
+}
+
+function _ext3fs_bytes() {
+	echo $(( $(_ext3fs_blocks $@) * 512 ))
+}
+
+function _ext3fs_resize() {
+	local device=${1}
+	local size=${2}
+
+	[ -z "${size}" ] && size="-M"
+
+	e2fsck -f -y ${device}
+	resize2fs ${device} ${size}
+}
+
+function _installer_image_ext3fs() {
 	local file=${1}
 	local dir=${2}
 
-	cd ${dir} && mksquashfs * ${file} -no-progress -e boot
+	local zero=$(mktemp)
+
+	mkdir -p $(dirname ${file}) 2>/dev/null
+
+	# Create a zeroed file
+	dd if=/dev/zero of=${file} bs=1 count=0 seek=${FSSIZE}G
+
+	# Create a temporary directory
+	# and get a free loop device
+	local tmp_dir=$(mktemp -d)
+	local loop=$(losetup -f)
+
+	# Set up the loop device
+	losetup ${loop} ${file}
+
+	# Create filesystem
+	mkfs.${FSTYPE} \
+		-L "$(basename ${file})" \
+		-m 1 \
+		${loop}
+
+	# Tune the FS
+	tune2fs -c0 -i0 -Odir_index -ouser_xattr,acl ${loop}
+
+	# Mount and copy all files to the FS
+	mount ${loop} ${tmp_dir}
+	cp -frp ${dir}/* ${tmp_dir}
+	umount ${tmp_dir}
+
+	# Shrink FS to minimal size
+	_ext3fs_resize ${loop}
+	truncate -s $(_ext3fs_blocks ${loop}) ${loop}
+
+	losetup -d ${loop}
+
+	rm -rf ${tmp_dir}
 }
 
 function install_config() {
@@ -60,9 +197,11 @@ function install_kernel() {
 	mkdir -p ${dest} 2>/dev/null
 
 	local file
-	for file in vmlinuz initrd; do
-		cp -f /boot/${file}-${KERNEL_RELEASE}* ${dest}/${file}
+	for file in vmlinuz; do
+		cp -f /boot/${file}-${KERNEL_RELEASE}* ${dest}/${file}0
 	done
+
+	dracut -f ${dest}/initrd0 ${KERNEL_RELEASE}
 }
 
 case "${1}" in
@@ -73,7 +212,7 @@ case "${1}" in
 		ISO_FILE=$(mktemp)
 
 		# Copy installer image to ISO
-		installer_image ${ISO_DIR}/installer.sfs /installer
+		installer_image ${ISO_DIR}/LiveOS /installer
 
 		# Install bootloader
 		install_isolinux ${ISO_DIR}/isolinux
