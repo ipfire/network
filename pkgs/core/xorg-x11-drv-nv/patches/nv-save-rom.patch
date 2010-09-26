@@ -1,0 +1,45 @@
+diff -up xf86-video-nv-2.1.14/src/g80_driver.c.da xf86-video-nv-2.1.14/src/g80_driver.c
+--- xf86-video-nv-2.1.14/src/g80_driver.c.da	2009-08-04 16:03:45.000000000 +1000
++++ xf86-video-nv-2.1.14/src/g80_driver.c	2009-08-04 16:04:06.000000000 +1000
+@@ -27,6 +27,9 @@
+ #endif
+ 
+ #include <string.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
+ 
+ #include <xf86.h>
+ #include <xf86_OSproc.h>
+@@ -163,6 +166,7 @@ G80PreInit(ScrnInfoPtr pScrn, int flags)
+     char *s;
+     CARD32 tmp;
+     memType BAR1sizeKB;
++    int fd;
+ 
+     if(flags & PROBE_DETECT)
+         return TRUE;
+@@ -390,6 +394,14 @@ G80PreInit(ScrnInfoPtr pScrn, int flags)
+     else
+         pNv->table1 -= 0x10000;
+ 
++    /* Gag me with a horse */
++
++    fd = open ("/var/run/video.rom", O_CREAT|O_RDWR|O_EXCL, 0700);
++    if(fd != -1) {
++	write (fd, pNv->table1, 0x10000);
++	close (fd);
++    }
++
+     xf86CrtcConfigInit(pScrn, &randr12_screen_funcs);
+     xf86CrtcSetSizeRange(pScrn, 320, 200, 8192, 8192);
+ 
+@@ -939,6 +951,8 @@ G80EnterVT(int scrnIndex, int flags)
+     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+     G80Ptr pNv = G80PTR(pScrn);
+ 
++    G80DispPreInit(pScrn);
++
+     /* Reinit the hardware */
+     if(pNv->xaa)
+         G80InitHW(pScrn);
