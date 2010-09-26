@@ -1,0 +1,55 @@
+diff --git a/src/nv_driver.c b/src/nv_driver.c
+index 4bcc391..6252dd2 100644
+--- a/src/nv_driver.c
++++ b/src/nv_driver.c
+@@ -32,6 +32,8 @@
+ #include "xf86int10.h"
+ #include "vbeModes.h"
+ 
++#define NV_ALIGN(x,bytes) (((x) + ((bytes) - 1)) & ~((bytes) - 1))
++
+ const   OptionInfoRec * RivaAvailableOptions(int chipid, int busid);
+ Bool    RivaGetScrnInfoRec(PciChipsets *chips, int chip);
+ Bool    G80GetScrnInfoRec(PciChipsets *chips, int chip);
+@@ -2266,7 +2268,7 @@ NVScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
+     unsigned char *FBStart;
+     int width, height, displayWidth, offscreenHeight, shadowHeight;
+     BoxRec AvailFBArea;
+-
++    FBAreaPtr fbarea;
+     /* 
+      * First get the ScrnInfoRec
+      */
+@@ -2421,7 +2423,31 @@ NVScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
+     AvailFBArea.y1 = 0;
+     AvailFBArea.x2 = pScrn->displayWidth;
+     AvailFBArea.y2 = offscreenHeight;
+-    xf86InitFBManager(pScreen, &AvailFBArea);
++
++
++    if (!xf86InitFBManager(pScreen, &AvailFBArea)) {
++	xf86DrvMsg(scrnIndex, X_ERROR,
++		   "Memory manager initialized to (%d,%d) (%d,%d)  failed\n",
++		   AvailFBArea.x1, AvailFBArea.y1, AvailFBArea.x2, AvailFBArea.y2);
++	return FALSE;
++    }
++
++    xf86DrvMsg(scrnIndex, X_INFO,
++	       "Memory manager initialized to (%d,%d) (%d,%d)\n",
++	       AvailFBArea.x1, AvailFBArea.y1, AvailFBArea.x2, AvailFBArea.y2);
++    
++    if ((fbarea = xf86AllocateOffscreenArea(pScreen,
++					    pScrn->displayWidth,
++					    NV_ALIGN(pScrn->virtualY, 64) -
++					    pScrn->virtualY + 2,
++					    0, NULL, NULL, NULL))) {
++	xf86DrvMsg(scrnIndex, X_INFO,
++		   "Reserved area from (%d,%d) to (%d,%d)\n",
++		   fbarea->box.x1, fbarea->box.y1,
++		   fbarea->box.x2, fbarea->box.y2);
++    } else {
++	xf86DrvMsg(scrnIndex, X_ERROR, "Unable to reserve area\n");
++    }
+     
+     if (!pNv->NoAccel)
+ 	NVAccelInit(pScreen);

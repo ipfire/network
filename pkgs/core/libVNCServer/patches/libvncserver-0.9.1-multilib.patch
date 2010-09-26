@@ -1,0 +1,20 @@
+diff -up LibVNCServer-0.9.1/libvncserver-config.in.multilib LibVNCServer-0.9.1/libvncserver-config.in
+--- LibVNCServer-0.9.1/libvncserver-config.in.multilib	2007-05-26 21:28:25.000000000 -0500
++++ LibVNCServer-0.9.1/libvncserver-config.in	2008-01-22 14:51:08.000000000 -0600
+@@ -4,7 +4,6 @@ prefix=@prefix@
+ exec_prefix=@exec_prefix@
+ exec_prefix_set=no
+ includedir=@includedir@
+-libdir=@libdir@
+ 
+ # if this script is in the same directory as libvncserver-config.in, assume not installed
+ if [ -f "`dirname "$0"`/libvncserver-config.in" ]; then
+@@ -63,7 +62,7 @@ while test $# -gt 0; do
+           libs="$libs -R$dir"
+         fi
+       done
+-      echo "$libs" -lvncserver -lvncclient @LIBS@ @WSOCKLIB@
++      echo "$libs" -lvncserver -lvncclient
+       ;;
+     --link)
+       echo @CC@

@@ -1,0 +1,63 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = xorg-x11-drv-intel
+PKG_VER        = 2.12.0
+PKG_REL        = 0
+
+PKG_MAINTAINER = Stefan Schantl <stefan.schantl@ipfire.org>
+PKG_GROUP      = X/Driver
+PKG_URL        = http://www.x.org/
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = Xorg X11 intel video driver.
+
+PKG_BUILD_DEPS += autoconf automake libdrm-devel libudev-devel libxcb-devel \
+	libXvMC-devel libtool mesa-devel pkg-config xorg-x11-server-devel xorg-x11-util-macros
+
+define PKG_DESCRIPTION
+	X.Org X11 intel video driver.
+endef
+
+PKG_TARBALL    = xf86-video-intel-$(PKG_VER).tar.bz2
+
+DIR_APP = $(DIR_SRC)/xf86-video-intel-$(PKG_VER)
+
+CFLAGS        += -Wl,-z,lazy
+
+QUALITY_AGENT_PERMIT_NOT_FULL_RELRO = yes
+
+CONFIGURE_OPTIONS += \
+	--enable-dri \
+	--enable-xvmc \
+	--disable-static
+
+define STAGE_PREPARE_CMDS
+	cd $(DIR_APP) && autoreconf -vi
+endef
+
+define STAGE_INSTALL_CMDS
+	install -Dm 0644 $(DIR_SOURCE)/intel.xinf $(BUILDROOT)/usr/share/hwdata/videoaliases/intel.xinf
+endef

@@ -1,0 +1,10 @@
+--- a/x11vnc/cleanup.c.orig	2009-06-14 19:29:17.000000000 +0400
++++ b/x11vnc/cleanup.c	2009-08-07 02:44:14.000000000 +0400
+@@ -50,6 +50,7 @@
+ #include "screen.h"
+ #include "xrecord.h"
+ #include "xevents.h"
++#include <X11/extensions/shmproto.h> // For X_ShmAttach in Fedora 12
+ 
+ /*
+  * Exiting and error handling routines

@@ -53,7 +53,7 @@ endef
 
 PKG_TARBALL    = xorg-server-$(PKG_VER).tar.bz2
 
-CFLAGS        += -Wstrict-overflow -rdynamic -Wl,-z,lazy
+CFLAGS        += -Wstrict-overflow -rdynamic
 
 QUALITY_AGENT_PERMIT_NOT_FULL_RELRO = yes
 
@@ -88,6 +88,27 @@ CONFIGURE_OPTIONS += \
 
 define STAGE_PREPARE_CMDS
 	cd $(DIR_APP) && autoreconf -vfi
+endef
+
+# Remove BIND_NOW flag from server modules to provide autoloading of them if needed
+# by the server itself.
+define STAGE_CONFIGURE_CMDS
+	cd $(DIR_APP) && sed -i \
+		-e "s/^CFLAGS.*/& -Wl,-z,lazy/" \
+		-e "s/^CCASFLAGS.*/& -Wl,-z,lazy/" \
+		\
+		hw/xfree86/dixmods/Makefile \
+		hw/xfree86/dixmods/extmod/Makefile \
+		hw/xfree86/dri/Makefile \
+		hw/xfree86/dri2/Makefile \
+		hw/xfree86/exa/Makefile \
+		hw/xfree86/fbdevhw/Makefile \
+		hw/xfree86/i2c/Makefile \
+		hw/xfree86/int10/Makefile \
+		hw/xfree86/shadowfb/Makefile \
+		hw/xfree86/vbe/Makefile \
+		hw/xfree86/vgahw/Makefile \
+		hw/xfree86/xaa/Makefile	
 endef
 
 define STAGE_INSTALL
