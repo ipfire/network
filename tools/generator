@@ -66,7 +66,7 @@ function _installer_image_osmin() {
 	sparse=${tmp}/osmin
 	sparse_loop=$(losetup -f)
 
-	dd if=/dev/zero of=${sparse} bs=1 count=0 seek=64M
+	_ext3fs_sparse ${sparse} 128M
 	losetup ${sparse_loop} ${sparse}
 
 	# Create a DM snapshot device...
@@ -84,6 +84,7 @@ function _installer_image_osmin() {
 	local cow_size=( $(dmsetup status | grep "^${name}") )
 	cow_size=${cow_size[4]}
 	cow_size=$(awk -F"/" '{ print $1 }' <<<${cow_size})
+	cow_size=$(( ${cow_size} * 512 ))
 
 	sleep 2
 	dmsetup remove ${name}
@@ -120,6 +121,28 @@ function _ext3fs_resize() {
 	resize2fs ${device} ${size}
 }
 
+function _ext3fs_sparse() {
+	local file=${1}
+	local size=${2}
+
+	# Create a sparse disk with given size
+	dd if=/dev/zero of=${file} bs=1 count=0 seek=${size}
+}
+
+function _ext3fs_resparse() {
+	local file=${1}
+	local device=${2}
+
+	local size=$(stat --format="%s" ${file})
+
+	# Shrink FS to minimal size
+	_ext3fs_resize ${device}
+	truncate -s $(_ext3fs_bytes ${device}) ${file}
+
+	_ext3fs_sparse ${file} ${size}
+	_ext3fs_resize ${device} ${size}
+}
+
 function _installer_image_ext3fs() {
 	local file=${1}
 	local dir=${2}
@@ -129,7 +152,7 @@ function _installer_image_ext3fs() {
 	mkdir -p $(dirname ${file}) 2>/dev/null
 
 	# Create a zeroed file
-	dd if=/dev/zero of=${file} bs=1 count=0 seek=${FSSIZE}G
+	_ext3fs_sparse ${file} ${FSSIZE}G
 
 	# Create a temporary directory
 	# and get a free loop device
@@ -153,9 +176,7 @@ function _installer_image_ext3fs() {
 	cp -frp ${dir}/* ${tmp_dir}
 	umount ${tmp_dir}
 
-	# Shrink FS to minimal size
-	_ext3fs_resize ${loop}
-	truncate -s $(_ext3fs_blocks ${loop}) ${loop}
+	#_ext3fs_resparse ${file} ${loop}
 
 	losetup -d ${loop}
 
@@ -207,7 +228,6 @@ function install_kernel() {
 case "${1}" in
 	iso)
 		log DEBUG "Creating ISO image..."
-		set
 
 		ISO_DIR=$(mktemp -d)
 		ISO_FILE=$(mktemp)
