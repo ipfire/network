@@ -26,7 +26,7 @@ include $(PKGROOT)/Include
 
 PKG_NAME       = coreutils
 PKG_VER        = 8.5
-PKG_REL        = 0
+PKG_REL        = 1
 
 PKG_MAINTAINER =
 PKG_GROUP      = System/Base
@@ -74,4 +74,8 @@ define STAGE_INSTALL_CMDS
 	# Dump /etc/DIR_COLORS
 	dircolors -p > $(BUILDROOT)/etc/DIR_COLORS
 	cp -vf $(DIR_SOURCE)/profile.d/* $(BUILDROOT)/etc/profile.d/
+
+	# Capabilities
+	chmod u-s $(BUILDROOT)/bin/su
+	setcap cap_setgid,cap_setuid+ep $(BUILDROOT)/bin/su
 endef
