@@ -26,13 +26,15 @@ include $(PKGROOT)/Include
 
 PKG_NAME       = shadow
 PKG_VER        = 4.1.4.2
-PKG_REL        = 0
+PKG_REL        = 1
 
 PKG_MAINTAINER =
 PKG_GROUP      = System/Base
 PKG_URL        = ftp://pkg-shadow.alioth.debian.org/pub/pkg-shadow/
 PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Utilities to deal with user accounts.
+
+PKG_BUILD_DEPS+= libcap
 
 define PKG_DESCRIPTION
 	The shadow-utils package includes the necessary programs \
@@ -69,4 +71,11 @@ endef
 define STAGE_INSTALL_CMDS
 	# Remove man pages in other languages
 	rm -rfv $(BUILDROOT)/usr/share/man/{cs,de,fi,fr,hu,id,it,ja,pl,pt_BR,ru,sv,tr}
+
+	# Capabilities
+	chmod u-s $(BUILDROOT)/usr/bin/chage
+	setcap cap_dac_read_search+ep $(BUILDROOT)/usr/bin/chage
+
+	chmod u-s $(BUILDROOT)/usr/bin/newgrp
+	setcap cap_dac_override,cap_setgid+ep $(BUILDROOT)/usr/bin/newgrp
 endef
