@@ -50,6 +50,10 @@ PKG_TARBALL    = $(THISAPP).tgz
 
 PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
 
+PKG_FILES-$(PKG_NAME_REAL)-devel += \
+	!/usr/lib/python*/config/Makefile \
+	!/usr/include/python*/pyconfig.h
+
 export CFLAGS  += -D_GNU_SOURCE -fwrapv
 export CPPFLAGS = $(shell pkg-config --cflags-only-I libffi)
 
@@ -80,8 +84,6 @@ endef
 
 define STAGE_INSTALL
 	cd $(DIR_APP) && make install DESTDIR=$(BUILDROOT)
-
-	rm -rf $(BUILDROOT)/usr/lib/python*/test/
 
 	# All *.py files don't need to be executeable...
 	find $(BUILDROOT)/usr/lib/python*/ -name "*.py" | xargs chmod a-x -v
