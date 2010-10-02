@@ -35,6 +35,7 @@ PKG_LICENSE    = GPLv2+
 PKG_SUMMARY    = Python module for GNU parted.
 
 PKG_BUILD_DEPS+= parted-devel pkg-config python-decorator python-devel
+PKG_DEPS      += python-decorator
 
 define PKG_DESCRIPTION
 	Python module for the parted library. It is used for manipulating \
