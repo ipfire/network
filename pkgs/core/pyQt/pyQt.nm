@@ -35,9 +35,19 @@ PKG_LICENSE    = GPLv3 or GPLv2 with exceptions
 PKG_SUMMARY    = Python bindings for Qt4.
 
 PKG_BUILD_DEPS+= gcc-c++ libXext-devel python-devel qt sip-devel
+PKG_DEPS      += sip
 
 define PKG_DESCRIPTION
 	 Python bindings for Qt4
+endef
+
+PKG_PACKAGES  += $(PKG_NAME_REAL)-devel
+
+define PKG_FILES-$(PKG_NAME_REAL)-devel
+	/usr/bin
+	/usr/lib/python*/site-packages/PyQt4/pyqtconfig*
+	/usr/lib/python*/site-packages/PyQt4/uic/pyuic.py*
+	/usr/share/sip
 endef
 
 PKG_TARBALL    = PyQt-x11-gpl-$(PKG_VER).tar.gz

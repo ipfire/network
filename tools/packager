@@ -61,6 +61,7 @@ BUILD_ID="${BUILD_ID}"
 # Distribution information
 DISTRO_NAME="${DISTRO_NAME}"
 DISTRO_EPOCH="${DISTRO_EPOCH}"
+DISTRO_VENDOR="${DISTRO_VENDOR}"
 
 # Package information
 PKG_NAME="${PKG_NAME}"
@@ -112,27 +113,9 @@ ${CONTROL_POSTUN}
 EOF
 }
 
-function __filelist() {
-	local paths
-
-	# Disable globbing
-	set -f
-
-	local path
-	for path in ${PKG_FILES}; do
-		if [ "${path:0:1}" != "/" ]; then
-			path="/${path}"
-		fi
-
-		path="${BUILDROOT}${path}"
-		paths="${paths} ${path}"
-	done
-
-	# Enable globbing again
-	set +f
-
-	# If not paths were found take all files
-	[ -z "${paths}" ] && paths="${BUILDROOT}"
+function find_files() {
+	local paths=$@
+	local file
 
 	for file in $(find ${paths} 2>/dev/null | sort); do
 		# Remove ${BUILDROOT}
@@ -144,6 +127,57 @@ function __filelist() {
 		done
 
 		echo "${file}"
+	done
+}
+
+function __filelist() {
+	local paths
+	local exclude_paths
+
+	# Disable globbing
+	set -f
+
+	local path
+	local exclude
+	for path in ${PKG_FILES}; do
+		if [ "${path:0:1}" = "!" ]; then
+			exclude="1"
+			path="${path:1:${#path}}"
+		else
+			exclude="0"
+		fi
+
+		if [ "${path:0:1}" != "/" ]; then
+			path="/${path}"
+		fi
+
+		path="${BUILDROOT}${path}"
+		if [ "${exclude}" = "0" ]; then
+			paths="${paths} ${path}"
+		else
+			exclude_paths="${exclude_paths} ${path}"
+		fi
+	done
+
+	# Enable globbing again
+	set +f
+
+	# If not paths were found take all files
+	[ -z "${paths}" ] && paths="${BUILDROOT}"
+
+	local excludes
+	if [ -n "${exclude_paths}" ]; then
+		excludes=$(find_files ${exclude_paths})
+	fi
+
+	for file in $(find_files ${paths}); do
+		if [ -n "${excludes}" ]; then
+			if ! listmatch ${file} ${excludes}; then
+				echo "${file}"
+			fi
+		else
+			echo "${file}"
+		fi
 	done
 }
 
@@ -179,11 +213,18 @@ function create_dataimg() {
 	local file
 
 	# Remove the just copied files
+	sort_by_length $(<${filelist}) | \
 	while read file; do
 		[ -z "${file}" ] && continue
 
+		if [ -d "${BUILDROOT}/${file}" ]; then
+			if dir_is_empty ${BUILDROOT}/${file}; then
+				rm -rf ${BUILDROOT}/${file}
+			fi
+			continue
+		fi
 		rm -rf ${BUILDROOT}/${file}
-	done < ${filelist}
+	done
 
 	# Return the filelist
 	cd ${dir} && \
