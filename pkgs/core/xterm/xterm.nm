@@ -1,0 +1,57 @@
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2007, 2008 Michael Tremer & Christian Schmidt                 #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+###############################################################################
+# Definitions
+###############################################################################
+
+include $(PKGROOT)/Include
+
+PKG_NAME       = xterm
+PKG_VER        = 262
+PKG_REL        = 0
+
+PKG_MAINTAINER =
+PKG_GROUP      = X/Application
+PKG_URL        = http://invisible-island.net/xterm/
+PKG_LICENSE    = MIT
+PKG_SUMMARY    = Terminal emulator for the X Window System.
+
+PKG_BUILD_DEPS+= libXft-devel libXaw-devel libXext-devel libxkbfile-devel \
+	pkg-config
+PKG_DEPS      += xorg-x11-server
+
+define PKG_DESCRIPTION
+	The xterm program is a terminal emulator for the X Window System. It \
+	provides DEC VT102 and Tektronix 4014 compatible terminals for \
+	programs that can't use the window system directly.
+endef
+
+PKG_TARBALL    = $(THISAPP).tgz
+
+CONFIGURE_OPTIONS += \
+	--mandir=/usr/share/man \
+	--enable-256-color \
+	--enable-exec-xterm \
+	--enable-luit \
+	--enable-warnings \
+	--enable-wide-chars \
+	--with-tty-group=tty \
+	--disable-full-tgetent
