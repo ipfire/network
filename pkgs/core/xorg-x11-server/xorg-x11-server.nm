@@ -40,7 +40,8 @@ PKG_BUILD_DEPS+= autoconf automake libcap libX11-devel libXau-devel libXdmcp-dev
 	libtool libudev-devel libxcb-devel libxkbfile-devel mesa-devel pixman-devel\
 	pkg-config xorg-x11-font-utils-devel xorg-x11-util-macros xorg-x11-proto-devel\
 	xorg-x11-xtrans-devel
-PKG_DEPS      += pixman udev xkeyboard-config xorg-x11-xkb-utils
+PKG_DEPS      += mesa pixman udev xkeyboard-config xorg-x11-fonts xorg-x11-font-utils \
+	xorg-x11-xkb-utils
 
 PKG_PACKAGES  += $(PKG_NAME)-devel
 
