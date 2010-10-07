@@ -2,19 +2,23 @@
 
 . $(dirname ${0})/qa-include
 
-# Strip debugging symbols
-log "Strip debugging symbols"
-for f in $(find ${BUILDROOT} -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \)); do
-	if (file $f | grep -q ' shared object,'); then
-		strip --strip-debug "$f" || :
-	fi
-done
+DESC="Stripping reduces size of binary files."
 
-log "Strip unneeded symbols"
-for f in $(find ${BUILDROOT} -type f); do
-	if (file $f | grep -q ' shared object,'); then
-		strip --strip-unneeded "$f" || :
-	fi
-done
+function check() {
+	# Strip debugging symbols
+	for f in $(find ${BUILDROOT} -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \)); do
+		if (file $f | grep -q ' shared object,'); then
+			strip --strip-debug "$f" || :
+		fi
+	done
 
-exit 0
+	log "Strip unneeded symbols"
+	for f in $(find ${BUILDROOT} -type f); do
+		if (file $f | grep -q ' shared object,'); then
+			strip --strip-unneeded "$f" || :
+		fi
+	done
+}
+
+run
+

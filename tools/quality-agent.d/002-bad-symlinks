@@ -7,21 +7,27 @@
 
 log_debug "Search for absolute symlinks"
 
-failed=0
-for link in $(find ${BUILDROOT} -type l); do
-	if fgrep -q "/lib/udev/devices" <<<${link}; then
-		continue
-	fi
+function check() {
+	local failed=0
 
-	destination=$(readlink ${link})
-	if [ "${destination:0:1}" = "/" ]; then
-		log_error "  absolute symlink: ${link}"
-		failed=1
-	fi
-	if [ ! -e "${link%/*}/${destination}" ]; then
-		log_error "  not existant destination: ${link} -> ${destination}"
-		failed=1
-	fi
-done
+	for link in $(find ${BUILDROOT} -type l); do
+		if fgrep -q "/lib/udev/devices" <<<${link}; then
+			continue
+		fi
 
-exit ${failed}
+		destination=$(readlink ${link})
+		if [ "${destination:0:1}" = "/" ]; then
+			log ERROR "  Absolute symlink: ${link}"
+			failed=1
+		fi
+		if [ ! -e "${link%/*}/${destination}" ]; then
+			log ERROR "  Not existant destination: ${link} -> ${destination}"
+			failed=1
+		fi
+	done
+
+	return ${failed}
+}
+
+run
+

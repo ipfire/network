@@ -2,16 +2,19 @@
 
 . $(dirname ${0})/qa-include
 
-# If the pyc and pyo files are the same, we can hardlink them
-log "Hard-linking python bytecode files"
+DESC="Python byte-code files could be hardlinked if the optimized one is equal"
+DESC="${DESC} to the other one."
 
-for py in $(find ${BUILDROOT} -type f -name "*.py"); do
-	if [ -e "${py}c" ] && [ -e "${py}o" ]; then
-		if cmp -s "${py}c" "${py}o"; then
-			log "  ${py}c -> ${py}o"
-			ln -f "${py}c" "${py}o"
+function check() {
+	for py in $(find ${BUILDROOT} -type f -name "*.py"); do
+		if [ -e "${py}c" ] && [ -e "${py}o" ]; then
+			if cmp -s "${py}c" "${py}o"; then
+				log DEBUG "  ${py}c -> ${py}o"
+				ln -f "${py}c" "${py}o"
+			fi
 		fi
-	fi
-done
+	done
+}
 
-exit 0
+run
+

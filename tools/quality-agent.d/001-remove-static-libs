@@ -2,20 +2,23 @@
 
 . $(dirname ${0})/qa-include
 
-# Remove unwanted files
-log_debug "Removing unwanted files: *.a *.la"
-for file in $(find ${BUILDROOT} -name "*.a" -or -name "*.la"); do
-	
-	# Don't remove libc_nonshared.a. It is used by gcc/ld.
-	[ "${file##*/}" = "libc_nonshared.a" ] && continue
-	[ "${file##*/}" = "libpthread_nonshared.a" ] && continue
-	[ "${file##*/}" = "libgcc.a" ] && continue
-	[ "${file##*/}" = "libgcc_eh.a" ] && continue
-	[ "${file##*/}" = "libfl_pic.a" ] && continue
-	[ "${file##*/}" = "libpython2.6.a" ] && continue
-	
-	log_debug "  Removing: ${file}"
-	rm -f ${file} || exit $?
-done
+DESC="Removing unwanted files: *.a *.la"
 
-exit 0
+function check() {
+	for file in $(find ${BUILDROOT} -name "*.a" -or -name "*.la"); do
+	
+		# Don't remove libc_nonshared.a. It is used by gcc/ld.
+		[ "${file##*/}" = "libc_nonshared.a" ] && continue
+		[ "${file##*/}" = "libpthread_nonshared.a" ] && continue
+		[ "${file##*/}" = "libgcc.a" ] && continue
+		[ "${file##*/}" = "libgcc_eh.a" ] && continue
+		[ "${file##*/}" = "libfl_pic.a" ] && continue
+		[ "${file##*/}" = "libpython2.6.a" ] && continue
+	
+		log DEBUG "  Removing: ${file}"
+		rm -f ${file} || exit $?
+	done
+}
+
+run
+

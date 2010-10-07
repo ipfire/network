@@ -2,13 +2,16 @@
 
 . $(dirname ${0})/qa-include
 
-# Remove documentation files
-log_debug "Removing documentation files..."
-for dir in ${BUILDROOT}/usr/{,share}/{doc,gtk-doc,info}; do
-	if [ -d "${dir}" ]; then
-		log_debug "  Removing: ${dir}"
-		rm -rf ${dir} || exit $?
-	fi
-done
+DESC="Remove documentation files."
 
-exit 0
+function check() {
+	for dir in ${BUILDROOT}/usr/{,share}/{doc,gtk-doc,info}; do
+		if [ -d "${dir}" ]; then
+			log DEBUG "  Removing: ${dir}"
+			rm -rf ${dir} || exit $?
+		fi
+	done
+}
+
+run
+
