@@ -236,6 +236,9 @@ class BinaryPackage(Package):
 			key, val = m.groups()
 			self._info[key] = val.strip("\"")
 
+		self.__dependencies = self.get_dependencies()
+		self.__provides = self.get_provides()
+
 	def extract(self, path):
 		logging.debug("Extracting %s to %s" % (self, path))
 
@@ -261,6 +264,9 @@ class BinaryPackage(Package):
 		return self._info["PKG_NAME"]
 
 	def get_dependencies(self):
+		if hasattr(self, "__dependencies"):
+			return self.__dependencies
+
 		objects = self._info.get("PKG_DEPS", "").split()
 
 		# Compatibility to older package format
@@ -269,6 +275,9 @@ class BinaryPackage(Package):
 		return [dependencies.Dependency(o, origin=self) for o in objects]
 
 	def get_provides(self):
+		if hasattr(self, "__provides"):
+			return self.__provides
+
 		return [dependencies.Provides(p, origin=self) \
 			for p in self._info.get("PKG_PROVIDES", "").split()]
 
