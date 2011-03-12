@@ -33,44 +33,32 @@ function cli_config() {
 }
 
 function cli_device() {
-	if device_config_exists ${1}; then
-		local device=${1}
-		local action=${2}
-		shift 2
+	local device=${1}
+	local action=${2}
+	shift 2
 
-		case "${action}" in
-			down|up)
-				device_${action} ${device} $@
-				;;
-		esac
-	else
-		local action=${1}
-		shift
+	assert device_exists ${device}
 
-		case "${action}" in
-			create)
-				device_${action} $@
-				;;
-
-			discover)
-				echo "# XXX need to implement --raw here"
-				local device
-				for device in ${devices}; do
-					cli_device_discover ${device} $@
-				done
-				;;
-
-			show|"")
-				local device
-				for device in $(device_get $@); do
-					device_print ${device}
-				done
-				;;
-			*)
-				cli_usage device
-				;;				
-		esac
+	if zone_exists ${device} || port_exists ${device}; then
+		error "The device '${device}' has already been configured."
+		error "You cannot do a device action."
+		return ${EXIT_ERROR}
 	fi
+
+	case "${action}" in
+		discover)
+			echo "# XXX need to implement --raw here"
+			cli_device_discover ${device} $@
+			;;
+
+		show|"")
+			# XXX device_show needs to be implemented
+			device_show ${device}
+			;;
+		*)
+			cli_usage device
+			;;
+	esac
 }
 
 function cli_device_discover() {
