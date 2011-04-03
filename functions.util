@@ -93,6 +93,8 @@ function listlength() {
 function config_read() {
 	local config_file=${1}
 
+	log DEBUG "Reading configuration: ${config_file}"
+
 	if [ -e "${config_file}" ]; then
 		. ${config_file}
 		config_check

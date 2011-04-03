@@ -50,6 +50,8 @@ function routing_default_update() {
 		fi
 	done
 
+	log INFO "Setting default route: ${routes}"
+
 	if [ -z "${routes}" ]; then
 		if routing_has_default; then
 			ip route del default

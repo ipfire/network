@@ -1,0 +1,157 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /lib/network/header-zone
+
+HOOK_SETTINGS="HOOK PHY MAC MTU SSID KEY ENCRYPTION"
+
+# Default values
+MAC=$(mac_generate)
+PHY=
+MTU=1500
+SSID=
+KEY=
+ENCRYPTION="WPA-PSK"
+
+function _check() {
+	assert isset SSID
+	assert ismac MAC
+	assert isinteger MTU
+	assert ismac PHY
+
+	if [ -n "${ENCRYPTION}" ]; then
+		assert isset KEY
+	fi
+}
+
+function _parse_cmdline() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--phy=*)
+				PHY=${1#--phy=}
+				;;
+			--ssid=*)
+				SSID=${1#--ssid=}
+				;;
+			--key=*)
+				KEY=${1#--key=}
+				;;
+			*)
+				warning "Ignoring unknown option '${1}'"
+				;;
+		esac
+		shift
+	done
+
+	PHY=$(phy_get ${PHY})
+	PHY=$(phy_get_address ${PHY})
+}
+
+function _up() {
+	local zone=${1}
+	shift
+
+	assert isset zone
+
+	zone_config_read ${zone}
+
+	wireless_create ${zone} ${PHY} managed ${MAC}
+
+	[ -n "${MAC}" ] && device_set_address ${zone} ${MAC}
+	[ -n "${MTU}" ] && device_set_mtu ${zone} ${MTU} 
+
+	# Create WPA supplicant configuration.
+	wpa_supplicant_start ${zone} --ssid=${SSID} \
+		--encryption=${ENCRYPTION} --key=${KEY}
+
+	#device_set_up ${zone}
+
+	zone_configs_up ${zone}
+
+	event_interface_up ${zone}
+
+	exit ${EXIT_OK}
+}
+
+function _down() {
+	local zone=${1}
+	shift
+
+	if ! device_is_up ${zone}; then
+		warning "Zone '${zone}' is not up"
+		exit ${EXIT_OK}
+	fi
+
+	event_interface_down ${zone}
+
+	zone_configs_down ${zone}
+
+	wpa_supplicant_stop ${zone}
+
+	#device_set_down ${zone}
+
+	wireless_remove ${zone}
+
+	exit ${EXIT_OK}
+}
+
+function _status() {
+	local zone=${1}
+
+	cli_status_headline ${zone}
+
+	# Exit if zone is down
+	if ! zone_is_up ${zone}; then
+		echo # Empty line
+		exit ${EXIT_ERROR}
+	fi
+
+	# XXX Add bridge stp priority here
+	# brctl does not give any information about that
+
+	cli_headline "  Spanning Tree Protocol information:"
+	printf "${DEVICE_PRINT_LINE1}" "ID:" $(stp_bridge_get_id ${zone})
+	printf "${DEVICE_PRINT_LINE1}" "Priority:" $(stp_bridge_get_priority ${zone})
+
+	if stp_bridge_is_root ${zone}; then
+		echo -e "    ${COLOUR_BOLD}This bridge is root.${COLOUR_NORMAL}"
+	else
+		printf "${DEVICE_PRINT_LINE1}" "Designated root:" $(stp_bridge_get_designated_root ${zone})
+		printf "${DEVICE_PRINT_LINE1}" "Root path cost:" $(stp_bridge_get_root_path_cost ${zone})
+	fi
+	echo # Empty line
+
+	# Topology information
+	printf "${DEVICE_PRINT_LINE1}" "Topology changing:" $(stp_bridge_get_topology_change_detected ${zone})
+	printf "${DEVICE_PRINT_LINE1}" "Topology change time:" $(beautify_time $(stp_bridge_get_topology_change_timer ${zone}))
+	printf "${DEVICE_PRINT_LINE1}" "Topology change count:" $(stp_bridge_get_topology_change_count ${zone})
+
+	cli_headline "  Ports:"
+	zone_ports_status ${zone}
+
+	cli_headline "  Configurations:"
+	zone_configs_cmd status ${zone}
+
+	echo # Empty line
+	exit ${EXIT_OK}
+}
+
+run $@
