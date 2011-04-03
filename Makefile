@@ -21,6 +21,7 @@ install:
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-pre-up
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-up
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-down
+	install -m 755 -v ppp/dialer $(DESTDIR)/etc/ppp
 
 dist:
 	git archive --format tar --prefix $(NAME)-$(VER)/ HEAD | gzip -9 > \

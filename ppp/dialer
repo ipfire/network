@@ -1,0 +1,11 @@
+TIMEOUT		5
+REPORT		CONNECT
+''		'+++ATZ'
+''		'AT'
+''		'+++ATZ'
+OK		'ATH'
+''		'AT+CGDCONT=1,"IP","event.vodafone.de"'
+''		'sleep 5'
+TIMEOUT		30
+OK		'ATDT*99#'
+CONNECT		''
