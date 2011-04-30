@@ -132,6 +132,25 @@ function cli_device_discover() {
 	[ "${up}" = "1" ] || device_set_down ${device}
 }
 
+function cli_hostname() {
+	if cli_help_requested $@; then
+		cli_usage hostname
+		exit ${EXIT_OK}
+	fi
+
+	local hostname=${1}
+
+	if [ -n "${hostname}" ]; then
+		config_hostname ${hostname}
+		log INFO "Hostname was set to '${hostname}'."
+		log INFO "Changes do only take affect after reboot."
+		exit ${EXIT_OK}
+	fi
+
+	echo "$(config_hostname)"
+	exit ${EXIT_OK}
+}
+
 function cli_port() {
 	if cli_help_requested $@; then
 		cli_usage root-port

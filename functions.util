@@ -132,6 +132,16 @@ function config_check() {
 	[ -n "$(type -t _check)" ] && _check
 }
 
+function config_hostname() {
+	local hostname=${1}
+
+	if [ -n "${hostname}" ]; then
+		echo "${hostname}" > ${CONFIG_HOSTNAME}
+	else
+		echo "$(<${CONFIG_HOSTNAME})"
+	fi
+}
+
 function network_config_set() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
