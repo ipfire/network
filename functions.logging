@@ -37,4 +37,12 @@ function log() {
 	fi
 
 	logger -t ${LOG_FACILITY} "${message}"
+
+	case "${level}" in
+		DEBUG|INFO|WARNING|ERROR)
+			message="${COLOUR_LOG[${level}]}${message}${COLOUR_NORMAL}"
+			;;
+	esac
+
+	echo -e "${message}" >&2
 }
