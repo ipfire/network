@@ -24,24 +24,29 @@ function routing_has_default() {
 }
 
 function routing_default_update() {
-	local zone
 	local routes
+
+	local zones=$(zones_get_nonlocal)
+	if [ -z "${zones}" ]; then
+		zones=$(zones_get_local)
+	fi
 
 	local gateway
 	local weight
+	local zone
 
-	log INFO "Updating default route."
+	local proto="ipv4"
 
-	for zone in $(zones_get_nonlocal); do
+	for zone in ${zones}; do
 		# Skip if zone is not up
-		red_db_exists ${zone} || continue
+		routing_db_exists ${zone} ${proto} || continue
 
-		if [ "$(red_db_get ${zone} active)" = "1" ]; then
-			gateway=$(red_db_get ${zone} remote-ip-address)
-			weight=$(red_db_get ${zone} weight)
+		if [ "$(routing_db_get ${zone} ${proto} active)" = "1" ]; then
+			gateway=$(routing_db_get ${zone} ${proto} remote-ip-address)
+			weight=$(routing_db_get ${zone} ${proto} weight)
 
 			routes="${routes} nexthop via ${gateway}"
-			
+
 			if [ -n "${weight}" ]; then
 				routes="${routes} weight ${weight}"
 			fi
@@ -50,14 +55,19 @@ function routing_default_update() {
 		fi
 	done
 
-	log INFO "Setting default route: ${routes}"
-
 	if [ -z "${routes}" ]; then
+		log INFO "Removing default route."
+
 		if routing_has_default; then
 			ip route del default
 		fi
 		return ${EXIT_OK}
 	fi
+
+	# Remove too much spaces.
+	routes=$(echo ${routes})
+
+	log INFO "Setting default route: ${routes}"
 
 	ip route replace default ${routes}
 }
@@ -70,11 +80,6 @@ function routing_table_exists() {
 
 function routing_table_create() {
 	local zone=${1}
-
-	if ! zone_is_nonlocal ${zone}; then
-		error_log "Can only create routing tables for non-local zones."
-		return ${EXIT_ERROR}
-	fi
 
 	if routing_table_exists ${zone}; then
 		return ${EXIT_OK}
@@ -89,4 +94,101 @@ function routing_table_create() {
 
 function routing_table_remove() {
 	: # XXX do we need this?
+}
+
+function routing_db_path() {
+	local zone=${1}
+	local proto=${2}
+
+	assert isset zone
+	assert isset proto
+	assert isoneof proto ${IP_SUPPORTED_PROTOCOLS}
+
+	echo "${ROUTING_DB_DIR}/${zone}/${proto}"
+}
+
+function routing_db_exists() {
+	[ -d "$(routing_db_path $@)" ]
+}
+
+function routing_db_create() {
+	routing_db_exists $@ && return ${EXIT_OK}
+
+	mkdir -p $(routing_db_path $@)
+}
+
+function routing_db_remove() {
+	rm -rf $(routing_db_path $@)
+}
+
+function routing_db_set() {
+	local zone=${1}
+	local proto=${2}
+	local parameter=${3}
+	shift 3
+
+	local value="$@"
+
+	log INFO "Updating database (${zone} - ${proto}): ${parameter} = ${value}"
+
+	routing_db_create ${zone} ${proto}
+
+	echo "${value}" > $(routing_db_path ${zone} ${proto})/${parameter}
+}
+
+function routing_db_get() {
+	local zone=${1}
+	local proto=${2}
+	local parameter=${3}
+	shift 3
+
+	cat $(routing_db_path ${zone} ${proto})/${parameter} 2>/dev/null
+}
+
+function routing_db_from_ppp() {
+	local zone=${1}
+	local proto=${2}
+
+	# Save ppp configuration
+	routing_db_set ${zone} ${proto} type "ppp"
+	routing_db_set ${zone} ${proto} local-ip-address ${PPP_IPLOCAL}
+	routing_db_set ${zone} ${proto} remote-ip-address ${PPP_IPREMOTE}
+
+	routing_db_set ${zone} ${proto} dns ${PPP_DNS1} ${PPP_DNS2}
+
+	routing_db_set ${zone} ${proto} remote-address ${PPP_MACREMOTE,,}
+}
+
+function routing_update() {
+	local zone=${1}
+
+	# Nothing to do for local zones.
+	if zone_is_local ${zone}; then
+		return ${EXIT_OK}
+	fi
+
+	local proto=${2}
+	local table=${zone}
+
+	# Create routing table if not exists
+	routing_table_create ${table}
+
+	log DEBUG "Flushing routing table ${table}"
+	cmd ip route flush table ${table}
+
+	local local_ip_address=$(routing_db_get ${zone} ${proto} local-ip-address)
+
+	# XXX does not work.
+	#log DEBUG "Adding route for subnet ${local_ip_address} to table ${table}"
+	#cmd ip route add table ${table} ${local_ip_address} dev ${zone}
+
+	local remote_ip_address=$(routing_db_get ${zone} ${proto} remote-ip-address)
+
+	if isset remote_ip_address; then
+		log DEBUG "Adding default route for table ${table}"
+
+		cmd ip route add table ${table} default nexthop via ${remote_ip_address}
+	fi
+
+	cmd ip rule add from ${local_ip_address} lookup ${table}
 }

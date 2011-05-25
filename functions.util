@@ -161,7 +161,12 @@ function network_config_set() {
 }
 
 function network_config_read() {
+	# Save state of DEBUG and restore it later.
+	local debug=${DEBUG}
+
 	config_read ${CONFIG_FILE}
+
+	DEBUG=${debug}
 }
 
 function network_config_write() {
@@ -308,7 +313,8 @@ function exec_cmd() {
 
 	log DEBUG "Running command: ${cmd}"
 
-	${SHELL} ${cmd}
+	DEBUG=${DEBUG} \
+		${SHELL} ${cmd}
 	local ret=$?
 
 	#log DEBUG "Returned with code '${ret}'"
@@ -317,6 +323,19 @@ function exec_cmd() {
 		error_log "Stopping parent process due to assertion error in child process: ${cmd}"
 		exit ${EXIT_ERROR_ASSERT}
 	fi
+
+	return ${ret}
+}
+
+function cmd() {
+	local cmd=$@
+
+	log DEBUG "Running command: ${cmd}"
+
+	${cmd}
+	local ret=$?
+
+	log DEBUG "Returned with code '${ret}'"
 
 	return ${ret}
 }
