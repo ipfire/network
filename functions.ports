@@ -23,6 +23,16 @@ function port_dir() {
 	echo "${CONFIG_DIR}/ports"
 }
 
+function ports_get_all() {
+	local port
+
+	for port in $(port_dir)/*; do
+		[ -f "${port}" ] || continue
+
+		basename ${port}
+	done
+}
+
 function port_file() {
 	local port=${1}
 
