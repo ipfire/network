@@ -161,25 +161,27 @@ function _status() {
 		exit ${EXIT_ERROR}
 	fi
 
-	# XXX Add bridge stp priority here
-	# brctl does not give any information about that
-
 	cli_headline "  Spanning Tree Protocol information:"
-	printf "${DEVICE_PRINT_LINE1}" "ID:" $(stp_bridge_get_id ${zone})
-	printf "${DEVICE_PRINT_LINE1}" "Priority:" $(stp_bridge_get_priority ${zone})
+	if [ -n "$(stp_bridge_get_protocol ${zone})" ]; then
+		printf "${DEVICE_PRINT_LINE1}" "Version:" $(stp_bridge_get_protocol ${zone})
+		printf "${DEVICE_PRINT_LINE1}" "ID:" $(stp_bridge_get_id ${zone})
+		printf "${DEVICE_PRINT_LINE1}" "Priority:" $(stp_bridge_get_priority ${zone})
 
-	if stp_bridge_is_root ${zone}; then
-		echo -e "    ${COLOUR_BOLD}This bridge is root.${COLOUR_NORMAL}"
+		if stp_bridge_is_root ${zone}; then
+			echo -e "    ${COLOUR_BOLD}This bridge is root.${COLOUR_NORMAL}"
+		else
+			printf "${DEVICE_PRINT_LINE1}" "Designated root:" $(stp_bridge_get_designated_root ${zone})
+			printf "${DEVICE_PRINT_LINE1}" "Root path cost:" $(stp_bridge_get_root_path_cost ${zone})
+		fi
+		echo # Empty line
+
+		# Topology information
+		printf "${DEVICE_PRINT_LINE1}" "Topology changing:" $(stp_bridge_get_topology_change_detected ${zone})
+		printf "${DEVICE_PRINT_LINE1}" "Topology change time:" $(beautify_time $(stp_bridge_get_topology_change_timer ${zone}))
+		printf "${DEVICE_PRINT_LINE1}" "Topology change count:" $(stp_bridge_get_topology_change_count ${zone})
 	else
-		printf "${DEVICE_PRINT_LINE1}" "Designated root:" $(stp_bridge_get_designated_root ${zone})
-		printf "${DEVICE_PRINT_LINE1}" "Root path cost:" $(stp_bridge_get_root_path_cost ${zone})
+		echo -e "    ${COLOUR_BOLD}STP is disabled.${COLOUR_NORMAL}"
 	fi
-	echo # Empty line
-
-	# Topology information
-	printf "${DEVICE_PRINT_LINE1}" "Topology changing:" $(stp_bridge_get_topology_change_detected ${zone})
-	printf "${DEVICE_PRINT_LINE1}" "Topology change time:" $(beautify_time $(stp_bridge_get_topology_change_timer ${zone}))
-	printf "${DEVICE_PRINT_LINE1}" "Topology change count:" $(stp_bridge_get_topology_change_count ${zone})
 
 	cli_headline "  Ports:"
 	zone_ports_status ${zone}

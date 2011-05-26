@@ -138,13 +138,15 @@ function _status() {
 	printf "        %-10s - " "${port}"
 	if ! device_is_up ${port}; then
 		echo -ne "${COLOUR_DOWN}   DOWN   ${COLOUR_NORMAL}"
-	else
+	elif [ -n "$(stp_bridge_get_protocol ${zone})" ]; then
 		local state=$(stp_port_get_state ${zone} ${port})
 		local colour="COLOUR_STP_${state}"
 		printf "${!colour}%10s${COLOUR_NORMAL}" ${state}
 
 		echo -n " - DSR: $(stp_port_get_designated_root ${zone} ${port})"
 		echo -n " - Cost: $(stp_port_get_cost ${zone} ${port})"
+	else
+		echo -ne "${COLOUR_UP}    UP    ${COLOUR_NORMAL}"
 	fi
 
 	echo

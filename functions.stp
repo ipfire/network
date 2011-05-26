@@ -108,6 +108,11 @@ function stp_bridge_get_protocol() {
 
 	assert isset bridge
 
+	local enabled=$(__device_get_file ${bridge} "bridge/stp_state")
+	if ! enabled ${enabled}; then
+		return ${EXIT_OK}
+	fi
+
 	local mode=$(__rstpctl_bridge_get ${bridge} protocol_version)
 
 	case "${mode}" in
@@ -116,7 +121,12 @@ function stp_bridge_get_protocol() {
 			;;
 		2)
 			echo "rstp"
-			;;		
+			;;
+		# When rstpctl has an error, we assume that rstpd is not running and
+		# return the slow mode.
+		"")
+			echo "stp"
+			;;
 	esac
 }
 
@@ -463,7 +473,10 @@ function stp_port_get_designated_root() {
 			;;
 	esac
 
-	mac_format ${output:5:12}
+	if [ -n "${output}" ]; then
+		mac_format ${output:5:12}
+		return ${EXIT_OK}
+	fi
 
 	return ${EXIT_ERROR}
 }
