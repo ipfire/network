@@ -34,7 +34,8 @@ function ppp_common_ip_pre_up() {
 		return ${EXIT_ERROR}
 	fi
 
-	routing_db_from_ppp ${zone}
+	# XXX protocol hardcoded
+	routing_db_from_ppp ${zone} ipv4
 
 	# Request firewall reload
 	event_firewall_reload
@@ -51,8 +52,9 @@ function ppp_common_ip_up() {
 		return ${EXIT_ERROR}
 	fi
 
-	routing_db_set ${zone} active 1
-	red_routing_update ${zone}
+	# XXX protocol is hardcoded
+	routing_db_set ${zone} ipv4 active 1
+	routing_update ${zone} ipv4
 
 	# Emit interface-up event
 	event_interface_up ${zone}

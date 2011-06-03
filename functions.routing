@@ -149,6 +149,9 @@ function routing_db_from_ppp() {
 	local zone=${1}
 	local proto=${2}
 
+	assert isset zone
+	assert isset proto
+
 	# Save ppp configuration
 	routing_db_set ${zone} ${proto} type "ppp"
 	routing_db_set ${zone} ${proto} local-ip-address ${PPP_IPLOCAL}
@@ -161,6 +164,7 @@ function routing_db_from_ppp() {
 
 function routing_update() {
 	local zone=${1}
+	assert isset zone
 
 	# Nothing to do for local zones.
 	if zone_is_local ${zone}; then
@@ -169,6 +173,7 @@ function routing_update() {
 
 	local proto=${2}
 	local table=${zone}
+	assert isset proto
 
 	# Create routing table if not exists
 	routing_table_create ${table}

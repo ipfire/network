@@ -176,6 +176,10 @@ EOF
 			log DEBUG "pppd detached successfully"
 			exit ${EXIT_OK}
 			;;
+		19)
+			log ERROR "Authentication failed. Maybe user and/or secret is/are incorrect."
+			exit ${EXIT_ERROR}
+			;;
 	esac
 
 	error_log "pppd exited with unknown exit code '${ret}'"
