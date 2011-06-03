@@ -34,7 +34,7 @@ function ppp_common_ip_pre_up() {
 		return ${EXIT_ERROR}
 	fi
 
-	red_db_from_ppp ${zone}
+	routing_db_from_ppp ${zone}
 
 	# Request firewall reload
 	event_firewall_reload
@@ -51,7 +51,7 @@ function ppp_common_ip_up() {
 		return ${EXIT_ERROR}
 	fi
 
-	red_db_set ${zone} active 1
+	routing_db_set ${zone} active 1
 	red_routing_update ${zone}
 
 	# Emit interface-up event

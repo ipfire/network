@@ -258,11 +258,11 @@ function _status() {
 	# XXX display time since connection started
 
 	cli_headline "    Point-to-Point-over-Ethernet protocol:"
-	echo "        IP-Address            : $(red_db_get ${zone} local-ip-address)"
-	echo "        Gateway               : $(red_db_get ${zone} remote-ip-address)"
-	echo "        DNS-Server            : $(red_db_get ${zone} dns)"
+	echo "        IP-Address            : $(routing_db_get ${zone} local-ip-address)"
+	echo "        Gateway               : $(routing_db_get ${zone} remote-ip-address)"
+	echo "        DNS-Server            : $(routing_db_get ${zone} dns)"
 	echo
-	echo "        MAC-Remote            : $(red_db_get ${zone} remote-address)"
+	echo "        MAC-Remote            : $(routing_db_get ${zone} remote-address)"
 	echo
 	echo "        MTU                   : $(device_get_mtu ${zone})"
 	echo # Empty line
