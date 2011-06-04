@@ -299,6 +299,34 @@ function _ppp-ip-down() {
 	exit $?
 }
 
+function _ppp-ipv6-up() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	ppp_common_ipv6_up ${zone} $@
+
+	exit $?
+}
+
+function _ppp-ipv6-down() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	ppp_common_ipv6_down ${zone} $@
+
+	exit $?
+}
+
 function run() {
 	# Replace all dashes by an underscore
 	#action=${action//-/_}
@@ -320,7 +348,7 @@ function run() {
 			;;
 
 		# ppp daemon callbacks
-		ppp-ip-pre-up|ppp-ip-up|ppp-ip-down)
+		ppp-ip-pre-up|ppp-ip-up|ppp-ip-down|ppp-ipv6-up|ppp-ipv6-down)
 			_${action} $@
 			;;
 

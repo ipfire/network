@@ -34,7 +34,6 @@ function ppp_common_ip_pre_up() {
 		return ${EXIT_ERROR}
 	fi
 
-	# XXX protocol hardcoded
 	routing_db_from_ppp ${zone} ipv4
 
 	# Request firewall reload
@@ -52,7 +51,6 @@ function ppp_common_ip_up() {
 		return ${EXIT_ERROR}
 	fi
 
-	# XXX protocol is hardcoded
 	routing_db_set ${zone} ipv4 active 1
 	routing_update ${zone} ipv4
 
@@ -70,6 +68,55 @@ function ppp_common_ip_down() {
 		error "Zone '${zone}' does not exist."
 		return ${EXIT_ERROR}
 	fi
+
+	# Remove the information about this zone from the routing database
+	# and update the routing table.
+	routing_db_remove ${zone} ipv4
+	routing_update ${zone} ipv4
+
+	# Save accounting information
+	ppp_accounting ${zone}
+
+	# Emit interface-up event
+	event_interface_down ${zone}
+
+	return ${EXIT_OK}
+}
+
+function ppp_common_ipv6_up() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	# Add information about this zone to the routing database.
+	routing_db_from_ppp ${zone} ipv6
+
+	routing_db_set ${zone} ipv6 active 1
+	routing_update ${zone} ipv6
+
+	# Emit interface-up event
+	event_interface_up ${zone}
+
+	return ${EXIT_OK}
+}
+
+function ppp_common_ipv6_down() {
+	local zone=${1}
+	shift
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	# Remove the information about this zone from the routing database
+	# and update the routing table.
+	routing_db_remove ${zone} ipv6
+	routing_update ${zone} ipv6
 
 	# Save accounting information
 	ppp_accounting ${zone}

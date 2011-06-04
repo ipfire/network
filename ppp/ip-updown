@@ -23,7 +23,7 @@ umask 022
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
 # Give the variables we get passed by pppd an own namespace
-for i in IFNAME IPLOCAL IPREMOTE DNS1 DNS2 MACREMOTE; do
+for i in IFNAME IPLOCAL IPREMOTE DNS1 DNS2 MACREMOTE LLLOCAL LLREMOTE; do
 	export PPP_${i}=${!i}
 	unset ${i}
 done
@@ -41,4 +41,10 @@ HOOK=$(zone_get_hook ${ZONE})
 assert isset HOOK
 assert hook_zone_exists ${HOOK}
 
-hook_zone_exec ${HOOK} ppp-$(basename ${0}) ${ZONE}
+PROGNAME=$(basename ${0})
+assert isset PROGNAME
+
+log DEBUG "${PROGNAME} was called with the following parameters:"
+log DEBUG "  $@"
+
+hook_zone_exec ${HOOK} ppp-${PROGNAME} ${ZONE}

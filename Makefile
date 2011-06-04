@@ -21,6 +21,8 @@ install:
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-pre-up
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-up
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-down
+	ln -svf ip-updown ${DESTDIR}/etc/ppp/ipv6-up
+	ln -svf ip-updown ${DESTDIR}/etc/ppp/ipv6-down
 	install -m 755 -v ppp/dialer $(DESTDIR)/etc/ppp
 
 dist:

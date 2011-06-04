@@ -27,6 +27,7 @@ HOOK_SETTINGS="HOOK AUTH LINKNAME USER SECRET PEERDNS DEFAULTROUTE MTU"
 
 AUTH=
 DEFAULTROUTE=1
+IPV6=1
 LINKNAME="$(uuid)"
 MTU=1492
 PEERDNS=1
@@ -53,6 +54,7 @@ function _check() {
 	#assert isset DEVICE_TYPE
 
 	assert isbool DEFAULTROUTE
+	assert isbool IPV6
 	assert isbool PEERDNS
 	#assert ismac DEVICE
 	#assert isoneof DEVICE_TYPE real virtual
@@ -100,6 +102,9 @@ function _parse_cmdline() {
 			--auth=*)
 				AUTH=${1#--auth=}
 				;;
+			--ipv6=*)
+				IPV6=${1#--ipv6=}
+				;;
 			*)
 				echo "Unknown option: $1" >&2
 				exit ${EXIT_ERROR}
@@ -144,6 +149,9 @@ name ${LINKNAME}
 linkname ${LINKNAME}
 
 plugin ${PPPOE_PLUGIN} ${port}
+
+# Enable/disable IPv6
+$(enabled IPV6 && echo "+" || echo "-")ipv6
 
 # User configuration
 user ${USER}
@@ -244,6 +252,7 @@ function _status() {
 	printf "${DEVICE_PRINT_LINE1}" "Secret:" "<hidden>"
 	echo
 	printf "${DEVICE_PRINT_LINE1}" "MTU:" "${MTU}"
+	printf "${DEVICE_PRINT_LINE1}" "IPv6:" "$(enabled IPV6 && echo "enabled" || echo "disabled")"
 	printf "${DEVICE_PRINT_LINE1}" "Use default route?" "$(enabled DEFAULTROUTE && echo "enabled" || echo "disabled")"
 	printf "${DEVICE_PRINT_LINE1}" "Use peer DNS?" "$(enabled PEERDNS && echo "enabled" || echo "disabled")"
 	echo
@@ -262,12 +271,21 @@ function _status() {
 	# XXX display time since connection started
 
 	cli_headline "    Point-to-Point-over-Ethernet protocol:"
-	echo "        IP-Address            : $(routing_db_get ${zone} local-ip-address)"
-	echo "        Gateway               : $(routing_db_get ${zone} remote-ip-address)"
-	echo "        DNS-Server            : $(routing_db_get ${zone} dns)"
-	echo
-	echo "        MAC-Remote            : $(routing_db_get ${zone} remote-address)"
-	echo
+	local proto
+	for proto in ${IP_SUPPORTED_PROTOCOLS}; do
+		routing_db_exists ${zone} ${proto} || continue
+		if [ "${proto}" = "ipv6" ]; then
+			echo "      Internet Protocol Version 6:"
+		elif [ "${proto}" = "ipv4" ]; then
+			echo "      Internet Protocol Version 4:"
+		fi
+		echo "        IP-Address            : $(routing_db_get ${zone} ${proto} local-ip-address)"
+		echo "        Gateway               : $(routing_db_get ${zone} ${proto} remote-ip-address)"
+		echo "        DNS-Server            : $(routing_db_get ${zone} ${proto} dns)"
+		echo
+		echo "        MAC-Remote            : $(routing_db_get ${zone} ${proto} remote-address)"
+		echo
+	done
 	echo "        MTU                   : $(device_get_mtu ${zone})"
 	echo # Empty line
 	exit ${EXIT_OK}
