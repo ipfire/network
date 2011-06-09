@@ -78,8 +78,11 @@ function _up() {
 
 	ip_address_add ${zone} ${ADDRESS}/${PREFIX}
 
-	if zone_is_nonlocal ${zone} && [ -n "${GATEWAY}" ]; then
-		: # XXX to be done
+	if [ -n "${GATEWAY}" ]; then
+		routing_db_set ${zone} ipv6 local-ip-address ${ADDRESS}/${PREFIX}
+		routing_db_set ${zone} ipv6 remote-ip-address ${GATEWAY}
+		routing_db_set ${zone} ipv6 active 1
+		routing_default_update
 	fi
 
 	exit ${EXIT_OK}
@@ -94,10 +97,16 @@ function _down() {
 		error "Zone '${zone}' doesn't exist."
 		exit ${EXIT_ERROR}
 	fi
+
+	# Remove routing information from database.
+	routing_db_remove ${zone} ipv6
 	
 	config_read $(zone_dir ${zone})/configs/${config}
 
 	ip_address_del ${zone} ${ADDRESS}/${PREFIX}
+
+	# Update routing tables.
+	routing_default_update
 
 	exit ${EXIT_OK}
 }
