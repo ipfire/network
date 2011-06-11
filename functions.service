@@ -1,0 +1,71 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function service_start() {
+	local name=${1}
+	shift
+
+	assert isset name
+
+	systemctl start ${name}.service
+}
+
+function service_stop() {
+	local name=${1}
+	shift
+
+	assert isset name
+
+	systemctl stop ${name}.service
+}
+
+function service_restart() {
+	local name=${1}
+	shift
+
+	assert isset name
+
+	systemctl restart ${name}.service
+}
+
+function service_reload() {
+	local name=${1}
+	shift
+
+	assert isset name
+
+	if service_status ${name}; then
+		systemctl reload ${name}.service
+		return $?
+	else
+		log WARNING "Cannot reload service '${name}' which is currently not running."
+	fi
+}
+
+function service_status() {
+	local name=${1}
+	shift
+
+	assert isset name
+
+	systemctl status ${name}.service >/dev/null 2>&1
+	return $?
+}
