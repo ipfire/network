@@ -22,42 +22,16 @@
 IP_SUPPORTED_PROTOCOLS="${IP_SUPPORTED_PROTOCOLS} ipv4"
 
 function ipv4_is_valid() {
-	local address=${1}
+	ipcalc --ipv4 -c $@ >/dev/null 2>&1
 
-	assert isset address
-
-	# Cut the prefix if there is one given
-	local prefix=$(ip_get_prefix ${address})
-	address=$(ip_split_prefix ${address})
-
-	# If address is larger than 15 characters it cannot be an IPv4 address
-	[ ${#address} -gt 15 ] && return ${EXIT_ERROR}
-
-	# Check for a valid IPv4 prefix if provided
-	if [ -n "${prefix}" ]; then
-		if [ ${prefix} -lt 4 ] || [ ${prefix} -gt 30 ]; then
+	case "$?" in
+		0)
+			return ${EXIT_OK}
+			;;
+		*)
 			return ${EXIT_ERROR}
-		fi
-	fi
-
-	local IFS="."
-	local octet
-	local count
-	for octet in ${address}; do
-		if [ ${octet} -ge 0 ] && [ ${octet} -le 255 ]; then
-			count=$(( ${count} + 1 ))
-			continue
-		fi
-
-		# If we get here the address was not valid
-		break
-	done
-
-	if [ ${count} -eq 4 ]; then
-		return ${EXIT_OK}
-	fi
-
-	return ${EXIT_ERROR}
+			;;
+	esac
 }
 
 function ipv4_detect_duplicate() {

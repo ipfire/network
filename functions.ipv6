@@ -138,35 +138,16 @@ function ipv6_device_privacy_extensions_disable() {
 }
 
 function ipv6_is_valid() {
-	local address=${1}
+	ipcalc --ipv6 -c $@ >/dev/null 2>&1
 
-	assert isset address
-
-	local prefix=$(ip_get_prefix ${address})
-	address=$(ip_split_prefix ${address})
-
-	# Check length
-	[ ${#address} -gt 39 ] && return ${EXIT_ERROR}
-
-	# Check prefix if provided
-	if [ -n "${prefix}" ]; then
-		# XXX need to check was largest prefix is
-		if [ ${prefix} -lt 0 ] && [ ${prefix} -gt 64 ]; then
+	case "$?" in
+		0)
+			return ${EXIT_OK}
+			;;
+		*)
 			return ${EXIT_ERROR}
-		fi
-	fi
-
-	# XXX find :: twice?
-	# XXX check for documentation prefix?
-
-	# Check for bad characters
-	local char
-	for char in 0 1 2 3 4 5 6 7 8 9 a b c d e f :; do
-		address=${address//${char}/}
-	done
-	[ -n "${address}" ] && return ${EXIT_ERROR}
-
-	return ${EXIT_OK}
+			;;
+	esac
 }
 
 function ipv6_implode() {
