@@ -80,7 +80,7 @@ function _up() {
 	local zone=${1}
 	shift
 
-	config_read ${ZONE_DIR}/${zone}/settings
+	zone_config_read ${zone}
 
 	if ! device_exists ${zone}; then
 		brctl addbr ${zone}
