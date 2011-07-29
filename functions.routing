@@ -35,10 +35,13 @@ function routing_default_update() {
 	local proto
 	local weight
 	local zone
+	local cmd
 
 	for proto in ${IP_SUPPORTED_PROTOCOLS}; do
 		# Clear routes
 		routes=""
+
+		cmd="ip $([ "${proto}" = "ipv6" ] && echo "-6") route"
 
 		for zone in ${zones}; do
 			# Skip if zone is not up
@@ -48,7 +51,11 @@ function routing_default_update() {
 				gateway=$(routing_db_get ${zone} ${proto} remote-ip-address)
 				weight=$(routing_db_get ${zone} ${proto} weight)
 
-				routes="${routes} nexthop via ${gateway}"
+				if device_is_ppp ${zone}; then
+					routes="${routes} dev ${zone}"
+				else
+					routes="${routes} nexthop via ${gateway}"
+				fi
 
 				if [ -n "${weight}" ]; then
 					routes="${routes} weight ${weight}"
@@ -58,22 +65,30 @@ function routing_default_update() {
 			fi
 		done
 
-		if [ -z "${routes}" ]; then
-			log INFO "Removing default route for ${proto}."
-
-			if routing_has_default; then
-				ip route del default
-			fi
-			return ${EXIT_OK}
-		fi
-
 		# Remove too much spaces.
 		routes=$(echo ${routes})
 
+		# Remove all default routes.
+		while ${cmd} | grep -q "^default"; do
+			${cmd} del default
+		done
+
+		if [ -z "${routes}" ]; then
+			log INFO "Removed default route for ${proto}."
+			return ${EXIT_OK}
+		fi
+
 		log INFO "Setting default route for ${proto}: ${routes}"
 
-		ip $([ "${proto}" = "ipv6" ] && echo "-6") route replace default ${routes}
+		${cmd} add default ${routes}
 		assert [ $? -eq 0 ]
+
+		case "${proto}" in
+			ipv6)
+				# Apply radvd configuration.
+				radvd_update
+				;;
+		esac
 	done
 }
 
