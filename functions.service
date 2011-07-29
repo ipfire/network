@@ -26,6 +26,15 @@ function service_start() {
 	assert isset name
 
 	systemctl start ${name}.service
+
+	# Check, if the service was successfully started and
+	# return a proper exit code.
+	service_is_active ${name}
+	local ret=$?
+
+	log INFO "Started service '${name}.service', code=${ret}."
+
+	return ${ret}
 }
 
 function service_stop() {
@@ -67,5 +76,15 @@ function service_status() {
 	assert isset name
 
 	systemctl status ${name}.service >/dev/null 2>&1
+	return $?
+}
+
+function service_is_active() {
+	local name=${1}
+	shift
+
+	assert isset name
+
+	systemctl is-active ${name}.service >/dev/null 2>&1
 	return $?
 }

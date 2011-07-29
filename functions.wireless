@@ -230,7 +230,7 @@ function hostapd_start() {
 	local config_file=${config_dir}/config
 	hostapd_config_write ${device} $@ > ${config_file}
 
-	hostapd -dd -B -P ${config_dir}/pid ${config_file}
+	service_start hostapd@${device}
 	local ret=$?
 
 	case "${ret}" in
@@ -257,13 +257,7 @@ function hostapd_stop() {
 
 	assert isset device
 
-	local pid=$(hostapd_get_pid ${device})
-
-	if isset pid; then
-		process_kill ${pid}
-	else
-		warning_log "Could not find pid file for hostapd process running for ${device}."
-	fi
+	service_stop hostapd@${device}
 
 	rm -rf $(hostapd_config_dir ${device})
 }
