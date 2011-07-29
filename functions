@@ -13,6 +13,9 @@ function init_run() {
 	done
 }
 
+# Include version information.
+. /lib/network/version
+
 for file in /lib/network/functions.*; do
 	. ${file}
 done
