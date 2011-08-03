@@ -549,3 +549,27 @@ function device_get_tx_errors() {
 
 	__device_get_file ${device} statistics/tx_errors
 }
+
+function device_hotplug() {
+	local device=${1}
+	shift
+
+	assert isset device
+	#assert device_exists ${device}
+
+	if ! device_is_free ${device}; then
+		log ERROR "The device '${device}' does not look to be unused."
+		log ERROR "Don't proceed."
+	#	return ${EXIT_ERROR}
+	fi
+
+	for port in $(ports_get_all); do
+		port_cmd hotplug ${port} ${device}
+		if [ $? -eq ${EXIT_OK} ]; then
+			echo "${port}"
+			exit ${EXIT_OK}
+		fi
+	done
+
+	exit ${EXIT_ERROR}
+}

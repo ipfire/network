@@ -151,6 +151,27 @@ function cli_hostname() {
 	exit ${EXIT_OK}
 }
 
+function cli_hotplug() {
+	if cli_help_requested $@; then
+		cli_usage root-hotplug
+		exit ${EXIT_OK}
+	fi
+
+	local command=${1}
+	shift
+
+	case "${command}" in
+		device)
+			device_hotplug $@
+			exit $?
+			;;
+		*)
+			cli_usage root-hotplug
+			exit ${EXIT_OK}
+			;;
+	esac
+}
+
 function cli_port() {
 	if cli_help_requested $@; then
 		cli_usage root-port

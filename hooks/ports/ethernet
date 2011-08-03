@@ -60,6 +60,22 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
+function _hotplug() {
+	local port=${1}
+	local device=${2}
+
+	assert isset port
+	assert isset device
+
+	config_read $(port_file ${port})
+
+	if [ "${DEVICE_MAC}" = "$(device_get_address ${device})" ]; then
+		exit ${EXIT_OK}
+	fi
+
+	exit ${EXIT_ERROR}
+}
+
 function _status() {
 	local port=${1}
 	shift

@@ -40,12 +40,16 @@ done
 
 function run() {
 	case "${action}" in
-		edit|add|create|rem|up|down|status|info)
+		edit|add|create|rem|up|down|status|info|hotplug)
 			_${action} $@
 			;;
 	esac
 
 	error "Port hook '${HOOK}' didn't exit properly."
+	exit ${EXIT_ERROR}
+}
+
+function _hotplug() {
 	exit ${EXIT_ERROR}
 }
 
