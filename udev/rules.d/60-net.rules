@@ -1,0 +1,8 @@
+
+# Call a script that checks for the right name of the new device.
+# It is either renamed to match an existing configuration or gets
+# a new name.
+ACTION=="add", SUBSYSTEM=="net", PROGRAM="/lib/udev/network-hotplug-rename", RESULT=="?*", ENV{INTERFACE_NAME}="$result"
+
+# Handle all plugged-in devices.
+#SUBSYSTEM=="net", RUN+="/lib/udev/network-hotlug"

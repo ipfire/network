@@ -12,7 +12,7 @@ all:
 
 install:
 	-mkdir -pv $(DESTDIR)/etc/{network,ppp}
-	-mkdir -pv $(DESTDIR)/lib/network
+	-mkdir -pv $(DESTDIR)/lib/{network,udev}
 	-mkdir -pv $(DESTDIR)/sbin
 	-mkdir -pv $(DESTDIR)/usr/lib/sysctl.d
 	-mkdir -pv $(DESTDIR)/var/log/network
@@ -21,6 +21,7 @@ install:
 
 	cp -rfv {hooks,header*,functions*} $(DESTDIR)/lib/network/
 	cp -fv  sysctl.d/* $(DESTDIR)/usr/lib/sysctl.d/
+	cp -rfv udev/* $(DESTDIR)/lib/udev
 
 	install -m 755 -v ppp/ip-updown $(DESTDIR)/etc/ppp
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-pre-up

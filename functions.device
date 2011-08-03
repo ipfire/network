@@ -558,18 +558,18 @@ function device_hotplug() {
 	#assert device_exists ${device}
 
 	if ! device_is_free ${device}; then
-		log ERROR "The device '${device}' does not look to be unused."
-		log ERROR "Don't proceed."
-	#	return ${EXIT_ERROR}
+		log ERROR "The device '${device}' is in use."
+		return ${EXIT_ERROR}
 	fi
 
 	for port in $(ports_get_all); do
 		port_cmd hotplug ${port} ${device}
 		if [ $? -eq ${EXIT_OK} ]; then
 			echo "${port}"
-			exit ${EXIT_OK}
+			return ${EXIT_OK}
 		fi
 	done
 
-	exit ${EXIT_ERROR}
+	port_find_free ${PORT_PATTERN}
+	return $?
 }
