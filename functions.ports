@@ -260,3 +260,21 @@ function port_get_children() {
 
 	port_get_info ${port} PORT_CHILDREN
 }
+
+function port_zone() {
+	# Get name of the zones, this port is configured in.
+	local port=${1}
+	shift
+
+	assert isset port
+
+	local zone
+	for zone in $(zones_get_all); do
+		if zone_has_port ${zone} ${port}; then
+			echo "${zone}"
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_OK}
+}

@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2011  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,49 +19,52 @@
 #                                                                             #
 ###############################################################################
 
-COLOUR_GREEN="\\033[1;32m"
-COLOUR_RED="\\033[1;31m"
-COLOUR_NORMAL="\\033[0;39m"
-COLOUR_YELLOW="\\033[1;35m"
+. /lib/network/functions
 
-COLOUR_BOLD="\\033[1;39m"
-COLOUR_DOWN=${COLOUR_RED}
-COLOUR_ERROR=${COLOUR_RED}
-COLOUR_OK=${COLOUR_GREEN}
-COLOUR_UP=${COLOUR_GREEN}
-COLOUR_WARN=${COLOUR_YELLOW}
+# Do nothing, if the network isn't running.
+# That happens for example on boot time.
+if ! network_is_running; then
+	exit 0
+fi
 
-COLOUR_ENABLED=${COLOUR_GREEN}
-COLOUR_DISABLED=${COLOUR_RED}
+# Check if the udev environment variables are properly set.
+assert isset ACTION
+assert isset INTERFACE
 
-declare -A COLOUR_LOG
-COLOUR_LOG["DEBUG"]=${COLOUR_NORMAL}
-COLOUR_LOG["INFO"]=${COLOUR_NORMAL}
-COLOUR_LOG["ERROR"]=${COLOUR_RED}
-COLOUR_LOG["WARNING"]=${COLOUR_YELLOW}
+# Check, if the device is a physical network interface and
+# if we can handle it.
+if ! device_is_real ${INTERFACE}; then
+	exit ${EXIT_OK}
+fi
 
-COLOUR_STP_FORWARDING=${COLOUR_GREEN}
-COLOUR_STP_DISCARDING=${COLOUR_RED}
-COLOUR_STP_LEARNING=${COLOUR_YELLOW}
-COLOUR_STP_BLOCKING=${COLOUR_YELLOW}
+# Check, if there is a configuration for that device.
+if port_exists ${INTERFACE}; then
+	port=${INTERFACE}
 
-COLOUR_VARIABLES="COLOUR_GREEN COLOUR_RED COLOUR_NORMAL COLOUR_YELLOW"
-COLOUR_VARIABLES="${COLOUR_VARIABLES} COLOUR_BOLD COLOUR_DOWN COLOUR_ERROR"
-COLOUR_VARIABLES="${COLOUR_VARIABLES} COLOUR_ERROR COLOUR_OK COLOUR_UP"
-COLOUR_VARIABLES="${COLOUR_VARIABLES} COLOUR_WARM COLOUR_ENABLED COLOUR_DISABLED"
-COLOUR_VARIABLES="${COLOUR_VARIABLES} COLOUR_LOG COLOUR_STP_FORWARDING"
-COLOUR_VARIABLES="${COLOUR_VARIABLES} COLOUR_STP_DISCARDING COLOUR_STP_LEARNING"
-COLOUR_VARIABLES="${COLOUR_VARIABLES} COLOUR_STP_BLOCKING"
+else
+	# If the given device was not configured,
+	# we create an initial configuration.
+	port_create ethernet ${INTERFACE}
+	exit ${EXIT_OK}
+fi
 
-function colours_disable() {
-	local line
-	for line in ${COLOUR_VARIABLES}; do
-		unset ${line}
-	done
-}
+case "${ACTION}" in
+	add|register)
+		zone=$(port_zone ${port})
 
-function colours_auto_disable() {
-	if [ "${TERM}" = "dumb" ]; then
-		colours_disable
-	fi
-}
+		# Check, if the device is configured in a zone.
+		# If not, there is nothing to do.
+		isset zone || exit ${EXIT_OK}
+
+		boot=$(zone_config_option ${zone} BOOT)
+		if enabled boot; then
+			zone_up ${zone}
+		fi
+		;;
+
+	remove|unregister)
+		port_down ${port}
+		;;
+esac
+
+exit ${EXIT_OK}

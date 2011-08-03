@@ -444,3 +444,8 @@ function dec() {
 
 	printf "%d\n" "${hex}"
 }
+
+function network_is_running() {
+	# Check, if the network service is running.
+	service_is_active network
+}

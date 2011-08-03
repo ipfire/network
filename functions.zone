@@ -321,6 +321,20 @@ function zone_get_ports() {
 	done
 }
 
+function zone_has_port() {
+	# Check, if the given port is configured
+	# in this zone.
+
+	local zone=${1}
+	local port=${2}
+	shift 2
+
+	assert isset zone
+	assert isset port
+
+	[ -e "$(zone_dir ${zone})/ports/${port}" ]
+}
+
 # XXX overwritten some lines below
 function zone_config() {
 	local zone=${1}
@@ -372,6 +386,24 @@ function zone_config() {
 			exit ${EXIT_ERROR}
 			;;
 	esac
+}
+
+function zone_config_option() {
+	local zone=${1}
+	local option=${2}
+	local default=${3}
+	shift 2
+
+	assert isset zone
+	assert isset option
+
+	(
+		VALUE="${default}"
+		zone_config_read ${zone}
+
+		VALUE="${!option}"
+		echo "${VALUE}"
+	)
 }
 
 function zone_config_create() {
