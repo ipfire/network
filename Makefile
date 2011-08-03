@@ -1,6 +1,6 @@
 
 NAME = network
-VER  = 001
+VER  = 002
 
 DESTDIR=
 
