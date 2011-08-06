@@ -11,7 +11,7 @@ all:
 	@echo "Nothing to do here."
 
 install:
-	-mkdir -pv $(DESTDIR)/etc/{network,ppp}
+	-mkdir -pv $(DESTDIR)/etc/{network/{ports,zones},ppp}
 	-mkdir -pv $(DESTDIR)/lib/{network,udev}
 	-mkdir -pv $(DESTDIR)/sbin
 	-mkdir -pv $(DESTDIR)/usr/lib/sysctl.d
