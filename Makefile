@@ -22,6 +22,7 @@ install:
 	cp -rfv {hooks,header*,functions*} $(DESTDIR)/lib/network/
 	cp -fv  sysctl.d/* $(DESTDIR)/usr/lib/sysctl.d/
 	cp -rfv udev/* $(DESTDIR)/lib/udev
+	cp -rfv network-* $(DESTDIR)/lib/network/
 
 	install -m 755 -v ppp/ip-updown $(DESTDIR)/etc/ppp
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-pre-up

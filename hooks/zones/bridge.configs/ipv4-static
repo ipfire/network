@@ -79,15 +79,13 @@ function _up() {
 
 	ip_address_add ${zone} ${ADDRESS}/${PREFIX}
 
-	if [ -n "${GATEWAY}" ]; then
-		# Save configuration
-		routing_db_set ${zone} ipv4 type "${HOOK}"
-		routing_db_set ${zone} ipv4 local-ip-address "${ADDRESS}/${PREFIX}"
-		routing_db_set ${zone} ipv4 remote-ip-address "${GATEWAY}"
-		routing_db_set ${zone} ipv4 active 1
+	# Save configuration
+	routing_db_set ${zone} ipv4 type "${HOOK}"
+	routing_db_set ${zone} ipv4 local-ip-address "${ADDRESS}/${PREFIX}"
+	routing_db_set ${zone} ipv4 remote-ip-address "${GATEWAY}"
+	routing_db_set ${zone} ipv4 active 1
 
-		routing_update ${zone} ipv4
-	fi
+	routing_update ${zone} ipv4
 
 	exit ${EXIT_OK}
 }
