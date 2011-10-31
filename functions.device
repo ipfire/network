@@ -125,7 +125,12 @@ function device_has_virtuals() {
 function device_is_ppp() {
 	local device=${1}
 
-	ip link show ${device} 2>/dev/null | grep -qE "<.*POINTOPOINT.*>"
+	local type=$(__device_get_file ${device} type)
+	if [ "${type}" = "512" ]; then
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
 }
 
 # Check if the device is a loopback device
