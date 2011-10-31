@@ -164,7 +164,9 @@ function network_config_read() {
 
 	config_read ${CONFIG_FILE}
 
-	DEBUG=${debug}
+	if [ -n "${debug}" ]; then
+		DEBUG=${debug}
+	fi
 }
 
 function network_config_write() {
