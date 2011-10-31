@@ -39,7 +39,6 @@ function bonding_create() {
 
 	echo "+${device}" > /sys/class/net/bonding_masters
 	device_set_address ${device} ${mac}
-	device_set_up ${device}
 }
 
 function bonding_remove() {
