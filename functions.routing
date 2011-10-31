@@ -211,12 +211,17 @@ function routing_update() {
 	cmd ip route flush table ${table}
 
 	local local_ip_address=$(routing_db_get ${zone} ${proto} local-ip-address)
+	local remote_ip_address=$(routing_db_get ${zone} ${proto} remote-ip-address)
 
 	# XXX does not work.
-	#log DEBUG "Adding route for subnet ${local_ip_address} to table ${table}"
-	#cmd ip route add table ${table} ${local_ip_address} dev ${zone}
+	case "${proto}" in
+		ipv4)
+			local net_address=$(ipv4_get_netaddress ${local_ip_address})
 
-	local remote_ip_address=$(routing_db_get ${zone} ${proto} remote-ip-address)
+			log DEBUG "Adding route for subnet ${local_ip_address} to table ${table}"
+			cmd ip route add table ${table} ${net_address} dev ${zone}
+			;;
+	esac
 
 	if isset remote_ip_address; then
 		log DEBUG "Adding default route for table ${table}"
