@@ -49,8 +49,11 @@ function routing_default_update() {
 
 			if [ "$(routing_db_get ${zone} ${proto} active)" = "1" ]; then
 				gateway=$(routing_db_get ${zone} ${proto} remote-ip-address)
+				[ -z "${gateway}" ] && continue
+
 				weight=$(routing_db_get ${zone} ${proto} weight)
 
+				assert device_exists ${zone}
 				if device_is_ppp ${zone}; then
 					routes="${routes} dev ${zone}"
 				else
