@@ -1,0 +1,218 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /lib/network/header-zone
+
+HOOK_SETTINGS="HOOK AUTH LINKNAME USER SECRET PEERDNS DEFAULTROUTE MSN MTU"
+HOOK_SETTINGS="${HOOK_SETTINGS} L2PROTO L3PROTO ENCAP PHONE"
+
+AUTH=
+CHANNELS="auto"
+DEFAULTROUTE=1
+ENCAP="syncppp"
+L2PROTO="hdlc"
+L3PROTO="trans"
+LINKNAME="$(uuid)"
+MSN=
+MTU=1500
+PEERDNS=1
+TIMEOUT=10
+SECRET=
+USER=
+PHONE=
+
+MODE="persistent"
+
+ISDN_ALLOWED_AUTHS="chap pap"
+
+function _check() {
+	assert isset USER
+	assert isset SECRET
+	assert isset LINKNAME
+	assert isset DEFAULTROUTE
+	assert isset PEERDNS
+	assert isset TIMEOUT
+	assert isset PHONE
+
+	assert isbool DEFAULTROUTE
+	assert isbool PEERDNS
+	assert isinteger MSN
+	assert isinteger TIMEOUT
+
+	isset AUTH && assert isoneof AUTH ${ISDN_ALLOWED_AUTHS}
+}
+
+function _parse_cmdline() {
+	local value
+
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			--user=*)
+				USER=${1#--user=}
+				;;
+			--secret=*)
+				SECRET=${1#--secret=}
+				;;
+			--linkname=*)
+				LINKNAME=${1#--name=}
+				;;
+			--mtu=*)
+				MTU=${1#--mtu=}
+				;;
+			--defaultroute=*)
+				value=${1#--defaultroute=}
+				if enabled value; then
+					DEFAULTROUTE=1
+				else
+					DEFAULTROUTE=0
+				fi
+				;;
+			--dns=*)
+				value=${1#--dns=}
+				if enabled value; then
+					PEERDNS=1
+				else
+					PEERDNS=0
+				fi
+				;;
+			--auth=*)
+				AUTH=${1#--auth=}
+				;;
+			--device=*)
+				DEVICE=${1#--device=}
+				;;
+			--msn=*)
+				MSN=${1#--msn=}
+				;;
+			--timeout=*)
+				TIMEOUT=${1#--timeout=}
+				;;
+			--phone=*)
+				PHONE="${PHONE} ${1#--phone=}"
+				;;
+			*)
+				echo "Unknown option: $1" >&2
+				exit ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+}
+
+function _up() {
+	local zone=${1}
+	shift
+
+	assert isset zone
+
+	zone_config_read ${zone}
+
+	assert [ -e "/dev/${DEVICE}" ]
+
+	# Creating necessary files
+	# XXX must be PPP_RUN
+	[ -d "${RED_RUN}/${LINKNAME}" ] || mkdir -p ${RED_RUN}/${LINKNAME}
+
+	# Create device node.
+	isdn_create_device ${zone}
+
+	# Apply configuration to the ISDN stack.
+	isdn_set_l2proto ${zone} ${L2PROTO}
+	isdn_set_l3proto ${zone} ${L3PROTO}
+	isdn_set_encap   ${zone} ${ENCAP}
+
+	isdn_set_eaz ${zone} ${MSN}
+	isdn_set_huptimeout ${zone} $(( ${TIMEOUT} * 60 ))
+	isdn_addphone ${zone} out ${PHONE}
+
+	# Updating PPP credentials.
+	ppp_secret "${USER}" "${SECRET}"
+
+	# Bring up connection.
+	isdn_dial ${zone} \
+		--mode=${MODE} \
+		--channels=${CHANNELS} \
+		--user=${USER} \
+		--mtu=${MTU}
+
+	exit ${EXIT_OK}
+}
+
+function _down() {
+	local zone=${1}
+	shift
+
+	# Bring down ISDN interface.
+	isdn_hangup ${zone}
+
+	# Remove ISDN device.
+	isdn_remove_device ${zone}
+
+	exit ${EXIT_OK}
+}
+
+function _status() {
+	local zone=${1}
+
+	assert isset zone
+
+	cli_status_headline ${zone}
+
+	zone_config_read ${zone}
+
+	cli_headline "  Configuration:"
+	printf "${DEVICE_PRINT_LINE1}" "User:" "${USER}"
+	printf "${DEVICE_PRINT_LINE1}" "Secret:" "<hidden>"
+	echo
+	printf "${DEVICE_PRINT_LINE1}" "MTU:" "${MTU}"
+	printf "${DEVICE_PRINT_LINE1}" "Use default route?" "$(enabled DEFAULTROUTE && echo "enabled" || echo "disabled")"
+	printf "${DEVICE_PRINT_LINE1}" "Use peer DNS?" "$(enabled PEERDNS && echo "enabled" || echo "disabled")"
+	echo
+
+	if device_exists ${zone}; then
+		cli_headline "    ISDN information:"
+		printf "${DEVICE_PRINT_LINE1}" "L2 protocol:" "$(isdn_get_l2proto ${zone})"
+		printf "${DEVICE_PRINT_LINE1}" "L3 protocol:" "$(isdn_get_l3proto ${zone})"
+		printf "${DEVICE_PRINT_LINE1}" "Encapsulation:" "$(isdn_get_encap ${zone})"
+		echo
+	fi
+
+	# Exit if zone is down
+	if ! zone_is_up ${zone}; then
+		echo # Empty line
+		exit ${EXIT_ERROR}
+	fi
+
+	# XXX display time since connection started
+
+	cli_headline "    Point-to-Point-over-Ethernet protocol:"
+	echo "        IP-Address            : $(routing_db_get ${zone} local-ip-address)"
+	echo "        Gateway               : $(routing_db_get ${zone} remote-ip-address)"
+	echo "        DNS-Server            : $(routing_db_get ${zone} dns)"
+	echo
+	echo "        MAC-Remote            : $(routing_db_get ${zone} remote-address)"
+	echo
+	echo "        MTU                   : $(device_get_mtu ${zone})"
+	echo # Empty line
+	exit ${EXIT_OK}
+}
+
+run $@
