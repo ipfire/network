@@ -110,12 +110,14 @@ function _up() {
 	fi
 
 	bonding_create ${device} ${DEVICE_MAC}
+	assert device_exists ${device}
 
 	if [ -n "${MODE}" ]; then
 		bonding_set_mode ${device} ${MODE}
 	fi
 
 	bonding_set_miimon ${device} ${MIIMON}
+	device_set_up ${device}
 
 	local slave
 	for slave in ${SLAVES}; do

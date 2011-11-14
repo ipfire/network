@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2011  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,57 +19,17 @@
 #                                                                             #
 ###############################################################################
 
-IP_SUPPORTED_PROTOCOLS="${IP_SUPPORTED_PROTOCOLS} ipv4"
+. /lib/network/functions
 
-function ipv4_is_valid() {
-	ipcalc --ipv4 -c $@ >/dev/null 2>&1
+case "${1}" in
+	start)
+		# Write the radvd configuration file.
+		radvd_write_config
+		;;
+	stop)
+		# Clear all contents in the configuration file.
+		radvd_clear
+		;;
+esac
 
-	case "$?" in
-		0)
-			return ${EXIT_OK}
-			;;
-		*)
-			return ${EXIT_ERROR}
-			;;
-	esac
-}
-
-function ipv4_detect_duplicate() {
-	local device=${1}
-	local address=${2}
-
-	assert isset address
-	assert isset device
-	assert device_exists ${device}
-
-	if ! arping -q -c 2 -w 3 -D -I ${device} ${address}; then
-		log DEBUG "Detected duplicate address '${address}' on device '${device}'."
-		return ${EXIT_OK}
-	fi
-
-	return ${EXIT_ERROR}
-}
-
-function ipv4_update_neighbours() {
-	local device=${1}
-	local address=${2}
-
-	arping -q -A -c 1 -I ${device} ${address}
-	( sleep 2; arping -q -U -c 1 -I ${device} ${address} ) >/dev/null 2>&1 </dev/null &
-}
-
-function ipv4_get_netaddress() {
-	local address=${1}
-	assert isset address
-
-	local prefix=$(ip_get_prefix ${address})
-	assert isset prefix
-
-	local NETWORK
-	eval $(ipcalc --network ${address})
-	assert isset NETWORK
-
-	echo "${NETWORK}/${prefix}"
-
-	return ${EXIT_OK}
-}
+exit ${EXIT_OK}

@@ -1,6 +1,6 @@
 
 NAME = network
-VER  = 002
+VER  = 003
 
 DESTDIR=
 
@@ -12,16 +12,16 @@ all:
 
 install:
 	-mkdir -pv $(DESTDIR)/etc/{network/{ports,zones},ppp}
-	-mkdir -pv $(DESTDIR)/lib/{network,udev}
+	-mkdir -pv $(DESTDIR)/lib/{network,sysctl.d,udev}
 	-mkdir -pv $(DESTDIR)/sbin
-	-mkdir -pv $(DESTDIR)/usr/lib/sysctl.d
 	-mkdir -pv $(DESTDIR)/var/log/network
 
 	install -m 755 -v network $(DESTDIR)/sbin
 
 	cp -rfv {hooks,header*,functions*} $(DESTDIR)/lib/network/
-	cp -fv  sysctl.d/* $(DESTDIR)/usr/lib/sysctl.d/
+	cp -fv  sysctl.d/* $(DESTDIR)/lib/sysctl.d/
 	cp -rfv udev/* $(DESTDIR)/lib/udev
+	cp -rfv network-* $(DESTDIR)/lib/network/
 
 	install -m 755 -v ppp/ip-updown $(DESTDIR)/etc/ppp
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-pre-up
