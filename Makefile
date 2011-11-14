@@ -13,8 +13,8 @@ all:
 install:
 	-mkdir -pv $(DESTDIR)/etc/{network/{ports,zones},ppp}
 	-mkdir -pv $(DESTDIR)/lib/{network,sysctl.d,udev}
-	-mkdir -pv $(DESTDIR)/sbin
 	-mkdir -pv $(DESTDIR)/var/log/network
+	-mkdir -pv $(DESTDIR)/sbin
 
 	install -m 755 -v network $(DESTDIR)/sbin
 
@@ -22,6 +22,9 @@ install:
 	cp -fv  sysctl.d/* $(DESTDIR)/lib/sysctl.d/
 	cp -rfv udev/* $(DESTDIR)/lib/udev
 	cp -rfv network-* $(DESTDIR)/lib/network/
+
+	# Install bridge-stp. 
+	install -m 755 bridge-stp $(DESTDIR)/sbin/
 
 	install -m 755 -v ppp/ip-updown $(DESTDIR)/etc/ppp
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-pre-up
