@@ -32,7 +32,7 @@ STP_MODE="rstp"
 STP_FORWARD_DELAY=0
 STP_HELLO=2
 STP_MAXAGE=20
-STP_PRIORITY=512 # XXX check out better value
+STP_PRIORITY=512
 
 function _check() {
 	assert ismac MAC
@@ -91,7 +91,7 @@ function _up() {
 
 	# Enable STP
 	if enabled STP; then
-		stp_enable ${zone}
+		stp_enable ${zone} ${STP_MODE}
 
 		if [ -n "${STP_FORWARD_DELAY}" ]; then
 			brctl setfd ${zone} ${STP_FORWARD_DELAY}

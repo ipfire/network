@@ -19,14 +19,14 @@
 #                                                                             #
 ###############################################################################
 
-function stp_init() {
-	module_load stp
+# The default mode.
+#   We default to RSTP, because it has the better user experience and
+#   faster convergence times. Despite of that, it completely downgradeable
+#   to plain STP.
+STP_DEFAULT_MODE="rstp"
 
-	assert binary_exists brctl
-	assert binary_exists rstpctl
-}
-
-init_register stp_init
+# Allowed modes of the spanning tree protocol.
+STP_ALLOWED_MODES="rstp stp"
 
 function __rstpctl_bridge_get() {
 	local bridge=${1}
@@ -72,26 +72,19 @@ function __rstpctl_port_get() {
 
 function stp_enable() {
 	local bridge=${1}
+	local mode=${2}
 
 	assert isset bridge
 	assert zone_exists ${bridge}
 
+	# Tell the kernel to enable STP.
 	brctl stp ${bridge} on
 
-	local mode=$(zone_config_get ${bridge} STP_MODE)
-
-	case "${mode}" in
-		stp)
-			rstpctl setforcevers ${bridge} slow
-			;;
-		rstp)
-			rstpctl setforcevers ${bridge} normal
-			;;
-		*)
-			log WARNING "Unknown protocol version: ${mode}."
-			log WARNING "Using default mode."
-			;;
-	esac
+	# Set the correct protocol version.
+	if [ -z "${mode}" ]; then
+		mode="${STP_DEFAULT_MODE}"
+	fi
+	stp_bridge_set_protocol ${bridge} ${mode}
 }
 
 function stp_disable() {
@@ -101,6 +94,24 @@ function stp_disable() {
 	assert zone_exists ${bridge}
 
 	brctl stp ${bridge} off
+}
+
+function stp_bridge_set_protocol() {
+	local bridge=${1}
+	local mode=${2}
+
+	assert isset bridge
+	assert isset mode
+
+	if ! listmatch ${mode} ${STP_ALLOWED_MODES}; then
+		log WARNING "Unknown protocol version: ${mode}."
+		log WARNING "Using default mode."
+
+		mode="${STP_DEFAULT_MODE}"
+	fi
+
+	mstpctl setforcevers ${bridge} ${mode}
+	assert [ $? -eq 0 ]
 }
 
 function stp_bridge_get_protocol() {
@@ -128,10 +139,6 @@ function stp_bridge_get_protocol() {
 			echo "stp"
 			;;
 	esac
-}
-
-function stp_bridge_set_protocol() {
-	: XXX WANTED
 }
 
 function stp_bridge_get_id() {
