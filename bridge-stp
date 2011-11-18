@@ -25,7 +25,7 @@
 
 . /lib/network/functions
 
-systemctl is-active mstpd.service >/dev/null 2>&1 ||
+service_is_active mstpd || \
 	log ERROR "mstpd is not running. STP might not work."
 
 exit 0
