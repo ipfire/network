@@ -162,8 +162,11 @@ function _status() {
 	fi
 
 	cli_headline "  Spanning Tree Protocol information:"
-	if [ -n "$(stp_bridge_get_protocol ${zone})" ]; then
-		printf "${DEVICE_PRINT_LINE1}" "Version:" $(stp_bridge_get_protocol ${zone})
+	local proto=$(stp_bridge_get_protocol ${zone})
+	local ret=$?
+
+	if [ ${ret} -eq 0 ]; then
+		printf "${DEVICE_PRINT_LINE1}" "Version:" "$(stp_get_name ${proto})"
 		printf "${DEVICE_PRINT_LINE1}" "ID:" $(stp_bridge_get_id ${zone})
 		printf "${DEVICE_PRINT_LINE1}" "Priority:" $(stp_bridge_get_priority ${zone})
 
