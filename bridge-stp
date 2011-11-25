@@ -19,13 +19,46 @@
 #                                                                             #
 ###############################################################################
 
-# This script always returns 0 to prevent the kernel starting its own stp
-# implementation.
-# But in case no mstpd is not running, an error message will be logged.
-
 . /lib/network/functions
 
-service_is_active mstpd || \
-	log ERROR "mstpd is not running. STP might not work."
+# Change LOG_FACILITY that we will find our messages in syslog.
+LOG_FACILITY=$(basename ${0})
+
+zone=${1}
+action=${2}
+
+assert isset zone
+assert isset action
+
+# Exit immediately, if zone configuration does not exist.
+# This is for manually created bridges.
+if ! zone_exists ${zone}; then
+	exit 0
+fi
+
+# Check if mstpd is running. If not, try to start it.
+if ! service_is_active mstpd; then
+	service_start mstpd
+
+	if ! service_is_active mstpd; then
+		log ERROR "mstpd is not running. STP might not work."
+	fi
+fi
+
+# Tell mstpd that STP has to be enabled/disabled.
+case "${action}" in
+	start)
+		log DEBUG "Enabling STP for zone '${zone}'."
+		mstpctl notify-daemon-that-stp-is-on ${zone}
+		assert [ $? -eq 0 ]
+		;;
+	stop)
+		log DEBUG "Disabling STP for zone '${zone}'."
+		mstpctl notify-daemon-that-stp-is-off ${zone}
+		;;
+	*)
+		log ERROR "Unknown action given: ${action}."
+		;;
+esac
 
 exit 0
