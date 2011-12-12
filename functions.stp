@@ -120,23 +120,7 @@ function stp_bridge_get_protocol() {
 	# We get here, when STP is running in user-space mode.
 
 	# Get the current protocol version.
-	state=$(mstpctl showbridge ${bridge} | sed -n 's/  force protocol version.*\([0-9]\)/\1/p')
-
-	case "${state}" in
-		1)
-			echo "stp"
-			;;
-		2)
-			echo "rstp"
-			;;
-		3)
-			echo "mstp"
-			;;
-		*)
-			log ERROR "Could not determine STP version: ${state}."
-			return ${EXIT_ERROR}
-			;;
-	esac
+	mstpctl showbridge ${bridge} force-protocol-version
 
 	return ${EXIT_OK}
 }
@@ -156,7 +140,7 @@ function stp_bridge_get_forward_delay() {
 
 	assert isset bridge
 
-	mstpctl showbridge ${bridge} | sed -n "s/  forward delay \([0-9]*\).*/\1/p"
+	mstpctl showbridge ${bridge} forward-delay
 }
 
 function stp_bridge_set_forward_delay() {
@@ -169,7 +153,7 @@ function stp_bridge_get_designated_root() {
 
 	assert isset bridge
 
-	local output=$(mstpctl showbridge ${bridge} | sed -n "s/  designated root \(.*\).*/\1/p")
+	local output=$(mstpctl showbridge ${bridge} designated-root)
 
 	if ! isset output; then
 		return ${EXIT_ERROR}
@@ -184,7 +168,7 @@ function stp_bridge_get_root_path_cost() {
 
 	assert isset bridge
 
-	mstpctl showbridge ${bridge} | sed -n "s/  path cost\s*\([0-9]*\).*/\1/p"
+	mstpctl showbridge ${bridge} path-cost
 }
 
 function stp_bridge_get_root_port_id() {
@@ -192,7 +176,7 @@ function stp_bridge_get_root_port_id() {
 
 	assert isset bridge
 
-	local root_port=$(mstpctl showbridge ${bridge} | sed -n "s/  root port\s*\([a-z0-9]*\).*/\1/p")
+	local root_port=$(mstpctl showbridge ${bridge} root-port)
 
 	# Return error, when there is no root port.
 	if [ "${root_port}" = "none" ]; then
@@ -250,7 +234,7 @@ function stp_bridge_get_topology_change_count() {
 
 	assert isset bridge
 
-	mstpctl showbridge ${bridge} | sed -n "s/  toplogy change count\s*\([0-9]*\)/\1/p"
+	mstpctl showbridge ${bridge} topology-change-count
 }
 
 function stp_bridge_get_topology_change_timer() {
@@ -258,7 +242,7 @@ function stp_bridge_get_topology_change_timer() {
 
 	assert isset bridge
 
-	mstpctl showbridge ${bridge} | sed -n "s/  time since topology change\s*\([0-9]*\)/\1/p"
+	mstpctl showbridge ${bridge} time-since-topology-change
 }
 
 function stp_bridge_get_topology_change_detected() {
@@ -266,7 +250,7 @@ function stp_bridge_get_topology_change_detected() {
 
 	assert isset bridge
 
-	local change=$(mstpctl showbridge ${bridge} | sed -n "s/  topology change\s*\(.*\)/\1/p")
+	local change=$(mstpctl showbridge ${bridge} topology-change)
 
 	echo "${change}"
 	case "${change}" in
@@ -286,7 +270,7 @@ function stp_port_get_state() {
 	assert isset bridge
 	assert isset port
 
-	local state=$(mstpctl showportdetail ${bridge} ${port} | sed -n "s/.*state\s*\([a-z]*\)/\1/p")
+	local state=$(mstpctl showportdetail ${bridge} ${port} state)
 
 	echo "${state^^}"
 }
@@ -312,7 +296,7 @@ function stp_port_get_cost() {
 	assert isset bridge
 	assert isset port
 
-	mstpctl showportdetail ${bridge} ${port} | sed -n "s/  external port cost \([0-9]*\).*/\1/p"
+	mstpctl showportdetail ${bridge} ${port} external-port-cost
 
 	return ${EXIT_ERROR}
 }
@@ -325,7 +309,7 @@ function stp_port_get_designated_root() {
 	assert isset bridge
 	assert isset port
 
-	output=$(mstpctl showportdetail ${bridge} ${port} | sed -n "s/  designated root\s*\(.*\)\s*dsgn.*/\1/p")
+	output=$(mstpctl showportdetail ${bridge} ${port} designated-root)
 
 	if [ -n "${output}" ]; then
 		echo "${output,,}"
