@@ -19,81 +19,12 @@
 #                                                                             #
 ###############################################################################
 
-IP_SUPPORTED_PROTOCOLS="${IP_SUPPORTED_PROTOCOLS} ipv4"
+# A list of all supported authentications methods:
 
-function ipv4_is_valid() {
-	ipcalc --ipv4 -c $@ >/dev/null 2>&1
+#  PPP daemon:
+PPP_ALLOWED_AUTHS="chap pap"
 
-	case "$?" in
-		0)
-			return ${EXIT_OK}
-			;;
-		*)
-			return ${EXIT_ERROR}
-			;;
-	esac
-}
+#  ISDN/ippp daemon:
+ISDN_ALLOWED_AUTHS="${PPP_ALLOWED_AUTHS}"
 
-function ipv4_detect_duplicate() {
-	local device=${1}
-	local address=${2}
-
-	assert isset address
-	assert isset device
-	assert device_exists ${device}
-
-	# Don't check on PPP devices.
-	device_is_ppp ${device} && return ${EXIT_ERROR}
-
-	if ! arping -q -c 2 -w 3 -D -I ${device} ${address}; then
-		log DEBUG "Detected duplicate address '${address}' on device '${device}'."
-		return ${EXIT_OK}
-	fi
-
-	return ${EXIT_ERROR}
-}
-
-function ipv4_update_neighbours() {
-	local device=${1}
-	local address=${2}
-
-	# Don't do anything on PPP devices.
-	device_is_ppp ${device} && return ${EXIT_OK}
-
-	arping -q -A -c 1 -I ${device} ${address}
-	( sleep 2; arping -q -U -c 1 -I ${device} ${address} ) >/dev/null 2>&1 </dev/null &
-}
-
-function ipv4_get_netaddress() {
-	local address=${1}
-	assert isset address
-
-	local prefix=$(ip_get_prefix ${address})
-	assert isset prefix
-
-	local NETWORK
-	eval $(ipcalc --network ${address})
-	assert isset NETWORK
-
-	echo "${NETWORK}/${prefix}"
-
-	return ${EXIT_OK}
-}
-
-function ipv4_prefix2netmask() {
-	local prefix=${1}
-	shift
-
-	assert isinteger prefix
-
-	# XXX this function is a stub
-
-	case "${prefix}" in
-		24)
-			echo "255.255.255.0"
-			;;
-		*)
-			assert false NOT IMPLEMENTED
-			;;
-	esac
-}
+# XXX ADD MODEM AND PPPOE ALLOWED AUTHS

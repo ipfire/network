@@ -302,7 +302,7 @@ function isdn_hangup() {
 }
 
 function ipppd_start() {
-	local device=${device}
+	local device=${1}
 	shift
 
 	assert device_exists ${device}
@@ -317,13 +317,27 @@ function ipppd_write_config() {
 	local device=${1}
 	shift
 
+	local value
 	local auth="chap"
 	local user
 	local mppe="on"
 	local mtu="1500"
+	local proxyarp="on"
+	local local_address
+	local remote_address
+	local netmask
+	local dns_servers
+
+	# mode tells us if we are running in server or
+	# client mode. The collection of variables to
+	# be set depends on this.
+	local mode="client"
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
+			--mode=*)
+				mode=${1#--mode=}
+				;;
 			--auth=*)
 				auth=${1#--auth=}
 				;;
@@ -336,6 +350,29 @@ function ipppd_write_config() {
 			--mtu=*)
 				mtu=${1#--mtu=}
 				;;
+			--proxyarp=*)
+				value=${1#--proxyarp=}
+				if enabled value; then
+					proxyarp="on"
+				else
+					proxyarp="off"
+				fi
+				;;
+			--netmask=*)
+				netmask=${1#--netmask=}
+				;;
+			--local-address=*)
+				local_address=${1#--local-address=}
+				;;
+			--remote-address=*)
+				remote_address=${1#--remote-address=}
+				;;
+			--dns-server=*)
+				value=${1#--dns-server=}
+				# XXX check if this is actually an IP address
+
+				dns_servers="${dns_servers} ${value}"
+				;;
 			*)
 				log WARN "Unknown argument given: ${1}"
 				;;
@@ -343,21 +380,38 @@ function ipppd_write_config() {
 		shift
 	done
 
-	assert isset auth
+	# Check if all common variables are correctly set.
+	assert isset mtu
 	assert isinteger mtu
 
+	case "${mode}" in
+		client)
+			# Check if all variables for client mode are set.
+			assert isset auth
+			assert isset user
+			;;
+		server)
+			assert isset local_address
+			assert isset remote_address
+			assert isset netmask
+			;;
+		*)
+			log CRITICAL "Invalid mode given: ${mode}"
+			exit ${EXIT_ERROR}
+			;;
+	esac
+
+	# Make a configuration file.
 	local config="$(isdn_config_dir ${device})/config"
 
 	cat >${config} <<EOF
+### Common section
+
 # XXX find a solution for this
 /dev/${device}
 
-# Authentication
-user ${user}
-+${auth}
-
-# Get remote DNS servers
-ms-get-dns
+# Never change the default route
+-defaultroute
 
 # Link properties
 mru ${mtu}
@@ -370,7 +424,38 @@ noipdefault
 -vj -vjccomp
 
 debug
+
 EOF
+
+	case "${mode}" in
+		client)
+			cat >>${config} <<EOF
+### Client section
+
+# Authentication
+user ${user}
++${auth}
+
+# Get remote DNS servers
+ms-get-dns
+
+EOF
+			;;
+
+
+		server)
+			cat >>${config} <<EOF
+### Server section
+
+${local_address}:${remote_address}
+netmask ${netmask}
+
+# Add DNS servers
+$(for value in ${dns_servers}; do echo "ms-dns ${value}"; done)
+
+EOF
+			;;
+	esac
 }
 
 function ipppd_stop() {
