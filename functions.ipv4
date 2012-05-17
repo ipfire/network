@@ -42,6 +42,9 @@ function ipv4_detect_duplicate() {
 	assert isset device
 	assert device_exists ${device}
 
+	# Don't check on PPP devices.
+	device_is_ppp ${device} && return ${EXIT_ERROR}
+
 	if ! arping -q -c 2 -w 3 -D -I ${device} ${address}; then
 		log DEBUG "Detected duplicate address '${address}' on device '${device}'."
 		return ${EXIT_OK}
@@ -53,6 +56,9 @@ function ipv4_detect_duplicate() {
 function ipv4_update_neighbours() {
 	local device=${1}
 	local address=${2}
+
+	# Don't do anything on PPP devices.
+	device_is_ppp ${device} && return ${EXIT_OK}
 
 	arping -q -A -c 1 -I ${device} ${address}
 	( sleep 2; arping -q -U -c 1 -I ${device} ${address} ) >/dev/null 2>&1 </dev/null &
@@ -103,4 +109,21 @@ function ipv4_flush_device() {
 	ip -4 neigh flush dev ${device} >/dev/null 2>&1
 
 	return 0
+
+function ipv4_prefix2netmask() {
+	local prefix=${1}
+	shift
+
+	assert isinteger prefix
+
+	# XXX this function is a stub
+
+	case "${prefix}" in
+		24)
+			echo "255.255.255.0"
+			;;
+		*)
+			assert false NOT IMPLEMENTED
+			;;
+	esac
 }

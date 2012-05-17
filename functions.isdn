@@ -1,0 +1,519 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2011  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function isdn_config_dir() {
+	local device=${1}
+	local dir="${RUN_DIR}/isdn/${device}"
+
+	[ -d "${dir}" ] || mkdir -p ${dir}
+
+	echo "${dir}"
+}
+
+function isdn_create_device() {
+	local device=${1}
+
+	if device_exists ${device}; then
+		return ${EXIT_OK}
+	fi
+
+	log INFO "Creating ISDN interface ${device}."
+	isdnctrl addif ${device} >/dev/null
+}
+
+function isdn_remove_device() {
+	local device=${1}
+
+	if ! device_exists ${device}; then
+		return ${EXIT_OK}
+	fi
+
+	log INFO "Removing ISDN interface ${device}."
+	isdnctrl delif ${device} >/dev/null
+}
+
+function isdn_add_slave() {
+	local device=${1}
+	local slave=${2}
+
+	assert device_exists ${device}
+	assert isset slave
+
+	log INFO "Creating ISDN slave interface ${slave} for device ${device}."
+	isdnctrl addslave ${device} ${slave}
+	local ret=$?
+
+	case "${ret}" in
+		0)
+			return ${EXIT_OK}
+			;;
+		255)
+			log ERROR "Could not create slave device for ${device}."
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function isdn_rem_slave() {
+	local device=${1}
+	local slave=${2}
+
+	assert device_exists ${device}
+	assert isset slave
+
+	log INFO "Removing ISDN slave interface ${slave}."
+	isdnctrl delslave ${device} ${slave} >/dev/null
+}
+
+function isdn_addlink() {
+	local device=${1}
+
+	assert device_exists ${device}
+
+	log INFO "Adding link to ISDN interface ${device}."
+	isdnctrl addlink ${device} >/dev/null
+}
+
+function isdn_get_encap() {
+	local device=${1}
+
+	assert device_exists ${device}
+
+	isdnctrl encap ${device} | awk '{ print $NF }'
+}
+
+function isdn_set_encap() {
+	local device=${1}
+	local encap=${2}
+
+	assert device_exists ${device}
+	assert isset encap
+
+	case "${encap}" in
+		syncppp) ;;
+		*)
+			log ERROR "Cannot set unknown encapsulation: ${encap}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	isdnctrl encap ${device} ${encap} >/dev/null
+}
+
+function isdn_get_l2proto() {
+	local device=${1}
+
+	assert device_exists ${device}
+
+	isdnctrl l2_prot ${device} | awk '{ print $NF }'
+}
+
+function isdn_set_l2proto() {
+	local device=${1}
+	local proto=${2}
+
+	assert device_exists ${device}
+	assert isset proto
+
+	case "${proto}" in
+		hdlc) ;;
+		*)
+			log ERROR "Cannot set unknown l2 proto: ${proto}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	isdnctrl l2_prot ${device} ${proto} >/dev/null
+}
+
+function isdn_get_l3proto() {
+	local device=${1}
+
+	assert device_exists ${device}
+
+	isdnctrl l3_prot ${device} | awk '{ print $NF }'
+}
+
+function isdn_set_l3proto() {
+	local device=${1}
+	local proto=${2}
+
+	assert device_exists ${device}
+	assert isset proto
+
+	case "${proto}" in
+		trans) ;;
+		*)
+			log ERROR "Cannot set unknown l3 proto: ${proto}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	isdnctrl l3_prot ${device} ${proto} >/dev/null
+}
+
+function isdn_set_dialmax() {
+	local device=${1}
+	local dialmax=${2}
+
+	assert device_exists ${device}
+	assert [ ${dialmax} -gt 0 ]
+
+	isdnctrl dialmax ${device} ${dialmax} >/dev/null
+}
+
+function isdn_set_eaz() {
+	local device=${1}
+	local eaz=${2}
+
+	assert device_exists ${device}
+	assert isset eaz
+
+	isdnctrl eaz ${device} ${eaz} >/dev/null
+}
+
+function isdn_set_dialmode() {
+	local device=${1}
+	local mode=${2}
+
+	assert device_exists ${device}
+
+	case "${proto}" in
+		auto) ;;
+		*)
+			log ERROR "Cannot set unknown dialmode: ${mode}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	isdnctrl dialmode ${device} ${mode} >/dev/null
+}
+
+function isdn_set_huptimeout() {
+	local device=${1}
+	local timeout=${2}
+
+	assert device_exists ${device}
+	assert isinteger timeout
+
+	isdnctrl huptimeout ${device} ${mode} >/dev/null
+}
+
+function isdn_addphone() {
+	local device=${1}
+	local type=${2}
+	local number=${3}
+
+	assert device_exists ${device}
+	assert isoneof type in out
+	assert isset number
+
+	isdnctrl addphone ${device} ${type} ${number} >/dev/null
+}
+
+function isdn_dial() {
+	local device=${1}
+	shift
+
+	assert device_exists ${device}
+
+	local mode="persistent"
+	local channels="auto"
+	local ipppd_args
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--mode=*)
+				mode=${1#--mode=}
+				;;
+			--channels=*)
+				channels=${1#--channels=}
+				;;
+			*)
+				ipppd_args="${ipppd_args} ${1}"
+				;;
+		esac
+		shift
+	done
+
+	assert isset channels
+	assert isset mode
+	assert isoneof channels 1 2 auto
+
+	# Start ippp daemon.
+	ipppd_start ${ipppd_args}
+
+	case "${mode}" in
+		dialondemand)
+			isdn_set_dialmode ${device} auto
+			;;
+		persistent)
+			case "${channels}" in
+				auto)
+					ibod_start ${device}
+					;;
+				1)
+					# Do nothing.
+					;;
+				2)
+					isdn_addlink ${device}
+					;;
+			esac
+
+			# Establish the connection immediately.
+			isdnctrl dial ${device} >/dev/null
+			;;
+		*)
+			log ERROR "Unknown dial mode given: ${mode}."
+			return ${EXIT_ERROR}
+			;;
+	esac
+}
+
+function isdn_hangup() {
+	local device=${1}
+
+	assert device_exists ${device}
+
+	# Bring isdn device down.
+	ip link set ${device} down
+
+	# Kill ippp daemon.
+	ipppd_stop ${device}
+}
+
+function ipppd_start() {
+	local device=${1}
+	shift
+
+	assert device_exists ${device}
+
+	ipppd_write_config ${device} $@
+
+	# Actually run the service.
+	service_start "ipppd@${device}"
+}
+
+function ipppd_write_config() {
+	local device=${1}
+	shift
+
+	local value
+	local auth="chap"
+	local user
+	local mppe="on"
+	local mtu="1500"
+	local proxyarp="on"
+	local local_address
+	local remote_address
+	local netmask
+	local dns_servers
+
+	# mode tells us if we are running in server or
+	# client mode. The collection of variables to
+	# be set depends on this.
+	local mode="client"
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--mode=*)
+				mode=${1#--mode=}
+				;;
+			--auth=*)
+				auth=${1#--auth=}
+				;;
+			--user=*)
+				user=${1#--user=}
+				;;
+			--mppe=*)
+				mppe=${1#--mppe=}
+				;;
+			--mtu=*)
+				mtu=${1#--mtu=}
+				;;
+			--proxyarp=*)
+				value=${1#--proxyarp=}
+				if enabled value; then
+					proxyarp="on"
+				else
+					proxyarp="off"
+				fi
+				;;
+			--netmask=*)
+				netmask=${1#--netmask=}
+				;;
+			--local-address=*)
+				local_address=${1#--local-address=}
+				;;
+			--remote-address=*)
+				remote_address=${1#--remote-address=}
+				;;
+			--dns-server=*)
+				value=${1#--dns-server=}
+				# XXX check if this is actually an IP address
+
+				dns_servers="${dns_servers} ${value}"
+				;;
+			*)
+				log WARN "Unknown argument given: ${1}"
+				;;
+		esac
+		shift
+	done
+
+	# Check if all common variables are correctly set.
+	assert isset mtu
+	assert isinteger mtu
+
+	case "${mode}" in
+		client)
+			# Check if all variables for client mode are set.
+			assert isset auth
+			assert isset user
+			;;
+		server)
+			assert isset local_address
+			assert isset remote_address
+			assert isset netmask
+			;;
+		*)
+			log CRITICAL "Invalid mode given: ${mode}"
+			exit ${EXIT_ERROR}
+			;;
+	esac
+
+	# Make a configuration file.
+	local config="$(isdn_config_dir ${device})/config"
+
+	cat >${config} <<EOF
+### Common section
+
+# XXX find a solution for this
+/dev/${device}
+
+# Never change the default route
+-defaultroute
+
+# Link properties
+mru ${mtu}
+mtu ${mtu}
+
+lock
+noipdefault
+
+# Disable compression
+-vj -vjccomp
+
+debug
+
+EOF
+
+	case "${mode}" in
+		client)
+			cat >>${config} <<EOF
+### Client section
+
+# Authentication
+user ${user}
++${auth}
+
+# Get remote DNS servers
+ms-get-dns
+
+EOF
+			;;
+
+
+		server)
+			cat >>${config} <<EOF
+### Server section
+
+${local_address}:${remote_address}
+netmask ${netmask}
+
+# Add DNS servers
+$(for value in ${dns_servers}; do echo "ms-dns ${value}"; done)
+
+EOF
+			;;
+	esac
+}
+
+function ipppd_stop() {
+	local device=${1}
+
+	# Stop service.
+	service_stop "ipppd@${device}"
+
+	# Remove configuration file.
+	rm -f $(isdn_config_dir ${device})/config
+}
+
+function ibod_start() {
+	local device=${1}
+
+	assert device_exists ${device}
+
+	# Create ibod configuration file first.
+	ibod_write_config $@
+
+	# Start the daemon.
+	log INFO "Starting ibod service on device ${device}."
+	service_start "ibod@${device}"
+}
+
+function ibod_config_file() {
+	assert [ -n "$@" ]
+
+	echo "$(isdn_config_dir $@)/ibod.cf"
+}
+
+function ibod_write_config() {
+	local device=${1}
+
+	log DEBUG "Writing ibod.cf for device ${device}."
+
+	# Create path to configuration file.
+	local config=$(ibod_config_file ${device})
+
+	# Empty configuration file.
+	: > ${config}
+
+	# Set the device to watch.
+	echo "DEVICE	${device}" >> ${config}
+
+	# We could set some more options here to
+	# configure when ibod is bringing the second
+	# channel up and down. I guess that is not
+	# required at the moment.
+	# See man ibod.cf.
+}
+
+function ibod_stop() {
+	local device=${1}
+
+	log INFO "Stopping ibod on device ${device}..."
+	service_stop "ibod@${device}"
+
+	# Remove ibod configuration file.
+	rm -f $(ibod_config_file ${device})
+}
