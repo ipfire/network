@@ -109,6 +109,7 @@ function ipv4_flush_device() {
 	ip -4 neigh flush dev ${device} >/dev/null 2>&1
 
 	return 0
+}
 
 function ipv4_prefix2netmask() {
 	local prefix=${1}
