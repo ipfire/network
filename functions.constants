@@ -66,8 +66,11 @@ DISCOVER_OK=0
 DISCOVER_ERROR=1
 DISCOVER_NOT_SUPPORTED=2
 
-# The user is able to create zones that begin with these names
-VALID_ZONES="green orange red grey"
+# The user is able to create zones that begin
+# with these names followed by a number.
+ZONE_LOCAL="lan"
+ZONE_NONLOCAL="upl"
+VALID_ZONES="${ZONE_LOCAL} ${ZONE_NONLOCAL}"
 
 SYS_CLASS_NET="/sys/class/net"
 

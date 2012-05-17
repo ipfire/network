@@ -57,15 +57,13 @@ function zone_name_is_valid() {
 function zone_is_local() {
 	local zone=${1}
 
-	! zone_is_nonlocal ${zone}
+	[[ "${zone:0:${#ZONE_LOCAL}}" = "${ZONE_LOCAL}" ]]
 }
 
 function zone_is_nonlocal() {
 	local zone=${1}
 
-	assert isset zone
-
-	[[ ${zone} =~ ^red[0-9]{1,5} ]]
+	[[ "${zone:0:${#ZONE_NONLOCAL}}" = "${ZONE_NONLOCAL}" ]]
 }
 
 function zone_get_hook() {
