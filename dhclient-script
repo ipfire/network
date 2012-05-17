@@ -1,0 +1,122 @@
+#!/bin/bash
+
+. /usr/lib/network/functions
+
+# Configure logging
+LOG_FACILITY="dhclient-script"
+
+assert isset interface
+assert isset reason
+
+assert device_exists ${interface}
+
+# XXX LOAD ZONE CONFIGURATION
+
+basename="$(basename $0)"
+log DEBUG "${basename} called for interface=${interface} reason=${reason}"
+
+# Main pitchfork.
+case "${reason}" in
+	MEDIUM)
+		# Linux does not handle MEDIUM.
+		exit 0
+		;;
+
+	PREINIT)
+		# Bring up the device if it hasn't been done before.
+		if ! device_is_up ${interface}; then
+			log DEBUG "The interface '${interface}' does not appear to be up."
+
+			zone_up ${interface}
+		fi
+
+		# If the use configured a delay, we will honour that.
+		if [ -n "${DELAY}"  ]; then
+			assert isinteger DELAY
+			sleep ${DELAY}
+
+		# If he didn't, we will try to detect is STP has brought the
+		# bridge up.
+		elif device_is_bridge ${interface}; then
+			counter=60
+
+			while [ ${counter} -gt 0 ]; do
+				# We may end this, when the bridge is in forwarding mode.
+				if bridge_is_forwarding ${interface}; then
+					log DEBUG "Bridge '${interface}' is in forwarding mode."
+					break
+				fi
+
+				counter=$(( ${counter} - 1 ))
+				sleep 1
+			done
+
+			# Tell the daemon, that we are not ready to go on.
+			if [ ${counter} -eq 0 ]; then
+				log ERROR "Bridge '${interface}' is not in forwarding mode."
+				log ERROR "Could not go on with getting a DHCP lease. Exiting."
+
+				exit 1
+			fi
+		fi
+
+		exit 0
+		;;
+
+
+	BOUND|RENEW|REBIND|REBOOT)
+		# Check if the IP address has changed. If so, delete all routes and stuff.
+		if [ -n "${old_ip_address}" -a "${old_ip_address}" != "${new_ip_address}" ]; then
+			ipv4_flush_device ${interface}
+		fi
+
+		case "${reason}" in
+			BOUND|REBOOT)
+				if [ ! "${old_ip_address}" = "${new_ip_address}" ] || \
+					[ ! "${old_subnet_mask}" = "${new_subnet_mask}" ] || \
+					[ ! "${old_network_number}" = "${new_network_number}" ] || \
+					[ ! "${old_broadcast_address}" = "${new_broadcast_address}" ] || \
+					[ ! "${old_routers}" = "${new_routers}" ] || \
+					[ ! "${old_interface_mtu}" = "${new_interface_mtu}" ]; then
+
+
+					# Calc a prefix out of address and subnet mask.
+					new_prefix="$(ipv4_get_prefix ${new_ip_address} ${new_subnet_mask})"
+
+					# Set the new ip address.
+					ip_address_add ${interface} ${new_ip_address}/${new_prefix}
+					device_set_up ${interface}
+
+
+					# A MTU of 576 is used for X.25 and dialup connections. Some broken DHCP
+					# servers send out an MTU of 576 bytes, which will be ignored.
+					if [ -n "${new_interface_mtu}" ] && [ ${new_interface_mtu} -gt 576 ]; then
+						device_set_mtu ${interface} ${new_interface_mtu}
+					fi
+
+					# Save configuration
+					routing_db_set ${interface} ipv4 type "ipv4-dhcp"
+					routing_db_set ${interface} ipv4 local-ip-address "${new_ip_address}/${new_prefix}"
+					routing_db_set ${interface} ipv4 remote-ip-address "${new_router}"
+					routing_db_set ${interface} ipv4 active 1
+
+					# Update the routing tables.
+					routing_update ${interface} ipv4
+				fi
+				;;
+		esac
+
+		exit 0
+		;;
+
+	EXPIRE|FAIL|RELEASE|STOP)
+		# Remove the currently configured addresses from the device.
+		if [ -n "${old_ip_address}" ]; then
+			ipv4_flush_device ${interface}
+		fi
+
+		exit 0
+		;;
+esac
+
+exit 1

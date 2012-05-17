@@ -26,6 +26,10 @@ install:
 	# Install bridge-stp. 
 	install -m 755 bridge-stp $(DESTDIR)/sbin/
 
+	# Install dhclient script and helper.
+	install -m 755 dhclient-helper ${DESTDIR}/usr/lib/network/
+	install -m 755 dhclient-script ${DESTDIR}/sbin/
+
 	install -m 755 -v ppp/ip-updown $(DESTDIR)/etc/ppp
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-pre-up
 	ln -svf ip-updown $(DESTDIR)/etc/ppp/ip-up

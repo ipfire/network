@@ -73,3 +73,34 @@ function ipv4_get_netaddress() {
 
 	return ${EXIT_OK}
 }
+
+function ipv4_get_prefix() {
+	local address=${1}
+	local broadcast=${2}
+
+	assert isset address
+	assert isset broadcast
+
+	local PREFIX
+	eval $(ipcalc --prefix ${address} ${broadcast})
+	assert isset PREFIX
+
+	echo "${PREFIX}"
+	return ${EXIT_OK}
+}
+
+function ipv4_flush_device() {
+	#
+	# Flushes all routes, addresses from the device
+	# and clears the ARP cache.
+	#
+
+	local device=${1}
+	assert isset device
+
+	ip -4 addr flush dev ${device} >/dev/null 2>&1
+	ip -4 route flush dev ${device} >/dev/null 2>&1
+	ip -4 neigh flush dev ${device} >/dev/null 2>&1
+
+	return 0
+}

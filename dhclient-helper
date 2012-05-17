@@ -1,0 +1,60 @@
+#!/bin/bash
+
+. /usr/lib/network/functions
+
+action="${1}"
+assert isset action
+
+interface="${2}"
+assert isset interface
+
+proto=${3}
+assert isset proto
+
+# Check if the given interface is a zone.
+assert zone_exists ${interface}
+
+case "${action}" in
+	start)
+		# Create dhclient configuration file.
+		case "${proto}" in
+			ipv4)
+				config_file="${RUN_DIR}/dhclient/${interface}/dhclient4.conf"
+				;;
+			ipv6)
+				config_file="${RUN_DIR}/dhclient/${interface}/dhclient6.conf"
+				;;
+		esac
+		assert isset config_file
+
+		dhclient_write_config ${interface} ${config_file} \
+			--hostname="${HOSTNAME%%.*}"
+
+		exit ${EXIT_OK}
+		;;
+
+	stop)
+		case "${proto}" in
+			ipv4)
+				reason="STOP"
+				;;
+			ipv6)
+				reason="STOP6"
+				;;
+		esac
+		assert isset reason
+
+		export interface
+		export reason
+
+		exec /usr/sbin/dhclient-script
+
+		log ERROR $"execing dhclient-script has failed."
+		exit ${EXIT_ERROR}
+		;;
+
+	*)
+		log ERROR "Unknown action passed: ${action}"
+		exit ${EXIT_ERROR}
+		;;
+esac
