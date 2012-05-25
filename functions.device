@@ -135,7 +135,8 @@ function device_is_ppp() {
 
 # Check if the device is a loopback device
 function device_is_loopback() {
-	local device=$(devicify ${1})
+	local device=${1}
+
 	[ "${device}" = "lo" ]
 }
 
@@ -166,7 +167,7 @@ function device_is_real() {
 
 # Get the device type
 function device_get_type() {
-	local device=$(devicify ${1})
+	local device=${1}
 
 	if device_is_virtual ${device}; then
 		echo "vlan"
@@ -271,7 +272,9 @@ function devices_get_all() {
 
 # Check if a device has a cable plugged in
 function device_has_carrier() {
-	local device=$(devicify ${1})
+	local device=${1}
+	assert isset device
+
 	[ "$(<${SYS_CLASS_NET}/${device}/carrier)" = "1" ]
 }
 
@@ -299,7 +302,7 @@ function device_is_free() {
 
 # Check if the device is used
 function device_is_used() {
-	local device=$(devicify ${1})
+	local device=${1}
 
 	device_has_virtuals ${device} && \
 		return ${EXIT_OK}
@@ -346,7 +349,7 @@ function device_set_name() {
 
 # Set device up
 function device_set_up() {
-	local device=$(devicify ${1})
+	local device=${1}
 
 	# Silently fail if device was not found
 	[ -z "${device}" ] && return ${EXIT_ERROR}
@@ -381,7 +384,8 @@ function device_set_parent_up() {
 
 # Set device down
 function device_set_down() {
-	local device=$(devicify ${1})
+	local device=${1}
+	assert isset device
 
 	local ret=${EXIT_OK}
 

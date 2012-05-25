@@ -292,8 +292,10 @@ function cli_start() {
 
 	local zone
 	for zone in ${zones}; do
-		zone_up ${zone}
+		zone_start ${zone} &
 	done
+
+	wait # until everything is settled
 }
 
 function cli_stop() {
@@ -306,8 +308,10 @@ function cli_stop() {
 
 	local zone
 	for zone in ${zones}; do
-		zone_down ${zone}
+		zone_stop ${zone} &
 	done
+
+	wait # until everything is settled
 }
 
 function cli_restart() {

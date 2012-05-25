@@ -74,6 +74,26 @@ function zone_get_hook() {
 	config_get_hook $(zone_dir ${zone})/settings
 }
 
+function zone_start() {
+	# This function will bring up the zone
+	# 'asynchronously' with help of systemd.
+
+	local zone=${1}
+	assert zone_exists ${zone}
+
+	service_start "network@${zone}"
+}
+
+function zone_stop() {
+	# This function will bring down the zone
+	# 'asynchronously' with help of systemd.
+
+	local zone=${1}
+	assert zone_exists ${zone}
+
+	service_stop "network@${zone}"
+}
+
 function zone_create() {
 	local zone=${1}
 	local hook=${2}

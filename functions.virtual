@@ -37,7 +37,7 @@ EOF
 init_register virtual_init
 
 function virtual_create() {
-	local port=$(devicify ${1})
+	local port=${1}
 	local vid=${2}
 	local mac=${3}
 	local newport=${port}v${vid}
@@ -124,7 +124,7 @@ function virtual_create() {
 }
 
 function virtual_remove() {
-	local device=$(devicify ${1})
+	local device=${1}
 
 	log INFO "Removing virtual device '${device}' with address '$(macify ${device})'."
 

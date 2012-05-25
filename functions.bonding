@@ -42,8 +42,7 @@ function bonding_create() {
 }
 
 function bonding_remove() {
-	local device=$(devicify ${1})
-
+	local device=${1}
 	assert isset device
 
 	log INFO "Remove bonding device '${device}'."
@@ -70,8 +69,8 @@ function bonding_get_mode() {
 }
 
 function bonding_enslave_device() {
-	local device=$(devicify ${1})
-	local slave=$(devicify ${2})
+	local device=${1}
+	local slave=${2}
 	shift 2
 
 	assert isset device
