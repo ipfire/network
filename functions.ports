@@ -199,22 +199,6 @@ function ports_get() {
 	done
 }
 
-# This function automatically creates the real ethernet devices
-# that do not exists in the configuration.
-# Saves some work for the administrator.
-function ports_init() {
-	local device
-	for device in $(devices_get_all); do
-		if device_is_real ${device}; then
-			if ! port_exists ${device}; then
-				port_create ethernet ${device}
-			fi
-		fi
-	done
-}
-
-init_register ports_init
-
 function port_find_free() {
 	local pattern=${1}
 
