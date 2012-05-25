@@ -560,7 +560,9 @@ function device_hotplug() {
 	shift
 
 	assert isset device
-	assert device_exists ${device}
+
+	# Just check if the device has already vanished.
+	device_exists ${device} || return ${EXIT_ERROR}
 
 	if ! device_is_free ${device}; then
 		log ERROR "The device '${device}' is in use."
