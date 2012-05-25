@@ -19,10 +19,10 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/functions
-
 # Change LOG_FACILITY that we will find our messages in syslog.
 LOG_FACILITY=$(basename ${0})
+
+. /usr/lib/network/functions
 
 zone=${1}
 action=${2}
@@ -50,11 +50,11 @@ fi
 case "${action}" in
 	start)
 		log DEBUG "Enabling STP for zone '${zone}'."
-		exec mstpctl notify-daemon-that-stp-is-on ${zone}
+		exec mstpctl addbridge ${zone}
 		;;
 	stop)
 		log DEBUG "Disabling STP for zone '${zone}'."
-		exec mstpctl notify-daemon-that-stp-is-off ${zone}
+		exec mstpctl delbridge ${zone}
 		;;
 	*)
 		log ERROR "Unknown action given: ${action}."
