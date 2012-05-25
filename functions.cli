@@ -334,12 +334,21 @@ function cli_status() {
 		exit ${EXIT_OK}
 	fi
 
+	# When dumping status information, the debug
+	# mode clutters the console which is not what we want.
+	# Logging on the console is disabled for a short time.
+	local log_disable_stdout=${LOG_DISABLE_STDOUT}
+	LOG_DISABLE_STDOUT="true"
+
 	local zones=$(zones_get $@)
 
 	local zone
 	for zone in ${zones}; do
 		zone_status ${zone}
 	done
+
+	# Reset logging.
+	LOG_DISABLE_STDOUT=${log_disable_stdout}
 }
 
 function cli_reset() {
