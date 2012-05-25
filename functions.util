@@ -314,6 +314,8 @@ function exec_cmd() {
 	log DEBUG "Running command: ${cmd}"
 
 	DEBUG=${DEBUG} \
+	LOG_DISABLE_STDOUT="${LOG_DISABLE_STDOUT}" \
+	LOG_FACILITY="${LOG_FACILITY}" \
 		${SHELL} ${cmd}
 	local ret=$?
 

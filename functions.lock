@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2011  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2012  Michael Tremer & Christian Schmidt                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,30 +19,40 @@
 #                                                                             #
 ###############################################################################
 
-# Setup logging.
-LOG_FACILITY="network-hotplug-rename"
-LOG_DISABLE_STDOUT="true"
+function lock_acquire() {
+	local lockfile="${1}"
+	assert isset lockfile
 
-. /usr/lib/network/functions
+	# timeout value in seconds
+	local timeout=60
+	timeout=$(( ${timeout} * 10 ))
 
-# Setup the locking.
-LOCKFILE="${RUN_DIR}/.rename_lock"
-function cleanup() {
-	lock_release ${LOCKFILE}
+	log DEBUG "Acquiring lock '${lockfile}'."
+
+	local free="false"
+	while [ ${timeout} -gt 0 ]; do
+		if [ ! -e "${lockfile}" ]; then
+			free="true"
+			break
+		fi
+
+		timeout=$(( ${timeout} - 1 ))
+		sleep 0.1
+	done
+
+	assert ${free} "Could not acquire lock '${lockfile}'."
+
+	# Write out pid to the lockfile and make sure that
+	# nobody else can access it.
+	echo "$$" > ${lockfile}
+	chmod 600 ${lockfile}
 }
-trap cleanup EXIT TERM KILL
 
-# Check if the INTERFACE variable is properly set.
-assert isset INTERFACE
+function lock_release() {
+	local lockfile="${1}"
 
-# Log what we are doing here.
-log DEBUG "Called for interface '${INTERFACE}'."
+	log DEBUG "Releasing lock '${lockfile}'."
 
-# Acquiring lock for this operation.
-lock_acquire ${LOCKFILE}
-
-# Get the name of that device from the configuration
-# or return a new one if it is unknown.
-device_hotplug ${INTERFACE}
-
-exit $?
+	# Remove the lockfile (okay if it does not exist).
+	rm -f ${lockfile}
+}

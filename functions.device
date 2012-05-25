@@ -560,11 +560,16 @@ function device_hotplug() {
 	shift
 
 	assert isset device
-	#assert device_exists ${device}
+	assert device_exists ${device}
 
 	if ! device_is_free ${device}; then
 		log ERROR "The device '${device}' is in use."
 		return ${EXIT_ERROR}
+	fi
+
+	if ! device_is_real ${device}; then
+		log DEBUG "Don't rename any virtual devices."
+		return ${EXIT_OK}
 	fi
 
 	for port in $(ports_get_all); do
@@ -575,6 +580,13 @@ function device_hotplug() {
 		fi
 	done
 
-	port_find_free ${PORT_PATTERN}
-	return $?
+	# If no port configuration could be found, we search for the next
+	# unused name and return that.
+	local port=$(port_find_free ${PORT_PATTERN})
+
+	log DEBUG "Could not find an existing port configuration for '${device}'."
+	log DEBUG "${device} --> ${port}"
+
+	echo "${port}"
+	return ${EXIT_OK}
 }

@@ -19,8 +19,15 @@
 #                                                                             #
 ###############################################################################
 
-LOG_FACILITY="network"
+if [ -z "${LOG_FACILITY}" ]; then
+	LOG_FACILITY="network"
+fi
+
 LOG_LEVEL="DEBUG"
+
+if [ -z "${LOG_DISABLE_STDOUT}" ]; then
+	LOG_DISABLE_STDOUT=false
+fi
 
 function log() {
 	local level=${1}
@@ -37,6 +44,9 @@ function log() {
 	fi
 
 	logger -t ${LOG_FACILITY} "${message}"
+
+	# Leave here, when there should be no output on the console.
+	[ "${LOG_DISABLE_STDOUT}" = "true" ] && return 0
 
 	case "${level}" in
 		DEBUG|INFO|WARNING|ERROR)
