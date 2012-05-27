@@ -26,11 +26,6 @@ done
 # Reading in network tool configuration
 network_config_read
 
-# Create run dir
-if ! [ -d "${RUN_DIR}" ]; then
-	mkdir ${RUN_DIR}
-fi
-
 # Set colour mode
 case "${COLOURS}" in
 	auto)
@@ -46,4 +41,3 @@ case "${COLOURS}" in
 		warning_log "Unknown parameter given for COLOURS: ${COLOURS}"
 		;;
 esac
-
