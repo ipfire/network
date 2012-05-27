@@ -127,7 +127,6 @@ function stp_bridge_get_protocol() {
 
 function stp_bridge_get_id() {
 	local bridge=${1}
-
 	assert isset bridge
 
 	__device_get_file ${bridge} "bridge/bridge_id"
@@ -144,7 +143,115 @@ function stp_bridge_get_forward_delay() {
 }
 
 function stp_bridge_set_forward_delay() {
-	: # XXX WANTED
+	local bridge=${1}
+	assert isset bridge
+
+	local fdelay=${2}
+	assert isinteger fdelay
+
+	# Check if the setting we want is already set.
+	local current_fdelay=$(stp_bridge_get_forward_delay ${bridge})
+	[ ${fdelay} -eq ${current_fdelay} ] && return ${EXIT_OK}
+
+	# The smallest value that may be set is 2.
+	if [ ${fdelay} -lt 2 ]; then
+		fdelay=2
+	fi
+
+	# Set the new value.
+	log INFO "Changing forward delay for '${bridge}': ${current_fdelay} --> ${fdelay}."
+	brctl setfd ${bridge} ${fdelay}
+
+	return ${EXIT_OK}
+}
+
+function stp_bridge_get_hello_time() {
+	local bridge=${1}
+	assert isset bridge
+
+	local ht=$(__device_get_file ${bridge} "bridge/hello_time")
+
+	# ht is now in seconds * 100.
+	local split=$((${#ht} - 2))
+	ht="${ht:0:${split}}.${ht:${split}:2}"
+
+	# Round the output.
+	printf "%.0f\n" "${ht}"
+}
+
+function stp_bridge_set_hello_time() {
+	local bridge=${1}
+	assert isset bridge
+
+	local hello=${2}
+	assert isinteger hello
+
+	# Check if the setting we want is already set.
+	local current_hello=$(stp_bridge_get_hello_time ${bridge})
+	[ ${hello} -eq ${current_hello} ] && return ${EXIT_OK}
+
+	# Set the new value.
+	log INFO "Changing hello time for '${bridge}': ${current_hello} --> ${hello}."
+	brctl sethello ${bridge} ${hello}
+
+	return ${EXIT_OK}
+}
+
+function stp_bridge_get_max_age() {
+	local bridge=${1}
+	assert isset bridge
+
+	local maxage=$(__device_get_file ${bridge} "bridge/max_age")
+
+	# maxage is now in seconds * 100.
+	local split=$((${#maxage} - 2))
+	maxage="${maxage:0:${split}}.${maxage:${split}:2}"
+
+	# Round the output.
+	printf "%.0f\n" "${maxage}"
+}
+
+function stp_bridge_set_max_age() {
+	local bridge=${1}
+	assert isset bridge
+
+	local maxage=${2}
+	assert isinteger maxage
+
+	# Check if the setting we want is already set.
+	local current_maxage=$(stp_bridge_get_max_age ${bridge})
+	[ ${maxage} -eq ${current_maxage} ] && return ${EXIT_OK}
+
+	# Set the new value.
+	log INFO "Changing max age for '${bridge}': ${current_maxage} --> ${maxage}."
+	brctl setmaxage ${bridge} ${maxage}
+
+	return ${EXIT_OK}
+}
+
+function stp_bridge_get_priority() {
+	local bridge=${1}
+	assert isset bridge
+
+	__device_get_file ${bridge} "bridge/priority"
+}
+
+function stp_bridge_set_priority() {
+	local bridge=${1}
+	assert isset bridge
+
+	local priority=${2}
+	assert isinteger priority
+
+	# Check if the setting we want is already set.
+	local current_priority=$(stp_bridge_get_priority ${bridge})
+	[ ${priority} -eq ${current_priority} ] && return ${EXIT_OK}
+
+	# Set the new value.
+	log INFO "Changing priority for '${bridge}': ${current_priority} --> ${priority}."
+	brctl setbridgeprio ${bridge} ${priority}
+
+	return ${EXIT_OK}
 }
 
 function stp_bridge_get_designated_root() {

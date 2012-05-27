@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/header-zone
+. /usr/lib/network/header-zone
 
 HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE STP_MODE"
 HOOK_SETTINGS="${HOOK_SETTINGS} STP_PRIORITY MAC MTU"
@@ -94,19 +94,19 @@ function _up() {
 		stp_enable ${zone} ${STP_MODE}
 
 		if [ -n "${STP_FORWARD_DELAY}" ]; then
-			brctl setfd ${zone} ${STP_FORWARD_DELAY}
+			stp_bridge_set_forward_delay ${zone} ${STP_FORWARD_DELAY}
 		fi
 
 		if [ -n "${STP_HELLO}" ]; then
-			brctl sethello ${zone} ${STP_HELLO}
+			stp_bridge_set_hello_time ${zone} ${STP_HELLO}
 		fi
 
 		if [ -n "${STP_MAXAGE}" ]; then
-			brctl setmaxage ${zone} ${STP_MAXAGE}
+			stp_bridge_set_max_age ${zone} ${STP_MAXAGE}
 		fi
 
 		if [ -n "${STP_PRIORITY}" ]; then
-			brctl setbridgeprio ${zone} ${STP_PRIORITY}
+			stp_bridge_set_priority ${zone} ${STP_PRIORITY}
 		fi
 	else
 		stp_disable ${zone}
