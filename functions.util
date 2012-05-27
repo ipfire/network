@@ -37,30 +37,11 @@ function warning_log() {
 	log WARNING "$@"
 }
 
-# This function does not exist because we cannot use /usr/bin/sort.
-# It implements some kind of bubble sort which is generally very slow
-# but we only have to sort very small data.
 function listsort() {
-	local list=($@)
-	local list_prev
-
 	local i
-	local j
-	local var
-	while [ "${list[*]}" != "${list_prev}" ]; do
-		list_prev="${list[*]}"
-		for j in $(seq 1 ${#list[*]}); do
-			[ ${j} -ge ${#list[*]} ] && continue
-			i=$(( ${j} - 1 ))
-			if [[ "${list[${j}]}" < "${list[${i}]}" ]]; then
-				var="${list[${i}]}"
-				list[${i}]="${list[${j}]}"
-				list[${j}]="${var}"
-			fi
-		done
-	done
-
-	echo "${list[*]}"
+	for i in $@; do
+		echo "${1}"
+	done | sort | tr '\n' ' '
 }
 
 function listmatch() {
