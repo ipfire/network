@@ -26,13 +26,6 @@ LOG_FACILITY="network-hotplug"
 
 log DEBUG "Called with ACTION='${ACTION}', INTERFACE='${INTERFACE}'."
 
-# Do nothing, if the network isn't running.
-# That happens for example on boot time.
-if ! network_is_running; then
-	log DEBUG "network has not been started, yet. Exiting."
-	exit 0
-fi
-
 # Check if the udev environment variables are properly set.
 assert isset ACTION
 assert isset INTERFACE
@@ -53,14 +46,36 @@ case "${ACTION}" in
 			port=${INTERFACE}
 
 		# Create new configuration for _real_ network devices.
-		elif device_is_real ${INTERFACE}; then
-			# If the given device was not configured,
-			# we create an initial configuration.
-			port_create ethernet ${INTERFACE}
-
-		# Dunno what to do in any other case.
 		else
-			exit 0
+			type=$(device_get_type ${INTERFACE})
+			case "${type}" in
+				# If the given device was not configured,
+				# we create an initial configuration.
+				ethernet|real)
+					port_create ethernet ${INTERFACE}
+					;;
+
+				# Handle wireless devices.
+				wireless)
+					# Save the phy of this device for later.
+					phy=$(phy_get ${INTERFACE})
+					assert isset phy
+
+					# Remove the unconfigured wireless device.
+					wireless_remove ${INTERFACE}
+
+					# Create configured child devices.
+					for port in $(ports_get_all); do
+						port_cmd hotplug ${port} ${phy}
+					done
+					;;
+
+				# Do nothing for all the rest.
+				*)
+					log DEBUG "Don't create a port configuration for device '${INTERFACE}' of type '${type}'."
+					;;
+			esac
+			exit ${EXIT_OK}
 		fi
 
 		zone=$(port_zone ${port})
@@ -69,14 +84,18 @@ case "${ACTION}" in
 		# If not, there is nothing to do.
 		isset zone || exit ${EXIT_OK}
 
-		boot=$(zone_config_option ${zone} BOOT)
-		if enabled boot; then
+		# If the zone is already up, we add the device
+		# to the zone.
+		if zone_is_up ${zone}; then
 			zone_up ${zone}
 		fi
 		;;
 
 	remove|unregister)
-		# Do nothing.
+		# After the interface has been removed/unplugged,
+		# there are often daemons (like hostapd) which need
+		# to be stopped.
+		port_exists ${INTERFACE} && port_down ${INTERFACE}
 		;;
 esac
 
