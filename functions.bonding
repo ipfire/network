@@ -27,13 +27,15 @@ function bonding_init() {
 	fi
 }
 
-init_register bonding_init
-
 function bonding_create() {
 	local device=${1}
 	local mac=${2}
 
 	[ -z "${mac}" ] && mac=$(mac_generate)
+
+	# Initialize the bonding driver just
+	# when we need it.
+	bonding_init
 
 	log INFO "Creating bonding device '${device}' (${mac})."
 
