@@ -19,13 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-function aiccu_init() {
-	log INFO "Initializing aiccu."
-	mkdir -p $(aiccu_config_dir)
-}
-
-init_register aiccu_init
-
 function aiccu_config_dir() {
 	local device=${1}
 

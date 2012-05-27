@@ -123,12 +123,6 @@ function wireless_set_channel() {
 	iw dev ${device} set channel ${channel} $@
 }
 
-function hostapd_init() {
-	mkdir -p $(hostapd_config_dir)
-}
-
-init_register hostapd_init
-
 function hostapd_config_dir() {
 	local device=${1}
 	

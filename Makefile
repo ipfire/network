@@ -11,6 +11,7 @@ libdir=$(prefix)/lib
 sysconfdir=/etc
 localstatedir=/var
 systemdunitdir=$(prefix)/lib/systemd/system
+tmpfilesdir=$(prefix)/lib/tmpfiles.d
 
 # File to store the version number in.
 VERSION_FILE = $(DESTDIR)$(libdir)/network/version
@@ -24,6 +25,7 @@ install:
 	-mkdir -pv $(DESTDIR)$(localstatedir)/log/network
 	-mkdir -pv $(DESTDIR)$(sbindir)
 	-mkdir -pv $(DESTDIR)$(systemdunitdir)
+	-mkdir -pv $(DESTDIR)$(tmpfilesdir)
 
 	install -m 755 -v network $(DESTDIR)$(sbindir)
 
@@ -32,6 +34,7 @@ install:
 	cp -rfv udev/* $(DESTDIR)$(libdir)/udev
 	cp -rfv network-* $(DESTDIR)$(libdir)/network/
 	cp -vf  systemd/*.service $(DESTDIR)$(systemdunitdir)
+	cp -vf network.tmpfiles $(DESTDIR)$(tmpfilesdir)/network.conf
 
 	# Install bridge-stp. 
 	install -m 755 bridge-stp $(DESTDIR)$(sbindir)/

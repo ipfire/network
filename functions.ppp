@@ -19,12 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-function ppp_init() {
-	mkdir -p /var/run/ppp 2>/dev/null
-}
-
-init_register ppp_init
-
 function ppp_common_ip_pre_up() {
 	local zone=${1}
 	shift
