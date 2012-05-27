@@ -138,6 +138,8 @@ function _status() {
 	printf "        %-10s - " "${port}"
 	if ! device_is_up ${port}; then
 		echo -ne "${COLOUR_DOWN}   DOWN   ${COLOUR_NORMAL}"
+	elif ! device_has_carrier ${port}; then
+		echo -ne "${COLOUR_DOWN}NO-CARRIER${COLOUR_NORMAL}"
 	elif [ -n "$(stp_bridge_get_protocol ${zone})" ]; then
 		local state=$(stp_port_get_state ${zone} ${port})
 		local colour="COLOUR_STP_${state}"
