@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/functions
+. /usr/lib/network/functions
 
 HOOK=$(basename ${0})
 INFO_SETTINGS="HOOK PORT_PARENTS PORT_CHILDREN"
@@ -40,7 +40,7 @@ done
 
 function run() {
 	case "${action}" in
-		edit|add|create|rem|up|down|status|info|hotplug)
+		edit|add|create|rem|up|down|status|info|hotplug|hotplug_rename)
 			_${action} $@
 			;;
 	esac
@@ -49,8 +49,21 @@ function run() {
 	exit ${EXIT_ERROR}
 }
 
+# This function is called after a device has been plugged
+# into the system and got its correct name.
+# The function is intended to create child ports and things
+# like that.
 function _hotplug() {
-	exit ${EXIT_ERROR}
+	exit ${EXIT_OK}
+}
+
+# This function gets called when a device is plugged in
+# to determine the right name.
+# The first argument is the port which should be tested
+# against the second argument which is the device that
+# has been plugged in.
+function _hotplug_rename() {
+	exit ${EXIT_FALSE}
 }
 
 function _info() {

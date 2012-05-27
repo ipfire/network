@@ -38,11 +38,44 @@ assert isset INTERFACE
 # Log what we are doing here.
 log DEBUG "Called for interface '${INTERFACE}'."
 
+# Just check if the device has already vanished.
+device_exists ${INTERFACE} || exit ${EXIT_ERROR}
+
 # Acquiring lock for this operation.
 lock_acquire ${LOCKFILE}
 
-# Get the name of that device from the configuration
-# or return a new one if it is unknown.
-device_hotplug ${INTERFACE}
+# Check if the device is already in use and
+# prevent the script to touch it in any way.
+if ! device_is_free ${INTERFACE}; then
+	log ERROR "The device '${INTERFACE}' is in use."
+	exit ${EXIT_ERROR}
+fi
 
-exit $?
+# Determine the type of the device and then see what
+# we need to do with it.
+type=$(device_get_type ${INTERFACE})
+log DEBUG "Interface '${INTERFACE}' is of type '${type}'."
+
+case "${type}" in
+	ethernet|real)
+		# Search within all the port configurations
+		# if this port has already been configured.
+		for port in $(ports_get_all); do
+			port_cmd hotplug_rename ${port} ${INTERFACE} &>/dev/null
+			if [ $? -eq ${EXIT_TRUE} ]; then
+				echo "${port}"
+				exit ${EXIT_OK}
+			fi
+		done
+
+		# If no port configuration could be found,
+		# we search for the next unused name and return that.
+		port=$(port_find_free ${PORT_PATTERN})
+		echo "${port}"
+
+		log DEBUG "Could not find an existing port configuration for '${INTERFACE}'."
+		log DEBUG "${INTERFACE} --> ${port}"
+		;;
+esac
+
+exit ${EXIT_OK}
