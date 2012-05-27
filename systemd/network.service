@@ -1,0 +1,13 @@
+[Unit]
+Description=Network Connectivity
+Before=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/usr/sbin/network init
+ExecStart=/usr/sbin/network start
+ExecStop=/usr/sbin/network stop
+
+[Install]
+WantedBy=multi-user.target

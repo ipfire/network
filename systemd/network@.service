@@ -1,0 +1,8 @@
+[Unit]
+Description=Network Connectivity for zone %I
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/network zone %I up
+ExecStop=/usr/sbin/network zone %I down
