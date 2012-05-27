@@ -157,17 +157,17 @@ function _up() {
 
 function _down() {
 	local port=${1}
-
 	assert isset port
 
 	config_read $(port_file ${port})
 
-	if ! device_exists ${port}; then
-		exit ${EXIT_OK}
-	fi
-
+	# Stop the hostapd daemon.
 	hostapd_stop ${port}
-	wireless_remove ${port}
+
+	# Remove the device if it is still present.
+	if device_exists ${port}; then
+		wireless_remove ${port}
+	fi
 
 	exit ${EXIT_OK}
 }
@@ -192,6 +192,29 @@ config_read $(zone_dir ${zone})/${port}
 	echo -n " - DSR: $(stp_port_designated_root ${zone} ${device})"
 	echo -n " - Cost: $(stp_port_pathcost ${zone} ${device})"
 	echo
+
+	exit ${EXIT_OK}
+}
+
+function _hotplug() {
+	local port=${1}
+	local phy=${2}
+
+	assert isset port
+	assert isset phy
+	assert port_exists ${port}
+
+	# Read configuration of port.
+	config_read $(port_file ${port})
+
+	# Get the address of the phy.
+	local phy_address=$(phy_get_address ${phy})
+
+	# Check if the phy is the same we have
+	# read from the configuration file.
+	if [ "${PHY}" = "${phy_address}" ]; then
+		wireless_create ${port} ${PHY} __ap ${ADDRESS}
+	fi
 
 	exit ${EXIT_OK}
 }
