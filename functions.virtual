@@ -34,8 +34,6 @@ function virtual_init() {
 EOF
 }
 
-init_register virtual_init
-
 function virtual_create() {
 	local port=${1}
 	local vid=${2}
@@ -45,6 +43,9 @@ function virtual_create() {
 	if [ -z "${mac}" ]; then
 		mac=$(mac_generate)
 	fi
+
+	# Initialize the vlan drivers just when we need them.
+	virtual_init
 
 	log INFO "Creating virtual device '${newport}' with address '${mac}'."
 
