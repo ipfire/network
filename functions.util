@@ -40,8 +40,9 @@ function warning_log() {
 function listsort() {
 	local i
 	for i in $@; do
-		echo "${1}"
+		echo "${i}"
 	done | sort | tr '\n' ' '
+	echo
 }
 
 function listmatch() {
