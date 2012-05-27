@@ -140,6 +140,13 @@ function device_is_loopback() {
 	[ "${device}" = "lo" ]
 }
 
+# Check if the device is a wireless device
+function device_is_wireless() {
+	local device=${1}
+
+	[ -d "${SYS_CLASS_NET}/${device}/phy80211" ]
+}
+
 # Check if the device is a physical network interface
 function device_is_real() {
 	local device=${1}
@@ -183,6 +190,9 @@ function device_get_type() {
 
 	elif device_is_loopback ${device}; then
 		echo "loopback"
+
+	elif device_is_wireless ${device}; then
+		echo "wireless"
 
 	elif device_is_real ${device}; then
 		echo "real"
