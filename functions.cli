@@ -26,7 +26,8 @@ function cli_config() {
 	fi
 
 	if [ -n "${1}" ]; then
-		network_config_set $@
+		config_set $@
+		network_config_write
 	else
 		network_config_print
 	fi

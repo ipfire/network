@@ -116,3 +116,42 @@ function firewall_connection_tracking() {
 	iptables -A OUTPUT  -j CONNTRACK
 	iptables -A FORWARD -j CONNTRACK
 }
+
+function firewall_import_portfw() {
+	local zone=${1}
+	shift
+
+	local protocol="ipv6"
+	local chain="filter"
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--chain=*)
+				chain=$(cli_get_val ${1})
+				;;
+			--protocol=*)
+				protocol=$(cli_get_val ${1})
+				;;
+		esac
+	done
+
+	assert isoneof protocol ipv4 ipv6
+
+	local allowed_chains="filter"
+	if [ "${protocol}" = "ipv4" ]; then
+		allowed_chains="${allowed_chains} nat"
+	fi
+	assert isoneof chain ${allowed_chains}
+
+	# XXX TODO
+
+	local src dst proto
+	while read src dst proto; do
+		case "${chain}" in
+			filter)
+				;;
+			nat)
+				;;
+		esac
+	done < ${FIREWALL_CONFIG_PORTFW}
+}

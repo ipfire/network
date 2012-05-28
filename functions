@@ -23,8 +23,8 @@ for file in /usr/lib/network/functions.*; do
 	. ${file}
 done
 
-# Reading in network tool configuration
-network_config_read
+# Reading in global configuration files
+config_read_globals
 
 # Set colour mode
 case "${COLOURS}" in

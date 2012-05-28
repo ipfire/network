@@ -19,14 +19,11 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/functions
-
 # Parse the command line
 while [ $# -gt 0 ]; do
 	case "${1}" in
 		-d|--debug)
 			DEBUG=1
-			log DEBUG "Enabled debugging mode"
 			;;
 		*)
 			action=${1}
@@ -35,6 +32,8 @@ while [ $# -gt 0 ]; do
 	shift
 	[ -n "${action}" ] && break
 done
+
+. /usr/lib/network/functions
 
 # Process the given action
 case "${action}" in

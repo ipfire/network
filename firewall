@@ -29,6 +29,20 @@ function cli_stop() {
 	firewall_stop
 }
 
+function cli_config() {
+	if cli_help_requested $@; then
+		cli_usage root-config
+		exit ${EXIT_OK}
+	fi
+
+	if [ -n "${1}" ]; then
+		config_set $@
+		firewall_config_write
+	else
+		firewall_config_print
+	fi
+}
+
 # Parse the command line
 while [ $# -gt 0 ]; do
 	case "${1}" in
@@ -52,6 +66,10 @@ case "${action}" in
 
 	stop)
 		cli_stop $@
+		;;
+
+	config)
+		cli_config $@
 		;;
 
 	""|help|--help|-h)
