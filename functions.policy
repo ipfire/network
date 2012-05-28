@@ -1,0 +1,118 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function policy_add_zone() {
+	local zone=${1}
+	assert isset zone
+
+	log DEBUG "Creating firewall policy for zone '${zone}'."
+
+	local chain="ZONE_${zone}"
+	chain=${chain^^}
+
+	# Create filter chain.
+	iptables_chain_create ${chain}
+	iptables -A INPUT   -i ${zone} -j ${chain}
+	iptables -A FORWARD -i ${zone} -j ${chain}
+	iptables -A FORWARD -o ${zone} -j ${chain}
+	iptables -A OUTPUT  -o ${zone} -j ${chain}
+
+	# Leave some space for own rules right at the beginning
+	# to make it possible to overwrite _everything_.
+	iptables_chain_create ${chain}_CUSTOM
+	iptables -A ${chain} -j ${chain}_CUSTOM
+
+	# Intrusion Prevention System
+	iptables_chain_create ${chain}_IPS
+	iptables -A ${chain} -i ${zone} -j ${chain}_IPS
+
+	# Port forwarding chain.
+	iptables_chain_create ${chain}_PORTFW
+	iptables -A ${chain} -i ${zone} -j ${chain}_PORTFW
+
+	# Outgoing firewall
+	iptables_chain_create ${chain}_OUTFW
+	iptables -A ${chain} -o ${zone} -j ${chain}_OUTFW
+
+	# Policy rules
+	iptables_chain_create ${chain}_POLICY
+	iptables -A ${chain} -j ${chain}_POLICY
+
+	# Create mangle chain.
+	iptables_chain_create -t mangle ${chain}
+	iptables -t mangle -A PREROUTING  -i ${zone} -j ${chain}
+	iptables -t mangle -A POSTROUTING -o ${zone} -j ${chain}
+
+	# Quality of Service
+	iptables_chain_create -t mangle ${chain}_QOS_INC
+	iptables -t mangle -A ${chain} -i ${zone} -j ${chain}_QOS_INC
+	iptables_chain_create -t mangle ${chain}_QOS_OUT
+	iptables -t mangle -A ${chain} -o ${zone} -j ${chain}_QOS_OUT
+
+	# Create NAT chain.
+	iptables_chain_create -t nat ${chain}
+	iptables -t nat -A PREROUTING  -i ${zone} -j ${chain}
+	iptables -t nat -A POSTROUTING -o ${zone} -j ${chain}
+
+	# Network Address Translation
+	iptables_chain_create -t nat ${chain}_NAT
+	iptables -t nat -A ${chain} -i ${zone} -j ${chain}_NAT
+
+	# Portforwarding
+	iptables_chain_create -t nat ${chain}_PORTFW
+	iptables -t nat -A ${chain} -i ${zone} -j ${chain}_PORTFW
+
+	# UPNP
+	iptables_chain_create -t nat ${chain}_UPNP
+	iptables -t nat -A ${chain} -j ${chain}_UPNP
+
+	# After the chains that are always available have been
+	# created, we will add a custom policy to every single
+	# zone.
+
+	# Local zones are currently allowed to access everything.
+	if zone_is_local ${zone}; then
+		policy_allow_all ${zone} ${chain}
+
+	# Uplink connections are not.
+	else
+		: # XXX TODO
+	fi
+}
+
+function policy_add_localhost() {
+	log DEBUG "Creating firewall policy for localhost..."
+
+	# Accept everything on lo
+	iptables -A INPUT  -i lo -j ACCEPT
+	iptables -A OUTPUT -o lo -j ACCEPT
+}
+
+function policy_allow_all() {
+	local zone=${1}
+	assert isset zone
+
+	local chain=${2}
+	assert isset chain
+
+	# Just accept everything.
+	iptables -A ${chain}_POLICY -j ACCEPT
+}

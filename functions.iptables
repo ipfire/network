@@ -1,0 +1,190 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function iptables() {
+	local arg
+	local args
+	local table
+
+	# Check if the directory where we put our rules in is set and
+	# exists.
+	assert isset IPTABLES_TMPDIR
+	assert [ -d "${IPTABLES_TMPDIR}" ]
+
+	table=filter
+
+	# Parsing arguments
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			-t)
+				table=${2}
+				shift 2
+				;;
+			-A)
+				args="${args} -A ${2^^}"
+				shift 2
+				;;
+			*)
+				args="${args} ${1}"
+				shift
+				;;
+		esac
+	done
+
+	echo "${args:1:${#args}}" >> ${IPTABLES_TMPDIR}/${table}
+}
+
+function iptables_init() {
+	local policy=${1}
+	assert isoneof policy ACCEPT DROP
+
+	iptables "* filter"
+	iptables_chain_create -t filter INPUT       ${policy}
+	iptables_chain_create -t filter OUTPUT      ${policy}
+	iptables_chain_create -t filter FORWARD     ${policy}
+
+	iptables -t mangle "* mangle"
+	iptables_chain_create -t mangle PREROUTING  ACCEPT
+	iptables_chain_create -t mangle INPUT       ACCEPT
+	iptables_chain_create -t mangle OUTPUT      ACCEPT
+	iptables_chain_create -t mangle FORWARD     ACCEPT
+	iptables_chain_create -t mangle POSTROUTING ACCEPT
+
+	iptables -t nat "* nat"
+	iptables_chain_create -t nat    PREROUTING  ACCEPT
+	iptables_chain_create -t nat    OUTPUT      ACCEPT
+	iptables_chain_create -t nat    POSTROUTING ACCEPT
+}
+
+function iptables_commit() {
+	local chain
+
+	# Check if the directory where we put our rules in is set and
+	# exists.
+	assert isset IPTABLES_TMPDIR
+	assert [ -d "${IPTABLES_TMPDIR}" ]
+
+	log INFO "Committing firewall configuration..."
+	iptables -t filter "COMMIT"
+	iptables -t mangle "COMMIT"
+	iptables -t nat    "COMMIT"
+
+	local iptables_ruleset="${IPTABLES_TMPDIR}/commit"
+	: > ${iptables_ruleset}
+
+	# Concat the rules for every chain into one file.
+	local table
+	for table in filter mangle nat; do
+		cat ${IPTABLES_TMPDIR}/${table} \
+			>> ${iptables_ruleset} 2>/dev/null
+	done
+
+	log DEBUG "Dumping iptables ruleset"
+	local counter=1
+	local line
+	while read line; do
+		line=$(printf "%4d | %s\n" "${counter}" "${line}")
+		log DEBUG "${line}"
+
+		counter=$(( $counter + 1 ))
+	done < ${iptables_ruleset}
+	
+	iptables-restore < ${iptables_ruleset}
+}
+
+function iptables_chain_create() {
+	local args
+	if [ "${1}" = "-t" ]; then
+		args="${1} ${2}"
+		shift 2
+	fi
+
+	iptables ${args} ":$1 ${2--} [0:0]"
+}
+
+function iptables_LOG() {
+	local prefix=${1}
+
+	if [ "${FIREWALL_LOG_FACILITY}" = "syslog" ]; then
+		echo -n "LOG"
+		[ -n "$prefix" ] && echo -n " --log-prefix \"$prefix\""
+	else
+		echo -n "NFLOG"
+		[ -n "$prefix" ] && echo -n " --nflog-prefix \"$prefix\""
+		echo -n " --nflog-threshold 30"
+	fi
+	echo
+}
+
+function iptables_protocol() {
+	local PROTO
+	PROTO=$1
+	for proto in tcp udp esp ah; do
+		if [ "$PROTO" = "$proto" ]; then
+			echo "-p $PROTO"
+			break
+		fi
+	done
+}
+
+IPTABLES_PORT=0
+IPTABLES_MULTIPORT=1
+IPTABLES_PORTRANGE=2
+
+function _iptables_port_range() {
+	grep -q ":" <<< $@
+}
+
+function _iptables_port_multiport() {
+	grep -q "," <<< $@
+}
+
+function _iptables_port() {
+	if _iptables_port_range "$@"; then
+		echo $IPTABLES_PORTRANGE
+	elif _iptables_port_multiport "$@"; then
+		echo $IPTABLES_MULTIPORT
+	else
+		echo $IPTABLES_PORT
+	fi
+}
+
+function iptables_source_port() {
+	[ -z "$@" ] && return
+	local type
+	type=$(_iptables_port $@)
+	if [ "$type" = "$IPTABLES_MULTIPORT" ]; then
+		echo "-m multiport --source-ports $@"
+	else
+		echo "--sport $@"
+	fi
+}
+
+function iptables_destination_port() {
+	[ -z "$@" ] && return
+	local type
+	type=$(_iptables_port $@)
+	if [ "$type" = "$IPTABLES_MULTIPORT" ]; then
+		echo "-m multiport --destination-ports $@"
+	else
+		echo "--dport $@"
+	fi
+}

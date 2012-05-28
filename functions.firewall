@@ -1,0 +1,118 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# High-level function which will create a ruleset for the current firewall
+# configuration and load it into the kernel.
+function firewall_start() {
+	firewall_lock_acquire
+
+	# Initialize an empty iptables ruleset.
+	iptables_init DROP
+
+	# Add default chains.
+	firewall_tcp_state_flags
+	firewall_connection_tracking
+
+	# Add policies for every zone.
+	policy_add_localhost
+
+	local zone
+	for zone in $(zones_get_all); do
+		policy_add_zone ${zone}
+	done
+
+	# Commit the new ruleset.
+	iptables_commit
+
+	firewall_lock_release
+}
+
+function firewall_stop() {
+	firewall_lock_acquire
+
+	# Initialize an empty firewall ruleset
+	# with default policy ACCEPT.
+	iptables_init ACCEPT
+
+	# Commit it.
+	iptables_commit
+
+	firewall_lock_release
+}
+
+function firewall_lock_acquire() {
+	lock_acquire ${RUN_DIR}/.firewall_lock
+
+	# Make sure the lock is released after the firewall
+	# script has crashed or exited early.
+	trap firewall_lock_release EXIT TERM KILL
+
+	# Create a directory where we can put our
+	# temporary data in the most secure way as possible.
+	IPTABLES_TMPDIR=$(mktemp -d)
+}
+
+function firewall_lock_release() {
+	if isset IPTABLES_TMPDIR; then
+		# Remove all temporary data.
+		rm -rf ${IPTABLES_TMPDIR}
+
+		# Reset the tempdir variable.
+		IPTABLES_TMPDIR=
+	fi
+
+	# Reset the trap.
+	trap true EXIT TERM KILL
+
+	lock_release ${RUN_DIR}/.firewall_lock
+}
+
+function firewall_tcp_state_flags() {
+	log INFO "Creating TCP State Flags chain..."
+	iptables_chain_create BADTCP_LOG
+	iptables -A BADTCP_LOG -p tcp -j $(iptables_LOG "Illegal TCP state: ")
+	iptables -A BADTCP_LOG -j DROP
+
+	iptables_chain_create BADTCP
+	iptables -A BADTCP -p tcp --tcp-flags ALL NONE -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags SYN,FIN SYN,FIN -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags SYN,RST SYN,RST -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags FIN,RST FIN,RST -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags ACK,FIN FIN     -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags ACK,PSH PSH     -j BADTCP_LOG
+	iptables -A BADTCP -p tcp --tcp-flags ACK,URG URG     -j BADTCP_LOG
+
+	iptables -A INPUT   -p tcp -j BADTCP
+	iptables -A OUTPUT  -p tcp -j BADTCP
+	iptables -A FORWARD -p tcp -j BADTCP
+}
+
+function firewall_connection_tracking() {
+	log INFO "Creating Connection Tracking chain..."
+	iptables_chain_create CONNTRACK
+	iptables -A CONNTRACK -m state --state ESTABLISHED,RELATED -j ACCEPT
+	iptables -A CONNTRACK -m state --state INVALID -j $(iptables_LOG "INVALID packet: ")
+	iptables -A CONNTRACK -m state --state INVALID -j DROP
+
+	iptables -A INPUT   -j CONNTRACK
+	iptables -A OUTPUT  -j CONNTRACK
+	iptables -A FORWARD -j CONNTRACK
+}

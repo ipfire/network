@@ -1,0 +1,12 @@
+[Unit]
+Description=Firewall Ruleset Manager
+Before=network.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/firewall start
+ExecStop=/usr/sbin/firewall stop
+
+[Install]
+WantedBy=multi-user.target

@@ -324,16 +324,8 @@ function cmd() {
 	return ${ret}
 }
 
-function uppercase() {
-	local input
-	read input
-	echo "${input^^}"
-}
-
-function lowercase() {
-	local input
-	read input
-	echo "${input,,}"
+function cmd_quiet() {
+	cmd $@ &>/dev/null
 }
 
 function seq() {

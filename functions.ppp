@@ -31,7 +31,7 @@ function ppp_common_ip_pre_up() {
 	routing_db_from_ppp ${zone} ipv4
 
 	# Request firewall reload
-	event_firewall_reload
+	event_emit firewall-reload
 
 	return ${EXIT_OK}
 }

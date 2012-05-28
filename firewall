@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2012  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,46 +19,51 @@
 #                                                                             #
 ###############################################################################
 
-function event_emit() {
-	local event=${1}
-	shift
+. /usr/lib/network/functions
 
-	log DEBUG "Emitting event '${event}' ($@)"
+function cli_start() {
+	firewall_start
+}
 
-	# XXX Since we have no more upstart, we do nothing here for now.
-	# At a later point of time, we need to find another solution how to
-	# react on those events.
-	#initctl emit ${event} $@
+function cli_stop() {
+	firewall_stop
+}
 
-	case "${event}" in
-		firewall-reload)
-			# Try to reload the firewall service.
-			__event_firewall_reload
+# Parse the command line
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		-d|--debug)
+			DEBUG=1
+			log DEBUG "Enabled debugging mode"
+			;;
+		*)
+			action=${1}
 			;;
 	esac
-}
+	shift
+	[ -n "${action}" ] && break
+done
 
-function __event_firewall_reload() {
-	local service="firewall"
+# Process the given action
+case "${action}" in
+	start|restart|reload)
+		cli_start $@
+		;;
 
-	# Reload the firewall service when it has
-	# been started earlier.
-	if service_is_running ${service}; then
-		service_restart ${service}
-	fi
-}
+	stop)
+		cli_stop $@
+		;;
 
-function event_interface_up() {
-	local iface=${1}
+	""|help|--help|-h)
+		cli_usage root
+		exit ${EXIT_OK}
+		;;
 
-	event_emit network-interface-up IFACE=${iface}
+	*)
+		error "Invalid command given: ${action}"
+		cli_usage usage
+		exit ${EXIT_CONF_ERROR}
+		;;
+esac
 
-	# XXX Just for now
-	routing_default_update
-}
-
-function event_interface_down() {
-	local iface=${1}
-
-	event_emit network-interface-down IFACE=${iface}
-}
+exit ${EXIT_OK}

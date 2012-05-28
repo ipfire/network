@@ -27,6 +27,7 @@ install:
 	-mkdir -pv $(DESTDIR)$(systemdunitdir)
 	-mkdir -pv $(DESTDIR)$(tmpfilesdir)
 
+	install -m 755 -v firewall $(DESTDIR)$(sbindir)
 	install -m 755 -v network $(DESTDIR)$(sbindir)
 
 	cp -rfv {hooks,header*,functions*} $(DESTDIR)$(libdir)/network/
