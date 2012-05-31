@@ -21,7 +21,7 @@
 
 function cli_config() {
 	if cli_help_requested $@; then
-		cli_usage root-config
+		cli_show_man network
 		exit ${EXIT_OK}
 	fi
 
@@ -57,7 +57,7 @@ function cli_device() {
 			device_show ${device}
 			;;
 		*)
-			cli_usage device
+			cli_show_man network-device
 			;;
 	esac
 }
@@ -135,7 +135,7 @@ function cli_device_discover() {
 
 function cli_hostname() {
 	if cli_help_requested $@; then
-		cli_usage hostname
+		cli_show_man network
 		exit ${EXIT_OK}
 	fi
 
@@ -152,30 +152,9 @@ function cli_hostname() {
 	exit ${EXIT_OK}
 }
 
-function cli_hotplug() {
-	if cli_help_requested $@; then
-		cli_usage root-hotplug
-		exit ${EXIT_OK}
-	fi
-
-	local command=${1}
-	shift
-
-	case "${command}" in
-		device)
-			device_hotplug $@
-			exit $?
-			;;
-		*)
-			cli_usage root-hotplug
-			exit ${EXIT_OK}
-			;;
-	esac
-}
-
 function cli_port() {
 	if cli_help_requested $@; then
-		cli_usage root-port
+		cli_show_man network-port
 		exit ${EXIT_OK}
 	fi
 
@@ -227,7 +206,7 @@ function cli_port() {
 
 function cli_zone() {
 	if cli_help_requested $@; then
-		cli_usage root-zone
+		cli_show_man network-zone
 		exit ${EXIT_OK}
 	fi
 
@@ -258,7 +237,7 @@ function cli_zone() {
 				;;
 			*)
 				error "Unrecognized argument: ${action}"
-				cli_usage root-zone-subcommands
+				cli_show_man network-zone
 				exit ${EXIT_ERROR}
 				;;
 		esac
@@ -276,7 +255,7 @@ function cli_zone() {
 					echo
 				fi
 
-				cli_usage root-zone
+				cli_show_man network-zone
 				exit ${EXIT_ERROR}
 				;;
 		esac
@@ -285,7 +264,7 @@ function cli_zone() {
 
 function cli_start() {
 	if cli_help_requested $@; then
-		cli_usage root-start
+		cli_show_man network
 		exit ${EXIT_OK}
 	fi
 
@@ -301,7 +280,7 @@ function cli_start() {
 
 function cli_stop() {
 	if cli_help_requested $@; then
-		cli_usage root-stop
+		cli_show_man network
 		exit ${EXIT_OK}
 	fi
 
@@ -317,7 +296,7 @@ function cli_stop() {
 
 function cli_restart() {
 	if cli_help_requested $@; then
-		cli_usage root-restart
+		cli_show_man network
 		exit ${EXIT_OK}
 	fi
 
@@ -331,7 +310,7 @@ function cli_restart() {
 
 function cli_status() {
 	if cli_help_requested $@; then
-		cli_usage root-status
+		cli_show_man network
 		exit ${EXIT_OK}
 	fi
 
@@ -354,7 +333,7 @@ function cli_status() {
 
 function cli_reset() {
 	if cli_help_requested $@; then
-		cli_usage root-reset
+		cli_show_man network
 		exit ${EXIT_OK}
 	fi
 
@@ -408,118 +387,6 @@ function cli_help_requested() {
 	return ${EXIT_ERROR}
 }
 
-function cli_usage() {
-	local what=${1}
-
-	case "${what}" in
-		root)
-			echo "${0}: [command] <options ...>"
-			echo
-			echo "  start  - ..."
-			echo "  stop   - ..."
-			echo "  restart - ..."
-			echo "  status - ..."
-			echo
-			echo "  config - ..."
-			echo
-			echo "  device - ..."
-			echo "  zone   - ..."
-			echo
-			;;
-		root-config)
-			echo    "${0}: ${what#root-} [KEY=VAL, ...]"
-			echo
-			echo    "  This command allows setting of global configuration parameters."
-			echo
-			echo    "  If no additional arguments are passed it will list the current configuration."
-			echo
-			echo    "  You can overwrite the settings like the following:"
-			echo
-			echo    "    ${0} ${what#root-} DEBUG=1 ..."
-			echo
-			;;
-		root-reset)
-			echo    "${0}: ${what#root-} [--force | -f]"
-			echo
-			echo    "  This command resets the network configuration."
-			echo
-			echo    "  Will delete all zones and ports."
-			echo
-			echo -e "  ${COLOUR_RED}USE WITH CAUTION!${COLOUR_NORMAL}"
-			echo
-			;;
-		root-start|root-stop|root-restart)
-			echo    "${0}: ${what#root-} [--local-only|--remote-only|--all|<zone>...]"
-			echo
-			echo    "  This commands ${what#root-}s all zones by default."
-			echo    "  One can pass several parameters to only process a subset of all"
-			echo    "  available zones:"
-			echo
-			echo -e "    ${COLOUR_BOLD}--local-only${COLOUR_NORMAL}"
-			echo    "    Process all local zones which includes every zone without red."
-			echo
-			echo -e "    ${COLOUR_BOLD}--remote-only${COLOUR_NORMAL}"
-			echo    "    Process all remote zones which means only the red ones."
-			echo
-			echo -e "    ${COLOUR_BOLD}--all${COLOUR_NORMAL}"
-			echo    "    Process all zones. This is the default parameter."
-			echo
-			echo    "    Additionally, you can pass one or more zone names which will"
-			echo    "    be processed."
-			echo
-			;;
-		root-status)
-			echo    "${0}: ${what#root-} [--local-only|--remote-only|--all|<zone>...]"
-			echo
-			echo    "  This commands shows status information of all zones by default."
-			echo    "  One can pass several parameters to only process a subset of all"
-			echo    "  available zones:"
-			echo
-			echo -e "    ${COLOUR_BOLD}--local-only${COLOUR_NORMAL}"
-			echo    "    Process all local zones which includes every zone without red."
-			echo
-			echo -e "    ${COLOUR_BOLD}--remote-only${COLOUR_NORMAL}"
-			echo    "    Process all remote zones which means only the red ones."
-			echo
-			echo -e "    ${COLOUR_BOLD}--all${COLOUR_NORMAL}"
-			echo    "    Process all zones. This is the default parameter."
-			echo
-			echo    "    Additionally, you can pass one or more zone names which will"
-			echo    "    be processed."
-			echo
-			;;
-		root-zone)
-			echo    "${0}: ${what#root-} <create|remove> <zone> [<type> <options...>]"
-			echo
-			echo    "  Create or remove a zone."
-			echo
-			echo -e "    ${COLOUR_BOLD}create <zone> <type> <options>${COLOUR_NORMAL}"
-			echo    "    Create a new zone of type <type> where <zone> is an allowed"
-			echo    "    zone name."
-			echo
-			echo -e "    ${COLOUR_BOLD}remove <zone>${COLOUR_NORMAL}"
-			echo    "    Remove the zone <zone>."
-			echo
-			echo    "  You may also edit the configuration of the zones."
-			echo
-			echo -e "    ${COLOUR_BOLD}<zone> ...${COLOUR_NORMAL}"
-			echo    "    Edit the zone <zone>."
-			echo
-			;;
-		usage)
-			echo
-			echo "  Run '${0} help' to get information how to use this tool."
-			echo
-			;;
-		*)
-			error "No help available for this command '${what}'."
-			echo
-			;;
-	esac
-
-	echo "Network configuration tool. Report all bugs to <http://bugs.ipfire.org>."
-}
-
 function cli_status_headline() {
 	local zone=${1}
 
@@ -556,4 +423,29 @@ function cli_get_key() {
 
 function cli_get_val() {
 	echo "${@##*=}"
+}
+
+function cli_usage() {
+	local command="$@"
+	local basename="$(basename ${0})"
+
+	if ! isset command; then
+		command="${basename} help"
+	fi
+
+	echo "The given command was not understood by ${basename}." >&2
+	echo "Please run '${command}' for detailed help." >&2
+}
+
+function cli_show_man() {
+	local manpage=${1}
+	assert isset manpage
+
+	if ! binary_exists man; then
+		error "The man package is not installed on this system."
+		error "Please install 'man' in order to view the help."
+		exit ${EXIT_ERROR}
+	fi
+
+	man ${manpage}
 }

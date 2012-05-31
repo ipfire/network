@@ -1,8 +1,7 @@
-#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2012  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,40 +18,5 @@
 #                                                                             #
 ###############################################################################
 
-# Parse the command line
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		-d|--debug)
-			DEBUG=1
-			;;
-		*)
-			action=${1}
-			;;
-	esac
-	shift
-	[ -n "${action}" ] && break
-done
-
-. /usr/lib/network/functions
-
-# Process the given action
-case "${action}" in
-	init)
-		init_run
-		;;
-
-	config|hostname|port|device|zone|start|stop|restart|status|reset)
-		cli_${action} $@
-		;;
-
-	""|help|--help|-h)
-		cli_show_man network
-		exit ${EXIT_OK}
-		;;
-
-	*)
-		error "Invalid command given: ${action}"
-		cli_usage "network help"
-		exit ${EXIT_CONF_ERROR}
-		;;
-esac
+PACKAGE_NAME    = network
+PACKAGE_VERSION = 003

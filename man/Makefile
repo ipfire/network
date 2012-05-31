@@ -1,8 +1,7 @@
-#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2012  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,40 +18,28 @@
 #                                                                             #
 ###############################################################################
 
-# Parse the command line
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		-d|--debug)
-			DEBUG=1
-			;;
-		*)
-			action=${1}
-			;;
-	esac
-	shift
-	[ -n "${action}" ] && break
-done
+include ../Makeconfig
 
-. /usr/lib/network/functions
+mandir   = /usr/share/man
 
-# Process the given action
-case "${action}" in
-	init)
-		init_run
-		;;
+MANPAGES    = $(MANPAGES8)
+MANPAGES_IN = $(foreach file,$(MANPAGES),$(file).in)
 
-	config|hostname|port|device|zone|start|stop|restart|status|reset)
-		cli_${action} $@
-		;;
+MANPAGES8   = \
+	network.8 \
+	network-zone.8
 
-	""|help|--help|-h)
-		cli_show_man network
-		exit ${EXIT_OK}
-		;;
+.PHONY: all
+all: $(MANPAGES)
+	@: # Do nothing.
 
-	*)
-		error "Invalid command given: ${action}"
-		cli_usage "network help"
-		exit ${EXIT_CONF_ERROR}
-		;;
-esac
+# Replace all placeholders.
+$(MANPAGES): Makefile $(MANPAGES_IN)
+	sed \
+		-e "s/@VERSION@/$(PACKAGE_VERSION)/g" \
+		< $@.in > $@
+
+.PHONY: install
+install: $(MANPAGES)
+	-mkdir -pv $(DESTDIR)$(mandir)/man8
+	cp -vf *.8 $(DESTDIR)$(mandir)/man8

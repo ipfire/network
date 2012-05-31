@@ -1,0 +1,68 @@
+.TH network-zone 8 "1 Jun 2012" "@VERSION@" "network man page"
+
+.SH NAME
+network-zone \- Network Configuration Control Program
+
+.SH SYNOPSIS
+\fBnetwork [OPTIONS] zone create <zone> ...\fR
+.P
+\fBnetwork [OPTIONS] zone <zone> command ...\fR
+
+.SH DESCRIPTION
+By the zone subcommands, it is very easy to configure network zones.
+.PP
+It is possible to create zones and remove them. Zones may also
+be brought up and down and reconfigured. Their status may be viewed
+as well.
+
+.SH OPTIONS
+The \fBnetwork zone\fR command offers various commands:
+
+\fBcreate <zone> <hook> [options]\fR
+.RS 4
+A new zone may be created by the \fBcreate\fR command. There are at least two arguments
+required.
+.PP
+\fB<zone>\fR must be valid name for a zone which does not already exist.
+\fB<hook>\fR is a valid zone hook which may require additional options.
+.RE
+.PP
+
+\fBremove <zone>\fR
+.RS 4
+XXX TODO What will happen here?
+.RE
+.PP
+
+For all other commands, the name of the zone needs to be passed first:
+\fBnetwork zone <zone> command\fR.
+
+\fB<zone> edit [OPTIONS]\fR
+.RS 4
+The settings of a zone may be edited after it has been created. The options that can
+be passed depend on the hook that is used for the zone. Run \fBnetwork zone <zone> edit --help\fR
+to learn more about that.
+.PP
+It normally is required to restart/reload the zone until the new settings are taken into account.
+.RE
+.PP
+
+\fB<zone> [up|down]\fR
+.RS 4
+These commands will bring the zone up/down. This is done without control of systemd, therefore
+not intended to be done in a productive environment. However, these commands may be used for
+debugging.
+.RE
+.PP
+
+\fB<zone> status\fR
+.RS 4
+This will show some detailed information about the state if the specified zone.
+.RE
+.PP
+
+.SH SEE ALSO
+network(8)
+
+.SH AUTHOR
+Michael Tremer (michael.tremer@ipfire.org)
