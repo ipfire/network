@@ -1,0 +1,78 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+LOG_FACILITY="miredo-helper"
+
+. /usr/lib/network/functions
+
+action="${STATE}"
+assert isset action
+
+zone="${IFACE}"
+assert zone_exists ${zone}
+
+log DEBUG "Called for zone=${zone} action=${action}."
+
+case "${action}" in
+	up)
+		# Configure the requested MTU.
+		isset MTU && device_set_mtu ${zone} ${MTU}
+
+		# Bring up the device.
+		device_set_up ${zone}
+
+		# Apply the link-local address.
+		ip_address_add ${zone} "${LLADDRESS}/64"
+
+		# Apply the public IP address.
+		ip_address_add ${zone} "${ADDRESS}/32"
+
+		# Write all data to the routing database.
+		routing_db_set ${zone} ipv6 type "teredo"
+		routing_db_set ${zone} ipv6 local-ip-address "${ADDRESS}/32"
+		routing_db_set ${zone} ipv6 active 1
+
+		# Update the routing database.
+		routing_update ${zone} ipv6
+		routing_default_update
+		;;
+
+	down)
+		# Remove the routing database and update the tables.
+		routing_db_remove ${zone} ipv6
+		routing_update ${zone} ipv6
+		routing_default_update
+
+		# Set down the device.
+		device_set_down ${zone}
+		;;
+
+	destroy)
+		# Do nothing here.
+		;;
+
+	*)
+		log ERROR "Unknown action passed: ${action}"
+		exit ${EXIT_ERROR}
+		;;
+esac
+
+exit ${EXIT_OK}

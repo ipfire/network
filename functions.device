@@ -126,9 +126,12 @@ function device_is_ppp() {
 	local device=${1}
 
 	local type=$(__device_get_file ${device} type)
-	if [ "${type}" = "512" ]; then
-		return ${EXIT_OK}
-	fi
+
+	case "${type}" in
+		512|65534)
+			return ${EXIT_OK}
+			;;
+	esac
 
 	return ${EXIT_ERROR}
 }

@@ -44,7 +44,7 @@ function radvd_write_config() {
 
 	# Write the configuration for all zones.
 	local zone
-	for zone in $(zones_get_all); do
+	for zone in $(zones_get_local); do
 		__radvd_config_interface ${zone}
 	done
 }

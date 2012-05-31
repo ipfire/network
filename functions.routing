@@ -49,18 +49,26 @@ function routing_default_update() {
 
 			if [ "$(routing_db_get ${zone} ${proto} active)" = "1" ]; then
 				gateway=$(routing_db_get ${zone} ${proto} remote-ip-address)
-				[ -z "${gateway}" ] && continue
-
-				weight=$(routing_db_get ${zone} ${proto} weight)
 
 				assert device_exists ${zone}
+
+				# If we have got a PPP device, we will directly send all
+				# packets into the pipe.
 				if device_is_ppp ${zone}; then
 					routes="${routes} dev ${zone}"
-				else
+
+				# On other devices, we will use the gateway if we got one.
+				elif isset gateway; then
 					routes="${routes} nexthop via ${gateway}"
+
+				# If none of the cases above apply, we cannot go on.
+				else
+					continue
 				fi
 
-				if [ -n "${weight}" ]; then
+				# Apply weight.
+				weight=$(routing_db_get ${zone} ${proto} weight)
+				if isinteger ${weight}; then
 					routes="${routes} weight ${weight}"
 				fi
 			else
@@ -83,7 +91,7 @@ function routing_default_update() {
 
 		log INFO "Setting default route for ${proto}: ${routes}"
 
-		${cmd} add default ${routes}
+		cmd ${cmd} add default ${routes}
 		assert [ $? -eq 0 ]
 
 		case "${proto}" in
@@ -204,30 +212,37 @@ function routing_update() {
 	local table=${zone}
 	assert isset proto
 
+	local ip_cmd="ip"
+	if [ "${proto}" = "ipv6" ]; then
+		ip_cmd="${ip_cmd} -6"
+	fi
+
 	# Create routing table if not exists
 	routing_table_create ${table}
 
 	log DEBUG "Flushing routing table ${table}"
-	cmd ip route flush table ${table}
+	cmd ${ip_cmd} route flush table ${table}
 
 	local local_ip_address=$(routing_db_get ${zone} ${proto} local-ip-address)
 	local remote_ip_address=$(routing_db_get ${zone} ${proto} remote-ip-address)
 
-	# XXX does not work.
 	case "${proto}" in
 		ipv4)
 			local net_address=$(ipv4_get_netaddress ${local_ip_address})
 
 			log DEBUG "Adding route for subnet ${local_ip_address} to table ${table}"
-			cmd ip route add table ${table} ${net_address} dev ${zone}
+			cmd ${ip_cmd} route add table ${table} ${net_address} dev ${zone}
 			;;
 	esac
 
+	log DEBUG "Adding default route for table ${table}"
+	local routing_cmd="${ip_cmd} route add table ${table} default"
 	if isset remote_ip_address; then
-		log DEBUG "Adding default route for table ${table}"
-
-		cmd ip route add table ${table} default nexthop via ${remote_ip_address}
+		routing_cmd="${routing_cmd} via ${remote_ip_address}"
+	else
+		routing_cmd="${routing_cmd} dev ${zone}"
 	fi
+	cmd ${routing_cmd}
 
-	cmd ip rule add from ${local_ip_address} lookup ${table}
+	cmd ${ip_cmd} rule add from ${local_ip_address} lookup ${table}
 }

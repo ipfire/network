@@ -37,6 +37,10 @@ install:
 	cp -vf  systemd/*.service $(DESTDIR)$(systemdunitdir)
 	cp -vf network.tmpfiles $(DESTDIR)$(tmpfilesdir)/network.conf
 
+	# Install the helper tools.
+	-mkdir -pv $(DESTDIR)$(libdir)/network/helpers
+	cp -vf helpers/* $(DESTDIR)$(libdir)/network/helpers
+
 	# Install bridge-stp. 
 	install -m 755 bridge-stp $(DESTDIR)$(sbindir)/
 
