@@ -27,6 +27,7 @@ MANPAGES_IN = $(foreach file,$(MANPAGES),$(file).in)
 
 MANPAGES8   = \
 	network.8 \
+	network-config.8 \
 	network-zone.8
 
 .PHONY: all

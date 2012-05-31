@@ -1,0 +1,43 @@
+.TH network-config 8 "1 Jun 2012" "@VERSION@" "network man page"
+
+.SH NAME
+network-config \- A list of global configuration options.
+
+.SH SYNOPSIS
+\fBnetwork [OPTIONS] config\fR \- Will return a list of all possible keys and their current values.
+.P
+\fBnetwork [OPTIONS] config [KEY=VALUE ...]\fR \- Will set the variable \fBKEY\fR to \fBVALUE\fR.
+
+.SH DESCRIPTION
+The \fBnetwork config\fR command may be used to set global configuration options permanently.
+These options are mostly display options or debugging settings and do not influcence
+the behaviour of the networking code itself.
+
+.SH OPTIONS
+This is a list of possible configuration values:
+
+\fBCOLORS\fR = [\fBauto\fR|on|off]
+.RS 4
+This will control the output of the console tools. \fBon\fR will enable colorful output
+all the time, \fBoff\fR will disable colors.
+.PP
+The default setting is \fBauto\fR which will automatically detect if the console supports
+colors.
+.PP
+Colorful output is very helpful to spot important information faster.
+.RE
+.PP
+
+\fBDEBUG\fR = [\fB0\fR|1]
+.RS 4
+The \fBDEBUG\fR will control weather debug logging is enabled or not. Additionally
+to writing debug log messages to the log files, the messages will displayed on the
+console.
+.RE
+.PP
+
+.SH SEE ALSO
+network(8)
+
+.SH AUTHOR
+Michael Tremer (michael.tremer@ipfire.org)

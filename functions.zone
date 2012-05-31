@@ -22,9 +22,7 @@
 function zone_dir() {
 	local zone=${1}
 
-	#assert isset zone
-
-	echo "${ZONE_DIR}/zones/${zone}"
+	echo "${NETWORK_ZONE_DIR}/zones/${zone}"
 }
 
 function zone_exists() {
