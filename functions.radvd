@@ -70,7 +70,6 @@ function __radvd_config_interface() {
 	assert isset zone
 
 	log DEBUG "Writing radvd configuration for ${zone}"
-	echo $zone
 
 	# If the interface does not provide any routing information,
 	# we can skip this whole stuff.
