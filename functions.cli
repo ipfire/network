@@ -246,8 +246,11 @@ function cli_zone() {
 		shift
 
 		case "${action}" in
-			create|remove)
+			create)
 				zone_${action} $@
+				;;
+			remove)
+				cli_zone_remove $@
 				;;
 			""|*)
 				if [ -n "${action}" ]; then
@@ -260,6 +263,29 @@ function cli_zone() {
 				;;
 		esac
 	fi
+}
+
+# Removes a zone either immediately, if it is currently down,
+# or adds a tag that the removal will be done when the zone
+# is brought down the next time.
+function cli_zone_remove() {
+	if cli_help_requested $@; then
+		cli_show_man network-zone
+		exit ${EXIT_OK}
+	fi
+
+	local zone=${1}
+	assert zone_exists ${zone}
+
+	if zone_is_up ${zone}; then
+		echo "Zone '${zone}' is up and will be removed when it goes down the next time."
+		zone_remove ${zone}
+	else
+		echo "Removing zone '${zone}' now..."
+		zone_remove_now ${zone}
+	fi
+
+	exit ${EXIT_OK}
 }
 
 function cli_start() {

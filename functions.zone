@@ -125,7 +125,7 @@ function zone_create() {
 	# Maybe the zone create hook did not exit correctly.
 	# If this is the case we remove the created zone immediately.
 	if [ "${ret}" = "${EXIT_ERROR}" ]; then
-		zone_remove ${zone}
+		zone_remove_now ${zone}
 	fi
 }
 
@@ -135,6 +135,12 @@ function zone_edit() {
 
 	if ! zone_exists ${zone}; then
 		error "Zone '${zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if the zone is tagged for removal.
+	if zone_has_remove_tag ${zone}; then
+		error "You cannot edit a zone that is tagged for removal."
 		return ${EXIT_ERROR}
 	fi
 
@@ -153,16 +159,35 @@ function zone_edit() {
 	hook_zone_exec ${hook} edit ${zone} $@
 }
 
+
 function zone_remove() {
 	local zone=${1}
-	shift
+	assert zone_exists ${zone}
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
+	# Make the zone for removal.
+	touch $(zone_dir ${zone})/.remove
 
-	# XXX Tear this down here?
+	log INFO "Zone '${zone}' has been tagged for removal."
+}
+
+function zone_has_remove_tag() {
+	local zone=${1}
+	assert zone_exists ${zone}
+
+	[ -e "$(zone_dir ${zone})/.remove" ]
+}
+
+# This function will remove the given zone
+# RIGHT NOW. Use zone_remove to remove it
+# at the next status change.
+function zone_remove_now() {
+	local zone=${1}
+	assert zone_exists ${zone}
+
+	log INFO "Removing zone '${zone}' right now."
+
+	# Force the zone down.
+	zone_is_up ${zone} && zone_set_down ${zone}
 
 	rm -rf $(zone_dir ${zone})
 }
@@ -173,6 +198,12 @@ function zone_up() {
 
 	if ! zone_exists ${zone}; then
 		error "Zone '${zone}' does not exist."
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if a zone has got the remove tag.
+	if zone_has_remove_tag ${zone}; then
+		error "Cannot bring up any zone which is to be removed."
 		return ${EXIT_ERROR}
 	fi
 
@@ -221,6 +252,11 @@ function zone_down() {
 	hook_zone_exec ${hook} down ${zone} $@
 
 	zone_db ${zone} stopped
+
+	# Remove the zone, if it has got a remove tag.
+	if zone_has_remove_tag ${zone}; then
+		zone_remove_now ${zone}
+	fi
 }
 
 function zone_status() {
@@ -245,6 +281,11 @@ function zone_status() {
 	fi
 
 	hook_zone_exec ${hook} status ${zone} $@
+
+	# Show that the zone it to be removed soon.
+	if zone_has_remove_tag ${zone}; then
+		warning "This zone is tagged for removal."
+	fi
 }
 
 function zone_port() {
