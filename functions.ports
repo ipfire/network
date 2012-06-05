@@ -20,7 +20,7 @@
 ###############################################################################
 
 function port_dir() {
-	echo "${CONFIG_DIR}/ports"
+	echo "${NETWORK_CONFIG_DIR}/ports"
 }
 
 function ports_get_all() {
@@ -44,7 +44,7 @@ function port_file() {
 function port_exists() {
 	local port=${1}
 
-	[ -f "${CONFIG_DIR}/ports/${port}" ]
+	[ -f "${NETWORK_CONFIG_DIR}/ports/${port}" ]
 }
 
 function port_get_hook() {
