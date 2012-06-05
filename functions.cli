@@ -252,6 +252,9 @@ function cli_zone() {
 			remove)
 				cli_zone_remove $@
 				;;
+			list-hooks)
+				cli_list_hooks zone $@
+				;;
 			""|*)
 				if [ -n "${action}" ]; then
 					error "Unrecognized argument: '${action}'"
@@ -263,6 +266,26 @@ function cli_zone() {
 				;;
 		esac
 	fi
+}
+
+function cli_list_hooks() {
+	local type=${1}
+	shift
+
+	if cli_help_requested $@; then
+		cli_show_man network-zone
+		exit ${EXIT_OK}
+	fi
+
+	local hook_dir=$(hook_dir ${type})
+	local hook
+
+	for hook in ${hook_dir}/*; do
+		hook=$(basename ${hook})
+		if hook_exists ${type} ${hook}; then
+			echo "${hook}"
+		fi
+	done | sort -u
 }
 
 # Removes a zone either immediately, if it is currently down,

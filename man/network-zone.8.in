@@ -4,7 +4,9 @@
 network-zone \- Network Configuration Control Program
 
 .SH SYNOPSIS
-\fBnetwork [OPTIONS] zone create <zone> ...\fR
+\fBnetwork [OPTIONS] zone [create|remove] <zone> ...\fR
+.P
+\fBnetwork [OPTIONS] zone list-hooks\fR
 .P
 \fBnetwork [OPTIONS] zone <zone> command ...\fR
 
@@ -35,6 +37,12 @@ A zone can be simple removed with this command.
 There are two possible ways to remove a zone. The case is when the zone is not up. Then,
 it will be removed immediately. When the zone is current up and used, it will tagged
 to be remove later, after it has been brought down.
+.RE
+.PP
+
+\fBlist-hooks\fR
+.RS 4
+Outputs a list of all possible hooks for the zones.
 .RE
 .PP
 
