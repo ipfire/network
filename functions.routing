@@ -52,9 +52,9 @@ function routing_default_update() {
 
 				assert device_exists ${zone}
 
-				# If we have got a PPP device, we will directly send all
+				# If we have got a Point-to-Point device, we will directly send all
 				# packets into the pipe.
-				if device_is_ppp ${zone}; then
+				if device_is_ptp ${zone}; then
 					routes="${routes} dev ${zone}"
 
 				# On other devices, we will use the gateway if we got one.
