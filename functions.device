@@ -68,13 +68,26 @@ function device_exists() {
 	[ -d "${SYS_CLASS_NET}/${device}" ]
 }
 
+function device_has_flag() {
+	local device=${1}
+	local flag=${2}
+
+	local flags=$(__device_get_file ${device} flags)
+
+	if [[ "$(( ${flags} & ${flag} ))" -eq 0 ]]; then
+		return ${EXIT_FALSE}
+	else
+		return ${EXIT_TRUE}
+	fi
+}
+
 # Check if the device is up
 function device_is_up() {
 	local device=${1}
 
 	device_exists ${device} || return ${EXIT_ERROR}
 
-	ip link show ${device} 2>/dev/null | grep -qE "<.*UP.*>"
+	device_has_flag ${device} 0x1
 }
 
 # Check if the device is a bonding device
@@ -127,13 +140,14 @@ function device_is_ppp() {
 
 	local type=$(__device_get_file ${device} type)
 
-	case "${type}" in
-		512|65534)
-			return ${EXIT_OK}
-			;;
-	esac
+	[ "${type}" = "512" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
+}
 
-	return ${EXIT_ERROR}
+# Check if the device is a pointopoint device.
+function device_is_ptp() {
+	local device=${1}
+
+	device_has_flag ${device} 0x10
 }
 
 # Check if the device is a loopback device
@@ -294,7 +308,7 @@ function device_has_carrier() {
 function device_is_promisc() {
 	local device=${1}
 
-	ip link show ${device} | grep -qE "<.*PROMISC.*>"
+	device_has_flag ${device} 0x200
 }
 
 function device_set_promisc() {
@@ -533,7 +547,10 @@ function __device_get_file() {
 	assert isset device
 	assert isset file
 
-	cat ${SYS_CLASS_NET}/${device}/${file}
+	local path="${SYS_CLASS_NET}/${device}/${file}"
+	[ -r "${path}" ] || return ${EXIT_ERROR}
+
+	echo "$(<${path})"
 }
 
 function device_get_rx_bytes() {
