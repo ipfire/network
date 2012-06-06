@@ -52,11 +52,11 @@ function _create() {
 		shift
 	done
 
-	# Store IPv6 address in full format
-	ADDRESS=$(ipv6_explode ${ADDRESS})
+	# Store IPv6 address in small format.
+	ADDRESS=$(ipv6_implode ${ADDRESS})
 
 	if [ -n "${GATEWAY}" ]; then
-		GATEWAY=$(ipv6_explode ${GATEWAY})
+		GATEWAY=$(ipv6_implode ${GATEWAY})
 	fi
 
 	config_write $(zone_dir ${zone})/configs/${HOOK}.$(ipv6_hash ${ADDRESS}).${PREFIX} ${HOOK_SETTINGS}
