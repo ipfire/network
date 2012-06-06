@@ -451,18 +451,22 @@ function cli_headline() {
 }
 
 function cli_yesno() {
-	local message="$@ [y/N] "
+	local message="$@ [y/n] "
 	local yesno
 
-	echo
-	echo -ne "${message}"
-	read yesno
+	while true; do
+		printf "\n${message}"
+		read yesno
 
-	if listmatch ${yesno} y Y j J yes YES Yes; then
-		return ${EXIT_OK}
-	fi
+		# Check for "yes".
+		if listmatch ${yesno} y Y yes YES Yes; then
+			return ${EXIT_TRUE}
 
-	return ${EXIT_ERROR}
+		# Check for "no".
+		elif listmatch ${yesno} n N no NO No; then
+			return ${EXIT_FALSE}
+		fi
+	done
 }
 
 function cli_get_key() {
