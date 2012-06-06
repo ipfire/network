@@ -1,0 +1,89 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+IP_TUNNEL_MODES="sit"
+
+function ip_tunnel_add() {
+	local device=${1}
+	shift
+
+	local mode="sit"
+	local ttl
+
+	local remote_address
+	local local_address
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--mode=*)
+				mode=$(cli_get_val ${1})
+				;;
+			--ttl=*)
+				ttl=$(cli_get_val ${1})
+				;;
+
+			--remote-address=*)
+				remote_address=$(cli_get_val ${1})
+				;;
+			--local-address=*)
+				local_address=$(cli_get_val ${1})
+				;;
+		esac
+		shift
+	done
+
+	assert isset mode
+	assert isoneof mode ${IP_TUNNEL_MODES}
+
+	# If TTL is set, make sure it is an integer.
+	isset ttl && assert isinteger ttl
+
+	assert isset remote_address
+	assert isset local_address
+
+	local cmd_args
+
+	# Apply TTL if a value has been set.
+	if isset ttl; then
+		cmd_args="${cmd_args} ttl ${ttl}"
+	fi
+
+	log DEBUG "Creating tunnel device '${device}' (mode=${mode})..."
+
+	# Create the device.
+	cmd ip tunnel add ${device} mode ${mode} \
+		remote ${remote_address} local ${local_address} ${cmd_args}
+	assert [ $? -eq 0 ]
+}
+
+
+function ip_tunnel_del() {
+	local device=${1}
+	assert device_exists ${device}
+
+	# Make sure the device has been shut down.
+	device_set_down ${device}
+
+	log DEBUG "Removing tunnel device '${device}'..."
+
+	ip tunnel del ${device}
+	assert [ $? -eq 0 ]
+}

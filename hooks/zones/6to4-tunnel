@@ -1,0 +1,131 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /usr/lib/network/header-zone
+
+HOOK_SETTINGS="HOOK SERVER_ADDRESS LOCAL_ADDRESS LOCAL_ADDRESS6"
+
+# The IPv4 address of the tunnel endpoint where to connect to.
+SERVER_ADDRESS=
+
+# The local IPv4 address of the tunnel endpoint.
+LOCAL_ADDRESS=
+
+# The address that is assigned to the tunnel device (with prefix).
+LOCAL_ADDRESS6=
+
+function _check() {
+	assert isset SERVER_ADDRESS
+	assert isset LOCAL_ADDRESS
+	assert isset LOCAL_ADDRESS6
+}
+
+function _parse_cmdline() {
+	local value
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--server-address=*)
+				SERVER_ADDRESS=$(cli_get_val ${1})
+				;;
+			--local-ipv4-address=*)
+				LOCAL_ADDRESS=$(cli_get_val ${1})
+				;;
+			--local-ipv6-address=*)
+				LOCAL_ADDRESS6=$(cli_get_val ${1})
+				;;
+			*)
+				echo "Unknown option: ${1}" >&2
+				exit ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+}
+
+function _up() {
+	local zone=${1}
+	assert isset zone
+
+	# Read configuration options.
+	zone_config_read ${zone}
+
+	ip_tunnel_add ${zone} --ttl=255 \
+		--remote-address="${SERVER_ADDRESS}" \
+		--local-address="${LOCAL_ADDRESS}"
+
+	# Bring up the device.
+	device_set_up ${zone}
+
+	# Assign IPv6 address.
+	ip_address_add ${zone} ${LOCAL_ADDRESS6}
+
+	# Update routing information.
+	routing_db_set ${zone} ipv6 type "${HOOK}"
+	routing_db_set ${zone} ipv6 local-ip-address "${LOCAL_ADDRESS6}"
+	routing_db_set ${zone} ipv6 active 1
+
+	# Update the routing database.
+	routing_update ${zone} ipv6
+	routing_default_update
+
+	exit ${EXIT_OK}
+}
+
+function _down() {
+	local zone=${1}
+	assert isset zone
+
+	# Remove everything from the routing db.
+	routing_db_remove ${zone} ipv6
+	routing_update ${zone} ipv6
+	routing_default_update
+
+	# Remove the tunnel device.
+	ip_tunnel_del ${zone}
+
+	exit ${EXIT_OK}
+}
+
+function _status() {
+	local zone=${1}
+	assert isset zone
+
+	cli_status_headline ${zone}
+
+	zone_config_read ${zone}
+
+	local server_line="${SERVER_ADDRESS}"
+	local server_hostname=$(dns_get_hostname ${SERVER_ADDRESS})
+	if [ -n "${server_hostname}" ]; then
+		server_line="${server_line} (Hostname: ${server_hostname})"
+	fi
+
+	cli_headline "  Configuration:"
+	printf "${DEVICE_PRINT_LINE1}" "Server:" "${server_line}"
+	printf "${DEVICE_PRINT_LINE1}" "Endpoint IPv4 address:" "${LOCAL_ADDRESS}"
+	printf "${DEVICE_PRINT_LINE1}" "Endpoint IPv6 address:" "${LOCAL_ADDRESS6}"
+	echo
+
+	exit ${EXIT_OK}
+}
+
+run $@
