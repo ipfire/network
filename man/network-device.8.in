@@ -1,0 +1,37 @@
+.TH network-device 8 "6 Jun 2012" "@VERSION@" "network man page"
+
+.SH NAME
+network-device \- Network Configuration Control Program
+
+.SH SYNOPSIS
+\fBnetwork [OPTIONS] device <device> [status|discover] ...\fR
+
+.SH DESCRIPTION
+By the device subcommands, it is very easy to get status information
+about network devices and do some more things.
+
+.SH OPTIONS
+The \fBnetwork device\fR command offers various commands:
+
+\fB<device> status\fR
+.RS 4
+This will show you very detailed information about the given device.
+.PP
+This is all about the ethernet parts of the device and does not contain
+any IP information as this is defined as a zone (\fBnetwork-zone\fR(8)).
+.RE
+.PP
+
+\fB<device> discover\fR
+.RS 4
+Runs a discovery for many hooks on the given device. This will check
+if the hook can find for example a DHCP server or DSLAM and thus predict
+for what the device should be used.
+.RE
+.PP
+
+.SH SEE ALSO
+network(8)
+
+.SH AUTHOR
+Michael Tremer (michael.tremer@ipfire.org)

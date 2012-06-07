@@ -33,7 +33,7 @@ assert isset INTERFACE
 # Check, if the device is a physical network interface and
 # if we can handle it.
 if device_exists ${INTERFACE}; then
-	if ! device_is_real ${INTERFACE}; then
+	if ! device_is_ethernet ${INTERFACE}; then
 		log DEBUG "Called for interface '${INTERFACE}' which is a virtual interface. Exiting."
 		exit ${EXIT_OK}
 	fi

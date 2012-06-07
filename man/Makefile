@@ -28,6 +28,7 @@ MANPAGES_IN = $(foreach file,$(MANPAGES),$(file).in)
 MANPAGES8   = \
 	network.8 \
 	network-config.8 \
+	network-device.8 \
 	network-zone.8
 
 .PHONY: all
@@ -35,7 +36,7 @@ all: $(MANPAGES)
 	@: # Do nothing.
 
 # Replace all placeholders.
-$(MANPAGES): Makefile $(MANPAGES_IN)
+$(MANPAGES): ../Makeconfig Makefile $(MANPAGES_IN)
 	sed \
 		-e "s/@VERSION@/$(PACKAGE_VERSION)/g" \
 		< $@.in > $@

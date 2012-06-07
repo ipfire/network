@@ -125,13 +125,20 @@ function device_has_virtuals() {
 	local device=${1}
 
 	if device_is_virtual ${device}; then
-		return 1
+		return ${EXIT_FALSE}
 	fi
 
-	if [ ! -e "/proc/net/vlan/config" ]; then
-		return 1
-	fi
-	grep -q "${1}$" /proc/net/vlan/config
+	local virtuals=$(device_get_virtuals ${device})
+	[ -n "${virtuals}" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
+}
+
+function device_get_virtuals() {
+	local device=${1}
+
+	local dev spacer1 id spacer2 parent
+	while read dev spacer1 id spacer2 parent; do
+		[ "${parent}" = "${device}" ] && echo "${dev}"
+	done < /proc/net/vlan/config | sort
 }
 
 # Check if the device is a ppp device
@@ -165,7 +172,7 @@ function device_is_wireless() {
 }
 
 # Check if the device is a physical network interface
-function device_is_real() {
+function device_is_ethernet() {
 	local device=${1}
 
 	device_is_loopback ${device} && \
@@ -211,8 +218,8 @@ function device_get_type() {
 	elif device_is_wireless ${device}; then
 		echo "wireless"
 
-	elif device_is_real ${device}; then
-		echo "real"
+	elif device_is_ethernet ${device}; then
+		echo "ethernet"
 
 	else
 		echo "unknown"
@@ -302,7 +309,8 @@ function device_has_carrier() {
 	local device=${1}
 	assert isset device
 
-	[ "$(<${SYS_CLASS_NET}/${device}/carrier)" = "1" ]
+	local carrier=$(__device_get_file ${device} carrier)
+	[ "${carrier}" = "1" ]
 }
 
 function device_is_promisc() {
@@ -587,4 +595,16 @@ function device_get_tx_errors() {
 	local device=${1}
 
 	__device_get_file ${device} statistics/tx_errors
+}
+
+function device_get_speed() {
+	local device=${1}
+
+	__device_get_file ${device} speed
+}
+
+function device_get_duplex() {
+	local device=${1}
+
+	__device_get_file ${device} duplex
 }

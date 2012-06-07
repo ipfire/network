@@ -81,7 +81,7 @@ function _edit() {
 
 	local slave
 	for slave in ${SLAVES}; do
-		if ! device_is_real $(devicify ${slave}); then
+		if ! device_is_ethernet $(devicify ${slave}); then
 			error "Slave device '${slave}' is not an ethernet device."
 			exit ${EXIT_ERROR}
 		fi

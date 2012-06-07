@@ -54,28 +54,108 @@ function cli_device() {
 	local action=${2}
 	shift 2
 
-	assert device_exists ${device}
-
-	if zone_exists ${device} || port_exists ${device}; then
-		error "The device '${device}' has already been configured."
-		error "You cannot do a device action."
+	if ! isset device; then
+		cli_show_man network-device
 		return ${EXIT_ERROR}
 	fi
 
+	assert device_exists ${device}
+
 	case "${action}" in
 		discover)
-			echo "# XXX need to implement --raw here"
 			cli_device_discover ${device} $@
 			;;
-
-		show|"")
-			# XXX device_show needs to be implemented
-			device_show ${device}
+		status)
+			cli_device_status ${device}
 			;;
 		*)
 			cli_show_man network-device
 			;;
 	esac
+
+	return ${EXIT_OK}
+}
+
+function cli_device_status() {
+	local device=${1}
+	assert device_exists ${device}
+
+	# Save the type of the device for later.
+	local type=$(device_get_type ${device})
+
+	cli_headline 1 "Device status: ${device}"
+	cli_print_fmt1 1 "Name"		"${device}"
+
+	# Print the device status.
+	device_is_up ${device} &>/dev/null
+	local status=$?
+
+	case "${status}" in
+		${EXIT_TRUE})
+			status="${COLOUR_GREEN}UP${COLOUR_NORMAL}"
+			;;
+		${EXIT_FALSE})
+			status="${COLOUR_RED}DOWN${COLOUR_NORMAL}"
+			;;
+	esac
+
+	cli_print_fmt1 1 "Status"	"${status}"
+	cli_print_fmt1 1 "Type"		"${type}"
+	cli_print_fmt1 1 "Address"	"$(device_get_address ${device})"
+	cli_space
+
+	# Print the link speed for ethernet devices.
+	case "${type}" in
+		ethernet)
+			cli_print_fmt1 1 "Link" \
+				"$(device_get_speed ${device}) MBit/s $(device_get_duplex ${device}) duplex"
+			;;
+	esac
+
+	cli_print_fmt1 1 "MTU"		"$(device_get_mtu ${device})"
+	cli_space
+
+	# This section will print statistical data from the device.
+	local packets bytes errors
+
+	cli_headline 2 "Statistics"
+	local format="%-10s %9d packets %6s (%d errors)"
+
+	# RX
+	packets=$(device_get_rx_packets ${device})
+	bytes=$(device_get_rx_bytes ${device})
+	errors=$(device_get_rx_errors ${device})
+
+	cli_print 2 "${format}" "Received" "${packets}" "$(beautify_bytes ${bytes})" "${errors}"
+
+	# TX
+	packets=$(device_get_tx_packets ${device})
+	bytes=$(device_get_tx_bytes ${device})
+	errors=$(device_get_tx_errors ${device})
+
+	cli_print 2 "${format}" "Sent"     "${packets}" "$(beautify_bytes ${bytes})" "${errors}"
+	cli_space
+
+	# Print some more information.
+	device_has_carrier ${device} &>/dev/null
+	cli_print_fmt1 1 "Has carrier?"	"$(cli_print_bool $?)"
+
+	device_is_promisc ${device} &>/dev/null
+	cli_print_fmt1 1 "Promisc"	"$(cli_print_bool $?)"
+	cli_space
+
+	# Print all virtual devices.
+	local virtuals=$(device_get_virtuals ${device})
+	if [ -n "${virtuals}" ]; then
+		cli_headline 2 "Virtual devices"
+
+		local virtual
+		for virtual in ${virtuals}; do
+			cli_print 2 "* %-6s - %s" "${virtual}" "$(device_get_address ${virtual})"
+		done
+		cli_space
+	fi
+
 }
 
 function cli_device_discover() {
