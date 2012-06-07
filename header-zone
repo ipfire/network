@@ -24,7 +24,7 @@
 #     conflict with any functions that were defined somewhere else.
 #
 
-. /lib/network/functions
+. /usr/lib/network/functions
 
 HOOK=$(basename ${0})
 
@@ -98,6 +98,17 @@ function _down() {
 function _discover() {
 	# This hook does not support a discovery
 	exit ${DISCOVER_NOT_SUPPORTED}
+}
+
+# The default help function.
+function _help() {
+	# If no man page has been configured, we print an error message.
+	if [ -z "${HOOK_MANPAGE}" ]; then
+		error "There is no help available for hook '${HOOK}'. Exiting."
+		exit ${EXIT_ERROR}
+	fi
+
+	cli_show_man ${HOOK_MANPAGE}
 }
 
 # Do nothing
@@ -350,6 +361,11 @@ function run() {
 		# ppp daemon callbacks
 		ppp-ip-pre-up|ppp-ip-up|ppp-ip-down|ppp-ipv6-up|ppp-ipv6-down)
 			_${action} $@
+			;;
+
+		# Help requested by the user.
+		help)
+			_help $@
 			;;
 
 		*)

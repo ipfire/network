@@ -520,6 +520,32 @@ function cli_reset() {
 	exit ${EXIT_OK}
 }
 
+# Help function: will show the default man page to the user.
+# Optionally, there are two arguments taken, the type of hook
+# and which hook should be shown.
+function cli_help() {
+	local type=${1}
+	local what=${2}
+
+	# Remove unknown types.
+	if ! listmatch ${type} zone port config; then
+		type=""
+	fi
+
+	# If no arguments were given, we will show the default page.
+	if [ -z "${type}" ]; then
+		cli_show_man network
+		return ${EXIT_OK}
+	fi
+
+	if ! hook_exists ${type} ${what}; then
+		error "Hook of type '${type}' and name '${what}' could not be found."
+		exit "${EXIT_ERROR}"
+	fi
+
+	hook_exec ${type} ${what} help
+}
+
 # Process the given action
 case "${action}" in
 	init)
@@ -531,8 +557,7 @@ case "${action}" in
 		;;
 
 	""|help|--help|-h)
-		cli_show_man network
-		exit ${EXIT_OK}
+		cli_help $@
 		;;
 
 	*)
@@ -541,3 +566,5 @@ case "${action}" in
 		exit ${EXIT_CONF_ERROR}
 		;;
 esac
+
+exit ${EXIT_OK}
