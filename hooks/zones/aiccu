@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/header-zone
+. /usr/lib/network/header-zone
 
 HOOK_SETTINGS="HOOK PROTOCOL USER SECRET SERVER TUNNEL_ID"
 
@@ -114,5 +114,3 @@ function _status() {
 
 	exit ${EXIT_OK}
 }
-
-run $@

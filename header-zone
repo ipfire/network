@@ -24,26 +24,6 @@
 #     conflict with any functions that were defined somewhere else.
 #
 
-. /usr/lib/network/functions
-
-HOOK=$(basename ${0})
-
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		-*)
-			error "Unrecognized option: ${1}"
-			exit ${EXIT_ERROR}
-			;;
-		*)
-			action=${1}
-			;;
-	esac
-	shift
-
-	# If action argument was given, we will exit.
-	[ -n "${action}" ] && break
-done
-
 # _notimplemented
 #   Returns a soft error if a function was not implemented, yet.
 #
@@ -336,44 +316,4 @@ function _ppp-ipv6-down() {
 	ppp_common_ipv6_down ${zone} $@
 
 	exit $?
-}
-
-function run() {
-	# Replace all dashes by an underscore
-	#action=${action//-/_}
-
-	case "${action}" in
-		# Main functions
-		create|discover|down|edit|info|rem|status|up)
-			_${action} $@
-			;;
-
-		# Port callbacks
-		port_add|port_rem|port_up|port_down|port_status)
-			_${action} $@
-			;;
-
-		# Configuration callbacks
-		config_create)
-			_${action} $@
-			;;
-
-		# ppp daemon callbacks
-		ppp-ip-pre-up|ppp-ip-up|ppp-ip-down|ppp-ipv6-up|ppp-ipv6-down)
-			_${action} $@
-			;;
-
-		# Help requested by the user.
-		help)
-			_help $@
-			exit ${EXIT_OK}
-			;;
-
-		*)
-			error "Unknown action: ${action}"
-			;;		
-	esac
-
-	error "Hook did not exit properly."
-	exit ${EXIT_ERROR}
 }

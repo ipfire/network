@@ -27,7 +27,6 @@ function zone_dir() {
 
 function zone_exists() {
 	local zone=${1}
-
 	assert isset zone
 
 	[ -d "$(zone_dir ${zone})" ]
@@ -46,7 +45,6 @@ function zone_match() {
 
 function zone_name_is_valid() {
 	local zone=${1}
-
 	assert isset zone
 
 	[[ ${zone} =~ $(zone_match) ]]
@@ -66,7 +64,6 @@ function zone_is_nonlocal() {
 
 function zone_get_hook() {
 	local zone=${1}
-
 	assert isset zone
 
 	config_get_hook $(zone_dir ${zone})/settings
@@ -350,8 +347,6 @@ function zone_port_cmd() {
 	assert isset hook_zone
 	assert isset hook_port
 
-	assert hook_zone_port_exists ${hook_zone} ${hook_port}
-
 	hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} ${port} $@
 }
 
@@ -589,7 +584,6 @@ function zone_ports_cmd() {
 
 	local port
 	for port in $(zone_get_ports ${zone}); do
-		#zone_port_cmd ${cmd} ${zone} ${port} $@
 		hook_zone_exec ${hook} ${cmd} ${zone} ${port} $@
 	done
 }
@@ -613,7 +607,7 @@ function zone_configs_list() {
 	for config in $(zone_dir ${zone})/configs/*; do
 		[ -e "${config}" ] || continue
 
-		echo $(basename ${config})
+		basename ${config}
 	done
 }
 

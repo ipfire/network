@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/header-zone
+. /usr/lib/network/header-zone
 
 HOOK_SETTINGS="HOOK AUTH LINKNAME USER SECRET PEERDNS DEFAULTROUTE MSN MTU"
 HOOK_SETTINGS="${HOOK_SETTINGS} L2PROTO L3PROTO ENCAP PHONE"
@@ -203,5 +203,3 @@ function _status() {
 
 	exit ${EXIT_OK}
 }
-
-run $@

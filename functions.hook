@@ -28,6 +28,7 @@ function hook_dir() {
 
 	echo "${NETWORK_HOOKS_DIR}${type}"
 }
+NETWORK_HOOKS_DIR_ZONES="$(hook_dir zone)"
 
 function hook_exists() {
 	local type=${1}
@@ -36,27 +37,48 @@ function hook_exists() {
 	assert isset type
 	assert isset hook
 
-	local hook_dir=$(hook_dir ${type})
+	# Add the path prefix.
+	hook="$(hook_dir ${type})/${hook}"
 
-	[ -d "${hook_dir}/${hook}" ] && return ${EXIT_ERROR}
-
-	[ -x "${hook_dir}/${hook}" ]
+	[ ! -d "${hook}" ] && [ -x "${hook}" ]
 }
 
 function hook_exec() {
 	local type=${1}
 	local hook=${2}
-	shift 2
+	local cmd=${3}
+	shift 3
 
 	assert isset type
 	assert isset hook
+	assert isset cmd
 
-	if ! hook_exists ${type} ${hook}; then
-		error "Hook '${hook}' does not exist."
-		return ${EXIT_ERROR}
+	assert hook_exists "${type}" "${hook}"
+
+	# For performance reasons, all hooks are executed
+	# in a subshell and so will inherit the currently
+	# running environment.
+	(
+		# Set the name of the hook.
+		HOOK=$(basename ${hook})
+
+		# Source the code of the hook.
+		source "$(hook_dir ${type})/${hook}"
+
+		# Make sure HOOK is still properly set.
+		assert isset HOOK
+
+		# Execute the requested command.
+		_${cmd} $@
+	)
+	local ret=$?
+
+	if [ ${ret} -eq ${EXIT_ERROR_ASSERT} ]; then
+		log ERROR "Hook exited with an assertion error."
+		exit ${ret}
 	fi
 
-	exec_cmd $(hook_dir ${type})/${hook} $@
+	return ${ret}
 }
 
 function config_get_hook() {
@@ -71,8 +93,6 @@ function config_get_hook() {
 	)
 }
 
-## Wrappers around the hook functions for zones
-
 function hook_zone_exists() {
 	hook_exists zone $@
 }
@@ -81,34 +101,26 @@ function hook_zone_port_exists() {
 	local hook_zone=${1}
 	local hook_port=${2}
 
-	hook_zone_exists ${hook_zone} || return ${EXIT_ERROR}
-
-	[ -x "$(hook_dir zone)/${hook_zone}.ports/${hook_port}" ]
+	hook_exists zone "${hook_zone}.ports/${hook_port}"
 }
 
 function hook_zone_config_exists() {
 	local hook_zone=${1}
 	local hook_config=${2}
 
-	hook_zone_exists ${hook_zone} || return ${EXIT_ERROR}
-
-	[ -x "$(hook_dir zone)/${hook_zone}.configs/${hook_config}" ]
+	hook_exists zone "${hook_zone}.configs/${hook_config}"
 }
 
 function hook_zone_has_ports() {
 	local hook=${1}
 
-	[ -d "$(hook_dir zone)/${hook}.ports" ]
-}
-
-function hook_zone_port_exists() {
-	: # XXX WANTED
+	[ -d "${NETWORK_HOOKS_DIR_ZONES}/${hook}.ports" ]
 }
 
 function hook_zone_has_configs() {
 	local hook=${1}
 
-	[ -d "$(hook_dir zone)/${hook}.configs" ]
+	[ -d "${NETWORK_HOOKS_DIR_ZONES}/${hook}.configs" ]
 }
 
 function hook_zone_exec() {
@@ -120,38 +132,15 @@ function hook_zone_port_exec() {
 	local hook_port=${2}
 	shift 2
 
-	if ! hook_exists zone ${hook_zone}; then
-		error "Hook '${hook_zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	if ! hook_zone_port_exists ${hook_zone} ${hook_port}; then
-		error "Port hook '${hook_port}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	exec_cmd $(hook_dir zone)/${hook_zone}.ports/${hook_port} $@
+	hook_zone_exec "${hook_zone}.ports/${hook_port}" $@
 }
 
 function hook_zone_config_exec() {
 	local hook_zone=${1}
-	local hook_config=${2}
+	local hook_port=${2}
 	shift 2
 
-	assert isset hook_zone
-	assert isset hook_config
-
-	if ! hook_zone_exists ${hook_zone}; then
-		error "Hook '${hook_zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	if ! hook_zone_config_exists ${hook_zone} ${hook_config}; then
-		error "Config hook '${hook_config}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	exec_cmd $(hook_dir zone)/${hook_zone}.configs/${hook_config} $@
+	hook_zone_exec "${hook_zone}.configs/${hook_port}" $@
 }
 
 function hook_zone_get_all() {

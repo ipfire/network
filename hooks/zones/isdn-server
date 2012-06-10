@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/header-zone
+. /usr/lib/network/header-zone
 
 HOOK_SETTINGS="HOOK LOCAL_ADDRESS REMOTE_ADDRESS MSN MTU MRU"
 HOOK_SETTINGS="${HOOK_SETTINGS} L2PROTO L3PROTO ENCAP"
@@ -229,5 +229,3 @@ function _status() {
 	echo # Empty line
 	exit ${EXIT_OK}
 }
-
-run $@

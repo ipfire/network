@@ -18,32 +18,3 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #                                                                             #
 ###############################################################################
-
-. /lib/network/functions
-
-HOOK=$(basename ${0})
-
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		-*)
-			error "Unrecognized option: ${1}"
-			exit ${EXIT_ERROR}
-			;;
-		*)
-			action=${1}
-			;;
-	esac
-	shift
-	[ -n "${action}" ] && break
-done
-
-function run() {
-	case "${action}" in
-		edit|create|rem|up|down|status)
-			_${action} $@
-			;;
-	esac
-
-	error "Config hook '${HOOK}' didn't exit properly."
-	exit ${EXIT_ERROR}
-}
