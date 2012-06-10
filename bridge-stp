@@ -24,6 +24,8 @@ LOG_FACILITY=$(basename ${0})
 
 . /usr/lib/network/functions
 
+export PATH="/usr/sbin:/sbin:/usr/bin:/bin"
+
 zone=${1}
 action=${2}
 
@@ -61,3 +63,6 @@ case "${action}" in
 		exit 1
 		;;
 esac
+
+log ERROR "Could not properly exec mstpctl."
+exit 1
