@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/header-port
+. /usr/lib/network/header-port
 
 HOOK_SETTINGS="HOOK DEVICE_MAC MIIMON MODE SLAVES"
 
@@ -203,5 +203,3 @@ function _status() {
 
         exit ${EXIT_OK}
 }
-
-run $@
