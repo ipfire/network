@@ -54,6 +54,22 @@ function stp_disable() {
 	brctl stp ${bridge} off
 }
 
+function stp_is_enabled() {
+	local bridge=${1}
+	assert isset bridge
+
+	local state=$(__device_get_file ${bridge} bridge/stp_state)
+
+	case "${state}" in
+		0)
+			return ${EXIT_FALSE}
+			;;
+		*)
+			return ${EXIT_TRUE}
+			;;
+	esac
+}
+
 function stp_get_name() {
 	local proto=${1}
 

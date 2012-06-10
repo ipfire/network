@@ -94,36 +94,23 @@ function _down() {
 
 function _status() {
 	local zone=${1}
-
 	assert isset zone
 
-	cli_status_headline ${zone}
+	cli_device_headline ${zone}
 
 	zone_config_read ${zone}
 
-	cli_headline "  Configuration:"
-	printf "${DEVICE_PRINT_LINE1}" "User:" "${USER}"
-	printf "${DEVICE_PRINT_LINE1}" "Secret:" "<hidden>"
-	echo
-	printf "${DEVICE_PRINT_LINE1}" "Server:" "${SERVER}"
-	printf "${DEVICE_PRINT_LINE1}" "Protocol:" "${PROTOCOL}"
+	cli_headline 2 "Configuration"
+	cli_print_fmt1 2 "User" "${USER}"
+	cli_print_fmt1 2 "Secret" "<hidden>"
+	cli_space
+	cli_print_fmt1 2 "Server" "${SERVER}"
+	cli_print_fmt1 2 "Protocol" "${PROTOCOL}"
 	if isset TUNNEL_ID; then
-		echo
-		printf "${DEVICE_PRINT_LINE1}" "Tunnel ID:" "${TUNNEL_ID}"
+		cli_space
+		cli_print_fmt1 2 "Tunnel ID" "${TUNNEL_ID}"
 	fi
-	echo
-	printf "${DEVICE_PRINT_LINE1}" "Use default route?" "$(enabled DEFAULTROUTE && echo "enabled" || echo "disabled")"
-	printf "${DEVICE_PRINT_LINE1}" "Use peer DNS?" "$(enabled PEERDNS && echo "enabled" || echo "disabled")"
-
-	# Exit if zone is down
-	if ! zone_is_up ${zone}; then
-		echo # Empty line
-		exit ${EXIT_ERROR}
-	fi
-
-	cli_headline "  Protocol information:"
-	printf "${DEVICE_PRINT_LINE1}" "MTU:" "$(device_get_mtu ${zone})"
-	echo
+	cli_space
 
 	exit ${EXIT_OK}
 }

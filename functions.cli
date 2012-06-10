@@ -31,13 +31,81 @@ function cli_help_requested() {
 	return ${EXIT_ERROR}
 }
 
-function cli_zone_headline() {
-	local zone=${1}
+function cli_device_headline() {
+	local device=${1}
+	assert isset device
 
-	cli_status_headline ${zone}
+	local type
+	if zone_exists ${device}; then
+		type="zone"
+	elif port_exists ${device}; then
+		type="port"
+	else
+		type="unknown"
+	fi
+
+	local headline_prefix
+	case "${type}" in
+		zone)
+			headline_prefix="Zone ${device}"
+			;;
+		port)
+			headline_prefix="Port ${device}"
+			;;
+		*)
+			headline_prefix="Device ${device}"
+			;;
+	esac
+
+	cli_headline 1 "${headline_prefix}:"
+
+	# Print the hook for all zones.
+	if [ "${type}" = "zone" ]; then
+		cli_print_fmt1 1 "Hook" "$(zone_get_hook ${device})"
+	fi
+
+	# Print the device status.
+	local status=$(device_get_status ${device})
+	cli_print_fmt1 1 "Status" "${STATUS_COLOUR[${status}]}${STATUS_TEXT[${status}]}${COLOUR_NORMAL}"
+	if device_is_up ${device}; then
+		cli_print_fmt1 1 "MTU" "$(device_get_mtu ${device})"
+	fi
+
+	cli_space
+
+	# Print the device stats.
+	device_is_up ${device} && cli_device_stats 2 ${device}
+}
+
+function cli_device_stats() {
+	local level=${1}
+	local device=${2}
+
+	# This section will print statistical data from the device.
+	local packets bytes errors
+
+	cli_headline ${level} "Statistics"
+	local format="%-10s %9d packets %6s (%d errors)"
+
+	# RX
+	packets=$(device_get_rx_packets ${device})
+	bytes=$(device_get_rx_bytes ${device})
+	errors=$(device_get_rx_errors ${device})
+
+	cli_print ${level} "${format}" "Received" "${packets}" "$(beautify_bytes ${bytes})" "${errors}"
+
+	# TX
+	packets=$(device_get_tx_packets ${device})
+	bytes=$(device_get_tx_bytes ${device})
+	errors=$(device_get_tx_errors ${device})
+
+	cli_print ${level} "${format}" "Sent"     "${packets}" "$(beautify_bytes ${bytes})" "${errors}"
+	cli_space
 }
 
 function cli_status_headline() {
+	echo "XXX THIS FUNCTION IS DEPRECATED"
+
 	local zone=${1}
 
 	local state="${COLOUR_DOWN}DOWN${COLOUR_NORMAL}"
@@ -92,6 +160,13 @@ function cli_print_yesno() {
 	else
 		echo "false"
 	fi
+}
+
+function cli_print_warning() {
+	local level=${1}
+	shift
+
+	cli_print ${level} "${COLOUR_WARN}%s${COLOUR_NORMAL}" "$@"
 }
 
 function cli_space() {

@@ -187,10 +187,9 @@ function _down() {
 
 function _status() {
 	local zone=${1}
-
 	assert isset zone
 
-	cli_status_headline ${zone}
+	cli_device_headline ${zone}
 
 	zone_config_read ${zone}
 

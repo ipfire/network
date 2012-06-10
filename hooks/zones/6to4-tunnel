@@ -109,7 +109,7 @@ function _status() {
 	local zone=${1}
 	assert isset zone
 
-	cli_status_headline ${zone}
+	cli_device_headline ${zone}
 
 	zone_config_read ${zone}
 
@@ -119,11 +119,11 @@ function _status() {
 		server_line="${server_line} (Hostname: ${server_hostname})"
 	fi
 
-	cli_headline "  Configuration:"
-	printf "${DEVICE_PRINT_LINE1}" "Server:" "${server_line}"
-	printf "${DEVICE_PRINT_LINE1}" "Endpoint IPv4 address:" "${LOCAL_ADDRESS}"
-	printf "${DEVICE_PRINT_LINE1}" "Endpoint IPv6 address:" "${LOCAL_ADDRESS6}"
-	echo
+	cli_headline 2 "Configuration"
+	cli_print_fmt1 2 "Server" "${server_line}"
+	cli_print_fmt1 2 "Endpoint IPv4 address" "${LOCAL_ADDRESS}"
+	cli_print_fmt1 2 "Endpoint IPv6 address" "${LOCAL_ADDRESS6}"
+	cli_space
 
 	exit ${EXIT_OK}
 }

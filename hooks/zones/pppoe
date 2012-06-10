@@ -240,26 +240,26 @@ function _discover() {
 
 function _status() {
 	local zone=${1}
-
 	assert isset zone
 
-	cli_status_headline ${zone}
+	cli_device_headline ${zone}
 
 	zone_config_read ${zone}
 
-	cli_headline "  Configuration:"
-	printf "${DEVICE_PRINT_LINE1}" "User:" "${USER}"
-	printf "${DEVICE_PRINT_LINE1}" "Secret:" "<hidden>"
-	echo
-	printf "${DEVICE_PRINT_LINE1}" "MTU:" "${MTU}"
-	printf "${DEVICE_PRINT_LINE1}" "IPv6:" "$(enabled IPV6 && echo "enabled" || echo "disabled")"
-	printf "${DEVICE_PRINT_LINE1}" "Use default route?" "$(enabled DEFAULTROUTE && echo "enabled" || echo "disabled")"
-	printf "${DEVICE_PRINT_LINE1}" "Use peer DNS?" "$(enabled PEERDNS && echo "enabled" || echo "disabled")"
-	echo
-	cli_headline "  Ports:"
+	cli_headline 2 "Configuration"
+	cli_print_fmt1 2 "User" "${USER}"
+	cli_print_fmt1 2 "Secret" "<hidden>"
+	cli_space
+
+	enabled IPV6 &>/dev/null
+	local ipv6_enabled=$?
+	cli_print_fmt1 2 "IPv6?" "$(cli_print_bool ${ipv6_enabled})"
+
+	cli_headline 2 "Ports"
 	zone_ports_status ${zone}
 	if [ -z "$(zone_get_ports ${zone})" ]; then
-		echo -e "    ${COLOUR_WARN}No ports attached. Won't be able to start.${COLOUR_NORMAL}"
+		cli_print_warning "No ports attached. Won't be able to start."
+		cli_space
 	fi
 
 	# Exit if zone is down
@@ -270,24 +270,33 @@ function _status() {
 
 	# XXX display time since connection started
 
-	cli_headline "    Point-to-Point-over-Ethernet protocol:"
+	cli_headline 2 "Point-to-Point-over-Ethernet protocol"
 	local proto
 	for proto in ${IP_SUPPORTED_PROTOCOLS}; do
 		routing_db_exists ${zone} ${proto} || continue
-		if [ "${proto}" = "ipv6" ]; then
-			echo "      Internet Protocol Version 6:"
-		elif [ "${proto}" = "ipv4" ]; then
-			echo "      Internet Protocol Version 4:"
-		fi
-		echo "        IP-Address            : $(routing_db_get ${zone} ${proto} local-ip-address)"
-		echo "        Gateway               : $(routing_db_get ${zone} ${proto} remote-ip-address)"
-		echo "        DNS-Server            : $(routing_db_get ${zone} ${proto} dns)"
-		echo
-		echo "        MAC-Remote            : $(routing_db_get ${zone} ${proto} remote-address)"
-		echo
+
+		local headline
+		case "${proto}" in
+			ipv6)
+				headline="Internet Protocol Version 6"
+				;;
+			ipv4)
+				headline="Internet Protocol Version 4"
+				;;
+			*)
+				headline="Unkown protocol"
+				;;
+		esac
+		cli_headline 3 "${headline}"
+
+		cli_print_fmt1 3 "IP address"  "$(routing_db_get ${zone} ${proto} local-ip-address)"
+		cli_print_fmt1 3 "Gateway"     "$(routing_db_get ${zone} ${proto} remote-ip-address)"
+		cli_print_fmt1 3 "DNS servers" "$(routing_db_get ${zone} ${proto} dns)"
+		cli_space
+		cli_print_fmt1 3 "MAC-Remote"  "$(routing_db_get ${zone} ${proto} remote-address)"
+		cli_space
 	done
-	echo "        MTU                   : $(device_get_mtu ${zone})"
-	echo # Empty line
+
 	exit ${EXIT_OK}
 }
 

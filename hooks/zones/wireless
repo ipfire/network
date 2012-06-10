@@ -115,8 +115,9 @@ function _down() {
 
 function _status() {
 	local zone=${1}
+	assert isset zone
 
-	cli_status_headline ${zone}
+	cli_device_headline ${zone}
 
 	# Exit if zone is down
 	if ! zone_is_up ${zone}; then

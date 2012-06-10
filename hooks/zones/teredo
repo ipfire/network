@@ -66,25 +66,25 @@ function _down() {
 
 function _status() {
 	local zone=${1}
-
 	assert isset zone
 
-	cli_status_headline ${zone}
+	# Print a nice header.
+	cli_device_headline ${zone}
 
 	zone_config_read ${zone}
 
-	cli_headline "  Configuration:"
-	printf "${DEVICE_PRINT_LINE1}" "Server:" "${SERVER}"
+	cli_headline 2 "Configuration"
+	cli_print_fmt1 2 "Server" "${SERVER}"
 
 	# Exit if zone is down
 	if ! zone_is_up ${zone}; then
-		echo # Empty line
+		cli_space
 		exit ${EXIT_ERROR}
 	fi
 
-	cli_headline "  Protocol information:"
-	printf "${DEVICE_PRINT_LINE1}" "MTU:" "$(device_get_mtu ${zone})"
-	echo
+	cli_headline 2 "Protocol information"
+	cli_print_fmt1 2 "MTU" "$(device_get_mtu ${zone})"
+	cli_space
 
 	exit ${EXIT_OK}
 }

@@ -228,20 +228,17 @@ function device_get_type() {
 
 function device_get_status() {
 	local device=${1}
-
 	assert isset device
 
-	local status=${STATUS_UNKNOWN}
+	local status=${STATUS_DOWN}
 
-	if ! device_has_carrier ${device}; then
-		status=${STATUS_NOCARRIER}
-	elif device_is_up ${device}; then
+	if device_is_up ${device}; then
 		status=${STATUS_UP}
-	elif device_is_down ${device}; then
-		status=${STATUS_DOWN}
-	fi
 
-	assert isset status
+		if ! device_has_carrier ${device}; then
+			status=${STATUS_NOCARRIER}
+		fi
+	fi
 
 	echo "${status}"
 }

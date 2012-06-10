@@ -115,26 +115,8 @@ function cli_device_status() {
 	cli_print_fmt1 1 "MTU"		"$(device_get_mtu ${device})"
 	cli_space
 
-	# This section will print statistical data from the device.
-	local packets bytes errors
-
-	cli_headline 2 "Statistics"
-	local format="%-10s %9d packets %6s (%d errors)"
-
-	# RX
-	packets=$(device_get_rx_packets ${device})
-	bytes=$(device_get_rx_bytes ${device})
-	errors=$(device_get_rx_errors ${device})
-
-	cli_print 2 "${format}" "Received" "${packets}" "$(beautify_bytes ${bytes})" "${errors}"
-
-	# TX
-	packets=$(device_get_tx_packets ${device})
-	bytes=$(device_get_tx_bytes ${device})
-	errors=$(device_get_tx_errors ${device})
-
-	cli_print 2 "${format}" "Sent"     "${packets}" "$(beautify_bytes ${bytes})" "${errors}"
-	cli_space
+	# Print device statistics.
+	cli_device_stats 2 ${device}
 
 	# Print some more information.
 	device_has_carrier ${device} &>/dev/null

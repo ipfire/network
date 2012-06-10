@@ -171,47 +171,36 @@ function _down() {
 
 function _status() {
 	local zone=${1}
-
 	assert isset zone
 
-	cli_status_headline ${zone}
+	cli_device_headline ${zone}
 
 	zone_config_read ${zone}
 
-	cli_headline "  Configuration:"
-	printf "${DEVICE_PRINT_LINE1}" "User:" "${USER}"
-	printf "${DEVICE_PRINT_LINE1}" "Secret:" "<hidden>"
-	echo
-	printf "${DEVICE_PRINT_LINE1}" "MTU:" "${MTU}"
-	printf "${DEVICE_PRINT_LINE1}" "Use default route?" "$(enabled DEFAULTROUTE && echo "enabled" || echo "disabled")"
-	printf "${DEVICE_PRINT_LINE1}" "Use peer DNS?" "$(enabled PEERDNS && echo "enabled" || echo "disabled")"
-	echo
+	cli_headline 2 "Configuration:"
+	cli_print_fmt1 2 "User" "${USER}"
+	cli_print_fmt1 2 "Secret" "<hidden>"
+	cli_space
 
 	if device_exists ${zone}; then
-		cli_headline "    ISDN information:"
-		printf "${DEVICE_PRINT_LINE1}" "L2 protocol:" "$(isdn_get_l2proto ${zone})"
-		printf "${DEVICE_PRINT_LINE1}" "L3 protocol:" "$(isdn_get_l3proto ${zone})"
-		printf "${DEVICE_PRINT_LINE1}" "Encapsulation:" "$(isdn_get_encap ${zone})"
-		echo
+		cli_headline  3 "ISDN information:"
+		cli_print_fmt1 3 "L2 protocol" "$(isdn_get_l2proto ${zone})"
+		cli_print_fmt1 3 "L3 protocol" "$(isdn_get_l3proto ${zone})"
+		cli_print_fmt1 3 "Encapsulation" "$(isdn_get_encap ${zone})"
+		cli_space
 	fi
 
 	# Exit if zone is down
-	if ! zone_is_up ${zone}; then
-		echo # Empty line
-		exit ${EXIT_ERROR}
-	fi
+	zone_is_up ${zone} || exit ${EXIT_ERROR}
 
 	# XXX display time since connection started
 
-	cli_headline "    Point-to-Point-over-Ethernet protocol:"
-	echo "        IP-Address            : $(routing_db_get ${zone} local-ip-address)"
-	echo "        Gateway               : $(routing_db_get ${zone} remote-ip-address)"
-	echo "        DNS-Server            : $(routing_db_get ${zone} dns)"
-	echo
-	echo "        MAC-Remote            : $(routing_db_get ${zone} remote-address)"
-	echo
-	echo "        MTU                   : $(device_get_mtu ${zone})"
-	echo # Empty line
+	cli_headline 2 "Point-to-Point protocol"
+	cli_print_fmt1 2 "IP address"  "$(routing_db_get ${zone} local-ip-address)"
+	cli_print_fmt1 2 "Gateway"     "$(routing_db_get ${zone} remote-ip-address)"
+	cli_print_fmt1 2 "DNS servers" "$(routing_db_get ${zone} dns)"
+	cli_space
+
 	exit ${EXIT_OK}
 }
 
