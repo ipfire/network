@@ -10,8 +10,6 @@ assert isset reason
 
 assert device_exists ${interface}
 
-# XXX LOAD ZONE CONFIGURATION
-
 basename="$(basename $0)"
 log DEBUG "${basename} called for interface=${interface} reason=${reason}"
 
@@ -97,11 +95,12 @@ case "${reason}" in
 					# Save configuration
 					routing_db_set ${interface} ipv4 type "ipv4-dhcp"
 					routing_db_set ${interface} ipv4 local-ip-address "${new_ip_address}/${new_prefix}"
-					routing_db_set ${interface} ipv4 remote-ip-address "${new_router}"
+					routing_db_set ${interface} ipv4 remote-ip-address "${new_routers}"
 					routing_db_set ${interface} ipv4 active 1
 
 					# Update the routing tables.
 					routing_update ${interface} ipv4
+					routing_default_update
 				fi
 				;;
 		esac
@@ -114,6 +113,9 @@ case "${reason}" in
 		if [ -n "${old_ip_address}" ]; then
 			ipv4_flush_device ${interface}
 		fi
+
+		routing_db_remove ${interface} ipv4
+		routing_default_update
 
 		exit 0
 		;;
