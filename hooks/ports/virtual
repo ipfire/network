@@ -126,27 +126,3 @@ function _down() {
 
 	exit ${EXIT_OK}
 }
-
-function _status() {
-	local zone=${1}
-	local port=${2}
-
-	config_read $(zone_dir ${zone})/${port}
-
-	local device=$(devicify ${ADDRESS})
-
-	printf "        %-10s - " "${device}"
-	if ! device_is_up ${device}; then
-		echo -ne "${COLOUR_DOWN}   DOWN   ${COLOUR_NORMAL}"
-	else
-		local state=$(stp_port_state ${zone} ${device})
-		local colour="COLOUR_STP_${state}"
-		printf "${!colour}%10s${COLOUR_NORMAL}" ${state}
-	fi
-
-	echo -n " - DSR: $(stp_port_designated_root ${zone} ${device})"
-	echo -n " - Cost: $(stp_port_pathcost ${zone} ${device})"
-	echo
-
-	exit ${EXIT_OK}
-}

@@ -144,12 +144,27 @@ function virtual_remove() {
 function virtual_get_parent() {
 	local device=${1}
 
-	local parent=$(grep "^${device}" < /proc/net/vlan/config | awk '{ print $NF }')
+	local dev spacer1 id spacer2 parent
+	while read dev spacer1 id spacer2 parent; do
+		if [ "${device}" = "${dev}" ]; then
+			echo "${parent}"
+			return ${EXIT_OK}
+		fi
+	done < /proc/net/vlan/config
 
-	if device_exists ${parent}; then
-		echo "${parent}"
-		return ${EXIT_OK}
-	fi
+	return ${EXIT_ERROR}
+}
+
+function virtual_get_id() {
+	local device=${1}
+
+	local dev spacer1 id spacer2 parent
+	while read dev spacer1 id spacer2 parent; do
+		if [ "${device}" = "${dev}" ]; then
+			echo "${id}"
+			return ${EXIT_OK}
+		fi
+	done < /proc/net/vlan/config
 
 	return ${EXIT_ERROR}
 }
@@ -161,19 +176,15 @@ function virtual_get_by_parent_and_vid() {
 	assert isset parent
 	assert isset vid
 
-	local v_port
-	local v_id
-	local v_parent
-
 	assert [ -e "/proc/net/vlan/config" ]
 
-	fgrep '|' < /proc/net/vlan/config | tr -d '|' | \
-		while read v_port v_id v_parent; do
-			if [ "${v_parent}" = "${parent}" ] && [ "${v_id}" = "${vid}" ]; then
-				echo "${v_port}"
-				return ${EXIT_OK}
-			fi
-		done
+	local dev spacer1 id spacer2 par
+	while read dev spacer1 id spacer2 par; do
+		if [ "${parent}" = "${par}" ] && [ "${vid}" = "${id}" ]; then
+			echo "${dev}"
+			return ${EXIT_OK}
+		fi
+	done < /proc/net/vlan/config
 
 	return ${EXIT_ERROR}
 }

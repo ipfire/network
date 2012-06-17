@@ -35,6 +35,17 @@ function cli_device_headline() {
 	local device=${1}
 	assert isset device
 
+	local long=0
+	shift
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--long)
+				long=1
+				;;
+		esac
+		shift
+	done
+
 	local type
 	if zone_exists ${device}; then
 		type="zone"
@@ -50,10 +61,10 @@ function cli_device_headline() {
 			headline_prefix="Zone ${device}"
 			;;
 		port)
-			headline_prefix="Port ${device}"
+			headline_prefix="Port ${device} ($(device_get_type ${device}))"
 			;;
 		*)
-			headline_prefix="Device ${device}"
+			headline_prefix="Device ${device} ($(device_get_type ${device}))"
 			;;
 	esac
 
@@ -80,14 +91,32 @@ function cli_device_headline() {
 			;;
 	esac
 	cli_print_fmt1 1 "Status" "${status}"
+	if enabled ${long}; then
+		cli_print_fmt1 1 "Address" "$(device_get_address ${device})"
+	fi
 	if device_is_up ${device}; then
 		cli_print_fmt1 1 "MTU" "$(device_get_mtu ${device})"
+	fi
+	if enabled ${long}; then
+		device_is_promisc ${device} &>/dev/null
+		cli_print_fmt1 1 "Promisc" "$(cli_print_bool $?)"
 	fi
 
 	cli_space
 
 	# Print the device stats.
 	device_is_up ${device} && cli_device_stats 2 ${device}
+
+	if enabled ${long}; then
+		# Virtual devices.
+		device_is_virtual ${device} && cli_device_virtual ${device}
+
+		# Bonded devices.
+		device_is_bonded ${device} && cli_device_bonded ${device}
+
+		# Bonding devices.
+		device_is_bonding ${device} && cli_device_bonding ${device}
+	fi
 }
 
 function cli_device_stats() {
@@ -113,6 +142,52 @@ function cli_device_stats() {
 	errors=$(device_get_tx_errors ${device})
 
 	cli_print ${level} "${format}" "Sent"     "${packets}" "$(beautify_bytes ${bytes})" "${errors}"
+	cli_space
+}
+
+function cli_device_virtual() {
+	local device=${1}
+
+	cli_headline 2 "VLAN"
+
+	cli_print_fmt1 2 "Parent" "$(virtual_get_parent ${device})"
+	cli_print_fmt1 2 "VID" "$(virtual_get_id ${device})"
+	cli_space
+}
+
+function cli_device_bonded() {
+	local device=${1}
+
+	cli_headline 2 "Bonding information"
+
+	local master=$(bonding_slave_get_master ${port})
+	cli_print_fmt1 2 "Master" "${master}"
+
+	local active
+	[ "$(bonding_get_active_slave ${master})" = "${port}" ]
+	cli_print_fmt1 2 "Active slave" "$(cli_print_yesno $?)"
+	cli_space
+}
+
+function cli_device_bonding() {
+	local device=${1}
+
+	cli_headline 2 "Bonding information"
+
+	cli_print_fmt1 2 "Mode" "$(bonding_get_mode ${port})"
+	# XXX lacp rate
+	cli_space
+
+	local slave slave_prefix
+	local slave_active=$(bonding_get_active_slave ${device})
+	for slave in $(bonding_get_slaves ${device}); do
+		if [ "${slave_active}" = "${slave}" ]; then
+			slave_prefix="Slave (active)"
+		else
+			slave_prefix="Slave"
+		fi
+		cli_print_fmt1 2 "${slave_prefix}" "${slave}"
+	done
 	cli_space
 }
 

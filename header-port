@@ -60,3 +60,11 @@ function _info() {
 
 	exit ${ERROR_OK}
 }
+
+function _status() {
+	local port=${1}
+	assert isset port
+
+	cli_device_headline ${port} --long
+	exit ${EXIT_OK}
+}
