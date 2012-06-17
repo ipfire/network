@@ -19,6 +19,10 @@
 #                                                                             #
 ###############################################################################
 
+# Make sure that helpers which are exec'ed have a working
+# PATH variable.
+export PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/bin:/bin:${PATH}"
+
 INIT_FUNCTIONS=""
 
 function init_register() {

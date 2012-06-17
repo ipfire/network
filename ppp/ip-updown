@@ -20,7 +20,6 @@
 ###############################################################################
 
 umask 022
-export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
 # Give the variables we get passed by pppd an own namespace
 for i in IFNAME IPLOCAL IPREMOTE DNS1 DNS2 MACREMOTE LLLOCAL LLREMOTE; do
@@ -28,7 +27,7 @@ for i in IFNAME IPLOCAL IPREMOTE DNS1 DNS2 MACREMOTE LLLOCAL LLREMOTE; do
 	unset ${i}
 done
 
-. /lib/network/functions
+. /usr/lib/network/functions
 
 # Zone equals IFNAME
 ZONE=${PPP_IFNAME}
