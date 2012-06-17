@@ -22,9 +22,6 @@
 # Set gettext text domain.
 TEXTDOMAIN="network"
 
-# Enable colors by default
-COLOURS="auto"
-
 LOG_DIR=/var/log/network
 RUN_DIR=/run/network
 
@@ -38,7 +35,7 @@ NETWORK_HOOKS_DIR=/usr/lib/network/hooks
 
 # Network file configuration.
 NETWORK_CONFIG_FILE=${NETWORK_CONFIG_DIR}/config
-NETWORK_CONFIG_FILE_PARAMS="COLOURS DEBUG"
+NETWORK_CONFIG_FILE_PARAMS="DEBUG"
 CONFIG_HOSTNAME="/etc/hostname"
 
 RED_DB_DIR=${RUN_DIR}/red
