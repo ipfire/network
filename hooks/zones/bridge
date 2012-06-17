@@ -198,10 +198,11 @@ function _status() {
 
 	cli_headline 2 "Ports:"
 	zone_ports_status ${zone}
+	cli_space
 
 	cli_headline 2 "Configurations:"
 	zone_configs_cmd status ${zone}
-
 	cli_space
+
 	exit ${EXIT_OK}
 }

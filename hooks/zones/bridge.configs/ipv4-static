@@ -119,16 +119,17 @@ function _status() {
 	
 	config_read $(zone_dir ${zone})/configs/${config}
 
-	printf "        %10s - " "${HOOK}"
+	local status
 	if zone_has_ip ${zone} ${ADDRESS}/${PREFIX}; then
-		echo -ne "${COLOUR_UP} UP ${COLOUR_NORMAL}"
+		status=${MSG_HOOK_UP}
 	else
-		echo -ne "${COLOUR_DOWN}DOWN${COLOUR_NORMAL}"
+		status=${MSG_HOOK_DOWN}
 	fi
-	echo " - ${ADDRESS}/${PREFIX}"
+	cli_statusline 3 "${HOOK}" "${status}"
 
+	cli_print_fmt1 3 "IPv4 address" "${ADDRESS}/${PREFIX}"
 	if [ -n "${GATEWAY}" ]; then
-		echo "          Gateway: ${GATEWAY}"
+		cli_print_fmt1 3 "Gateway" "${GATEWAY}"
 	fi
 
 	exit ${EXIT_OK}

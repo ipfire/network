@@ -135,23 +135,22 @@ function _status() {
 	local zone=${1}
 	local port=${2}
 
-	printf "        %-10s - " "${port}"
+	local status
 	if ! device_is_up ${port}; then
-		echo -ne "${COLOUR_DOWN}   DOWN   ${COLOUR_NORMAL}"
+		status=${MSG_DEVICE_STATUS_UP}
 	elif ! device_has_carrier ${port}; then
-		echo -ne "${COLOUR_DOWN}NO-CARRIER${COLOUR_NORMAL}"
+		status=${MSG_DEVICE_STATUS_NOCARRIER}
 	elif [ -n "$(stp_bridge_get_protocol ${zone})" ]; then
 		local state=$(stp_port_get_state ${zone} ${port})
-		local colour="COLOUR_STP_${state}"
-		printf "${!colour}%10s${COLOUR_NORMAL}" ${state}
+		state="MSG_STP_${state}"
+		status="${!state}"
 
-		echo -n " - DSR: $(stp_port_get_designated_root ${zone} ${port})"
-		echo -n " - Cost: $(stp_port_get_cost ${zone} ${port})"
+		status="${status} - DSR: $(stp_port_get_designated_root ${zone} ${port})"
+		status="${status} - Cost: $(stp_port_get_cost ${zone} ${port})"
 	else
-		echo -ne "${COLOUR_UP}    UP    ${COLOUR_NORMAL}"
+		status=${MSG_DEVICE_STATUS_UP}
 	fi
-
-	echo
+	cli_statusline 3 "${port}" "${status}"
 
 	exit ${EXIT_OK}
 }

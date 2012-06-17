@@ -93,16 +93,18 @@ function _status() {
 	
 	config_read $(zone_dir ${zone})/configs/${config}
 
-	printf "        %10s - " "${HOOK}"
-	if zone_has_ip ${zone} ${ADDRESS}/${PREFIX}; then
-		echo -ne "${COLOUR_UP} UP ${COLOUR_NORMAL}"
+	local status
+	if dhclient_status ${zone} ipv4; then
+		status="${MSG_HOOK_UP}"
 	else
-		echo -ne "${COLOUR_DOWN}DOWN${COLOUR_NORMAL}"
+		status="${MSG_HOOK_DOWN}"
 	fi
-	echo " - ${ADDRESS}/${PREFIX}"
+	cli_statusline 3 "${HOOK}" "${status}"
 
-	if [ -n "${GATEWAY}" ]; then
-		echo "          Gateway: ${GATEWAY}"
+	cli_print_fmt1 3 "IPv4 address" "$(routing_db_get ${zone} ipv4 local-ip-address)"
+	local gateway=$(routing_db_get ${zone} ipv4 remote-ip-address)
+	if isset gateway; then
+		cli_print_fmt1 3 "Gateway" "${gateway}"
 	fi
 
 	exit ${EXIT_OK}

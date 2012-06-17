@@ -42,6 +42,16 @@ dhclient_stop() {
 	service_stop "${service}@${interface}"
 }
 
+dhclient_status() {
+	local interface=${1}
+	local proto=${2}
+
+	local service=$(dhclient_proto2service ${proto})
+	assert isset service
+
+	service_status "${service}@${interface}"
+}
+
 dhclient_proto2service() {
 	local proto=${1}
 	assert isset proto

@@ -57,16 +57,29 @@ function cli_device_headline() {
 			;;
 	esac
 
-	cli_headline 1 "${headline_prefix}:"
-
 	# Print the hook for all zones.
 	if [ "${type}" = "zone" ]; then
-		cli_print_fmt1 1 "Hook" "$(zone_get_hook ${device})"
+		headline_prefix="${headline_prefix} ($(zone_get_hook ${device}))"
 	fi
+	cli_headline 1 "${headline_prefix}"
 
 	# Print the device status.
-	local status=$(device_get_status ${device})
-	cli_print_fmt1 1 "Status" "${STATUS_COLOUR[${status}]}${STATUS_TEXT[${status}]}${COLOUR_NORMAL}"
+	local status
+	case "$(device_get_status ${device})" in
+		${STATUS_UP})
+			status=${MSG_DEVICE_STATUS_UP}
+			;;
+		${STATUS_DOWN})
+			status=${MSG_DEVICE_STATUS_DOWN}
+			;;
+		${STATUS_NOCARRIER})
+			status=${MSG_DEVICE_STATUS_NOCARRIER}
+			;;
+		*)
+			status=${MSG_DEVICE_STATUS_UNKNOWN}
+			;;
+	esac
+	cli_print_fmt1 1 "Status" "${status}"
 	if device_is_up ${device}; then
 		cli_print_fmt1 1 "MTU" "$(device_get_mtu ${device})"
 	fi
@@ -103,25 +116,26 @@ function cli_device_stats() {
 	cli_space
 }
 
-function cli_status_headline() {
-	echo "XXX THIS FUNCTION IS DEPRECATED"
+function cli_headline() {
+	local level=${1}
+	local format=${2}
+	shift 2
 
-	local zone=${1}
+	local ident=$(cli_ident ${level})
 
-	local state="${COLOUR_DOWN}DOWN${COLOUR_NORMAL}"
-	zone_is_up ${zone} && state="${COLOUR_UP}UP${COLOUR_NORMAL}"
-
-	echo -e "${zone} - ${state} - $(zone_get_hook ${zone})"
+	local out
+	printf -v out "${ident}${COLOUR_BOLD}${format}${COLOUR_NORMAL}\n" "$@"
+	printf "${out}"
 }
 
-function cli_headline() {
+function cli_statusline() {
 	local level=${1}
 	shift
 
-	local message="$@"
-	local ident=$(cli_ident ${level})
+	local head=${1}
+	shift
 
-	printf "${ident}${COLOUR_BOLD}$@${COLOUR_NORMAL}\n"
+	cli_print $(( ${level} - 1 )) "%-12s %s" "${head}" "$@"
 }
 
 function cli_print() {

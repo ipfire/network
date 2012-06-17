@@ -50,9 +50,9 @@ function log() {
 
 	case "${level}" in
 		DEBUG|INFO|WARNING|ERROR)
-			message="${COLOUR_LOG[${level}]}${message}${COLOUR_NORMAL}"
+			message="${CLR_LOG[${level}]}${message}${CLR_RESET_ALL}"
 			;;
 	esac
 
-	echo -e "${message}" >&2
+	printf "${message}\n" >&2
 }
