@@ -118,7 +118,7 @@ function routing_table_create() {
 
 	log INFO "Creating routing table for zone '${zone}'"
 
-	local id=$(( ${zone#red} + 1 ))
+	local id=$(( ${zone#${ZONE_NONLOCAL}} + 1 ))
 
 	echo "${id}	${zone}" >> /etc/iproute2/rt_tables
 }
