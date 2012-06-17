@@ -48,11 +48,23 @@ function log() {
 	# Leave here, when there should be no output on the console.
 	[ "${LOG_DISABLE_STDOUT}" = "true" ] && return 0
 
+	local colour
+	local console=">&2"
 	case "${level}" in
-		DEBUG|INFO|WARNING|ERROR)
-			message="${CLR_LOG[${level}]}${message}${CLR_RESET_ALL}"
+		DEBUG)
+			colour="${CLR_CYAN_R}"
+			;;
+		INFO)
+			colour="${CLR_BLACK_R}"
+			console=""
+			;;
+		WARNING)
+			colour="${CLR_YELLOW_R}"
+			;;
+		ERROR)
+			colour="${CLR_RED_B}"
 			;;
 	esac
 
-	printf "${message}\n" >&2
+	printf "${colour}${message}${CLR_RESET_ALL}\n" ${out}
 }
