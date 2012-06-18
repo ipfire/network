@@ -43,7 +43,7 @@ function log() {
 		message="${HOOK}: ${message}"
 	fi
 
-	logger -t ${LOG_FACILITY} "${message}"
+	logger -t "${LOG_FACILITY}[$$]" "${message}"
 
 	# Leave here, when there should be no output on the console.
 	[ "${LOG_DISABLE_STDOUT}" = "true" ] && return 0
