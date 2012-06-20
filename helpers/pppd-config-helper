@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2012  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,95 +19,36 @@
 #                                                                             #
 ###############################################################################
 
-. /lib/network/header-port
+. /usr/lib/network/functions
 
-function _add() {
-	local zone=${1}
-	local port=${2}
-	shift 2
+action="${1}"
+assert isset action
 
-	assert isset zone
-	assert isset port
+zone="${2}"
+assert isset zone
+assert zone_exists ${zone}
 
-	if ! port_exists ${port}; then
-		error "Port '${port}' does not exist."
+config_file="${RUN_DIR}/ppp/${zone}/pppd.conf"
+
+case "${action}" in
+	create)
+		# Create the configuration file for this zone.
+		hook=$(zone_get_hook ${zone})
+		assert isset hook
+
+		hook_exec zone ${hook} ppp_write_config \
+			${zone} ${config_file}
+		exit $?
+		;;
+
+	remove)
+		rm -f ${config_file}
+		;;
+
+	*)
+		log ERROR "Unknown action passed: ${action}"
 		exit ${EXIT_ERROR}
-	fi
+		;;
+esac
 
-	touch $(zone_dir ${zone})/ports/${port}
-
-	exit ${EXIT_OK}
-}
-
-function _edit() {
-	_add $@
-}
-
-function _rem() {
-	local zone=${1}
-	local port=${2}
-	shift 2
-
-	assert isset zone
-	assert isset port
-
-	if ! listmatch ${port} $(zone_get_ports ${zone}); then
-		error "Port '${port}' does not belong to '${zone}'."
-		error "Won't remove anything."
-		exit ${EXIT_ERROR}
-	fi
-
-	warning "Removing port '${port}' from '${zone}' will shutdown the zone."
-
-	# Shut down this zone
-	zone_down ${zone}
-
-	rm -f $(zone_dir ${zone})/ports/${port}
-
-	exit ${EXIT_OK}
-}
-
-function _up() {
-	local zone=${1}
-	local port=${2}
-
-	assert isset zone
-	assert isset port
-
-	assert zone_exists ${zone}
-	assert port_exists ${port}
-
-	port_up ${port}
-
-	exit ${EXIT_OK}
-}
-
-function _down() {
-	local zone=${1}
-	local port=${2}
-
-	assert isset zone
-	assert isset port
-
-	assert zone_exists ${zone}
-	assert port_exists ${port}
-
-	port_down ${port}
-
-	exit ${EXIT_OK}
-}
-
-function _status() {
-	local zone=${1}
-	local port=${2}
-
-	printf "        %-10s - " "${port}"
-	if device_is_up ${port}; then
-		echo -ne "${COLOUR_UP}    UP    ${COLOUR_NORMAL}"
-	else
-		echo -ne "${COLOUR_DOWN}   DOWN   ${COLOUR_NORMAL}"
-	fi
-	echo
-
-	exit ${EXIT_OK}
-}
+exit ${EXIT_OK}

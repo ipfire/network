@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2012  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -21,93 +21,70 @@
 
 . /usr/lib/network/header-zone
 
-# TODO XXX AC name, service name, sync?
+HOOK_SETTINGS="HOOK ACCESS_CONCENTRATOR AUTH USERNAME PASSWORD"
+HOOK_SETTINGS="${HOOK_SETTINGS} SERVICE_NAME MTU PORT"
 
-HOOK_SETTINGS="HOOK AUTH LINKNAME USER SECRET PEERDNS DEFAULTROUTE MTU"
+# User credentials for the dialin.
+USERNAME=""
+PASSWORD=""
 
+# Set the authentication mechanism.
 AUTH=
-DEFAULTROUTE=1
-IPV6=1
-LINKNAME="$(uuid)"
-MTU=1492
-PEERDNS=1
-SECRET=
-USER=
 
-PPPOE_ALLOWED_AUTHS="chap pap"
+# The physical ethernet port the modem is connected to.
+PORT=""
+
+# Access Concentrator.
+ACCESS_CONCENTRATOR=""
+
+# Service name.
+SERVICE_NAME=""
+
+# Maximum Transmission Unit.
+# 1492 is a very common value for that.
+MTU=1492
+
+# This hook can work with all authentication methods supported by pppd.
+PPPOE_ALLOWED_AUTH_METHODS="${PPP_ALLOWED_AUTH_METHODS}"
 PPPOE_PLUGIN="rp-pppoe.so"
 
-function pppd_pid() {
-	local zone=${1}
-	shift
-
-	cat /var/run/${zone}.pid 2>/dev/null
-}
-
 function _check() {
-	assert isset USER
-	assert isset SECRET
-	assert isset LINKNAME
-	assert isset DEFAULTROUTE
-	assert isset PEERDNS
-	#assert isset DEVICE
-	#assert isset DEVICE_TYPE
+	assert isset USERNAME
+	assert isset PASSWORD
 
-	assert isbool DEFAULTROUTE
-	assert isbool IPV6
-	assert isbool PEERDNS
-	#assert ismac DEVICE
-	#assert isoneof DEVICE_TYPE real virtual
+	isset AUTH && assert isoneof AUTH ${PPPOE_ALLOWED_AUTH_METHODS}
 
-	local ports_num=$(listlength ${PORTS})
-	assert isoneof ports_num 0 1
-
-	isset AUTH && assert isoneof AUTH ${PPPOE_ALLOWED_AUTHS}
-	isset DEVICE_ID && assert isinteger DEVICE_VID
+	# Check for a valid port setting.
+	assert isset PORT
+	assert port_exists ${PORT}
 }
 
 function _parse_cmdline() {
-	local value
-
 	while [ $# -gt 0 ]; do
-		case "$1" in
-			--user=*)
-				USER=${1#--user=}
-				;;
-			--secret=*)
-				SECRET=${1#--secret=}
-				;;
-			--linkname=*)
-				LINKNAME=${1#--name=}
-				;;
-			--mtu=*)
-				MTU=${1#--mtu=}
-				;;
-			--defaultroute=*)
-				value=${1#--defaultroute=}
-				if enabled value; then
-					DEFAULTROUTE=1
-				else
-					DEFAULTROUTE=0
-				fi
-				;;
-			--dns=*)
-				value=${1#--dns=}
-				if enabled value; then
-					PEERDNS=1
-				else
-					PEERDNS=0
-				fi
+		case "${1}" in
+			--access-concentrator=*)
+				ACCESS_CONCENTRATOR=$(cli_get_val ${1})
 				;;
 			--auth=*)
-				AUTH=${1#--auth=}
+				AUTH=$(cli_get_val ${1})
 				;;
-			--ipv6=*)
-				IPV6=${1#--ipv6=}
+			--mtu=*)
+				MTU=$(cli_get_val ${1})
+				;;
+			--password=*)
+				PASSWORD=$(cli_get_val ${1})
+				;;
+			--port=*)
+				PORT=$(cli_get_val ${1})
+				;;
+			--service-name=*)
+				SERVICE_NAME=$(cli_get_val ${1})
+				;;
+			--username=*)
+				USERNAME=$(cli_get_val ${1})
 				;;
 			*)
-				echo "Unknown option: $1" >&2
-				exit ${EXIT_ERROR}
+				warning "Unknown argument: ${1}" >&2
 				;;
 		esac
 		shift
@@ -116,94 +93,20 @@ function _parse_cmdline() {
 
 function _up() {
 	local zone=${1}
-	shift
-
 	assert isset zone
 
-	zone_config_read ${zone}
+	# Start the ppp daemon.
+	pppd_start ${zone}
 
-	local port=$(zone_get_ports ${zone})
-
-	assert isset port
-
-	if ! port_exists ${port}; then
-		error_log "Parent device '${port}' does not exist. Cannot bring up zone '${zone}'."
-		exit ${EXIT_ERROR}
-	fi
-
-	# Creating necessary files
-	# XXX must be PPP_RUN
-	[ -d "${RED_RUN}/${LINKNAME}" ] || mkdir -p ${RED_RUN}/${LINKNAME}
-
-	# Setting up the device
-	zone_ports_up ${zone}
-
-	ppp_secret "${USER}" "${SECRET}"
-
-	# XXX AC and service on plugin command line
-
-	cat <<EOF >${RED_RUN}/${LINKNAME}/options
-# Naming options
-ifname ${zone}
-name ${LINKNAME}
-linkname ${LINKNAME}
-
-plugin ${PPPOE_PLUGIN} ${port}
-
-# Enable/disable IPv6
-$(enabled IPV6 && echo "+" || echo "-")ipv6
-
-# User configuration
-user ${USER}
-
-$(enabled PEERDNS && echo "usepeerdns")
-$(enabled DEFAULTROUTE && echo "defaultroute")
-
-noauth
-$(isset AUTH && echo "require-${AUTH}")
-
-noipdefault
-
-# Maximum transmission/receive unit
-mtu ${MTU}
-mru ${MTU}
-
-# Disable the compression
-noccp noaccomp nodeflate nopcomp novj novjccomp nobsdcomp nomppe
-
-updetach debug
-EOF
-
-	pppd_exec file ${RED_RUN}/${LINKNAME}/options
-
-	local ret=$?
-
-	# Get exit code from ppp daemon and handle it:
-	case "${ret}" in
-		0)
-			log DEBUG "pppd detached successfully"
-			exit ${EXIT_OK}
-			;;
-		19)
-			log ERROR "Authentication failed. Maybe user and/or secret is/are incorrect."
-			exit ${EXIT_ERROR}
-			;;
-	esac
-
-	error_log "pppd exited with unknown exit code '${ret}'"
-
-	exit ${EXIT_ERROR}
+	exit ${EXIT_OK}
 }
 
 function _down() {
 	local zone=${1}
-	shift
+	assert isset zone
 
-	# Kill pppd
-	# XXX very ugly
-	kill $(pppd_pid ${zone}) &>/dev/null
-
-	zone_ports_down ${zone}
+	# Stop the ppp daemon.
+	pppd_stop ${zone}
 
 	exit ${EXIT_OK}
 }
@@ -247,20 +150,10 @@ function _status() {
 	zone_config_read ${zone}
 
 	cli_headline 2 "Configuration"
-	cli_print_fmt1 2 "User" "${USER}"
-	cli_print_fmt1 2 "Secret" "<hidden>"
+	cli_print_fmt1 2 "Username" "${USERNAME}"
+	cli_print_fmt1 2 "Password" "<hidden>"
+	cli_print_fmt1 2 "Port" "${PORT}"
 	cli_space
-
-	enabled IPV6 &>/dev/null
-	local ipv6_enabled=$?
-	cli_print_fmt1 2 "IPv6?" "$(cli_print_bool ${ipv6_enabled})"
-
-	cli_headline 2 "Ports"
-	zone_ports_status ${zone}
-	if [ -z "$(zone_get_ports ${zone})" ]; then
-		cli_print_warning "No ports attached. Won't be able to start."
-		cli_space
-	fi
 
 	# Exit if zone is down
 	if ! zone_is_up ${zone}; then
@@ -300,18 +193,69 @@ function _status() {
 	exit ${EXIT_OK}
 }
 
-function _port_add() {
+function _ppp-ip-pre-up() {
 	local zone=${1}
-	local port=${2}
-	shift 2
+	assert isset ${zone}
 
-	if [ $(listlength $(zone_get_ports ${zone})) -ge 1 ]; then
-		error "This hook only supports one port at a time."
-		error "Please remove any existant port(s) and try again."
-		exit ${EXIT_ERROR}
+	# Read the configuration.
+	zone_config_read ${zone}
+
+	# Bring up the port.
+	port_up ${PORT}
+
+	ppp_common_pre_ip_up ${zone}
+}
+
+function _ppp-ip-down() {
+	local zone=${1}
+	assert isset ${zone}
+
+	# Read the configuation.
+	zone_config_read ${zone}
+
+	# Bring down the port.
+	port_down ${PORT}
+
+	ppp_common_ip_down ${zone}
+}
+
+function _ppp_write_config() {
+	local zone=${1}
+	assert isset zone
+
+	local file=${2}
+	assert isset file
+
+	# Read in the configuration files.
+	zone_config_read ${zone}
+
+	# Set the user credentials.
+	ppp_secret "${USERNAME}" "${PASSWORD}"
+
+	# Prepare the command line options for the pppoe plugin.
+	local plugin_options
+
+	# Add the access concentrator (if any).
+	if isset ACCESS_CONCENTRATOR; then
+		plugin_options="${plugin_options} rp_pppoe_ac '${ACCESS_CONCENTRATOR}'"
 	fi
 
-	_port_cmd add ${zone} ${port} $@
+	# Add the service name (if any).
+	if isset SERVICE_NAME; then
+		plugin_options="${plugin_options} rp_pppoe_service '${SERVICE_NAME}'"
+	fi
 
-	exit ${EXIT_OK}
+	# The last argument must be the interface.
+	plugin_options="${plugin_options} ${PORT}"
+
+	pppd_write_config ${file} \
+		--interface="${zone}" \
+		--user="${USERNAME}" \
+		--mtu="${MTU}" \
+		--auth="${AUTH}" \
+		\
+		--plugin="${PPPOE_PLUGIN}" \
+		--plugin-options="${plugin_options}"
+
+	return ${EXIT_OK}
 }

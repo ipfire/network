@@ -248,6 +248,12 @@ function _config_show() {
 	_notimplemented _config_show
 }
 
+function _ppp-write-config() {
+	_notimplemented _ppp_write_config
+
+	# Arguments: <zone> <filename>
+}
+
 function _ppp-ip-pre-up() {
 	local zone=${1}
 	shift

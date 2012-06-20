@@ -19,6 +19,11 @@
 #                                                                             #
 ###############################################################################
 
+# A simple print statement
+function print() {
+	printf "$@\n"
+}
+
 # Print a pretty error message
 function error() {
 	echo -e " ${COLOUR_ERROR}ERROR${COLOUR_NORMAL}  : $@" >&2

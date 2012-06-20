@@ -19,6 +19,29 @@
 #                                                                             #
 ###############################################################################
 
+PPP_SUPPORTED_AUTH_METHODS="chap pap"
+
+function pppd_start() {
+	local interface=${1}
+	assert isset interface
+
+	service_start "pppd@${interface}"
+}
+
+function pppd_stop() {
+	local interface=${1}
+	assert isset interface
+
+	service_stop "pppd@${interface}"
+}
+
+function pppd_status() {
+	local interface=${1}
+	assert isset interface
+
+	service_status "pppd@${interface}"
+}
+
 function ppp_common_ip_pre_up() {
 	local zone=${1}
 	shift
@@ -152,4 +175,117 @@ function pppd_exec() {
 	log DEBUG "Running pppd with parameters '$@'."
 
 	pppd $@ > /dev/null
+}
+
+function pppd_write_config() {
+	local file=${1}; shift
+	assert isset file
+
+	local auth
+	local interface
+	local linkname
+	local mtu mru
+	local plugin plugin_options
+	local user
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--auth=*)
+				auth=$(cli_get_val ${1})
+				;;
+			# The name of the created ppp interface.
+			--interface=*)
+				interface=$(cli_get_val ${1})
+				;;
+			# Maximum Transmission Unit
+			--mtu=*)
+				mtu=$(cli_get_val ${1})
+				;;
+			# Maximum Receive Unit
+			--mru=*)
+				mru=$(cli_get_val ${1})
+				;;
+			--plugin=*)
+				plugin=$(cli_get_val ${1})
+				;;
+			--plugin-options=*)
+				plugin_options=$(cli_get_val ${1})
+				;;
+			--user=*)
+				user=$(cli_get_val ${1})
+				;;
+			*)
+				log WARNING "Unhandled argument: ${1}"
+				;;
+		esac
+		shift
+	done
+
+	if [ -z "${interface}" ]; then
+		log ERROR "You need to set the interface name: ${interface}"
+		return ${EXIT_ERROR}
+	fi
+	linkname=${interface}
+
+	if isset auth; then
+		if ! isoneof ${auth} ${PPP_SUPPORTED_AUTH_METHODS}; then
+			log ERROR "Unsupported auth method: ${auth}"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	# Write the configuration header.
+	mkdir -p $(dirname ${file}) 2>/dev/null
+	config_header "PPP daemon configuration file" > ${file}
+
+	# At first, set the name of the link.
+	print "name ${linkname}\nlinkname ${linkname}\n" >> ${file}
+
+	# Configure the interface name.
+	print "# Interface name\nifname ${interface}\n" >> ${file}
+
+	# Plugin settings
+	if isset plugin; then
+		(
+			print "# Plugin settings"
+			print "plugin ${plugin} ${plugin_options}"
+			print
+		) >> ${file}
+	fi
+
+	# User authentication
+	if isset user; then
+		(
+			print "# User authentication"
+			print "user ${user}"
+
+			print "noauth"
+			if isset auth; then
+				print "require-${auth}"
+			fi
+			print
+		) >> ${file}
+	fi
+
+	# MTU/MRU settings
+	if isset mtu; then
+		isset mru || mru=${mtu}
+
+		(
+			print "# MTU/MRU settings"
+			print "mtu ${mtu}"
+			print "mru ${mru}"
+			print
+		) >> ${file}
+	fi
+
+	# Add the default settings.
+	(
+		print "# Disable the compression"
+		print "noccp noaccomp nodeflate nopcomp novj novjccomp nobsdcomp nomppe"
+
+		print "noipdefault nodetach debug"
+	) >> ${file}
+
+	return ${EXIT_OK}
 }
