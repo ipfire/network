@@ -195,7 +195,7 @@ function _status() {
 
 function _ppp-ip-pre-up() {
 	local zone=${1}
-	assert isset ${zone}
+	assert isset zone
 
 	# Read the configuration.
 	zone_config_read ${zone}
@@ -208,7 +208,7 @@ function _ppp-ip-pre-up() {
 
 function _ppp-ip-down() {
 	local zone=${1}
-	assert isset ${zone}
+	assert isset zone
 
 	# Read the configuation.
 	zone_config_read ${zone}
