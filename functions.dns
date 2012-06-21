@@ -19,12 +19,109 @@
 #                                                                             #
 ###############################################################################
 
+# Set this to true if localhost should be added as the first DNS server.
+DNS_USE_LOCAL_RESOLVER=true
+NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_USE_LOCAL_RESOLVER"
+
+# Set this option to true if the DNS servers should be queried in a random order.
+# This is useful to load balance between multiple servers.
+DNS_RANDOMIZE=false
+NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_RANDOMIZE"
+
+DNS_SERVER_CONFIG_FILE="${NETWORK_CONFIG_DIR}/dns-servers"
+
+# Path to the configuration file of the DNS resolver.
+RESOLV_CONF="/etc/resolv.conf"
+
 function dns_get_hostname() {
 	local address=${1}
 	assert isset address
 
-	#(
-	#	eval $(ipcalc -h ${address})
-	#	echo "${HOSTNAME}"
-	#)
+	(
+		unset HOSTNAME
+		eval $(ipcalc -h ${address} 2>/dev/null)
+		echo "${HOSTNAME}"
+	)
+}
+
+function __dns_server_println() {
+	local server=${1}
+	local priority=${2}
+
+	print "%-20s %s" "${server}" "${priority}"
+}
+
+function __dns_server_sort() {
+	sort -k2 -u -g
+}
+
+function dns_server_list() {
+	[ -r "${DNS_SERVER_CONFIG_FILE}" ] || return ${EXIT_OK}
+
+	local server priority
+	while read server priority; do
+		if [ -n "${server}" ] && [ -n "${priority}" ]; then
+			__dns_server_println "${server}" "${priority}"
+		fi
+	done < ${DNS_SERVER_CONFIG_FILE} | __dns_server_sort
+}
+
+function dns_server_add() {
+	local server=${1}
+	assert isset server
+
+	local priority=${2}
+	if ! isset priority; then
+		priority=20
+	fi
+	assert isinteger priority
+
+	(
+		dns_server_list
+		__dns_server_println "${server}" "${priority}"
+	) | __dns_server_sort > ${DNS_SERVER_CONFIG_FILE}.new
+
+	mv ${DNS_SERVER_CONFIG_FILE}{.new,}
+}
+
+function dns_server_remove() {
+	local server=${1}
+	assert isset server
+
+	local entry priority
+	local entries=$(dns_server_list)
+
+	while read entry priority; do
+		[ "${entry}" = "${server}" ] && continue
+		__dns_server_println "${server}" "${priority}"
+	done <<< ${entries} | __dns_server_sort > ${DNS_SERVER_CONFIG_FILE}
+}
+
+function dns_server_flush() {
+	: > ${DNS_SERVER_CONFIG_FILE}
+}
+
+function dns_generate_resolvconf() {
+	local file=${RESOLV_CONF}
+
+	log INFO "Updating resolver configuration..."
+
+	config_header "resolver configutation file" > ${file}
+
+	if enabled DNS_RANDOMIZE; then
+		print "option rotate\n" >> ${file}
+	fi
+
+	# XXX Add search domain.
+
+	# Add the local resolver as the first DNS server if enabled.
+	if enabled DNS_USE_LOCAL_RESOLVER; then
+		print "nameserver ::1" >> ${file}
+	fi
+
+	# Dump all DNS servers (if any).
+	local server priority
+	dns_server_list | while read server priority; do
+		print "nameserver ${server}"
+	done >> ${file}
 }

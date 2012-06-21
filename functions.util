@@ -21,7 +21,9 @@
 
 # A simple print statement
 function print() {
-	printf "$@\n"
+	local fmt=${1}; shift
+
+	printf "${fmt}\n" "$@"
 }
 
 # Print a pretty error message
@@ -89,7 +91,7 @@ function touch() {
 function enabled() {
 	local param=${1}
 
-	[ "${!param}" = "yes" ] || [ "${!param}" = "on" ] || [ "${!param}" = "1" ]
+	listmatch "${!param}" yes on true 1
 }
 
 function mac_generate() {

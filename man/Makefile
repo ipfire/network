@@ -29,6 +29,7 @@ MANPAGES8   = \
 	network.8 \
 	network-config.8 \
 	network-device.8 \
+	network-dns.8 \
 	network-zone.8 \
 	network-zone-bridge.8 \
 	network-zone-pppoe.8

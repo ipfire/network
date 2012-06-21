@@ -496,6 +496,9 @@ function cli_reset() {
 		port_remove ${port}
 	done
 
+	# Flush all DNS servers.
+	dns_server_flush
+
 	# Re-run the initialization functions
 	init_run
 
@@ -528,13 +531,53 @@ function cli_help() {
 	hook_exec ${type} ${what} help
 }
 
+function cli_dns() {
+	if cli_help_requested $@; then
+		cli_show_man network-dns
+		exit ${EXIT_OK}
+	fi
+
+	# Get the command.
+	local cmd=${1}; shift
+	if [ -z "${cmd}" ]; then
+		cli_show_man network-dns
+		exit ${EXIT_ERROR}
+	fi
+
+	case "${cmd}" in
+		list)
+			__dns_server_println "SERVER" "PRIORITY"
+			dns_server_list
+			;;
+		add)
+			log INFO "Adding new DNS server: ${server}..."
+			dns_server_add $@
+			;;
+		remove)
+			log INFO "Removing DNS server: ${server}..."
+			dns_server_remove $@
+			;;
+		update)
+			# Just run the update afterwards.
+			;;
+		*)
+			error "No such command: ${cmd}"
+			exit ${EXIT_ERROR}
+	esac
+
+	# Update the local DNS configuration after changes have been made.
+	dns_generate_resolvconf
+
+	exit ${EXIT_OK}
+}
+
 # Process the given action
 case "${action}" in
 	init)
 		init_run
 		;;
 
-	config|hostname|port|device|zone|start|stop|restart|status|reset)
+	config|hostname|port|device|zone|start|stop|restart|status|reset|dns)
 		cli_${action} $@
 		;;
 
