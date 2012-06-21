@@ -101,6 +101,9 @@ function dns_server_flush() {
 	: > ${DNS_SERVER_CONFIG_FILE}
 }
 
+# Update resolv.conf(5) when initializing the network.
+init_register dns_generate_resolvconf
+
 function dns_generate_resolvconf() {
 	local file=${RESOLV_CONF}
 
