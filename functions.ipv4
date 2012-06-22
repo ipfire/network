@@ -69,14 +69,19 @@ function ipv4_get_netaddress() {
 	assert isset address
 
 	local prefix=$(ip_get_prefix ${address})
-	assert isset prefix
+	isset prefix || prefix="32"
+
+	# Assume host-only address if no prefix has been given.
+	if [ "${prefix}" = "32" ]; then
+		echo "${address}/${prefix}"
+		return ${EXIT_OK}
+	fi
 
 	local NETWORK
 	eval $(ipcalc --network ${address})
 	assert isset NETWORK
 
 	echo "${NETWORK}/${prefix}"
-
 	return ${EXIT_OK}
 }
 
