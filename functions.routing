@@ -223,6 +223,11 @@ function routing_update() {
 	log DEBUG "Flushing routing table ${table}"
 	cmd ${ip_cmd} route flush table ${table}
 
+	# Exit here if there is no routing information.
+	if ! routing_db_exists ${zone} ${proto}; then
+		return ${EXIT_OK}
+	fi
+
 	local local_ip_address=$(routing_db_get ${zone} ${proto} local-ip-address)
 	local remote_ip_address=$(routing_db_get ${zone} ${proto} remote-ip-address)
 
