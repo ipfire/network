@@ -25,7 +25,35 @@ function pppd_start() {
 	local interface=${1}
 	assert isset interface
 
+	# This will block until the connection has been established or
+	# pppd exited.
 	service_start "pppd@${interface}"
+
+	# Get the exit code of the ppp daemon and figure out
+	# how to handle this.
+	local ret=$(service_get_exitcode "pppd@${interface}")
+	case "${ret}" in
+		0)
+			return ${EXIT_OK}
+			;;
+		1)
+			error "pppd crashed for an unknown reason"
+			;;
+		2)
+			error "pppd: Configuration error"
+			;;
+		3)
+			error "pppd terminated"
+			;;
+		19)
+			error "pppd: Authentication failed"
+			;;
+		*)
+			error "pppd: Unhandled exit code: ${ret}"
+			;;
+	esac
+
+	return ${ret}
 }
 
 function pppd_stop() {
@@ -284,7 +312,7 @@ function pppd_write_config() {
 		print "# Disable the compression"
 		print "noccp noaccomp nodeflate nopcomp novj novjccomp nobsdcomp nomppe"
 
-		print "noipdefault nodetach debug"
+		print "noipdefault updetach debug"
 	) >> ${file}
 
 	return ${EXIT_OK}

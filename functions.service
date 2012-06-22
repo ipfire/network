@@ -88,3 +88,13 @@ function service_is_active() {
 	systemctl is-active ${name}.service >/dev/null 2>&1
 	return $?
 }
+
+function service_get_exitcode() {
+	local name=${1}
+	assert isset name
+
+	name="${name}.service"
+
+	local output=$(systemctl show ${name} --property="ExecMainStatus")
+	cli_get_val "${output}"
+}
