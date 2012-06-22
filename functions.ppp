@@ -42,7 +42,7 @@ function pppd_start() {
 		2)
 			error "pppd: Configuration error"
 			;;
-		3)
+		5)
 			error "pppd terminated"
 			;;
 		19)
@@ -214,20 +214,51 @@ function pppd_write_config() {
 	assert isset file
 
 	local auth
+	local default_asyncmap="true"
 	local interface
+	local lcp_echo_failure=3
+	local lcp_echo_interval=20
 	local linkname
 	local mtu mru
 	local plugin plugin_options
 	local user
+	local value
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--auth=*)
 				auth=$(cli_get_val ${1})
 				;;
+			# Enable or disable the use of the default asyncmap.
+			--default-asyncmap=*)
+				value=$(cli_get_val ${1})
+				if enabled value; then
+					default_asyncmap="true"
+				else
+					default_asyncmap="false"
+				fi
+				;;
 			# The name of the created ppp interface.
 			--interface=*)
 				interface=$(cli_get_val ${1})
+				;;
+			# LCP echo failure.
+			--lcr-echo-failure=*)
+				lcr_echo_failure=$(cli_get_val ${1})
+
+				if ! isinteger ${lcr_echo_failure}; then
+					error "--lcr-echo-failure= requires a number"
+					return ${EXIT_ERROR}
+				fi
+				;;
+			# LCP echo interval.
+			--lcr-echo-interval=*)
+				lcr_echo_interval=$(cli_get_val ${1})
+
+				if ! isinteger ${lcr_echo_failure}; then
+					error "--lcr-echo-interval= requires a number"
+					return ${EXIT_ERROR}
+				fi
 				;;
 			# Maximum Transmission Unit
 			--mtu=*)
@@ -257,7 +288,7 @@ function pppd_write_config() {
 		log ERROR "You need to set the interface name: ${interface}"
 		return ${EXIT_ERROR}
 	fi
-	linkname=${interface}
+	linkname="${interface}"
 
 	if isset auth; then
 		if ! isoneof ${auth} ${PPP_SUPPORTED_AUTH_METHODS}; then
@@ -271,7 +302,7 @@ function pppd_write_config() {
 	config_header "PPP daemon configuration file" > ${file}
 
 	# At first, set the name of the link.
-	print "name ${linkname}\nlinkname ${linkname}\n" >> ${file}
+	print "linkname ${linkname}\n" >> ${file}
 
 	# Configure the interface name.
 	print "# Interface name\nifname ${interface}\n" >> ${file}
@@ -310,6 +341,23 @@ function pppd_write_config() {
 			print
 		) >> ${file}
 	fi
+
+	# Default asyncmap.
+	if enabled default_asyncmap; then
+		(
+			print "# Use the default asyncmap."
+			print "default-asyncmap"
+			print
+		) >> ${file}
+	fi
+
+	# LCP settings.
+	(
+		print "# LCP settings"
+		print "lcp-echo-failure ${lcp_echo_failure}"
+		print "lcp-echo-interval ${lcp_echo_interval}"
+		print
+	) >> ${file}
 
 	# Add the default settings.
 	(
