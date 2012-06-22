@@ -95,6 +95,12 @@ function _up() {
 	local zone=${1}
 	assert isset zone
 
+	zone_config_read ${zone}
+
+	# Bring up the port.
+	log DEBUG "Bringing up port '${PORT}'."
+	port_up ${PORT}
+
 	# Start the ppp daemon.
 	pppd_start ${zone}
 
@@ -105,8 +111,14 @@ function _down() {
 	local zone=${1}
 	assert isset zone
 
+	zone_config_read ${zone}
+
 	# Stop the ppp daemon.
 	pppd_stop ${zone}
+
+	# Bring down the port.
+	log DEBUG "Bringing down port '${PORT}'."
+	port_down ${PORT}
 
 	exit ${EXIT_OK}
 }
@@ -191,32 +203,6 @@ function _status() {
 	done
 
 	exit ${EXIT_OK}
-}
-
-function _ppp-ip-pre-up() {
-	local zone=${1}
-	assert isset zone
-
-	# Read the configuration.
-	zone_config_read ${zone}
-
-	# Bring up the port.
-	port_up ${PORT}
-
-	ppp_common_pre_ip_up ${zone}
-}
-
-function _ppp-ip-down() {
-	local zone=${1}
-	assert isset zone
-
-	# Read the configuation.
-	zone_config_read ${zone}
-
-	# Bring down the port.
-	port_down ${PORT}
-
-	ppp_common_ip_down ${zone}
 }
 
 function _ppp_write_config() {
