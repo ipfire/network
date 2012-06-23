@@ -694,7 +694,13 @@ function zone_config_read() {
 
 	assert isset zone
 
+	# Save the HOOK variable.
+	local hook="${HOOK}"
+
 	config_read $(zone_file ${zone})
+
+	# Restore hook.
+	HOOK="${hook}"
 }
 
 function zone_config_write() {
