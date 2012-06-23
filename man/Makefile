@@ -32,6 +32,7 @@ MANPAGES8   = \
 	network-dns.8 \
 	network-zone.8 \
 	network-zone-bridge.8 \
+	network-zone-config-pppoe-server.8 \
 	network-zone-pppoe.8
 
 .PHONY: all
