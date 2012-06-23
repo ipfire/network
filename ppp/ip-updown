@@ -31,19 +31,28 @@ done
 
 # Zone equals IFNAME
 ZONE=${PPP_IFNAME}
-
 assert isset ZONE
-assert zone_exists ${ZONE}
 
-HOOK=$(zone_get_hook ${ZONE})
+# If the given device is a known zone, we will call the required
+# hook methods. If we don't know about any zone with name ${ZONE},
+# we do nothing.
 
-assert isset HOOK
-assert hook_zone_exists ${HOOK}
+if zone_exists ${ZONE}; then
+	HOOK=$(zone_get_hook ${ZONE})
 
-PROGNAME=$(basename ${0})
-assert isset PROGNAME
+	assert isset HOOK
+	assert hook_zone_exists ${HOOK}
 
-log DEBUG "${PROGNAME} was called with the following parameters:"
-log DEBUG "  $@"
+	PROGNAME=$(basename ${0})
+	assert isset PROGNAME
 
-hook_zone_exec ${HOOK} ppp-${PROGNAME} ${ZONE}
+	log DEBUG "${PROGNAME} was called with the following parameters:"
+	log DEBUG "  $@"
+
+	hook_zone_exec ${HOOK} ppp-${PROGNAME} ${ZONE}
+	local ret=$?
+
+	exit ${ret}
+fi
+
+exit ${EXIT_OK}
