@@ -80,12 +80,6 @@ function basename() {
 	echo "${1##*/}"
 }
 
-function touch() {
-	local file=${1}
-
-	: > ${file}
-}
-
 function enabled() {
 	local param=${1}
 
