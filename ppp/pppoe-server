@@ -1,0 +1,89 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# This is a wrapper script which does some on-the-fly configuration of the
+# pppoe-server daemon, which does not support any configuration files.
+
+LOG_FACILITY="pppoe-server"
+. /usr/lib/network/functions
+
+zone=${1}
+assert zone_exists ${zone}
+
+action=${2}
+
+# Read the configuration file of this hook.
+config_read $(zone_dir ${zone})/configs/pppoe-server
+assert isset SUBNET
+
+pppd_options="${RUN_DIR}/${zone}/pppoe-server-options"
+pool_file="${RUN_DIR}/${zone}/pppoe-server-pool"
+
+case "${action}" in
+	cleanup)
+		# Cleanup all temporary files.
+		rm -f ${pppd_options} ${pool_file}
+
+		exit ${EXIT_OK}
+		;;
+
+	*)
+		# Don't let the server fork to background.
+		pppoe_cmdline="-F"
+
+		# Add the interface to listen to.
+		pppoe_cmdline="${pppoe_cmdline} -I ${zone}"
+
+		# Enable kernel-mode PPPoE.
+		pppoe_cmdline="${pppoe_cmdline} -k"
+
+		# Randomize session IDs.
+		pppoe_cmdline="${pppoe_cmdline} -r"
+
+		# Add the service name.
+		if isset SERVICE_NAME; then
+			pppoe_cmdline="${pppoe_cmdline} -S ${SERVICE_NAME// /_}"
+		fi
+
+		# Create the pppoe-server-options file.
+		pppoe_server_options ${pppd_options} ${zone}
+		pppoe_cmdline="${pppoe_cmdline} -O ${pppd_options}"
+
+		# Configure the IP addresses.
+		local_address=$(ipv4_get_network ${SUBNET})
+		pppoe_cmdline="${pppoe_cmdline} -L ${local_address}"
+
+		# Create the address pool.
+		pppoe_server_poolfile ${pool_file} ${SUBNET}
+		pppoe_cmdline="${pppoe_cmdline} -p ${pool_file}"
+
+		log INFO "Starting pppoe-server daemon..."
+		log DEBUG "pppoe-server options: ${pppoe_cmdline}"
+
+		# Now exec the actual pppoe-server binary.
+		exec pppoe-server ${pppoe_cmdline}
+
+		error "Could not execute pppoe-server. Exiting."
+		exit ${EXIT_ERROR}
+	;;
+esac
+
+exit ${EXIT_ERROR}

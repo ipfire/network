@@ -1,0 +1,183 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function pppoe_server_start() {
+	local zone=${1}
+	assert isset zone
+
+	service_start "pppoe-server@${zone}"
+}
+
+function pppoe_server_stop() {
+	local zone=${1}
+	assert isset zone
+
+	service_stop "pppoe-server@${zone}"
+}
+
+function pppoe_server_status() {
+	local zone=${1}
+	assert isset zone
+
+	service_status "pppoe-server@${zone}"
+}
+
+function pppoe_server_options() {
+	local file=${1}
+	assert isset file
+
+	local zone=${2}
+	assert isset zone
+
+	shift 2
+
+	local auth="false"
+	local default_asyncmap="true"
+	local dns_servers
+	local lcp_echo_failure=5
+	local lcp_echo_interval=60
+	local proxyarp="true"
+	local required_auths
+	local value
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--auth=*)
+				auth=$(cli_get_val ${1})
+				;;
+			--default-asyncmap=*)
+				default_asyncmap=$(cli_get_val ${1})
+				;;
+			--dns-server=*)
+				dns_servers="${dns_servers} $(cli_get_val ${1})"
+				;;
+			--lcp-echo-failure=*)
+				lcp_echo_failure=$(cli_get_val ${1})
+				assert isinteger ${lcp_echo_failure}
+				;;
+			--lcp-echo-interval=*)
+				lcp_echo_interval=$(cli_get_val ${1})
+				assert isinteger ${lcp_echo_interval}
+				;;
+			--proxyarp=*)
+				proxyarp=$(cli_get_val ${1})
+				;;
+			--require-auth=*)
+				required_auths="${required_auths} $(cli_get_val ${1})"
+				;;
+		esac
+		shift
+	done
+
+	mkdir -p $(dirname ${file}) 2>/dev/null
+	config_header "pppoe-server options configuration file" > ${file}
+
+	# Authentication
+	(
+		print "# Authentication"
+		if enabled auth; then
+			print "auth"
+		else
+			print "noauth"
+		fi
+		print
+	) >> ${file}
+
+	# If there are only a number of auth algorithms allowed, we
+	# define them here.
+	if isset required_auths; then
+		print "# Required authentication methods" >> ${file}
+		local method
+		for method in ${required_auths}; do
+			print "require-${method}"
+		done >> ${file}
+		print >> ${file}
+	fi
+
+	# DNS servers
+	if isset dns_servers; then
+		print "# DNS servers" >> ${file}
+		local server
+		for server in ${dns_servers}; do
+			print "ms-dns ${server}"
+		done >> ${file}
+		print >> ${file}
+	fi
+
+	# Default asyncmap
+	if enabled default_asyncmap; then
+		(
+			print "# Default asyncmap"
+			print "default-asyncmap"
+			print
+		) >> ${file}
+	fi
+
+	# LCP settings.
+	(
+		print "# LCP settings"
+		print "lcp-echo-failure ${lcp_echo_failure}"
+		print "lcp-echo-interval ${lcp_echo_interval}"
+		print
+	) >> ${file}
+
+	# Proxy ARP
+	(
+		print "# Proxy ARP"
+		if enabled proxyarp; then
+			print "proxyarp"
+		else
+			print "noproxyarp"
+		fi
+		print
+	) >> ${file}
+
+	# Default options, we always set.
+	(
+		print "debug"
+		print "nodefaultroute"
+		print "noipdefault"
+		print "noipx"
+	) >> ${file}
+
+	return ${EXIT_OK}
+}
+
+function pppoe_server_poolfile() {
+	local file=${1}
+	assert isset file
+
+	local subnet=${2}
+	assert isset subnet
+
+	config_header "PPPoE server IP address pool file" > ${file}
+
+	# The network address will be the gateway address.
+	local netaddr=$(ipv4_get_network ${subnet})
+
+	local addr
+	for addr in $(ipv4_range_explicit ${subnet}); do
+		[ "${addr}" = "${netaddr}" ] && continue
+		print "${addr}"
+	done >> ${file}
+
+	return ${EXIT_OK}
+}

@@ -1,0 +1,113 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /usr/lib/network/header-config
+
+HOOK_SETTINGS="HOOK MTU SERVICE_NAME SUBNET"
+
+# Maximum Transmission Unit.
+MTU=1492
+
+# Service Name.
+SERVICE_NAME=
+
+# A subnet. Addresses from this subnet will be given to the remote hosts.
+# The net address will be the gateway address for the PPPoE server.
+SUBNET=
+
+function _check() {
+	assert isset MTU
+	assert isset SUBNET
+}
+
+function _create() {
+	local zone=${1}
+	shift
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--mtu=*)
+				MTU=$(cli_get_val ${1})
+				;;
+			--service-name=*)
+				SERVICE_NAME=$(cli_get_val ${1})
+				;;
+			--subnet=*)
+				SUBNET=$(cli_get_val ${1})
+				;;
+		esac
+		shift
+	done
+
+	config_write $(zone_dir ${zone})/configs/${HOOK} ${HOOK_SETTINGS}
+
+	exit ${EXIT_OK}
+}
+
+function _up() {
+	local zone=${1}
+	local config=${2}
+	shift 2
+
+	# Start the PPPoE server.
+	pppoe_server_start ${zone}
+
+	exit ${EXIT_OK}
+}
+
+function _down() {
+	local zone=${1}
+	local config=${2}
+	shift 2
+
+	if ! device_exists ${zone}; then
+		error "Zone '${zone}' doesn't exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	# Stop the PPPoE server.
+	pppoe_server_stop ${zone}
+
+	exit ${EXIT_OK}
+}
+
+function _status() {
+	local zone=${1}
+	local config=${2}
+	shift 2
+
+	if ! device_exists ${zone}; then
+		error "Zone '${zone}' doesn't exist."
+		exit ${EXIT_ERROR}
+	fi
+	
+	config_read $(zone_dir ${zone})/configs/${config}
+
+	local status
+	if pppoe_server_status ${zone}; then
+		status="${MSG_HOOK_UP}"
+	else
+		status="${MSG_HOOK_DOWN}"
+	fi
+	cli_statusline 3 "PPPoE server" "${status}"
+
+	exit ${EXIT_OK}
+}

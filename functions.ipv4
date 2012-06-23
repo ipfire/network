@@ -133,3 +133,147 @@ function ipv4_prefix2netmask() {
 			;;
 	esac
 }
+
+function ipv4_get_network() {
+	local net=${1}
+
+	local prefix=$(ip_get_prefix ${net})
+	isset prefix || prefix=32
+
+	local mask=0
+	if [ ${prefix} -ne 0 ]; then
+		mask=$(( -1 << $(( 32 - ${prefix} )) ))
+	fi
+
+	local addr=$(ip_split_prefix ${net})
+	addr=$(ipv4_encode ${addr})
+
+	ipv4_decode $(( ${addr} & ${mask} ))
+}
+
+function ipv4_get_broadcast() {
+	local net=${1}
+
+	local prefix=$(ip_get_prefix ${net})
+	assert isset prefix
+
+	prefix=$(( 32 - ${prefix} ))
+
+	local netmask=0
+	local broadcast=-1
+	if [ ${prefix} -eq 32 ]; then
+		:
+	else
+		netmask=$(( -1 << ${prefix} ))
+		broadcast=$(( $(( 1 << ${prefix} )) - 1))
+	fi
+
+	local addr=$(ip_split_prefix ${net})
+	addr=$(ipv4_encode ${addr})
+
+	ipv4_decode $(( $(( ${addr} & ${netmask} )) | ${broadcast} ))
+}
+
+function ipv4_encode() {
+	local addr=${1}
+	local int=0
+
+	local field
+	for field in ${addr//./ }; do
+		int=$(( $(( ${int} << 8 )) | ${field} ))
+	done
+
+	print "${int}"
+}
+
+function ipv4_decode() {
+	local int=${1}
+
+	local addr=$(( ${int} & 255 ))
+
+	local i
+	for i in 1 2 3; do
+		int=$(( ${int} >> 8 ))
+		addr="$(( ${int} & 255 )).${addr}"
+	done
+
+	print "${addr}"
+}
+
+function ipv4_range() {
+	local range=${1}
+
+	local first=${1%-*}
+	local last=${1#*-}
+
+	_ipv4_range "$(ipv4_encode ${first})" "$(ipv4_encode ${last})"
+}
+
+function _ipv4_range() {
+	local first=${1}
+	local last=${2}
+
+	if [ ${first} -gt ${last} ]; then
+		local range="$(ipv4_decode ${first})-$(ipv4_decode ${last})"
+
+		error "Invalid IPv4 address range: ${range}"
+		return ${EXIT_ERROR}
+	fi
+
+	last=$(( ${last} + 1 ))
+
+	local prefix
+	local x y z
+	while [ ${last} -gt ${first} ]; do
+		prefix=
+		x=31
+		y=2
+		z=1
+
+		while [ $(( ${first} % ${y} )) -eq 0 ] && [ ${last} -gt $(( ${first} + ${y} )) ]; do
+			prefix="/${x}"
+			x=$(( ${x} - 1 ))
+			z=${y}
+			y=$(( ${y} * 2 ))
+		done
+
+		print "$(ipv4_decode ${first})${prefix}"
+		first=$(( ${first} + ${z} ))
+	done
+}
+
+function ipv4_range_explicit() {
+	local range=${1}
+
+	local first last
+
+	case "${range}" in
+		*.*.*.*-*.*.*.*)
+			first=${range%-*}
+			last=${range#*-}
+			;;
+		*.*.*.*/*)
+			first=$(ipv4_get_network ${range})
+			last=$(ipv4_get_broadcast ${range})
+			;;
+	esac
+
+	_ipv4_range_explicit "$(ipv4_encode ${first})" "$(ipv4_encode ${last})"
+}
+
+function _ipv4_range_explicit() {
+	local first=${1}
+	local last=${2}
+
+	if [ ${first} -gt ${last} ]; then
+		local range="$(ipv4_decode ${first})-$(ipv4_decode ${last})"
+
+		error "Invalid IPv4 address range: ${range}"
+		return ${EXIT_ERROR}
+	fi
+
+	while [ ${first} -le ${last} ]; do
+		ipv4_decode ${first}
+		first=$(( ${first} + 1 ))
+	done
+}
