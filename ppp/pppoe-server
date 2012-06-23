@@ -53,7 +53,10 @@ case "${action}" in
 		pppoe_cmdline="${pppoe_cmdline} -I ${zone}"
 
 		# Enable kernel-mode PPPoE.
-		pppoe_cmdline="${pppoe_cmdline} -k"
+		# (The version that is shipped with IPFire does not
+		# support the userspace implementation and therefore
+		# kernel-mode PPPoE is enabled by default).
+		#pppoe_cmdline="${pppoe_cmdline} -k"
 
 		# Randomize session IDs.
 		pppoe_cmdline="${pppoe_cmdline} -r"
