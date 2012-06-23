@@ -56,8 +56,6 @@ function listmatch() {
 	local match=${1}
 	shift
 
-	assert isset match
-
 	local i
 	for i in $@; do
 		[ "${match}" = "${i}" ] && return ${EXIT_OK}
@@ -169,11 +167,7 @@ function isoneof() {
 	local var=${!1}
 	shift
 
-	for i in $@; do
-		[ "${var}" = "${i}" ] && return ${EXIT_OK}
-	done
-
-	return ${EXIT_ERROR}
+	listmatch "${var}" "$@"
 }
 
 function isbool() {
