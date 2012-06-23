@@ -548,6 +548,7 @@ function cli_dns() {
 		list)
 			__dns_server_println "SERVER" "PRIORITY"
 			dns_server_list
+			exit ${EXIT_OK}
 			;;
 		add)
 			log INFO "Adding new DNS server: ${server}..."
