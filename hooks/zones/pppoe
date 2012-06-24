@@ -45,14 +45,14 @@ SERVICE_NAME=""
 MTU=1492
 
 # This hook can work with all authentication methods supported by pppd.
-PPPOE_ALLOWED_AUTH_METHODS="${PPP_ALLOWED_AUTH_METHODS}"
+PPPOE_SUPPORTED_AUTH_METHODS="${PPP_SUPPORTED_AUTH_METHODS}"
 PPPOE_PLUGIN="rp-pppoe.so"
 
 function _check() {
 	assert isset USERNAME
 	assert isset PASSWORD
 
-	isset AUTH && assert isoneof AUTH ${PPPOE_ALLOWED_AUTH_METHODS}
+	isset AUTH && assert isoneof AUTH ${PPPOE_SUPPORTED_AUTH_METHODS}
 
 	# Check for a valid port setting.
 	assert isset PORT
