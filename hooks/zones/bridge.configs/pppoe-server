@@ -21,7 +21,7 @@
 
 . /usr/lib/network/header-config
 
-HOOK_SETTINGS="HOOK MTU SERVICE_NAME SUBNET"
+HOOK_SETTINGS="HOOK MTU SERVICE_NAME SUBNET MAX_SESSIONS"
 
 # Maximum Transmission Unit.
 MTU=1492
@@ -33,9 +33,14 @@ SERVICE_NAME=
 # The net address will be the gateway address for the PPPoE server.
 SUBNET=
 
+# Defines the max. number of sessions per MAC address.
+# 0 = unlimited.
+MAX_SESSIONS=0
+
 function _check() {
 	assert isset MTU
 	assert isset SUBNET
+	assert isset MAX_SESSIONS
 }
 
 function _create() {
@@ -44,6 +49,9 @@ function _create() {
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
+			--max-sessions=*)
+				MAX_SESSIONS=$(cli_get_val ${1})
+				;;
 			--mtu=*)
 				MTU=$(cli_get_val ${1})
 				;;
@@ -119,6 +127,13 @@ function _status() {
 
 	cli_print_fmt1 3 "Client range" \
 		"${start_address}-${end_address}"
+	cli_space
+
+	local max_sessions=${MAX_SESSIONS}
+	if [ "${max_sessions}" = "0" ]; then
+		max_sessions="unlimited"
+	fi
+	cli_print_fmt1 3 "${max_sessions} session(s) per MAC"
 	cli_space
 
 	exit ${EXIT_OK}

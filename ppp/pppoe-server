@@ -66,6 +66,11 @@ case "${action}" in
 			pppoe_cmdline="${pppoe_cmdline} -S ${SERVICE_NAME// /_}"
 		fi
 
+		# Add the max. number of sessions per MAC address.
+		if [ ${MAX_SESSIONS} -gt 0 ]; then
+			pppoe_cmdline="${pppoe_cmdline} -x ${MAX_SESSIONS}"
+		fi
+
 		# Create the pppoe-server-options file.
 		pppoe_server_options ${pppd_options} ${zone}
 		pppoe_cmdline="${pppoe_cmdline} -O ${pppd_options}"
