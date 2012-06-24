@@ -109,5 +109,17 @@ function _status() {
 	fi
 	cli_statusline 3 "PPPoE server" "${status}"
 
+	local gateway=$(ipv4_get_network ${SUBNET})
+	cli_print_fmt1 3 "Gateway" "${gateway}"
+
+	local start_address=$(ipv4_encode ${gateway})
+	start_address=$(( ${start_address} + 1 ))
+	start_address=$(ipv4_decode ${start_address})
+	local end_address=$(ipv4_get_broadcast ${SUBNET})
+
+	cli_print_fmt1 3 "Client range" \
+		"${start_address}-${end_address}"
+	cli_space
+
 	exit ${EXIT_OK}
 }
