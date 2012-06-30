@@ -203,7 +203,7 @@ function assert() {
 	if ! ${assertion}; then
 		error_log "Assertion '${assertion}' failed."
 		backtrace
-		exit ${EXIT_ERROR}
+		exit ${EXIT_ERROR_ASSERT}
 	fi
 
 	return ${EXIT_OK}
