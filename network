@@ -544,6 +544,10 @@ function cli_dns() {
 		exit ${EXIT_ERROR}
 	fi
 
+	# Get the new server to process (if any).
+	local server=${1}
+	local priority=${2}
+
 	case "${cmd}" in
 		list)
 			__dns_server_println "SERVER" "PRIORITY"
@@ -551,12 +555,12 @@ function cli_dns() {
 			exit ${EXIT_OK}
 			;;
 		add)
-			log INFO "Adding new DNS server: ${server}..."
-			dns_server_add $@
+			log INFO "Adding new DNS server: ${server}"
+			dns_server_add ${server} ${priority}
 			;;
 		remove)
-			log INFO "Removing DNS server: ${server}..."
-			dns_server_remove $@
+			log INFO "Removing DNS server: ${server}"
+			dns_server_remove ${server} ${priority}
 			;;
 		update)
 			# Just run the update afterwards.
@@ -568,6 +572,7 @@ function cli_dns() {
 
 	# Update the local DNS configuration after changes have been made.
 	dns_generate_resolvconf
+	radvd_update
 
 	exit ${EXIT_OK}
 }

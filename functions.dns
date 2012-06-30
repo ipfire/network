@@ -28,6 +28,10 @@ NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_USE_LOCAL_RESOLVER
 DNS_RANDOMIZE=false
 NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_RANDOMIZE"
 
+# Set this option to true if the DNS servers should be advertised by
+# radvd.
+DNS_ADVERTISE_SERVERS="true"
+
 DNS_SERVER_CONFIG_FILE="${NETWORK_CONFIG_DIR}/dns-servers"
 
 # Path to the configuration file of the DNS resolver.
@@ -52,7 +56,7 @@ function __dns_server_println() {
 }
 
 function __dns_server_sort() {
-	sort -k2 -u -g
+	sort -k2 -g | uniq
 }
 
 function dns_server_list() {
@@ -64,6 +68,13 @@ function dns_server_list() {
 			__dns_server_println "${server}" "${priority}"
 		fi
 	done < ${DNS_SERVER_CONFIG_FILE} | __dns_server_sort
+}
+
+function dns_server_list_no_priority() {
+	local server priority
+	dns_server_list | while read server priority; do
+		echo "${server}"
+	done
 }
 
 function dns_server_add() {
