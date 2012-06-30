@@ -49,14 +49,14 @@ function log() {
 	[ "${LOG_DISABLE_STDOUT}" = "true" ] && return 0
 
 	local colour
-	local console=">&2"
+	local console="2"
 	case "${level}" in
 		DEBUG)
 			colour="${CLR_CYAN_R}"
 			;;
 		INFO)
 			colour="${CLR_BLACK_R}"
-			console=""
+			console="1"
 			;;
 		WARNING)
 			colour="${CLR_YELLOW_R}"
@@ -66,5 +66,12 @@ function log() {
 			;;
 	esac
 
-	printf "${colour}${message}${CLR_RESET_ALL}\n" ${console}
+	case "${console}" in
+		1)
+			printf "${colour}${message}${CLR_RESET_ALL}\n"
+			;;
+		2)
+			printf "${colour}${message}${CLR_RESET_ALL}\n" >&2
+			;;
+	esac
 }
