@@ -209,6 +209,18 @@ function assert() {
 	return ${EXIT_OK}
 }
 
+# This function checks, if the given argument is an assert error
+# exit code. If this is the case, the script will halt immediately.
+function assert_check_retval() {
+	local ret=${1}
+
+	if [ ${ret} -eq ${EXIT_ERROR_ASSERT} ]; then
+		exit ${EXIT_ERROR_ASSERT}
+	fi
+
+	return ${ret}
+}
+
 function exec_cmd() {
 	local cmd=$@
 
