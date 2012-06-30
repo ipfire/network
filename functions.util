@@ -187,12 +187,13 @@ function backtrace() {
 	echo # Empty line
 	error_log "Backtrace (most recent call in first line):"
 
-	local i
+	local i source
 	for i in $(seq ${start} ${#BASH_SOURCE[*]}); do
 		[ -z "${FUNCNAME[${i}]}" ] && continue
 		[ "${FUNCNAME[${i}]}" == "main" ] && continue
 
-		error_log "  $(printf "%20s" "'${FUNCNAME[${i}]}'") called from ${BASH_SOURCE[$(( ${i} + 1 ))]}:${BASH_LINENO[${i}]}"
+		source=${BASH_SOURCE[$(( ${i} + 1 ))]}
+		error_log "  $(printf "%20s" "'${FUNCNAME[${i}]}'") called from ${source:-<shell>}:${BASH_LINENO[${i}]}"
 	done
 }
 
