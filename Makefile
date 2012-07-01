@@ -55,7 +55,7 @@ install:
 	ln -svf ip-updown $(DESTDIR)$(sysconfdir)/ppp/ip-down
 	ln -svf ip-updown $(DESTDIR)$(sysconfdir)/ppp/ipv6-up
 	ln -svf ip-updown $(DESTDIR)$(sysconfdir)/ppp/ipv6-down
-	install -m 755 -v ppp/dialer $(DESTDIR)$(sysconfdir)/ppp
+	install -m 755 -v ppp/dialer $(DESTDIR)$(libdir)/network/
 
 	# Install pppoe-server wrapper.
 	install -m 755 ppp/pppoe-server $(DESTDIR)$(libdir)/network/

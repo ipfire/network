@@ -1,11 +1,124 @@
-TIMEOUT		5
-REPORT		CONNECT
-''		'+++ATZ'
-''		'AT'
-''		'+++ATZ'
-OK		'ATH'
-''		'AT+CGDCONT=1,"IP","event.vodafone.de"'
-''		'sleep 5'
-TIMEOUT		30
-OK		'ATDT*99#'
-CONNECT		''
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+LOG_FACILITY=$(basename ${0})
+
+# Do not print any log messages because these may be sent to the modem.
+LOG_DISABLE_STDOUT="true"
+
+. /usr/lib/network/functions
+
+log DEBUG "dialer called with arguments: $@"
+
+# The zone is an optional argument.
+ZONE=${1}
+assert isset ZONE
+
+# If we have the zone information, we will
+# load the zone configuration.
+if zone_exists ${ZONE}; then
+	zone_config_read ${ZONE}
+fi
+
+# The default speaker settings is on.
+at_speaker=${AT_SPEAKER_ON}
+
+# The default dial method is tone dial.
+at_dial=${AT_TONE_DIAL}
+
+# Initalize the commandline
+commandline=""
+
+# If we are running in debug mode, we start chat with the
+# verbose flag as well.
+if enabled DEBUG; then
+	commandline="${commandline} -v"
+fi
+
+# Create a temporary chat script file.
+file=$(mktemp)
+commandline="${commandline} -f ${file}"
+
+# Helper function to write beatiful lines to
+# the chat scripts.
+function println() {
+	printf "%-30s %s\n" "$@" >> ${file}
+}
+
+### Write the connect script.
+
+# Set the timeout value for the configuration commands to
+# 3 seconds. This will be increased later.
+println "TIMEOUT" 3
+
+# Let's log everything until we are properly connected.
+println "REPORT" "CONNECT"
+
+# End the connection, when one of the following conditions
+# happens:
+for condition in "BUSY" "NO ANSWER" "NO CARRIER" "NO DIALTONE"; do
+	println "ABORT" "'${condition}'"
+done
+
+# Now, we get to the exciting stuff.
+# Initalize the modem.
+println "''" "${AT_INITIALIZE}"
+println "''" "AT"
+println "''" "${AT_INITIALIZE}"
+
+# End all left over connections by hanging up.
+println "OK" "${AT_HANGUP}"
+
+# Apply the speaker setting.
+println "OK" "${at_speaker}"
+
+# Set the APN if any.
+if isset APN; then
+	println "''" "'AT+CGDCONT=1,\"IP\",\"${APN}\"'"
+fi
+
+# Enter a 5 seconds break so the modem can setup itself
+# to the settings we just transmitted to it.
+for i in $(seq 0 5); do
+	println "''" "\\d"
+done
+
+# Reset the timeout value to 30 seconds.
+println "TIMEOUT" 30
+
+# Actually dial the number.
+println "OK" "${at_dial}${PHONE_NUMBER}"
+
+# Wait for the CONNECT string.
+println "CONNECT" "\\c"
+
+# If login credentials were set, we send them.
+if isset USERNAME && isset PASSWORD; then
+	println "ogin:--ogin:" "${USERNAME}"
+	println "assword:" "${PASSWORD}"
+fi
+
+# Exec the chat command which will start talking to the modem.
+log DEBUG "Exec'ing chat with command line: ${commandline}"
+exec chat ${commandline}
+
+error "Could not execute chat. Exiting."
+exit ${EXIT_ERROR}

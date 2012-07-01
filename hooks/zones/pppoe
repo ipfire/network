@@ -215,9 +215,6 @@ function _ppp_write_config() {
 	# Read in the configuration files.
 	zone_config_read ${zone}
 
-	# Set the user credentials.
-	ppp_secret "${USERNAME}" "${PASSWORD}"
-
 	# Prepare the command line options for the pppoe plugin.
 	local plugin_options
 
@@ -236,12 +233,13 @@ function _ppp_write_config() {
 
 	pppd_write_config ${file} \
 		--interface="${zone}" \
-		--user="${USERNAME}" \
+		--username="${USERNAME}" \
+		--password="${PASSWORD}" \
 		--mtu="${MTU}" \
 		--auth="${AUTH}" \
 		\
 		--plugin="${PPPOE_PLUGIN}" \
 		--plugin-options="${plugin_options}"
 
-	return ${EXIT_OK}
+	exit ${EXIT_OK}
 }

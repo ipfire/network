@@ -50,6 +50,11 @@ function cli_config() {
 }
 
 function cli_device() {
+	if cli_help_requested $@; then
+		cli_show_man network-device
+		exit ${EXIT_OK}
+	fi
+
 	local device=${1}
 	local action=${2}
 	shift 2
@@ -68,6 +73,9 @@ function cli_device() {
 		status)
 			cli_device_status ${device}
 			;;
+		unlock)
+			cli_device_serial_unlock ${device} $@
+			;;
 		*)
 			cli_show_man network-device
 			;;
@@ -80,11 +88,21 @@ function cli_device_status() {
 	local device=${1}
 	assert device_exists ${device}
 
+	# Disable debugging output here.
+	local log_disable_stdout=${LOG_DISABLE_STDOUT}
+	LOG_DISABLE_STDOUT="true"
+
 	# Save the type of the device for later.
 	local type=$(device_get_type ${device})
 
 	cli_headline 1 "Device status: ${device}"
 	cli_print_fmt1 1 "Name"		"${device}"
+
+	# Handle serial devices.
+	if [ "${type}" = "serial" ]; then
+		cli_device_status_serial ${device}
+		return $?
+	fi
 
 	# Print the device status.
 	device_is_up ${device} &>/dev/null
@@ -138,6 +156,69 @@ function cli_device_status() {
 		cli_space
 	fi
 
+	# Reset the logging level.
+	LOG_DISABLE_STDOUT=${log_disable_stdout}
+}
+
+function cli_device_status_serial() {
+	local device=${1}
+	assert device_is_serial ${device}
+
+	serial_is_locked ${device} &>/dev/null
+	local locked=$?
+
+	cli_print_fmt1 1 "Locked" "$(cli_print_bool ${locked})"
+	cli_space
+
+	# Cannot go on when the device is locked.
+	[ ${locked} -eq ${EXIT_TRUE} ] && return ${EXIT_OK}
+
+	cli_print_fmt1 1 "Manufacturer" \
+		"$(modem_get_manufacturer ${device})"
+	cli_print_fmt1 1 "Model" \
+		"$(modem_get_model ${device})"
+	cli_print_fmt1 1 "Software version" \
+		"$(modem_get_software_version ${device})"
+
+	if modem_is_mobile ${device}; then
+		cli_print_fmt1 1 "IMEI" \
+			"$(modem_get_device_imei ${device})"
+		cli_space
+
+		cli_headline 2 "Network status"
+		modem_sim_status ${device} &>/dev/null
+		local sim_status_code=$?
+
+		local sim_status="unknown"
+		case "${sim_status_code}" in
+			${EXIT_SIM_READY})
+				sim_status="SIM ready"
+				;;
+			${EXIT_SIM_PIN})
+				sim_status="PIN locked"
+				;;
+			${EXIT_SIM_PUK})
+				sim_status="PUK locked"
+				;;
+		esac
+		cli_print_fmt1 2 "SIM status" "${sim_status}"
+
+		if [ ${sim_status_code} -eq ${EXIT_SIM_READY} ]; then
+			cli_print_fmt1 2 "IMSI" \
+				"$(modem_get_sim_imsi ${device})"
+			cli_print_fmt1 2 "Operator" \
+				"$(modem_get_network_operator ${device})"
+			cli_print_fmt1 2 "Mode" \
+				"$(modem_get_network_mode ${device})"
+			cli_print_fmt1 2 "Signal quality" \
+				"$(modem_get_signal_quality ${device}) dBm"
+
+			local ber=$(modem_get_bit_error_rate ${device})
+			isset ber || ber="unknown"
+			cli_print_fmt1 2 "Bit Error Rate" "${ber}"
+		fi
+	fi
+	cli_space
 }
 
 function cli_device_discover() {
@@ -209,6 +290,92 @@ function cli_device_discover() {
 	echo # New line
 
 	[ "${up}" = "1" ] || device_set_down ${device}
+}
+
+function cli_device_serial_unlock() {
+	if cli_help_requested $@; then
+		cli_show_man network-device
+		exit ${EXIT_OK}
+	fi
+
+	local device=${1}
+	assert isset device
+
+	if ! device_is_serial ${device}; then
+		error "${device} is not a serial device."
+		error "Unlocking is only supported for serial devices."
+		exit ${EXIT_ERROR}
+	fi
+
+	# Read the current state of the SIM card.
+	modem_sim_status ${device} &>/dev/null
+	local sim_status_code=$?
+
+	# If the SIM card is already unlocked, we don't need to do anything.
+	if [ ${sim_status_code} -eq ${EXIT_SIM_READY} ]; then
+		print "The SIM card is already unlocked."
+		exit ${EXIT_OK}
+
+	# If the SIM card is in an unknown state, we cannot do anything.
+	elif [ ${sim_status_code} -eq ${EXIT_SIM_UNKNOWN} ]; then
+		error "The SIM card is in an unknown state."
+		exit ${EXIT_ERROR}
+	fi
+
+	# Ask for the code.
+	local code=${2}
+	local require_new_pin="false"
+	local new_pin
+
+	while ! isinteger code; do
+		local message
+		case "${sim_status_code}" in
+			${EXIT_SIM_PIN})
+				message="Please enter PIN:"
+				;;
+			${EXIT_SIM_PUK})
+				message="Please enter PUK:"
+				require_new_pin="true"
+				;;
+		esac
+		assert isset message
+
+		echo -n "${message} "
+		read -s code
+		echo # Print newline.
+
+		if enabled require_new_pin; then
+			local i new_pin2
+			for i in 0 1; do
+				case "${i}" in
+					0)
+						message="Please enter a new PIN code:"
+						;;
+					1)
+						message="Please confirm the new PIN code:"
+						;;
+				esac
+
+				echo -n "${message} "
+				read -s new_pin2
+				echo # Print newline.
+
+				if [ -n "${new_pin}" ]; then
+					if [ "${new_pin}" != "${new_pin2}" ]; then
+						error "The entered PIN codes did not match."
+						exit ${EXIT_ERROR}
+					fi
+				else
+					new_pin=${new_pin2}
+				fi
+			done
+		fi
+	done
+
+	# Trying to unlock the SIM card.
+	modem_sim_unlock ${device} ${code} ${new_pin}
+
+	exit $?
 }
 
 function cli_hostname() {

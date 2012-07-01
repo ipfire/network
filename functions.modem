@@ -1,0 +1,530 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# Exit codes from the chat(8) command:
+CHAT_OK=0
+CHAT_INVALID=1
+CHAT_ERROR=2
+CHAT_TIMEOUT=3
+
+function modem_chat() {
+	local answer="OK"
+	local device
+	local timeout=2
+	local quiet="false"
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--timeout=*)
+				timeout=$(cli_get_val ${1})
+				;;
+			--answer=*)
+				answer=$(cli_get_val ${1})
+				;;
+			--quiet)
+				quiet="true"
+				;;
+			*)
+				device=${1}
+				shift; break
+				;;
+		esac
+		shift
+	done
+
+	assert serial_exists ${device}
+	assert serial_is_unlocked ${device}
+	assert isset answer
+	assert isset timeout
+
+	local command=$@
+
+	log DEBUG "Sending command to ${device}: ${command}"
+
+	(
+		# This cannot be run with -x.
+		set +x 2>/dev/null
+
+		chat -V -s -t ${timeout} "" "${command}" "${answer}" \
+			< ${device} > ${device} || exit $?
+		print # Print line feed.
+	) 2>&1 | __modem_chat_process_output "${answer}" ${quiet}
+
+	local ret=${PIPESTATUS[0]}
+
+	# Return the exit code of the chat command.
+	case "${ret}" in
+		${CHAT_OK})
+			return ${EXIT_OK}
+			;;
+
+		# When the timeout condition hit, the expected string has not
+		# been received in the given amount of time.
+		${CHAT_TIMEOUT}|${CHAT_ERROR})
+			return ${EXIT_ERROR}
+			;;
+
+		${CHAT_INVALID})
+			return ${EXIT_CONF_ERROR}
+			;;
+	esac
+
+	log WARNING "Received unknown exit code from chat(8): ${ret}"
+	return ${EXIT_ERROR}
+}
+
+function __modem_chat_process_output() {
+	local answer=${1}
+	local quiet=${2}
+
+	if enabled quiet; then
+		# Just throw everything away.
+		cat >/dev/null
+		return ${EXIT_OK}
+	fi
+
+	local counter=0
+
+	local line
+	while read line; do
+		log DEBUG "Output[${counter}]: ${line}"
+
+		# Also skip empty lines.
+		[ -n "${line}" ] || continue
+
+		# Ignore all volatile messages.
+		[ "${line:0:1}" = "^" ] && continue
+
+		counter=$(( ${counter} + 1 ))
+
+		# Skip the first line, because that's out command.
+		[ ${counter} -eq 1 ] && continue
+
+		# Filter out the expected answer.
+		[ "${line}" = "${answer}" ] && continue
+
+		# Print the rest.
+		print "${line}"
+	done
+}
+
+# Exit codes of the sim_status function.
+EXIT_SIM_READY=0
+EXIT_SIM_PIN=1
+EXIT_SIM_PUK=2
+EXIT_SIM_UNKNOWN=3
+
+function modem_sim_status() {
+	local device=${1}
+	assert isset device
+
+	local output
+	output=$(modem_chat ${device} "AT+CPIN?")
+	assert_check_retval $?
+
+	# Strip leading +CPIN: from the output.
+	output=${output#*: }
+
+	case "${output}" in
+		"READY")
+			log DEBUG "${device}'s SIM is unlocked or doesn't need a PIN."
+			return ${EXIT_SIM_READY}
+			;;
+		"SIM PIN")
+			log DEBUG "${device}'s SIM is waiting for a PIN."
+			return ${EXIT_SIM_PIN}
+			;;
+		"SIM PUK")
+			log DEBUG "${device}'s SIM is PUK locked."
+			return ${EXIT_SIM_PUK}
+			;;
+	esac
+
+	log WARNING "${device}: Invalid output of the AT+CPIN? command."
+	return ${EXIT_SIM_UNKNOWN}
+}
+
+function modem_sim_unlocked() {
+	local device=${1}
+	assert isset device
+
+	modem_sim_status "${device}"
+	local ret=$?
+
+	[ ${ret} -eq ${EXIT_SIM_READY} ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
+function modem_sim_locked() {
+	modem_sim_unlocked $@ && return ${EXIT_FALSE} || return ${EXIT_TRUE}
+}
+
+function modem_sim_unlock() {
+	local device=${1}
+	assert isset device
+
+	local pin=${2}
+	assert isset pin
+
+	local command="AT+CPIN=${pin}"
+
+	local new_pin=${3}
+	if isset new_pin; then
+		command="${command},${new_pin}"
+	fi
+
+	modem_chat --timeout=2 --quiet "${device}" "${command}"
+
+	local ret=$?
+	case "${ret}" in
+		${EXIT_OK})
+			log INFO "Successfully unlocked SIM card on ${device}."
+			;;
+		*)
+			log ERROR "Could not unlock SIM card on ${device}."
+			ret=${EXIT_ERROR}
+			;;
+	esac
+
+	return ${ret}
+}
+
+# Returns the vendor of the modem.
+# For example: "huawei"
+function modem_get_manufacturer() {
+	local device=${1}
+	assert isset device
+
+	local output
+	output=$(modem_chat ${device} "AT+GMI")
+	assert_check_retval $?
+
+	[ "${output:0:1}" = "+" ] && output=${output#*: }
+	output=${output//\"/}
+
+	print "${output}"
+}
+
+function modem_get_model() {
+	local device=${1}
+	assert isset device
+
+	local output
+	output=$(modem_chat ${device} "AT+GMM")
+	assert_check_retval $?
+
+	[ "${output:0:1}" = "+" ] && output=${output#*: }
+	output=${output//\"/}
+
+	print "${output}"
+}
+
+function modem_get_software_version() {
+	local device=${1}
+	assert isset device
+
+	local output
+	output=$(modem_chat ${device} "AT+GMR")
+	assert_check_retval $?
+
+	[ "${output:0:1}" = "+" ] && output=${output#*: }
+	output=${output//\"/}
+
+	print "${output}"
+}
+
+function modem_get_sim_imsi() {
+	local device=${1}
+	assert isset device
+
+	# Make sure the SIM card is unlocked for this operation.
+	assert modem_sim_unlocked ${device}
+
+	modem_chat ${device} "AT+CIMI"
+}
+
+function modem_get_device_imei() {
+	local device=${1}
+	assert isset device
+
+	local output
+	output=$(modem_chat --timeout=1 ${device} "AT+CGSN") || assert_check_retval $?
+	local ret=$?
+
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		print "${output}"
+	fi
+
+	return ${ret}
+}
+
+function modem_is_mobile() {
+	local device=${1}
+	assert isset device
+
+	# Check if the device can return it's IMEI.
+	# If not, it's probably a serial 56k modem or something
+	# in that category.
+
+	modem_get_device_imei ${device} &>/dev/null
+}
+
+# Exit codes of the network registration function.
+EXIT_REG_REGISTERED_TO_HOME_NETWORK=0
+EXIT_REG_NOT_REGISTERED_NOT_SEARCHING=1
+EXIT_REG_NOT_REGISTERED_SEARCHING=2
+EXIT_REG_REGISTRATION_DENIED=3
+EXIT_REG_REGISTERED_ROAMING=4
+EXIT_REG_UNKNOWN=5
+
+function modem_get_network_registration() {
+	local device=${1}
+	assert isset device
+
+	# Make sure the SIM card is unlocked for this operation.
+	assert modem_sim_unlocked ${device}
+
+	local output
+	output=$(modem_chat ${device} "AT+CREG?")
+	assert_check_retval $?
+
+	# Cut out unneeded parts of the message.
+	output=${output#*: }
+
+	case "${output}" in
+		[0-2],[0-5])
+			local status=${output%,*}
+
+			# The status variable must be zero.
+			[ ${status} -ne 0 ] && break
+
+			local stat=${output#*,}
+			case "${stat}" in
+				0)
+					return ${EXIT_REG_NOT_REGISTERED_NOT_SEARCHING}
+					;;
+				1)
+					return ${EXIT_REG_REGISTERED_TO_HOME_NETWORK}
+					;;
+				2)
+					return ${EXIT_REG_NOT_REGISTERED_SEARCHING}
+					;;
+				3)
+					return ${EXIT_REG_REGISTRATION_DENIED}
+					;;
+				5)
+					return ${EXIT_REG_REGISTERED_ROAMING}
+					;;
+				*)
+					return ${EXIT_REG_UNKNOWN}
+					;;
+			esac
+			;;
+	esac
+
+	# Apparently the output of the CREG? command was not in
+	# the right format. The modem will be tried to be set to the
+	# right mode.
+
+	modem_set_network_registration ${device} 0
+	modem_get_network_registration ${device}
+}
+
+function modem_set_network_registration() {
+	local device=${1}
+	assert isset device
+
+	# Make sure the SIM card is unlocked for this operation.
+	assert modem_sim_unlocked ${device}
+
+	local mode=${2}
+	assert isset mode
+
+	modem_chat ${device} "AT+CREG=${mode}"
+}
+
+function modem_scan_networks() {
+	local device=${1}
+	assert isset device
+
+	# Make sure the SIM card is unlocked for this operation.
+	assert modem_sim_unlocked ${device}
+
+	local output
+	output=$(modem_chat --timeout=60 ${device} "AT+COPS=?")
+	assert_check_retval $?
+
+	output=${output#*: }
+
+	# XXX the output is not very nice to parse.
+}
+
+function __modem_get_network_operator() {
+	local device=${1}
+	assert isset device
+
+	# Make sure the SIM card is unlocked for this operation.
+	assert modem_sim_unlocked ${device}
+
+	local argument=${2}
+	assert isset argument
+
+	local output
+	output=$(modem_chat ${device} "AT+COPS?")
+	assert_check_retval $?
+
+	output=${output#*: }
+
+	local mode format operator act
+	read mode format operator act <<< "${output//,/ }"
+
+	# Remove all " from the operator string.
+	operator=${operator//\"/}
+
+	print "${!argument}"
+	return ${EXIT_OK}
+}
+
+function modem_get_network_operator() {
+	local device=${1}
+	assert isset device
+
+	__modem_get_network_operator ${device} operator
+}
+
+# Exit codes of the network operator mode function.
+EXIT_OPMODE_GSM=0
+EXIT_OPMODE_COMPACTGSM=1
+EXIT_OPMODE_GSM_WITH_EGPRS=2
+EXIT_OPMODE_UMTS=3
+EXIT_OPMODE_UMTS_WITH_HSDPA=4
+EXIT_OPMODE_UMTS_WITH_HSUPA=5
+EXIT_OPMODE_UMTS_WITH_HSDPA_AND_HSUPA=6
+EXIT_OPMODE_UNKNOWN=7
+
+function modem_get_network_mode() {
+	local device=${1}
+	assert isset device
+
+	local output
+	output=$(__modem_get_network_operator ${device} act)
+	assert_check_retval $?
+
+	case "${output}" in
+		0)
+			print "GSM"
+			return ${EXIT_OPMODE_GSM}
+			;;
+		1)
+			print "Compact GSM"
+			return ${EXIT_OPMODE_COMPACTGSM}
+			;;
+		2)
+			print "UMTS"
+			return ${EXIT_OPMODE_UMTS}
+			;;
+		3)
+			print "UMTS with HSDPA"
+			return ${EXIT_OPMODE_UMTS_WITH_HSDPA}
+			;;
+		4)
+			print "UMTS with HSUPA"
+			return ${EXIT_OPMODE_UMTS_WITH_HSUPA}
+			;;
+		5)
+			print "UMTS with HSDPA and HSUPA"
+			return ${EXIT_OPMODE_UMTS_WITH_HSDPA_AND_HSUPA}
+			;;
+		*)
+			print "Unknown"
+			return ${EXIT_OPMODE_UNKNOWN}
+			;;
+	esac
+}
+
+function __modem_get_signal_quality() {
+	local device=${1}
+	assert isset device
+
+	# Make sure the SIM card is unlocked for this operation.
+	assert modem_sim_unlocked ${device}
+
+	local argument=${2}
+	assert isset argument
+
+	local output
+	output=$(modem_chat ${device} "AT+CSQ")
+	assert_check_retval $?
+
+	output=${output#*: }
+
+	case "${output}" in
+		*,*)
+			local rssi=${output%,*}
+			local ber=${output#*,}
+
+			print "${!argument}"
+			return ${EXIT_OK}
+			;;
+		*)
+			log ERROR "Unknown format for AT+CSQ: ${device}: ${output}"
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
+function modem_get_signal_quality() {
+	local device=${1}
+	assert isset device
+
+	local rssi
+	rssi=$(__modem_get_signal_quality ${device} rssi)
+	assert_check_retval $?
+
+	isset rssi || return ${EXIT_ERROR}
+
+	# 99 indicates an unknown signal strength.
+	[ ${rssi} -eq 99 ] && return ${EXIT_UNKNOWN}
+
+	local dbm=$(( ${rssi} * 2 ))
+	dbm=$(( ${dbm} - 113 ))
+
+	print "%d" "${dbm}"
+	return ${EXIT_OK}
+}
+
+function modem_get_bit_error_rate() {
+	local device=${1}
+	assert isset device
+
+	local ber
+	ber=$(__modem_get_signal_quality ${device} ber)
+	assert_check_retval $?
+
+	isset ber || return ${EXIT_ERROR}
+
+	# 99 indicates that the bit error rate could not be detected or
+	# is unknown for some other reason.
+	[ ${ber} -eq 99 ] && return ${EXIT_UNKNOWN}
+
+	print "%d" "${ber}"
+	return ${EXIT_OK}
+}

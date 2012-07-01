@@ -50,12 +50,13 @@ function routing_default_update() {
 			if [ "$(routing_db_get ${zone} ${proto} active)" = "1" ]; then
 				gateway=$(routing_db_get ${zone} ${proto} remote-ip-address)
 
-				assert device_exists ${zone}
+				# Go on if the device is not there anymore.
+				device_exists ${zone} || continue
 
 				# If we have got a Point-to-Point device, we will directly send all
 				# packets into the pipe.
 				if device_is_ptp ${zone}; then
-					routes="${routes} dev ${zone}"
+					routes="${routes} nexthop dev ${zone}"
 
 				# On other devices, we will use the gateway if we got one.
 				elif isset gateway; then

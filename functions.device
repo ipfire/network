@@ -65,7 +65,12 @@ function device_exists() {
 	# If device name was not found, exit.
 	[ -n "${device}" ] || return ${EXIT_ERROR}
 
-	[ -d "${SYS_CLASS_NET}/${device}" ]
+	# Check for a normal network device.
+	[ -d "${SYS_CLASS_NET}/${device}" ] && return ${EXIT_OK}
+
+	# If the check above, did not find a result,
+	# we check for serial devices.
+	serial_exists ${device}
 }
 
 function device_has_flag() {
@@ -171,6 +176,10 @@ function device_is_wireless() {
 	[ -d "${SYS_CLASS_NET}/${device}/phy80211" ]
 }
 
+function device_is_serial() {
+	serial_exists $@
+}
+
 # Check if the device is a physical network interface
 function device_is_ethernet() {
 	local device=${1}
@@ -220,6 +229,9 @@ function device_get_type() {
 
 	elif device_is_ethernet ${device}; then
 		echo "ethernet"
+
+	elif device_is_serial ${device}; then
+		echo "serial"
 
 	else
 		echo "unknown"

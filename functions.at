@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2012  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,49 +19,20 @@
 #                                                                             #
 ###############################################################################
 
-LOG_FACILITY=$(basename ${0})
+# This file defines a bunch of default AT commands.
 
-umask 022
+# Initialize the modem.
+AT_INITIALIZE="+++ATZ"
 
-PPP_VARIABLES="IFNAME IPLOCAL IPREMOTE DNS1 DNS2 MACREMOTE LLLOCAL LLREMOTE"
+# Pulse dial.
+AT_PULSE_DIAL="ATDP"
 
-# Give the variables we get passed by pppd an own namespace
-for i in ${PPP_VARIABLES}; do
-	export PPP_${i}=${!i}
-	unset ${i}
-done
+# Tone dial.
+AT_TONE_DIAL="ATDT"
 
-. /usr/lib/network/functions
+# Speaker settings.
+AT_SPEAKER_OFF="ATM0"
+AT_SPEAKER_ON="ATM1"
 
-log DEBUG "Called."
-for i in ${PPP_VARIABLES}; do
-	i="PPP_${i}"
-	log DEBUG "  ${i} = ${!i}"
-done
-
-# Zone equals IFNAME
-ZONE=${PPP_IFNAME}
-
-# If the given device is a known zone, we will call the required
-# hook methods. If we don't know about any zone with name ${ZONE},
-# we do nothing.
-
-if isset ZONE && zone_exists ${ZONE}; then
-	HOOK=$(zone_get_hook ${ZONE})
-
-	assert isset HOOK
-	assert hook_zone_exists ${HOOK}
-
-	PROGNAME=$(basename ${0})
-	assert isset PROGNAME
-
-	log DEBUG "${PROGNAME} was called with the following parameters:"
-	log DEBUG "  $@"
-
-	hook_zone_exec ${HOOK} ppp-${PROGNAME} ${ZONE}
-	ret=$?
-
-	exit ${ret}
-fi
-
-exit ${EXIT_OK}
+# Hangup.
+AT_HANGUP="ATH"

@@ -45,6 +45,9 @@ function pppd_start() {
 		5)
 			error "pppd terminated"
 			;;
+		16)
+			error "pppd: Link terminated by modem"
+			;;
 		19)
 			error "pppd: Authentication failed"
 			;;
@@ -214,20 +217,31 @@ function pppd_write_config() {
 	assert isset file
 
 	local auth
+	local baudrate
+	local connect_cmd
 	local default_asyncmap="true"
 	local interface
 	local lcp_echo_failure=3
 	local lcp_echo_interval=20
 	local linkname
 	local mtu mru
+	local password
 	local plugin plugin_options
-	local user
+	local serial="false"
+	local username
 	local value
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--auth=*)
 				auth=$(cli_get_val ${1})
+				;;
+			--baudrate=*)
+				baudrate=$(cli_get_val ${1})
+				assert isoneof baudrate ${SERIAL_BAUDRATES}
+				;;
+			--connect-command=*)
+				connect_cmd=$(cli_get_val ${1})
 				;;
 			# Enable or disable the use of the default asyncmap.
 			--default-asyncmap=*)
@@ -268,14 +282,24 @@ function pppd_write_config() {
 			--mru=*)
 				mru=$(cli_get_val ${1})
 				;;
+			--password=*)
+				password=$(cli_get_val ${1})
+				;;
 			--plugin=*)
 				plugin=$(cli_get_val ${1})
 				;;
 			--plugin-options=*)
 				plugin_options=$(cli_get_val ${1})
 				;;
-			--user=*)
-				user=$(cli_get_val ${1})
+			# Sets if the modem is a serial device.
+			--serial=*)
+				serial=$(cli_get_val ${1})
+				;;
+			--serial-device=*)
+				serial_device=$(cli_get_val ${1})
+				;;
+			--username=*)
+				username=$(cli_get_val ${1})
 				;;
 			*)
 				log WARNING "Unhandled argument: ${1}"
@@ -297,6 +321,14 @@ function pppd_write_config() {
 		fi
 	fi
 
+	if enabled serial; then
+		assert isset serial_device
+		assert [ -c "${serial_device}" ]
+	fi
+
+	# Set the user credentials.
+	ppp_secret "${username}" "${password}"
+
 	# Write the configuration header.
 	mkdir -p $(dirname ${file}) 2>/dev/null
 	config_header "PPP daemon configuration file" > ${file}
@@ -304,8 +336,12 @@ function pppd_write_config() {
 	# At first, set the name of the link.
 	print "linkname ${linkname}\n" >> ${file}
 
-	# Configure the interface name.
-	print "# Interface name\nifname ${interface}\n" >> ${file}
+	# Configure the interface/zone name.
+	(
+		print "# Interface name"
+		print "ifname ${interface}"
+		print
+	) >> ${file}
 
 	# Plugin settings
 	if isset plugin; then
@@ -317,10 +353,10 @@ function pppd_write_config() {
 	fi
 
 	# User authentication
-	if isset user; then
+	if isset username; then
 		(
 			print "# User authentication"
-			print "user ${user}"
+			print "user ${username}"
 
 			print "noauth"
 			if isset auth; then
@@ -340,6 +376,26 @@ function pppd_write_config() {
 			print "mru ${mru}"
 			print
 		) >> ${file}
+	fi
+
+	if enabled serial; then
+		(
+			print "# Serial modem settings"
+			print "${serial_device} ${baudrate}"
+			print "crtscts"
+			print "lock"
+			print "modem"
+			print
+		) >> ${file}
+
+		# Connect command
+		if isset connect_cmd; then
+			(
+				print "# Connect command"
+				print "connect \"${connect_cmd}\""
+				print
+			) >> ${file}
+		fi
 	fi
 
 	# Default asyncmap.

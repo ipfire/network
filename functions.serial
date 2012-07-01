@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2012  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,49 +19,51 @@
 #                                                                             #
 ###############################################################################
 
-LOG_FACILITY=$(basename ${0})
+# This is a list of baudrates that are supported.
+SERIAL_BAUDRATES="921600 460800 230400 115200 57600 38400 19200 9600"
 
-umask 022
+function serial_exists() {
+	local device=${1}
 
-PPP_VARIABLES="IFNAME IPLOCAL IPREMOTE DNS1 DNS2 MACREMOTE LLLOCAL LLREMOTE"
+	[ -c "${device}" ]
+}
 
-# Give the variables we get passed by pppd an own namespace
-for i in ${PPP_VARIABLES}; do
-	export PPP_${i}=${!i}
-	unset ${i}
-done
+function serial_is_locked() {
+	local device=${1}
+	assert isset device
 
-. /usr/lib/network/functions
+	device=$(basename ${device})
 
-log DEBUG "Called."
-for i in ${PPP_VARIABLES}; do
-	i="PPP_${i}"
-	log DEBUG "  ${i} = ${!i}"
-done
+	local dir
+	for dir in /var/lock /var/lock/ppp; do
+		[ -e "${dir}/LCK..${device}" ] \
+			&& return ${EXIT_TRUE}
+	done
 
-# Zone equals IFNAME
-ZONE=${PPP_IFNAME}
+	return ${EXIT_FALSE}
+}
 
-# If the given device is a known zone, we will call the required
-# hook methods. If we don't know about any zone with name ${ZONE},
-# we do nothing.
+function serial_is_unlocked() {
+	serial_is_locked ${device} \
+		&& return ${EXIT_FALSE} || return ${EXIT_TRUE}
+}
 
-if isset ZONE && zone_exists ${ZONE}; then
-	HOOK=$(zone_get_hook ${ZONE})
+function serial_is_modem() {
+	local device=${1}
+	assert isset device
 
-	assert isset HOOK
-	assert hook_zone_exists ${HOOK}
+	modem_chat --timeout=2 "${device}" "AT" &>/dev/null
+	local ret=$?
 
-	PROGNAME=$(basename ${0})
-	assert isset PROGNAME
-
-	log DEBUG "${PROGNAME} was called with the following parameters:"
-	log DEBUG "  $@"
-
-	hook_zone_exec ${HOOK} ppp-${PROGNAME} ${ZONE}
-	ret=$?
-
-	exit ${ret}
-fi
-
-exit ${EXIT_OK}
+	case "${ret}" in
+		${EXIT_OK})
+			return ${EXIT_TRUE}
+			;;
+		${EXIT_ERROR})
+			return ${EXIT_FALSE}
+			;;
+		*)
+			return ${EXIT_UNKNOWN}
+			;;
+	esac
+}

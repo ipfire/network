@@ -21,86 +21,106 @@
 
 . /lib/network/header-zone
 
-HOOK_SETTINGS="HOOK AUTH DEVICE BAUDRATE LINKNAME USER SECRET PEERDNS DEFAULTROUTE MTU"
+# Modems support all authentication methods, that pppd does support.
+MODEM_ALLOWED_AUTH_METHODS="${PPP_ALLOWED_AUTH_METHODS}"
 
+HOOK_SETTINGS="HOOK"
+
+# Access Point Name.
+APN=
+HOOK_SETTINGS="${HOOK_SETTINGS} APN"
+
+# Sets the authentication algortihm that must be used.
 AUTH=
+HOOK_SETTINGS="${HOOK_SETTINGS} AUTH"
+
+# Baudrate.
 BAUDRATE=921600
-DEFAULTROUTE=1
+HOOK_SETTINGS="${HOOK_SETTINGS} BAUDRATE"
+
+# The device name of the serial device.
+# XXX how can we make sure that this does not change all the time?
 DEVICE=
-LINKNAME="$(uuid)"
+HOOK_SETTINGS="${HOOK_SETTINGS} DEVICE"
+
+# A monitor device.
+# Send AT commands to this device, when the primary device is
+# connected.
+MONITOR_DEVICE=
+HOOK_SETTINGS="${HOOK_SETTINGS} MONITOR_DEVICE"
+
+# Maximum transmission unit.
 MTU=1492
-PEERDNS=1
-SECRET=
-USER=
+HOOK_SETTINGS="${HOOK_SETTINGS} MTU"
 
-MODEM_ALLOWED_AUTHS="chap pap"
+# User credentials.
+USERNAME=
+PASSWORD=
+HOOK_SETTINGS="${HOOK_SETTINGS} USERNAME PASSWORD"
 
-function pppd_pid() {
-	local zone=${1}
-	shift
+# PIN code.
+PIN=
+HOOK_SETTINGS="${HOOK_SETTINGS} PIN"
 
-	cat /var/run/${zone}.pid 2>/dev/null
-}
+# Phone number.
+PHONE_NUMBER=
+HOOK_SETTINGS="${HOOK_SETTINGS} PHONE_NUMBER"
 
 function _check() {
-	assert isset USER
-	assert isset SECRET
-	assert isset LINKNAME
-	assert isset DEFAULTROUTE
-	assert isset PEERDNS
 	assert isset DEVICE
+	assert isset PHONE_NUMBER
 
-	assert isbool DEFAULTROUTE
-	assert isbool PEERDNS
-	assert isinteger BAUDRATE
+	# Make sure the PIN code is an integer, when set.
+	if isset PIN; then
+		assert isinteger PIN
+		assert [ ${#PIN} -ge 4 ]
+		assert [ ${#PIN} -le 8 ]
+	fi
 
-	isset AUTH && assert isoneof AUTH ${MODEM_ALLOWED_AUTHS}
+	assert isoneof BAUDRATE ${SERIAL_BAUDRATES}
+
+	isset AUTH && assert isoneof AUTH ${MODEM_ALLOWED_AUTH_METHODS}
 }
 
 function _parse_cmdline() {
 	local value
 
 	while [ $# -gt 0 ]; do
-		case "$1" in
-			--user=*)
-				USER=${1#--user=}
-				;;
-			--secret=*)
-				SECRET=${1#--secret=}
-				;;
-			--linkname=*)
-				LINKNAME=${1#--name=}
-				;;
-			--mtu=*)
-				MTU=${1#--mtu=}
-				;;
-			--defaultroute=*)
-				value=${1#--defaultroute=}
-				if enabled value; then
-					DEFAULTROUTE=1
-				else
-					DEFAULTROUTE=0
-				fi
-				;;
-			--dns=*)
-				value=${1#--dns=}
-				if enabled value; then
-					PEERDNS=1
-				else
-					PEERDNS=0
-				fi
+		case "${1}" in
+			--apn=*)
+				APN=$(cli_get_val ${1})
 				;;
 			--auth=*)
-				AUTH=${1#--auth=}
-				;;
-			--device=*)
-				DEVICE=${1#--device=}
+				AUTH=$(cli_get_val ${1})
 				;;
 			--baudrate=*)
-				BAUDRATE=${1#--baudrate=}
+				BAUDRATE=$(cli_get_val ${1})
+				assert isoneif "${BAUDRATE}" ${SERIAL_BAUDRATES}
+				;;
+			--device=*)
+				DEVICE=$(cli_get_val ${1})
+				;;
+			--monitor-device=*)
+				MONITOR_DEVICE=$(cli_get_val ${1})
+				;;
+			--mtu=*)
+				MTU=$(cli_get_val ${1})
+				assert isinteger ${MTU}
+				;;
+			--password=*)
+				PASSWORD=$(cli_get_val ${1})
+				;;
+			--phone-number=*)
+				PHONE_NUMBER=$(cli_get_val ${1})
+				;;
+			--pin=*)
+				PIN=$(cli_get_val ${1})
+				;;
+			--username=*)
+				USERNAME=$(cli_get_val ${1})
 				;;
 			*)
-				echo "Unknown option: $1" >&2
+				echo "Unknown argument: ${1}" >&2
 				exit ${EXIT_ERROR}
 				;;
 		esac
@@ -110,78 +130,56 @@ function _parse_cmdline() {
 
 function _up() {
 	local zone=${1}
-	shift
-
 	assert isset zone
 
+	# Load configuration file.
 	zone_config_read ${zone}
 
-	assert [ -e "/dev/${DEVICE}" ]
+	# If we have got a PIN, we try to unlock the device first.
+	if isset PIN; then
+		modem_sim_status ${DEVICE} &>/dev/null
+		local sim_status_code=$?
 
-	# Creating necessary files
-	# XXX must be PPP_RUN
-	[ -d "${RED_RUN}/${LINKNAME}" ] || mkdir -p ${RED_RUN}/${LINKNAME}
+		case "${sim_status_code}" in
+			${EXIT_SIM_READY})
+				# Everything's fine. The SIM card is
+				# already unlocked.
+				;;
+			${EXIT_SIM_PIN})
+				# Try to unlock the device.
+				if ! modem_sim_unlock ${DEVICE} ${PIN}; then
+					# Reset the PIN setting.
+					PIN=""
+					config_write $(zone_dir ${zone})/settings ${HOOK_SETTINGS}
 
-	ppp_secret "${USER}" "${SECRET}"
+					error "Could not unlock the SIM card. Removing PIN from settings."
+					exit ${EXIT_ERROR}
+				fi
+				;;
+			${EXIT_SIM_PUK})
+				error "SIM card is PUK locked. Please unlock manually."
+				exit ${EXIT_ERROR}
+				;;
+		esac
 
-	cat <<EOF >${RED_RUN}/${LINKNAME}/options
-# Naming options
-ifname ${zone}
-name ${LINKNAME}
-linkname ${LINKNAME}
+	# For mobile devices, check if a PIN is required although none is set.
+	elif modem_is_mobile ${DEVICE} && modem_sim_locked ${DEVICE}; then
+		error "The SIM card is locked. Please configure the PIN code."
+		exit ${EXIT_ERROR}
+	fi
 
-# Device configuration
-/dev/${DEVICE} ${BAUDRATE}
-connect "/usr/sbin/chat -v -f /etc/ppp/dialer"
-lock
-modem
-crtscts
+	# Start the PPP daemon.
+	pppd_start ${zone}
 
-# User configuration
-user ${USER}
-
-$(enabled PEERDNS && echo "usepeerdns")
-$(enabled DEFAULTROUTE && echo "defaultroute")
-
-noauth
-$(isset AUTH && echo "require-${AUTH}")
-
-noipdefault
-
-# Maximum transmission/receive unit
-mtu ${MTU}
-mru ${MTU}
-
-# Disable the compression
-noccp noaccomp nodeflate nopcomp novj novjccomp nobsdcomp nomppe
-
-updetach debug
-EOF
-
-	pppd_exec file ${RED_RUN}/${LINKNAME}/options
-
-	local ret=$?
-
-	# Get exit code from ppp daemon and handle it:
-	case "${ret}" in
-		0)
-			log DEBUG "pppd detached successfully"
-			exit ${EXIT_OK}
-			;;
-	esac
-
-	error_log "pppd exited with unknown exit code '${ret}'"
-
-	exit ${EXIT_ERROR}
+	exit ${EXIT_OK}
 }
 
 function _down() {
 	local zone=${1}
-	shift
+	assert isset zone
 
-	# Kill pppd
-	# XXX very ugly
-	kill $(pppd_pid ${zone}) &>/dev/null
+	# Stop the PPP daemon.
+	pppd_start ${zone}
 
 	exit ${EXIT_OK}
 }
@@ -194,19 +192,19 @@ function _status() {
 
 	zone_config_read ${zone}
 
-	cli_headline "  Configuration:"
-	printf "${DEVICE_PRINT_LINE1}" "User:" "${USER}"
-	printf "${DEVICE_PRINT_LINE1}" "Secret:" "<hidden>"
-	echo
-	printf "${DEVICE_PRINT_LINE1}" "MTU:" "${MTU}"
-	printf "${DEVICE_PRINT_LINE1}" "Use default route?" "$(enabled DEFAULTROUTE && echo "enabled" || echo "disabled")"
-	printf "${DEVICE_PRINT_LINE1}" "Use peer DNS?" "$(enabled PEERDNS && echo "enabled" || echo "disabled")"
-	echo
-	cli_headline "  Ports:"
-	zone_ports_status ${zone}
-	if [ -z "$(zone_get_ports ${zone})" ]; then
-		echo -e "    ${COLOUR_WARN}No ports attached. Won't be able to start.${COLOUR_NORMAL}"
+	cli_headline 2 "Configuration"
+	cli_print_fmt1 2 "Username" "${USERNAME}"
+	cli_print_fmt1 2 "Password" "<hidden>"
+	cli_space
+
+	cli_headline 2 "Device settings"
+	cli_print_fmt1 2 "Device" "${DEVICE}"
+	if isset MONITOR_DEVICE; then
+		cli_print_fmt1 2 "Monitor device" "${MONITOR_DEVICE}"
 	fi
+	cli_print_fmt1 2 "Baudrate" "${BAUDRATE}"
+	cli_print_fmt1 2 "MTU/MRU" "${MTU}"
+	cli_space
 
 	# Exit if zone is down
 	if ! zone_is_up ${zone}; then
@@ -214,16 +212,90 @@ function _status() {
 		exit ${EXIT_ERROR}
 	fi
 
+	cli_headline 2 "Carrier network"
+
+	# If the device and the monitor device are both locked,
+	# we cannot show any carrier information.
+	local device dev
+	for dev in ${DEVICE} ${MONITOR_DEVICE}; do
+		if ! serial_exists ${dev}; then
+			continue
+		fi
+		if serial_is_locked ${dev}; then
+			continue
+		fi
+
+		device=${dev}
+	done
+
+	if isset device; then
+		cli_print_fmt1 2 "Operator" \
+			"$(modem_get_network_operator ${device})"
+		cli_print_fmt1 2 "SIM IMSI" \
+			"$(modem_get_sim_imsi ${device})"
+		cli_print_fmt1 2 "Mode" \
+			"$(modem_get_network_mode ${device})"
+		cli_print_fmt1 2 "Signal strength" \
+			"$(modem_get_signal_quality ${device}) dBm"
+		local ber=$(modem_get_bit_error_rate ${device})
+		isset ber || ber="unknown"
+		cli_print_fmt1 2 "Bit error rate" "${ber}"
+	else
+		cli_print 2 "Device is locked."
+	fi
+	cli_space
+
 	# XXX display time since connection started
 
-	cli_headline "    Point-to-Point-over-Ethernet protocol:"
-	echo "        IP-Address            : $(routing_db_get ${zone} local-ip-address)"
-	echo "        Gateway               : $(routing_db_get ${zone} remote-ip-address)"
-	echo "        DNS-Server            : $(routing_db_get ${zone} dns)"
-	echo
-	echo "        MAC-Remote            : $(routing_db_get ${zone} remote-address)"
-	echo
-	echo "        MTU                   : $(device_get_mtu ${zone})"
-	echo # Empty line
+	cli_headline 2 "Point-to-Point-over-Ethernet protocol"
+	local proto
+	for proto in ${IP_SUPPORTED_PROTOCOLS}; do
+		routing_db_exists ${zone} ${proto} || continue
+
+		local headline
+		case "${proto}" in
+			ipv6)
+				headline="Internet Protocol Version 6"
+				;;
+			ipv4)
+				headline="Internet Protocol Version 4"
+				;;
+			*)
+				headline="Unkown protocol"
+				;;
+		esac
+		cli_headline 3 "${headline}"
+
+		cli_print_fmt1 3 "IP address"  "$(routing_db_get ${zone} ${proto} local-ip-address)"
+		cli_print_fmt1 3 "Gateway"     "$(routing_db_get ${zone} ${proto} remote-ip-address)"
+		cli_print_fmt1 3 "DNS servers" "$(routing_db_get ${zone} ${proto} dns)"
+		cli_space
+	done
+
+	exit ${EXIT_OK}
+}
+
+function _ppp_write_config() {
+	local zone=${1}
+	assert isset zone
+
+	local file=${2}
+	assert isset file
+
+	# Read in the configuration files.
+	zone_config_read ${zone}
+
+	pppd_write_config ${file} \
+		--interface="${zone}" \
+		--username="${USERNAME}" \
+		--password="${PASSWORD}" \
+		--mtu="${MTU}" \
+		--auth="${AUTH}" \
+		\
+		--serial="true" \
+		--serial-device="${DEVICE}" \
+		--baudrate="${BAUDRATE}" \
+		--connect-command="/usr/lib/network/dialer ${zone}"
+
 	exit ${EXIT_OK}
 }
