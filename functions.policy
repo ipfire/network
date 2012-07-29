@@ -44,13 +44,13 @@ function policy_add_zone() {
 	iptables_chain_create ${chain}_IPS
 	iptables -A ${chain} -i ${zone} -j ${chain}_IPS
 
-	# Port forwarding chain.
-	iptables_chain_create ${chain}_PORTFW
-	iptables -A ${chain} -i ${zone} -j ${chain}_PORTFW
+	# Rules for incoming packets.
+	iptables_chain_create ${chain}_RULES_INC
+	iptables -A ${chain} -i ${zone} -j ${chain}_RULES_INC
 
-	# Outgoing firewall
-	iptables_chain_create ${chain}_OUTFW
-	iptables -A ${chain} -o ${zone} -j ${chain}_OUTFW
+	# Rules for outgoing packets.
+	iptables_chain_create ${chain}_RULES_OUT
+	iptables -A ${chain} -o ${zone} -j ${chain}_RULES_OUT
 
 	# Policy rules
 	iptables_chain_create ${chain}_POLICY
@@ -68,21 +68,21 @@ function policy_add_zone() {
 	iptables -t mangle -A ${chain} -o ${zone} -j ${chain}_QOS_OUT
 
 	# Create NAT chain.
-	iptables_chain_create -t nat ${chain}
-	iptables -t nat -A PREROUTING  -i ${zone} -j ${chain}
-	iptables -t nat -A POSTROUTING -o ${zone} -j ${chain}
+	iptables_chain_create -4 -t nat ${chain}
+	iptables -4 -t nat -A PREROUTING  -i ${zone} -j ${chain}
+	iptables -4 -t nat -A POSTROUTING -o ${zone} -j ${chain}
 
 	# Network Address Translation
-	iptables_chain_create -t nat ${chain}_NAT
-	iptables -t nat -A ${chain} -i ${zone} -j ${chain}_NAT
+	iptables_chain_create -4 -t nat ${chain}_NAT
+	iptables -4 -t nat -A ${chain} -i ${zone} -j ${chain}_NAT
 
-	# Portforwarding
-	iptables_chain_create -t nat ${chain}_PORTFW
-	iptables -t nat -A ${chain} -i ${zone} -j ${chain}_PORTFW
+	# Port forwarding
+	iptables_chain_create -4 -t nat ${chain}_PORTFW
+	iptables -4 -t nat -A ${chain} -i ${zone} -j ${chain}_PORTFW
 
 	# UPNP
-	iptables_chain_create -t nat ${chain}_UPNP
-	iptables -t nat -A ${chain} -j ${chain}_UPNP
+	iptables_chain_create -4 -t nat ${chain}_UPNP
+	iptables -4 -t nat -A ${chain} -j ${chain}_UPNP
 
 	# After the chains that are always available have been
 	# created, we will add a custom policy to every single
@@ -96,6 +96,9 @@ function policy_add_zone() {
 	else
 		: # XXX TODO
 	fi
+
+	# Import all configured rules and those things.
+	policy_import_all_rules ${zone} ${chain}
 }
 
 function policy_add_localhost() {
@@ -115,4 +118,23 @@ function policy_allow_all() {
 
 	# Just accept everything.
 	iptables -A ${chain}_POLICY -j ACCEPT
+}
+
+function policy_drop_all() {
+	# Nothing to do here, because that is the
+	# default policy of the INPUT/OUTPUT/FORWARD chain.
+	:
+}
+
+function policy_import_all_rules() {
+	# This will populate all chains with the rules
+	# for the given zone.
+
+	local zone=${1}
+	assert isset zone
+
+	local chain=${2}
+	assert isset chain
+
+	# XXX TODO
 }

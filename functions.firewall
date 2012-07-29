@@ -22,6 +22,23 @@
 # High-level function which will create a ruleset for the current firewall
 # configuration and load it into the kernel.
 function firewall_start() {
+	# Test mode.
+	local test="false"
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--test)
+				test="true"
+				;;
+		esac
+		shift
+	done
+
+	if enabled test; then
+		log INFO "Test mode enabled."
+		log INFO "The firewall ruleset will not be loaded."
+	fi
+
 	firewall_lock_acquire
 
 	# Initialize an empty iptables ruleset.
@@ -39,8 +56,8 @@ function firewall_start() {
 		policy_add_zone ${zone}
 	done
 
-	# Commit the new ruleset.
-	iptables_commit
+	# Load the new ruleset.
+	iptables_load ${test}
 
 	firewall_lock_release
 }
@@ -52,8 +69,37 @@ function firewall_stop() {
 	# with default policy ACCEPT.
 	iptables_init ACCEPT
 
-	# Commit it.
-	iptables_commit
+	# Load it.
+	iptables_load
+
+	firewall_lock_release
+}
+
+function firewall_show() {
+	# Shows the ruleset that is currently loaded.
+	iptables_status
+
+	return ${EXIT_OK}
+}
+
+function firewall_panic() {
+	local admin_hosts="$@"
+
+	firewall_lock_acquire
+
+	# Drop all communications.
+	iptables_init DROP
+
+	# If an admin host is provided, some administrative
+	# things will be allowed from there.
+	local admin_host
+	for admin_host in ${admin_hosts}; do
+		iptables -A INPUT -s ${admin_host} -j ACCEPT
+		iptables -A OUTPUT -d ${admin_host} -j ACCEPT
+	done
+
+	# Load it.
+	iptables_load
 
 	firewall_lock_release
 }
@@ -117,17 +163,17 @@ function firewall_connection_tracking() {
 	iptables -A FORWARD -j CONNTRACK
 }
 
-function firewall_import_portfw() {
+function firewall_import_rules() {
 	local zone=${1}
 	shift
 
 	local protocol="ipv6"
-	local chain="filter"
+	local table="filter"
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--chain=*)
-				chain=$(cli_get_val ${1})
+			--table=*)
+				table=$(cli_get_val ${1})
 				;;
 			--protocol=*)
 				protocol=$(cli_get_val ${1})
@@ -136,12 +182,7 @@ function firewall_import_portfw() {
 	done
 
 	assert isoneof protocol ipv4 ipv6
-
-	local allowed_chains="filter"
-	if [ "${protocol}" = "ipv4" ]; then
-		allowed_chains="${allowed_chains} nat"
-	fi
-	assert isoneof chain ${allowed_chains}
+	assert isoneof table $(iptables_table ${protocol})
 
 	# XXX TODO
 
@@ -153,7 +194,5 @@ function firewall_import_portfw() {
 			nat)
 				;;
 		esac
-	done < ${FIREWALL_CONFIG_PORTFW}
+	done < ${FIREWALL_CONFIG_RULES}
 }
-
-

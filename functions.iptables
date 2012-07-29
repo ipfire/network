@@ -22,18 +22,30 @@
 function iptables() {
 	local arg
 	local args
-	local table
+	local table="filter"
+	local src dst
+
+	# Default is both protocols.
+	local proto="6 4"
 
 	# Check if the directory where we put our rules in is set and
 	# exists.
 	assert isset IPTABLES_TMPDIR
 	assert [ -d "${IPTABLES_TMPDIR}" ]
 
-	table=filter
-
 	# Parsing arguments
 	while [ $# -gt 0 ]; do
 		case "${1}" in
+			# Select IPv4 protocol.
+			-4)
+				proto="4"
+				shift
+				;;
+			# Select IPv6 protocol.
+			-6)
+				proto="6"
+				shift
+				;;
 			-t)
 				table=${2}
 				shift 2
@@ -44,94 +56,316 @@ function iptables() {
 				;;
 			*)
 				args="${args} ${1}"
+
+				# Save some values for further processing.
+				case "${1}" in
+					-s)
+						src="${2}"
+						;;
+					-d)
+						dst="${2}"
+						;;
+				esac
 				shift
 				;;
 		esac
 	done
 
-	echo "${args:1:${#args}}" >> ${IPTABLES_TMPDIR}/${table}
+	# Check that the nat table is not used for IPv6.
+	if isoneof 6 ${proto}; then
+		assert [ "${table}" != "nat" ]
+	fi
+
+	# Detect the version of the IP protocol.
+	local src_proto
+	isset src && src_proto=$(ip_detect_protocol ${src})
+
+	local dst_proto
+	isset dst && dst_proto=$(ip_detect_protocol ${dst})
+
+	# Check that the source and destinations are not
+	# using different versions of the IP protocol.
+	if isset src_proto && isset dst_proto; then
+		assert [ "${src_proto}" = "${dst_proto}" ]
+	fi
+
+	local rulesfile
+	local p
+	for p in ${proto}; do
+		case "${p}" in
+			6)
+				listmatch ipv4 ${src_proto} ${dst_proto} \
+					&& continue
+				;;
+			4)
+				listmatch ipv6 ${src_proto} ${dst_proto} \
+					&& continue
+				;;
+		esac
+
+		rulesfile=$(iptables_rulesfile ipv${p} ${table})
+		print "${args:1:${#args}}" >> ${rulesfile}
+	done
+}
+
+# Calls the binary iptables command.
+function _iptables() {
+	local iptables_cmd=$(which iptables)
+	assert isset iptables_cmd
+
+	${iptables_cmd} $@
+}
+
+function iptables_status() {
+	_iptables -L -n -v
+}
+
+# Returns which tables exist for the given protocol.
+function iptables_tables() {
+	local proto=${1}
+	local file
+
+	case "${proto}" in
+		ipv6)
+			file="/proc/net/ip6_tables_names"
+			;;
+		ipv4)
+			file="/proc/net/ip_tables_names"
+			;;
+		*)
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	assert [ -r "${file}" ]
+
+	print "$(<${file})"
+	return ${EXIT_OK}
+}
+
+function iptables_rulesfile() {
+	local proto=${1}
+	proto=${proto/ipv/}
+
+	local chain=${2}
+	[ -z "${chain}" ] && chain="ruleset"
+
+	print "${IPTABLES_TMPDIR}/${chain}${proto}"
 }
 
 function iptables_init() {
 	local policy=${1}
-	assert isoneof policy ACCEPT DROP
+	assert isset policy
 
+	# Create filter table and initialize chains.
 	iptables "* filter"
-	iptables_chain_create -t filter INPUT       ${policy}
-	iptables_chain_create -t filter OUTPUT      ${policy}
-	iptables_chain_create -t filter FORWARD     ${policy}
+	iptables_chain_create -t filter INPUT   --policy=${policy}
+	iptables_chain_create -t filter OUTPUT  --policy=${policy}
+	iptables_chain_create -t filter FORWARD --policy=${policy}
 
+	# Create mangle table initialize chains.
 	iptables -t mangle "* mangle"
-	iptables_chain_create -t mangle PREROUTING  ACCEPT
-	iptables_chain_create -t mangle INPUT       ACCEPT
-	iptables_chain_create -t mangle OUTPUT      ACCEPT
-	iptables_chain_create -t mangle FORWARD     ACCEPT
-	iptables_chain_create -t mangle POSTROUTING ACCEPT
+	iptables_chain_create -t mangle PREROUTING  --policy=ACCEPT
+	iptables_chain_create -t mangle INPUT       --policy=ACCEPT
+	iptables_chain_create -t mangle OUTPUT      --policy=ACCEPT
+	iptables_chain_create -t mangle FORWARD     --policy=ACCEPT
+	iptables_chain_create -t mangle POSTROUTING --policy=ACCEPT
 
-	iptables -t nat "* nat"
-	iptables_chain_create -t nat    PREROUTING  ACCEPT
-	iptables_chain_create -t nat    OUTPUT      ACCEPT
-	iptables_chain_create -t nat    POSTROUTING ACCEPT
+	# Add NAT table for IPv4.
+	iptables -4 -t nat "* nat"
+	iptables_chain_create -4 -t nat PREROUTING  --policy=ACCEPT
+	iptables_chain_create -4 -t nat OUTPUT      --policy=ACCEPT
+	iptables_chain_create -4 -t nat POSTROUTING --policy=ACCEPT
 }
 
-function iptables_commit() {
-	local chain
+# Load the created ruleset into the kernel.
+function iptables_load() {
+	# If first argument is present and true, we
+	# run in test mode.
+	local test="${1}"
 
-	# Check if the directory where we put our rules in is set and
-	# exists.
-	assert isset IPTABLES_TMPDIR
-	assert [ -d "${IPTABLES_TMPDIR}" ]
+	local rulesfile
 
-	log INFO "Committing firewall configuration..."
-	iptables -t filter "COMMIT"
-	iptables -t mangle "COMMIT"
-	iptables -t nat    "COMMIT"
+	# First, commit all tables.
+	_iptables_commit
 
-	local iptables_ruleset="${IPTABLES_TMPDIR}/commit"
-	: > ${iptables_ruleset}
+	# Concat the table rulesets into one big file.
+	local proto
+	for proto in 6 4; do
+		rulesfile=$(iptables_rulesfile ipv${proto})
 
-	# Concat the rules for every chain into one file.
-	local table
-	for table in filter mangle nat; do
-		cat ${IPTABLES_TMPDIR}/${table} \
-			>> ${iptables_ruleset} 2>/dev/null
+		local table
+		local tablefile
+		for table in $(iptables_tables ipv${proto}); do
+			tablefile=$(iptables_rulesfile ipv${proto} ${table})
+			print "$(<${tablefile})"
+		done > ${rulesfile}
 	done
 
-	log DEBUG "Dumping iptables ruleset"
-	local counter=1
-	local line
-	while read line; do
-		line=$(printf "%4d | %s\n" "${counter}" "${line}")
-		log DEBUG "${line}"
+	local error="false"
+	local ret
 
-		counter=$(( $counter + 1 ))
-	done < ${iptables_ruleset}
-	
-	iptables-restore < ${iptables_ruleset}
+	# First check if everything is correctly formatted.
+	for proto in 6 4; do
+		rulesfile=$(iptables_rulesfile ipv${proto})
+
+		_iptables_load ipv${proto} ${rulesfile} true
+		if [ $? -ne ${EXIT_OK} ]; then
+			log CRITICAL "Ruleset load check failed for IPv${proto}"
+			error="true"
+		fi
+	done
+
+	# Check if there has been an error in the load check.
+	if enabled error; then
+		iptables_dump CRITICAL
+
+		log CRITICAL "New firewall rules could not be loaded."
+		return ${EXIT_ERROR}
+	fi
+
+	# Dump the data, we are going to load.
+	iptables_dump
+
+	# If we are running in test mode, we are done here.
+	enabled test && return ${EXIT_OK}
+
+	# If we got until here, everything is fine to load the ruleset.
+	for proto in 6 4; do
+		rulesfile=$(iptables_rulesfile ipv${proto})
+
+		_iptables_load ipv${proto} ${rulesfile}
+	done
+	return ${EXIT_OK}
+}
+
+# Commit all tables.
+function _iptables_commit() {
+	iptables -t filter "COMMIT"
+	iptables -t mangle "COMMIT"
+
+	# Commit NAT chain for IPv4.
+	iptables -4 -t nat "COMMIT"
+}
+
+function _iptables_load() {
+	local proto=${1}
+	local file=${2}
+	local testmode=${3}
+
+	local command
+	case "${proto}" in
+		ipv6)
+			command="ip6tables-restore"
+			;;
+		ipv4)
+			command="iptables-restore"
+			;;
+	esac
+	assert isset command
+
+	if enabled testmode; then
+		command="${command} --test"
+	fi
+
+	local time_started=$(date -u "+%s")
+
+	cmd ${command} < ${file}
+	local ret=$?
+
+	case "${ret}" in
+		${EXIT_OK})
+			local time_finished=$(date -u "+%s")
+			time_finished=$(( ${time_finished} - ${time_started} ))
+			log INFO \
+				"Successfully loaded new firewall ruleset for IPv${proto/ipv/} in ${time_finished}s!"
+			;;
+		*)
+			if ! enabled testmode; then
+				log CRITICAL "Error loading firewall ruleset for IPv${proto/ipv/}!"
+			fi
+			;;
+	esac
+
+	return ${ret}
+}
+
+function iptables_dump() {
+	local log_facility=${1-DEBUG}
+
+	# Here is nothing to do, if we are not running in
+	# debug mode.
+	enabled DEBUG || return ${EXIT_OK}
+
+	local rulesfile
+	local counter
+	local line
+
+	local proto
+	for proto in 6 4; do
+		rulesfile=$(iptables_rulesfile ipv${proto})
+		[ -e "${rulesfile}" ] || continue
+
+		log ${log_facility} "Firewall ruleset for IPv${proto}:"
+
+		counter=1
+		while read line; do
+			line=$(print "%4d | %s" "${counter}" "${line}")
+			log ${log_facility} "${line}"
+
+			counter=$(( $counter + 1 ))
+		done < ${rulesfile}
+	done
 }
 
 function iptables_chain_create() {
+	local chain
+	local table="filter"
+	local policy="-"
+	local proto
 	local args
-	if [ "${1}" = "-t" ]; then
-		args="${1} ${2}"
-		shift 2
-	fi
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			-6|-4)
+				proto=${1}
+				;;
+			-t)
+				table=${2}
+				shift
+				;;
+			--policy=*)
+				policy=$(cli_get_val ${1})
+				;;
+			*)
+				chain=${1}
+				;;
+		esac
+		shift
+	done
 
-	iptables ${args} ":$1 ${2--} [0:0]"
+	assert isset chain
+	assert isset table
+	assert isoneof policy ACCEPT DROP "-"
+
+	iptables ${proto} -t ${table} ":${chain} ${policy} [0:0]"
 }
 
 function iptables_LOG() {
 	local prefix=${1}
+	local ret
 
-	if [ "${FIREWALL_LOG_FACILITY}" = "syslog" ]; then
-		echo -n "LOG"
-		[ -n "$prefix" ] && echo -n " --log-prefix \"$prefix\""
-	else
-		echo -n "NFLOG"
-		[ -n "$prefix" ] && echo -n " --nflog-prefix \"$prefix\""
-		echo -n " --nflog-threshold 30"
-	fi
-	echo
+	case "${FIREWALL_LOG_METHOD}" in
+		nflog)
+			ret="NFLOG --nflog-threshold ${FIREWALL_NFLOG_THRESHOLD}"
+			isset prefix && ret="${ret} --nflog-prefix \"$prefix\""
+			;;
+		syslog)
+			ret="LOG"
+			isset prefix && ret="${ret} --log-prefix \"$prefix\""
+			;;
+	esac
+
+	print "${ret}"
 }
 
 function iptables_protocol() {

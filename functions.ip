@@ -65,6 +65,14 @@ function ip_protocol_is_supported() {
 	listmatch ${proto} ${IP_SUPPORTED_PROTOCOLS}
 }
 
+function ip_is_valid() {
+	local address=${1}
+	assert isset address
+
+	local proto=$(ip_detect_protocol ${address})
+	isset proto && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
 function ip_address_add() {
 	local device=${1}
 	local address=${2}

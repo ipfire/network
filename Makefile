@@ -7,6 +7,7 @@ prefix=/usr
 bindir=$(prefix)/bin
 sbindir=$(prefix)/sbin
 libdir=$(prefix)/lib
+datadir=$(prefix)/share
 sysconfdir=/etc
 localstatedir=/var
 systemdunitdir=$(prefix)/lib/systemd/system
@@ -27,6 +28,7 @@ install:
 	-mkdir -pv $(DESTDIR)$(sbindir)
 	-mkdir -pv $(DESTDIR)$(systemdunitdir)
 	-mkdir -pv $(DESTDIR)$(tmpfilesdir)
+	-mkdir -pv $(DESTDIR)$(datadir)/firewall
 
 	install -m 755 -v firewall $(DESTDIR)$(sbindir)
 	install -m 755 -v network $(DESTDIR)$(sbindir)
@@ -59,6 +61,9 @@ install:
 
 	# Install pppoe-server wrapper.
 	install -m 755 ppp/pppoe-server $(DESTDIR)$(libdir)/network/
+
+	# Install the firewall macros.
+	cp -av macros $(DESTDIR)$(datadir)/firewall/
 
 	# Create the version file.
 	: > $(VERSION_FILE)
