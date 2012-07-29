@@ -267,6 +267,10 @@ function seq() {
 	fi
 }
 
+function which() {
+	type -P $@
+}
+
 function beautify_time() {
 	local value=${1}
 
