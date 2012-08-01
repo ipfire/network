@@ -153,6 +153,9 @@ function firewall_tcp_state_flags() {
 }
 
 function firewall_tcp_clamp_mss() {
+	# Do nothing if this has been disabled.
+	enabled FIREWALL_CLAMP_PATH_MTU || return ${EXIT_OK}
+
 	log DEBUG "Adding rules to clamp MSS to path MTU..."
 	iptables -t mangle -A FORWARD \
 		-p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
