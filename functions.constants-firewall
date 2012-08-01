@@ -1,0 +1,47 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# This variable is used to point to a directory
+# in which the iptables ruleset will be generated.
+IPTABLES_TMPDIR=
+
+FIREWALL_CONFIG_DIR="/etc/firewall"
+FIREWALL_ZONES_DIR="${FIREWALL_CONFIG_DIR}/zones"
+FIREWALL_CONFIG_FILE="${FIREWALL_CONFIG_DIR}/config"
+FIREWALL_CONFIG_RULES="${FIREWALL_CONFIG_DIR}/rules"
+
+FIREWALL_MACROS_DIRS="${FIREWALL_CONFIG_DIR}/macros"
+FIREWALL_MACROS_DIRS="${FIREWALL_MACROS_DIRS} /usr/share/firewall/macros"
+
+# List of parameters which are saved in the configuration file.
+FIREWALL_CONFIG_PARAMS=""
+
+# Define the default logging method (nflog or syslog).
+FIREWALL_LOG_METHOD="nflog"
+FIREWALL_CONFIG_PARAMS="${FIREWALL_CONFIG_PARAMS} FIREWALL_LOG_METHOD"
+
+# Set the default threshold for the nflog method.
+FIREWALL_NFLOG_THRESHOLD=30
+FIREWALL_CONFIG_PARAMS="${FIREWALL_CONFIG_PARAMS} FIREWALL_NFLOG_THREASHOLD"
+
+# Enable clamping MSS for braindead ISPs which filter ICMP packets.
+FIREWALL_CLAMP_PATH_MTU="false"
+FIREWALL_CONFIG_PARAMS="${FIREWALL_CONFIG_PARAMS} FIREWALL_CLAMP_PATH_MTU"
