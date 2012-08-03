@@ -144,6 +144,9 @@ function virtual_remove() {
 function virtual_get_parent() {
 	local device=${1}
 
+	# Nothing to do, if 8021q module is not loaded.
+	[ -r "/proc/net/vlan/config" ] || return ${EXIT_OK}
+
 	local dev spacer1 id spacer2 parent
 	while read dev spacer1 id spacer2 parent; do
 		if [ "${device}" = "${dev}" ]; then
@@ -157,6 +160,9 @@ function virtual_get_parent() {
 
 function virtual_get_id() {
 	local device=${1}
+
+	# Nothing to do, if 8021q module is not loaded.
+	[ -r "/proc/net/vlan/config" ] || return ${EXIT_OK}
 
 	local dev spacer1 id spacer2 parent
 	while read dev spacer1 id spacer2 parent; do
@@ -176,7 +182,8 @@ function virtual_get_by_parent_and_vid() {
 	assert isset parent
 	assert isset vid
 
-	assert [ -e "/proc/net/vlan/config" ]
+	# Nothing to do, if 8021q module is not loaded.
+	[ -r "/proc/net/vlan/config" ] || return ${EXIT_OK}
 
 	local dev spacer1 id spacer2 par
 	while read dev spacer1 id spacer2 par; do

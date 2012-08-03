@@ -140,6 +140,10 @@ function device_has_virtuals() {
 function device_get_virtuals() {
 	local device=${1}
 
+	# If no 8021q module has been loaded into the kernel,
+	# we cannot do anything.
+	[ -r "/proc/net/vlan/config" ] || return ${EXIT_OK}
+
 	local dev spacer1 id spacer2 parent
 	while read dev spacer1 id spacer2 parent; do
 		[ "${parent}" = "${device}" ] && echo "${dev}"
