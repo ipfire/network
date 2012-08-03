@@ -123,12 +123,14 @@ function cli_device_status() {
 	cli_space
 
 	# Print the link speed for ethernet devices.
-	case "${type}" in
-		ethernet)
-			cli_print_fmt1 1 "Link" \
-				"$(device_get_speed ${device}) MBit/s $(device_get_duplex ${device}) duplex"
-			;;
-	esac
+	if device_is_up ${device} &>/dev/null; then
+		case "${type}" in
+			ethernet)
+				cli_print_fmt1 1 "Link" \
+					"$(device_get_speed ${device}) MBit/s $(device_get_duplex ${device}) duplex"
+				;;
+		esac
+	fi
 
 	cli_print_fmt1 1 "MTU"		"$(device_get_mtu ${device})"
 	cli_space
