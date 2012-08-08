@@ -1,0 +1,79 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+#
+# Functions for nice handling of lists.
+#
+
+function list_append() {
+	local list=${1}
+	shift
+
+	assert isset list
+
+	eval "${list}=\"${!list} $@\""
+}
+
+function list_remove() {
+	local list=${1}
+	shift
+
+	assert isset list
+
+	local _list k
+	for k in ${!list}; do
+		listmatch ${k} $@ && continue
+
+		_list="${_list} ${k}"
+	done
+
+	eval "${list}=\"${_list}\""
+}
+
+function list_sort() {
+	local i
+	for i in $@; do
+		print "${i}"
+	done | sort | tr '\n' ' '
+	print
+}
+
+function list_match() {
+	local match=${1}
+	shift
+
+	local i
+	for i in $@; do
+		[ "${match}" = "${i}" ] && return ${EXIT_OK}
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function list_length() {
+	local length=0
+
+	local i
+	for i in $@; do
+		length=$(( ${length} + 1 ))
+	done
+
+	print "${length}"
+}
