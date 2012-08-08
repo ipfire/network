@@ -31,6 +31,13 @@ function cli_help_requested() {
 	return ${EXIT_ERROR}
 }
 
+function cli_run_help() {
+	local command="$@"
+
+	print "Run \"${command} help\" to get more information."
+	return ${EXIT_OK}
+}
+
 function cli_device_headline() {
 	local device=${1}
 	assert isset device

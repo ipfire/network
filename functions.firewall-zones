@@ -1,0 +1,147 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+#
+
+FIREWALL_ZONE_SETTINGS="MASQUERADE POLICY"
+
+function firewall_zone_create() {
+	local zone=${1}
+	assert isset zone
+
+	# Do nothing if the zone configuration already exists.
+	firewall_zone_exists ${zone} && return ${EXIT_OK}
+
+	# Write defaults to the file.
+	(
+		firewall_zone_read ${zone}
+		firewall_zone_write ${zone}
+	)
+
+	return ${EXIT_OK}
+}
+
+function firewall_zone_config() {
+	local zone=${1}
+	assert isset zone
+
+	print "$(zone_dir ${zone})/fwsettings"
+	return ${EXIT_OK}
+}
+
+function firewall_zone_exists() {
+	local file=$(firewall_zone_config $@)
+
+	[ -r "${file}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
+function firewall_zone_defaults() {
+	local zone=${1}
+	assert isset zone
+
+	# Default policy.
+	POLICY="DROP"
+
+	# Don't masquerade by default (IPv4 only).
+	MASQUERADE="false"
+}
+
+function firewall_zone_read() {
+	local zone=${1}
+	assert isset zone
+
+	local file=$(firewall_zone_config ${zone})
+	assert isset file
+
+	# Load default settings.
+	firewall_zone_defaults ${zone}
+
+	config_read ${file} ${FIREWALL_ZONE_SETTINGS}
+	return ${EXIT_OK}
+}
+
+function firewall_zone_write() {
+	local zone=${1}
+	assert isset zone
+
+	local file=$(firewall_zone_config ${zone})
+	assert isset file
+
+	config_write ${file} ${FIREWALL_ZONE_SETTINGS}
+	return ${EXIT_OK}
+}
+
+function firewall_zone_print() {
+	local zone=${1}
+	assert isset zone
+
+	(
+		firewall_zone_read ${zone}
+		config_print ${FIREWALL_ZONE_SETTINGS}
+	)
+
+	return ${EXIT_OK}
+}
+
+function firewall_zone_edit() {
+	local zone=${1}
+	shift
+
+	assert firewall_zone_exists ${zone}
+
+	(
+		# Read current settings.
+		firewall_zone_read ${zone}
+
+		while [ $# -gt 0 ]; do
+			case "${1}" in
+				--masquerade=*)
+					MASQUERADE=$(cli_get_val ${1})
+					;;
+				--policy=*)
+					POLICY=$(cli_get_val ${1})
+					;;
+				*)
+					warning "Unknown option: ${1}"
+					;;
+			esac
+			shift
+		done
+
+		# Write updated settings.
+		firewall_zone_write ${zone}
+	)
+}
+
+function firewall_zone_reset() {
+	local zone=${1}
+	assert isset zone
+
+	local file=$(firewall_zone_config ${zone})
+	assert isset file
+
+	# Remove the configuration file.
+	rm -f ${file}
+
+	# Recreate it.
+	firewall_zone_create ${zone}
+
+	return ${EXIT_OK}
+}

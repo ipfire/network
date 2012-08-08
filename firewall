@@ -70,6 +70,91 @@ function cli_config() {
 	fi
 }
 
+function cli_zone() {
+	if cli_help_requested $@; then
+		cli_show_man firewall-zone
+		exit ${EXIT_OK}
+	fi
+
+	if zone_name_is_valid ${1}; then
+		local zone=${1}
+		local action=${2}
+		shift 2
+
+		# Check if the given zone exists.
+		if ! zone_exists ${zone}; then
+			error "Zone '${zone}' does not exist."
+			cli_run_help firewall zone
+
+			exit ${EXIT_ERROR}
+		fi
+
+		# Process the given action.
+		case "${action}" in
+			edit)
+				cli_zone_edit ${zone} $@
+				;;
+			status|"")
+				cli_zone_status ${zone} $@
+				;;
+
+			# Print the raw configuration settings.
+			show)
+				firewall_zone_print ${zone} $@
+
+				exit ${EXIT_ERROR}
+				;;
+			*)
+				error "Unrecognized action: ${action}"
+				cli_run_help firewall zone
+
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	else
+		local action=${1}
+		shift
+
+		case "${action}" in
+			reset)
+				firewall_zone_reset $@
+				exit $?
+				;;
+
+			*)
+				error "Unrecognized action: ${action}"
+				cli_run_help firewall zone
+
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	fi
+}
+
+# Show firewall zone conifguration.
+function cli_zone_status() {
+	local zone=${1}
+	assert isset zone
+
+	(
+		firewall_zone_read ${zone}
+
+		cli_headline 1 "Zone ${zone} (policy ${POLICY})"
+		cli_print_fmt1 1 "Masquerade" "$(cli_print_bool ${MASQUERADE})"
+
+		cli_space
+	)
+
+	exit ${EXIT_OK}
+}
+
+# Edit firewall zone configuration.
+function cli_zone_edit() {
+	firewall_zone_edit $@
+
+	exit ${EXIT_OK}
+}
+
 # Parse the command line
 while [ $# -gt 0 ]; do
 	case "${1}" in
@@ -105,6 +190,10 @@ case "${action}" in
 
 	config)
 		cli_config $@
+		;;
+
+	zone)
+		cli_zone $@
 		;;
 
 	""|help|--help|-h)

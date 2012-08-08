@@ -45,7 +45,9 @@ function zone_match() {
 
 function zone_name_is_valid() {
 	local zone=${1}
-	assert isset zone
+
+	# Don't accept empty strings.
+	[ -z "${zone}" ] && return ${EXIT_FALSE}
 
 	[[ ${zone} =~ $(zone_match) ]]
 }
