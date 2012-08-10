@@ -1,0 +1,232 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+#
+# Functions for static routing.
+#
+
+function route_add() {
+	local ${NETWORK_CONFIG_ROUTES_PARAMS}
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--gateway=*)
+				gateway=$(cli_get_val ${1})
+				;;
+			--unreachable)
+				unreachable="true"
+				;;
+			*)
+				network=${1}
+				;;
+		esac
+		shift
+	done
+
+	assert isset network
+
+	if ! ip_is_valid ${network}; then
+		error "The given network is invalid: ${network}"
+		return ${EXIT_ERROR}
+	fi
+
+	if route_find_duplicate ${network}; then
+		error "A route to ${network} does already exist."
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if gateway and unreachable are both enabled.
+	if isset gateway && enabled unreachable; then
+		error "You cannot use both, --gateway=${gateway} and --unreachable at the same time."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ip_is_valid ${gateway}; then
+		error "--gateway= is not a valid IP address."
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if network and gateway IP protocol version match.
+	if isset gateway; then
+		local network_proto=$(ip_detect_protocol ${network})
+		local gateway_proto=$(ip_detect_protocol ${gateway})
+
+		if [ "${network_proto}" != "${gateway_proto}" ]; then
+			error "The IP protocol version of the given network and gateway did not match."
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	local line
+	list_append line "network=\"${network}\""
+
+	# Add gateway to configuration entry when it is set.
+	if isset gateway; then
+		list_append line "gateway=\"${gateway}\""
+	fi
+
+	# Add unreachable to configuration entry when it is set.
+	if enabled unreachable; then
+		list_append line "unreachable=\"true\""
+	fi
+
+	# Write line to file.
+	print "${line}" >> ${NETWORK_CONFIG_ROUTES}
+
+	log INFO "New route to network '${network}' has been added."
+	return ${EXIT_OK}
+}
+
+function route_remove() {
+	local _network=${1}
+	assert isset _network
+
+	local found="false"
+
+	local ${NETWORK_CONFIG_ROUTES_PARAMS}
+	local line
+	while read line; do
+		route_parse_line ${line}
+		[ $? -eq ${EXIT_OK} ] || continue
+
+		# Skip the rule, we want to delete.
+		if [ "${network}" = "${_network}" ]; then
+			found="true"
+			continue
+		fi
+
+		print "${line}"
+	done < ${NETWORK_CONFIG_ROUTES} > ${NETWORK_CONFIG_ROUTES}.tmp
+	mv ${NETWORK_CONFIG_ROUTES}{.tmp,}
+
+	if enabled found; then
+		log INFO "Route to network '${_network}' has been removed."
+	else
+		error "No route to network '${_network}' was found."
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+function route_list() {
+	local protocol
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--protocol=*)
+				protocol=$(cli_get_val ${1})
+				;;
+			*)
+				warning "Unrecognized argument: ${1}"
+				;;
+		esac
+		shift
+	done
+
+	if [ ! -r "${NETWORK_CONFIG_ROUTES}" ]; then
+		print "No static routes defined."
+		return ${EXIT_OK}
+	fi
+
+	local format="%-40s %-20s"
+	print "${format}" "NETWORK/HOST" "GATEWAY"
+
+	local ${NETWORK_CONFIG_ROUTES_PARAMS}
+	local line
+	while read line; do
+		route_parse_line ${line}
+		[ $? -eq ${EXIT_OK} ] || continue
+
+		if enabled unreachable; then
+			gateway="<unreachable>"
+		fi
+
+		# Filter all entries with a wrong protocol.
+		if isset protocol; then
+			local proto=$(ip_detect_protocol ${network})
+			[ "${protocol}" = "${proto}" ] || continue
+		fi
+
+		print "${format}" "${network}" "${gateway}"
+	done < ${NETWORK_CONFIG_ROUTES}
+}
+
+function route_find_duplicate() {
+	local _network=${1}
+
+	[ -r "${NETWORK_CONFIG_ROUTES}" ] || return ${EXIT_FALSE}
+
+	local ${NETWORK_CONFIG_ROUTES_PARAMS}
+	local line
+	while read line; do
+		route_parse_line ${line}
+
+		# Check if the network is already in use.
+		[ "${network}" = "${_network}" ] && return ${EXIT_TRUE}
+	done < ${NETWORK_CONFIG_ROUTES}
+
+	return ${EXIT_FALSE}
+}
+
+function route_parse_line() {
+	local arg
+
+	# Reset all possible settings.
+	for arg in ${NETWORK_CONFIG_ROUTES_PARAMS}; do
+		printf -v ${arg} "%s" ""
+	done
+
+	while read arg; do
+		case "${arg}" in
+			network=*)
+				network=$(cli_get_val ${arg})
+				;;
+			gateway=*)
+				gateway=$(cli_get_val ${arg})
+				;;
+			unreachable=*)
+				unreachable=$(cli_get_val ${arg})
+				;;
+		esac
+	done <<< "$(args $@)"
+
+	### Check if all values are correctly set.
+
+	# network must be set.
+	isset network || return ${EXIT_ERROR}
+
+	# network must be a valid.
+	ip_is_network ${network} || return ${EXIT_ERROR}
+
+	# Check gateway settings.
+	if isset gateway; then
+		# When gateway is set, unreachable cannot be set.
+		isset unreachable && return ${EXIT_ERROR}
+
+		# Must be a valid IP address.
+		ip_is_valid ${gateway} || return ${EXIT_ERROR}
+	else
+		# Either gateway or unreachable must be set.
+		isset unreachable || return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}

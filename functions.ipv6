@@ -150,6 +150,16 @@ function ipv6_is_valid() {
 	esac
 }
 
+function ipv6_prefix_is_valid() {
+	local prefix=${1}
+	assert isset prefix
+
+	[ ${prefix} -le   0 ] && return ${EXIT_FALSE}
+	[ ${prefix} -gt 128 ] && return ${EXIT_FALSE}
+
+	return ${EXIT_TRUE}
+}
+
 function ipv6_implode() {
 	local address=${1}
 

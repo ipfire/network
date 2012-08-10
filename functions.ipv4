@@ -34,6 +34,16 @@ function ipv4_is_valid() {
 	esac
 }
 
+function ipv4_prefix_is_valid() {
+	local prefix=${1}
+	assert isset prefix
+
+	[ ${prefix} -le  0 ] && return ${EXIT_FALSE}
+	[ ${prefix} -gt 32 ] && return ${EXIT_FALSE}
+
+	return ${EXIT_TRUE}
+}
+
 function ipv4_detect_duplicate() {
 	local device=${1}
 	local address=${2}

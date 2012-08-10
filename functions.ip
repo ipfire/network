@@ -73,6 +73,48 @@ function ip_is_valid() {
 	isset proto && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
+function ip_is_network() {
+	local network=${1}
+	assert isset network
+
+	# Get the address part.
+	local address=$(ip_split_prefix ${network})
+	isset address || return ${EXIT_FALSE}
+
+	# Get the prefix.
+	local prefix=$(ip_get_prefix ${network})
+	isset prefix || return ${EXIT_FALSE}
+
+	# Detect the protocol.
+	local proto=$(ip_detect_protocol ${address})
+	assert isset proto
+
+	# Check if the prefix is correct.
+	ip_prefix_is_valid ${proto} ${prefix} || return ${EXIT_FALSE}
+
+	return ${EXIT_TRUE}
+}
+
+function ip_prefix_is_valid() {
+	local proto=${1}
+	assert isset proto
+
+	local prefix=${2}
+
+	case "${proto}" in
+		ipv4)
+			ipv4_prefix_is_valid ${prefix}
+			return $?
+			;;
+		ipv6)
+			ipv6_prefix_is_valid ${prefix}
+			return $?
+			;;
+	esac
+
+	assert ip_protocol_is_supported ${proto}
+}
+
 function ip_address_add() {
 	local device=${1}
 	local address=${2}
