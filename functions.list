@@ -28,7 +28,11 @@ function list_append() {
 
 	assert isset list
 
-	eval "${list}=\"${!list} $@\""
+	if [ -n "${!list}" ]; then
+		printf -v ${list} "${!list} $@"
+	else
+		printf -v ${list} "$@"
+	fi
 }
 
 function list_remove() {
