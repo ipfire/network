@@ -1,0 +1,88 @@
+.TH network-route 8 "11 Aug 2012" "@VERSION@" "network man page"
+
+.SH NAME
+network-route \- Network Route Configuration Control Program
+
+.SH SYNOPSIS
+\fBnetwork [OPTIONS] route add <network> [--gateway=..., --unreachable, --prohibit, --blackhole]\fR
+.P
+\fBnetwork [OPTIONS] route remove <network>\fR
+.P
+\fBnetwork [OPTIONS] route list\fR
+
+.SH DESCRIPTION
+The route subcommands, help to configure static routes.
+.PP
+It is possible to create and remove static routes.
+
+.SH COMMANDS
+The \fBnetwork route\fR command offers various sub commands:
+
+\fBadd <network> [--gateway=..., --unreachable, --prohibit, --blackhole]\fR
+.RS 4
+A new route may be added by the \fBadd\fR command.
+It is always required to pass a valid network prefix (\fB<network>\fR), which
+can be either IPv6 or IPv4.
+.PP
+For unicast routes, the \fB--gateway=<gateway>\fR option must be passed, where
+\fB<gateway>\fR is a valid IP address of the same protocol type as the network
+prefix is.
+.PP
+Use \fB--unreachable\fR, \fB--prohibit\fR, \fB--blackhole\fR can be used to create
+of that type. See \fBROUTE TYPES\fR below for more information about these options.
+.RE
+.PP
+
+\fBremove <network>\fR
+.RS 4
+A route can be removed with this command.
+.PP
+\fB<network>\fR is the network prefix of a existing route.
+.RE
+.PP
+
+\fBlist [--ipv6|--ipv4]\fR
+.RS 4
+Shows a list of all configured routes.
+.PP
+Pass the protocol as shown above to filter.
+.RE
+.PP
+
+.SH ROUTE TYPES
+
+\fBunicast\fR
+.RS 4
+A unicast route is the most common route in routing tables. It is a route to a destination
+network address, which describes the path to the destination.
+Use the \fB--gateway=...\fR option to create such a route.
+.RE
+.PP
+
+\fBunreachable\fR
+.RS 4
+When a route is determined and the routing decision process returns a destination with
+an unreachable route type, an ICMP unreachable message is generated and returned to
+the source address.
+.RE
+.PP
+
+\fBprohibit\fR
+.RS 4
+This works like an \fBunreachable\fR route, but the returned ICMP message is an
+ICMP prohibited message.
+.RE
+.PP
+
+\fBblackhole\fR
+.RS 4
+Packets matching this kind of route are silently discarded. There will be no ICMP message
+sent to the source and no packet be forwarded.
+.RE
+.PP
+
+.SH SEE ALSO
+network(8), ip-route(8)
+
+.SH AUTHOR
+Michael Tremer (michael.tremer@ipfire.org)
