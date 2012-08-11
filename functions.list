@@ -81,3 +81,20 @@ function list_length() {
 
 	print "${length}"
 }
+
+# Count how often $1 occurs in the list.
+function list_count() {
+	local what=${1}
+	shift
+
+	local counter=0
+
+	local arg
+	for arg in $@; do
+		if [ "${arg}" = "${what}" ]; then
+			counter=$(( ${counter} + 1 ))
+		fi
+	done
+
+	print "${counter}"
+}

@@ -40,6 +40,12 @@ function route_add() {
 			--unreachable)
 				unreachable="true"
 				;;
+			--prohibit)
+				prohibit="true"
+				;;
+			--blackhole)
+				blackhole="true"
+				;;
 			*)
 				network=${1}
 				;;
@@ -60,13 +66,23 @@ function route_add() {
 	fi
 
 	# Check if gateway and unreachable are both enabled.
-	if isset gateway && enabled unreachable; then
-		error "You cannot use both, --gateway=${gateway} and --unreachable at the same time."
-		return ${EXIT_ERROR}
-	fi
-
-	# Check if network and gateway IP protocol version match.
 	if isset gateway; then
+		if enabled unreachable; then
+			error "You cannot use both, --gateway=${gateway} and --unreachable at the same time."
+			return ${EXIT_ERROR}
+		fi
+
+		if enabled prohibit; then
+			error "You cannot use both, --gateway=${gateway} and --prohibit at the same time."
+			return ${EXIT_ERROR}
+		fi
+
+		if enabled blackhole; then
+			error "You cannot use both, --gateway=${gateway} and --blackhole at the same time."
+			return ${EXIT_ERROR}
+		fi
+
+		# Check if network and gateway IP protocol version match.
 		if ! ip_is_valid ${gateway}; then
 			error "--gateway= is not a valid IP address."
 			return ${EXIT_ERROR}
@@ -77,6 +93,13 @@ function route_add() {
 
 		if [ "${network_proto}" != "${gateway_proto}" ]; then
 			error "The IP protocol version of the given network and gateway did not match."
+			return ${EXIT_ERROR}
+		fi
+
+	else
+		local counter=$(list_count true ${unreachable} ${prohibit} ${blackhole})
+		if [ ${counter} -gt 1 ]; then
+			error "You can only use one of --unreachable, --prohibit or --blackhole."
 			return ${EXIT_ERROR}
 		fi
 	fi
@@ -90,9 +113,13 @@ function route_add() {
 	fi
 
 	# Add unreachable to configuration entry when it is set.
-	if enabled unreachable; then
-		list_append line "unreachable=\"true\""
-	fi
+	local arg
+	for arg in unreachable prohibit blackhole; do
+		if enabled ${arg}; then
+			list_append line "${arg}=\"true\""
+			break
+		fi
+	done
 
 	# Write line to file.
 	print "${line}" >> ${NETWORK_CONFIG_ROUTES}
@@ -162,9 +189,13 @@ function route_list() {
 		route_parse_line ${line}
 		[ $? -eq ${EXIT_OK} ] || continue
 
-		if enabled unreachable; then
-			gateway="<unreachable>"
-		fi
+		local arg
+		for arg in unreachable prohibit blackhole; do
+			if enabled ${arg}; then
+				gateway="<${arg}>"
+				break
+			fi
+		done
 
 		# Filter all entries with a wrong protocol.
 		if isset protocol; then
@@ -213,6 +244,12 @@ function route_parse_line() {
 			unreachable=*)
 				unreachable=$(cli_get_val ${arg})
 				;;
+			prohibit=*)
+				prohibit=$(cli_get_val ${arg})
+				;;
+			blackhole=*)
+				blackhole=$(cli_get_val ${arg})
+				;;
 		esac
 	done <<< "$(args $@)"
 
@@ -232,8 +269,9 @@ function route_parse_line() {
 		# Must be a valid IP address.
 		ip_is_valid ${gateway} || return ${EXIT_ERROR}
 	else
-		# Either gateway or unreachable must be set.
-		isset unreachable || return ${EXIT_ERROR}
+		# Check if exactly one of unreachable, prohibit or blackhole is set.
+		local counter=$(list_count true ${unreachable} ${prohibit} ${blackhole})
+		[ ${counter} -eq 1 ] || return ${EXIT_ERROR}
 	fi
 
 	return ${EXIT_OK}
@@ -253,9 +291,13 @@ function route_apply() {
 		[ $? -eq ${EXIT_OK} ] || continue
 
 		type="unicast"
-		if enabled unreachable; then
-			type="unreachable"
-		fi
+		local arg
+		for arg in unreachable prohibit blackhole; do
+			if enabled ${arg}; then
+				type="${arg}"
+				break
+			fi
+		done
 
 		# Add the route.
 		route_entry_add ${network} --table="static" --proto="static" \
