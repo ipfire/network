@@ -281,6 +281,8 @@ function route_apply() {
 	local table="static"
 	local type
 
+	log INFO "Applying static routes..."
+
 	# Flush the routing table.
 	route_table_flush ${table}
 
