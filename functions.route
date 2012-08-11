@@ -22,6 +22,13 @@
 # Functions for static routing.
 #
 
+function route_init() {
+	# Apply configured static routes.
+	route_apply
+}
+
+init_register route_init
+
 function route_add() {
 	local ${NETWORK_CONFIG_ROUTES_PARAMS}
 
@@ -58,13 +65,13 @@ function route_add() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! ip_is_valid ${gateway}; then
-		error "--gateway= is not a valid IP address."
-		return ${EXIT_ERROR}
-	fi
-
 	# Check if network and gateway IP protocol version match.
 	if isset gateway; then
+		if ! ip_is_valid ${gateway}; then
+			error "--gateway= is not a valid IP address."
+			return ${EXIT_ERROR}
+		fi
+
 		local network_proto=$(ip_detect_protocol ${network})
 		local gateway_proto=$(ip_detect_protocol ${gateway})
 
@@ -178,6 +185,7 @@ function route_find_duplicate() {
 	local line
 	while read line; do
 		route_parse_line ${line}
+		[ $? -eq ${EXIT_OK} ] || continue
 
 		# Check if the network is already in use.
 		[ "${network}" = "${_network}" ] && return ${EXIT_TRUE}
@@ -229,4 +237,380 @@ function route_parse_line() {
 	fi
 
 	return ${EXIT_OK}
+}
+
+function route_apply() {
+	local table="static"
+	local type
+
+	# Flush the routing table.
+	route_table_flush ${table}
+
+	local ${NETWORK_CONFIG_ROUTES_PARAMS}
+	local line
+	while read line; do
+		route_parse_line ${line}
+		[ $? -eq ${EXIT_OK} ] || continue
+
+		type="unicast"
+		if enabled unreachable; then
+			type="unreachable"
+		fi
+
+		# Add the route.
+		route_entry_add ${network} --table="static" --proto="static" \
+			--type="${type}" --gateway="${gateway}"
+		local ret=$?
+
+		if [ ${ret} -ne ${EXIT_OK} ]; then
+			log WARNING "Could not set route '${network}'."
+		fi
+	done < ${NETWORK_CONFIG_ROUTES}
+
+	# Create a lookup rule for the static routing table.
+	route_rule_add --lookup="static" --priority=1000
+}
+
+function route_entry_add() {
+	local gateway
+	local network
+	local proto
+	local table
+	local type="unicast"
+
+	local command
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--gateway=*)
+				gateway=$(cli_get_val ${1})
+				;;
+			--table=*)
+				table=$(cli_get_val ${1})
+				;;
+			--type=*)
+				type=$(cli_get_val ${1})
+				;;
+			--proto=*)
+				proto=$(cli_get_val ${1})
+				;;
+			*)
+				if isset network; then
+					warning "Unrecognized argument: ${1}"
+				else
+					network=${1}
+				fi
+				;;
+		esac
+		shift
+	done
+
+	# Validate input.
+	assert isoneof type unicast broadcast unreachable prohibit blackhole
+	assert ip_is_network ${network}
+
+	# Detect the protocol of the given network.
+	local protocol=$(ip_detect_protocol ${network})
+	case "${protocol}" in
+		ipv6)
+			command="ip -6 route add"
+			;;
+		ipv4)
+			command="ip route add"
+			;;
+	esac
+	assert isset command
+
+	# Add type.
+	list_append command "${type}"
+
+	# Add network/prefix.
+	list_append command "${network}"
+
+	if [ "${type}" = "unicast" ]; then
+		assert isset gateway
+		assert ip_is_valid ${gateway}
+
+		list_append command "via ${gateway}"
+	fi
+
+	# Add table (if any).
+	if isset table; then
+		# Create routing table, if it does not exist, yet.
+		route_table_create ${table}
+
+		list_append command "table ${table}"
+	fi
+
+	# Add proto.
+	if isset proto; then
+		list_append command "proto ${proto}"
+	fi
+
+	cmd "${command}"
+}
+
+function route_table_create() {
+	local table=${1}
+	assert isset table
+
+	if route_table_exists ${table}; then
+		return ${EXIT_OK}
+	fi
+
+	# Get the next free id.
+	local id=$(_route_table_next_id)
+	assert isset id
+
+	# Write everything to file.
+	print "%d\t%s" "${id}" "${table}" >> /etc/iproute2/rt_tables
+
+	log DEBUG "Created routing table '${table}'."
+
+	return ${EXIT_OK}
+}
+
+function _route_table_next_id() {
+	# The Linux kernel is able to manage 255 routing tables (1-255).
+	# This function returns the next free id, starting from 255.
+	local next_id
+
+	for next_id in {255..1}; do
+		if ! route_table_exists --id="${next_id}"; then
+			print "${next_id}"
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_FALSE}
+}
+
+function route_table_flush() {
+	local protocol
+	local table
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--protocol=*)
+				protocol=$(cli_get_val ${1})
+				;;
+			*)
+				table="${1}"
+				;;
+		esac
+		shift
+	done
+
+	# If the table does not exists, there is nothing to
+	# flush.
+	route_table_exists ${table} || return ${EXIT_OK}
+
+	local command
+	local proto
+	for proto in ${IP_SUPPORTED_PROTOCOLS}; do
+		# Skip unwanted protocols.
+		if isset protocol; then
+			[ "${protocol}" = "${proto}" ] || continue
+		fi
+
+		command=""
+		case "${proto}" in
+			ipv6)
+				command="ip -6 route flush"
+				;;
+			ipv4)
+				command="ip route flush"
+				;;
+		esac
+		assert isset command
+
+		list_append command "table ${table}"
+
+		# Execute command.
+		cmd "${command}"
+	done
+
+	return ${EXIT_OK}
+}
+
+function route_table_exists() {
+	local _id _table
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--id=*)
+				_id=$(cli_get_val ${1})
+				;;
+			*)
+				_table=${1}
+				break
+				;;
+		esac
+		shift
+	done
+
+	local id table
+	while read -r id table; do
+		# Skip all comments.
+		[ "${id:0:1}" = "#" ] && continue
+
+		if [ "${_table}" = "${table}" ] || [ "${_id}" = "${id}" ]; then
+			# Found a match.
+			return ${EXIT_TRUE}
+		fi
+	done < /etc/iproute2/rt_tables
+
+	return ${EXIT_FALSE}
+}
+
+function route_rule_add() {
+	local priority
+	local protocols=${IP_SUPPORTED_PROTOCOLS}
+	local lookup
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--lookup=*)
+				lookup=$(cli_get_val ${1})
+				;;
+			--priority=*)
+				priority=$(cli_get_val ${1})
+				;;
+			--protocol=*)
+				protocols=$(cli_get_val ${1})
+
+				assert isoneof protocols ${IP_SUPPORTED_PROTOCOLS}
+				;;
+			*)
+				warning "Unhandled argument: ${1}"
+				;;
+		esac
+		shift
+	done
+
+	local command options
+
+	if isset lookup; then
+		route_table_create ${lookup}
+
+		list_append options "lookup ${lookup}"
+	fi
+
+	if isset priority; then
+		assert isinteger priority
+
+		list_append options "prio ${priority}"
+	fi
+
+	local proto
+	for proto in ${protocols}; do
+		command=
+		case "${proto}" in
+			ipv6)
+				command="ip -6 rule add  ${options}"
+				;;
+			ipv4)
+				command="ip rule add ${options}"
+				;;
+		esac
+		assert isset command
+
+		# Skip, if the rule does already exist.
+		route_rule_exists \
+			--protocol=${proto} \
+			--lookup=${lookup} \
+			--priority=${priority} \
+			&& continue
+
+		cmd "${command}"
+	done
+}
+
+function route_rule_exists() {
+	local from
+	local lookup
+	local proto
+	local prio
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--from=*)
+				from=$(cli_get_val ${1})
+				;;
+			--lookup=*)
+				lookup=$(cli_get_val ${1})
+				;;
+			--priority=*)
+				prio=$(cli_get_val ${1})
+				;;
+			--protocol=*)
+				proto=$(cli_get_val ${1})
+				;;
+			*)
+				warning "Unrecognized argument: ${1}"
+				;;
+		esac
+		shift
+	done
+
+	local command
+	case "${proto}" in
+		ipv6)
+			command="ip -6 rule show"
+			;;
+		ipv4)
+			command="ip rule show"
+			;;
+	esac
+	assert isset command
+
+	local _lookup _from _prio
+	local line
+	while read -r line; do
+		_route_rule_exists_parse ${line}
+
+		if isset from; then
+			[ "${from}" = "${_from}" ] || continue
+		fi
+
+		if isset prio; then
+			[ "${prio}" = "${_prio}" ] || continue
+		fi
+
+		if isset lookup; then
+			[ "${lookup}" = "${_lookup}" ] || continue
+		fi
+
+		return ${EXIT_TRUE}
+	done <<< "$(${command})"
+
+	return ${EXIT_FALSE}
+}
+
+function _route_rule_exists_parse() {
+	# Reset all variables.
+	_lookup=
+	_from=
+	_prio=
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			lookup)
+				_lookup=${2}
+				shift 2
+				;;
+			from)
+				_from=${2}
+				shift 2
+				;;
+			*:)
+				_prio=${1//:/}
+				shift
+				;;
+			*)
+				# Skip unknown arguments.
+				shift
+				;;
+		esac
+	done
 }

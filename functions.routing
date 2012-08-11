@@ -104,28 +104,14 @@ function routing_default_update() {
 	done
 }
 
+# XXX deprecated function
 function routing_table_exists() {
-	local zone=${1}
-
-	grep -q "${zone}$" < /etc/iproute2/rt_tables
+	route_table_exists $@
 }
 
+# XXX deprecated function
 function routing_table_create() {
-	local zone=${1}
-
-	if routing_table_exists ${zone}; then
-		return ${EXIT_OK}
-	fi
-
-	log INFO "Creating routing table for zone '${zone}'"
-
-	local id=$(( ${zone#${ZONE_NONLOCAL}} + 1 ))
-
-	echo "${id}	${zone}" >> /etc/iproute2/rt_tables
-}
-
-function routing_table_remove() {
-	: # XXX do we need this?
+	route_table_create $@
 }
 
 function routing_db_path() {

@@ -579,6 +579,7 @@ function cli_route() {
 		# List all routes.
 		list)
 			route_list $@
+			return ${EXIT_OK}
 			;;
 		*)
 			error "Unrecognized action: ${action}"
@@ -587,6 +588,9 @@ function cli_route() {
 			exit ${EXIT_ERROR}
 			;;
 	esac
+
+	# Applying all routes.
+	route_apply
 
 	exit ${EXIT_OK}
 }
