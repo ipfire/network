@@ -213,6 +213,8 @@ function pppd_write_config() {
 	local mtu mru
 	local password
 	local plugin plugin_options
+	local pty
+	local refuses
 	local serial="false"
 	local username
 	local value
@@ -281,6 +283,14 @@ function pppd_write_config() {
 			--plugin-options=*)
 				plugin_options=$(cli_get_val ${1})
 				;;
+			--pty=*)
+				pty=$(cli_get_val ${1})
+				;;
+			# Refused authentication methods
+			--refuse=*)
+				list_append refuses "$(cli_get_val "${1}")"
+				error_log "REFUSES $refuses $1"
+				;;
 			# Sets if the modem is a serial device.
 			--serial=*)
 				serial=$(cli_get_val ${1})
@@ -342,6 +352,15 @@ function pppd_write_config() {
 		) >> ${file}
 	fi
 
+	# pty settings
+	if isset pty; then
+		(
+			print "# pty settings"
+			print "pty \"${pty}\""
+			print
+		 ) >> ${file}
+	fi
+
 	# User authentication
 	if isset username; then
 		(
@@ -352,6 +371,11 @@ function pppd_write_config() {
 			if isset auth; then
 				print "require-${auth}"
 			fi
+
+			# Refused authentication methods
+			for refuse in ${refuses}; do
+				print "refuse-${refuse}"
+			done
 			print
 		) >> ${file}
 	fi
