@@ -138,6 +138,8 @@ function hostapd_config_write() {
 	local broadcast_ssid
 	local channel
 	local country_code
+	local encryption
+	local key
 	local mode
 	local ssid
 
@@ -158,6 +160,12 @@ function hostapd_config_write() {
 			--ssid=*)
 				ssid=${1#--ssid=}
 				;;
+			--encryption=*)
+				encryption=$(cli_get_val ${1})
+				;;
+			--key=*)
+				key=$(cli_get_val ${1})
+				;;
 			*)
 				warning_log "Ignoring unknown argument '${1}'."
 				;;			
@@ -174,6 +182,12 @@ function hostapd_config_write() {
 	assert isset country_code
 	assert isset mode
 	assert isset ssid
+
+	# Check if key is set when encryption is used.
+	if isset encryption; then
+		assert isoneof encryption WPA WPA2 WPA/WPA2
+		assert isset key
+	fi
 
 	local ignore_broadcast_ssid
 	if enabled broadcast_ssid; then
@@ -196,18 +210,36 @@ hw_mode=${mode}
 ignore_broadcast_ssid=${ignore_broadcast_ssid}
 ssid=${ssid}
 
-# Logging options
-logger_syslog=-1
-logger_syslog_level=2
-logger_stdout=-1
-logger_stdout_level=2
-
 # Dump file
-dump_file=$(hostapd_config_dir ${device}/dump
+dump_file=$(hostapd_config_dir ${device}/dump)
 
 ctrl_interface=/var/run/hostapd
 ctrl_interface_group=0
+
 EOF
+
+	if isset encryption; then
+		local encryption_mode=0
+		case "${encryption}" in
+			WPA)
+				encryption_mode=1
+				;;
+			WPA2)
+				encryption_mode=2
+				;;
+			WPA/WPA2)
+				encryption_mode=3
+				;;
+		esac
+
+		print "# Encryption settings."
+		print "wpa=${encryption_mode}"
+		print "wpa_passphrase=${key}"
+		print "wpa_key_mgmt=WPA-PSK"
+		print "wpa_pairwise=TKIP"
+		print "rsn_pairwise=CCMP"
+		print
+	fi
 
 	return ${EXIT_OK}
 }

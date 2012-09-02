@@ -22,11 +22,14 @@
 . /usr/lib/network/header-port
 
 HOOK_SETTINGS="HOOK ADDRESS BROADCAST_SSID CHANNEL COUNTRY_CODE MODE PHY SSID"
+HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION KEY"
 
 ADDRESS=$(mac_generate)
 BROADCAST_SSID=on
 CHANNEL=1
 COUNTRY_CODE="US"
+ENCRYPTION=""
+KEY=""
 MODE="g"
 SSID=
 
@@ -42,6 +45,14 @@ function _check() {
 	assert isset PHY
 	assert ismac PHY
 	assert isset SSID
+
+	if isset ENCRYPTION; then
+		assert isoneof ENCRYPTION WPA WPA2 WPA/WPA2
+
+		assert isset KEY
+		assert [ ${#KEY} -ge 8 ]
+		assert [ ${#KEY} -le 63 ]
+	fi
 }
 
 function _create() {
@@ -55,6 +66,12 @@ function _create() {
 				;;
 			--country-code=*)
 				COUNTRY_CODE=$(cli_get_val ${1})
+				;;
+			--encryption=*)
+				ENCRYPTION=$(cli_get_val ${1})
+				;;
+			--key=*)
+				KEY=$(cli_get_val ${1})
 				;;
 			--mac=*)
 				ADDRESS=$(cli_get_val ${1})
@@ -106,6 +123,12 @@ function _edit() {
 			--country-code=*)
 				COUNTRY_CODE=$(cli_get_val ${1})
 				;;
+			--encryption=*)
+				ENCRYPTION=$(cli_get_val ${1})
+				;;
+			--key=*)
+				KEY=$(cli_get_val ${1})
+				;;
 			--ssid=*)
 				SSID=$(cli_get_val ${1})
 				;;
@@ -140,6 +163,8 @@ function _up() {
 			--broadcast-ssid="${BROADCAST_SSID}" \
 			--channel="${CHANNEL}" \
 			--country-code="${COUNTRY_CODE}" \
+			--encryption="${ENCRYPTION}" \
+			--key="${KEY}" \
 			--mode="${MODE}" \
 			--ssid="${SSID}"
 
