@@ -27,7 +27,11 @@ function bridge_attach_device() {
 	assert isset device
 
 	assert device_exists ${bridge}
-	assert device_exists ${device}
+
+	if ! device_exists ${device}; then
+		log WARN "Could not attach '${device}' to '${bridge}' becase device does not exist."
+		return ${EXIT_ERROR}
+	fi
 
 	# If device is already attached, exit silently
 	if listmatch ${device} $(bridge_get_members ${bridge}); then
