@@ -23,21 +23,21 @@ function pppoe_server_start() {
 	local zone=${1}
 	assert isset zone
 
-	service_start "pppoe-server@${zone}"
+	service_start "pppoe-server@${zone}.service"
 }
 
 function pppoe_server_stop() {
 	local zone=${1}
 	assert isset zone
 
-	service_stop "pppoe-server@${zone}"
+	service_stop "pppoe-server@${zone}.service"
 }
 
 function pppoe_server_status() {
 	local zone=${1}
 	assert isset zone
 
-	service_status "pppoe-server@${zone}"
+	service_status "pppoe-server@${zone}.service"
 }
 
 function pppoe_server_options() {

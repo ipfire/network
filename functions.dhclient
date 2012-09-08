@@ -26,44 +26,41 @@ dhclient_start() {
 	assert isset interface
 	assert device_exists ${interface}
 
-	local service=$(dhclient_proto2service ${proto})
-	assert isset service
-
-	service_start "${service}@${interface}"
+	local service=$(dhclient_proto2service ${proto} ${interface})
+	service_start ${service}
 }
 
 dhclient_stop() {
 	local interface=${1}
 	local proto=${2}
 
-	local service=$(dhclient_proto2service ${proto})
-	assert isset service
-
-	service_stop "${service}@${interface}"
+	local service=$(dhclient_proto2service ${proto} ${interface})
+	service_stop ${service}
 }
 
 dhclient_status() {
 	local interface=${1}
 	local proto=${2}
 
-	local service=$(dhclient_proto2service ${proto})
-	assert isset service
-
-	service_status "${service}@${interface}"
+	local service=$(dhclient_proto2service ${proto} ${interface})
+	service_status ${service}
 }
 
 dhclient_proto2service() {
 	local proto=${1}
 	assert isset proto
 
+	local interface=${2}
+	assert isset interface
+
 	local service
 
 	case "${proto}" in
 		ipv4)
-			service="dhclient4"
+			service="dhclient4@${interface}.service"
 			;;
 		ipv6)
-			service="dhclient6"
+			service="dhclient6@${interface}.service"
 			;;
 		*)
 			return ${EXIT_ERROR}

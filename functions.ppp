@@ -27,11 +27,11 @@ function pppd_start() {
 
 	# This will block until the connection has been established or
 	# pppd exited.
-	service_start "pppd@${interface}"
+	service_start "pppd@${interface}.service"
 
 	# Get the exit code of the ppp daemon and figure out
 	# how to handle this.
-	local ret=$(service_get_exitcode "pppd@${interface}")
+	local ret=$(service_get_exitcode "pppd@${interface}.service")
 	case "${ret}" in
 		0)
 			return ${EXIT_OK}
@@ -63,14 +63,14 @@ function pppd_stop() {
 	local interface=${1}
 	assert isset interface
 
-	service_stop "pppd@${interface}"
+	service_stop "pppd@${interface}.service"
 }
 
 function pppd_status() {
 	local interface=${1}
 	assert isset interface
 
-	service_status "pppd@${interface}"
+	service_status "pppd@${interface}.service"
 }
 
 function ppp_common_ip_pre_up() {

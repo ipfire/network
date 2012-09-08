@@ -256,7 +256,7 @@ function hostapd_start() {
 	local config_file=${config_dir}/config
 	hostapd_config_write ${device} $@ > ${config_file}
 
-	service_start hostapd@${device}
+	service_start "hostapd@${device}.service"
 	local ret=$?
 
 	case "${ret}" in
@@ -280,10 +280,9 @@ function hostapd_start() {
 
 function hostapd_stop() {
 	local device=${1}
-
 	assert isset device
 
-	service_stop hostapd@${device}
+	service_stop "hostapd@${device}.service"
 
 	rm -rf $(hostapd_config_dir ${device})
 }

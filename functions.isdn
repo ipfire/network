@@ -310,7 +310,7 @@ function ipppd_start() {
 	ipppd_write_config ${device} $@
 
 	# Actually run the service.
-	service_start "ipppd@${device}"
+	service_start "ipppd@${device}.service"
 }
 
 function ipppd_write_config() {
@@ -462,7 +462,7 @@ function ipppd_stop() {
 	local device=${1}
 
 	# Stop service.
-	service_stop "ipppd@${device}"
+	service_stop "ipppd@${device}.service"
 
 	# Remove configuration file.
 	rm -f $(isdn_config_dir ${device})/config
@@ -478,7 +478,7 @@ function ibod_start() {
 
 	# Start the daemon.
 	log INFO "Starting ibod service on device ${device}."
-	service_start "ibod@${device}"
+	service_start "ibod@${device}.service"
 }
 
 function ibod_config_file() {
@@ -512,7 +512,7 @@ function ibod_stop() {
 	local device=${1}
 
 	log INFO "Stopping ibod on device ${device}..."
-	service_stop "ibod@${device}"
+	service_stop "ibod@${device}.service"
 
 	# Remove ibod configuration file.
 	rm -f $(ibod_config_file ${device})

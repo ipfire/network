@@ -78,7 +78,7 @@ function zone_start() {
 	local zone=${1}
 	assert zone_exists ${zone}
 
-	service_start "network@${zone}"
+	service_start "network@${zone}.service"
 }
 
 function zone_stop() {
@@ -88,7 +88,7 @@ function zone_stop() {
 	local zone=${1}
 	assert zone_exists ${zone}
 
-	service_stop "network@${zone}"
+	service_stop "network@${zone}.service"
 }
 
 function zone_create() {

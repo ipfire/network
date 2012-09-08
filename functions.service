@@ -21,48 +21,40 @@
 
 function service_start() {
 	local name=${1}
-	shift
-
 	assert isset name
 
-	systemctl start ${name}.service
+	systemctl start ${name}
 
 	# Check, if the service was successfully started and
 	# return a proper exit code.
 	service_is_active ${name}
 	local ret=$?
 
-	log INFO "Started service '${name}.service', code=${ret}."
+	log INFO "Started service '${name}', code=${ret}."
 
 	return ${ret}
 }
 
 function service_stop() {
 	local name=${1}
-	shift
-
 	assert isset name
 
-	systemctl stop ${name}.service
+	systemctl stop ${name}
 }
 
 function service_restart() {
 	local name=${1}
-	shift
-
 	assert isset name
 
-	systemctl restart ${name}.service
+	systemctl restart ${name}
 }
 
 function service_reload() {
 	local name=${1}
-	shift
-
 	assert isset name
 
 	if service_status ${name}; then
-		systemctl reload ${name}.service
+		systemctl reload ${name}
 		return $?
 	else
 		log WARNING "Cannot reload service '${name}' which is currently not running."
@@ -71,18 +63,14 @@ function service_reload() {
 
 function service_status() {
 	local name=${1}
-	shift
-
 	assert isset name
 
-	systemctl status ${name}.service >/dev/null 2>&1
+	systemctl status ${name} >/dev/null 2>&1
 	return $?
 }
 
 function service_is_active() {
 	local name=${1}
-	shift
-
 	assert isset name
 
 	systemctl is-active ${name}.service >/dev/null 2>&1
@@ -92,8 +80,6 @@ function service_is_active() {
 function service_get_exitcode() {
 	local name=${1}
 	assert isset name
-
-	name="${name}.service"
 
 	local output=$(systemctl show ${name} --property="ExecMainStatus")
 	cli_get_val "${output}"

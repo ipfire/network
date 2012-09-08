@@ -38,9 +38,9 @@ fi
 
 # Check if mstpd is running. If not, try to start it.
 if ! service_is_active mstpd; then
-	service_start mstpd
+	service_start "mstpd.service"
 
-	if ! service_is_active mstpd; then
+	if ! service_is_active "mstpd.service"; then
 		log ERROR "mstpd is not running. STP might not work."
 		exit 1
 	fi

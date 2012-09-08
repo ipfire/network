@@ -23,7 +23,7 @@ function teredo_start() {
 	local zone=${1}
 	assert isset zone
 
-	service_start "miredo-client@${zone}"
+	service_start "miredo-client@${zone}.service"
 }
 
 function teredo_stop() {
@@ -31,7 +31,7 @@ function teredo_stop() {
 	assert isset zone
 
 	# Just stop the miredo daemon for this device.
-	service_stop "miredo-client@${zone}"
+	service_stop "miredo-client@${zone}.service"
 }
 
 function teredo_write_config() {
