@@ -271,7 +271,7 @@ function cli_space() {
 
 function cli_ident() {
 	local level=${1}
-	shift
+	assert isinteger level
 
 	local ident=""
 	while [ ${level} -gt 1 ]; do
@@ -279,7 +279,7 @@ function cli_ident() {
 		level=$(( ${level} - 1 ))
 	done
 
-	echo "${ident}"
+	print "${ident}"
 }
 
 function cli_yesno() {
