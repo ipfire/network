@@ -171,6 +171,12 @@ function ismac() {
 	mac_is_valid ${mac}
 }
 
+function isipaddress() {
+	local addr=${!1}
+
+	ip_is_valid ${addr}
+}
+
 function backtrace() {
 	local start=1
 
