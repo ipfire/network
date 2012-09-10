@@ -98,3 +98,13 @@ function list_count() {
 
 	print "${counter}"
 }
+
+function list_join() {
+	local list=${1}
+	local delim=${2}
+
+	local ret
+	printf -v ret "${delim}%s" ${!list}
+
+	print "${ret:${#delim}}"
+}
