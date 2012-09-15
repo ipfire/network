@@ -59,9 +59,16 @@ function __radvd_config_interface() {
 	[ "${active}" = "0" ] && return ${EXIT_OK}
 
 	# Skip if there is no prefix or prefix is link-local.
-	local prefix=$(routing_db_get ${zone} ipv6 local-ip-address)
-	if [ -z "${prefix}" ] || [ "${prefix:0:5}" = "fe80:" ]; then
+	local addr=$(routing_db_get ${zone} ipv6 local-ip-address)
+	if [ -z "${addr}" ] || [ "${addr:0:5}" = "fe80:" ]; then
 		return ${EXIT_OK}
+	fi
+	local prefix=$(ipv6_get_network ${addr})
+
+	# Check if the subnet is configured by the DHCP server.
+	local dhcpd="false"
+	if dhcpd_subnet_match ipv6 "${prefix}"; then
+		dhcpd="true"
 	fi
 
 	print "interface ${zone} {"
@@ -69,11 +76,24 @@ function __radvd_config_interface() {
 	print "	MinRtrAdvInterval 3;"
 	print "	MaxRtrAdvInterval 10;"
 	print "	IgnoreIfMissing on;"
+
+	if enabled dhcpd; then
+		print "	AdvManagedFlag on;"
+		print "	AdvOtherConfigFlag on;"
+	fi
+
 	print
 	print "	prefix ${prefix} {"
 	print "		AdvOnLink on;"
-	print "		AdvAutonomous on;"
-	print "		AdvRouterAddr on;"
+
+	if enabled dhcpd; then
+		print "		AdvRouterAddr off;"
+		print "		AdvAutonomous off;"
+	else
+		print "		AdvRouterAddr on;"
+		print "		AdvAutonomous on;"
+	fi
+
 	print "	};"
 	print
 

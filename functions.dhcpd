@@ -1,0 +1,1163 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+DHCPV6D_CONFIG_FILE="/etc/dhcp/dhcpd6.conf"
+DHCPV4D_CONFIG_FILE="/etc/dhcp/dhcpd.conf"
+
+DHCPV6D_CONFIG_DIR="${NETWORK_CONFIG_DIR}/dhcpd/ipv6"
+DHCPV4D_CONFIG_DIR="${NETWORK_CONFIG_DIR}/dhcpd/ipv4"
+
+DHCPV6D_OPTIONS_FILE="${DHCPV6D_CONFIG_DIR}/options"
+DHCPV4D_OPTIONS_FILE="${DHCPV4D_CONFIG_DIR}/options"
+
+DHCPV6D_SETTINGS_FILE="${DHCPV6D_CONFIG_DIR}/settings"
+DHCPV4D_SETTINGS_FILE="${DHCPV4D_CONFIG_DIR}/settings"
+
+DHCPD_SETTINGS="\
+	AUTHORITATIVE
+"
+DHCPV6D_SETTINGS="\
+	${DHCPD_SETTINGS} \
+	PREFERRED_LIFETIME
+	VALID_LIFETIME
+"
+DHCPV4D_SETTINGS="\
+	${DHCPD_SETTINGS} \
+	DEFAULT_LEASE_TIME \
+	MAX_LEASE_TIME \
+	MIN_LEASE_TIME \
+"
+
+DHCPD_SUBNET_PREFIX="subnet-"
+#DHCPD_SUBNET_POOL_PREFIX="pool-"
+DHCPD_SUBNET_RANGE_PREFIX="range-"
+
+DHCPD_SUBNET_SETTINGS="ADDRESS PREFIX ROUTERS"
+DHCPV6D_SUBNET_SETTINGS="${DHCPD_SUBNET_SETTINGS}"
+DHCPV4D_SUBNET_SETTINGS="${DHCPD_SUBNET_SETTINGS}"
+
+DHCPD_SUBNET_RANGE_SETTINGS="START END"
+DHCPV6D_SUBNET_RANGE_SETTINGS="${DHCPD_SUBNET_RANGE_SETTINGS}"
+DHCPV4D_SUBNET_RANGE_SETTINGS="${DHCPD_SUBNET_RANGE_SETTINGS}"
+
+DHCPV6D_OPTIONS="\
+	domain-search \
+	name-servers \
+"
+DHCPV4D_OPTIONS="\
+	all-subnets-local \
+	arp-cache-timeout \
+	bootfile-name \
+	broadcast-address \
+	default-ip-ttl \
+	default-tcp-ttl \
+	dhcp-client-identifier \
+	dhcp-lease-time \
+	dhcp-max-message-size \
+	dhcp-rebinding-time \
+	dhcp-renewal-time \
+	domain-name \
+	domain-name-servers \
+	domain-search \
+	interface-mtu \
+	ntp-servers \
+	root-path \
+	routers \
+	tftp-server-name \
+"
+
+DHCPD_SUBNET_OPTIONS="${DHCPD_OPTIONS}"
+DHCPV6D_SUBNET_OPTIONS="${DHCPD_SUBNET_OPTIONS}"
+DHCPV4D_SUBNET_OPTIONS="${DHCPD_SUBNET_OPTIONS}"
+
+# Defaults for DHCPv6.
+DHCPV6D_PREFERRED_LIFETIME=""
+DHCPV6D_VALID_LIFETIME="43200"		# 12h
+
+# Defaults for DHCPv4.
+DHCPV4D_AUTHORITATIVE="true"
+DHCPV4D_DEFAULT_LEASE_TIME="43200"	# 12h
+DHCPV4D_MAX_LEASE_TIME="86400"		# 24h
+DHCPV4D_MIN_LEASE_TIME=""
+
+function dhcpd_service() {
+	case "${1}" in
+		ipv6)
+			print "dhcpd6.service"
+			;;
+		ipv4)
+			print "dhcpd.service"
+			;;
+		"")
+			print "dhcpd6.service dhcp.service"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_start() {
+	local services=$(dhcpd_service $@)
+
+	local service
+	for service in ${services}; do
+		service_start ${service}
+	done
+}
+
+function dhcpd_stop() {
+	local services=$(dhcpd_service $@)
+
+	local service
+	for service in ${services}; do
+		service_stop ${service}
+	done
+}
+
+function dhcpd_restart() {
+	# DHCP does not support a reload, so
+	# we retsart it.
+	local services=$(dhcpd_service $@)
+
+	local service
+	for service in ${services}; do
+		service_restart ${service}
+	done
+}
+
+function dhcpd_reload() {
+	dhcpd_restart $@
+}
+
+function dhcpd_edit() {
+	local proto=${1}
+	assert isset proto
+	shift
+
+	local settings=$(dhcpd_settings ${proto})
+	assert isset settings
+
+	local ${settings}
+	dhcpd_global_settings_read ${proto}
+
+	case "${proto}" in
+		ipv6)
+			_dhcpd_edit_ipv6 $@ || return $?
+			;;
+		ipv4)
+			_dhcpd_edit_ipv4 $@ || return $?
+			;;
+	esac
+
+	dhcpd_global_settings_write ${proto}
+}
+
+function _dhcpd_edit_ipv4() {
+	local val
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--authoritative=*)
+				val=$(cli_get_val ${1})
+
+				if enabled val; then
+					AUTHORITATIVE="true"
+				else
+					AUTHORITATIVE="false"
+				fi
+				;;
+			--default-lease-time=*)
+				DEFAULT_LEASE_TIME=$(cli_get_val ${1})
+
+				if ! isinteger DEFAULT_LEASE_TIME; then
+					error "Invalid value for --default-lease-time."
+					return ${EXIT_ERROR}
+				fi
+				;;
+			--max-lease-time=*)
+				MAX_LEASE_TIME=$(cli_get_val ${1})
+
+				if ! isinteger MAX_LEASE_TIME; then
+					error "Invalid value for --max-lease-time."
+					return ${EXIT_ERROR}
+				fi
+				;;
+			--min-lease-time=*)
+				MIN_LEASE_TIME=$(cli_get_val ${1})
+
+				if isset MIN_LEASE_TIME; then
+					if ! isinteger MIN_LEASE_TIME; then
+						error "Invalid value for --min-lease-time."
+						return ${EXIT_ERROR}
+					fi
+				fi
+				;;
+			*)
+				error "Unrecognized argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	if [ ${MAX_LEASE_TIME} -le ${DEFAULT_LEASE_TIME} ]; then
+		error "The max. lease time must be higher than the default lease time."
+		return ${EXIT_ERROR}
+	fi
+}
+
+function _dhcpd_edit_ipv6() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--preferred-lifetime=*)
+				PREFERRED_LIFETIME=$(cli_get_val ${1})
+
+				if ! isinteger PREFERRED_LIFETIME; then
+					error "Invalid value for --preferred-lifetime."
+					return ${EXIT_ERROR}
+				fi
+				;;
+			--valid-lifetime=*)
+				VALID_LIFETIME=$(cli_get_val ${1})
+
+				if ! isinteger VALID_LIFETIME; then
+					error "Invalid value for --valid-lifetime."
+					return ${EXIT_ERROR}
+				fi
+				;;
+			*)
+				error "Unrecognized argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+}
+
+function dhcpd_settings_file() {
+	local proto=${1}
+	assert isset proto
+
+	case "${proto}" in
+		ipv6)
+			print "${DHCPV6D_SETTINGS_FILE}"
+			;;
+		ipv4)
+			print "${DHCPV4D_SETTINGS_FILE}"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_settings() {
+	local proto=${1}
+	assert isset proto
+
+	case "${proto}" in
+		ipv6)
+			print "${DHCPV6D_SETTINGS}"
+			;;
+		ipv4)
+			print "${DHCPV4D_SETTINGS}"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_options_file() {
+	local proto=${1}
+	assert isset proto
+
+	case "${proto}" in
+		ipv6)
+			print "${DHCPV6D_OPTIONS_FILE}"
+			;;
+		ipv4)
+			print "${DHCPV4D_OPTIONS_FILE}"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_options_list() {
+	local proto=${1}
+	assert isset proto
+
+	case "${proto}" in
+		ipv6)
+			print "DHCPV6D_OPTIONS"
+			;;
+		ipv4)
+			print "DHCPV4D_OPTIONS"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_options() {
+	local proto=${1}
+	assert isset proto
+
+	case "${proto}" in
+		ipv6)
+			print "${DHCPV6D_OPTIONS}"
+			;;
+		ipv4)
+			print "${DHCPV4D_OPTIONS}"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_global_settings_defaults() {
+	local proto=${1}
+	assert isset proto
+
+	local settings=$(dhcpd_settings ${proto})
+	assert isset settings
+
+	local prefix="DHCPV${proto/ipv/}D_"
+
+	local setting setting_default
+	for setting in ${settings}; do
+		setting_default="${prefix}${setting}"
+		printf -v ${setting} "%s" "${!setting_default}"
+	done
+}
+
+function dhcpd_global_settings_read() {
+	local proto=${1}
+	assert isset proto
+
+	local file=$(dhcpd_settings_file ${proto})
+	assert isset file
+
+	local settings=$(dhcpd_settings ${proto})
+	assert isset settings
+
+	dhcpd_global_settings_defaults ${proto}
+	config_read ${file} ${settings}
+}
+
+function dhcpd_global_settings_write() {
+	local proto=${1}
+	assert isset proto
+
+	local file=$(dhcpd_settings_file ${proto})
+	assert isset file
+
+	local settings=$(dhcpd_settings ${proto})
+	assert isset settings
+
+	config_write ${file} ${settings}
+}
+
+function dhcpd_global_options_read() {
+	local proto=${1}
+	assert isset proto
+
+	local options_file=$(dhcpd_options_file ${proto})
+	local options_list=$(dhcpd_options_list ${proto})
+
+	config_read_array ${options_file} options ${!options_list}
+
+	# Check if domain-name is set.
+	if [ -z "${options["domain-name"]}" ]; then
+		options["domain-name"]=$(config_domainname)
+	fi
+}
+
+function dhcpd_subnet_path() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isset subnet_id
+
+	local path
+	case "${proto}" in
+		ipv6)
+			path=${DHCPV6D_CONFIG_DIR}
+			;;
+		ipv4)
+			path=${DHCPV4D_CONFIG_DIR}
+			;;
+	esac
+	assert isset path
+
+	print "${path}/${DHCPD_SUBNET_PREFIX}${subnet_id}"
+	return ${EXIT_OK}
+}
+
+function dhcpd_subnet_exists() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isset subnet_id
+
+	local path=$(dhcpd_subnet_path ${proto} ${subnet_id})
+	assert isset path
+
+	[ -d "${path}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
+function dhcpd_subnet_match() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet=${2}
+	assert isset subnet
+
+	local settings=$(dhcpd_subnet_settings ${proto})
+	assert isset settings
+
+	local subnet_id ${settings}
+	for subnet_id in $(dhcpd_subnet_list ${proto}); do
+		dhcpd_subnet_read ${proto} ${subnet_id}
+
+		${proto}_addr_eq "${ADDRESS}/${PREFIX}" "${subnet}" \
+			&& return ${EXIT_TRUE}
+	done
+
+	return ${EXIT_FALSE}
+}
+
+function dhcpd_new_subnet_id() {
+	local proto=${1}
+	assert isset proto
+
+	local id=1
+	while :; do
+		if ! dhcpd_subnet_exists ${proto} ${id}; then
+			print "${id}"
+			return ${EXIT_OK}
+		fi
+
+		id=$(( ${id} + 1 ))
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function dhcpd_subnet_new() {
+	local proto=${1}
+	assert isset proto
+	shift
+
+	# Allocate a new subnet id.
+	local subnet_id=$(dhcpd_new_subnet_id ${proto})
+	assert isinteger subnet_id
+
+	# Create directory structure.
+	local path=$(dhcpd_subnet_path ${proto} ${subnet_id})
+	assert isset path
+
+	mkdir -p ${path}
+	touch ${path}/settings
+
+	dhcpd_subnet_edit ${proto} ${subnet_id} $@
+	local ret=$?
+
+	# Remove the new subnet, when the edit method returned
+	# an error.
+	if [ ${ret} -ne ${EXIT_OK} ]; then
+		dhcpd_subnet_remove ${proto} ${subnet_id}
+	fi
+}
+
+function dhcpd_subnet_edit() {
+	local proto=${1}
+	assert isset proto
+	shift
+
+	local id=${1}
+	assert isset id
+	shift
+
+	local settings
+	case "${proto}" in
+		ipv6)
+			settings=${DHCPV6D_SUBNET_SETTINGS}
+			;;
+		ipv4)
+			settings=${DHCPV4D_SUBNET_SETTINGS}
+			;;
+	esac
+	assert isset settings
+	local ${settings}
+
+	# Read current settings.
+	dhcpd_subnet_read ${proto} ${id} || :
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--address=*)
+				ADDRESS=$(cli_get_val ${1})
+
+				local prefix=$(ip_get_prefix ${ADDRESS})
+				if isset prefix; then
+					PREFIX=${prefix}
+					ADDRESS=$(ip_split_prefix ${ADDRESS})
+				fi
+				;;
+			--prefix=*)
+				PREFIX=$(cli_get_val ${1})
+				;;
+			--routers=*)
+				ROUTERS=$(cli_get_val ${1})
+				;;
+			*)
+				error "Unknown argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	case "${proto}" in
+		ipv6)
+			if ! ipv6_is_valid ${ADDRESS}; then
+				error "'${ADDRESS}' is not a valid IPv6 address."
+				return ${EXIT_ERROR}
+			fi
+
+			if ! ipv6_prefix_is_valid ${PREFIX}; then
+				error "'${PREFIX}' is not  a valid IPv6 prefix."
+				return ${EXIT_ERROR}
+			fi
+			;;
+		ipv4)
+			if ! ipv4_is_valid ${ADDRESS}; then
+				error "'${ADDRESS}' is not a valid IPv4 address."
+				return ${EXIT_ERROR}
+			fi
+
+			if ! ipv4_prefix_is_valid ${PREFIX}; then
+				error "'${PREFIX}' is not a valid IPv4 prefix."
+				return ${EXIT_ERROR}
+			fi
+			;;
+	esac
+
+	# XXX Check for subnet collisions!
+
+	local file="$(dhcpd_subnet_path ${proto} ${id})/settings"
+	config_write ${file} ${settings}
+}
+
+function dhcpd_subnet_remove() {
+	local proto=${1}
+	assert isset proto
+
+	local id=${2}
+	assert isset id
+
+	local path=$(dhcpd_subnet_path ${proto} ${id})
+	assert isset path
+
+	# Remove everything of this subnet.
+	rm -rf ${path}
+}
+
+function dhcpd_subnet_list() {
+	local proto=${1}
+	assert isset proto
+
+	local path=$(dhcpd_subnet_path ${proto} 0)
+	path=$(dirname ${path})
+
+	# Return an error of the directory does not exist.
+	[ -d "${path}" ] || return ${EXIT_ERROR}
+
+	local p
+	for p in ${path}/${DHCPD_SUBNET_PREFIX}*; do
+		[ -d "${p}" ] || continue
+
+		p=$(basename ${p})
+		print "${p:${#DHCPD_SUBNET_PREFIX}}"
+	done
+}
+
+function dhcpd_subnet_read() {
+	local proto=${1}
+	assert isset proto
+
+	local id=${2}
+	assert isset id
+
+	local file="$(dhcpd_subnet_path ${proto} ${id})/settings"
+	config_read ${file}
+}
+
+function dhcpd_subnet_range_path() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isinteger subnet_id
+
+	local range_id=${3}
+	assert isinteger range_id
+
+	print "$(dhcpd_subnet_path ${proto} ${subnet_id})/${DHCPD_SUBNET_RANGE_PREFIX}${range_id}"
+	return ${EXIT_OK}
+}
+
+function dhcpd_subnet_range_settings() {
+	local proto=${1}
+
+	case "${proto}" in
+		ipv6)
+			print "${DHCPV6D_SUBNET_RANGE_SETTINGS}"
+			;;
+		ipv4)
+			print "${DHCPV4D_SUBNET_RANGE_SETTINGS}"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_subnet_new_range_id() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isset subnet_id
+
+	local id=1 path
+	while :; do
+		path=$(dhcpd_subnet_range_path ${proto} ${subnet_id} ${id})
+		if [ ! -f "${path}" ]; then
+			print "${id}"
+			return ${EXIT_OK}
+		fi
+
+		id=$(( ${id} + 1 ))
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function dhcpd_subnet_range_new() {
+	local proto=${1}
+	assert isset proto
+	shift
+
+	local subnet_id=${1}
+	assert isset subnet_id
+	shift
+
+	# Allocate a new range id.
+	local range_id=$(dhcpd_subnet_new_range_id ${proto} ${subnet_id})
+	assert isinteger range_id
+
+	local path=$(dhcpd_subnet_range_path ${proto} ${subnet_id} ${range_id})
+	assert isset path
+
+	# Create file (as a placeholder).
+	touch ${path}
+
+	dhcpd_subnet_range_edit ${proto} ${subnet_id} ${range_id} $@
+	local ret=$?
+
+	if [ ${ret} -ne ${EXIT_OK} ]; then
+		dhcpd_subnet_range_remove ${proto} ${subnet_id} ${range_id}
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_subnet_range_edit() {
+	local proto=${1}
+	assert isset proto
+	shift
+
+	local subnet_id=${1}
+	assert isset subnet_id
+	shift
+
+	local range_id=${1}
+	assert isset range_id
+	shift
+
+	local ip_encode ip_is_valid
+	local settings
+	case "${proto}" in
+		ipv6)
+			ip_encode="ipv6_encode"
+			ip_is_valid="ipv6_is_valid"
+			settings=${DHCPV6D_SUBNET_RANGE_SETTINGS}
+			;;
+		ipv4)
+			ip_encode="ipv4_encode"
+			ip_is_valid="ipv4_is_valid"
+			settings=${DHCPV4D_SUBNET_RANGE_SETTINGS}
+			;;
+	esac
+	assert isset settings
+	local ${settings}
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--start=*)
+				START=$(cli_get_val ${1})
+				;;
+			--end=*)
+				END=$(cli_get_val ${1})
+				;;
+			*)
+				error "Unknown argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	if ! isset START; then
+		error "You need to set the start of the IP range with --start=..."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! isset END; then
+		error "You need to set the end of the IP range with --end=..."
+		return ${EXIT_ERROR}
+	fi
+
+	local var
+	for var in START END; do
+		if ! ${ip_is_valid} ${!var}; then
+			error "'${!var}' is not a valid IP address."
+			return ${EXIT_ERROR}
+		fi
+	done
+
+	# XXX currently, this check can only be performed for IPv4
+	if [ "${proto}" = "ipv4" ]; then
+		# Check if the end address is greater than the start address.
+		local start_encoded=$(${ip_encode} ${START})
+		local end_encoded=$(${ip_encode} ${END})
+
+		if [ ${start_encoded} -ge ${end_encoded} ]; then
+			error "The start address of the range must be greater than the end address."
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	# Write the configuration to file.
+	local file=$(dhcpd_subnet_range_path ${proto} ${subnet_id} ${range_id})
+	assert isset file
+
+	config_write ${file} ${settings}
+}
+
+function dhcpd_subnet_range_remove() {
+	local path=$(dhcpd_subnet_range_path $@)
+	assert isset path
+
+	rm -f ${path}
+}
+
+function dhcpd_subnet_range_list() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isset subnet_id
+
+	local path=$(dhcpd_subnet_range_path ${proto} ${subnet_id} 0)
+	path=$(dirname ${path})
+
+	local p
+	for p in ${path}/${DHCPD_SUBNET_RANGE_PREFIX}*; do
+		[ -r "${p}" ] || continue
+
+		p=$(basename ${p})
+		print "${p:${#DHCPD_SUBNET_RANGE_PREFIX}}"
+	done
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_subnet_range_read() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isset subnet_id
+
+	local range_id=${3}
+	assert isset range_id
+
+	local file=$(dhcpd_subnet_range_path ${proto} ${subnet_id} ${range_id})
+	config_read ${file}
+}
+
+function dhcpd_subnet_settings() {
+	local proto=${1}
+
+	case "${proto}" in
+		ipv6)
+			print "${DHCPV6D_SUBNET_SETTINGS}"
+			;;
+		ipv4)
+			print "${DHCPV4D_SUBNET_SETTINGS}"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_subnet_options_file() {
+	local path=$(dhcpd_subnet_path $@)
+	assert isset path
+
+	print "${path}/options"
+}
+
+function dhcpd_subnet_options_list() {
+	local proto=${1}
+
+	case "${proto}" in
+		ipv6)
+			print "DHCPV6D_SUBNET_OPTIONS"
+			;;
+		ipv4)
+			print "DHCPV4D_SUBNET_OPTIONS"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_subnet_options() {
+	local proto=${1}
+
+	case "${proto}" in
+		ipv6)
+			print "${DHCPV6D_SUBNET_OPTIONS}"
+			;;
+		ipv4)
+			print "${DHCPV4D_SUBNET_OPTIONS}"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_subnet_options_read() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isset subnet_id
+
+	local options_file=$(dhcpd_subnet_options_file ${proto} ${subnet_id})
+	local options_list=$(dhcpd_subnet_options_list ${proto})
+
+	_dhcpd_read_options ${options_file} ${options_list}
+}
+
+# Helper functions to create a DHCP configuration file.
+function _dhcpd_write_options() {
+	local proto=${1}
+	assert isset proto
+
+	local file=${2}
+	assert isset file
+
+	local options_list=${3}
+	assert isset options_list
+
+	local ident=${4}
+
+	# Dump options array.
+	local key val fmt
+	for key in ${!options_list}; do
+		val=${options[${key}]}
+
+		# Prepend dhcp6 on IPv6 options.
+		if [ "${proto}" = "ipv6" ]; then
+			key="dhcp6.${key}"
+		fi
+
+		if isset val; then
+			if isinteger val; then
+				fmt="option %s %d;"
+			elif isipaddress val; then
+				fmt="option %s %s;"
+			else
+				fmt="option %s \"%s\";"
+			fi
+			print "${ident}${fmt}" "${key}" "${val}"
+		fi
+	done >> ${file}
+
+	# Append an empty line when options have been written.
+	if [ -n "${!options[@]}" ]; then
+		print >> ${file}
+	fi
+}
+
+function _dhcpd_read_options() {
+	local file=${1}
+	assert isset file
+
+	local options_list=${2}
+	assert isset options_list
+
+	config_read_array ${file} options ${!options_list}
+}
+
+function _dhcpd_write_subnet() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isset subnet_id
+
+	local file=${3}
+	assert isset file
+
+	# Check which settings we do expect.
+	local settings
+	case "${proto}" in
+		ipv6)
+			settings=${DHCPV6D_SUBNET_SETTINGS}
+			;;
+		ipv4)
+			settings=${DHCPV4D_SUBNET_SETTINGS}
+			;;
+	esac
+	assert isset settings
+	local ${settings}
+
+	# Read configuration settings.
+	dhcpd_subnet_read ${proto} ${subnet_id}
+
+	print "# Subnet declaration for subnet id ${subnet_id}." >> ${file}
+	case "${proto}" in
+		ipv6)
+			print "subnet6 ${ADDRESS}/${PREFIX} {" >> ${file}
+			;;
+		ipv4)
+			local netmask=$(ipv4_get_netmask ${ADDRESS}/${PREFIX})
+			print "subnet ${ADDRESS} netmask ${netmask} {" >> ${file}
+			;;
+	esac
+
+	# Add options.
+	_dhcpd_write_subnet_options ${proto} ${subnet_id} ${file}
+
+	# Add the ranges.
+	local range_id
+	for range_id in $(dhcpd_subnet_range_list ${proto} ${subnet_id} ${range_id}); do
+		_dhcpd_write_subnet_range ${proto} ${subnet_id} ${range_id} ${file}
+	done
+
+	# End this subnet block.
+	print "}\n" >> ${file}
+
+	return ${EXIT_OK}
+}
+
+function _dhcpd_write_subnet_options() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isset subnet_id
+
+	local file=${3}
+	assert isset file
+
+	local settings
+	local options_file="$(dhcpd_subnet_path ${proto} ${subnet_id})/options"
+	local options_list
+	case "${proto}" in
+		ipv6)
+			settings=${DHCPV6D_SUBNET_SETTINGS}
+			options_list="DHCPV6D_OPTIONS"
+			;;
+		ipv4)
+			settings=${DHCPV4D_SUBNET_SETTINGS}
+			options_list="DHCPV4D_OPTIONS"
+			;;
+	esac
+	assert isset settings
+	assert isset options_list
+
+	local ${settings}
+	dhcpd_subnet_read ${proto} ${subnet_id}
+
+	local -A options
+	_dhcpd_read_options ${options_file} ${options_list}
+
+	# Fill in router, if not already set.
+	if [ -z "${options["routers"]}" ]; then
+		options["routers"]=$(_dhcpd_search_routers ${proto} "${ADDRESS}/${PREFIX}")
+	fi
+
+	_dhcpd_write_options ${proto} ${file} ${options_list} "\t"
+}
+
+function _dhcpd_search_routers() {
+	local proto=${1}
+	assert isset proto
+
+	# Do nothing for IPv6 (yet?).
+	[ "${proto}" = "ipv6" ] && return ${EXIT_OK}
+
+	local subnet=${2}
+	assert isset subnet
+
+	local routers
+
+	local zone addr
+	for zone in $(zones_get_all); do
+		addr=$(routing_db_get ${zone} ${proto} local-ip-address)
+		isset addr || continue
+
+		if ipv4_in_subnet ${addr} ${subnet}; then
+			list_append routers $(ip_split_prefix ${addr})
+		fi
+	done
+
+	list_join routers ", "
+}
+
+function _dhcpd_write_subnet_range() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isset subnet_id
+
+	local range_id=${3}
+	assert isset range_id
+
+	local file=${4}
+	assert isset file
+
+	local settings=$(dhcpd_subnet_range_settings ${proto})
+	assert isset settings
+
+	# Read the configuration settings.
+	local ${settings}
+	dhcpd_subnet_range_read ${proto} ${subnet_id} ${range_id}
+
+	# Print the range line.
+	print "	# Range id ${range_id}." >> ${file}
+
+	case "${proto}" in
+		ipv6)
+			print "	range6 ${START} ${END};" >> ${file}
+			;;
+		ipv4)
+			print "	range ${START} ${END};" >> ${file}
+			;;
+	esac
+	print >> ${file}
+
+	return ${EXIT_OK}
+}
+
+function dhcpd_write_config() {
+	local proto=${1}
+	assert isset proto
+
+	local file options_list
+	case "${proto}" in
+		ipv6)
+			file=${DHCPV6D_CONFIG_FILE}
+			options_list="DHCPV6D_OPTIONS"
+			;;
+		ipv4)
+			file=${DHCPV4D_CONFIG_FILE}
+			options_list="DHCPV4D_OPTIONS"
+			;;
+	esac
+	assert isset file
+	assert isset options_list
+
+	# Writing header.
+	config_header "DHCP ${proto} daemon configuration file" > ${file}
+
+	# Authoritative.
+	if enabled AUTHORITATIVE; then
+		(
+			print "# This is an authoritative DHCP server for this network."
+			print "authoritative;\n"
+		) >> ${file}
+	else
+		(
+			print "# This is NOT an authoritative DHCP server for this network."
+			print "not authoritative;\n"
+		) >> ${file}
+	fi
+
+	case "${proto}" in
+		ipv6)
+			# Lease times.
+			if ininteger VALID_LIFETIME; then
+				print "default-lease-time %d;" "${VALID_LIFETIME}" >> ${file}
+			fi
+
+			if isinteger PREFERRED_LIFETIME; then
+				print "preferred-lifetime %d;" "${PREFERRED_LIFETIME}" >> ${file}
+			fi
+			;;
+		ipv4)
+			# Lease times.
+			if isinteger DEFAULT_LEASE_TIME; then
+				print "default-lease-time %d;" "${DEFAULT_LEASE_TIME}" >> ${file}
+			fi
+
+			if isinteger MAX_LEASE_TIME; then
+				print "max-lease-time %d;" "${MAX_LEASE_TIME}" >> ${file}
+			fi
+
+			if isinteger MIN_LEASE_TIME; then
+				print "min-lease-time %d;" "${MIN_LEASE_TIME}" >> ${file}
+			fi
+			;;
+	esac
+
+	# Write the options to file.
+	local -A options
+	dhcpd_global_options_read ${proto}
+	_dhcpd_write_options ${proto} ${file} ${options_list}
+
+	# Add all subnet declarations.
+	local subnet_id
+	for subnet_id in $(dhcpd_subnet_list ${proto}); do
+		_dhcpd_write_subnet ${proto} ${subnet_id} ${file}
+	done
+
+	return ${EXIT_OK}
+}

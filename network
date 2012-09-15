@@ -595,6 +595,305 @@ function cli_route() {
 	exit ${EXIT_OK}
 }
 
+function cli_dhcpd() {
+	local proto=${1}
+	shift
+
+	if cli_help_requested $@; then
+		cli_show_man network-dhcp
+		exit ${EXIT_OK}
+	fi
+
+	local action=${1}
+	shift
+
+	case "${action}" in
+		edit)
+			dhcpd_edit ${proto} $@
+			;;
+		start)
+			dhcpd_start ${proto}
+			;;
+		stop)
+			dhcpd_stop ${proto}
+			;;
+		restart|reload)
+			dhcpd_reload ${proto}
+			;;
+		subnet)
+			cli_dhcpd_subnet ${proto} $@
+			;;
+		show|"")
+			cli_dhcpd_show ${proto} $@
+			;;
+		*)
+			error "Unrecognized action: ${action}"
+			cli_run_help network dhcpvN
+
+			exit ${EXIT_ERROR}
+			;;
+	esac
+
+	exit ${EXIT_OK}
+}
+
+function cli_dhcpd_show() {
+	local proto=${1}
+	assert isset proto
+
+	local settings=$(dhcpd_settings ${proto})
+	assert isset settings
+
+	local ${settings}
+	dhcpd_global_settings_read ${proto}
+
+	cli_headline 1 "Dynamic Host Configuration Protocol Daemon for ${proto/ip/IP}"
+
+	case "${proto}" in
+		ipv6)
+			cli_headline 2 "Lease times"
+			if isinteger VALID_LIFETIME; then
+				cli_print_fmt1 2 "Valid lifetime" "${VALID_LIFETIME}s"
+			fi
+
+			if isinteger PREFERRED_LIFETIME; then
+				cli_print_fmt1 2 "Preferred lifetime" "${PREFERRED_LIFETIME}s"
+			fi
+
+			cli_space
+			;;
+		ipv4)
+			cli_print_fmt1 1 "Authoritative" $(cli_print_enabled AUTHORITATIVE)
+			cli_space
+
+			cli_headline 2 "Lease times"
+			cli_print_fmt1 2 "Default lease time" "${DEFAULT_LEASE_TIME}s"
+			cli_print_fmt1 2 "Max. lease time" "${MAX_LEASE_TIME}s"
+
+			if isset MIN_LEASE_TIME; then
+				cli_print_fmt1 2 "Min. lease time" "${MIN_LEASE_TIME}s"
+			fi
+
+			cli_space
+			;;
+	esac
+
+	# Read the options.
+	local -A options
+	dhcpd_global_options_read ${proto} ${subnet_id}
+
+	# Print the options if any.
+	if [ ${#options[*]} -gt 0 ]; then
+		cli_headline 2 "Options"
+
+		local option
+		for option in $(dhcpd_options ${proto}); do
+			[ -n "${options[${option}]}" ] || continue
+
+			cli_print_fmt1 2 \
+				"${option}" "${options[${option}]}"
+		done
+		cli_space
+	fi
+
+	# Subnets.
+	local subnets=$(dhcpd_subnet_list ${proto})
+	if [ -n "${subnets}" ]; then
+		cli_headline 2 "Subnets"
+		local subnet_id
+		for subnet_id in ${subnets}; do
+			cli_dhcpd_subnet_show ${proto} ${subnet_id} 2
+		done
+	fi
+}
+
+function cli_dhcpd_subnet() {
+	local proto=${1}
+	shift
+
+	if cli_help_requested $@; then
+		cli_show_man network-dhcp-subnet
+		exit ${EXIT_OK}
+	fi
+
+	local action=${1}
+	shift
+
+	case "${action}" in
+		new)
+			dhcpd_subnet_new ${proto} $@
+			;;
+		remove)
+			dhcpd_subnet_remove ${proto} $@
+			;;
+		[0-9]*)
+			local subnet_id=${action}
+
+			if ! dhcpd_subnet_exists ${proto} ${subnet_id}; then
+				error "The given subnet with ID ${subnet_id} does not exist."
+				return ${EXIT_ERROR}
+			fi
+
+			# Update the action.
+			action=${1}
+			shift
+
+			case "${action}" in
+				edit)
+					dhcpd_subnet_edit ${proto} ${subnet_id} $@
+					local ret=$?
+
+					if [ ${ret} -eq ${EXIT_OK} ]; then
+						dhcpd_reload ${proto}
+					fi
+					exit ${ret}
+					;;
+				range)
+					cli_dhcpd_subnet_range ${proto} ${subnet_id} $@
+					exit $?
+					;;
+				show)
+					cli_dhcpd_subnet_show ${proto} ${subnet_id} $@
+					exit $?
+					;;
+				options)
+					cli_dhcpd_subnet_options ${proto} ${subnet_id} $@
+					exit $?
+					;;
+				*)
+					error "Unrecognized action: ${action}"
+					cli_run_help network dhcpvN subnet
+					exit ${EXIT_ERROR}
+					;;
+			esac
+			;;
+		show)
+			local subnet_id
+			for subnet_id in $(dhcpd_subnet_list ${proto}); do
+				cli_dhcpd_subnet_show ${proto} ${subnet_id}
+			done
+			;;
+		*)
+			error "Unrecognized action: ${action}"
+			cli_run_help network dhcpvN subnet
+
+			exit ${EXIT_ERROR}
+			;;
+	esac
+
+	exit ${EXIT_OK}
+}
+
+function cli_dhcpd_subnet_range() {
+	local proto=${1}
+	assert isset proto
+	shift
+
+	local subnet_id=${1}
+	assert isset subnet_id
+	shift
+
+	local action=${1}
+	shift
+
+	case "${action}" in
+		new)
+			dhcpd_subnet_range_new ${proto} ${subnet_id} $@
+			exit $?
+			;;
+		remove)
+			dhcpd_subnet_range_remove ${proto} ${subnet_id} $@
+			exit $?
+			;;
+		*)
+			error "Unrecognized action: ${action}"
+			cli_run_help network dhcpvN subnet range
+			exit ${EXIT_ERROR}
+			;;
+	esac
+}
+
+function cli_dhcpd_subnet_show() {
+	local proto=${1}
+	assert isset proto
+
+	local subnet_id=${2}
+	assert isset subnet_id
+
+	local level=${3}
+	isset level || level=0
+
+	local $(dhcpd_subnet_settings ${proto})
+
+	# Read in configuration settings.
+	dhcpd_subnet_read ${proto} ${subnet_id}
+
+	cli_headline $(( ${level} + 1 )) \
+		"DHCP${proto/ip/} subnet declaration #${subnet_id}"
+	cli_print_fmt1 $(( ${level} + 1 )) \
+		"Subnet" "${ADDRESS}/${PREFIX}"
+	cli_space
+
+	# Read the options.
+	local -A options
+	dhcpd_subnet_options_read ${proto} ${subnet_id}
+
+	# Print the options if any.
+	if [ ${#options[*]} -gt 0 ]; then
+		cli_headline $(( ${level} + 2 )) "Options"
+
+		local option
+		for option in $(dhcpd_subnet_options ${proto}); do
+			[ -n "${options[${option}]}" ] || continue
+
+			cli_print_fmt1 $(( ${level} + 2 )) \
+				"${option}" "${options[${option}]}"
+		done
+		cli_space
+	fi
+
+	# Ranges.
+	cli_headline $(( ${level} + 2 )) "Ranges"
+
+	local ranges=$(dhcpd_subnet_range_list ${proto} ${subnet_id})
+	if isset ranges; then
+		local range_id $(dhcpd_subnet_range_settings ${proto})
+		for range_id in ${ranges}; do
+			dhcpd_subnet_range_read ${proto} ${subnet_id} ${range_id}
+
+			cli_print $(( ${level} + 2 )) \
+				"#%d: %s - %s" ${range_id} ${START} ${END}
+		done
+	else
+		cli_print $(( ${level} + 2 )) "No ranges have been defined."
+	fi
+
+	cli_space
+}
+
+function cli_dhcpd_options() {
+	local proto=${1}
+	assert isset proto
+	shift
+
+	local subnet_id=${1}
+	assert isset subnet_id
+	shift
+
+	local valid_options=$(dhcpd_subnet_options ${proto})
+
+	local key val
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			*=*)
+				key=$(cli_get_key ${1})
+				val=$(cli_get_val ${1})
+
+				dhcpd_subnet_option_set ${proto} ${subnet_id} ${key} ${val}
+		esac
+	done
+}
+
 function cli_start() {
 	if cli_help_requested $@; then
 		cli_show_man network
@@ -791,6 +1090,11 @@ case "${action}" in
 
 	config|hostname|port|device|zone|start|stop|restart|status|reset|dns|route)
 		cli_${action} $@
+		;;
+
+	# DHCP server configuration (automatically detects which protocol to use).
+	dhcpv6|dhcpv4)
+		cli_dhcpd ${action/dhcp/ip} $@
 		;;
 
 	""|help|--help|-h)
