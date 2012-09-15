@@ -56,7 +56,7 @@ function routing_default_update() {
 				# If we have got a Point-to-Point device, we will directly send all
 				# packets into the pipe.
 				if device_is_ptp ${zone}; then
-					routes="${routes} nexthop dev ${zone}"
+					routes="${routes} dev ${zone}"
 
 				# On other devices, we will use the gateway if we got one.
 				elif isset gateway; then
