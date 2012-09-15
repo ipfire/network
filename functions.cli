@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+IDENT="  "
+
 function cli_help_requested() {
 	local argument="${1}"
 
@@ -236,7 +238,7 @@ function cli_print_fmt1() {
 	local level=${1}
 	shift
 
-	local space=$(( 30 - (${level} * 4) ))
+	local space=$(( 30 - (${level} * ${#IDENT}) ))
 	local format="%-${space}s %s"
 
 	cli_print ${level} "${format}" "$@"
@@ -258,6 +260,12 @@ function cli_print_yesno() {
 	fi
 }
 
+function cli_print_enabled() {
+	enabled ${1}
+
+	cli_print_bool $?
+}
+
 function cli_print_warning() {
 	local level=${1}
 	shift
@@ -275,7 +283,7 @@ function cli_ident() {
 
 	local ident=""
 	while [ ${level} -gt 1 ]; do
-		ident="${ident}    "
+		ident="${ident}${IDENT}"
 		level=$(( ${level} - 1 ))
 	done
 
