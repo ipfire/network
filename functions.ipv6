@@ -162,178 +162,69 @@ function ipv6_prefix_is_valid() {
 
 function ipv6_implode() {
 	local address=${1}
-
 	assert isset address
 
-	if ! ipv6_is_valid ${address}; then
-		error "IPv6 address is invalid: ${address}"
-		return ${EXIT_ERROR}
-	fi
+	local ADDRESS6_IMPL
+	eval $(ipcalc -6 -i ${address} 2>/dev/null)
+	assert isset ADDRESS6_IMPL
 
-	# Save prefix
-	local prefix=$(ip_get_prefix ${address})
-	address=$(ip_split_prefix ${address})
-
-	# Make proper address in exploded format
-	address=$(ipv6_explode ${address})
-
-	local block
-	local char
-	local i
-
-	local address_new
-	local block_new
-
-	for block in ${address//:/\ }; do
-		block_new=
-		for i in $(seq 0 ${#block}); do
-			char="${block:${i}:1}"
-
-			[ -z "${char}" ] && continue
-
-			if [ -z "${block_new}" ] && [ "${char}" = "0" ]; then
-				continue
-			fi
-
-			block_new="${block_new}${char}"
-		done
-
-		[ -z "${block_new}" ] && block_new="0"
-
-		address_new="${address_new}:${block_new}"
-	done
-
-	# Cut first colon (:)
-	address="${address_new:1:${#address_new}}"
-
-	local match
-	local matches=()
-	local pattern
-	local pos_start
-	local pos_next
-	for pos_start in $(seq 0 ${#address}); do
-		matches["${pos_start}"]=0
-
-		for pos_next in $(seq ${pos_start} 2 ${#address}); do
-			case "${pos_start}" in
-				0)
-					match="${address:${pos_next}:2}"
-					pattern="0:"
-					;;
-				*)
-					match="${address:${pos_next}:2}"
-					pattern=":0"
-					;;
-			esac
-
-			[ -z "${match}" ] && continue
-
-			if [ "${match}" = "${pattern}" ]; then
-				matches[${pos_start}]=$(( matches[${pos_start}] + 1))
-			else
-				break
-			fi
-		done
-	done
-
-	local pos_best
-	local pos_best_val=0
-	for i in $(seq 0 ${#matches[@]}); do
-		[ -z "${matches[${i}]}" ] && continue
-
-		if [ ${matches[${i}]} -gt ${pos_best_val} ]; then
-			pos_best=${i}
-			pos_best_val=${matches[${i}]}
-		fi
-	done
-
-	if [ -n "${pos_best}" ]; then
-		address_new="${address:0:${pos_best}}::"
-
-		local pos_end=$(( ${pos_best_val} * 2 + ${pos_best} + 1))
-		
-		if [ "${pos_best}" = "0" ]; then
-			pos_end=$(( ${pos_end} - 1 ))
-		fi
-
-		address="${address_new}${address:${pos_end}:${#address}}"
-	fi
-
-	# If a prefix was provided we append it in the end
-	[ -n "${prefix}" ] && address="${address}/${prefix}"
-
-	assert ipv6_is_valid ${address}
-
-	echo "${address}"
+	print "${ADDRESS6_IMPL}"
 }
 
 function ipv6_explode() {
 	local address=${1}
-
 	assert isset address
 
-	local prefix=$(ip_get_prefix ${address})
-	address=$(ip_split_prefix ${address})
-
+	# Nothing to do if the length of the address is 39.
 	if [ ${#address} -eq 39 ]; then
-		echo "${address}$([ -n "${prefix}" ] && echo "/${prefix}")"
-		return ${EXIT_OK}	
+		print "${address}"
+		return ${EXIT_OK}
 	fi
 
-	address=${address//::/:X:}
+	local ADDRESS6_EXPL
+	eval $(ipcalc -6 -e ${address} 2>/dev/null)
+	assert isset ADDRESS6_EXPL
 
-	local block
-	local block_count=0
-	local block_id
-	local block_max=8
-	local blocks=()
+	print "${ADDRESS6_EXPL}"
+}
 
-	for block in ${address//:/\ }; do
-		blocks[${block_count}]=${block}
-		
-		block_count=$(( ${block_count} + 1 ))
+function ipv6_addr_eq() {
+	local addr1=${1}
+	assert isset addr1
+
+	local addr2=${2}
+	assert isset addr2
+
+	local addr
+	for addr in addr1 addr2; do
+		printf -v ${addr} "%s" $(ipv6_explode ${!addr})
 	done
 
-	if [ ${#blocks[@]} -lt ${block_max} ]; then
-		for block_id in $(seq ${#blocks[@]} -1 0); do
-			block=${blocks[${block_id}]}
+	[[ "${addr1}" = "${addr2}" ]] \
+		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
 
-			[ -z "${block}" ] && continue
+function ipv6_addr_gt() {
+	local addr1=${1}
+	assert isset addr1
 
-			if [ "${block}" = "X" ]; then
-				blocks[${block_id}]="0000"
-				break
-			fi
+	local addr2=${2}
+	assert isset addr2
 
-			blocks[$(( ${block_max} - ${block_count} + ${block_id} ))]=${block}
-			blocks[${block_id}]="0000"
-		done
-	fi
-
-	for block_id in $(seq 0 ${#blocks[@]}); do
-		block=${blocks[${block_id}]}
-
-		[ -z "${block}" ] && block="0000"
-
-		while [ "${#block}" -lt 4 ]; do
-			block="0${block}"
-		done
-
-		blocks[${block_id}]=${block}
+	local addr
+	for addr in addr1 addr2; do
+		printf -v ${addr} "%s" $(ipv6_explode ${!addr})
 	done
 
-	address=
-	for block in ${blocks[@]}; do
-		address="${address}:${block}"
+	local i addr1_oct addr2_oct
+	for i in 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30; do
+		addr1_oct="0x${addr1:${i}:2}"
+		addr2_oct="0x${addr2:${i}:2}"
+
+		[[ ${addr1_oct} -gt ${addr2_oct} ]] && return ${EXIT_TRUE}
 	done
-	address=${address:1:39}
 
-	# If a prefix was provided we append it in the end again
-	[ -n "${prefix}" ] && address="${address}/${prefix}"
-
-	assert ipv6_is_valid ${address}
-
-	echo "${address}"
+	return ${EXIT_FALSE}
 }
 
 function ipv6_hash() {
@@ -345,4 +236,19 @@ function ipv6_hash() {
 	address=$(ipv6_explode ${address})
 
 	echo "${address//:/}"
+}
+
+function ipv6_get_network() {
+	local addr=${1}
+	assert isset addr
+
+	# Check if a prefix (e.g. /64) is provided.
+	local prefix=$(ip_get_prefix ${addr})
+	assert ipv6_prefix_is_valid ${prefix}
+
+	local PREFIX6
+	eval $(ipcalc --ipv6 -p ${addr})
+	assert isset PREFIX6
+
+	print "${PREFIX6}/${prefix}"
 }

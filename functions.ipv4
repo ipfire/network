@@ -36,7 +36,8 @@ function ipv4_is_valid() {
 
 function ipv4_prefix_is_valid() {
 	local prefix=${1}
-	assert isset prefix
+
+	isset prefix || return ${EXIT_FALSE}
 
 	[ ${prefix} -le  0 ] && return ${EXIT_FALSE}
 	[ ${prefix} -gt 32 ] && return ${EXIT_FALSE}
@@ -110,6 +111,22 @@ function ipv4_get_prefix() {
 	return ${EXIT_OK}
 }
 
+function ipv4_get_netmask() {
+	local address=${1}
+	assert isset address
+
+	# Add prefix if none given.
+	local prefix=$(ip_get_prefix ${address})
+	isset prefix || address="${address}/32"
+
+	local NETMASK
+	eval $(ipcalc --netmask ${address})
+	assert isset NETMASK
+
+	print "${NETMASK}"
+	return ${EXIT_OK}
+}
+
 function ipv4_flush_device() {
 	#
 	# Flushes all routes, addresses from the device
@@ -145,6 +162,12 @@ function ipv4_prefix2netmask() {
 }
 
 function ipv4_get_network() {
+	local network=$(ipv4_get_network $@)
+
+	ipv4_decode ${network}
+}
+
+function ipv4_get_network_encoded() {
 	local net=${1}
 
 	local prefix=$(ip_get_prefix ${net})
@@ -158,10 +181,16 @@ function ipv4_get_network() {
 	local addr=$(ip_split_prefix ${net})
 	addr=$(ipv4_encode ${addr})
 
-	ipv4_decode $(( ${addr} & ${mask} ))
+	print "%d" $(( ${addr} & ${mask} ))
 }
 
 function ipv4_get_broadcast() {
+	local broadcast=$(ipv4_get_broadcast_encoded $@)
+
+	ipv4_decode ${broadcast}
+}
+
+function ipv4_get_broadcast_encoded() {
 	local net=${1}
 
 	local prefix=$(ip_get_prefix ${net})
@@ -181,7 +210,7 @@ function ipv4_get_broadcast() {
 	local addr=$(ip_split_prefix ${net})
 	addr=$(ipv4_encode ${addr})
 
-	ipv4_decode $(( $(( ${addr} & ${netmask} )) | ${broadcast} ))
+	print "%d" $(( $(( ${addr} & ${netmask} )) | ${broadcast} ))
 }
 
 function ipv4_encode() {
@@ -208,6 +237,33 @@ function ipv4_decode() {
 	done
 
 	print "${addr}"
+}
+
+function ipv4_addr_eq() {
+	local addr1=${1}
+	assert isset addr1
+
+	local addr2=${2}
+	assert isset addr2
+
+	[[ "${addr1}" = "${addr2}" ]] \
+		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
+function ipv4_addr_gt() {
+	local addr1=${1}
+	assert isset addr1
+
+	local addr2=${2}
+	assert isset addr2
+
+	local addr
+	for addr in addr1 addr2; do
+		printf -v ${addr} "%s" "$(ip_encode ${!addr})"
+	done
+
+	[[ ${addr1} -gt ${addr2} ]] \
+		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
 function ipv4_range() {
@@ -286,4 +342,23 @@ function _ipv4_range_explicit() {
 		ipv4_decode ${first}
 		first=$(( ${first} + 1 ))
 	done
+}
+
+function ipv4_in_subnet() {
+	local addr=${1}
+	assert isset addr
+
+	local subnet=${2}
+	assert isset subnet
+
+	local subnet_first=$(ipv4_get_network_encoded ${subnet})
+	local subnet_last=$(ipv4_get_broadcast_encoded ${subnet})
+
+	addr=$(ipv4_encode ${addr})
+
+	if [[ "${addr}" -ge "${subnet_first}" ]] && [[ "${addr}" -le "${subnet_last}" ]]; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
 }
