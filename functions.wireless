@@ -196,6 +196,16 @@ function hostapd_config_write() {
 		ignore_broadcast_ssid="1"
 	fi
 
+	local hw_mode ieee80211n="0"
+	if [ "${mode}" = "n" ]; then
+		if [ ${channel} -le 15 ]; then
+			hw_mode="g"
+		else
+			hw_mode="a"
+		fi
+		ieee80211n="1"
+	fi
+
 	cat <<EOF
 ### Hostapd configuration for ${device}
 
@@ -206,7 +216,8 @@ interface=${device}
 # Wireless configuration
 channel=${channel}
 country_code=${country_code}
-hw_mode=${mode}
+hw_mode=${hw_mode}
+ieee80211n=${ieee80211n}
 ignore_broadcast_ssid=${ignore_broadcast_ssid}
 ssid=${ssid}
 
