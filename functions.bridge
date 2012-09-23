@@ -146,7 +146,7 @@ function bridge_detach_device() {
 	fi
 
 	cmd_quiet ip link set ${device} nomaster
-	locat ret=$?
+	local ret=$?
 
 	if [ ${ret} -eq ${EXIT_OK} ]; then
 		log DEBUG "bridge: device '${device}' has been detached from bridge '${bridge}'"
