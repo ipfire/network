@@ -97,7 +97,7 @@ function _up() {
 
 	# Enable STP
 	if enabled STP; then
-		stp_enable ${zone} ${STP_MODE}
+		stp_enable ${zone}
 
 		if [ -n "${STP_FORWARD_DELAY}" ]; then
 			stp_bridge_set_forward_delay ${zone} ${STP_FORWARD_DELAY}

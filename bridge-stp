@@ -19,48 +19,73 @@
 #                                                                             #
 ###############################################################################
 
+EXIT_USERSPACE_STP=0
+EXIT_KERNEL_STP=1
+
 # Change LOG_FACILITY that we will find our messages in syslog.
 LOG_FACILITY=$(basename ${0})
 
 . /usr/lib/network/functions
 
 zone=${1}
-action=${2}
-
 assert isset zone
+
+action=${2}
 assert isset action
 
 # Exit immediately, if zone configuration does not exist.
 # This is for manually created bridges.
 if ! zone_exists ${zone}; then
-	exit 1
+	exit ${EXIT_KERNEL_STP}
 fi
 
-# Check if mstpd is running. If not, try to start it.
-if ! service_is_active mstpd; then
-	service_start "mstpd.service"
+# Read zone configuration.
+zone_config_read ${zone}
 
-	if ! service_is_active "mstpd.service"; then
-		log ERROR "mstpd is not running. STP might not work."
-		exit 1
-	fi
-fi
+# Make sure STP is enabled for this zone.
+assert enabled STP
 
-# Tell mstpd that STP has to be enabled/disabled.
-case "${action}" in
-	start)
-		log DEBUG "Enabling STP for zone '${zone}'."
-		exec mstpctl addbridge ${zone}
+log DEBUG "Configured STP mode is '${STP_MODE}'"
+
+case "${STP_MODE}" in
+	rstp)
+		# Check if mstpd is running. If not, try to start it.
+		if ! service_is_active mstpd; then
+			service_start "mstpd.service"
+
+			if ! service_is_active "mstpd.service"; then
+				log ERROR "mstpd is not running. STP might not work."
+				exit 1
+			fi
+		fi
+
+		# Tell mstpd that STP has to be enabled/disabled.
+		case "${action}" in
+			start)
+				log DEBUG "Enabling userspace STP for zone '${zone}'"
+				exec mstpctl addbridge ${zone}
+				;;
+			stop)
+				log DEBUG "Disabling userspace STP for zone '${zone}'"
+				exec mstpctl delbridge ${zone}
+				;;
+		esac
+
+		log ERROR "Could not properly exec mstpctl."
 		;;
-	stop)
-		log DEBUG "Disabling STP for zone '${zone}'."
-		exec mstpctl delbridge ${zone}
-		;;
-	*)
-		log ERROR "Unknown action given: ${action}."
-		exit 1
+	stp)
+		case "${action}" in
+			start)
+				log DEBUG "Enabling kernel STP for zone '${zone}'"
+				exit ${EXIT_KERNEL_STP}
+				;;
+			stop)
+				log DEBUG "Disabling kernel STP for zone '${zone}'"
+				exit ${EXIT_OK}
+				;;
+		esac
 		;;
 esac
 
-log ERROR "Could not properly exec mstpctl."
-exit 1
+# Fall back to kernel STP.
+exit ${EXIT_KERNEL_STP}
