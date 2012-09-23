@@ -90,6 +90,9 @@ function _up() {
 		dummy_create ${port} "${ADDRESS}"
 	fi
 
+	# Bring up the port.
+	device_set_up ${port}
+
 	exit ${EXIT_OK}
 }
 
@@ -101,6 +104,10 @@ function _down() {
 		exit ${EXIT_OK}
 	fi
 
+	# Tear down the port.
+	device_set_down ${port}
+
+	# Remove the dummy port.
 	dummy_remove ${port}
 
 	exit ${EXIT_OK}
