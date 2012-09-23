@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2012  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,54 +19,142 @@
 #                                                                             #
 ###############################################################################
 
-function bridge_attach_device() {
+function bridge_create() {
 	local bridge=${1}
-	local device=${2}
-
 	assert isset bridge
-	assert isset device
+	shift
 
-	assert device_exists ${bridge}
+	local address
+	local mtu
 
-	if ! device_exists ${device}; then
-		log WARN "Could not attach '${device}' to '${bridge}' becase device does not exist."
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--address=*)
+				address=$(cli_get_val ${1})
+				;;
+			--mtu=*)
+				mtu=$(cli_get_val ${1})
+				;;
+			*)
+				error "Unrecognized argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	if device_exists ${bridge}; then
+		log ERROR "bridge: bridge '${bridge}' does already exist"
 		return ${EXIT_ERROR}
 	fi
 
-	# If device is already attached, exit silently
+	# Build the ip command.
+	local command="ip link add name ${bridge}"
+
+	# Add address, if we know it.
+	if ismac address; then
+		command="${command} address ${address}"
+	fi
+
+	# Add MTU if it has been set.
+	if isinteger mtu; then
+		command="${command} mtu ${mtu}"
+	fi
+
+	# Last argument is the device type.
+	command="${command} type bridge"
+
+	# Run the command.
+	cmd_quiet ${command}
+	local ret=$?
+
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "bridge: bridge '${bridge}' has been created"
+	else
+		log ERROR "bridge: Could not create bridge '${bridge}': ${ret}"
+	fi
+
+	return ${ret}
+}
+
+function bridge_delete() {
+	local bridge=${1}
+	assert isset bridge
+
+	device_delete ${bridge}
+}
+
+function bridge_attach_device() {
+	local bridge=${1}
+	assert isset bridge
+
+	local device=${2}
+	assert isset device
+
+	# Check if bridge exists.
+	if ! device_exists ${bridge}; then
+		log ERROR "bridge: bridge '${bridge}' does not exist to attach devices to"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if device exists.
+	if ! device_exists ${device}; then
+		log ERROR "bridge: could not attach '${device}' to '${bridge}' because device does not exist"
+		return ${EXIT_ERROR}
+	fi
+
+	# If device is already attached, exit silently.
 	if listmatch ${device} $(bridge_get_members ${bridge}); then
 		return ${EXIT_OK}
 	fi
 
-	log INFO "Attaching device '${device}' to bridge '${bridge}'."
+	# Actually connect bridge and device.
+	cmd_quiet ip link set ${device} master ${bridge}
+	local ret=$?
 
-	brctl addif ${bridge} ${device}
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "bridge: device '${device}' has been attached to bridge '${bridge}'"
+	else
+		log ERROR "bridge: could not attach device '${device}' to bridge '${bridge}': ${ret}"
+	fi
+
+	return ${ret}
 }
 
 function bridge_detach_device() {
 	local bridge=${1}
-	local device=${2}
-
 	assert isset bridge
+
+	local device=${2}
 	assert isset device
-	
+
+	# Check if bridge exists.
 	if ! device_exists ${bridge}; then
-		error "Bridge '${bridge}' does not exist."
+		log ERROR "bridge: bridge '${bridge}' does not exist to detach devices from"
 		return ${EXIT_ERROR}
 	fi
 
+	# Check if device exists.
 	if ! device_exists ${device}; then
-		return ${EXIT_OK}
+		log ERROR "bridge: could not detach '${device}' from '${bridge}' because device does not exist"
+		return ${EXIT_ERROR}
 	fi
 
-	# If device is not attached, exit silently
+	# If device is not attched, exit silently.
 	if ! listmatch ${device} $(bridge_get_members ${bridge}); then
 		return ${EXIT_OK}
 	fi
 
-	log INFO "Detaching device '${device}' from bridge '${bridge}'."
+	cmd_quiet ip link set ${device} nomaster
+	locat ret=$?
 
-	brctl delif ${bridge} ${device}
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "bridge: device '${device}' has been detached from bridge '${bridge}'"
+	else
+		log ERROR "bridge: could not detach device '${device}' from bridge '${bridge}': ${ret}"
+	fi
+
+	return ${ret}
 }
 
 function bridge_get_members() {

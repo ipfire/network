@@ -73,6 +73,25 @@ function device_exists() {
 	serial_exists ${device}
 }
 
+function device_delete() {
+	local device=${1}
+	assert isset device
+
+	# Nothing to do, it device does not exist.
+	device_exists ${device} || return ${EXIT_OK}
+
+	# Delete the device.
+	cmd_quiet ip link delete ${device}
+	local ret=$?
+
+	if [ ${ret} -ne ${EXIT_OK} ]; then
+		log ERROR "device: Could not delete device '${device}': ${ret}"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${ret}
+}
+
 function device_has_flag() {
 	local device=${1}
 	local flag=${2}
@@ -93,6 +112,38 @@ function device_is_up() {
 	device_exists ${device} || return ${EXIT_ERROR}
 
 	device_has_flag ${device} 0x1
+}
+
+function device_ifindex_to_name() {
+	local idx=${1}
+	assert isset idx
+
+	local device device_idx
+	for device in ${SYS_CLASS_NET}/*; do
+		device=$(basename ${device})
+		device_exists ${device} || continue
+
+		device_idx=$(device_get_ifindex ${device})
+
+		if [ "${device_idx}" = "${idx}" ]; then
+			print "${device}"
+			return ${EXIT_OK}
+		fi
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function device_get_ifindex() {
+	local device=${1}
+	assert isset device
+
+	local path="${SYS_CLASS_NET}/${1}/ifindex"
+
+	# Check if file can be read.
+	[ -r "${path}" ] || return ${EXIT_ERROR}
+
+	print "$(<${path})"
 }
 
 # Check if the device is a bonding device
@@ -116,6 +167,22 @@ function device_is_bridge_attached() {
 	local device=${1}
 
 	[ -d "${SYS_CLASS_NET}/${device}/brport" ]
+}
+
+function device_get_bridge() {
+	local device=${1}
+	assert isset device
+
+	# Check if device is attached to a bridge.
+	device_is_bridge_attached ${device} || return ${EXIT_ERROR}
+
+	local ifindex_path="${SYS_CLASS_NET}/${device}/brport/bridge/ifindex"
+	[ -r "${ifindex_path}" ] || return ${EXIT_ERROR}
+
+	local ifindex=$(<${ifindex_path})
+	assert isset ifindex
+
+	device_ifindex_to_name ${ifindex}
 }
 
 # Check if the device is a virtual device

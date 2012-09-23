@@ -80,16 +80,20 @@ function _parse_cmdline() {
 
 function _up() {
 	local zone=${1}
-	shift
+	assert isset zone
 
 	zone_config_read ${zone}
 
+	# Create the bridge if it does not already exist.
 	if ! device_exists ${zone}; then
-		brctl addbr ${zone}
-	fi
+		bridge_create ${zone} \
+			--address=${MAC} --mtu=${MTU}
 
-	[ -n "${MAC}" ] && device_set_address ${zone} ${MAC}
-	[ -n "${MTU}" ] && device_set_mtu ${zone} ${MTU} 
+	# Adjust MAC address and MTU if needed.
+	else
+		device_set_address ${zone} ${MAC}
+		device_set_mtu ${zone} ${MTU}
+	fi
 
 	# Enable STP
 	if enabled STP; then
@@ -124,21 +128,17 @@ function _up() {
 	zone_ports_up ${zone}
 	zone_configs_up ${zone}
 
-	event_interface_up ${zone}
-
 	exit ${EXIT_OK}
 }
 
 function _down() {
 	local zone=${1}
-	shift
+	assert isset zone
 
 	if ! device_is_up ${zone}; then
 		warning "Zone '${zone}' is not up"
 		exit ${EXIT_OK}
 	fi
-
-	event_interface_down ${zone}
 
 	zone_configs_down ${zone}
 	zone_ports_down ${zone}
@@ -147,7 +147,7 @@ function _down() {
 	device_set_promisc ${zone} off
 
 	device_set_down ${zone}
-	brctl delbr ${zone}
+	bridge_delete ${zone}
 
 	exit ${EXIT_OK}
 }
