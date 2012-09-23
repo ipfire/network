@@ -93,6 +93,24 @@ function stp_get_name() {
 	return ${EXIT_OK}
 }
 
+function stp_bridge_set_protocol() {
+	local bridge=${1}
+	assert isset bridge
+
+	local mode=${2}
+	assert isset mode
+
+	if ! listmatch ${mode} ${STP_ALLOWED_MODES}; then
+		log WARNING "Unknown protocol version: ${mode}."
+		log WARNING "Using default mode."
+
+		mode="${STP_DEFAULT_MODE}"
+	fi
+
+	mstpctl setforcevers ${bridge} ${mode}
+	assert [ $? -eq 0 ]
+}
+
 function stp_bridge_get_protocol() {
 	local bridge=${1}
 
