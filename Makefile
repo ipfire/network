@@ -44,8 +44,10 @@ install:
 	-mkdir -pv $(DESTDIR)$(libdir)/network/helpers
 	cp -vf helpers/* $(DESTDIR)$(libdir)/network/helpers
 
-	# Install bridge-stp. 
-	install -m 755 bridge-stp $(DESTDIR)$(sbindir)/
+	# Install bridge-stp.
+	ln -svf --relative \
+		$(DESTDIR)$(libdir)/network/helpers/bridge-stp \
+		$(DESTDIR)$(sbindir)/
 
 	# Install dhclient script and helper.
 	install -m 755 dhclient-helper $(DESTDIR)$(libdir)/network/
