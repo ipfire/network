@@ -60,6 +60,21 @@ function stp_is_enabled() {
 	esac
 }
 
+function stp_is_userspace() {
+	local bridge=${1}
+	assert isset bridge
+
+	local state=$(__device_get_file ${bridge} bridge/stp_state)
+	case "${state}" in
+		2)
+			return ${EXIT_TRUE}
+			;;
+		*)
+			return ${EXIT_FALSE}
+			;;
+	esac
+}
+
 function stp_get_name() {
 	local proto=${1}
 
@@ -108,7 +123,7 @@ function stp_bridge_get_protocol() {
 	# We get here, when STP is running in user-space mode.
 
 	# Get the current protocol version.
-	mstpctl showbridge ${bridge} force-protocol-version
+	mstpctl showbridge ${bridge} force-protocol-version 2>/dev/null
 
 	return ${EXIT_OK}
 }
@@ -124,10 +139,16 @@ function stp_bridge_get_id() {
 
 function stp_bridge_get_forward_delay() {
 	local bridge=${1}
-
 	assert isset bridge
 
-	mstpctl showbridge ${bridge} forward-delay
+	if stp_is_userspace ${bridge}; then
+		cmd mstpctl showbridge ${bridge} forward-delay
+	else
+		local output=$(__device_get_file ${bridge} bridge/forward_delay)
+		__stp_div_100 ${output}
+	fi
+
+	return ${EXIT_OK}
 }
 
 function stp_bridge_set_forward_delay() {
@@ -147,8 +168,8 @@ function stp_bridge_set_forward_delay() {
 	fi
 
 	# Set the new value.
-	log INFO "Changing forward delay for '${bridge}': ${current_fdelay} --> ${fdelay}."
-	brctl setfd ${bridge} ${fdelay}
+	log INFO "Changing forward delay for '${bridge}': ${current_fdelay} --> ${fdelay}"
+	print "$(( ${fdelay} * 100 ))" > ${SYS_CLASS_NET}/${bridge}/bridge/forward_delay
 
 	return ${EXIT_OK}
 }
@@ -157,14 +178,10 @@ function stp_bridge_get_hello_time() {
 	local bridge=${1}
 	assert isset bridge
 
-	local ht=$(__device_get_file ${bridge} "bridge/hello_time")
+	local ht=$(__device_get_file ${bridge} bridge/hello_time)
+	__stp_div_100 ${ht}
 
-	# ht is now in seconds * 100.
-	local split=$((${#ht} - 2))
-	ht="${ht:0:${split}}.${ht:${split}:2}"
-
-	# Round the output.
-	printf "%.0f\n" "${ht}"
+	return ${EXIT_OK}
 }
 
 function stp_bridge_set_hello_time() {
@@ -179,8 +196,8 @@ function stp_bridge_set_hello_time() {
 	[ ${hello} -eq ${current_hello} ] && return ${EXIT_OK}
 
 	# Set the new value.
-	log INFO "Changing hello time for '${bridge}': ${current_hello} --> ${hello}."
-	brctl sethello ${bridge} ${hello}
+	log INFO "Changing hello time for '${bridge}': ${current_hello} --> ${hello}"
+	print "$(( ${hello} * 100 ))" > ${SYS_CLASS_NET}/${bridge}/bridge/hellow_time
 
 	return ${EXIT_OK}
 }
@@ -190,13 +207,9 @@ function stp_bridge_get_max_age() {
 	assert isset bridge
 
 	local maxage=$(__device_get_file ${bridge} "bridge/max_age")
+	__stp_div_100 ${maxage}
 
-	# maxage is now in seconds * 100.
-	local split=$((${#maxage} - 2))
-	maxage="${maxage:0:${split}}.${maxage:${split}:2}"
-
-	# Round the output.
-	printf "%.0f\n" "${maxage}"
+	return ${EXIT_OK}
 }
 
 function stp_bridge_set_max_age() {
@@ -211,8 +224,8 @@ function stp_bridge_set_max_age() {
 	[ ${maxage} -eq ${current_maxage} ] && return ${EXIT_OK}
 
 	# Set the new value.
-	log INFO "Changing max age for '${bridge}': ${current_maxage} --> ${maxage}."
-	brctl setmaxage ${bridge} ${maxage}
+	log INFO "Changing max age for '${bridge}': ${current_maxage} --> ${maxage}"
+	print "$(( ${maxage} * 100 ))" > ${SYS_CLASS_NET}/${bridge}/bridge/max_age
 
 	return ${EXIT_OK}
 }
@@ -222,6 +235,7 @@ function stp_bridge_get_priority() {
 	assert isset bridge
 
 	__device_get_file ${bridge} "bridge/priority"
+	return ${EXIT_OK}
 }
 
 function stp_bridge_set_priority() {
@@ -236,66 +250,80 @@ function stp_bridge_set_priority() {
 	[ ${priority} -eq ${current_priority} ] && return ${EXIT_OK}
 
 	# Set the new value.
-	log INFO "Changing priority for '${bridge}': ${current_priority} --> ${priority}."
-	brctl setbridgeprio ${bridge} ${priority}
+	log INFO "Changing priority for '${bridge}': ${current_priority} --> ${priority}"
+	print "${priority}" > ${SYS_CLASS_NET}/${bridge}/bridge/priority
 
 	return ${EXIT_OK}
 }
 
 function stp_bridge_get_designated_root() {
 	local bridge=${1}
-	local output
-
 	assert isset bridge
 
-	local output=$(mstpctl showbridge ${bridge} designated-root)
+	local output
 
-	if ! isset output; then
+	if stp_is_userspace ${bridge}; then
+		output=$(cmd mstpctl showbridge ${bridge} designated-root)
+	else
+		output=$(__device_get_file ${bridge} bridge/root_id)
+	fi
+	output=${output:6}
+
+	# Print output (lowercase).
+	print "${output,,}"
+
+	if isset output; then
+		return ${EXIT_OK}
+	else
 		return ${EXIT_ERROR}
 	fi
-
-	echo "${output,,}"
-	return ${EXIT_OK}
 }
 
 function stp_bridge_get_root_path_cost() {
 	local bridge=${1}
-
 	assert isset bridge
 
-	mstpctl showbridge ${bridge} path-cost
+	if stp_is_userspace ${bridge}; then
+		cmd mstpctl showbridge ${bridge} path-cost
+	else
+		__device_get_file ${bridge} bridge/root_path_cost
+	fi
+
+	return ${EXIT_OK}
 }
 
 function stp_bridge_get_root_port_id() {
 	local bridge=${1}
-
 	assert isset bridge
 
-	local root_port=$(mstpctl showbridge ${bridge} root-port)
+	if stp_is_userspace ${bridge}; then
+		local root_port=$(cmd mstpctl showbridge ${bridge} root-port)
 
-	# Return error, when there is no root port.
-	if [ "${root_port}" = "none" ]; then
-		return ${EXIT_ERROR}
+		# Return error, when there is no root port.
+		if [ "${root_port}" = "none" ]; then
+			return ${EXIT_ERROR}
+		fi
+
+		print "${root_port}"
+	else
+		__device_get_file ${bridge} bridge/root_port_id
 	fi
 
-	echo "${root_port}"
 	return ${EXIT_OK}
 }
 
 function stp_bridge_get_root_port() {
 	local bridge=${1}
-
 	assert isset bridge
 
 	local id=$(stp_bridge_get_root_port_id ${bridge})
 
-	local member
-	local member_id
+	local member member_id
 	for member in $(bridge_get_members ${bridge}); do
 		member_id=$(stp_port_get_id ${bridge} ${member})
 
 		if [ "${id}" = "${member_id}" ]; then
-			echo "${member}"
+			print "${member}"
 			return ${EXIT_OK}
 		fi
 	done
@@ -304,112 +332,162 @@ function stp_bridge_get_root_port() {
 }
 
 function stp_bridge_is_root() {
-	stp_bridge_get_root_port_id $@ >/dev/null
-	local ret=$?
-
-	if [ ${ret} -eq ${EXIT_ERROR} ]; then
-		return ${EXIT_OK}
-	fi
-
-	return ${EXIT_ERROR}
-}
-
-function stp_bridge_get_priority() {
 	local bridge=${1}
-
 	assert isset bridge
 
-	local id=$(stp_bridge_get_id ${bridge})
+	local root_path_cost=$(stp_bridge_get_root_path_cost ${bridge})
 
-	dec "${id:0:4}"
+	if [ "${root_path_cost}" = "0" ]; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
 }
 
 function stp_bridge_get_topology_change_count() {
 	local bridge=${1}
-
 	assert isset bridge
 
-	mstpctl showbridge ${bridge} topology-change-count
+	if stp_is_userspace ${bridge}; then
+		cmd mstpctl showbridge ${bridge} topology-change-count
+	else
+		__device_get_file ${bridge} bridge/topology_change
+	fi
+
+	return ${EXIT_OK}
 }
 
 function stp_bridge_get_topology_change_timer() {
 	local bridge=${1}
-
 	assert isset bridge
 
-	mstpctl showbridge ${bridge} time-since-topology-change
+	if stp_is_userspace ${bridge}; then
+		cmd mstpctl showbridge ${bridge} time-since-topology-change
+	else
+		__device_get_file ${bridge} bridge/topology_change_timer
+	fi
+
+	return ${EXIT_OK}
 }
 
 function stp_bridge_get_topology_change_detected() {
 	local bridge=${1}
-
 	assert isset bridge
 
-	local change=$(mstpctl showbridge ${bridge} topology-change)
+	local change
 
-	echo "${change}"
-	case "${change}" in
-		yes)
-			return ${EXIT_OK}
-			;;
-		*)
-			return ${EXIT_ERROR}
-			;;
-	esac
+	if stp_is_userspace ${bridge}; then
+		change=$(mstpctl showbridge ${bridge} topology-change)
+	else
+		change=$(__device_get_file ${bridge} bridge/topology_change_detected)
+	fi
+
+	if enabled change; then
+		print "yes"
+		return ${EXIT_TRUE}
+	else
+		print "no"
+		return ${EXIT_FALSE}
+	fi
 }
 
 function stp_port_get_state() {
 	local bridge=${1}
-	local port=${2}
-
 	assert isset bridge
+
+	local port=${2}
 	assert isset port
 
-	local state=$(mstpctl showportdetail ${bridge} ${port} state)
+	local space
+	if stp_is_userspace ${bridge}; then
+		state=$(mstpctl showportdetail ${bridge} ${port} state)
+		print "${state^^}"
+	else
+		state=$(__device_get_file ${bridge} brif/${port}/state)
 
-	echo "${state^^}"
+		case "${state}" in
+			0)
+				print "DISABLED"
+				;;
+			1)
+				print "LISTENING"
+				;;
+			2)
+				print "LEARNING"
+				;;
+			3)
+				print "FORWARDING"
+				;;
+			4)
+				print "BLOCKING"
+				;;
+			*)
+				return ${EXIT_ERROR}
+				;;
+		esac
+	fi
+
+	return ${EXIT_OK}
 }
 
 function stp_port_get_id() {
 	local bridge=${1}
-	local port=${2}
-
 	assert isset bridge
+
+	local port=${2}
 	assert isset port
 
-	local id=$(__device_get_file ${bridge} "brif/${port}/port_no")
-
-	dec ${id}
-
+	dec $(__device_get_file ${bridge} "brif/${port}/port_no")
 	return ${EXIT_OK}
 }
 
 function stp_port_get_cost() {
 	local bridge=${1}
-	local port=${2}
-
 	assert isset bridge
+
+	local port=${2}
 	assert isset port
 
-	mstpctl showportdetail ${bridge} ${port} external-port-cost
+	if stp_is_userspace ${bridge}; then
+		cmd mstpctl showportdetail ${bridge} ${port} external-port-cost
+	else
+		__device_get_file ${bridge} brif/${port}/path_cost
+	fi
 
 	return ${EXIT_ERROR}
 }
 
 function stp_port_get_designated_root() {
 	local bridge=${1}
-	local port=${2}
-	local output
-
 	assert isset bridge
+
+	local port=${2}
 	assert isset port
 
-	output=$(mstpctl showportdetail ${bridge} ${port} designated-root)
+	local output
 
-	if [ -n "${output}" ]; then
-		echo "${output,,}"
+	if stp_is_userspace ${bridge}; then
+		output=$(cmd mstpctl showportdetail ${bridge} ${port} designated-root)
+		output=${output:6}
+	else
+		output=$(__device_get_file ${bridge} brif/${port}/designated_root)
+		output=${output:5}
+	fi
+
+	if isset output; then
+		mac_format ${output}
 		return ${EXIT_OK}
 	fi
 
 	return ${EXIT_ERROR}
+}
+
+function __stp_div_100() {
+	local val=${1}
+
+	local split=$((${#val} - 2))
+	val="${val:0:${split}}.${val:${split}:2}"
+
+	# Round the output.
+	print "%.0f" "${val}"
 }

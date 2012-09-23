@@ -113,9 +113,13 @@ function mac_generate() {
 
 function mac_format() {
 	local mac=${1}
+	assert isset mac
+
+	# Remove all colons and make the rest lowercase.
+	mac=${mac//:/}
+	mac=${mac,,}
 
 	local output
-
 	if [ "${#mac}" = "12" ]; then
 		# Add colons (:) to mac address
 		output=${mac:0:2}
@@ -123,11 +127,13 @@ function mac_format() {
 		for i in 2 4 6 8 10; do
 			output="${output}:${mac:${i}:2}"
 		done
+	else
+		output=${mac}
 	fi
 
 	assert mac_is_valid ${output}
 
-	echo "${output}"
+	print "${output}"
 }
 
 function mac_is_valid() {

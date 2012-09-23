@@ -135,12 +135,21 @@ function _status() {
 	local zone=${1}
 	local port=${2}
 
+	# Do nothing for devices which are not up and running.
+	device_exists ${port} || exit ${EXIT_OK}
+
 	local status
+
+	# Check if the device is down.
 	if ! device_is_up ${port}; then
-		status=${MSG_DEVICE_STATUS_UP}
+		status=${MSG_DEVICE_STATUS_DOWN}
+
+	# Check if the device has no carrier.
 	elif ! device_has_carrier ${port}; then
 		status=${MSG_DEVICE_STATUS_NOCARRIER}
-	elif [ -n "$(stp_bridge_get_protocol ${zone})" ]; then
+
+	# Check for STP information.
+	elif stp_is_enabled ${zone}; then
 		local state=$(stp_port_get_state ${zone} ${port})
 		state="MSG_STP_${state}"
 		status="${!state}"
