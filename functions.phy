@@ -1,0 +1,84 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+PHY_DIR="/sys/class/ieee80211"
+
+function phy_dir() {
+	local phy=${1}
+
+	echo "${PHY_DIR}/${phy}"
+}
+
+function phy_exists() {
+	local phy=${1}
+	assert isset phy
+
+	[ -d "$(phy_dir ${phy})" ]
+}
+
+function phy_list() {
+	local phy
+
+	for phy in $(phy_dir)/*; do
+		[ -d "${phy}" ] || continue
+
+		basename ${phy}
+	done
+}
+
+function phy_get() {
+	local info=${1}
+
+	local phy
+
+	if listmatch ${info} $(phy_list); then
+		phy="${info}"
+	elif device_exists ${info}; then
+		info=$(device_get_address ${info})
+	fi
+
+	if [ -z "${phy}" ] && mac_is_valid ${info}; then
+		local i
+		for i in $(phy_list); do
+			if [ "${info}" = "$(phy_get_address ${i})" ]; then
+				phy=${i}
+				break
+			fi
+		done
+	fi
+
+	if [ -z "${phy}" ]; then
+		return ${EXIT_ERROR}
+	fi
+
+	echo "${phy}"
+	return ${EXIT_OK}
+}
+
+function phy_get_address() {
+	local phy=${1}
+	assert isset phy
+
+	local path="$(phy_dir ${phy})/macaddress"
+	[ -r "${path}" ] || return ${EXIT_ERROR}
+
+	print "$(<${path})"
+}

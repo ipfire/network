@@ -19,65 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-PHY_DIR="/sys/class/ieee80211"
-
-function phy_dir() {
-	local phy=${1}
-
-	echo "${PHY_DIR}/${phy}"
-}
-
-function phy_exists() {
-	local phy=${1}
-
-	[ -d "$(phy_dir ${phy})" ]
-}
-
-function phy_list() {
-	local phy
-	for phy in $(phy_dir)/*; do
-		phy=$(basename ${phy})
-		echo "${phy}"
-	done
-}
-
-function phy_get() {
-	local info=${1}
-
-	local phy
-
-	if listmatch ${info} $(phy_list); then
-		phy="${info}"
-	elif device_exists ${info}; then
-		info=$(device_get_address ${info})
-	fi
-
-	if [ -z "${phy}" ] && mac_is_valid ${info}; then
-		local i
-		for i in $(phy_list); do
-			if [ "${info}" = "$(phy_get_address ${i})" ]; then
-				phy=${i}
-				break
-			fi
-		done
-	fi
-
-	if [ -z "${phy}" ]; then
-		return ${EXIT_ERROR}
-	fi
-
-	echo "${phy}"
-	return ${EXIT_OK}
-}
-
-function phy_get_address() {
-	local phy=${1}
-
-	assert isset phy
-
-	cat $(phy_dir ${phy})/macaddress 2>/dev/null
-}
-
 function wireless_create() {
 	local device=${1}
 	local phy=$(phy_get ${2})
