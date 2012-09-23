@@ -110,10 +110,10 @@ function cli_device_status() {
 
 	case "${status}" in
 		${EXIT_TRUE})
-			status="${COLOUR_GREEN}UP${COLOUR_NORMAL}"
+			status="${CLR_GREEN_B}UP${CLR_RESET}"
 			;;
 		${EXIT_FALSE})
-			status="${COLOUR_RED}DOWN${COLOUR_NORMAL}"
+			status="${CLR_RED_B}DOWN${CLR_RESET}"
 			;;
 	esac
 

@@ -270,7 +270,7 @@ function cli_print_warning() {
 	local level=${1}
 	shift
 
-	cli_print ${level} "${COLOUR_WARN}%s${COLOUR_NORMAL}" "$@"
+	cli_print ${level} "${CLR_YELLOW_B}%s${CLR_RESET}" "$@"
 }
 
 function cli_space() {

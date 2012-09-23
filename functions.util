@@ -35,7 +35,7 @@ function args() {
 
 # Print a pretty error message
 function error() {
-	echo -e " ${COLOUR_ERROR}ERROR${COLOUR_NORMAL}  : $@" >&2
+	echo -e " ${CLR_RED_B}ERROR${CLR_RESET}  : $@" >&2
 }
 
 function error_log() {
@@ -44,7 +44,7 @@ function error_log() {
 
 # Print a pretty warn message
 function warning() {
-	echo -e " ${COLOUR_WARN}WARNING${COLOUR_NORMAL}: $@" >&2
+	echo -e " ${CLR_YELLOW_B}WARNING${CLR_RESET}: $@" >&2
 }
 
 function warning_log() {

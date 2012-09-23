@@ -157,6 +157,7 @@ function _status() {
         echo "${port}"
 
         local status=$(device_get_status ${port})
+	# XXX STATUS_COLOUR AND STATUS_TEXT DO NOT EXIST ANYMORE
         printf "${DEVICE_PRINT_LINE1}" "Status:" "$(echo -ne ${STATUS_COLOUR[${status}]}${STATUS_TEXT[${status}]}${COLOUR_NORMAL})"
 
         cli_headline "  Ethernet information:"

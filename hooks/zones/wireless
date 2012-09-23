@@ -129,7 +129,7 @@ function _status() {
 	printf "${DEVICE_PRINT_LINE1}" "Priority:" $(stp_bridge_get_priority ${zone})
 
 	if stp_bridge_is_root ${zone}; then
-		echo -e "    ${COLOUR_BOLD}This bridge is root.${COLOUR_NORMAL}"
+		echo -e "    ${CLR_BLACK_B}This bridge is root.${CLR_RESET}"
 	else
 		printf "${DEVICE_PRINT_LINE1}" "Designated root:" $(stp_bridge_get_designated_root ${zone})
 		printf "${DEVICE_PRINT_LINE1}" "Root path cost:" $(stp_bridge_get_root_path_cost ${zone})
