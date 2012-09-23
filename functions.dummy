@@ -1,0 +1,54 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+DUMMY_PORT_PATTERN="dN"
+
+function dummy_create() {
+	local device=${1}
+	assert isset device
+
+	local address=${2}
+	isset address || address=$(mac_generate)
+	assert ismac address
+
+	if device_exists ${device}; then
+		log ERROR "dummy device '${device}' does already exist"
+		return ${EXIT_ERROR}
+	fi
+
+	cmd_quiet "ip link add name ${device} address ${address} type dummy"
+	local ret=$?
+
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "dummy device '${device}' has been created"
+	else
+		log ERROR "could not create dummy device '${dummy}': ${ret}"
+	fi
+
+	return ${ret}
+}
+
+function dummy_remove() {
+	local device=${1}
+	assert isset device
+
+	device_delete ${device}
+}
