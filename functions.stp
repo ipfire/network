@@ -107,7 +107,7 @@ function stp_bridge_set_protocol() {
 		mode="${STP_DEFAULT_MODE}"
 	fi
 
-	mstpctl setforcevers ${bridge} ${mode}
+	cmd mstpctl setforcevers ${bridge} ${mode}
 	assert [ $? -eq 0 ]
 }
 

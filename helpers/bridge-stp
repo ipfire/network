@@ -59,6 +59,13 @@ case "${STP_MODE}" in
 			fi
 		fi
 
+		# Set the right protocol that should be used.
+		# Do this after the bridge has been added.
+		(
+			sleep 2
+			stp_bridge_set_protocol ${bridge} ${STP_MODE}
+		) &
+
 		# Tell mstpd that STP has to be enabled/disabled.
 		case "${action}" in
 			start)
