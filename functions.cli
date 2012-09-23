@@ -118,7 +118,7 @@ function cli_device_headline() {
 
 	if enabled long; then
 		# Virtual devices.
-		device_is_virtual ${device} && cli_device_virtual ${device}
+		device_is_vlan ${device} && cli_device_vlan ${device}
 
 		# Bonded devices.
 		device_is_bonded ${device} && cli_device_bonded ${device}
@@ -154,13 +154,13 @@ function cli_device_stats() {
 	cli_space
 }
 
-function cli_device_virtual() {
+function cli_device_vlan() {
 	local device=${1}
 
 	cli_headline 2 "VLAN"
 
-	cli_print_fmt1 2 "Parent" "$(virtual_get_parent ${device})"
-	cli_print_fmt1 2 "VID" "$(virtual_get_id ${device})"
+	cli_print_fmt1 2 "Parent" "$(vlan_get_parent ${device})"
+	cli_print_fmt1 2 "VID" "$(vlan_get_id ${device})"
 	cli_space
 }
 

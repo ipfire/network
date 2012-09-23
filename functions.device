@@ -185,36 +185,41 @@ function device_get_bridge() {
 	device_ifindex_to_name ${ifindex}
 }
 
-# Check if the device is a virtual device
-function device_is_virtual() {
+# Check if the device is a vlan device
+function device_is_vlan() {
 	local device=${1}
+	assert isset device
 
-	[ -e "/proc/net/vlan/${device}" ]
+	[ -e "${PROC_NET_VLAN}/${device}" ]
 }
 
-# Check if the device has virtual devices
-function device_has_virtuals() {
+# Check if the device has vlan devices
+function device_has_vlans() {
 	local device=${1}
+	assert isset device
 
-	if device_is_virtual ${device}; then
+	if device_is_vlan ${device}; then
 		return ${EXIT_FALSE}
 	fi
 
-	local virtuals=$(device_get_virtuals ${device})
-	[ -n "${virtuals}" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
+	local vlans=$(device_get_vlans ${device})
+	[ -n "${vlans}" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
 }
 
-function device_get_virtuals() {
+function device_get_vlans() {
 	local device=${1}
+	assert isset device
 
 	# If no 8021q module has been loaded into the kernel,
 	# we cannot do anything.
-	[ -r "/proc/net/vlan/config" ] || return ${EXIT_OK}
+	[ -r "${PROC_NET_VLAN_CONFIG}" ] || return ${EXIT_OK}
 
 	local dev spacer1 id spacer2 parent
 	while read dev spacer1 id spacer2 parent; do
-		[ "${parent}" = "${device}" ] && echo "${dev}"
-	done < /proc/net/vlan/config | sort
+		[ "${parent}" = "${device}" ] || continue
+
+		print "${dev}"
+	done < ${PROC_NET_VLAN_CONFIG}
 }
 
 # Check if the device is a ppp device
@@ -267,7 +272,7 @@ function device_is_ethernet() {
 	device_is_ppp ${device} && \
 		return ${EXIT_ERROR}
 
-	device_is_virtual ${device} && \
+	device_is_vlan ${device} && \
 		return ${EXIT_ERROR}
 
 	[ "$(__device_get_file ${device} type)" != "1" ] && \
@@ -280,7 +285,7 @@ function device_is_ethernet() {
 function device_get_type() {
 	local device=${1}
 
-	if device_is_virtual ${device}; then
+	if device_is_vlan ${device}; then
 		echo "vlan"
 
 	elif device_is_bonding ${device}; then
@@ -419,7 +424,7 @@ function device_is_free() {
 function device_is_used() {
 	local device=${1}
 
-	device_has_virtuals ${device} && \
+	device_has_vlans ${device} && \
 		return ${EXIT_OK}
 	device_is_bonded ${device} && \
 		return ${EXIT_OK}
@@ -483,8 +488,8 @@ function device_set_parent_up() {
 	local device=${1}
 	local parent
 
-	if device_is_virtual ${device}; then
-		parent=$(virtual_get_parent ${device})
+	if device_is_vlan ${device}; then
+		parent=$(vlan_get_parent ${device})
 
 		device_is_up ${parent} && return ${EXIT_OK}
 
@@ -520,8 +525,8 @@ function device_set_parent_down() {
 	local device=${1}
 	local parent
 
-	if device_is_virtual ${device}; then
-		parent=$(virtual_get_parent ${device})
+	if device_is_vlan ${device}; then
+		parent=$(vlan_get_parent ${device})
 
 		device_is_up ${parent} || return ${EXIT_OK}
 

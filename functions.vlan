@@ -1,0 +1,156 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+PROC_NET_VLAN="/proc/net/vlan"
+PROC_NET_VLAN_CONFIG="${PROC_NET_VLAN}/config"
+
+VLAN_PORT_INTERFIX="v"
+
+function vlan_init() {
+	ebtables-restore <<EOF
+*filter
+:INPUT ACCEPT
+:FORWARD ACCEPT
+:OUTPUT ACCEPT
+
+*broute
+:BROUTING ACCEPT
+-A BROUTING -p 802_1Q -j DROP
+EOF
+}
+
+function vlan_create() {
+	local device=${1}
+	assert isset device
+
+	local parent=${2}
+	assert isset parent
+
+	local tag=${3}
+	assert isinteger tag
+
+	local address=${4}
+	if isset address; then
+		assert ismac address
+	fi
+
+	# Check if a device with the name does already exist.
+	if device_exists ${device}; then
+		log ERROR "device '${device}' does already exist"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if the parent device exists.
+	if ! device_exists ${parent}; then
+		log ERROR "parent device '${parent}' does not exist"
+		return ${EXIT_ERROR}
+	fi
+
+	# Load ebtables stuff.
+	vlan_init
+
+	local command="ip link add link ${parent} name ${device}"
+
+	if isset address; then
+		command="${command} address ${address}"
+	fi
+
+	command="${command} type vlan id ${tag}"
+
+	cmd_quiet ${command}
+	local ret=$?
+
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "vlan device '${device}' has been created"
+	else
+		log ERROR "could not create vlan device '${device}': ${ret}"
+	fi
+
+	return ${ret}
+}
+
+function vlan_remove() {
+	local device=${1}
+	assert isset device
+
+	# Set down device (if not already done).
+	device_set_down ${device}
+
+	device_delete ${device}
+}
+
+function vlan_get_parent() {
+	local device=${1}
+	assert isset device
+
+	# Nothing to do, if 8021q module is not loaded.
+	[ -r "${PROC_NET_VLAN_CONFIG}" ] || return ${EXIT_OK}
+
+	local dev spacer1 id spacer2 parent
+	while read dev spacer1 id spacer2 parent; do
+		[ "${device}" = "${dev}" ] || continue
+
+		print "${parent}"
+		return ${EXIT_OK}
+	done < ${PROC_NET_VLAN_CONFIG}
+
+	return ${EXIT_ERROR}
+}
+
+function vlan_get_id() {
+	local device=${1}
+	assert isset device
+
+	# Nothing to do, if 8021q module is not loaded.
+	[ -r "${PROC_NET_VLAN_CONFIG}" ] || return ${EXIT_OK}
+
+	local dev spacer1 id spacer2 parent
+	while read dev spacer1 id spacer2 parent; do
+		[ "${device}" = "${dev}" ] || continue
+
+		print "${id}"
+		return ${EXIT_OK}
+	done < ${PROC_NET_VLAN_CONFIG}
+
+	return ${EXIT_ERROR}
+}
+
+function vlan_get_by_parent_and_vid() {
+	local parent=${1}
+	assert isset parent
+
+	local vid=${2}
+	assert isset vid
+
+	# Nothing to do, if 8021q module is not loaded.
+	[ -r "${PROC_NET_VLAN_CONFIG}" ] || return ${EXIT_OK}
+
+	local dev spacer1 id spacer2 par
+	while read dev spacer1 id spacer2 par; do
+		[ "${parent}" = "${par}" ] || continue
+		[ "${vid}" = "${id}" ] || continue
+
+		print "${dev}"
+		return ${EXIT_OK}
+	done < ${PROC_NET_VLAN_CONFIG}
+
+	return ${EXIT_ERROR}
+}

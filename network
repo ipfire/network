@@ -146,14 +146,14 @@ function cli_device_status() {
 	cli_print_fmt1 1 "Promisc"	"$(cli_print_bool $?)"
 	cli_space
 
-	# Print all virtual devices.
-	local virtuals=$(device_get_virtuals ${device})
-	if [ -n "${virtuals}" ]; then
-		cli_headline 2 "Virtual devices"
+	# Print all vlan devices.
+	local vlans=$(device_get_vlans ${device})
+	if [ -n "${vlans}" ]; then
+		cli_headline 2 "VLAN devices"
 
-		local virtual
-		for virtual in ${virtuals}; do
-			cli_print 2 "* %-6s - %s" "${virtual}" "$(device_get_address ${virtual})"
+		local vlan
+		for vlan in ${vlans}; do
+			cli_print 2 "* %-6s - %s" "${vlan}" "$(device_get_address ${vlan})"
 		done
 		cli_space
 	fi
