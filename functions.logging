@@ -33,17 +33,23 @@ function log() {
 	local level=${1}
 	shift
 	local message="$@"
+	local message_log="${message}"
 
 	if [ -z "${DEBUG}" ] && [ "${level}" = "DEBUG" ]; then
 		return
 	fi
 
-	# Set a prefix if we are in a hook.
-	if [ -n "${HOOK}" ]; then
-		message="${HOOK}: ${message}"
+	local funcname="${FUNCNAME[1]}"
+	if isset funcname; then
+		message_log="${funcname}: ${message_log}"
 	fi
 
-	logger -t "${LOG_FACILITY}[$$]" "${message}"
+	# Set a prefix if we are in a hook.
+	if [ -n "${HOOK}" ]; then
+		message_log="${HOOK}: ${message_log}"
+	fi
+
+	logger -t "${LOG_FACILITY}[$$]" "${message_log}"
 
 	# Leave here, when there should be no output on the console.
 	[ "${LOG_DISABLE_STDOUT}" = "true" ] && return 0
