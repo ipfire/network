@@ -193,30 +193,3 @@ function hostapd_stop() {
 
 	rm -rf $(hostapd_config_dir ${device})
 }
-
-function hostapd_get_pid() {
-	local device=${1}
-
-	assert isset device
-
-	local pid_file="$(hostapd_config_dir ${device})/pid"
-
-	[ -e "${pid_file}" ] || return ${EXIT_ERROR}
-
-	cat ${pid_file} 2>/dev/null
-	return ${EXIT_OK}
-}
-
-function hostapd_is_running() {
-	local device=${1}
-
-	assert isset device
-
-	local pid=$(hostapd_get_pid ${device})
-
-	if isset pid && [ -d "/proc/${pid}" ]; then
-		return ${EXIT_OK}
-	fi
-
-	return ${EXIT_ERROR}
-}
