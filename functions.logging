@@ -61,7 +61,6 @@ function log() {
 			colour="${CLR_CYAN_R}"
 			;;
 		INFO)
-			colour="${CLR_BLACK_R}"
 			console="1"
 			;;
 		WARNING)
@@ -74,10 +73,10 @@ function log() {
 
 	case "${console}" in
 		1)
-			printf "${colour}${message}${CLR_RESET_ALL}\n"
+			printf "${colour}${message}${CLR_RESET}\n"
 			;;
 		2)
-			printf "${colour}${message}${CLR_RESET_ALL}\n" >&2
+			printf "${colour}${message}${CLR_RESET}\n" >&2
 			;;
 	esac
 }
