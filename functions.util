@@ -261,6 +261,17 @@ function cmd_quiet() {
 	cmd $@ &>/dev/null
 }
 
+function cmd_exec() {
+	local cmd=$@
+
+	log DEBUG "Exec'ing command: ${cmd}"
+
+	exec ${cmd}
+
+	log ERROR "Could not exec-ute: ${cmd}"
+	exit ${EXIT_ERROR}
+}
+
 function seq() {
 	if [ $# -eq 2 ]; then
 		eval echo {${1}..${2}}
@@ -363,4 +374,17 @@ function dec() {
 function network_is_running() {
 	# Check, if the network service is running.
 	service_is_active network
+}
+
+function contains_spaces() {
+	local var="$@"
+
+	# Eliminate spaces.
+	local var2=${var// /}
+
+	if [ ${#var} -ne ${#var2} ]; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
 }
