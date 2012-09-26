@@ -19,128 +19,298 @@
 #                                                                             #
 ###############################################################################
 
+WPA_SUPPLICANT_SOCKET_DIR="${RUN_DIR}/wpa_supplicant/ctrl"
+
 function wpa_supplicant_config_write() {
 	local device=${1}
-	shift
-
 	assert isset device
 
-	local ssid
-	local encryption
-	local key
+	local file=${2}
+	assert isset file
 
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--ssid=*)
-				ssid=${1#--ssid=}
+	shift 2
+
+	local ap_scan=1 country_code mode key ssid
+
+	local arg
+	for arg in "$@"; do
+		case "${arg}" in
+			--ap-scan=*)
+				ap_scan=$(cli_get_val ${arg})
 				;;
-			--encryption=*)
-				encryption=${1#--encryption=}
+			--country-code=*)
+				country_code=$(cli_get_val ${arg})
+				;;
+			--mode=*)
+				mode=$(cli_get_val ${arg})
+
+				# Empty signals no encryption.
+				isset mode || mode="NONE"
+				;;
+			--ssid=*)
+				ssid=$(cli_get_val ${arg})
 				;;
 			--key=*)
-				key=${1#--key=}
+				key=$(cli_get_val ${arg})
+				;;
+			*)
+				error "Unrecognized argument: ${arg}"
+				return ${EXIT_ERROR}
 				;;
 		esac
-		shift
 	done
 
-	assert isset ssid
-	assert isset encryption
-	assert isset key
+	assert isinteger ap_scan
+	assert isset mode
 
-	cat <<EOF
-# WPA supplicant configuration for ${device}.
-# DO NOT EDIT.
+	local auth_alg key_mgmt proto ssid psk wep_key0 wep_tx_keyidx
 
-network={
-	ssid="${ssid}"
-	proto=RSN
-	key_mgmt=${encryption}
-	pairwise=CCMP
-	group=TKIP
-	psk="${key}"
-}
+	case "${mode}" in
+		# Normal WPA.
+		WPA-PSK)
+			auth_alg="OPEN"
+			key_mgmt="WPA-PSK"
+			proto="WPA"
+			pairwise="CCMP TKIP"
+			group="CCMP TKIP WEP104 WEP40"
+			;;
 
-EOF
+		# WPA with stronger algorithms.
+		WPA-PSK-SHA256)
+			auth_alg="OPEN"
+			key_mgmt="WPA-PSK-SHA256"
+			proto="WPA"
+			pairwise="CCMP TKIP"
+			group="CCMP TKIP WEP104 WEP40"
+			;;
+
+		# Normal WPA2 (802.11i).
+		WPA2-PSK)
+			auth_alg="OPEN"
+			key_mgmt="WPA-PSK"
+			proto="RSN"
+			pairwise="CCMP TKIP"
+			group="CCMP TKIP WEP104 WEP40"
+			;;
+
+		# WPA2 with stronger algorithms.
+		WPA2-PSK-SHA256)
+			auth_alg="OPEN"
+			key_mgmt="WPA-PSK-SHA256"
+			proto="RSN"
+			pairwise="CCMP TKIP"
+			group="CCMP TKIP WEP104 WEP40"
+			;;
+
+		# WEP.
+		WEP)
+			auth_alg="SHARED"
+			wep_key0="${key}"
+			wep_tx_keyidx="0"
+
+			# Reset PSK.
+			psk=""
+			;;
+
+		# IEEE 802.1X
+		8021X)
+			key_mgmt="IEEE8021X"
+			;;
+
+		# No encryption. DANGEROUS!
+		NONE)
+			auth_alg="OPEN"
+			key_mgmt="NONE"
+			;;
+		*)
+			log ERROR "Unknown mode: ${mode}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	local config_dir=$(dirname ${file})
+	mkdir -p ${config_dir} 2>/dev/null
+
+	config_header "WPA supplicant configuration file" > ${file}
+
+	# AP scanning/selection
+	print "ap_scan=${ap_scan}" >> ${file}
+
+	# Set country code, if known.
+	if isset country_code; then
+		print "country=\"${country_code}\"" >> ${file}
+	fi
+
+	# Set control socket directory.
+	print "ctrl_interface=${WPA_SUPPLICANT_SOCKET_DIR}" >> ${file}
+
+	(
+		print # Network section
+		print "network={"
+
+		if isset auth_alg; then
+			print "	auth_alg=${auth_alg}"
+		fi
+
+		if isset key_mgmt; then
+			print "	key_mgmt=${key_mgmt}"
+		fi
+
+		if isset proto; then
+			print "	proto=${proto}"
+		fi
+
+		if isset ssid; then
+			print "	ssid=${ssid}"
+		fi
+
+		if isset key; then
+			print "	psk=\"${key}\""
+		fi
+
+		if isset wep_key0; then
+			print "	wep_key0=\"${wep_key0}\""
+		fi
+
+		if isset wep_tx_keyidx; then
+			print "	wep_tx_keyidx=${wep_tx_keyidx}"
+		fi
+
+		print "}"
+	) >> ${file}
+
+	return ${EXIT_OK}
 }
 
 function wpa_supplicant_config_dir() {
 	local device=${1}
-
 	assert isset device
 
-	echo "${RUN_DIR}/wireless/${device}"
+	echo "${RUN_DIR}/wpa_supplicant/${device}"
 }
 
 function wpa_supplicant_start() {
 	local device=${1}
-	shift
+	assert isset device
 
-	assert device_exists ${device}
-
-	local config_dir=$(wpa_supplicant_config_dir ${device})
-	mkdir -p ${config_dir}
-
-	local config_file=${config_dir}/config
-	wpa_supplicant_config_write ${device} $@ > ${config_file}
-
-	wpa_supplicant -i ${device} -D wext -B -c ${config_file} \
-		-P ${config_dir}/pid
+	service_start "wpa_supplicant@${device}.service"
 }
 
 function wpa_supplicant_stop() {
 	local device=${1}
-
 	assert isset device
 
-	local pid=$(wpa_supplicant_get_pid ${device})
-
-	if isset pid; then
-		process_kill ${pid}
-	else
-		warning_log "Could not find pid file for wpa_supplicant process running for ${device}."
-	fi
-
-	rm -rf $(wpa_supplicant_config_dir ${device})
+	service_stop "wpa_supplicant@${device}.service"
 }
 
-function wpa_supplicant_get_pid() {
+function wpa_supplicant_client() {
 	local device=${1}
-
 	assert isset device
+	shift
 
-	local pid_file="$(wpa_supplicant_config_dir ${device})/pid"
+	local cmd="$@"
+	assert isset cmd
 
-	[ -e "${pid_file}" ] || return ${EXIT_ERROR}
-
-	cat ${pid_file} 2>/dev/null
-	return ${EXIT_OK}
+	# Run the command and return the output.
+	cmd wpa_cli -p${WPA_SUPPLICANT_SOCKET_DIR} -i${device} ${cmd}
 }
 
-function wpa_supplicant_is_running() {
+function wpa_cli_status() {
 	local device=${1}
-
 	assert isset device
 
-	local pid=$(wpa_supplicant_get_pid ${device})
+	wpa_supplicant_client ${device} status verbose
+}
 
-	if isset pid && [ -d "/proc/${pid}" ]; then
-		return ${EXIT_OK}
-	fi
+function wpa_cli_status_get() {
+	local device=${1}
+	assert isset device
+
+	local arg=${2}
+	assert isset arg
+
+	local line key
+	while read -r line; do
+		key=$(cli_get_key ${line})
+
+		if [ "${key}" = "${arg}" ]; then
+			cli_get_val "${line}"
+			return ${EXIT_OK}
+		fi
+	done <<< "$(wpa_cli_status ${device})"
 
 	return ${EXIT_ERROR}
 }
 
-function wpa_supplicant_get_pid() {
-	local zone=${1}
-	shift
+function wpa_cli_bss() {
+	local device=${1}
+	assert isset device
 
-	
+	local bss=${2}
+	assert isset bss
+
+	wpa_supplicant_client ${device} bss ${bss}
 }
 
-function wpa_supplicant_stop() {
-	local zone=${1}
-	shift
+function wpa_cli_bss_get() {
+	local device=${1}
+	assert isset device
 
-	killall wpa_supplicant
+	local bss=${2}
+	assert isset bss
+
+	local arg=${3}
+	assert isset arg
+
+	local line key
+	while read -r line; do
+		key=$(cli_get_key ${line})
+
+		if [ "${key}" = "${arg}" ]; then
+			cli_get_val "${line}"
+			return ${EXIT_OK}
+		fi
+	done <<< "$(wpa_cli_bss ${device} ${bss})"
+
+	return ${EXIT_ERROR}
+}
+
+function wpa_cli_bss_get_frequency() {
+	local device=${1}
+	assert isset device
+
+	local bssid=${2}
+	assert isset bssid
+
+	wpa_cli_bss_get ${device} ${bssid} freq
+}
+
+function wpa_cli_bss_get_noise() {
+	local device=${1}
+	assert isset device
+
+	local bssid=${2}
+	assert isset bssid
+
+	wpa_cli_bss_get ${device} ${bssid} noise
+}
+
+function wpa_cli_bss_get_quality() {
+	local device=${1}
+	assert isset device
+
+	local bssid=${2}
+	assert isset bssid
+
+	wpa_cli_bss_get ${device} ${bssid} qual
+}
+
+function wpa_cli_bss_get_flags() {
+	local device=${1}
+	assert isset device
+
+	local bssid=${2}
+	assert isset bssid
+
+	wpa_cli_bss_get ${device} ${bssid} flags
 }

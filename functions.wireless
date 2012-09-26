@@ -21,45 +21,88 @@
 
 function wireless_create() {
 	local device=${1}
-	local phy=$(phy_get ${2})
-	local type=${3}
-	local mac=${4}
-
 	assert isset device
-	assert isset phy
-	assert isset type
+	shift
 
-	isset mac || mac=$(mac_generate)
+	local address
+	local phy
+	local type="managed"
 
-	assert phy_exists ${phy}
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--address=*)
+				address=$(cli_get_val ${1})
+				;;
+			--phy=*)
+				phy=$(cli_get_val ${1})
+				phy=$(phy_get ${phy})
+				;;
+			--type=*)
+				type=$(cli_get_val ${1})
+
+				# ap --> __ap
+				[ "${type}" = "ap" ] && type="__ap"
+				;;
+			*)
+				error "Unrecognized argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
 	assert isoneof type managed __ap
+	assert phy_exists ${phy}
+	isset address || address=$(mac_generate)
 
-	iw phy ${phy} interface add ${device} type ${type}
+	cmd_quiet iw phy ${phy} interface add ${device} type ${type}
+	local ret=$?
 
-	if device_exists ${device}; then
-		device_set_address ${device} ${mac}
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "created wireless device '${device}' (${type})"
+
+		if isset address; then
+			device_set_address ${device} ${address}
+		fi
+	else
+		log ERROR "could not create wireless device '${device}' (${type}): ${ret}"
 	fi
 
-	device_set_up ${device}
+	return ${ret}
 }
 
 function wireless_remove() {
 	local device=${1}
+	assert isset device
 
-	assert device_exists ${device}
+	if ! device_exists ${device}; then
+		return ${EXIT_OK}
+	fi
 
+	# Tear down the device (if necessary).
 	device_set_down ${device}
 
-	iw dev ${device} del
+	# Remove it.
+	cmd_quiet iw dev ${device} del
+	local ret=$?
+
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "removed wireless device '${device}'"
+	else
+		log ERROR "could not remove wireless device '${device}': ${ret}"
+	fi
+
+	return ${ret}
 }
 
 function wireless_set_channel() {
 	local device=${1}
-	local channel=${2}
-
 	assert isset device
-	assert device_exists ${device}
+
+	local channel=${2}
 	assert isset channel
 
-	iw dev ${device} set channel ${channel} $@
+	device_exists ${device} || return ${EXIT_ERROR}
+
+	cmd_quiet iw dev ${device} set channel ${channel}
 }

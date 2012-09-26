@@ -24,20 +24,24 @@
 HOOK_SETTINGS="HOOK PHY MAC MTU SSID KEY ENCRYPTION"
 
 # Default values
-MAC=$(mac_generate)
+ADDRESS=$(mac_generate)
 PHY=
 MTU=1500
 SSID=
 KEY=
-ENCRYPTION="WPA-PSK"
+ENCRYPTION_MODE=
 
 function _check() {
 	assert isset SSID
-	assert ismac MAC
+
+	if isset ADDRESS; then
+		assert ismac ADDRESS
+	fi
+
 	assert isinteger MTU
 	assert ismac PHY
 
-	if [ -n "${ENCRYPTION}" ]; then
+	if [ -n "${ENCRYPTION_MODE}" ]; then
 		assert isset KEY
 	fi
 }
@@ -45,44 +49,51 @@ function _check() {
 function _parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--phy=*)
-				PHY=${1#--phy=}
+			--phy=*|--parent-device=*)
+				PHY=$(cli_get_val ${1})
+				;;
+			--encryption-mode=*)
+				ENCRYPTION_MODE=$(cli_get_val ${1})
+				;;
+			--address=*)
+				ADDRESS=$(cli_get_val ${1})
 				;;
 			--ssid=*)
-				SSID=${1#--ssid=}
+				SSID=$(cli_get_val ${1})
 				;;
 			--key=*)
-				KEY=${1#--key=}
+				KEY=$(cli_get_val ${1})
 				;;
 			*)
-				warning "Ignoring unknown option '${1}'"
+				warning "Unrecognized option: ${1}"
 				;;
 		esac
 		shift
 	done
 
+	# Just save the MAC address of the phy.
 	PHY=$(phy_get ${PHY})
 	PHY=$(phy_get_address ${PHY})
 }
 
 function _up() {
 	local zone=${1}
-	shift
-
 	assert isset zone
 
+	# Read zone configuration.
 	zone_config_read ${zone}
 
-	wireless_create ${zone} ${PHY} managed ${MAC}
+	if ! device_exists ${zone}; then
+		#  Create the wireless interface.
+		wireless_create ${zone} \
+			--phy=${PHY} \
+			--type="managed" \
+			--address="${ADDRESS}" \
+		|| exit $?
+	fi
 
-	[ -n "${MAC}" ] && device_set_address ${zone} ${MAC}
-	[ -n "${MTU}" ] && device_set_mtu ${zone} ${MTU} 
-
-	# Create WPA supplicant configuration.
-	wpa_supplicant_start ${zone} --ssid=${SSID} \
-		--encryption=${ENCRYPTION} --key=${KEY}
-
-	#device_set_up ${zone}
+	# Start the WPA supplicant daemon.
+	wpa_supplicant_start ${zone}
 
 	zone_configs_up ${zone}
 
@@ -102,8 +113,6 @@ function _down() {
 
 	wpa_supplicant_stop ${zone}
 
-	#device_set_down ${zone}
-
 	wireless_remove ${zone}
 
 	exit ${EXIT_OK}
@@ -113,6 +122,7 @@ function _status() {
 	local zone=${1}
 	assert isset zone
 
+	# Print the default header.
 	cli_device_headline ${zone}
 
 	# Exit if zone is down
@@ -121,32 +131,37 @@ function _status() {
 		exit ${EXIT_ERROR}
 	fi
 
-	# XXX Add bridge stp priority here
-	# brctl does not give any information about that
+	cli_headline 2 "Wireless network information"
+	cli_print_fmt1 2 "SSID" "$(wpa_cli_status_get ${zone} ssid)"
+	cli_space
 
-	cli_headline "  Spanning Tree Protocol information:"
-	printf "${DEVICE_PRINT_LINE1}" "ID:" $(stp_bridge_get_id ${zone})
-	printf "${DEVICE_PRINT_LINE1}" "Priority:" $(stp_bridge_get_priority ${zone})
+	cli_headline 3 "Access Point"
+	local bssid=$(wpa_cli_status_get ${zone} bssid)
+	assert isset bssid
 
-	if stp_bridge_is_root ${zone}; then
-		echo -e "    ${CLR_BLACK_B}This bridge is root.${CLR_RESET}"
-	else
-		printf "${DEVICE_PRINT_LINE1}" "Designated root:" $(stp_bridge_get_designated_root ${zone})
-		printf "${DEVICE_PRINT_LINE1}" "Root path cost:" $(stp_bridge_get_root_path_cost ${zone})
-	fi
-	echo # Empty line
+	cli_print_fmt1 3 "BSSID" "${bssid}"
+	cli_print_fmt1 3 "Frequency" \
+		"$(wpa_cli_bss_get_frequency ${zone} ${bssid}) MHz"
+	cli_print_fmt1 3 "Noise" \
+		"$(wpa_cli_bss_get_noise ${zone} ${bssid})"
+	cli_print_fmt1 3 "Quality" \
+		"$(wpa_cli_bss_get_quality ${zone} ${bssid})"
+	cli_print_fmt1 3 "Flags" \
+		"$(wpa_cli_bss_get_flags ${zone} ${bssid})"
+	cli_space
 
-	# Topology information
-	printf "${DEVICE_PRINT_LINE1}" "Topology changing:" $(stp_bridge_get_topology_change_detected ${zone})
-	printf "${DEVICE_PRINT_LINE1}" "Topology change time:" $(beautify_time $(stp_bridge_get_topology_change_timer ${zone}))
-	printf "${DEVICE_PRINT_LINE1}" "Topology change count:" $(stp_bridge_get_topology_change_count ${zone})
+	cli_headline 3 "Encryption"
+	cli_print_fmt1 3 "Mode" \
+		"$(wpa_cli_status_get ${zone} key_mgmt)"
+	cli_print_fmt1 3 "Pairwise cipher" \
+		"$(wpa_cli_status_get ${zone} pairwise_cipher)"
+	cli_print_fmt1 3 "Group cipher" \
+		"$(wpa_cli_status_get ${zone} group_cipher)"
+	cli_space
 
-	cli_headline "  Ports:"
-	zone_ports_status ${zone}
-
-	cli_headline "  Configurations:"
+	cli_headline 2 "Configurations"
 	zone_configs_cmd status ${zone}
+	cli_space
 
-	echo # Empty line
 	exit ${EXIT_OK}
 }
