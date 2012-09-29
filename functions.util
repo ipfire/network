@@ -70,6 +70,31 @@ function basename() {
 	echo "${1##*/}"
 }
 
+function assign() {
+	local key=${1}
+	assert isset key
+	shift
+
+	printf -v "${key}" "%s" "$@"
+}
+
+function fread() {
+	local file=${1}
+	assert isset file
+
+	[ -r "${file}" ] || return ${EXIT_ERROR}
+
+	print "$(<${file})"
+}
+
+function fwrite() {
+	local file=${1}
+	assert isset file
+	shift
+
+	print "%s" "$@" >> ${file}
+}
+
 function enabled() {
 	local param=${1}
 
