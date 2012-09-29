@@ -183,20 +183,26 @@ function iptables_load() {
 
 	local rulesfile
 
-	# First, commit all tables.
-	_iptables_commit
-
 	# Concat the table rulesets into one big file.
 	local proto
 	for proto in 6 4; do
 		rulesfile=$(iptables_rulesfile ipv${proto})
+		assert isset rulesfile
 
 		local table
 		local tablefile
 		for table in $(iptables_tables ipv${proto}); do
 			tablefile=$(iptables_rulesfile ipv${proto} ${table})
-			print "$(<${tablefile})"
+
+			fread ${tablefile}
+
+			# Add the COMMIT statement for every table.
+			if [ -s "${tablefile}" ]; then
+				print "COMMIT"
+			fi
 		done > ${rulesfile}
+
+		assert [ -s "${rulesfile}" ]
 	done
 
 	local error="false"
@@ -234,15 +240,6 @@ function iptables_load() {
 		_iptables_load ipv${proto} ${rulesfile}
 	done
 	return ${EXIT_OK}
-}
-
-# Commit all tables.
-function _iptables_commit() {
-	iptables -t filter "COMMIT"
-	iptables -t mangle "COMMIT"
-
-	# Commit NAT chain for IPv4.
-	iptables -4 -t nat "COMMIT"
 }
 
 function _iptables_load() {
