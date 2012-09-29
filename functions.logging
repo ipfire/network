@@ -40,16 +40,14 @@ function log() {
 	fi
 
 	local funcname="${FUNCNAME[1]}"
-	if isset funcname; then
-		message_log="${funcname}: ${message_log}"
-	fi
+	message_log="${funcname}: ${message_log}"
 
 	# Set a prefix if we are in a hook.
 	if [ -n "${HOOK}" ]; then
 		message_log="${HOOK}: ${message_log}"
 	fi
 
-	logger -t "${LOG_FACILITY}[$$]" "${message_log}"
+	logger -t "${LOG_FACILITY}[$$]" "${message_log}" &
 
 	# Leave here, when there should be no output on the console.
 	[ "${LOG_DISABLE_STDOUT}" = "true" ] && return 0
