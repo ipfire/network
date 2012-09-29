@@ -123,23 +123,20 @@ function iptables_status() {
 # Returns which tables exist for the given protocol.
 function iptables_tables() {
 	local proto=${1}
-	local file
+	assert isset proto
 
 	case "${proto}" in
 		ipv6)
-			file="/proc/net/ip6_tables_names"
+			print "filter mangle"
 			;;
 		ipv4)
-			file="/proc/net/ip_tables_names"
+			print "filter mangle nat"
 			;;
 		*)
 			return ${EXIT_ERROR}
 			;;
 	esac
 
-	assert [ -r "${file}" ]
-
-	print "$(<${file})"
 	return ${EXIT_OK}
 }
 
