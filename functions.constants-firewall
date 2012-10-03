@@ -34,6 +34,9 @@ FIREWALL_MACROS_DIRS="${FIREWALL_MACROS_DIRS} /usr/share/firewall/macros"
 # List of parameters which are saved in the configuration file.
 FIREWALL_CONFIG_PARAMS=""
 
+# Valid arguments in the rules file.
+FIREWALL_RULES_CONFIG_PARAMS="src dst proto action sport dport in out"
+
 # Define the default logging method (nflog or syslog).
 FIREWALL_LOG_METHOD="nflog"
 FIREWALL_CONFIG_PARAMS="${FIREWALL_CONFIG_PARAMS} FIREWALL_LOG_METHOD"
@@ -45,3 +48,12 @@ FIREWALL_CONFIG_PARAMS="${FIREWALL_CONFIG_PARAMS} FIREWALL_NFLOG_THRESHOLD"
 # Enable clamping MSS for braindead ISPs which filter ICMP packets.
 FIREWALL_CLAMP_PATH_MTU="false"
 FIREWALL_CONFIG_PARAMS="${FIREWALL_CONFIG_PARAMS} FIREWALL_CLAMP_PATH_MTU"
+
+FIREWALL_SUPPORTED_PROTOCOLS="tcp udp icmp igmp esp ah gre"
+FIREWALL_PROTOCOLS_SUPPORTING_PORTS="tcp udp"
+
+# Firewall zone settings.
+FIREWALL_ZONE_SETTINGS="FRIEND_ZONES MASQUERADE4"
+
+# Default values.
+FIREWALL_ZONE_SETTINGS_MASQUERADE4="false"

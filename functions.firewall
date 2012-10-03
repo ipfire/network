@@ -51,11 +51,19 @@ function firewall_start() {
 	firewall_tcp_clamp_mss
 
 	# Add policies for every zone.
-	policy_add_localhost
+	firewall_localhost_create_chains
 
 	local zone
 	for zone in $(zones_get_all); do
-		policy_add_zone ${zone}
+		# Create all needed chains for the zone.
+		firewall_zone_create_chains ${zone}
+
+		# After the chains that are always available have been
+		# created, we will add a custom policy to every single
+		# zone.
+
+		# XXX TODO
+		#policy_zone_add ${zone}
 	done
 
 	# Load the new ruleset.
@@ -200,36 +208,208 @@ function firewall_connection_tracking() {
 	iptables -A FORWARD -j CONNTRACK
 }
 
-function firewall_import_rules() {
+function firewall_localhost_create_chains() {
+	log DEBUG "Creating firewall chains for localhost..."
+
+	# Accept everything on lo
+	iptables -A INPUT  -i lo -m state --state NEW -j ACCEPT
+	iptables -A OUTPUT -o lo -m state --state NEW -j ACCEPT
+}
+
+function firewall_zone_create_chains() {
 	local zone=${1}
-	shift
+	assert isset zone
 
-	local protocol="ipv6"
-	local table="filter"
+	log DEBUG "Creating firewall chains for zone '${zone}'."
 
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--table=*)
-				table=$(cli_get_val ${1})
-				;;
-			--protocol=*)
-				protocol=$(cli_get_val ${1})
-				;;
-		esac
+	local chain_prefix="ZONE_${zone^^}"
+
+	# Create filter chains.
+	iptables_chain_create "${chain_prefix}_INPUT"
+	iptables -A INPUT   -i ${zone} -j "${chain_prefix}_INPUT"
+
+	iptables_chain_create "${chain_prefix}_OUTPUT"
+	iptables -A OUTPUT  -o ${zone} -j "${chain_prefix}_OUTPUT"
+
+	# Custom rules.
+	iptables_chain_create "${chain_prefix}_CUSTOM"
+
+	# Intrusion Prevention System.
+	iptables_chain_create "${chain_prefix}_IPS"
+
+	# Create a chain for each other zone.
+	# This leaves us with n^2 chains. Duh.
+
+	local other_zone other_chain_prefix
+	for other_zone in $(zones_get_all); do
+		other_chain_prefix="${chain_prefix}_${other_zone^^}"
+		iptables_chain_create ${other_chain_prefix}
+
+		# Connect the chain with the FORWARD chain.
+		iptables -A FORWARD -i ${zone} -o ${other_zone} \
+			-j "${other_chain_prefix}"
+
+		# Handle custom rules.
+		iptables -A ${other_chain_prefix} -j "${chain_prefix}_CUSTOM"
+
+		# Link IPS.
+		iptables -A ${other_chain_prefix} -j "${chain_prefix}_IPS"
+
+		# Rules.
+		iptables_chain_create "${other_chain_prefix}_RULES"
+		iptables -A ${other_chain_prefix} -j "${other_chain_prefix}_RULES"
+
+		# Policy.
+		iptables_chain_create "${other_chain_prefix}_POLICY"
+		iptables -A ${other_chain_prefix} -j "${other_chain_prefix}_POLICY"
 	done
 
-	assert isoneof protocol ipv4 ipv6
-	assert isoneof table $(iptables_table ${protocol})
+	## Create mangle chain.
+	#iptables_chain_create -t mangle ${chain_prefix}
+	#iptables -t mangle -A PREROUTING  -i ${zone} -j ${chain_prefix}
+	#iptables -t mangle -A POSTROUTING -o ${zone} -j ${chain_prefix}
 
-	# XXX TODO
+	## Quality of Service
+	#iptables_chain_create -t mangle "${chain_prefix}_QOS_INC"
+	#iptables -t mangle -A ${chain_prefix} -i ${zone} -j "${chain_prefix}_QOS_INC"
+	#iptables_chain_create -t mangle "${chain_prefix}_QOS_OUT"
+	#iptables -t mangle -A ${chain_prefix} -o ${zone} -j "${chain_prefix}_QOS_OUT"
 
-	local src dst proto
-	while read src dst proto; do
-		case "${chain}" in
-			filter)
-				;;
-			nat)
-				;;
-		esac
-	done < ${FIREWALL_CONFIG_RULES}
+	# Create NAT chain.
+	iptables_chain_create -4 -t nat ${chain_prefix}
+	iptables -4 -t nat -A PREROUTING  -i ${zone} -j ${chain_prefix}
+	iptables -4 -t nat -A POSTROUTING -o ${zone} -j ${chain_prefix}
+
+	# Network Address Translation
+	iptables_chain_create -4 -t nat "${chain_prefix}_DNAT"
+	iptables -4 -t nat -A PREROUTING  -i ${zone} -j "${chain_prefix}_DNAT"
+	iptables_chain_create -4 -t nat "${chain_prefix}_SNAT"
+	iptables -4 -t nat -A POSTROUTING -o ${zone} -j "${chain_prefix}_SNAT"
+
+	# UPnP
+	iptables_chain_create -4 -t nat "${chain_prefix}_UPNP"
+	iptables -4 -t nat -A ${chain_prefix} -j "${chain_prefix}_UPNP"
+
+	return ${EXIT_OK}
+}
+
+function firewall_parse_rules() {
+	local file=${1}
+	assert isset file
+	shift
+
+	# End if no rule file exists.
+	[ -r "${file}" ] || return ${EXIT_OK}
+
+	local cmd
+
+	local ${FIREWALL_RULES_CONFIG_PARAMS}
+	local line
+	while read -r line; do
+		# Skip empty lines.
+		[ -n "${line}" ] || continue
+
+		# Skip commented lines.
+		[ "${line:0:1}" = "#" ] && continue
+
+		# Parse the rule.
+		_firewall_parse_rule_line ${line}
+		if [ $? -ne ${EXIT_OK} ]; then
+			log WARNING "Skipping invalid line: ${line}"
+			continue
+		fi
+
+		cmd="iptables $@"
+
+		# Source IP address/net.
+		if isset src; then
+			list_append cmd "-s ${src}"
+		fi
+
+		# Destination IP address/net.
+		if isset dst; then
+			list_append cmd "-d ${dst}"
+		fi
+
+		# Protocol.
+		if isset proto; then
+			list_append cmd "-p ${proto}"
+
+			if list_match ${proto} ${FIREWALL_PROTOCOLS_SUPPORTING_PORTS}; then
+				if isset sport; then
+					list_append cmd "--sport ${sport}"
+				fi
+
+				if isset dport; then
+					list_append cmd "--dport ${dport}"
+				fi
+			fi
+		fi
+
+		# Always append the action.
+		list_append cmd "-j ${action}"
+
+		# Execute command.
+		${cmd}
+	done < ${file}
+}
+
+function _firewall_parse_rule_line() {
+	local arg
+
+	# Clear all values.
+	for arg in ${FIREWALL_RULES_CONFIG_PARAMS}; do
+		assign "${arg}" ""
+	done
+
+	local key val
+	while read -r arg; do
+		key=$(cli_get_key ${arg})
+
+		if ! listmatch "${key}" ${FIREWALL_RULES_CONFIG_PARAMS}; then
+			log WARNING "Unrecognized argument: ${arg}"
+			return ${EXIT_ERROR}
+		fi
+
+		val=$(cli_get_val ${arg})
+		assign "${key}" "${val}"
+	done <<< "$(args $@)"
+
+	# action must always be set.
+	if ! isset action; then
+		log WARNING "'action' is not set: $@"
+		return ${EXIT_ERROR}
+	fi
+
+	for arg in src dst; do
+		isset ${arg} || continue
+
+		# Check for valid IP addresses.
+		if ! ip_is_valid ${!arg}; then
+			log WARNING "Invalid IP address for '${arg}=${!arg}': $@"
+			return ${EXIT_ERROR}
+		fi
+	done
+
+	if isset proto; then
+		# Make lowercase.
+		proto=${proto,,}
+
+		if ! list_match "${proto}" ${FIREWALL_SUPPORTED_PROTOCOLS}; then
+			log WARNING "Unsupported protocol type 'proto=${proto}': $@"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	for arg in sport dport; do
+		isset ${arg} || continue
+
+		# Check if port is valid.
+		if ! isinteger ${arg}; then
+			log WARNING "Invalid port '${arg}=${!arg}': $@"
+			return ${EXIT_ERROR}
+		fi
+	done
+
+	return ${EXIT_OK}
 }
