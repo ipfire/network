@@ -46,6 +46,7 @@ function firewall_start() {
 
 	# Add default chains.
 	firewall_tcp_state_flags
+	firewall_custom_chains
 	firewall_connection_tracking
 	firewall_tcp_clamp_mss
 
@@ -130,6 +131,32 @@ function firewall_lock_release() {
 	trap true EXIT TERM KILL
 
 	lock_release ${RUN_DIR}/.firewall_lock
+}
+
+function firewall_custom_chains() {
+	log INFO "Creating CUSTOM* chains..."
+
+	# These chains are intened to be filled with
+	# rules by the user. They are processed at the very
+	# beginning so it is possible to overwrite everything.
+
+	iptables_chain_create CUSTOMINPUT
+	iptables -A INPUT -j CUSTOMINPUT
+
+	iptables_chain_create CUSTOMFORWARD
+	iptables -A FORWARD -j CUSTOMFORWARD
+
+	iptables_chain_create CUSTOMOUTPUT
+	iptables -A OUTPUT -j CUSTOMOUTPUT
+
+	iptables_chain_create -4 -t nat CUSTOMPREROUTING
+	iptables -4 -t nat -A PREROUTING -j CUSTOMPREROUTING
+
+	iptables_chain_create -4 -t nat CUSTOMPOSTROUTING
+	iptables -4 -t nat -A POSTROUTING -j CUSTOMPOSTROUTING
+
+	iptables_chain_create -4 -t nat CUSTOMOUTPUT
+	iptables -4 -t nat -A OUTPUT -j CUSTOMOUTPUT
 }
 
 function firewall_tcp_state_flags() {
