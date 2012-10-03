@@ -104,6 +104,8 @@ function iptables() {
 		esac
 
 		rulesfile=$(iptables_rulesfile ipv${p} ${table})
+		assert isset rulesfile
+
 		print "${args:1:${#args}}" >> ${rulesfile}
 	done
 }
@@ -113,7 +115,7 @@ function _iptables() {
 	local iptables_cmd=$(which iptables)
 	assert isset iptables_cmd
 
-	${iptables_cmd} $@
+	cmd ${iptables_cmd} $@
 }
 
 function iptables_status() {
@@ -211,6 +213,7 @@ function iptables_load() {
 	# First check if everything is correctly formatted.
 	for proto in 6 4; do
 		rulesfile=$(iptables_rulesfile ipv${proto})
+		assert isset rulesfile
 
 		_iptables_load ipv${proto} ${rulesfile} true
 		if [ $? -ne ${EXIT_OK} ]; then
