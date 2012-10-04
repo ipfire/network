@@ -154,27 +154,26 @@ function _up() {
 
 	config_read $(port_file ${port})
 
-	if ! device_exists ${port}; then
-		wireless_create ${port} ${PHY} __ap ${ADDRESS}
+	# Check if the PHY is present.
+	local phy=$(phy_get ${PHY})
+	if ! isset phy; then
+		log DEBUG "phy '${PHY}' is not present"
+		exit ${EXIT_ERROR}
 	fi
 
-	if ! hostapd_is_running ${port}; then
-		hostapd_start ${port} \
-			--broadcast-ssid="${BROADCAST_SSID}" \
-			--channel="${CHANNEL}" \
-			--country-code="${COUNTRY_CODE}" \
-			--encryption="${ENCRYPTION}" \
-			--key="${KEY}" \
-			--mode="${MODE}" \
-			--ssid="${SSID}"
+	# Create the wireless device, if it does not exist, yet.
+	if ! device_exists ${port}; then
+		wireless_create ${port} --phy="${phy}" --type="ap" \
+			--address="${ADDRESS}"
+	fi
 
-		local ret=$?
+	# Start the hostapd service.
+	hostapd_start ${port}
+	local ret=$?
 
-		if [ ${ret} -eq ${EXIT_ERROR} ]; then
-			error_log "Could not start '${port}' because hostapd crashed previously."
-			( _down ${port} )
-			exit ${EXIT_ERROR}
-		fi
+	if [ ${ret} -ne ${EXIT_OK} ]; then
+		log ERROR "Could not start hostapd on port '${port}': ${ret}"
+		exit ${EXIT_ERROR}
 	fi
 
 	exit ${EXIT_OK}
@@ -183,8 +182,6 @@ function _up() {
 function _down() {
 	local port=${1}
 	assert isset port
-
-	config_read $(port_file ${port})
 
 	# Stop the hostapd daemon.
 	hostapd_stop ${port}
@@ -199,10 +196,11 @@ function _down() {
 
 function _hotplug() {
 	local port=${1}
-	local phy=${2}
-
 	assert isset port
+
+	local phy=${2}
 	assert isset phy
+
 	assert port_exists ${port}
 
 	# Read configuration of port.
@@ -214,7 +212,8 @@ function _hotplug() {
 	# Check if the phy is the same we have
 	# read from the configuration file.
 	if [ "${PHY}" = "${phy_address}" ]; then
-		wireless_create ${port} ${PHY} __ap ${ADDRESS}
+		wireless_create ${port} --phy="${phy_address}" --type="ap" \
+			--address="${ADDRESS}"
 	fi
 
 	exit ${EXIT_OK}

@@ -19,17 +19,17 @@
 #                                                                             #
 ###############################################################################
 
-function hostapd_config_dir() {
-	local device=${1}
-	
-	echo "${RUN_DIR}/hostapd/${device}"
-}
+HOSTAPD_CONTROL_INTERFACE_DIR="/run/hostapd/ctrl"
 
 function hostapd_config_write() {
 	local device=${1}
-	shift
+	assert isset device
 
-	assert device_exists ${device}
+	local file=${2}
+	assert isset file
+
+	# Shift the device and file argument.
+	shift 2
 
 	local broadcast_ssid
 	local channel
@@ -42,19 +42,19 @@ function hostapd_config_write() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--broadcast-ssid=*)
-				broadcast_ssid=${1#--broadcast-ssid=}
+				broadcast_ssid=$(cli_get_val ${1})
 				;;
 			--channel=*)
-				channel=${1#--channel=}
+				channel=$(cli_get_val ${1})
 				;;
 			--country-code=*)
-				country_code=${1#--country-code=}
+				country_code=$(cli_get_val ${1})
 				;;
 			--mode=*)
-				mode=${1#--mode=}
+				mode=$(cli_get_val ${1})
 				;;
 			--ssid=*)
-				ssid=${1#--ssid=}
+				ssid=$(cli_get_val ${1})
 				;;
 			--encryption=*)
 				encryption=$(cli_get_val ${1})
@@ -85,6 +85,21 @@ function hostapd_config_write() {
 		assert isset key
 	fi
 
+	# Create configuration directory.
+	local config_dir=$(dirname ${file})
+	mkdir -p ${HOSTAPD_CONTROL_INTERFACE_DIR} ${config_dir} 2>/dev/null
+
+	config_header "hostapd" > ${file}
+
+	# Interface configuration
+	(
+		print "# Interface configuration"
+		print "driver=nl80211"
+		print "interface=${device}"
+		print
+	) >> ${file}
+
+	# Wireless configuration
 	local ignore_broadcast_ssid
 	if enabled broadcast_ssid; then
 		ignore_broadcast_ssid="0"
@@ -104,29 +119,32 @@ function hostapd_config_write() {
 		hw_mode="${mode}"
 	fi
 
-	cat <<EOF
-### Hostapd configuration for ${device}
+	(
+		print "# Wireless configuration"
+		print "channel=${channel}"
+		print "country_code=${country_code}"
+		print "hw_mode=${hw_mode}"
+		print "ieee80211n=${ieee80211n}"
+		print "ignore_broadcast_ssid=${ignore_broadcast_ssid}"
 
-# Interface configuration
-driver=nl80211
-interface=${device}
+		if contains_spaces "${ssid}"; then
+			print "ssid=\"${ssid}\""
+		else
+			print "ssid=${ssid}"
+		fi
 
-# Wireless configuration
-channel=${channel}
-country_code=${country_code}
-hw_mode=${hw_mode}
-ieee80211n=${ieee80211n}
-ignore_broadcast_ssid=${ignore_broadcast_ssid}
-ssid=${ssid}
+		print
+	) >> ${file}
 
-# Dump file
-dump_file=$(hostapd_config_dir ${device}/dump)
+	# Control interface.
+	(
+		print "# Control interface"
+		print "ctrl_interface=${HOSTAPD_CONTROL_INTERFACE_DIR}"
+		print "ctrl_interface_group=0"
+		print
+	) >> ${file}
 
-ctrl_interface=/var/run/hostapd
-ctrl_interface_group=0
-
-EOF
-
+	# Encryption settings
 	if isset encryption; then
 		local encryption_mode=0
 		case "${encryption}" in
@@ -141,13 +159,15 @@ EOF
 				;;
 		esac
 
-		print "# Encryption settings."
-		print "wpa=${encryption_mode}"
-		print "wpa_passphrase=${key}"
-		print "wpa_key_mgmt=WPA-PSK"
-		print "wpa_pairwise=TKIP"
-		print "rsn_pairwise=CCMP"
-		print
+		(
+			print "# Encryption settings"
+			print "wpa=${encryption_mode}"
+			print "wpa_passphrase=${key}"
+			print "wpa_key_mgmt=WPA-PSK"
+			print "wpa_pairwise=TKIP"
+			print "rsn_pairwise=CCMP"
+			print
+		) >> ${file}
 	fi
 
 	return ${EXIT_OK}
@@ -155,36 +175,19 @@ EOF
 
 function hostapd_start() {
 	local device=${1}
-	shift
-
 	assert isset device
-
-	local config_dir=$(hostapd_config_dir ${device})
-	mkdir -p ${config_dir}
-
-	local config_file=${config_dir}/config
-	hostapd_config_write ${device} $@ > ${config_file}
 
 	service_start "hostapd@${device}.service"
 	local ret=$?
 
-	case "${ret}" in
-		0)
-			log DEBUG "Hostapd was successfully started for '${device}'."
-			return ${EXIT_OK}
-			;;
-		1)
-			error_log "Could not start hostapd properly for '${device}'."
-			
-			error_log "Configuration file dump:"
-			local line
-			while read line; do
-				error_log "  ${line}"
-			done < ${config_file}
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "hostapd has been successfully started on '${device}'"
+	else
+		log ERROR "Could not start hostapd on '${device}': ${ret}"
+		return ${EXIT_ERROR}
+	fi
 
-			return ${EXIT_ERROR}
-			;;
-	esac
+	return ${EXIT_OK}
 }
 
 function hostapd_stop() {
@@ -192,6 +195,4 @@ function hostapd_stop() {
 	assert isset device
 
 	service_stop "hostapd@${device}.service"
-
-	rm -rf $(hostapd_config_dir ${device})
 }
