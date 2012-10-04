@@ -179,7 +179,7 @@ function _down() {
 	assert isset zone
 
 	# Stop the PPP daemon.
-	pppd_start ${zone}
+	pppd_stop ${zone}
 
 	exit ${EXIT_OK}
 }
