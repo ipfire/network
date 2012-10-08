@@ -33,6 +33,25 @@ function args() {
 	echo "$@" | xargs printf "%s\n"
 }
 
+function unquote() {
+	local var="$@"
+
+	if [ "${var:0:1}" = "\"" ]; then
+		var=${var:1}
+	fi
+
+	local last=$(( ${#var} - 1 ))
+	if [ ${last} -ge 0 ] && [ "${var:${last}:1}" = "\"" ]; then
+		var=${var:0:${last}}
+	fi
+
+	print "${var}"
+}
+
+function quote() {
+	print "\"%s\"" "$@"
+}
+
 # Print a pretty error message
 function error() {
 	echo -e " ${CLR_RED_B}ERROR${CLR_RESET}  : $@" >&2
