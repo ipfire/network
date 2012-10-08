@@ -172,30 +172,60 @@ function cli_device_bonded() {
 	local master=$(bonding_slave_get_master ${port})
 	cli_print_fmt1 2 "Master" "${master}"
 
-	local active
-	[ "$(bonding_get_active_slave ${master})" = "${port}" ]
-	cli_print_fmt1 2 "Active slave" "$(cli_print_yesno $?)"
+	local mode=$(bonding_get_mode ${master})
+	if [ "${mode}" = "active-backup" ]; then
+		local active_slaves=$(bonding_get_slaves ${master} --active)
+		local active="false"
+		if list_match "${device}" ${active_slaves}; then
+			active="true"
+		fi
+		cli_print_fmt1 2 "Active slave" "$(cli_print_yesno ${active})"
+	fi
+
 	cli_space
 }
 
 function cli_device_bonding() {
 	local device=${1}
+	assert isset device
 
 	cli_headline 2 "Bonding information"
 
-	cli_print_fmt1 2 "Mode" "$(bonding_get_mode ${port})"
-	# XXX lacp rate
+	local mode=$(bonding_get_mode ${device})
+
+	cli_print_fmt1 2 "Mode" "${mode}"
+	if [ "${mode}" = "802.3ad" ]; then
+		local lacp_rate=$(bonding_get_lacp_rate ${device})
+		cli_print_fmt1 2 "LACP rate" "${lacp_rate}"
+	fi
 	cli_space
 
-	local slave slave_prefix
-	local slave_active=$(bonding_get_active_slave ${device})
+	local slave slave_suffix
+	local active_slaves=$(bonding_get_slaves ${device} --active)
 	for slave in $(bonding_get_slaves ${device}); do
-		if [ "${slave_active}" = "${slave}" ]; then
-			slave_prefix="Slave (active)"
+		# Print the device status.
+		local status
+		case "$(device_get_status ${slave})" in
+			${STATUS_UP})
+				status=${MSG_DEVICE_STATUS_UP}
+				;;
+			${STATUS_DOWN})
+				status=${MSG_DEVICE_STATUS_DOWN}
+				;;
+			${STATUS_NOCARRIER})
+				status=${MSG_DEVICE_STATUS_NOCARRIER}
+				;;
+			*)
+				status=${MSG_DEVICE_STATUS_UNKNOWN}
+				;;
+		esac
+
+		if list_match "${slave}" ${active_slaves}; then
+			slave_suffix="(active)"
 		else
-			slave_prefix="Slave"
+			slave_suffix=""
 		fi
-		cli_print_fmt1 2 "${slave_prefix}" "${slave}"
+		cli_print_fmt1 2 "Slave ${slave}" "${status} ${slave_suffix}"
 	done
 	cli_space
 }

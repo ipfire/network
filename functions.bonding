@@ -19,6 +19,10 @@
 #                                                                             #
 ###############################################################################
 
+BONDING_ALLOWED_MODES="balance-rr active-backup balance-xor broadcast 802.3ad \
+	balance-tlb balance-alb"
+BONDING_MASTERS="/sys/class/net/bonding_masters"
+
 function bonding_init() {
 	if ! grep -q "^bonding" /proc/modules; then
 		modprobe bonding
@@ -29,112 +33,201 @@ function bonding_init() {
 
 function bonding_create() {
 	local device=${1}
-	local mac=${2}
+	assert isset device
+	shift
 
-	[ -z "${mac}" ] && mac=$(mac_generate)
+	local address
+	local mode="balance-rr"
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--address=*)
+				address=$(cli_get_val ${1})
+				;;
+			--mode=*)
+				mode=$(cli_get_val ${1})
+				;;
+			*)
+				error "Unrecognized argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	if isset address; then
+		if ! ismac address; then
+			log ERROR "Invalid mac address: ${address}"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	if ! list_match "${mode}" ${BONDING_ALLOWED_MODES}; then
+		log ERROR "Bonding mode is not supported: ${mode}"
+		log ERROR "Valid modes are: ${BONDING_ALLOWED_MODES}"
+		return ${EXIT_ERROR}
+	fi
 
 	# Initialize the bonding driver just
 	# when we need it.
 	bonding_init
 
-	log INFO "Creating bonding device '${device}' (${mac})."
+	# Create the bonding device.
+	print "+${device}" > ${BONDING_MASTERS}
+	local ret=$?
 
-	echo "+${device}" > /sys/class/net/bonding_masters
-	device_set_address ${device} ${mac}
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "Successfully created bonding device '${device}'"
+	else
+		log ERROR "Could not create bonding device '${device}'"
+		return ${EXIT_ERROR}
+	fi
+
+	# Set the mode of the bonding device.
+	print "${mode}" > ${SYS_CLASS_NET}/${device}/bonding/mode
+	local ret=$?
+
+	if [ ${ret} -ne ${EXIT_OK} ]; then
+		log ERROR "Could not set mode of bonding device '${device}': ${Mmode}"
+		return ${EXIT_ERROR}
+	fi
+
+	if isset address; then
+		device_set_address ${device} ${address}
+	fi
+
+	return ${EXIT_OK}
 }
 
 function bonding_remove() {
 	local device=${1}
 	assert isset device
 
-	log INFO "Remove bonding device '${device}'."
+	if ! device_exists ${device}; then
+		return ${EXIT_ERROR}
+	fi
 
+	# Set device down if not already done.
 	device_set_down ${device}
-	echo "-${device}" > /sys/class/net/bonding_masters
-}
 
-function bonding_set_mode() {
-	local device=${1}
-	local mode=${2}
+	# Remove the device.
+	print "-${device}" > ${BONDING_MASTERS}
+	local ret=$?
 
-	log INFO "Setting bonding mode on '${device}' '${mode}'."
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "Successfully removed bonding device '${device}'"
+	else
+		log ERROR "Could not remove bonding device '${device}'"
+		return ${EXIT_ERROR}
+	fi
 
-	echo "${mode}" > /sys/class/net/${device}/bonding/mode
+	return ${EXIT_OK}
 }
 
 function bonding_get_mode() {
 	local device=${1}
+	assert isset device
 
 	local mode mode_num
 	read mode mode_num < ${SYS_CLASS_NET}/${device}/bonding/mode
-	echo "${mode}"
+	print "${mode}"
 }
 
 function bonding_enslave_device() {
 	local device=${1}
-	local slave=${2}
-	shift 2
-
 	assert isset device
+
+	local slave=${2}
 	assert isset slave
 
-	log INFO "Enslaving slave '${slave}' to '${device}'."
+	shift 2
 
-	device_set_down ${slave}
-	echo "+${slave}" > /sys/class/net/${device}/bonding/slaves
+	# Slave must be down to be enslaved.
+	device_set_down ${device}
+
+	if device_is_up ${device}; then
+		log ERROR "Cannot enslave '${slave}' because it cannot be set down."
+		return ${EXIT_ERROR}
+	fi
+
+	# Add it.
+	print "+${slave}" > ${SYS_CLASS_NET}/${device}/bonding/slaves
+	local ret=$?
+
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "Successfully enslaved '${slave}' to '${device}'."
+	else
+		log ERROR "Could not enslave '${slave}' to '${device}'."
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
 }
 
 function bonding_get_slaves() {
 	local device=${1}
+	assert isset device
+	shift
 
-	cat ${SYS_CLASS_NET}/${device}/bonding/slaves
+	local file="slaves"
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--active)
+				file="active_slave"
+				;;
+			*)
+				error "Unrecognized argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	fread ${SYS_CLASS_NET}/${device}/bonding/${file}
+
+	return ${EXIT_OK}
 }
 
-function bonding_get_active_slave() {
+function bonding_get_lacp_rate() {
 	local device=${1}
+	assert isset device
 
-	cat ${SYS_CLASS_NET}/${device}/bonding/active_slave
+	local rate rateno
+	read -r rate rateno \
+		< ${SYS_CLASS_NET}/${device}/bonding/lacp_rate
+
+	print "${rate}"
+	return ${EXIT_OK}
 }
-
-# XXX function bonding_get_lacp_rate?
 
 function bonding_get_miimon() {
 	local device=${1}
+	assert isset device
 
-	cat ${SYS_CLASS_NET}/${device}/bonding/miimon
+	fread ${SYS_CLASS_NET}/${device}/bonding/miimon
 }
 
 function bonding_set_miimon() {
 	local device=${1}
+	assert isset device
+
 	local miimon=${2}
+	assert isset miimon
 
-	echo "${miimon}" > ${SYS_CLASS_NET}/${device}/bonding/miimon
-}
-
-function bonding_device_print() {
-	local device=${1}
-
-	ethernet_device_print ${device}
-
-	echo # Empty line
-
-	printf "${DEVICE_PRINT_LINE1}" "Mode:" "$(bonding_get_mode ${device})"
-	printf "${DEVICE_PRINT_LINE1}" "Slaves:" "$(bonding_get_slaves ${device})"
+	print "${miimon}" > ${SYS_CLASS_NET}/${device}/bonding/miimon
 }
 
 function bonding_slave_get_master() {
 	local slave=${1}
-
 	assert isset slave
-	assert device_is_bonded ${slave}
 
-	local device
-	for device in $(devices_get_all); do
-		if device_is_bonding ${device} && listmatch ${slave} $(bonding_get_slaves ${device}); then
-			echo "${device}"
-			return ${EXIT_OK}
-		fi
-	done
+	device_is_bonded ${slave} || return ${EXIT_ERROR}
+
+	local master=$(fread ${SYS_CLASS_NET}/${slave}/master/ifindex)
+	if isset master; then
+		device_ifindex_to_name ${master}
+		return ${EXIT_OK}
+	fi
 
 	return ${EXIT_ERROR}
 }
