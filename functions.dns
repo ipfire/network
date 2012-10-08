@@ -1,34 +1,36 @@
 #!/bin/bash
 ###############################################################################
 #                                                                             #
-# IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2012  IPFire Network Development Team                         #
+# IPFire.org - A linux based firewall # Copyright (C) 2012 IPFire 
+# Network Development Team #
 #                                                                             #
-# This program is free software: you can redistribute it and/or modify        #
-# it under the terms of the GNU General Public License as published by        #
-# the Free Software Foundation, either version 3 of the License, or           #
-# (at your option) any later version.                                         #
+# This program is free software: you can redistribute it and/or modify # 
+# it under the terms of the GNU General Public License as published by # 
+# the Free Software Foundation, either version 3 of the License, or # 
+# (at your option) any later version.  #
 #                                                                             #
-# This program is distributed in the hope that it will be useful,             #
-# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
-# GNU General Public License for more details.                                #
+# This program is distributed in the hope that it will be useful, # but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of # 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the # GNU 
+# General Public License for more details.  #
 #                                                                             #
-# You should have received a copy of the GNU General Public License           #
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+# You should have received a copy of the GNU General Public License # 
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.  
+# #
 #                                                                             #
 ###############################################################################
 
 # Set this to true if localhost should be added as the first DNS server.
-DNS_USE_LOCAL_RESOLVER=true
-NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_USE_LOCAL_RESOLVER"
+DNS_USE_LOCAL_RESOLVER=true 
+NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} 
+DNS_USE_LOCAL_RESOLVER"
 
-# Set this option to true if the DNS servers should be queried in a random order.
-# This is useful to load balance between multiple servers.
-DNS_RANDOMIZE=false
+# Set this option to true if the DNS servers should be queried in a 
+# random order. This is useful to load balance between multiple servers.
+DNS_RANDOMIZE=false 
 NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_RANDOMIZE"
 
-# Set this option to true if the DNS servers should be advertised by
+# Set this option to true if the DNS servers should be advertised by 
 # radvd.
 DNS_ADVERTISE_SERVERS="true"
 
@@ -103,8 +105,8 @@ function dns_server_remove() {
 	local entries=$(dns_server_list)
 
 	while read entry priority; do
-		[ "${entry}" = "${server}" ] && continue
-		__dns_server_println "${server}" "${priority}"
+		[ "${entry}" = "${server}" ] && continue 
+__dns_server_println "${server}" "${priority}"
 	done <<< ${entries} | __dns_server_sort > ${DNS_SERVER_CONFIG_FILE}
 }
 
@@ -127,15 +129,48 @@ function dns_generate_resolvconf() {
 	fi
 
 	# XXX Add search domain.
+	local proto
+	local zone
+	local domainname
+	for zone in $(zones_get_all); do
+		for proto in ${IP_SUPPORTED_PROTOCOLS}; do
+			domainname=$(routing_db_get ${zone} ${proto} domain-name)
+			if [ -n "${domainname}" ]; then
+				print "search ${domainname}"
+			fi
+		done
+	done >> ${file}
 
 	# Add the local resolver as the first DNS server if enabled.
 	if enabled DNS_USE_LOCAL_RESOLVER; then
 		print "nameserver ::1" >> ${file}
 	fi
 
+	# First pull in zone name servers.
+	local server
+	for server in $(dns_get_zone_name_servers); do
+		print "nameserver ${server}"
+	done >> ${file}
+
 	# Dump all DNS servers (if any).
-	local server priority
+	local priority
 	dns_server_list | while read server priority; do
 		print "nameserver ${server}"
 	done >> ${file}
+}
+
+function dns_get_zone_name_servers() {
+	local servers
+	local zone
+	for zone in $(zones_get_all); do
+		local proto
+		for proto in ${IP_SUPPORTED_PROTOCOLS}; do
+			servers=$(routing_db_get ${zone} ${proto} domain-name-servers)
+
+			local server
+			for server in ${servers}; do
+				print "${server}"
+			done
+		done
+	done
 }

@@ -97,10 +97,15 @@ case "${reason}" in
 					routing_db_set ${interface} ipv4 local-ip-address "${new_ip_address}/${new_prefix}"
 					routing_db_set ${interface} ipv4 remote-ip-address "${new_routers}"
 					routing_db_set ${interface} ipv4 active 1
+					routing_db_set ${interface} ipv4 domain-name "${new_domain_name}"
+					routing_db_set ${interface} ipv4 domain-name-servers "${new_domain_name_servers}"
 
 					# Update the routing tables.
 					routing_update ${interface} ipv4
 					routing_default_update
+
+					# Update resolv.conf
+					dns_generate_resolvconf
 				fi
 				;;
 		esac
