@@ -1,36 +1,34 @@
 #!/bin/bash
 ###############################################################################
 #                                                                             #
-# IPFire.org - A linux based firewall # Copyright (C) 2012 IPFire 
-# Network Development Team #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
 #                                                                             #
-# This program is free software: you can redistribute it and/or modify # 
-# it under the terms of the GNU General Public License as published by # 
-# the Free Software Foundation, either version 3 of the License, or # 
-# (at your option) any later version.  #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
 #                                                                             #
-# This program is distributed in the hope that it will be useful, # but 
-# WITHOUT ANY WARRANTY; without even the implied warranty of # 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the # GNU 
-# General Public License for more details.  #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
 #                                                                             #
-# You should have received a copy of the GNU General Public License # 
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.  
-# #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #                                                                             #
 ###############################################################################
 
 # Set this to true if localhost should be added as the first DNS server.
-DNS_USE_LOCAL_RESOLVER=true 
-NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} 
-DNS_USE_LOCAL_RESOLVER"
+DNS_USE_LOCAL_RESOLVER=true
+NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_USE_LOCAL_RESOLVER"
 
-# Set this option to true if the DNS servers should be queried in a 
-# random order. This is useful to load balance between multiple servers.
-DNS_RANDOMIZE=false 
+# Set this option to true if the DNS servers should be queried in a random order.
+# This is useful to load balance between multiple servers.
+DNS_RANDOMIZE=false
 NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_RANDOMIZE"
 
-# Set this option to true if the DNS servers should be advertised by 
+# Set this option to true if the DNS servers should be advertised by
 # radvd.
 DNS_ADVERTISE_SERVERS="true"
 
@@ -105,8 +103,8 @@ function dns_server_remove() {
 	local entries=$(dns_server_list)
 
 	while read entry priority; do
-		[ "${entry}" = "${server}" ] && continue 
-__dns_server_println "${server}" "${priority}"
+		[ "${entry}" = "${server}" ] && continue
+		__dns_server_println "${server}" "${priority}"
 	done <<< ${entries} | __dns_server_sort > ${DNS_SERVER_CONFIG_FILE}
 }
 
