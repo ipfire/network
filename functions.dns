@@ -225,29 +225,12 @@ function dns_generate_resolvconf() {
 		print "option rotate\n" >> ${file}
 	fi
 
-	# Add search domains.
-	local search_domains="$(unquote ${DNS_SEARCH_DOMAINS})"
-
-	# Get search domains from DHCP clients, etc.
-	local proto
-	local zone
-	local domainname
-	for zone in $(zones_get_all); do
-		for proto in ${IP_SUPPORTED_PROTOCOLS}; do
-			domainname=$(routing_db_get ${zone} ${proto} domain-name)
-			if [ -n "${domainname}" ]; then
-				list_append search_domains "${domainname}"
-			fi
-		done
-	done
-
-	# Sort out duplicate entries.
-	search_domains=$(list_unique ${search_domains})
-
 	# Write search domains to file.
 	print "# Search domains" >> ${file}
-	for domainname in ${search_domains}; do
-		print "search ${domainname}"
+
+	local domain
+	for domain in $(dns_get_search_domains); do
+		print "search ${domain}"
 	done >> ${file}
 
 	print "\n# Nameservers" >> ${file}
@@ -261,6 +244,26 @@ function dns_generate_resolvconf() {
 	for server in $(dns_server_list_sorted); do
 		print "nameserver ${server}"
 	done >> ${file}
+}
+
+function dns_get_search_domains() {
+	# Add search domains.
+	local search_domains="$(unquote ${DNS_SEARCH_DOMAINS})"
+
+	# Get search domains from DHCP clients, etc.
+	local domain proto zone
+
+	for zone in $(zones_get_all); do
+		for proto in ${IP_SUPPORTED_PROTOCOLS}; do
+			domain=$(routing_db_get ${zone} ${proto} domain-name)
+			isset domain || continue
+
+			list_append search_domains "${domainname}"
+		done
+	done
+
+	# Sort out duplicate entries.
+	list_unique ${search_domains}
 }
 
 function dns_server_get_zone_name_servers() {
