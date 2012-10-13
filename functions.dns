@@ -28,6 +28,9 @@ NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_USE_LOCAL_RESOLVER
 DNS_RANDOMIZE=false
 NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_RANDOMIZE"
 
+DNS_SEARCH_DOMAINS=""
+NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_SEARCH_DOMAINS"
+
 # Set this option to true if the DNS servers should be advertised by
 # radvd.
 DNS_ADVERTISE_SERVERS="true"
@@ -126,7 +129,10 @@ function dns_generate_resolvconf() {
 		print "option rotate\n" >> ${file}
 	fi
 
-	# XXX Add search domain.
+	# Add search domains.
+	local search_domains="$(unquote ${DNS_SEARCH_DOMAINS})"
+
+	# Get search domains from DHCP clients, etc.
 	local proto
 	local zone
 	local domainname
@@ -134,9 +140,17 @@ function dns_generate_resolvconf() {
 		for proto in ${IP_SUPPORTED_PROTOCOLS}; do
 			domainname=$(routing_db_get ${zone} ${proto} domain-name)
 			if [ -n "${domainname}" ]; then
-				print "search ${domainname}"
+				list_append search_domains "${domainname}"
 			fi
 		done
+	done
+
+	# Sort out duplicate entries.
+	search_domains=$(list_unique ${search_domains})
+
+	# Write search domains to file.
+	for domainname in ${search_domains}; do
+		print "search ${domainname}"
 	done >> ${file}
 
 	# Add the local resolver as the first DNS server if enabled.

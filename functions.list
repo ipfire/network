@@ -59,6 +59,17 @@ function list_sort() {
 	print
 }
 
+function list_unique() {
+	local items item
+	for item in $@; do
+		# Check if the item has already been processed.
+		list_match "${item}" ${items} && continue
+
+		list_append items "${item}"
+		print "${item}"
+	done
+}
+
 function list_match() {
 	local match=${1}
 	shift
