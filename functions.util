@@ -89,12 +89,24 @@ function basename() {
 	echo "${1##*/}"
 }
 
+function format() {
+	local key=${1}
+	assert isset key
+
+	local format=${2}
+	assert isset format
+
+	shift 2
+
+	printf -v "${key}" "${format}" "$@"
+}
+
 function assign() {
 	local key=${1}
 	assert isset key
 	shift
 
-	printf -v "${key}" "%s" "$@"
+	format "${key}" "%s" "$@"
 }
 
 function fread() {

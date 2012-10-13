@@ -36,6 +36,11 @@ NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} DNS_SEARCH_DOMAINS"
 DNS_ADVERTISE_SERVERS="true"
 
 DNS_SERVER_CONFIG_FILE="${NETWORK_CONFIG_DIR}/dns-servers"
+NETWORK_CONFIG_DNS_SERVER_PARAMS="server priority"
+
+# Set the default priority for DNS servers.
+DNS_SERVER_DEFAULT_PRIORITY="100"
+DNS_SERVER_DYNAMIC_PRIORITY="10"
 
 # Path to the configuration file of the DNS resolver.
 RESOLV_CONF="/etc/resolv.conf"
@@ -51,33 +56,56 @@ function dns_get_hostname() {
 	)
 }
 
-function __dns_server_println() {
-	local server=${1}
-	local priority=${2}
-
-	print "%-20s %s" "${server}" "${priority}"
-}
-
-function __dns_server_sort() {
-	sort -k2 -g | uniq
-}
-
 function dns_server_list() {
 	[ -r "${DNS_SERVER_CONFIG_FILE}" ] || return ${EXIT_OK}
 
-	local server priority
-	while read server priority; do
-		if [ -n "${server}" ] && [ -n "${priority}" ]; then
-			__dns_server_println "${server}" "${priority}"
-		fi
-	done < ${DNS_SERVER_CONFIG_FILE} | __dns_server_sort
+	local line
+	local ${NETWORK_CONFIG_DNS_SERVER_PARAMS}
+
+	local format="%-20s %-8s"
+	print "${format}" "SERVER" "PRIORITY"
+
+	while read -r line; do
+		dns_server_parse_line ${line} || continue
+
+		print "${format}" "${server}" "${priority}"
+	done < ${DNS_SERVER_CONFIG_FILE}
+
+	return ${EXIT_OK}
 }
 
-function dns_server_list_no_priority() {
-	local server priority
-	dns_server_list | while read server priority; do
-		echo "${server}"
-	done
+function dns_server_list_sorted() {
+	[ -r "${DNS_SERVER_CONFIG_FILE}" ] || return ${EXIT_OK}
+
+	local servers=$(
+		# First get all servers from the configuration file.
+		while read -r line; do
+			dns_server_parse_line ${line} || continue
+
+			print "%d %s" "${priority}" "${server}"
+		done < ${DNS_SERVER_CONFIG_FILE}
+
+		# Then get all dynamically assigned DNS servers.
+		dns_server_get_zone_name_servers
+	)
+
+	# Nothing to do if we have got no DNS servers.
+	isset servers || return ${EXIT_OK}
+
+	# Sort everything we have got.
+	servers=$(sort -g -k1 <<< "${servers}")
+
+	# Remove the priority bit.
+	local server server_list
+	while read -r priority server; do
+		list_append server_list "${server}"
+	done <<< "${servers}"
+
+	# Return the list but remove duplicate entries, keeping
+	# the first and removing all others.
+	list_unique ${server_list}
+
+	return ${EXIT_OK}
 }
 
 function dns_server_add() {
@@ -86,33 +114,101 @@ function dns_server_add() {
 
 	local priority=${2}
 	if ! isset priority; then
-		priority=20
+		priority="${DNS_SERVER_DEFAULT_PRIORITY}"
 	fi
 	assert isinteger priority
 
-	(
-		dns_server_list
-		__dns_server_println "${server}" "${priority}"
-	) | __dns_server_sort > ${DNS_SERVER_CONFIG_FILE}.new
+	# Add a new line to the configuration file.
+	print "server=\"%s\" priority=\"%d\"" "${server}" "${priority}" \
+		>> ${DNS_SERVER_CONFIG_FILE}
 
-	mv ${DNS_SERVER_CONFIG_FILE}{.new,}
+	return ${EXIT_OK}
+}
+
+function dns_server_exists() {
+	local entry=${1}
+	assert isset entry
+
+	[ -r "${DNS_SERVER_CONFIG_FILE}" ] || return ${EXIT_FALSE}
+
+	local line ${NETWORK_CONFIG_DNS_SERVER_PARAMS}
+	while read -r line; do
+		dns_server_parse_line ${line} || continue
+
+		[ "${entry}" = "${server}" ] && return ${EXIT_TRUE}
+	done < ${DNS_SERVER_CONFIG_FILE}
+
+	return ${EXIT_FALSE}
 }
 
 function dns_server_remove() {
-	local server=${1}
-	assert isset server
+	local entry=${1}
+	assert isset entry
 
-	local entry priority
-	local entries=$(dns_server_list)
+	# Check if the DNS server configuration file exists.
+	[ -r "${DNS_SERVER_CONFIG_FILE}" ] || return ${EXIT_ERROR}
 
-	while read entry priority; do
+	# Create a tempfile.
+	local tempfile=$(mktemp)
+
+	local line ${NETWORK_CONFIG_DNS_SERVER_PARAMS}
+	while read -r line; do
+		dns_server_parse_line ${line} || continue
+
+		# Skip the line with the server we are searching for.
 		[ "${entry}" = "${server}" ] && continue
-		__dns_server_println "${server}" "${priority}"
-	done <<< ${entries} | __dns_server_sort > ${DNS_SERVER_CONFIG_FILE}
+
+		# Re-add the old line.
+		print "${line}"
+	done < ${DNS_SERVER_CONFIG_FILE} > ${tempfile}
+
+	# Overwrite the old content without the entry that has just been removed.
+	fread "${tempfile}" > ${DNS_SERVER_CONFIG_FILE}
+
+	# Remove the temporary file.
+	rm -f ${tempfile}
+
+	return ${EXIT_OK}
 }
 
 function dns_server_flush() {
 	: > ${DNS_SERVER_CONFIG_FILE}
+}
+
+function dns_server_parse_line() {
+	local arg
+
+	for arg in ${NETWORK_CONFIG_DNS_SERVER_PARAMS}; do
+		assign "${arg}" ""
+	done
+
+	while read -r arg; do
+		case "${arg}" in
+			server=*)
+				server=$(cli_get_val ${arg})
+				;;
+			priority=*)
+				priority=$(cli_get_val ${arg})
+				;;
+		esac
+	done <<< "$(args $@)"
+
+	# The server address must be set.
+	isset server || return ${EXIT_ERROR}
+
+	# The server address must also be a valid IP address.
+	ip_is_valid ${server} || return ${EXIT_ERROR}
+
+	# If priority is set, it must be an integer number.
+	if isset priority; then
+		isinteger priority || return ${EXIT_ERROR}
+
+	# Otherwise assign the default priority.
+	else
+		priority=${DNS_SERVER_DEFAULT_PRIORITY}
+	fi
+
+	return ${EXIT_OK}
 }
 
 # Update resolv.conf(5) when initializing the network.
@@ -149,39 +245,35 @@ function dns_generate_resolvconf() {
 	search_domains=$(list_unique ${search_domains})
 
 	# Write search domains to file.
+	print "# Search domains" >> ${file}
 	for domainname in ${search_domains}; do
 		print "search ${domainname}"
 	done >> ${file}
+
+	print "\n# Nameservers" >> ${file}
 
 	# Add the local resolver as the first DNS server if enabled.
 	if enabled DNS_USE_LOCAL_RESOLVER; then
 		print "nameserver ::1" >> ${file}
 	fi
 
-	# First pull in zone name servers.
-	local server
-	for server in $(dns_get_zone_name_servers); do
-		print "nameserver ${server}"
-	done >> ${file}
-
-	# Dump all DNS servers (if any).
-	local priority
-	dns_server_list | while read server priority; do
+	# Dump all DNS servers.
+	for server in $(dns_server_list_sorted); do
 		print "nameserver ${server}"
 	done >> ${file}
 }
 
-function dns_get_zone_name_servers() {
-	local servers
-	local zone
-	for zone in $(zones_get_all); do
-		local proto
-		for proto in ${IP_SUPPORTED_PROTOCOLS}; do
-			servers=$(routing_db_get ${zone} ${proto} domain-name-servers)
+function dns_server_get_zone_name_servers() {
+	local priority proto server servers zone
 
-			local server
+	for zone in $(zones_get_all); do
+		for proto in ${IP_SUPPORTED_PROTOCOLS}; do
+			priority=$(routing_db_get ${zone} ${proto} domain-name-servers-priority)
+			isset priority || priority="${DNS_SERVER_DYNAMIC_PRIORITY}"
+
+			servers=$(routing_db_get ${zone} ${proto} domain-name-servers)
 			for server in ${servers}; do
-				print "${server}"
+				print "${priority} ${server}"
 			done
 		done
 	done

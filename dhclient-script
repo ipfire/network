@@ -99,6 +99,7 @@ case "${reason}" in
 					routing_db_set ${interface} ipv4 active 1
 					routing_db_set ${interface} ipv4 domain-name "${new_domain_name}"
 					routing_db_set ${interface} ipv4 domain-name-servers "${new_domain_name_servers}"
+					routing_db_set ${interface} ipv4 domain-name-servers-priority "${DNS_SERVER_DYNAMIC_PRIORITY}"
 
 					# Update the routing tables.
 					routing_update ${interface} ipv4

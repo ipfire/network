@@ -114,7 +114,7 @@ function __radvd_config_dns() {
 	# resolver.
 
 	local server servers
-	for server in $(dns_server_list_no_priority); do
+	for server in $(dns_server_list_sorted); do
 		# Filter out non IPv6 addresses.
 		ipv6_is_valid ${server} || continue
 

@@ -1055,15 +1055,24 @@ function cli_dns() {
 
 	case "${cmd}" in
 		list)
-			__dns_server_println "SERVER" "PRIORITY"
 			dns_server_list
 			exit ${EXIT_OK}
 			;;
 		add)
+			if dns_server_exists ${server}; then
+				error "DNS server '${server}' already exists!"
+				exit ${EXIT_ERROR}
+			fi
+
 			log INFO "Adding new DNS server: ${server}"
 			dns_server_add ${server} ${priority}
 			;;
 		remove)
+			if ! dns_server_exists ${server}; then
+				error "DNS server '${server}' does not exist!"
+				exit ${EXIT_ERROR}
+			fi
+
 			log INFO "Removing DNS server: ${server}"
 			dns_server_remove ${server} ${priority}
 			;;
