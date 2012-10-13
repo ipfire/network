@@ -1036,16 +1036,16 @@ function cli_help() {
 	hook_exec ${type} ${what} help
 }
 
-function cli_dns() {
+function cli_dns_server() {
 	if cli_help_requested $@; then
-		cli_show_man network-dns
+		cli_show_man network-dns-server
 		exit ${EXIT_OK}
 	fi
 
 	# Get the command.
 	local cmd=${1}; shift
 	if [ -z "${cmd}" ]; then
-		cli_show_man network-dns
+		cli_show_man network-dns-server
 		exit ${EXIT_ERROR}
 	fi
 
@@ -1097,13 +1097,18 @@ case "${action}" in
 		init_run
 		;;
 
-	config|hostname|port|device|zone|start|stop|restart|status|reset|dns|route)
+	config|hostname|port|device|zone|start|stop|restart|status|reset|route)
 		cli_${action} $@
 		;;
 
 	# DHCP server configuration (automatically detects which protocol to use).
 	dhcpv6|dhcpv4)
 		cli_dhcpd ${action/dhcp/ip} $@
+		;;
+
+	# DNS server configuration.
+	dns-server)
+		cli_dns_server $@
 		;;
 
 	""|help|--help|-h)
