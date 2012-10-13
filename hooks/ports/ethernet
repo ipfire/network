@@ -21,19 +21,26 @@
 
 . /usr/lib/network/header-port
 
-HOOK_SETTINGS="HOOK DEVICE_MAC"
+# DEVICE equals the actual MAC address of the device.
+# If ADDRESS is set, the device will get ADDRESS set for its MAC address.
+
+HOOK_SETTINGS="HOOK ADDRESS DEVICE"
 
 function _check() {
-	assert ismac DEVICE_MAC
+	assert ismac DEVICE
+
+	if isset ADDRESS; then
+		assert ismac ADDRESS
+	fi
 }
 
 function _create() {
 	local port=${1}
+	assert isset port
 	shift
 
-	assert isset port
-
-	DEVICE_MAC=$(device_get_address ${port})
+	ADDRESS=""
+	DEVICE=$(device_get_address ${port})
 
 	config_write $(port_file ${port}) ${HOOK_SETTINGS}
 
@@ -42,9 +49,17 @@ function _create() {
 
 function _up() {
 	local port=${1}
-
 	assert isset port
 
+	# Read in the confguration file.
+	port_config_read ${port}
+
+	# Check if the MAC address is the right one.
+	if isset ADDRESS; then
+		device_set_address "${device}" "${ADDRESS}"
+	fi
+
+	# Bring up the device.
 	device_set_up ${port}
 
 	exit ${EXIT_OK}
@@ -52,9 +67,9 @@ function _up() {
 
 function _down() {
 	local port=${1}
-
 	assert isset port
 
+	# Set down the device.
 	device_set_down ${port}
 
 	exit ${EXIT_OK}
@@ -62,15 +77,28 @@ function _down() {
 
 function _hotplug_rename() {
 	local port=${1}
-	local device=${2}
-
 	assert isset port
+
+	local device=${2}
 	assert isset device
 
-	config_read $(port_file ${port})
+	# Read in the conifguration file.
+	port_config_read ${port}
 
-	if [ "${DEVICE_MAC}" = "$(device_get_address ${device})" ]; then
+	# Get the current MAC address of the device.
+	local address=$(device_get_address ${device})
+	assert isset address
+
+	# Check if the address matches with the configuration.
+	if list_match "${address}" ${DEVICE} ${ADDRESS}; then
 		log DEBUG "Device '${device}' equals port '${port}'."
+
+		# Change the MAC address, if needed.
+		if isset ADDRESS; then
+			device_set_address "${device}" "${ADDRESS}"
+		fi
+
+		# Everything is done.
 		exit ${EXIT_OK}
 	fi
 
