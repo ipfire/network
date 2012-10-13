@@ -46,6 +46,9 @@ function route_add() {
 			--blackhole)
 				blackhole="true"
 				;;
+			--mtu=*)
+				mtu=$(cli_get_val ${1})
+				;;
 			*)
 				network=${1}
 				;;
@@ -104,6 +107,11 @@ function route_add() {
 		fi
 	fi
 
+	if isset mtu && ! isinteger mtu; then
+		error "MTU must be an integer number: ${mtu}"
+		return ${EXIT_ERROR}
+	fi
+
 	local line
 	list_append line "network=\"${network}\""
 
@@ -120,6 +128,11 @@ function route_add() {
 			break
 		fi
 	done
+
+	# Add MTU (if set).
+	if isset mtu; then
+		list_append line "mtu=\"${mtu}\""
+	fi
 
 	# Write line to file.
 	print "${line}" >> ${NETWORK_CONFIG_ROUTES}
@@ -180,8 +193,8 @@ function route_list() {
 		return ${EXIT_OK}
 	fi
 
-	local format="%-40s %-20s"
-	print "${format}" "NETWORK/HOST" "GATEWAY"
+	local format="%-40s %-20s %-4s"
+	print "${format}" "NETWORK/HOST" "GATEWAY" "MTU"
 
 	local ${NETWORK_CONFIG_ROUTES_PARAMS}
 	local line
@@ -203,7 +216,12 @@ function route_list() {
 			[ "${protocol}" = "${proto}" ] || continue
 		fi
 
-		print "${format}" "${network}" "${gateway}"
+		# Print something when no MTU was set.
+		if ! isset mtu; then
+			mtu="-"
+		fi
+
+		print "${format}" "${network}" "${gateway}" "${mtu}"
 	done < ${NETWORK_CONFIG_ROUTES}
 }
 
@@ -250,6 +268,9 @@ function route_parse_line() {
 			blackhole=*)
 				blackhole=$(cli_get_val ${arg})
 				;;
+			mtu=*)
+				mtu=$(cli_get_val ${arg})
+				;;
 		esac
 	done <<< "$(args $@)"
 
@@ -272,6 +293,11 @@ function route_parse_line() {
 		# Check if exactly one of unreachable, prohibit or blackhole is set.
 		local counter=$(list_count true ${unreachable} ${prohibit} ${blackhole})
 		[ ${counter} -eq 1 ] || return ${EXIT_ERROR}
+	fi
+
+	# mtu must be an integer number.
+	if isset mtu; then
+		isinteger mtu || return ${EXIT_ERROR}
 	fi
 
 	return ${EXIT_OK}
@@ -303,7 +329,7 @@ function route_apply() {
 
 		# Add the route.
 		route_entry_add ${network} --table="static" --proto="static" \
-			--type="${type}" --gateway="${gateway}"
+			--type="${type}" --gateway="${gateway}" --mtu="${mtu}"
 		local ret=$?
 
 		if [ ${ret} -ne ${EXIT_OK} ]; then
@@ -321,6 +347,7 @@ function route_entry_add() {
 	local proto
 	local table
 	local type="unicast"
+	local mtu
 
 	local command
 
@@ -338,6 +365,9 @@ function route_entry_add() {
 			--proto=*)
 				proto=$(cli_get_val ${1})
 				;;
+			--mtu=*)
+				mtu=$(cli_get_val ${1})
+				;;
 			*)
 				if isset network; then
 					warning "Unrecognized argument: ${1}"
@@ -352,6 +382,9 @@ function route_entry_add() {
 	# Validate input.
 	assert isoneof type unicast broadcast unreachable prohibit blackhole
 	assert ip_is_network ${network}
+	if isset mtu; then
+		assert isinteger mtu
+	fi
 
 	# Detect the protocol of the given network.
 	local protocol=$(ip_detect_protocol ${network})
@@ -391,7 +424,12 @@ function route_entry_add() {
 		list_append command "proto ${proto}"
 	fi
 
-	cmd "${command}"
+	# Add MTU.
+	if isset mtu; then
+		list_append command "mtu ${mtu}"
+	fi
+
+	cmd_quiet "${command}"
 }
 
 function route_table_create() {

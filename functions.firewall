@@ -62,8 +62,7 @@ function firewall_start() {
 		# created, we will add a custom policy to every single
 		# zone.
 
-		# XXX TODO
-		#policy_zone_add ${zone}
+		policy_zone_add ${zone}
 	done
 
 	# Load the new ruleset.

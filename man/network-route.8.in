@@ -4,7 +4,7 @@
 network-route \- Network Route Configuration Control Program
 
 .SH SYNOPSIS
-\fBnetwork [OPTIONS] route add <network> [--gateway=..., --unreachable, --prohibit, --blackhole]\fR
+\fBnetwork [OPTIONS] route add <network> <--gateway=..., --unreachable, --prohibit, --blackhole> [--mtu=N]\fR
 .P
 \fBnetwork [OPTIONS] route remove <network>\fR
 .P
@@ -18,7 +18,7 @@ It is possible to create and remove static routes.
 .SH COMMANDS
 The \fBnetwork route\fR command offers various sub commands:
 
-\fBadd <network> [--gateway=..., --unreachable, --prohibit, --blackhole]\fR
+\fBadd <network> <--gateway=..., --unreachable, --prohibit, --blackhole> [--mtu=N]\fR
 .RS 4
 A new route may be added by the \fBadd\fR command.
 It is always required to pass a valid network prefix (\fB<network>\fR), which
@@ -30,6 +30,9 @@ prefix is.
 .PP
 Use \fB--unreachable\fR, \fB--prohibit\fR, \fB--blackhole\fR can be used to create
 of that type. See \fBROUTE TYPES\fR below for more information about these options.
+.PP
+The optional \fB--mtu\fR parameter defines the MTU along the path to the
+destination and must be an integer number.
 .RE
 .PP
 
@@ -41,11 +44,12 @@ A route can be removed with this command.
 .RE
 .PP
 
-\fBlist [--ipv6|--ipv4]\fR
+\fBlist [--protocol=ipv6|ipv4]\fR
 .RS 4
 Shows a list of all configured routes.
 .PP
-Pass the protocol as shown above to filter.
+Pass the protocol option to filter the output only for the given
+protocol.
 .RE
 .PP
 
