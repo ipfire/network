@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2013  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,66 +19,16 @@
 #                                                                             #
 ###############################################################################
 
-# Set gettext text domain.
-TEXTDOMAIN="network"
+function batman_adv_interface_add() {
+	local device=${1}
+	assert isset device
 
-LOG_DIR=/var/log/network
-RUN_DIR=/run/network
+	cmd_quiet batctl interface add ${device}
+}
 
-RED_RUN=${RUN_DIR}/red
-PPP_SECRETS=/etc/ppp/secrets
+function batman_adv_interface_del() {
+	local device=${1}
+	assert isset device
 
-# Network directory configuration.
-NETWORK_CONFIG_DIR="/etc/network"
-NETWORK_ZONE_DIR="${NETWORK_CONFIG_DIR}"
-NETWORK_HOOKS_DIR=/usr/lib/network/hooks
-
-# Network file configuration.
-NETWORK_CONFIG_FILE=${NETWORK_CONFIG_DIR}/config
-NETWORK_CONFIG_FILE_PARAMS="DEBUG"
-CONFIG_HOSTNAME="/etc/hostname"
-
-RED_DB_DIR=${RUN_DIR}/red
-ROUTING_DB_DIR=${RUN_DIR}/routing
-
-DB_CONNECTION_FILE="${LOG_DIR}/connections.db"
-
-# (Static) route settings.
-NETWORK_CONFIG_ROUTES="${NETWORK_CONFIG_DIR}/routes"
-NETWORK_CONFIG_ROUTES_PARAMS="network gateway unreachable prohibit blackhole mtu"
-
-# Proper error codes
-EXIT_OK=0
-EXIT_ERROR=1
-EXIT_CONF_ERROR=2
-EXIT_ERROR_ASSERT=128
-
-EXIT_TRUE=0
-EXIT_FALSE=1
-EXIT_UNKNOWN=2
-
-STATUS_UP=0
-STATUS_DOWN=1
-STATUS_NOCARRIER=2
-
-DISCOVER_OK=0
-DISCOVER_ERROR=1
-DISCOVER_NOT_SUPPORTED=2
-
-# The user is able to create zones that begin
-# with these names followed by a number.
-ZONE_LOCAL="lan"
-ZONE_NONLOCAL="upl"
-VALID_ZONES="${ZONE_LOCAL} ${ZONE_NONLOCAL}"
-
-SYS_CLASS_NET="/sys/class/net"
-
-# Timeout values
-TIMEOUT_RESTART=2
-
-DEVICE_PRINT_LINE1="    %-24s %s\n"
-
-PORT_PATTERN="pN"
-PORT_PATTERN_ACCESSPOINT="apN"
-PORT_PATTERN_BATMANADV="bN"
-PORT_PATTERN_WIRELESS="wN"
+	cmd_quiet batctl interface del ${device}
+}

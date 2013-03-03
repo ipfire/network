@@ -51,7 +51,7 @@ function wireless_create() {
 		shift
 	done
 
-	assert isoneof type managed __ap
+	assert isoneof type ibss managed __ap
 	assert phy_exists ${phy}
 	isset address || address=$(mac_generate)
 
@@ -95,6 +95,38 @@ function wireless_remove() {
 	return ${ret}
 }
 
+function wireless_channel_to_frequency() {
+	# http://en.wikipedia.org/wiki/List_of_WLAN_channels
+
+	local channel=${1}
+	assert isset channel
+
+	# Channel number must be positive.
+	assert [ "${channel}" -gt 0 ]
+
+	# 2.4 GHz band
+	case "${channel}" in
+		[123456789]|1[0123])
+			print "$(( 2407 + (${channel} * 5)))"
+			return ${EXIT_OK}
+			;;
+		14)
+			print "2484"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	# 5 GHz band
+	case "${channel}" in
+		3[68]|4[02468]|5[26]|6[04]|10[048]|11[26]|12[048]|13[26]|14[09]|15[37]|16[15])
+			print "$(( 5000 + (${channel} * 5)))"
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
 function wireless_set_channel() {
 	local device=${1}
 	assert isset device
@@ -105,4 +137,55 @@ function wireless_set_channel() {
 	device_exists ${device} || return ${EXIT_ERROR}
 
 	cmd_quiet iw dev ${device} set channel ${channel}
+}
+
+function wireless_ibss_join() {
+	local device=${1}
+	assert isset device
+	shift
+
+	local bssid
+	local essid
+	local frequency
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--bssid=*)
+				bssid="$(cli_get_val ${1})"
+				;;
+			--essid=*)
+				essid="$(cli_get_val ${1})"
+				;;
+			--channel=*)
+				local channel="$(cli_get_val ${1})"
+
+				# Save the frequency of the channel instead
+				# of the channel itself.
+				if isset channel; then
+					frequency="$(wireless_channel_to_frequency ${channel})"
+				fi
+				;;
+		esac
+		shift
+	done
+
+	# Check input.
+	assert ismac bssid
+	assert isset essid
+	assert isinteger frequency
+
+	# Set device up.
+	device_set_up "${device}"
+
+	log INFO "${device} joining ibss network: ${essid} (${bssid})"
+	cmd_quiet iw dev "${device}" ibss join "${essid}" \
+		"${frequency}" fixed-freq "${bssid}"
+}
+
+function wireless_ibss_leave() {
+	local device=${1}
+	assert isset device
+
+	log INFO "${device} leaving ibss network"
+	cmd_quiet iw dev "${device}" ibss leave
 }

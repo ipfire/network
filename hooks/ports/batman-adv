@@ -1,0 +1,199 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2013 Michael Tremer                                           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /usr/lib/network/header-port
+
+HOOK_SETTINGS="HOOK ADDRESS MESH_ID SSID CHANNEL COUNTRY_CODE PHY"
+
+ADDRESS=$(mac_generate)
+CHANNEL=1
+COUNTRY_CODE="US"
+MESH_ID=
+SSID=
+
+# batman-adv inserts an additional header of 28 bytes, so we set the MTU
+# to 1528, that normal ethernet packets with 1500 bytes can pass the network.
+MTU=1528
+MTU=1500
+
+function _check() {
+	assert isset ADDRESS
+	assert ismac ADDRESS
+	assert isset CHANNEL
+	assert isset COUNTRY_CODE
+	assert isset MESH_ID
+	assert ismac MESH_ID
+	assert isset PHY
+	assert ismac PHY
+	assert isset SSID
+}
+
+function _create() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--address=*)
+				ADDRESS=$(cli_get_val ${1})
+				;;
+			--channel=*)
+				CHANNEL=$(cli_get_val ${1})
+				;;
+			--country-code=*)
+				COUNTRY_CODE=$(cli_get_val ${1})
+				;;
+			--phy=*)
+				PHY=$(cli_get_val ${1})
+				;;
+			--ssid=*)
+				SSID=$(cli_get_val ${1})
+				;;
+			--mesh-id=*)
+				MESH_ID=$(cli_get_val ${1})
+				;;
+			*)
+				warning "Ignoring unknown argument '${1}'"
+				;;
+		esac
+		shift
+	done
+
+	# Save address of phy do identify it again
+	PHY=$(phy_get ${PHY})
+	PHY=$(phy_get_address ${PHY})
+
+	local port=$(port_find_free ${PORT_PATTERN_BATMANADV})
+	assert isset port
+
+	config_write $(port_file ${port}) ${HOOK_SETTINGS}
+
+	exit ${EXIT_OK}
+}
+
+function _edit() {
+	local port=${1}
+	assert isset port
+	shift
+
+	config_read $(port_file ${port})
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--channel=*)
+				CHANNEL=$(cli_get_val ${1})
+				;;
+			--country-code=*)
+				COUNTRY_CODE=$(cli_get_val ${1})
+				;;
+			--mesh-id=*)
+				MESH_ID=$(cli_get_val ${1})
+				;;
+			--ssid=*)
+				SSID=$(cli_get_val ${1})
+				;;
+			*)
+				warning "Unknown argument '${1}'"
+				;;
+		esac
+		shift
+	done
+
+	config_write $(port_file ${port}) ${HOOK_SETTINGS}
+
+	exit ${EXIT_OK}
+}
+
+function _up() {
+	local port=${1}
+	assert isset port
+
+	config_read $(port_file ${port})
+
+	# Check if the PHY is present.
+	local phy=$(phy_get ${PHY})
+	if ! isset phy; then
+		log DEBUG "phy '${PHY}' is not present"
+		exit ${EXIT_ERROR}
+	fi
+
+	# Create the wireless device, if it does not exist, yet.
+	if ! device_exists ${port}; then
+		wireless_create ${port} \
+			--address="${ADDRESS}" \
+			--phy="${phy}" \
+			--type="ibss"
+	fi
+
+	# Set the MTU.
+	device_set_mtu "${port}" "${MTU}"
+
+	# Join the ad-hoc network.
+	wireless_ibss_join "${port}" --channel="${CHANNEL}" \
+		--bssid="${MESH_ID}" --essid="${SSID}"
+
+	# Add the device as a batman-adv device.
+	batman_adv_interface_add "${port}"
+
+	exit ${EXIT_OK}
+}
+
+function _down() {
+	local port=${1}
+	assert isset port
+
+	# Remove the batman-adv device.
+	batman_adv_interface_del "${port}"
+
+	# Leave the ad-hoc network.
+	wireless_ibss_leave "${port}"
+
+	# Remove the device if it is still present.
+	if device_exists ${port}; then
+		wireless_remove ${port}
+	fi
+
+	exit ${EXIT_OK}
+}
+
+function _hotplug() {
+	local port=${1}
+	assert isset port
+
+	local phy=${2}
+	assert isset phy
+
+	assert port_exists ${port}
+
+	# Read configuration of port.
+	config_read $(port_file ${port})
+
+	# Get the address of the phy.
+	local phy_address=$(phy_get_address ${phy})
+
+	# Check if the phy is the same we have
+	# read from the configuration file.
+	if [ "${PHY}" = "${phy_address}" ]; then
+		wireless_create ${port} \
+			--address="${ADDRESS}" \
+			--phy="${phy_address}" \
+			--type="ibss"
+	fi
+
+	exit ${EXIT_OK}
+}
