@@ -77,7 +77,7 @@ function switch_attach_port() {
 	assert isset port
 
 	log DEBUG "Attaching port '${port}' to switch '${device}'"
-	ovs-vsctl -- --may-exist ${device} ${port}
+	ovs-vsctl -- --may-exist add-port "${device}" "${port}"
 
 	return ${EXIT_OK}
 }
@@ -90,7 +90,7 @@ function switch_detach_port() {
 	assert isset port
 
 	log DEBUG "Detaching port '${port}' from switch '${device}'"
-	ovs-vsctl -- --if-exists ${device} ${port}
+	ovs-vsctl -- --if-exists del-port "${device}" "${port}"
 
 	return ${EXIT_OK}
 }
