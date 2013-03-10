@@ -19,9 +19,22 @@
 #                                                                             #
 ###############################################################################
 
+function switch_start() {
+	local service="openvswitch.service"
+
+	if ! service_is_active "${service}"; then
+		service_start "${service}"
+	fi
+
+	return ${EXIT_OK}
+}
+
 function switch_create() {
 	local device=${1}
 	assert isset device
+
+	# Make sure that the openvswitch service is running.
+	switch_start
 
 	log DEBUG "Creating virtual switch: ${device}"
 	ovs-vsctl -- --may-exist add-br ${device}
