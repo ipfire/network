@@ -86,6 +86,7 @@ function _up() {
 	routing_db_set ${zone} ipv4 active 1
 
 	routing_update ${zone} ipv4
+	routing_default_update
 
 	exit ${EXIT_OK}
 }
@@ -103,6 +104,9 @@ function _down() {
 	config_read $(zone_dir ${zone})/configs/${config}
 
 	ip_address_del ${zone} ${ADDRESS}/${PREFIX}
+
+	# Update routing tables.
+	routing_default_update
 
 	exit ${EXIT_OK}
 }
