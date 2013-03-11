@@ -146,6 +146,16 @@ function device_get_ifindex() {
 	print "$(<${path})"
 }
 
+# Check if the device is a batman-adv bridge
+function device_is_batman_adv() {
+	[ -d "${SYS_CLASS_NET}/${1}/mesh" ]
+}
+
+# Check if the device is a batman-adv bridge port
+function device_is_batman_adv_port() {
+	[ -d "${SYS_CLASS_NET}/${1}/batman_adv" ]
+}
+
 # Check if the device is a bonding device
 function device_is_bonding() {
 	[ -d "/sys/class/net/${1}/bonding" ]
@@ -165,7 +175,6 @@ function device_is_bridge() {
 
 function device_is_bridge_attached() {
 	local device=${1}
-
 	[ -d "${SYS_CLASS_NET}/${device}/brport" ]
 }
 
@@ -296,6 +305,12 @@ function device_get_type() {
 
 	elif device_is_ppp ${device}; then
 		echo "ppp"
+
+	elif device_is_batman_adv ${device}; then
+		echo "batman-adv"
+
+	elif device_is_batman_adv_port ${device}; then
+		echo "batman-adv-port"
 
 	elif device_is_loopback ${device}; then
 		echo "loopback"

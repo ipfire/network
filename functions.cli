@@ -268,7 +268,7 @@ function cli_print_fmt1() {
 	local level=${1}
 	shift
 
-	local space=$(( 30 - (${level} * ${#IDENT}) ))
+	local space=$(( 34 - (${level} * ${#IDENT}) ))
 	local format="%-${space}s %s"
 
 	cli_print ${level} "${format}" "$@"

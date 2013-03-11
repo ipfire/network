@@ -55,8 +55,8 @@ case "${ACTION}" in
 					port_create ethernet ${INTERFACE}
 					;;
 
-				# Handle wireless devices.
-				wireless)
+				# Handle batman-adv and wireless devices.
+				batman-adv|batman-adv-port|wireless)
 					# Save the phy of this device for later.
 					phy=$(phy_get ${INTERFACE})
 					assert isset phy

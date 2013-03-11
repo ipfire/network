@@ -21,51 +21,26 @@
 
 . /usr/lib/network/header-port
 
-HOOK_SETTINGS="HOOK ADDRESS MESH_ID SSID CHANNEL COUNTRY_CODE PHY"
+HOOK_SETTINGS="HOOK ADDRESS SLAVES"
+
+PORT_CHILDREN_VAR="SLAVES"
 
 ADDRESS=$(mac_generate)
-CHANNEL=1
-COUNTRY_CODE="US"
-MESH_ID=
-SSID=
-
-# batman-adv inserts an additional header of 28 bytes, so we set the MTU
-# to 1528, that normal ethernet packets with 1500 bytes can pass the network.
-MTU=1528
-MTU=1500
+SLAVES=
 
 function _check() {
 	assert isset ADDRESS
 	assert ismac ADDRESS
-	assert isset CHANNEL
-	assert isset COUNTRY_CODE
-	assert isset MESH_ID
-	assert ismac MESH_ID
-	assert isset PHY
-	assert ismac PHY
-	assert isset SSID
 }
 
 function _create() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
-				ADDRESS=$(cli_get_val ${1})
+				ADDRESS="$(cli_get_val ${1})"
 				;;
-			--channel=*)
-				CHANNEL=$(cli_get_val ${1})
-				;;
-			--country-code=*)
-				COUNTRY_CODE=$(cli_get_val ${1})
-				;;
-			--phy=*)
-				PHY=$(cli_get_val ${1})
-				;;
-			--ssid=*)
-				SSID=$(cli_get_val ${1})
-				;;
-			--mesh-id=*)
-				MESH_ID=$(cli_get_val ${1})
+			--slaves=*)
+				SLAVES="$(cli_get_val ${1})"
 				;;
 			*)
 				warning "Ignoring unknown argument '${1}'"
@@ -74,11 +49,7 @@ function _create() {
 		shift
 	done
 
-	# Save address of phy do identify it again
-	PHY=$(phy_get ${PHY})
-	PHY=$(phy_get_address ${PHY})
-
-	local port=$(port_find_free ${PORT_PATTERN_BATMANADV})
+	local port=$(port_find_free ${PORT_PATTERN_BATMAN_ADV})
 	assert isset port
 
 	config_write $(port_file ${port}) ${HOOK_SETTINGS}
@@ -95,17 +66,21 @@ function _edit() {
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--channel=*)
-				CHANNEL=$(cli_get_val ${1})
+			--address=*)
+				ADDRESS="$(cli_get_val ${1})"
 				;;
-			--country-code=*)
-				COUNTRY_CODE=$(cli_get_val ${1})
+			--add-slave=*)
+				SLAVES="${SLAVES} $(cli_get_val ${1})"
 				;;
-			--mesh-id=*)
-				MESH_ID=$(cli_get_val ${1})
-				;;
-			--ssid=*)
-				SSID=$(cli_get_val ${1})
+			--del-slave=*)
+				local slave="$(cli_get_val ${1})"
+
+				local s slaves
+				for s in ${SLAVES}; do
+					[ "${slave}" = "${s}" ] && continue
+					slaves="${slaves} ${s}"
+				done
+				SLAVES="${slaves}"
 				;;
 			*)
 				warning "Unknown argument '${1}'"
@@ -125,30 +100,22 @@ function _up() {
 
 	config_read $(port_file ${port})
 
-	# Check if the PHY is present.
-	local phy=$(phy_get ${PHY})
-	if ! isset phy; then
-		log DEBUG "phy '${PHY}' is not present"
-		exit ${EXIT_ERROR}
+	# This cannot be started manually, but is created automatically
+	# when a slave device is brought up and set up by _hotplug.
+
+	local slave
+	for slave in ${SLAVES}; do
+		port_up "${slave}"
+	done
+
+	# If the port has been created (does not happen, when there are
+	# no slaves), we bring it up.
+	if device_exists "${port}"; then
+		# Set the address.
+		device_set_address "${port}" "${ADDRESS}"
+
+		device_set_up "${port}"
 	fi
-
-	# Create the wireless device, if it does not exist, yet.
-	if ! device_exists ${port}; then
-		wireless_create ${port} \
-			--address="${ADDRESS}" \
-			--phy="${phy}" \
-			--type="ibss"
-	fi
-
-	# Set the MTU.
-	device_set_mtu "${port}" "${MTU}"
-
-	# Join the ad-hoc network.
-	wireless_ibss_join "${port}" --channel="${CHANNEL}" \
-		--bssid="${MESH_ID}" --essid="${SSID}"
-
-	# Add the device as a batman-adv device.
-	batman_adv_interface_add "${port}"
 
 	exit ${EXIT_OK}
 }
@@ -157,16 +124,12 @@ function _down() {
 	local port=${1}
 	assert isset port
 
-	# Remove the batman-adv device.
-	batman_adv_interface_del "${port}"
+	config_read $(port_file ${port})
 
-	# Leave the ad-hoc network.
-	wireless_ibss_leave "${port}"
-
-	# Remove the device if it is still present.
-	if device_exists ${port}; then
-		wireless_remove ${port}
-	fi
+	local slave
+	for slave in ${SLAVES}; do
+		port_down "${slave}"
+	done
 
 	exit ${EXIT_OK}
 }
@@ -178,22 +141,77 @@ function _hotplug() {
 	local phy=${2}
 	assert isset phy
 
-	assert port_exists ${port}
+	# Bring up the device.
+	port_up "${port}"
 
-	# Read configuration of port.
-	config_read $(port_file ${port})
+	exit ${EXIT_OK}
+}
 
-	# Get the address of the phy.
-	local phy_address=$(phy_get_address ${phy})
+function _status() {
+	local port=${1}
+	assert isset port
 
-	# Check if the phy is the same we have
-	# read from the configuration file.
-	if [ "${PHY}" = "${phy_address}" ]; then
-		wireless_create ${port} \
-			--address="${ADDRESS}" \
-			--phy="${phy_address}" \
-			--type="ibss"
+	cli_device_headline "${port}" --long
+
+	cli_headline 2 "B.A.T.M.A.N."
+
+	# Routing algorithm
+	cli_print_fmt1 2 "Routing Algorithm" \
+		"$(batman_adv_get_routing_algorithm "${port}")"
+
+	# Space
+	cli_space
+
+	# Originator interval
+	cli_print_fmt1 2 "Originator Interval" \
+		"$(batman_adv_get_originator_interval "${port}") ms"
+
+	# Aggregated originator messages
+	batman_adv_get_aggregated_ogms "${port}"
+	cli_print_fmt1 2 "Aggregated Originator Messages" "$(cli_print_bool $?)"
+
+	# AP isolation
+	batman_adv_get_ap_isolation "${port}"
+	cli_print_fmt1 2 "Access Point Isolation" "$(cli_print_bool $?)"
+
+	# Bonding mode
+	batman_adv_get_bonding_mode "${port}"
+	cli_print_fmt1 2 "Bonding Mode" "$(cli_print_bool $?)"
+
+	# Bridge loop avoidance
+	batman_adv_get_bridge_loop_avoidance "${port}"
+	cli_print_fmt1 2 "Bridge Loop Avoidance" "$(cli_print_bool $?)"
+
+	# Distributed ARP table
+	batman_adv_get_distributed_arp_table "${port}"
+	cli_print_fmt1 2 "Distributed ARP Table" "$(cli_print_bool $?)"
+
+	# Fragmentation
+	batman_adv_get_fragmentation "${port}"
+	cli_print_fmt1 2 "Fragmentation" "$(cli_print_bool $?)"
+
+	# Hop penalty
+	cli_print_fmt1 2 "Hop Penalty" \
+		"$(batman_adv_get_hop_penalty "${port}")"
+	cli_space
+
+	# Gateway
+	cli_headline 3 "Gateway"
+
+	# Gateway mode
+	batman_adv_get_gateway_mode "${port}"
+	local gw_enabled=$?
+
+	cli_print_fmt1 3 "Enabled" "$(cli_print_bool ${gw_enabled})"
+
+	if [ ${gw_enabled} -eq ${EXIT_TRUE} ]; then
+		cli_print_fmt1 3 "Bandwidth" \
+			"$(batman_adv_get_gateway_bandwidth "${port}")"
+		cli_print_fmt1 3 "Selection Class" \
+			"$(batman_adv_get_gateway_selection_class "${port}")"
 	fi
+
+	cli_space
 
 	exit ${EXIT_OK}
 }
