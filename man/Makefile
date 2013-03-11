@@ -30,6 +30,8 @@ MANPAGES8   = \
 	network-config.8 \
 	network-device.8 \
 	network-dns-server.8 \
+	network-port-batman-adv.8 \
+	network-port-batman-adv-port.8 \
 	network-route.8 \
 	network-zone.8 \
 	network-zone-bridge.8 \

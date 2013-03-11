@@ -1,0 +1,50 @@
+.TH network-port-batman-adv 8 "11 Mar 2013" "@VERSION@" "network man page"
+
+.SH NAME
+network-port-batman-adv \- Network Configuration Control Program
+
+.SH SYNOPSIS
+\fBnetwork [OPTIONS] port create batman-adv ...\fR
+.P
+Parameters may be edited with the following command:
+.P
+\fBnetwork [OPTIONS] port <port> edit ...\fR
+
+.SH DESCRIPTION
+The batman-adv hook creates a batman-adv soft interface, which is
+used to bridge several hard interfaces (wireless adapters, etc.).
+
+.SH OPTIONS
+The \fBbatman-adv\fR hook offers various configuration options:
+
+\fB--address\fR = ...
+.RS 4
+Define the MAC address of the interface. If no address is defined,
+a random one will be generated.
+.RE
+.PP
+
+\fB--slaves\fR = ... (only on create)
+.RS 4
+Define a list of ports, which should be used as slaves.
+All slaves must be \fBbatman-adv-ports\fR ports.
+.RE
+.PP
+
+\fB--add-slave\fR = ... (only on edit)
+.RS 4
+Adds an additional slave port.
+.RE
+.PP
+
+\fB--del-slave\fR = ... (only on edit)
+.RS 4
+Removes a slave port.
+.RE
+.PP
+
+.SH SEE ALSO
+network(8), network-port-batman-adv-port(8)
+
+.SH AUTHOR
+Michael Tremer (michael.tremer@ipfire.org)
