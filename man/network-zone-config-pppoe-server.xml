@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-zone-config-pppoe-server">
+	<refentryinfo>
+		<title>network-zone-config-pppoe-server</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-zone-config-pppoe-server</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-zone-config-pppoe-server</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network zone <replaceable>ZONE</replaceable> config create pppoe-server ...</command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			This configuration hook enables a <emphasis>PPPoE server</emphasis>
+			functionality to a zone which is of an ethernet-like type.
+		</para>
+		<para>
+			The PPPoE server is mostly for development purpose and performs pretty
+			well. However, it is not recommended to use it in production environments.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<para>
+			The following options are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<option>--subnet=<replaceable>SUBNET</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The <option>--subnet</option> option defines an IPv4 pool
+						of which IP addresses are assigned to the remote hosts.
+						The first address of the subnet will be used for the
+						gateway which is the PPPoE server itself.
+					</para>
+					<para>
+						The subnet must at least have two IP addresses.
+						Broadcast and network addresses will be used as well.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--mtu=<replaceable>MTU</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Set the required MTU (Maximum Transmission Unit) for
+						the PPP connection.
+					</para>
+					<para>
+						The default value is 1492 bytes which is a common MTU for
+						DSL connections.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--service-name=<replaceable>STRING</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						This options receives a string which will be used as the
+						service name. The service name is sent out to the clients
+						and used for identification but not authorization purposes.
+					</para>
+					<para>
+						The default is an empty value.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--max-sessions=<emphasis>0</emphasis></option>
+				</term>
+
+				<listitem>
+					<para>
+						Limit the max. number of sessions that may be established
+						by the same MAC address.
+					</para>
+					<para>
+						This must be a positive number. 0 permits an unlimited
+						number of sessions per MAC address.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-zone-config</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>

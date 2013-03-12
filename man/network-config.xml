@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-config">
+	<refentryinfo>
+		<title>network-config</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-config</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-config</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network config</command>
+		</cmdsynopsis>
+
+		<cmdsynopsis>
+			<command>network config <replaceable>KEY=VALUE</replaceable></command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			The <command>network config</command> command may be used to set
+			global configuration options.
+		</para>
+		<para>
+			Please have a look at the individual man pages for more options.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Commands</title>
+
+		<para>
+			If no additional argument is given, running the command will
+			dump a list of all configuration variables and their current values.
+		</para>
+
+		<para>
+			You may set a new value by adding the variable name and the new
+			value to the command line.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Variables</title>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<varname>COLORS</varname>=[<emphasis>auto</emphasis>|on|off]
+				</term>
+
+				<listitem>
+					<para>
+						This will control the output of the console tools.
+						<varname>on</varname> will enable colorful output all
+						the time, <varname>off</varname> will disable colors.
+					</para>
+					<para>
+						The default setting is <varname>auto</varname> which will
+						automatically detect if the console supports colors.
+					</para>
+					<para>
+						Colorful output is very helpful to spot important information
+						more quickly.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>DEBUG</varname>=[<emphasis>0</emphasis>|1]
+				</term>
+
+				<listitem>
+					<para>
+						The <varname>DEBUG</varname> will control whether debug
+						logging is enabled or not. Additionally to writing debug
+						log messages to the log files, the messages will be displayed
+						on the console as well.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-dns-server</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>

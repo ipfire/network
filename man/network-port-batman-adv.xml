@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-port-batman-adv">
+	<refentryinfo>
+		<title>network-port-batman-adv</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-port-batman-adv</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-port-batman-adv</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network port create batman-adv ...</command>
+		</cmdsynopsis>
+
+		<cmdsynopsis>
+			<command>network <arg choice="plain">PORT</arg> edit ...</command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			The batman-adv hook creates a batman-adv soft interface, which is
+			used to bridge several hard interfaces (wireless adapters, etc.).
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<para>
+			The following options are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<option>--address=<replaceable>ADDRESS</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Define the MAC address of the interface. If no address
+						is defined, a random one will be generated.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--slaves=<replaceable>SLAVES</replaceable></option>
+					(only on create)
+				</term>
+
+				<listitem>
+					<para>
+						Define a lits of port, which should be used as slaves.
+						All slaves must be <emphasis>batman-adv-port</emphasis>
+						ports.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--add-slave=<replaceable>SLAVE</replaceable></option>
+					(only on edit)
+				</term>
+
+				<listitem>
+					<para>
+						Adds an additional slave port.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--del-slave=<replaceable>SLAVE</replaceable></option>
+					(only on edit)
+				</term>
+
+				<listitem>
+					<para>
+						Removes a slave port.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-port</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-port-batman-adv-port</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>

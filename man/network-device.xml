@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-device">
+	<refentryinfo>
+		<title>network-device</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-device</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-device</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network device <arg choice="plain">COMMAND</arg></command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			With help of the <command>device</command> subcommands, it is very easy
+			to get status information about network devices and to do some more
+			things.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Commands</title>
+
+		<para>
+			The following commands are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<command><replaceable>DEVICE</replaceable> status</command>
+				</term>
+
+				<listitem>
+					<para>
+						This will show you very detailed information about the given
+						device.
+					</para>
+					<para>
+						This is all about the ethernet parts of the device and
+						does not contain any IP information as this is defined
+						as a zone (<citerefentry>
+							<refentrytitle>network-zone</refentrytitle>
+							<manvolnum>8</manvolnum>
+						</citerefentry>).
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command><replaceable>DEVICE</replaceable> discover</command>
+				</term>
+
+				<listitem>
+					<para>
+						Runs a discovery for many hooks on the given device.
+						This will check if the hook can find for example a DHCP
+						server or DSLAM and thus predict for what the device
+						should be used.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command><replaceable>DEVICE</replaceable> unlock</command>
+				</term>
+
+				<listitem>
+					<para>
+						This command will unlock the SIM card in a modem.
+						Only serial devices are supported which are the most
+						UMTS or 3G modems.
+					</para>
+					<para>
+						For the PIN or PUK code, the user will be prompted.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>
