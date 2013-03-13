@@ -2,6 +2,9 @@ include Makeconfig
 
 DESTDIR=
 
+# Export HTML documents to this directory.
+HTML_DOCS_DIR = html
+
 prefix=/usr
 bindir=$(prefix)/bin
 sbindir=$(prefix)/sbin
@@ -127,3 +130,5 @@ dist:
 
 .PHONY: export-html-docs
 export-html-docs: $(MAN_PAGES_HTML)
+	mkdir -pv $(HTML_DOCS_DIR)
+	cp -vf $^ $(HTML_DOCS_DIR)
