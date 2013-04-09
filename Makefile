@@ -32,6 +32,7 @@ MAN_PAGES = \
 	man/network-port-batman-adv-port.8 \
 	man/network-route.8 \
 	man/network-zone.8 \
+	man/network-zone-6to4-tunnel.8 \
 	man/network-zone-bridge.8 \
 	man/network-zone-config-pppoe-server.8 \
 	man/network-zone-pppoe.8

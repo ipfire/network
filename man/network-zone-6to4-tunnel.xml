@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-zone-6to4-tunnel">
+	<refentryinfo>
+		<title>network-zone-6to4-tunnel</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-zone-6to4-tunnel</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-zone-6to4-tunnel</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network zone create <replaceable>ZONE</replaceable> 6to4-tunnel ...</command>
+		</cmdsynopsis>
+
+		<cmdsynopsis>
+			<command>network zone <replaceable>ZONE</replaceable> edit ...</command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			The 6to4-tunnel hook is used to create IPv6 tunnels over IPv4 networks
+			where the provider does not provide native IPv6.
+		</para>
+		<para>
+			Hurricane Electric offers a free tunnelbroker service on
+			http://www.tunnelbroker.net, that can be used with this hook.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<para>
+			The following options are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<option>--server-address=<replaceable>...</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The address of the tunnel endpoint server.
+					</para>
+					<para>
+						This is the IPv4 address of the server, to where
+						the tunnel is created.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--local-ipv4-address=<replaceable>...</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The local IPv4 address that is used to connect to
+						the server.
+					</para>
+					<para>
+						Attention! In case your local tunnel endpoint is behind
+						a NAT, you need to configure the internet IP address instead
+						of the public IP address.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--local-ipv6-address=<replaceable>...</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The local IPv6 address of your tunnel.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+
+		<para>
+			Optional arguments, that can be used to automatically update the
+			tunnel endpoint IPv4 address with tunnelbroker.net:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<option>--auto-update-endpoint=[<emphasis>false</emphasis>|true]</option>
+				</term>
+
+				<listitem>
+					<para>
+						Determines whether the tunnel endpoint IPv4 address should
+						be automatically updated or not.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--username=<replaceable>USERNAME</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The username of your tunnelbroker.net account.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--password=<replaceable>PASSWORD</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The password of your tunnelbroker.net account.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--tunnel-id=<replaceable>N</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The ID of this tunnel, given to you by tunnelbroker.net.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-zone</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>
