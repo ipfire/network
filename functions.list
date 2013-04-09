@@ -29,9 +29,9 @@ function list_append() {
 	assert isset list
 
 	if [ -n "${!list}" ]; then
-		printf -v ${list} "${!list} $@"
+		printf -v ${list} -- "${!list} $@"
 	else
-		printf -v ${list} "$@"
+		printf -v ${list} -- "$@"
 	fi
 }
 
