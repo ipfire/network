@@ -1,0 +1,65 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2013  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function he_tunnelbroker_endpoint_update() {
+	local username
+	local password
+	local tunnel_id
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--username=*)
+				username="$(cli_get_val ${1})"
+				;;
+			--password=*)
+				password="$(cli_get_val ${1})"
+				;;
+			--tunnel-id=*)
+				tunnel_id="$(cli_get_val ${1})"
+				;;
+		esac
+		shift
+	done
+
+	assert isset username
+	assert isset password
+	assert isset tunnel_id
+
+	# Send HTTP request.
+	local response=$(http_GET --username="${username}" --password="${password}" \
+		"https://ipv4.tunnelbroker.net/ipv4_end.php" "tid=${tunnel_id}")
+
+	log DEBUG "Server response: ${response}"
+
+	case "${response}" in
+		"-ERROR: This tunnel is already associated with this IP address.*")
+			# This is not really an error, because the right IP address is
+			# already configured.
+			;;
+		"-ERROR:*")
+			log ERROR "Tunnel endpoint address update not successful for tunnel ${tunnel_id}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	log INFO "Tunnel endpoint address has been updated for tunnel ${tunnel_id}"
+	return ${EXIT_OK}
+}

@@ -1,0 +1,83 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2013  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function http_format_args() {
+	local args="$@"
+
+	list_join args "&"
+}
+
+function http_GET() {
+	local username
+	local password
+
+	local url
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--username=*)
+				username="$(cli_get_val ${1})"
+				;;
+			--password=*)
+				password="$(cli_get_val ${1})"
+				;;
+			*)
+				break
+				;;
+		esac
+		shift
+	done
+
+	local url="$(cli_get_val ${1})"
+	shift
+
+	# Add credentials to the URL.
+	if isset username && isset password; then
+		# Stip http:// and so on from the URL.
+		local scheme="${url%://*}"
+		url="${url#*://}"
+
+		# Build new URL string with credentials.
+		url="${scheme}://${username}:${password}@${url}"
+	fi
+
+	# Add all query arguments if necessary.
+	local args=$(http_format_args "$@")
+	if [ -n "${args}" ]; then
+		url="${url}?${args}"
+	fi
+
+	http_call "${url}"
+}
+
+function http_call() {
+	# Argument list for invoking curl.
+	local args
+
+	list_append args "--silent"
+	list_append args "--user-agent IPFire-Network/${NETWORK_VERSION}"
+
+	# Add all other args.
+	list_append args "$@"
+
+	# Run curl.
+	curl ${args}
+}

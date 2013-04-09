@@ -21,7 +21,8 @@
 
 . /usr/lib/network/header-zone
 
-HOOK_SETTINGS="HOOK SERVER_ADDRESS LOCAL_ADDRESS LOCAL_ADDRESS6"
+HOOK_SETTINGS="HOOK SERVER_ADDRESS LOCAL_ADDRESS LOCAL_ADDRESS6 TUNNEL_ID"
+HOOK_SETTINGS="${HOOK_SETTINGS} AUTO_UPDATE_ENDPOINT USERNAME PASSWORD"
 
 # The IPv4 address of the tunnel endpoint where to connect to.
 SERVER_ADDRESS=
@@ -32,10 +33,27 @@ LOCAL_ADDRESS=
 # The address that is assigned to the tunnel device (with prefix).
 LOCAL_ADDRESS6=
 
+# True if the endpoint IP address should be automatically
+# updated each time the tunnel connects.
+AUTO_UPDATE_ENDPOINT="false"
+
+# The ID of the tunnel.
+TUNNEL_ID=
+
+# Credentials for the tunnelbroker.net service.
+USERNAME=
+PASSWORD=
+
 function _check() {
 	assert isset SERVER_ADDRESS
 	assert isset LOCAL_ADDRESS
 	assert isset LOCAL_ADDRESS6
+
+	if enabled AUTO_UPDATE_ENDPOINT; then
+		assert isset TUNNEL_ID
+		assert isset USERNAME
+		assert isset PASSWORD
+	fi
 }
 
 function _parse_cmdline() {
@@ -52,6 +70,24 @@ function _parse_cmdline() {
 			--local-ipv6-address=*)
 				LOCAL_ADDRESS6=$(cli_get_val ${1})
 				;;
+			--auto-update-endpoint=*)
+				local val="$(cli_get_val ${1})"
+
+				if enabled val; then
+					AUTO_UPDATE_ENDPOINT="true"
+				else
+					AUTO_UPADTE_ENDPOINT="false"
+				fi
+				;;
+			--tunnel-id=*)
+				TUNNEL_ID="$(cli_get_val ${1})"
+				;;
+			--username=*)
+				USERNAME="$(cli_get_val ${1})"
+				;;
+			--password=*)
+				PASSWORD="$(cli_get_val ${1})"
+				;;
 			*)
 				echo "Unknown option: ${1}" >&2
 				exit ${EXIT_ERROR}
@@ -67,6 +103,15 @@ function _up() {
 
 	# Read configuration options.
 	zone_config_read ${zone}
+
+	if enabled AUTO_UPDATE_ENDPOINT; then
+		log DEBUG "Updating tunnel endpoint"
+
+		he_tunnelbroker_endpoint_update \
+			--username="${USERNAME}" \
+			--password="${PASSWORD}" \
+			--tunnel-id="${TUNNEL_ID}"
+	fi
 
 	ip_tunnel_add ${zone} --ttl=255 \
 		--remote-address="${SERVER_ADDRESS}" \
