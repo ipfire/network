@@ -19,7 +19,7 @@
 ###############################################################################
 
 PACKAGE_NAME    = network
-PACKAGE_VERSION = 005
+PACKAGE_VERSION = 006
 
 DESTDIR=
 
