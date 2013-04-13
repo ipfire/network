@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2013  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -79,23 +79,33 @@ function aiccu_configure() {
 	local server
 	local protocol="tic"
 	local tunnel_id
+	local require_tls
 
 	while [ $# -gt  0 ]; do
 		case "${1}" in
 			--user=*)
-				user=$(cli_get_val ${1})
+				user="$(cli_get_val ${1})"
 				;;
 			--secret=*)
-				secret=$(cli_get_val ${1})
+				secret="$(cli_get_val ${1})"
 				;;
 			--server=*)
-				server=$(cli_get_val ${1})
+				server="$(cli_get_val ${1})"
 				;;
 			--protocol=*)
-				protocol=$(cli_get_val ${1})
+				protocol="$(cli_get_val ${1})"
 				;;
 			--tunnel-id=*)
-				tunnel_id=$(cli_get_val ${1})
+				tunnel_id="$(cli_get_val ${1})"
+				;;
+			--require-tls=*)
+				require_tls="$(cli_get_val ${1})"
+
+				if enabled val; then
+					require_tls="true"
+				else
+					require_tls="false"
+				fi
 				;;
 		esac
 		shift
@@ -105,6 +115,7 @@ function aiccu_configure() {
 	assert isset secret
 	assert isset server
 	assert isset protocol
+	assert isset require_tls
 	assert isoneof protocol tic tsp l2tp
 
 cat <<EOF
@@ -123,6 +134,8 @@ ipv6_interface ${device}
 verbose true
 daemonize true
 automatic true
+
+requiretls ${require_tls}
 
 pidfile $(aiccu_config_dir ${zone})/pid
 

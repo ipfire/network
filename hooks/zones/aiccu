@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2013  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -21,19 +21,21 @@
 
 . /usr/lib/network/header-zone
 
-HOOK_SETTINGS="HOOK PROTOCOL USER SECRET SERVER TUNNEL_ID"
+HOOK_SETTINGS="HOOK PROTOCOL REQUIRE_TLS USER SECRET SERVER TUNNEL_ID"
 
 USER=
 SECRET=
 SERVER="tic.sixxs.net"
 PROTOCOL="tic"
 TUNNEL_ID=
+REQUIRE_TLS="true"
 
 function _check() {
 	assert isset USER
 	assert isset SECRET
 	assert isset SERVER
 	assert isset PROTOCOL
+	assert isset REQUIRE_TLS
 }
 
 function _parse_cmdline() {
@@ -42,19 +44,28 @@ function _parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "$1" in
 			--user=*)
-				USER=$(cli_get_val ${1})
+				USER="$(cli_get_val ${1})"
 				;;
 			--secret=*)
-				SECRET=$(cli_get_val ${1})
+				SECRET="$(cli_get_val ${1})"
 				;;
 			--server=*)
-				SERVER=$(cli_get_val ${1})
+				SERVER="$(cli_get_val ${1})"
 				;;
 			--protocol=*)
-				PROTOCOL=$(cli_get_val ${1})
+				PROTOCOL="$(cli_get_val ${1})"
 				;;
 			--tunnel-id=*)
-				TUNNEL_ID=$(cli_get_val ${1})
+				TUNNEL_ID="$(cli_get_val ${1})"
+				;;
+			--require-tls=*)
+				REQUIRE_TLS="$(cli_get_val ${1})"
+
+				if enabled val; then
+					REQUIRE_TLS="true"
+				else
+					REQUIRE_TLS="false"
+				fi
 				;;
 			*)
 				echo "Unknown option: $1" >&2
@@ -78,7 +89,8 @@ function _up() {
 		--protocol="${PROTOCOL}" \
 		--user="${USER}" \
 		--secret="${SECRET}" \
-		--tunnel-id="${TUNNEL_ID}"
+		--tunnel-id="${TUNNEL_ID}" \
+		--require-tls="${REQUIRE_TLS}"
 
 	exit $?
 }
