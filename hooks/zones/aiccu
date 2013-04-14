@@ -78,27 +78,19 @@ function _parse_cmdline() {
 
 function _up() {
 	local zone=${1}
-	shift
-
 	assert isset zone
 
-	zone_config_read ${zone}
+	# Start aiccu on this zone.
+	aiccu_start ${zone}
 
-	aiccu_start ${zone} \
-		--server="${SERVER}" \
-		--protocol="${PROTOCOL}" \
-		--user="${USER}" \
-		--secret="${SECRET}" \
-		--tunnel-id="${TUNNEL_ID}" \
-		--require-tls="${REQUIRE_TLS}"
-
-	exit $?
+	exit ${EXIT_OK}
 }
 
 function _down() {
 	local zone=${1}
-	shift
+	assert isset zone
 
+	# Stop aiccu on this zone.
 	aiccu_stop ${zone}
 
 	exit ${EXIT_OK}

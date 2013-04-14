@@ -19,60 +19,39 @@
 #                                                                             #
 ###############################################################################
 
-function aiccu_config_dir() {
-	local device=${1}
-
-	echo "${RUN_DIR}/aiccu/${device}"
-}
-
 function aiccu_start() {
 	local device=${1}
-	shift
-
 	assert isset device
 
-	local config_dir=$(aiccu_config_dir ${device})
-	mkdir -p ${config_dir}
-
-	local config_file=${config_dir}/config
-	aiccu_configure ${device} $@ > ${config_file}
-
-	aiccu start ${config_file} &>/dev/null
+	# Tell systemd to start aiccu on this device.
+	service_start "aiccu@${device}.service"
 	local ret=$?
 
-	case "${ret}" in
-		0)
-			log DEBUG "Aiccu was successfully started for '${device}'."
-			return ${EXIT_OK}
-			;;
-		*)
-			error_log "Could not start aiccu properly for '${device}'."
-			
-			error_log "Configuration file dump:"
-			local line
-			while read line; do
-				error_log "  ${line}"
-			done < ${config_file}
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "aiccu was successfully started on '${device}'."
+	else
+		log ERROR "Could not start aiccu properly on '${device}': ${ret}"
+		return ${EXIT_ERROR}
+	fi
 
-			return ${EXIT_ERROR}
-			;;
-	esac
+	return ${EXIT_OK}
 }
 
 function aiccu_stop() {
 	local device=${1}
-
 	assert isset device
 
-	aiccu stop $(aiccu_config_dir ${device})/config
-
-	rm -rf $(aiccu_config_dir ${device})
+	# Tell sysemd to stop aiccu on this device.
+	service_stop "aiccu@${device}.service"
 }
 
-function aiccu_configure() {
+function aiccu_write_config() {
 	local device=${1}
+	local file=${2}
+	shift 2
 
 	assert isset device
+	assert isset file
 
 	local user
 	local secret
@@ -118,30 +97,38 @@ function aiccu_configure() {
 	assert isset require_tls
 	assert isoneof protocol tic tsp l2tp
 
-cat <<EOF
-## AICCU configuration for ${zone}
+	# Write configuration file header.
+	config_header "aiccu configuration file for ${zone}" > ${file}
 
-username ${user}
-password ${secret}
+	(
+		print "# Server info"
+		print "server ${server}"
+		print "protocol ${protocol}"
+		print
 
-server ${server}
-protocol ${protocol}
+		if isset tunnel_id; then
+			print "# Tunnel ID"
+			print "tunnel_id ${tunnel_id}"
+			print
+		fi
 
-$(isset tunnel_id && echo "tunnel_id ${tunnel_id}")
+		print "# Credentials"
+		print "username ${user}"
+		print "password ${secret}"
+		print
 
-ipv6_interface ${device}
+		print "ipv6_interface ${device}"
+		print
 
-verbose true
-daemonize true
-automatic true
+		print "# Security"
+		print "requiretls ${require_tls}"
+		print
 
-requiretls ${require_tls}
-
-pidfile $(aiccu_config_dir ${zone})/pid
-
-#setupscript /tmp/aiccu.sh
-
-EOF
+		# Misc.
+		print "verbose true"
+		print "daemonize false"
+		print "automatic true"
+	) >> ${file}
 
 	return ${EXIT_OK}
 }

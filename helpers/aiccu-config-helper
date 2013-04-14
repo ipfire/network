@@ -1,0 +1,60 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2013  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /usr/lib/network/functions
+
+action="${1}"
+assert isset action
+
+zone="${2}"
+assert isset zone
+assert zone_exists ${zone}
+
+config_file="${RUN_DIR}/${zone}/aiccu.conf"
+
+case "${action}" in
+	create)
+		# Create the configuration file for this zone.
+		zone_config_read ${zone}
+
+		config_dir="$(dirname ${config_file})"
+		mkdir -p ${config_dir}
+
+		aiccu_write_config ${zone} ${config_file} \
+			--server="${SERVER}" \
+			--protocol="${PROTOCOL}" \
+			--user="${USER}" \
+			--secret="${SECRET}" \
+			--tunnel-id="${TUNNEL_ID}" \
+			--require-tls="${REQUIRE_TLS}"
+		;;
+
+	remove)
+		rm -f ${config_file}
+		;;
+
+	*)
+		log ERROR "Unknown action passed: ${action}"
+		exit ${EXIT_ERROR}
+		;;
+esac
+
+exit ${EXIT_OK}
