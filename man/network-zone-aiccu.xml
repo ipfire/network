@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-zone-aiccu">
+	<refentryinfo>
+		<title>network-zone-aiccu</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Stefan</firstname>
+				<surname>Schantl</surname>
+				<email>stefan.schantl@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-zone-aiccu</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-zone-aiccu</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network zone create <replaceable>ZONE</replaceable> aiccu ...</command>
+		</cmdsynopsis>
+
+		<cmdsynopsis>
+			<command>network zone <replaceable>ZONE</replaceable> edit ...</command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			The aiccu hook is used to create IPv6 tunnels over IPv4 networks
+			when the provider does not provide native IPv6.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<para>
+			The following options are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<option>--user=<replaceable>USERNAME</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The username of your account from the tunnel brocker.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--secret=<replaceable>PASSWORD</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The password of your account from the tunnel brocker.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+
+		<para>
+			Optional arguments, that can be used with aiccu.
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<option>--server=<replaceable>STRING</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The configuration server to use for setting up the tunnel.
+					</para>
+
+					<para>
+						This option has to be set to the configuration server of your
+						tunnel brocker. Defaults to <emphasis>tic.sixxs.net</emphasis>.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--protocol=<replaceable>[<emphasis>tic</emphasis>|tsp|l2tp]</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The used protocol to setup the tunnel.
+					</para>
+
+					<para>
+						TIC is the Tunnel Information and Control protocol. It provides information
+						about tunnels and the ability to control the details of a tunnel to TIC clients.
+					</para>
+
+					<para>
+						The Tunnel Setup Protocol (TSP) is used to negotiate IP tunnel setup parameters
+						between a tunnel client and a tunnel broker server.
+					</para>
+
+					<para>
+						Layer 2 Tunneling Protocol (L2TP) is a tunneling protocol used to support virtual
+						private networks (VPNs) or as part of the delivery of services by ISPs.
+					</para>
+
+					<para>
+						This option defaults to <emphasis>tic</emphasis> and have
+						to be changed if your tunnel brocker does not support that.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--tunnel-id=<replaceable>N</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The ID of this tunnel, given to you by your tunnel brocker.
+					</para>
+
+					<para>
+						This option is only required when multiple tunnels have been requested.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--require-tls=[<emphasis>true</emphasis>|false]</option>
+				</term>
+
+				<listitem>
+					<para>
+						Use STARTTLS to secure the connection to the configuration server. 
+					</para>
+
+					<para>
+						When set to true and the server does not support TLS, the transaction
+						will fail. When set to false, it also tries a STARTTLS, but if this is
+						not supported by the server, aiccu will continue and send the user and
+						password information as plain text.
+					</para>
+				</listitem>
+			</varlistentry>
+
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-zone</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>
