@@ -36,6 +36,13 @@ function _check() {
 	assert isset SERVER
 	assert isset PROTOCOL
 	assert isset REQUIRE_TLS
+
+	# Check if a supported protocol has been given.
+	if ! list_match "${PROTOCOL}" ${AICCU_SUPPORTED_PROTOCOLS}; then
+		log ERROR "This protocol is not supported by aiccu: ${PROTOCOL}"
+		log ERROR "Valid protocols are: ${AICCU_SUPPORTED_PROTOCOLS}"
+		return ${EXIT_ERROR}
+	fi
 }
 
 function _parse_cmdline() {

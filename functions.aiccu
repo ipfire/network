@@ -19,6 +19,9 @@
 #                                                                             #
 ###############################################################################
 
+# Define protocols which are supported by aiccu.
+AICCU_SUPPORTED_PROTOCOLS="tic tsp l2tp"
+
 function aiccu_start() {
 	local device=${1}
 	assert isset device
@@ -95,7 +98,7 @@ function aiccu_write_config() {
 	assert isset server
 	assert isset protocol
 	assert isset require_tls
-	assert isoneof protocol tic tsp l2tp
+	assert isoneof ${protocol} ${AICCU_SUPPORTED_PROTOCOLS}
 
 	# Write configuration file header.
 	config_header "aiccu configuration file for ${zone}" > ${file}
