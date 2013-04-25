@@ -52,6 +52,18 @@ function quote() {
 	print "\"%s\"" "$@"
 }
 
+function strip() {
+	local value="$@"
+
+	# remove leading whitespace characters
+	value="${value#"${value%%[![:space:]]*}"}"
+
+	# remove trailing whitespace characters
+	value="${value%"${value##*[![:space:]]}"}"
+
+	print "${value}"
+}
+
 # Print a pretty error message
 function error() {
 	echo -e " ${CLR_RED_B}ERROR${CLR_RESET}  : $@" >&2
@@ -338,6 +350,11 @@ function seq() {
 
 function which() {
 	type -P $@
+}
+
+# Prints the number of seconds since epoch.
+function timestamp() {
+	date -u "+%s"
 }
 
 function beautify_time() {

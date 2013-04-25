@@ -35,6 +35,9 @@ done
 
 . /usr/lib/network/functions
 
+# Read network configuration.
+network_config_read
+
 function cli_config() {
 	if cli_help_requested $@; then
 		cli_show_man network-config

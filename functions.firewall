@@ -22,6 +22,10 @@
 # High-level function which will create a ruleset for the current firewall
 # configuration and load it into the kernel.
 function firewall_start() {
+	local protocol="${1}"
+	assert isset protocol
+	shift
+
 	# Test mode.
 	local test="false"
 
@@ -46,73 +50,87 @@ function firewall_start() {
 	firewall_lock_acquire
 
 	# Initialize an empty iptables ruleset.
-	iptables_init DROP
+	iptables_init "${protocol}" "DROP"
 
 	# Add default chains.
-	firewall_tcp_state_flags
-	firewall_custom_chains
-	firewall_connection_tracking
-	firewall_tcp_clamp_mss
+	firewall_tcp_state_flags "${protocol}"
+	firewall_custom_chains "${protocol}"
+	firewall_connection_tracking "${protocol}"
+	firewall_tcp_clamp_mss "${protocol}"
 
 	# Add policies for every zone.
-	firewall_localhost_create_chains
+	firewall_localhost_create_chains "${protocol}"
 
 	local zone
 	for zone in $(zones_get_all); do
 		# Create all needed chains for the zone.
-		firewall_zone_create_chains ${zone}
+		firewall_zone_create_chains "${protocol}" "${zone}"
 
 		# After the chains that are always available have been
 		# created, we will add a custom policy to every single
 		# zone.
 
-		policy_zone_add ${zone}
+		policy_zone_add "${protocol}" "${zone}"
 	done
 
 	# Load the new ruleset.
-	iptables_load ${test}
+	local args
+	if enabled testmode; then
+		list_append args "--test"
+	fi
+	iptables_commit "${protocol}" ${args}
 
 	firewall_lock_release
 }
 
 function firewall_stop() {
+	local protocol="${1}"
+	assert isset protocol
+
 	firewall_lock_acquire
 
 	# Initialize an empty firewall ruleset
 	# with default policy ACCEPT.
-	iptables_init ACCEPT
+	iptables_init "${protocol}" ACCEPT
 
 	# Load it.
-	iptables_load
+	ipables_load "${protocol}"
 
 	firewall_lock_release
 }
 
 function firewall_show() {
+	local protocol="${1}"
+	assert isset protocol
+
 	# Shows the ruleset that is currently loaded.
-	iptables_status
+	iptables_status "${protocol}"
 
 	return ${EXIT_OK}
 }
 
 function firewall_panic() {
+	local protocol="${1}"
+	assert isset protocol
+	shift
+
 	local admin_hosts="$@"
 
-	firewall_lock_acquire
+	firewall_lock_acquire "${protocol}"
 
 	# Drop all communications.
-	iptables_init DROP
+	iptables_init "${protocol}" DROP
 
 	# If an admin host is provided, some administrative
 	# things will be allowed from there.
 	local admin_host
 	for admin_host in ${admin_hosts}; do
-		iptables -A INPUT -s ${admin_host} -j ACCEPT
-		iptables -A OUTPUT -d ${admin_host} -j ACCEPT
+		iptables "${protocol}" -A INPUT  -s "${admin_host}" -j ACCEPT
+		iptables "${protocol}" -A OUTPUT -d "${admin_host}" -j ACCEPT
 	done
 
 	# Load it.
-	iptables_load
+	iptables_commit "${protocol}"
 
 	firewall_lock_release
 }
@@ -145,82 +163,103 @@ function firewall_lock_release() {
 }
 
 function firewall_custom_chains() {
+	local protocol="${1}"
+	assert isset protocol
+
 	log INFO "Creating CUSTOM* chains..."
 
 	# These chains are intened to be filled with
 	# rules by the user. They are processed at the very
 	# beginning so it is possible to overwrite everything.
 
-	iptables_chain_create CUSTOMINPUT
-	iptables -A INPUT -j CUSTOMINPUT
+	iptables_chain_create "${protocol}" CUSTOMINPUT
+	iptables "${protocol}" -A INPUT -j CUSTOMINPUT
 
-	iptables_chain_create CUSTOMFORWARD
-	iptables -A FORWARD -j CUSTOMFORWARD
+	iptables_chain_create "${protocol}" CUSTOMFORWARD
+	iptables "${protocol}" -A FORWARD -j CUSTOMFORWARD
 
-	iptables_chain_create CUSTOMOUTPUT
-	iptables -A OUTPUT -j CUSTOMOUTPUT
+	iptables_chain_create "${protocol}" CUSTOMOUTPUT
+	iptables "${protocol}" -A OUTPUT -j CUSTOMOUTPUT
 
-	iptables_chain_create -4 -t nat CUSTOMPREROUTING
-	iptables -4 -t nat -A PREROUTING -j CUSTOMPREROUTING
+	iptables_chain_create "${protocol}" -t nat CUSTOMPREROUTING
+	iptables "${protocol}" -t nat -A PREROUTING -j CUSTOMPREROUTING
 
-	iptables_chain_create -4 -t nat CUSTOMPOSTROUTING
-	iptables -4 -t nat -A POSTROUTING -j CUSTOMPOSTROUTING
+	iptables_chain_create "${protocol}" -t nat CUSTOMPOSTROUTING
+	iptables "${protocol}" -t nat -A POSTROUTING -j CUSTOMPOSTROUTING
 
-	iptables_chain_create -4 -t nat CUSTOMOUTPUT
-	iptables -4 -t nat -A OUTPUT -j CUSTOMOUTPUT
+	iptables_chain_create "${protocol}" -t nat CUSTOMOUTPUT
+	iptables "${protocol}" -t nat -A OUTPUT -j CUSTOMOUTPUT
 }
 
 function firewall_tcp_state_flags() {
+	local protocol="${1}"
+	assert isset protocol
+
 	log INFO "Creating TCP State Flags chain..."
-	iptables_chain_create BADTCP_LOG
-	iptables -A BADTCP_LOG -p tcp -j $(iptables_LOG "Illegal TCP state: ")
-	iptables -A BADTCP_LOG -j DROP
 
-	iptables_chain_create BADTCP
-	iptables -A BADTCP -p tcp --tcp-flags ALL NONE -j BADTCP_LOG
-	iptables -A BADTCP -p tcp --tcp-flags SYN,FIN SYN,FIN -j BADTCP_LOG
-	iptables -A BADTCP -p tcp --tcp-flags SYN,RST SYN,RST -j BADTCP_LOG
-	iptables -A BADTCP -p tcp --tcp-flags FIN,RST FIN,RST -j BADTCP_LOG
-	iptables -A BADTCP -p tcp --tcp-flags ACK,FIN FIN     -j BADTCP_LOG
-	iptables -A BADTCP -p tcp --tcp-flags ACK,PSH PSH     -j BADTCP_LOG
-	iptables -A BADTCP -p tcp --tcp-flags ACK,URG URG     -j BADTCP_LOG
+	iptables_chain_create "${protocol}" BADTCP_LOG
+	iptables "${protocol}" -A BADTCP_LOG -p tcp -j "$(iptables_LOG "Illegal TCP state: ")"
+	iptables "${protocol}" -A BADTCP_LOG -j DROP
 
-	iptables -A INPUT   -p tcp -j BADTCP
-	iptables -A OUTPUT  -p tcp -j BADTCP
-	iptables -A FORWARD -p tcp -j BADTCP
+	iptables_chain_create "${protocol}" BADTCP
+	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags ALL NONE        -j BADTCP_LOG
+	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags SYN,FIN SYN,FIN -j BADTCP_LOG
+	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags SYN,RST SYN,RST -j BADTCP_LOG
+	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags FIN,RST FIN,RST -j BADTCP_LOG
+	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags ACK,FIN FIN     -j BADTCP_LOG
+	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags ACK,PSH PSH     -j BADTCP_LOG
+	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags ACK,URG URG     -j BADTCP_LOG
+
+	iptables "${protocol}" -A INPUT   -p tcp -j BADTCP
+	iptables "${protocol}" -A OUTPUT  -p tcp -j BADTCP
+	iptables "${protocol}" -A FORWARD -p tcp -j BADTCP
 }
 
 function firewall_tcp_clamp_mss() {
 	# Do nothing if this has been disabled.
 	enabled FIREWALL_CLAMP_PATH_MTU || return ${EXIT_OK}
 
+	local protocol="${1}"
+	assert isset protocol
+
 	log DEBUG "Adding rules to clamp MSS to path MTU..."
-	iptables -t mangle -A FORWARD \
+
+	iptables "${protocol}" -t mangle -A FORWARD \
 		-p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 }
 
 function firewall_connection_tracking() {
-	log INFO "Creating Connection Tracking chain..."
-	iptables_chain_create CONNTRACK
-	iptables -A CONNTRACK -m state --state ESTABLISHED,RELATED -j ACCEPT
-	iptables -A CONNTRACK -m state --state INVALID -j $(iptables_LOG "INVALID packet: ")
-	iptables -A CONNTRACK -m state --state INVALID -j DROP
+	local protocol="${1}"
+	assert isset protocol
 
-	iptables -A INPUT   -j CONNTRACK
-	iptables -A OUTPUT  -j CONNTRACK
-	iptables -A FORWARD -j CONNTRACK
+	log INFO "Creating Connection Tracking chain..."
+
+	iptables_chain_create "${protocol}" CONNTRACK
+	iptables "${protocol}" -A CONNTRACK -m state --state ESTABLISHED,RELATED -j ACCEPT
+	iptables "${protocol}" -A CONNTRACK -m state --state INVALID -j "$(iptables_LOG "INVALID packet: ")"
+	iptables "${protocol}" -A CONNTRACK -m state --state INVALID -j DROP
+
+	iptables "${protocol}" -A INPUT   -j CONNTRACK
+	iptables "${protocol}" -A OUTPUT  -j CONNTRACK
+	iptables "${protocol}" -A FORWARD -j CONNTRACK
 }
 
 function firewall_localhost_create_chains() {
+	local protocol="${1}"
+	assert isset protocol
+
 	log DEBUG "Creating firewall chains for localhost..."
 
 	# Accept everything on lo
-	iptables -A INPUT  -i lo -m state --state NEW -j ACCEPT
-	iptables -A OUTPUT -o lo -m state --state NEW -j ACCEPT
+	iptables "${protocol}" -A INPUT  -i lo -m state --state NEW -j ACCEPT
+	iptables "${protocol}" -A OUTPUT -o lo -m state --state NEW -j ACCEPT
 }
 
 function firewall_zone_create_chains() {
-	local zone=${1}
+	local protocol="${1}"
+	assert isset protocol
+
+	local zone="${2}"
 	assert isset zone
 
 	log DEBUG "Creating firewall chains for zone '${zone}'."
@@ -228,17 +267,17 @@ function firewall_zone_create_chains() {
 	local chain_prefix="ZONE_${zone^^}"
 
 	# Create filter chains.
-	iptables_chain_create "${chain_prefix}_INPUT"
-	iptables -A INPUT   -i ${zone} -j "${chain_prefix}_INPUT"
+	iptables_chain_create "${protocol}" "${chain_prefix}_INPUT"
+	iptables "${protocol}" -A INPUT   -i ${zone} -j "${chain_prefix}_INPUT"
 
-	iptables_chain_create "${chain_prefix}_OUTPUT"
-	iptables -A OUTPUT  -o ${zone} -j "${chain_prefix}_OUTPUT"
+	iptables_chain_create "${protocol}" "${chain_prefix}_OUTPUT"
+	iptables "${protocol}" -A OUTPUT  -o ${zone} -j "${chain_prefix}_OUTPUT"
 
 	# Custom rules.
-	iptables_chain_create "${chain_prefix}_CUSTOM"
+	iptables_chain_create "${protocol}" "${chain_prefix}_CUSTOM"
 
 	# Intrusion Prevention System.
-	iptables_chain_create "${chain_prefix}_IPS"
+	iptables_chain_create "${protocol}" "${chain_prefix}_IPS"
 
 	# Create a chain for each other zone.
 	# This leaves us with n^2 chains. Duh.
@@ -246,52 +285,52 @@ function firewall_zone_create_chains() {
 	local other_zone other_chain_prefix
 	for other_zone in $(zones_get_all); do
 		other_chain_prefix="${chain_prefix}_${other_zone^^}"
-		iptables_chain_create ${other_chain_prefix}
+		iptables_chain_create "${protocol}" "${other_chain_prefix}"
 
 		# Connect the chain with the FORWARD chain.
-		iptables -A FORWARD -i ${zone} -o ${other_zone} \
+		iptables "${protocol}" -A FORWARD -i "${zone}" -o "${other_zone}" \
 			-j "${other_chain_prefix}"
 
 		# Handle custom rules.
-		iptables -A ${other_chain_prefix} -j "${chain_prefix}_CUSTOM"
+		iptables "${protocol}" -A "${other_chain_prefix}" -j "${chain_prefix}_CUSTOM"
 
 		# Link IPS.
-		iptables -A ${other_chain_prefix} -j "${chain_prefix}_IPS"
+		iptables "${protocol}" -A "${other_chain_prefix}" -j "${chain_prefix}_IPS"
 
 		# Rules.
-		iptables_chain_create "${other_chain_prefix}_RULES"
-		iptables -A ${other_chain_prefix} -j "${other_chain_prefix}_RULES"
+		iptables_chain_create "${protocol}" "${other_chain_prefix}_RULES"
+		iptables "${protocol}" -A "${other_chain_prefix}" -j "${other_chain_prefix}_RULES"
 
 		# Policy.
-		iptables_chain_create "${other_chain_prefix}_POLICY"
-		iptables -A ${other_chain_prefix} -j "${other_chain_prefix}_POLICY"
+		iptables_chain_create "${protocol}" "${other_chain_prefix}_POLICY"
+		iptables "${protocol}" -A "${other_chain_prefix}" -j "${other_chain_prefix}_POLICY"
 	done
 
 	## Create mangle chain.
-	#iptables_chain_create -t mangle ${chain_prefix}
-	#iptables -t mangle -A PREROUTING  -i ${zone} -j ${chain_prefix}
-	#iptables -t mangle -A POSTROUTING -o ${zone} -j ${chain_prefix}
+	#iptables_chain_create "${protocol}" -t mangle "${chain_prefix}"
+	#iptables "${protocol}" -t mangle -A PREROUTING  -i "${zone}" -j "${chain_prefix}"
+	#iptables "${protocol}" -t mangle -A POSTROUTING -o "${zone}" -j "${chain_prefix}"
 
 	## Quality of Service
-	#iptables_chain_create -t mangle "${chain_prefix}_QOS_INC"
-	#iptables -t mangle -A ${chain_prefix} -i ${zone} -j "${chain_prefix}_QOS_INC"
-	#iptables_chain_create -t mangle "${chain_prefix}_QOS_OUT"
-	#iptables -t mangle -A ${chain_prefix} -o ${zone} -j "${chain_prefix}_QOS_OUT"
+	#iptables_chain_create "${protocol}" -t mangle "${chain_prefix}_QOS_INC"
+	#iptables "${protocol}" -t mangle -A "${chain_prefix}" -i "${zone}" -j "${chain_prefix}_QOS_INC"
+	#iptables_chain_create "${protocol}" -t mangle "${chain_prefix}_QOS_OUT"
+	#iptables "${protocol}" -t mangle -A "${chain_prefix}" -o "${zone}" -j "${chain_prefix}_QOS_OUT"
 
 	# Create NAT chain.
-	iptables_chain_create -4 -t nat ${chain_prefix}
-	iptables -4 -t nat -A PREROUTING  -i ${zone} -j ${chain_prefix}
-	iptables -4 -t nat -A POSTROUTING -o ${zone} -j ${chain_prefix}
+	iptables_chain_create "${protocol}" -t nat "${chain_prefix}"
+	iptables "${protocol}" -t nat -A PREROUTING  -i "${zone}" -j "${chain_prefix}"
+	iptables "${protocol}" -t nat -A POSTROUTING -o "${zone}" -j "${chain_prefix}"
 
 	# Network Address Translation
-	iptables_chain_create -4 -t nat "${chain_prefix}_DNAT"
-	iptables -4 -t nat -A PREROUTING  -i ${zone} -j "${chain_prefix}_DNAT"
-	iptables_chain_create -4 -t nat "${chain_prefix}_SNAT"
-	iptables -4 -t nat -A POSTROUTING -o ${zone} -j "${chain_prefix}_SNAT"
+	iptables_chain_create "${protocol}" -t nat "${chain_prefix}_DNAT"
+	iptables "${protocol}" -t nat -A PREROUTING  -i "${zone}" -j "${chain_prefix}_DNAT"
+	iptables_chain_create "${protocol}" -t nat "${chain_prefix}_SNAT"
+	iptables "${protocol}" -t nat -A POSTROUTING -o "${zone}" -j "${chain_prefix}_SNAT"
 
 	# UPnP
-	iptables_chain_create -4 -t nat "${chain_prefix}_UPNP"
-	iptables -4 -t nat -A ${chain_prefix} -j "${chain_prefix}_UPNP"
+	iptables_chain_create "${protocol}" -t nat "${chain_prefix}_UPNP"
+	iptables "${protocol}" -t nat -A "${chain_prefix}" -j "${chain_prefix}_UPNP"
 
 	return ${EXIT_OK}
 }

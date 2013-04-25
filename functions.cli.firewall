@@ -19,21 +19,72 @@
 #                                                                             #
 ###############################################################################
 
-. /usr/lib/network/functions
+function firewall_cli() {
+	local protocol="${1}"
+	assert isset protocol
+	shift
 
-function cli_start() {
-	firewall_start $@
+	# Parse the command line
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			-d|--debug)
+				DEBUG=1
+				log DEBUG "Enabled debugging mode"
+				;;
+			*)
+				action=${1}
+				;;
+		esac
+		shift
+		[ -n "${action}" ] && break
+	done
+
+	# Process the given action
+	case "${action}" in
+		start|restart|reload)
+			firewall_start "${protocol}" "$@"
+			;;
+
+		stop)
+			firewall_stop "${protocol}" "$@"
+			;;
+
+		show)
+			firewall_show "${protocol}" "$@"
+			;;
+
+		panic)
+			firewall_cli_panic "${protocol}" "$@"
+			;;
+
+		config)
+			firewall_cli_config "${protocol}" $@
+			;;
+
+		zone)
+			firewall_cli_zone $@
+			;;
+
+		""|help|--help|-h)
+			cli_usage root
+			exit ${EXIT_OK}
+			;;
+
+		*)
+			error "Invalid command given: ${action}"
+			cli_usage usage
+			exit ${EXIT_CONF_ERROR}
+			;;
+	esac
+
+	exit ${EXIT_OK}
 }
 
-function cli_stop() {
-	firewall_stop
-}
+function firewall_cli_panic() {
+	local protocol="${1}"
+	assert isset protocol
+	shift
 
-function cli_show() {
-	firewall_show $@
-}
-
-function cli_panic() {
 	if cli_help_requested $@; then
 		cli_show_man firewall-panic
 		exit ${EXIT_OK}
@@ -56,21 +107,29 @@ function cli_panic() {
 	firewall_panic ${admin_hosts}
 }
 
-function cli_config() {
+function firewall_cli_config() {
+	local protocol="${1}"
+	assert isset protocol
+	shift
+
 	if cli_help_requested $@; then
 		cli_usage root-config
 		exit ${EXIT_OK}
 	fi
 
 	if [ -n "${1}" ]; then
-		config_set $@
-		firewall_config_write
+		config_set "$@"
+		firewall_config_write "${protocol}"
 	else
-		firewall_config_print
+		firewall_config_print "${protocol}"
 	fi
 }
 
-function cli_zone() {
+function firewall_cli_zone() {
+	local protocol="${1}"
+	assert isset protocol
+	shift 
+
 	if cli_help_requested $@; then
 		cli_show_man firewall-zone
 		exit ${EXIT_OK}
@@ -92,10 +151,10 @@ function cli_zone() {
 		# Process the given action.
 		case "${action}" in
 			edit)
-				cli_zone_edit ${zone} $@
+				firewall_cli_zone_edit ${zone} $@
 				;;
 			status|"")
-				cli_zone_status ${zone} $@
+				firewall_cli_zone_status ${zone} $@
 				;;
 
 			# Print the raw configuration settings.
@@ -132,7 +191,7 @@ function cli_zone() {
 }
 
 # Show firewall zone conifguration.
-function cli_zone_status() {
+function firewall_cli_zone_status() {
 	local zone=${1}
 	assert isset zone
 
@@ -149,63 +208,8 @@ function cli_zone_status() {
 }
 
 # Edit firewall zone configuration.
-function cli_zone_edit() {
-	firewall_zone_edit $@
+function firewall_cli_zone_edit() {
+	firewall_zone_edit "$@"
 
 	exit ${EXIT_OK}
 }
-
-# Parse the command line
-while [ $# -gt 0 ]; do
-	case "${1}" in
-		-d|--debug)
-			DEBUG=1
-			log DEBUG "Enabled debugging mode"
-			;;
-		*)
-			action=${1}
-			;;
-	esac
-	shift
-	[ -n "${action}" ] && break
-done
-
-# Process the given action
-case "${action}" in
-	start|restart|reload)
-		cli_start $@
-		;;
-
-	stop)
-		cli_stop $@
-		;;
-
-	show)
-		cli_show $@
-		;;
-
-	panic)
-		cli_panic $@
-		;;
-
-	config)
-		cli_config $@
-		;;
-
-	zone)
-		cli_zone $@
-		;;
-
-	""|help|--help|-h)
-		cli_usage root
-		exit ${EXIT_OK}
-		;;
-
-	*)
-		error "Invalid command given: ${action}"
-		cli_usage usage
-		exit ${EXIT_CONF_ERROR}
-		;;
-esac
-
-exit ${EXIT_OK}

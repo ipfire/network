@@ -19,26 +19,11 @@
 #                                                                             #
 ###############################################################################
 
-# Make sure that helpers which are exec'ed have a working
-# PATH variable.
-export PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/bin:/bin:${PATH}"
+. /usr/lib/network/functions
 
-INIT_FUNCTIONS=""
+# Read firewall configuration.
+firewall_config_read "ipv4"
 
-function init_register() {
-	INIT_FUNCTIONS="${INIT_FUNCTIONS} $@"
-}
+firewall_cli "ipv4" "$@"
 
-function init_run() {
-	local init
-	for init in ${INIT_FUNCTIONS}; do
-		${init}
-	done
-}
-
-# Include version information.
-. /usr/lib/network/version
-
-for file in /usr/lib/network/functions.*; do
-	. ${file}
-done
+exit ${EXIT_ERROR}

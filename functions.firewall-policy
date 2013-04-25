@@ -1,0 +1,127 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2012  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function policy_zone_add() {
+	local zone=${1}
+	assert isset zone
+
+	local ${FIREWALL_ZONE_SETTINGS}
+	firewall_zone_read ${zone}
+
+	# Apply masquerading.
+	if enabled MASQUERADE4; then
+		policy_zone_masquerade4 ${zone}
+	fi
+
+	# Allow/deny cross-zone communication.
+	local other_zone
+	for other_zone in $(zones_get_all); do
+		if list_match "${other_zone}" ${FRIEND_ZONES}; then
+			policy_zone_allow_all ${zone} ${other_zone}
+		else
+			policy_zone_deny_all ${zone} ${other_zone}
+		fi
+	done
+}
+
+function policy_zone_masquerade4() {
+	local zone=${1}
+	assert isset zone
+
+	local chain="ZONE_${zone^^}_SNAT"
+
+	iptables -4 -t nat -A "${chain}" -o ${zone} \
+		-j MASQUERADE --random
+}
+
+function policy_zone_allow_all() {
+	local zone=${1}
+	assert isset zone
+
+	local other_zone=${2}
+	assert isset other_zone
+
+	local chain="ZONE_${zone^^}_${other_zone^^}_POLICY"
+
+	# Just accept all new connections.
+	iptables -A "${chain}" -m state --state NEW -j ACCEPT
+}
+
+function policy_zone_deny_all() {
+	local zone=${1}
+	assert isset zone
+
+	local other_zone=${2}
+	assert isset other_zone
+
+	local chain="ZONE_${zone^^}_${other_zone^^}_POLICY"
+
+	# Just accept all new connections.
+	iptables -A "${chain}" -j DROP
+}
+
+function policy_drop_all() {
+	# Nothing to do here, because that is the
+	# default policy of the INPUT/OUTPUT/FORWARD chain.
+	:
+}
+
+function policy_import_all_rules() {
+	# This will populate all chains with the rules
+	# for the given zone.
+
+	local zone=${1}
+	assert isset zone
+
+	local chain=${2}
+	assert isset chain
+
+	local zone_dir=$(firewall_zone_dir ${zone})
+	assert isset zone_dir
+
+	local rulesfile="${zone_dir}/rules"
+
+	#firewall_parse_rules "${rulesfile}" \
+	#	-A ${chain}_RULES_INC
+}
+
+function policy_load() {
+	local zone_from=${1}
+	assert isset zone_from
+
+	local zone_to=${2}
+	assert isset zone_to
+
+	local chain=${3}
+	assert isset chain
+
+	# Allow routes that have the same incoming and outgoing interface.
+	if [ "${zone_from}" = "${zone_to}" ]; then
+		iptables -A ${chain} -j ACCEPT
+		return ${EXIT_OK}
+	fi
+
+	# Grant all local zones accessing everything (GREEN).
+	if zone_is_local ${zone_from}; then
+		iptables -A ${chain} -j ACCEPT
+		return ${EXIT_OK}
+	fi
+}
