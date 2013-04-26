@@ -206,6 +206,7 @@ function pppd_write_config() {
 	local connect_cmd
 	local default_asyncmap="true"
 	local interface
+	local ipv6="true"
 	local lcp_echo_failure=3
 	local lcp_echo_interval=20
 	local linkname
@@ -240,6 +241,10 @@ function pppd_write_config() {
 			# The name of the created ppp interface.
 			--interface=*)
 				interface=$(cli_get_val ${1})
+				;;
+			# IPv6
+			--ipv6=*)
+				ipv6="$(cli_get_val ${1})"
 				;;
 			# LCP echo failure.
 			--lcr-echo-failure=*)
@@ -347,6 +352,15 @@ function pppd_write_config() {
 			if isset auth; then
 				print "require-${auth}"
 			fi
+			print
+		) >> ${file}
+	fi
+
+	# IPv6
+	if enabled ipv6; then
+		(
+			print "# IPv6 support"
+			print "+ipv6"
 			print
 		) >> ${file}
 	fi
