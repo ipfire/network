@@ -62,7 +62,7 @@ function policy_zone_allow_all() {
 	local chain="ZONE_${zone^^}_${other_zone^^}_POLICY"
 
 	# Just accept all new connections.
-	iptables -A "${chain}" -m state --state NEW -j ACCEPT
+	iptables -A "${chain}" -m conntrack --ctstate NEW -j ACCEPT
 }
 
 function policy_zone_deny_all() {

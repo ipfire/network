@@ -235,9 +235,9 @@ function firewall_connection_tracking() {
 	log INFO "Creating Connection Tracking chain..."
 
 	iptables_chain_create "${protocol}" CONNTRACK
-	iptables "${protocol}" -A CONNTRACK -m state --state ESTABLISHED,RELATED -j ACCEPT
-	iptables "${protocol}" -A CONNTRACK -m state --state INVALID -j "$(iptables_LOG "INVALID packet: ")"
-	iptables "${protocol}" -A CONNTRACK -m state --state INVALID -j DROP
+	iptables "${protocol}" -A CONNTRACK -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+	iptables "${protocol}" -A CONNTRACK -m conntrack --ctstate INVALID -j "$(iptables_LOG "INVALID packet: ")"
+	iptables "${protocol}" -A CONNTRACK -m conntrack --ctstate INVALID -j DROP
 
 	iptables "${protocol}" -A INPUT   -j CONNTRACK
 	iptables "${protocol}" -A OUTPUT  -j CONNTRACK
@@ -251,8 +251,8 @@ function firewall_localhost_create_chains() {
 	log DEBUG "Creating firewall chains for localhost..."
 
 	# Accept everything on lo
-	iptables "${protocol}" -A INPUT  -i lo -m state --state NEW -j ACCEPT
-	iptables "${protocol}" -A OUTPUT -o lo -m state --state NEW -j ACCEPT
+	iptables "${protocol}" -A INPUT  -i lo -m conntrack --ctstate NEW -j ACCEPT
+	iptables "${protocol}" -A OUTPUT -o lo -m conntrack --ctstate NEW -j ACCEPT
 }
 
 function firewall_zone_create_chains() {
