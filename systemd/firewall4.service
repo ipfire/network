@@ -1,0 +1,12 @@
+[Unit]
+Description=Firewall for IPv4
+Before=network.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/firewall4 start
+ExecStop=/usr/sbin/firewall4 stop
+
+[Install]
+WantedBy=multi-user.target

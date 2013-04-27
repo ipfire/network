@@ -1,12 +1,12 @@
 [Unit]
-Description=Firewall Ruleset Manager
+Description=Firewall for IPv6
 Before=network.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/sbin/firewall start
-ExecStop=/usr/sbin/firewall stop
+ExecStart=/usr/sbin/firewall6 start
+ExecStop=/usr/sbin/firewall6 stop
 
 [Install]
 WantedBy=multi-user.target
