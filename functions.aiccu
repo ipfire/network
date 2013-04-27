@@ -19,6 +19,9 @@
 #                                                                             #
 ###############################################################################
 
+# Define protocols which are supported by aiccu.
+AICCU_SUPPORTED_PROTOCOLS="tic tsp l2tp"
+
 function aiccu_start() {
 	local device=${1}
 	assert isset device
@@ -53,8 +56,8 @@ function aiccu_write_config() {
 	assert isset device
 	assert isset file
 
-	local user
-	local secret
+	local username
+	local password
 	local server
 	local protocol="tic"
 	local tunnel_id
@@ -62,11 +65,11 @@ function aiccu_write_config() {
 
 	while [ $# -gt  0 ]; do
 		case "${1}" in
-			--user=*)
-				user="$(cli_get_val ${1})"
+			--username=*)
+				username="$(cli_get_val ${1})"
 				;;
-			--secret=*)
-				secret="$(cli_get_val ${1})"
+			--password=*)
+				password="$(cli_get_val ${1})"
 				;;
 			--server=*)
 				server="$(cli_get_val ${1})"
@@ -90,12 +93,12 @@ function aiccu_write_config() {
 		shift
 	done
 
-	assert isset user
-	assert isset secret
+	assert isset username
+	assert isset password
 	assert isset server
 	assert isset protocol
 	assert isset require_tls
-	assert isoneof protocol tic tsp l2tp
+	assert isoneof ${protocol} ${AICCU_SUPPORTED_PROTOCOLS}
 
 	# Write configuration file header.
 	config_header "aiccu configuration file for ${zone}" > ${file}
@@ -113,8 +116,8 @@ function aiccu_write_config() {
 		fi
 
 		print "# Credentials"
-		print "username ${user}"
-		print "password ${secret}"
+		print "username ${username}"
+		print "password ${password}"
 		print
 
 		print "ipv6_interface ${device}"

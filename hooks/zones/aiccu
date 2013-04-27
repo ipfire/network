@@ -21,21 +21,28 @@
 
 . /usr/lib/network/header-zone
 
-HOOK_SETTINGS="HOOK PROTOCOL REQUIRE_TLS USER SECRET SERVER TUNNEL_ID"
+HOOK_SETTINGS="HOOK PASSWORD PROTOCOL REQUIRE_TLS USERNAME SERVER TUNNEL_ID"
 
-USER=
-SECRET=
+USERNAME=
+PASSWORD=
 SERVER="tic.sixxs.net"
 PROTOCOL="tic"
 TUNNEL_ID=
 REQUIRE_TLS="true"
 
 function _check() {
-	assert isset USER
-	assert isset SECRET
+	assert isset USERNAME
+	assert isset PASSWORD
 	assert isset SERVER
 	assert isset PROTOCOL
 	assert isset REQUIRE_TLS
+
+	# Check if a supported protocol has been given.
+	if ! list_match "${PROTOCOL}" ${AICCU_SUPPORTED_PROTOCOLS}; then
+		log ERROR "This protocol is not supported by aiccu: ${PROTOCOL}"
+		log ERROR "Valid protocols are: ${AICCU_SUPPORTED_PROTOCOLS}"
+		return ${EXIT_ERROR}
+	fi
 }
 
 function _parse_cmdline() {
@@ -43,11 +50,11 @@ function _parse_cmdline() {
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
-			--user=*)
-				USER="$(cli_get_val ${1})"
+			--username=*)
+				USERNAME="$(cli_get_val ${1})"
 				;;
-			--secret=*)
-				SECRET="$(cli_get_val ${1})"
+			--password=*)
+				PASSWORD="$(cli_get_val ${1})"
 				;;
 			--server=*)
 				SERVER="$(cli_get_val ${1})"
@@ -105,7 +112,7 @@ function _status() {
 	zone_config_read ${zone}
 
 	cli_headline 2 "Configuration"
-	cli_print_fmt1 2 "User" "${USER}"
+	cli_print_fmt1 2 "User" "${USERNAME}"
 	cli_print_fmt1 2 "Secret" "<hidden>"
 	cli_space
 	cli_print_fmt1 2 "Server" "${SERVER}"
