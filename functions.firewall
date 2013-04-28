@@ -251,8 +251,8 @@ function firewall_localhost_create_chains() {
 	log DEBUG "Creating firewall chains for localhost..."
 
 	# Accept everything on lo
-	iptables "${protocol}" -A INPUT  -i lo -m conntrack --ctstate NEW -j ACCEPT
-	iptables "${protocol}" -A OUTPUT -o lo -m conntrack --ctstate NEW -j ACCEPT
+	iptables "${protocol}" -A INPUT  -i lo -j ACCEPT
+	iptables "${protocol}" -A OUTPUT -o lo -j ACCEPT
 }
 
 function firewall_zone_create_chains() {
