@@ -53,6 +53,7 @@ function firewall_start() {
 	iptables_init "${protocol}" "DROP"
 
 	# Add default chains.
+	firewall_filter_rh0_headers "${protocol}"
 	firewall_tcp_state_flags "${protocol}"
 	firewall_custom_chains "${protocol}"
 	firewall_connection_tracking "${protocol}"
@@ -253,6 +254,23 @@ function firewall_localhost_create_chains() {
 	# Accept everything on lo
 	iptables "${protocol}" -A INPUT  -i lo -j ACCEPT
 	iptables "${protocol}" -A OUTPUT -o lo -j ACCEPT
+}
+
+function firewall_filter_rh0_headers() {
+	local protocol="${1}"
+	assert isset protocol
+
+	# Only IPv6.
+	[ "${protocol}" = "ipv6" ] || return ${EXIT_OK}
+
+	# Filter all packets that have RH0 headers
+	# http://www.ietf.org/rfc/rfc5095.txt
+	iptables_chain_create "${protocol}" FILTER_RH0
+	iptables "${protocol}" -A FILTER_RH0 -m rt --rt-type 0 -j DROP
+
+	iptables "${protocol}" -A INPUT   -j FILTER_RH0
+	iptables "${protocol}" -A FORWARD -j FILTER_RH0
+	iptables "${protocol}" -A OUTPUT  -j FILTER_RH0
 }
 
 function firewall_zone_create_chains() {
