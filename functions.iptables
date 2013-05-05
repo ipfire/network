@@ -380,8 +380,24 @@ function iptables_dump() {
 }
 
 function iptables_LOG() {
-	local prefix=${1}
+	local prefix="${1}"
 	local ret
+
+	# Automatically append a colon and whitespace.
+	case "${prefix}" in
+		# Everything is fine.
+		"*: ") ;;
+
+		# Ends with colon, add whitespace only.
+		"*:")
+			prefix="${prefix} "
+			;;
+
+		# Append both.
+		*)
+			prefix="${prefix}: "
+			;;
+	esac
 
 	case "${FIREWALL_LOG_METHOD}" in
 		nflog)

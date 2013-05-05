@@ -185,7 +185,7 @@ function firewall_start() {
 	# Add default chains.
 	firewall_filter_rh0_headers "${protocol}"
 	firewall_filter_icmp "${protocol}"
-	firewall_tcp_state_flags "${protocol}"
+	firewall_filter_invalid_packets "${protocol}"
 	firewall_custom_chains "${protocol}"
 	firewall_connection_tracking "${protocol}"
 	firewall_tcp_clamp_mss "${protocol}"
@@ -323,28 +323,145 @@ function firewall_custom_chains() {
 	iptables "${protocol}" -t nat -A OUTPUT -j CUSTOMOUTPUT
 }
 
-function firewall_tcp_state_flags() {
+function firewall_filter_invalid_packets() {
 	local protocol="${1}"
 	assert isset protocol
 
-	log INFO "Creating TCP State Flags chain..."
+	local log_limit="-m limit --limit 5/m --limit-burst 10"
 
-	iptables_chain_create "${protocol}" BADTCP_LOG
-	iptables "${protocol}" -A BADTCP_LOG -p tcp -j "$(iptables_LOG "Illegal TCP state: ")"
-	iptables "${protocol}" -A BADTCP_LOG -j DROP
+	# Create a chain
+	iptables_chain_create "${protocol}" FILTER_INVALID
+	iptables "${protocol}" -A INPUT   -j FILTER_INVALID
+	iptables "${protocol}" -A OUTPUT  -j FILTER_INVALID
+	iptables "${protocol}" -A FORWARD -j FILTER_INVALID
 
-	iptables_chain_create "${protocol}" BADTCP
-	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags ALL NONE        -j BADTCP_LOG
-	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags SYN,FIN SYN,FIN -j BADTCP_LOG
-	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags SYN,RST SYN,RST -j BADTCP_LOG
-	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags FIN,RST FIN,RST -j BADTCP_LOG
-	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags ACK,FIN FIN     -j BADTCP_LOG
-	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags ACK,PSH PSH     -j BADTCP_LOG
-	iptables "${protocol}" -A BADTCP -p tcp --tcp-flags ACK,URG URG     -j BADTCP_LOG
+	# Create a chain where only TCP packets go
+	iptables_chain_create "${protocol}" FILTER_INVALID_TCP
+	iptables "${protocol}" -A FILTER_INVALID -p tcp -j FILTER_INVALID_TCP
 
-	iptables "${protocol}" -A INPUT   -p tcp -j BADTCP
-	iptables "${protocol}" -A OUTPUT  -p tcp -j BADTCP
-	iptables "${protocol}" -A FORWARD -p tcp -j BADTCP
+	# Create a chain where only UDP packets go
+	iptables_chain_create "${protocol}" FILTER_INVALID_UDP
+	iptables "${protocol}" -A FILTER_INVALID -p udp -j FILTER_INVALID_UDP
+
+	# Create a chain where only ICMP packets go
+	iptables_chain_create "${protocol}" FILTER_INVALID_ICMP
+	iptables "${protocol}" -A FILTER_INVALID -p icmp -j FILTER_INVALID_ICMP
+
+
+	# Optionally log all port scans
+
+	if enabled FIREWALL_LOG_STEALTH_SCANS; then
+		log INFO "Logging of stealth scans enabled"
+
+		# NMAP FIN/URG/PSH - XMAS scan
+		iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags ALL FIN,URG,PSH \
+			"${log_limit}" -j "$(iptables_LOG "Stealth XMAS scan")"
+
+		# SYN/RST/ACK/FIN/URG
+		iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG \
+			"${log_limit}" -j "$(iptables_LOG "Stealth XMAS-PSH scan")"
+
+		# ALL/ALL
+		iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags ALL ALL \
+			"${log_limit}" -j "$(iptables_LOG "Stealth XMAS-ALL scan")"
+
+		# NMAP FIN Stealth
+		iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags ALL FIN \
+			"${log_limit}" -j "$(iptables_LOG "Stealth FIN scan")"
+
+		# SYN/RST
+		iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags SYN,RST SYN,RST \
+			"${log_limit}" -j "$(iptables_LOG "Stealth SYN/RST scan")"
+
+		# SYN/FIN
+		iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags SYN,FIN SYN,FIN \
+			"${log_limit}" -j "$(iptables_LOG "Stealth SYN/FIN scan")"
+
+		# Null scan
+		iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags ALL NONE \
+			"${log_limit}" -j "$(iptables_LOG "Stealth NULL scan")"
+	else
+		log INFO "Logging of stealth scans disabled"
+	fi
+
+
+	# Drop scan packets
+
+	# NMAP FIN/URG/PSH
+	iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
+
+	# SYN/RST/ACK/FIN/URG
+	iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+
+	# ALL/ALL
+	iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags ALL ALL -j DROP
+
+	# NMAP FIN Stealth
+	iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags ALL FIN -j DROP
+
+	# SYN/RST
+	iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+
+	# SYN/FIN
+	iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+
+	# Null scan
+	iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-flags ALL NONE -j DROP
+
+
+	# Log packets with bad flags
+
+	if enabled FIREWALL_LOG_BAD_TCP_FLAGS; then
+		log INFO "Logging of packets with bad TCP flags enabled"
+
+		# Option 64
+		iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-option 64 \
+			"${log_limit}" -j "$(iptables_LOG "Bad TCP flag(64)")"
+
+		# Option 128
+		iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-option 128 \
+			"${log_limit}" -j "$(iptables_LOG "Bad TCP flag(128)")"
+	else
+		log INFO "Logging of packets with bad TCP flags disabled"
+	fi
+
+	# Drop packets with bad flags
+
+	iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-option 64 -j DROP
+	iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp --tcp-option 128 -j DROP
+
+
+	# Log invalid packets
+
+	if enabled FIREWALL_LOG_INVALID_TCP; then
+		log INFO "Logging of INVALID TCP packets enabled"
+
+		iptables "${protocol}" -A FILTER_INVALID_TCP -p tcp -m conntrack --ctstate INVALID \
+			"${log_limit}" -j "$(iptables_LOG "INVALID TCP")"
+	else
+		log INFO "Logging of INVALID TCP packets disabled"
+	fi
+
+	if enabled FIREWALL_LOG_INVALID_UDP; then
+		log INFO "Logging of INVALID UDP packets enabled"
+
+		iptables "${protocol}" -A FILTER_INVALID_UDP -p udp -m conntrack --ctstate INVALID \
+			"${log_limit}" -j "$(iptables_LOG "INVALID UDP")"
+	else
+		log INFO "Logging of INVALID UDP packets disabled"
+	fi
+
+	if enabled FIREWALL_LOG_INVALID_ICMP; then
+		log INFO "Logging of INVALID ICMP packets enabled"
+
+		iptables "${protocol}" -A FILTER_INVALID_ICMP -p icmp -m conntrack --ctstate INVALID \
+			"${log_limit}" -j "$(iptables_LOG "INVALID ICMP")"
+	else
+		log INFO "Logging of INVALID ICMP packets disabled"
+	fi
+
+	# Drop all INVALID packets
+	iptables "${protocol}" -A FILTER_INVALID -m conntrack --ctstate INVALID -j DROP
 }
 
 function firewall_tcp_clamp_mss() {
