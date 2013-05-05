@@ -1,0 +1,70 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2013  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# Accounting
+
+function conntrack_get_accounting() {
+	sysctl_get "net.netfilter.nf_conntrack_acct"
+}
+
+function conntrack_set_accounting() {
+	local value="${1}"
+	assert isset value
+
+	# Convert boolean values into 0 and 1.
+	if enabled value; then
+		log INFO "Enabling connection tracking accounting"
+		value="1"
+	else
+		log INFO "Disabling connection tracking accounting"
+		value="0"
+	fi
+
+	sysctl_set "net.netfilter.nf_conntrack_acct" "${value}"
+}
+
+# Max. connections
+
+function conntrack_get_max_connections() {
+	sysctl_get "net.netfilter.nf_conntrack_max"
+}
+
+function conntrack_set_max_connections() {
+	local value="${1}"
+	assert isinteger value
+
+	log INFO "Conntrack: Setting max. amount of concurrent connections to ${value}"
+	sysctl_set "net.netfilter.nf_conntrack_max" "${value}"
+}
+
+# UDP timeout
+
+function conntrack_get_udp_timeout() {
+	sysctl_get "net.netfilter.nf_conntrack_udp_timeout"
+}
+
+function conntrack_set_udp_timeout() {
+	local value="${1}"
+	assert isinteger value
+
+	log INFO "Conntrack: Setting UDP timeout to ${value}s"
+	sysctl_set "net.netfilter.nf_conntrack_udp_timeout" "${value}"
+}

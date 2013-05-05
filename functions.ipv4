@@ -362,3 +362,15 @@ function ipv4_in_subnet() {
 
 	return ${EXIT_FALSE}
 }
+
+function ipv4_ttl_valid() {
+	local ttl="${1}"
+
+	isinteger ttl || return ${EXIT_FALSE}
+
+	# Must be between 10 and 255.
+	[ "${ttl}" -lt  10 ] && return ${EXIT_FALSE}
+	[ "${ttl}" -gt 255 ] && return ${EXIT_FALSE}
+
+	return ${EXIT_TRUE}
+}

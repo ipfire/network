@@ -45,6 +45,7 @@ CLEANFILES =
 
 # man pages
 MAN_PAGES = \
+	man/firewall-config.8 \
 	man/network.8 \
 	man/network-config.8 \
 	man/network-device.8 \

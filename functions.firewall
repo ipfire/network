@@ -19,6 +19,136 @@
 #                                                                             #
 ###############################################################################
 
+# This function initializes all kernel parameters that need to be adjusted
+# to run this firewall properly.
+function firewall_kernel_init() {
+	log INFO "Configuring kernel parameters..."
+	local option
+
+	# Enable conntrack accounting
+	conntrack_set_accounting "true"
+
+	# Adjust max. amount of simultaneous connections
+	conntrack_set_max_connections "${CONNTRACK_MAX_CONNECTIONS}"
+
+	# Increase UDP connection timeout (fixes DNS)
+	conntrack_set_udp_timeout "${CONNTRACK_UDP_TIMEOUT}"
+
+	# Disable sending redirects
+	log INFO "Disabling sending redirects"
+	sysctl_set_recursively "net.ipv6.conf" "send_redirects" 0
+	sysctl_set_recursively "net.ipv4.conf" "send_redirects" 0
+
+	# Enable source route protection
+	log INFO "Enabling source route protection"
+	sysctl_set_recursively "net.ipv6.conf" "accept_source_route" 0
+	sysctl_set_recursively "net.ipv4.conf" "accept_source_route" 0
+
+	# ICMP broadcast protection (smurf amplifier protection)
+	log INFO "Enabling ICMP broadcast protection (smurf amplifier protection)"
+	sysctl_set "net.ipv4.icmp_echo_ignore_broadcasts" 1
+
+	# ICMP Dead Error Message protection
+	log INFO "Enabling ICMP dead error message protection"
+	sysctl_set "net.ipv4.icmp_ignore_bogus_error_responses" 0
+
+	# Enable packet forwarding
+	log INFO "Enabling packet forwarding"
+	sysctl_set_recursively "net.ipv6.conf" "forwarding" 1
+	sysctl_set_recursively "net.ipv4.conf" "forwarding" 1
+
+	# Setting some kernel performance options
+	log INFO "Setting some kernel performance options"
+	for option in window_scaling timestamps sack dsack fack; do
+		sysctl_set "net.ipv4.tcp_${option}" 1
+	done
+	sysctl_set "net.ipv4.tcp_low_latency" 0
+
+	# Reduce DoS ability by reducing timeouts
+	log INFO "Reducing DoS ability"
+	sysctl_set "net.ipv4.tcp_fin_timeout" 30
+	sysctl_set "net.ipv4.tcp_keepalive_time" 1800
+
+	# Set number of times to retry SYN in a new connection
+	sysctl_set "net.ipv4.tcp_syn_retries" 3
+
+	# Set number of times to retry a SYN-ACK in a half-open new connection
+	sysctl_set "net.ipv4.tcp_synack_retries" 2
+
+	# Enable a fix for RFC1337 - time-wait assassination hazards in TCP
+	sysctl_set "net.ipv4.tcp_rfc1337" 1
+
+	# SYN-flood protection
+	if enabled FIREWALL_SYN_COOKIES; then
+		log INFO "Enabling SYN-flood protection via SYN-cookies"
+		sysctl_set_bool "net.ipv4.tcp_syncookies" 1
+	else
+		log INFO "Disabling SYN-flood protection via SYN-cookies"
+		sysctl_set_bool "net.ipv4.tcp_syncookies" 0
+	fi
+
+	# rp_filter
+	if enabled FIREWALL_RP_FILTER; then
+		log INFO "Enabling anti-spoof from non-routable IP addresses"
+		sysctl_set_recursively "net.ipv4.conf" "rp_filter" 1
+	else
+		log INFO "Disabling anti-spoof from non-routable IP addresses"
+		sysctl_set_recursively "net.ipv4.conf" "rp_filter" 0
+	fi
+
+	# Log martians
+	if enabled FIREWALL_LOG_MARTIANS; then
+		log INFO "Enabling the logging of martians"
+		sysctl_set_recursively "net.ipv4.conf" "log_martians" 1
+	else
+		log INFO "Disabling the logging of martians"
+		sysctl_set_recursively "net.ipv4.conf" "log_martians" 0
+	fi
+
+	# ICMP redirect messages
+	if enabled FIREWALL_ACCEPT_ICMP_REDIRECTS; then
+		log INFO "Enabling accepting ICMP-redirect messages"
+		sysctl_set_recursively "net.ipv6.conf" "accept_redirects" 1
+		sysctl_set_recursively "net.ipv4.conf" "accept_redirects" 1
+	else
+		log INFO "Disabling accepting ICMP-redirect messages"
+		sysctl_set_recursively "net.ipv6.conf" "accept_redirects" 0
+		sysctl_set_recursively "net.ipv4.conf" "accept_redirects" 0
+	fi
+
+	# Explicit Congestion Notification
+	if enabled FIREWALL_USE_ECN; then
+		log INFO "Enabling ECN (Explicit Congestion Notification)"
+		sysctl_set "net.ipv4.tcp_ecn" 1
+	else
+		log INFO "Disabling ECN (Explicit Congestion Notification)"
+		sysctl_set "net.ipv4.tcp_ecn" 2
+	fi
+
+	# Dynamic IP address hacking
+	log INFO "Enabling kernel support for dynamic IP addresses"
+	sysctl_set "net.ipv4.ip_dynaddr" 1
+
+	if enabled FIREWALL_PMTU_DISCOVERY; then
+		log INFO "Enabling PMTU discovery"
+		sysctl_set "net.ipv4.ip_no_pmtu_disc" 0
+	else
+		log INFO "Disabling PMTU discovery"
+		sysctl_set "net.ipv4.ip_no_pmtu_disc" 1
+	fi
+
+	# TTL
+	if ipv4_ttl_valid "${FIREWALL_DEFAULT_TTL}"; then
+		log INFO "Setting default TTL to ${FIREWALL_DEFAULT_TTL}"
+		sysctl_set "net.ipv4.ip_default_ttl" "${FIREWALL_DEFAULT_TTL}"
+	else
+		log ERROR "Invalid value for default TTL '${FIREWALL_DEFAULT_TTL}'"
+		log ERROR "  Must be between 10 and 255!"
+	fi
+
+	return ${EXIT_OK}
+}
+
 # High-level function which will create a ruleset for the current firewall
 # configuration and load it into the kernel.
 function firewall_start() {

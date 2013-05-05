@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
@@ -18,5 +19,9 @@
 #                                                                             #
 ###############################################################################
 
-# Enable connection tracking accounting.
-net.netfilter.nf_conntrack_acct=1
+. /usr/lib/network/functions
+
+# Initialize kernel parameters for the firewall.
+firewall_kernel_init
+
+exit ${EXIT_OK}

@@ -1,6 +1,8 @@
 [Unit]
 Description=Network Connectivity
+After=firewall-init.service
 Before=network.target
+Requires=firewall-init.service
 
 [Service]
 Type=oneshot

@@ -1,0 +1,8 @@
+[Unit]
+Description=Initialize kernel parameters for the firewalls
+Before=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/network/helpers/firewall-kernel-init

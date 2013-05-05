@@ -1,5 +1,7 @@
 [Unit]
 Description=Network Connectivity for zone %I
+After=firewall-init.service
+Requires=firewall-init.service
 
 [Service]
 Type=oneshot
