@@ -54,6 +54,7 @@ function firewall_start() {
 
 	# Add default chains.
 	firewall_filter_rh0_headers "${protocol}"
+	firewall_filter_icmp "${protocol}"
 	firewall_tcp_state_flags "${protocol}"
 	firewall_custom_chains "${protocol}"
 	firewall_connection_tracking "${protocol}"
@@ -271,6 +272,67 @@ function firewall_filter_rh0_headers() {
 	iptables "${protocol}" -A INPUT   -j FILTER_RH0
 	iptables "${protocol}" -A FORWARD -j FILTER_RH0
 	iptables "${protocol}" -A OUTPUT  -j FILTER_RH0
+}
+
+function firewall_filter_icmp() {
+	local protocol="${1}"
+	assert isset protocol
+
+	# Only IPv6.
+	[ "${protocol}" = "ipv6" ] || return ${EXIT_OK}
+
+	local chain="FILTER_ICMPV6"
+
+	# Create an extra chain for handling ICMP packets.
+	iptables_chain_create "${protocol}" "${chain}_COMMON"
+
+	local suffix
+	for suffix in INC FWD OUT; do
+		iptables_chain_create "${protocol}" "${chain}_${suffix}"
+		iptables "${protocol}" -A "${chain}_${suffix}" -j "${chain}_COMMON"
+	done
+	iptables "${protocol}" -A INPUT   -p icmpv6 -j "${chain}_INC"
+	iptables "${protocol}" -A FORWARD -p icmpv6 -j "${chain}_FWD"
+	iptables "${protocol}" -A OUTPUT  -p icmpv6 -j "${chain}_OUT"
+
+	# Packets that must always pass the firewall.
+	# Type 4: Parameter Problem
+	local type
+	for type in ttl-zero-during-reassembly bad-header; do
+		iptables "${protocol}" -A "${chain}_COMMON" \
+			-p icmpv6 --icmpv6-type "${type}" -j ACCEPT
+	done
+
+	# Packets that are accepted if they belong to an existing connection.
+	for type in echo-reply destination-unreachable packet-too-big \
+			unknown-header-type unknown-option; do
+		iptables "${protocol}" -A "${chain}_COMMON" \
+			-m conntrack --ctstate ESTABLISHED,RELATED \
+			-p icmpv6 --icmpv6-type "${type}" -j ACCEPT
+	done
+
+	# Packets that are always discarded.
+	# Type 100, 101, 200, 201: Private Experimentation
+	for type in 100 101 200 201; do
+		iptables "${protocol}" -A "${chain}_COMMON" \
+			-p icmpv6 --icmpv6-type "${type}" -j DROP
+	done
+
+	# Discard packets from local networks with hop limit smaller than $hoplimit.
+	# Type 148: Path solicitation
+	# Type 149: Path advertisement
+	local hoplimit=255
+	for type in {router,neighbour}-{advertisement,solicitation} 148 149; do
+		iptables "${protocol}" -A "${chain}_INC" \
+			-p icmpv6 --icmpv6-type "${type}" \
+			-m hl --hl-lt "${hoplimit}" -j DROP
+	done
+
+	# The firewall is always allowed to send ICMP echo requests.
+	iptables "${protocol}" -A "${chain}_OUT" \
+		-p icmpv6 --icmpv6-type echo-request -j ACCEPT
+
+	return ${EXIT_OK}
 }
 
 function firewall_zone_create_chains() {
