@@ -45,6 +45,18 @@ function iptables() {
 
 				assert isoneof table ${IPTABLES_TABLES}
 				;;
+
+			# Automatically convert ICMP to ICMPv6 for IPv6
+			--protocol|-p)
+				local proto="${2}"
+
+				if [ "${protocol}" = "ipv6" -a "${proto}" = "icmp" ]; then
+					proto="icmpv6"
+				fi
+
+				list_append args "${1} ${proto}"
+				shift 2
+				;;
 			*)
 				list_append args "${1}"
 
