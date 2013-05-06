@@ -22,7 +22,7 @@
 . /usr/lib/network/header-zone
 
 HOOK_SETTINGS="HOOK ACCESS_CONCENTRATOR AUTH USERNAME PASSWORD"
-HOOK_SETTINGS="${HOOK_SETTINGS} SERVICE_NAME MTU PORT"
+HOOK_SETTINGS="${HOOK_SETTINGS} SERVICE_NAME MTU PORT IPV6"
 
 # User credentials for the dialin.
 USERNAME=""
@@ -48,6 +48,9 @@ MTU=1492
 PPPOE_SUPPORTED_AUTH_METHODS="${PPP_SUPPORTED_AUTH_METHODS}"
 PPPOE_PLUGIN="rp-pppoe.so"
 
+# Request an IPv6 address.
+IPV6="true"
+
 function _check() {
 	assert isset USERNAME
 	assert isset PASSWORD
@@ -57,6 +60,8 @@ function _check() {
 	# Check for a valid port setting.
 	assert isset PORT
 	assert port_exists ${PORT}
+
+	assert isset IPV6
 }
 
 function _parse_cmdline() {
@@ -67,6 +72,14 @@ function _parse_cmdline() {
 				;;
 			--auth=*)
 				AUTH=$(cli_get_val ${1})
+				;;
+			--ipv6=*)
+				local value="$(cli_get_val "${1}")"
+				if enabled value; then
+					IPV6="true"
+				else
+					IPV6="false"
+				fi
 				;;
 			--mtu=*)
 				MTU=$(cli_get_val ${1})
@@ -237,6 +250,7 @@ function _ppp_write_config() {
 		--password="${PASSWORD}" \
 		--mtu="${MTU}" \
 		--auth="${AUTH}" \
+		--ipv6="${IPV6}" \
 		\
 		--plugin="${PPPOE_PLUGIN}" \
 		--plugin-options="${plugin_options}"
