@@ -348,6 +348,18 @@ function cli_get_val() {
 	echo "${@#*=}"
 }
 
+function cli_get_bool() {
+	local value="$(cli_get_val "$@")"
+
+	if enabled value; then
+		print "true"
+		return ${EXIT_TRUE}
+	fi
+
+	print "false"
+	return ${EXIT_FALSE}
+}
+
 function cli_usage() {
 	local command="$@"
 	local basename="$(basename ${0})"

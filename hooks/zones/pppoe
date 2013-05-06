@@ -22,7 +22,7 @@
 . /usr/lib/network/header-zone
 
 HOOK_SETTINGS="HOOK ACCESS_CONCENTRATOR AUTH USERNAME PASSWORD"
-HOOK_SETTINGS="${HOOK_SETTINGS} SERVICE_NAME MTU PORT IPV6"
+HOOK_SETTINGS="${HOOK_SETTINGS} SERVICE_NAME MTU PORT IPV6 PREFIX_DELEGATION"
 
 # User credentials for the dialin.
 USERNAME=""
@@ -51,6 +51,9 @@ PPPOE_PLUGIN="rp-pppoe.so"
 # Request an IPv6 address.
 IPV6="true"
 
+# Use IPv6 prefix delegation.
+PREFIX_DELEGATION="false"
+
 function _check() {
 	assert isset USERNAME
 	assert isset PASSWORD
@@ -62,6 +65,7 @@ function _check() {
 	assert port_exists ${PORT}
 
 	assert isset IPV6
+	assert isset PREFIX_DELEGATION
 }
 
 function _parse_cmdline() {
@@ -89,6 +93,9 @@ function _parse_cmdline() {
 				;;
 			--port=*)
 				PORT=$(cli_get_val ${1})
+				;;
+			--prefix-delegation=*)
+				PREFIX_DELEGATION="$(cli_get_bool "${1}")"
 				;;
 			--service-name=*)
 				SERVICE_NAME=$(cli_get_val ${1})
