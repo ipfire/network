@@ -27,7 +27,7 @@ ADDRESS=$(mac_generate)
 SLAVES=""
 MIIMON=100
 
-function _check() {
+function hook_check() {
 	assert isset ADDRESS
 	assert ismac ADDRESS
 
@@ -35,11 +35,11 @@ function _check() {
 	assert isinteger MIIMON
 }
 
-function _create() {
+function hook_create() {
 	_edit $@
 }
 
-function _edit() {
+function hook_edit() {
 	local port=${1}
 	assert isset port
 	shift
@@ -95,7 +95,7 @@ function _edit() {
 	exit ${EXIT_OK}
 }
 
-function _up() {
+function hook_up() {
 	local device=${1}
 	assert isset device
 
@@ -134,7 +134,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local device=${1}
 
 	bonding_remove ${device}

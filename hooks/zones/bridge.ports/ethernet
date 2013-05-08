@@ -23,7 +23,7 @@
 
 HOOK_SETTINGS="COST PRIORITY"
 
-function _check() {
+function hook_check() {
 	local i
 	for i in COST PRIORITY; do
 		if isset ${i}; then
@@ -32,7 +32,7 @@ function _check() {
 	done
 }
 
-function _add() {
+function hook_add() {
 	local zone=${1}
 	local port=${2}
 	shift 2
@@ -64,11 +64,11 @@ function _add() {
 	exit ${EXIT_OK}
 }
 
-function _edit() {
-	_add $@
+function hook_edit() {
+	hook_add $@
 }
 
-function _rem() {
+function hook_remove() {
 	local zone=${1}
 	local port=${2}
 
@@ -92,7 +92,7 @@ function _rem() {
 	exit ${EXIT_OK}
 }
 
-function _up() {
+function hook_up() {
 	local zone=${1}
 	local port=${2}
 
@@ -114,7 +114,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local zone=${1}
 	local port=${2}
 
@@ -131,7 +131,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _status() {
+function hook_status() {
 	local zone=${1}
 	local port=${2}
 

@@ -54,7 +54,7 @@ IPV6="true"
 # Use IPv6 prefix delegation.
 PREFIX_DELEGATION="false"
 
-function _check() {
+function hook_check() {
 	assert isset USERNAME
 	assert isset PASSWORD
 
@@ -68,7 +68,7 @@ function _check() {
 	assert isset PREFIX_DELEGATION
 }
 
-function _parse_cmdline() {
+function hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--access-concentrator=*)
@@ -111,7 +111,7 @@ function _parse_cmdline() {
 	done
 }
 
-function _up() {
+function hook_up() {
 	local zone=${1}
 	assert isset zone
 
@@ -127,7 +127,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local zone=${1}
 	assert isset zone
 
@@ -143,7 +143,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _discover() {
+function hook_discover() {
 	local device=${1}
 
 	if [ "$(device_get_type ${device})" != "real" ]; then
@@ -173,7 +173,7 @@ function _discover() {
 	exit ${DISCOVER_OK}
 }
 
-function _status() {
+function hook_status() {
 	local zone=${1}
 	assert isset zone
 
@@ -225,7 +225,7 @@ function _status() {
 	exit ${EXIT_OK}
 }
 
-function _ppp_write_config() {
+function hook_ppp_write_config() {
 	local zone=${1}
 	assert isset zone
 

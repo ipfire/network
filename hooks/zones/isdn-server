@@ -39,7 +39,7 @@ TIMEOUT=10
 
 MODE="persistent"
 
-function _check() {
+function hook_check() {
 	assert isset LOCAL_ADDRESS
 	assert isset REMOTE_ADDRESS
 
@@ -52,7 +52,7 @@ function _check() {
 	isset AUTH && assert isoneof AUTH ${ISDN_ALLOWED_AUTHS}
 }
 
-function _parse_cmdline() {
+function hook_parse_cmdline() {
 	local value
 
 	while [ $# -gt 0 ]; do
@@ -112,7 +112,7 @@ function _parse_cmdline() {
 	done
 }
 
-function _up() {
+function hook_up() {
 	local zone=${1}
 	shift
 
@@ -169,7 +169,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local zone=${1}
 	shift
 
@@ -185,7 +185,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _status() {
+function hook_status() {
 	local zone=${1}
 	assert isset zone
 

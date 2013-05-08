@@ -87,7 +87,7 @@ function ppp_common_ip_pre_up() {
 	return ${EXIT_OK}
 }
 
-function ppp_common_ip_up() {
+function ppp_common_ipv4_up() {
 	local zone=${1}
 	shift
 
@@ -103,7 +103,7 @@ function ppp_common_ip_up() {
 	return ${EXIT_OK}
 }
 
-function ppp_common_ip_down() {
+function ppp_common_ipv4_down() {
 	local zone=${1}
 	shift
 

@@ -25,7 +25,7 @@ INFO_SETTINGS="HOOK PORT_PARENTS PORT_CHILDREN"
 # into the system and got its correct name.
 # The function is intended to create child ports and things
 # like that.
-function _hotplug() {
+function hook_hotplug() {
 	exit ${EXIT_OK}
 }
 
@@ -34,20 +34,18 @@ function _hotplug() {
 # The first argument is the port which should be tested
 # against the second argument which is the device that
 # has been plugged in.
-function _hotplug_rename() {
+function hook_hotplug_rename() {
 	exit ${EXIT_FALSE}
 }
 
-function _info() {
-	local port=${1}
+function hook_info() {
+	local port="${1}"
+	assert isset port
 	shift
 
-	assert isset port
+	config_read "$(port_file ${port})"
 
-	config_read $(port_file ${port})
-
-	local key
-	local val
+	local key val
 	for key in PORT_PARENTS PORT_CHILDREN; do
 		val="${key}_VAR"
 		val=${!val}
@@ -61,10 +59,10 @@ function _info() {
 	exit ${ERROR_OK}
 }
 
-function _status() {
-	local port=${1}
+function hook_status() {
+	local port="${1}"
 	assert isset port
 
-	cli_device_headline ${port} --long
+	cli_device_headline "${port}" --long
 	exit ${EXIT_OK}
 }

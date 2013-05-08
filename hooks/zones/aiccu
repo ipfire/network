@@ -30,7 +30,7 @@ PROTOCOL="tic"
 TUNNEL_ID=
 REQUIRE_TLS="true"
 
-function _check() {
+function hook_check() {
 	assert isset USERNAME
 	assert isset PASSWORD
 	assert isset SERVER
@@ -45,7 +45,7 @@ function _check() {
 	fi
 }
 
-function _parse_cmdline() {
+function hook_parse_cmdline() {
 	local value
 
 	while [ $# -gt 0 ]; do
@@ -83,7 +83,7 @@ function _parse_cmdline() {
 	done
 }
 
-function _up() {
+function hook_up() {
 	local zone=${1}
 	assert isset zone
 
@@ -93,7 +93,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local zone=${1}
 	assert isset zone
 
@@ -103,7 +103,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _status() {
+function hook_status() {
 	local zone=${1}
 	assert isset zone
 

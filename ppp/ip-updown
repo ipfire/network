@@ -53,15 +53,31 @@ if isset ZONE && zone_exists ${ZONE}; then
 	assert hook_zone_exists ${HOOK}
 
 	PROGNAME=$(basename ${0})
-	assert isset PROGNAME
+	METHOD=""
+	case "${PROGNAME}" in
+		ip-pre-up)
+			METHOD="ppp_ip_pre_up"
+			;;
+		ipv6-down)
+			METHOD="ppp_ipv6_down"
+			;;
+		ipv6-up)
+			METHOD="ppp_ipv6_up"
+			;;
+		ip-down)
+			METHOD="ppp_ipv4_down"
+			;;
+		ip-up)
+			METHOD="ppp_ipv4_up"
+			;;
+	esac
+	assert isset METHOD
 
-	log DEBUG "${PROGNAME} was called with the following parameters:"
+	log DEBUG "${PROGNAME}/${METHOD} was called with the following parameters:"
 	log DEBUG "  $@"
 
-	hook_zone_exec ${HOOK} ppp-${PROGNAME} ${ZONE}
-	ret=$?
-
-	exit ${ret}
+	hook_zone_exec "${HOOK}" "${METHOD}" "${ZONE}"
+	exit $?
 fi
 
 exit ${EXIT_OK}

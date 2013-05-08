@@ -340,6 +340,10 @@ function cmd_exec() {
 	exit ${EXIT_ERROR}
 }
 
+function cmd_not_implemented() {
+	assert false "not implemented"
+}
+
 function seq() {
 	if [ $# -eq 2 ]; then
 		eval echo {${1}..${2}}

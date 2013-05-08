@@ -33,7 +33,7 @@ KEY=""
 MODE="g"
 SSID=
 
-function _check() {
+function hook_check() {
 	assert isset ADDRESS
 	assert ismac ADDRESS
 	assert isset BROADCAST_SSID
@@ -55,7 +55,7 @@ function _check() {
 	fi
 }
 
-function _create() {
+function hook_create() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--broadcast-ssid=*)
@@ -104,7 +104,7 @@ function _create() {
 	exit ${EXIT_OK}
 }
 
-function _edit() {
+function hook_edit() {
 	local port=${1}
 	shift
 
@@ -147,7 +147,7 @@ function _edit() {
 	exit ${EXIT_OK}	
 }
 
-function _up() {
+function hook_up() {
 	local port=${1}
 	assert isset port
 
@@ -178,7 +178,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local port=${1}
 	assert isset port
 
@@ -193,7 +193,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _hotplug() {
+function hook_hotplug() {
 	local port=${1}
 	assert isset port
 

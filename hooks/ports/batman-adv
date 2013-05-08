@@ -28,12 +28,12 @@ PORT_CHILDREN_VAR="SLAVES"
 ADDRESS=$(mac_generate)
 SLAVES=
 
-function _check() {
+function hook_check() {
 	assert isset ADDRESS
 	assert ismac ADDRESS
 }
 
-function _create() {
+function hook_create() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
@@ -57,7 +57,7 @@ function _create() {
 	exit ${EXIT_OK}
 }
 
-function _edit() {
+function hook_edit() {
 	local port=${1}
 	assert isset port
 	shift
@@ -94,7 +94,7 @@ function _edit() {
 	exit ${EXIT_OK}
 }
 
-function _up() {
+function hook_up() {
 	local port=${1}
 	assert isset port
 
@@ -120,7 +120,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local port=${1}
 	assert isset port
 
@@ -134,7 +134,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _hotplug() {
+function hook_hotplug() {
 	local port=${1}
 	assert isset port
 
@@ -147,7 +147,7 @@ function _hotplug() {
 	exit ${EXIT_OK}
 }
 
-function _status() {
+function hook_status() {
 	local port=${1}
 	assert isset port
 

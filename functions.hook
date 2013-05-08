@@ -19,6 +19,22 @@
 #                                                                             #
 ###############################################################################
 
+HOOK_COMMANDS_CONFIG="hook_create hook_down hook_status hook_up"
+
+HOOK_COMMANDS_PORT="hook_create hook_down hook_hotplug hook_hotplug_rename \
+	hook_info hook_status hook_up"
+
+HOOK_COMMANDS_ZONE="hook_create hook_discover hook_down hook_edit hook_help \
+	hook_info hook_remove hook_status hook_up \
+	\
+	hook_config_create hook_config_edit hook_config_remove hook_config_show \
+	\
+	hook_port hook_port_add hook_port_edit hook_port_remove hook_port_show \
+	hook_port_status hook_port_up hook_port_down \
+	\
+	hook_ppp_ip_pre_up hook_ppp_ipv4_down hook_ppp_ipv4_up \
+	hook_ipv6_down hook_ipv6_up hook_ppp_write_config"
+
 function hook_dir() {
 	local type=${1}
 
@@ -44,16 +60,37 @@ function hook_exists() {
 }
 
 function hook_exec() {
-	local type=${1}
-	local hook=${2}
-	local cmd=${3}
-	shift 3
-
+	local type="${1}"
 	assert isset type
+
+	local hook="${2}"
 	assert isset hook
+
+	local cmd="${3}"
 	assert isset cmd
 
 	assert hook_exists "${type}" "${hook}"
+	shift 3
+
+	# Complete the hook command by prepending "hook_"
+	local hook_cmd="hook_${cmd}"
+
+	# Check if the hook action is valid.
+	local valid_commands
+	case "${type}" in
+		"config")
+			valid_commands="${HOOK_COMMANDS_CONFIG}"
+			;;
+		"port")
+			valid_commands="${HOOK_COMMANDS_PORT}"
+			;;
+		"zone")
+			valid_commands="${HOOK_COMMANDS_ZONE}"
+			;;
+	esac
+	isset valid_commands && assert list_match "${hook_cmd}" ${valid_commands}
+
+	local hook_path="$(hook_dir ${type})/${hook}"
 
 	# For performance reasons, all hooks are executed
 	# in a subshell and so will inherit the currently
@@ -63,20 +100,26 @@ function hook_exec() {
 		HOOK=$(basename ${hook})
 
 		# Source the code of the hook.
-		source "$(hook_dir ${type})/${hook}"
+		source "${hook_path}"
 
 		# Make sure HOOK is still properly set.
 		assert isset HOOK
 
 		# Execute the requested command.
-		_${cmd} $@
+		cmd "${hook_cmd}" "$@"
 	)
 	local ret=$?
 
-	if [ ${ret} -eq ${EXIT_ERROR_ASSERT} ]; then
-		log ERROR "Hook exited with an assertion error."
-		exit ${ret}
-	fi
+	case "${ret}" in
+		${EXIT_COMMAND_NOT_FOUND})
+			log ERROR "Hook command not implemented: ${hook_command} ($@)"
+			exit ${EXIT_COMMAND_NOT_FOUND}
+			;;
+		${EXIT_ERROR_ASSERT})
+			log ERROR "Hook exited with an assertion error."
+			exit ${EXIT_ERROR_ASSERT}
+			;;
+	esac
 
 	return ${ret}
 }

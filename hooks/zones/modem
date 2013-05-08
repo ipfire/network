@@ -66,7 +66,7 @@ HOOK_SETTINGS="${HOOK_SETTINGS} PIN"
 PHONE_NUMBER=
 HOOK_SETTINGS="${HOOK_SETTINGS} PHONE_NUMBER"
 
-function _check() {
+function hook_check() {
 	assert isset DEVICE
 	assert isset PHONE_NUMBER
 
@@ -82,7 +82,7 @@ function _check() {
 	isset AUTH && assert isoneof AUTH ${MODEM_ALLOWED_AUTH_METHODS}
 }
 
-function _parse_cmdline() {
+function hook_parse_cmdline() {
 	local value
 
 	while [ $# -gt 0 ]; do
@@ -128,7 +128,7 @@ function _parse_cmdline() {
 	done
 }
 
-function _up() {
+function hook_up() {
 	local zone=${1}
 	assert isset zone
 
@@ -174,7 +174,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local zone=${1}
 	assert isset zone
 
@@ -184,7 +184,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _status() {
+function hook_status() {
 	local zone=${1}
 	assert isset zone
 
@@ -275,7 +275,7 @@ function _status() {
 	exit ${EXIT_OK}
 }
 
-function _ppp_write_config() {
+function hook_ppp_write_config() {
 	local zone=${1}
 	assert isset zone
 
