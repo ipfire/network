@@ -1,0 +1,285 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="firewall-config">
+	<refentryinfo>
+		<title>firewall-config</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>firewall-config</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>firewall-config</refname>
+		<refpurpose>Firewall Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>firewall-config</command>
+		</cmdsynopsis>
+
+		<cmdsynopsis>
+			<command>firewall-config <replaceable>KEY=VALUE</replaceable></command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			The <command>firewall-config</command> command may be used to set
+			global firewall configuration options.
+		</para>
+		<para>
+			Please have a look at the individual man pages for more options.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Commands</title>
+
+		<para>
+			If no additional argument is given, running the command will
+			dump a list of all configuration variables and their current values.
+		</para>
+
+		<para>
+			You may set a new value by adding the variable name and the new
+			value to the command line.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Variables</title>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<varname>CONNTRACK_MAX_CONNECTIONS</varname> = <replaceable>16384</replaceable>
+				</term>
+
+				<listitem>
+					<para>
+						Limits the max. number of simultaneous connections.
+					</para>
+					<para>
+						Modify this if you want to handle a larger number of concurrent
+						connections. Every connection will use approx. 16 kBytes of memory.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>CONNTRACK_UDP_TIMEOUT</varname> = <replaceable>60</replaceable>
+				</term>
+
+				<listitem>
+					<para>
+						Defines the timeout (in seconds) the kernel will wait until
+						a half-assured UDP connection is fully established.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_ACCEPT_ICMP_REDIRECTS</varname> = [true|<emphasis>false</emphasis>]
+				</term>
+
+				<listitem>
+					<para>
+						Enable if you want to accept ICMP redirect messages.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_CLAMP_PATH_MTU</varname> = [true|<emphasis>false</emphasis>]
+				</term>
+
+				<listitem>
+					<para>
+						If Path MTU Discovery does not work well, enable this option.
+						It sets the MSS value of a packet so that the remote site would
+						never send a packet bigger than the MSS value.
+					</para>
+					<para>
+						No ICMP packets are needed to make this work, so use this on
+						networks with broken ICMP filtering.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_DEFAULT_TTL</varname> = <replaceable>64</replaceable>
+				</term>
+
+				<listitem>
+					<para>
+						Here you can change the default TTL used for sending packets.
+					</para>
+					<para>
+						The given value must be between 10 and 255.
+						Don't mess with this unless you know what you are doing.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_LOG_BAD_TCP_FLAGS</varname> = [<emphasis>true</emphasis>|false]
+				</term>
+
+				<listitem>
+					<para>
+						Enable this to log TCP packets with bad flags or options.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_LOG_INVALID_ICMP</varname> = [<emphasis>true</emphasis>|false]
+				</term>
+
+				<listitem>
+					<para>
+						Enable this to log INVALID ICMP packets.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_LOG_INVALID_TCP</varname> = [<emphasis>true</emphasis>|false]
+				</term>
+
+				<listitem>
+					<para>
+						Enable this to log INVALID TCP packets.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_LOG_INVALID_UDP</varname> = [<emphasis>true</emphasis>|false]
+				</term>
+
+				<listitem>
+					<para>
+						Enable this to log INVALID UDP packets.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_LOG_MARTIANS</varname> = [true|<emphasis>false</emphasis>]
+				</term>
+
+				<listitem>
+					<para>
+						Enable this to log packets with impossible addresses.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_LOG_STEALTH_SCANS</varname> = [<emphasis>true</emphasis>|false]
+				</term>
+
+				<listitem>
+					<para>
+						Enable this to log all stealth scans.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_PMTU_DISCOVERY</varname> = [<emphasis>true</emphasis>|false]
+				</term>
+
+				<listitem>
+					<para>
+						Enables Path MTU Discovery.
+						Disable it when you are experiencing problems.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_RP_FILTER</varname> = [<emphasis>true</emphasis>|false]
+				</term>
+
+				<listitem>
+					<para>
+						Enable to drop connection from non-routable IPs,
+						e.g. prevent source routing.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_SYN_COOKIES</varname> = [<emphasis>true</emphasis>|false]
+				</term>
+
+				<listitem>
+					<para>
+						Enable for SYN-flood protection.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<varname>FIREWALL_USE_ECN</varname> = [true|<emphasis>false</emphasis>]
+				</term>
+
+				<listitem>
+					<para>
+						Enables the ECN (Explicit Congestion Notification) TCP flag.
+					</para>
+					<para>
+						Some routers on the Internet still do not support ECN properly,
+						so this is not enabled by default.
+						When this setting is disabled, ECN is only advertised
+						when asked for.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>firewall</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>

@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+# Copyright (C) 2012  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,50 +19,12 @@
 #                                                                             #
 ###############################################################################
 
-INFO_SETTINGS="HOOK PORT_PARENTS PORT_CHILDREN"
+. /usr/lib/network/functions
 
-# This function is called after a device has been plugged
-# into the system and got its correct name.
-# The function is intended to create child ports and things
-# like that.
-function hook_hotplug() {
-	exit ${EXIT_OK}
-}
+# Read firewall configuration.
+firewall_config_read
 
-# This function gets called when a device is plugged in
-# to determine the right name.
-# The first argument is the port which should be tested
-# against the second argument which is the device that
-# has been plugged in.
-function hook_hotplug_rename() {
-	exit ${EXIT_FALSE}
-}
+# Initialize kernel parameters for the firewall.
+firewall_kernel_init
 
-function hook_info() {
-	local port="${1}"
-	assert isset port
-	shift
-
-	config_read "$(port_file ${port})"
-
-	local key val
-	for key in PORT_PARENTS PORT_CHILDREN; do
-		val="${key}_VAR"
-		val=${!val}
-		eval "${key}=\"${!val}\""
-	done
-
-	for key in ${INFO_SETTINGS}; do
-		echo "${key}=\"${!key}\""
-	done
-
-	exit ${ERROR_OK}
-}
-
-function hook_status() {
-	local port="${1}"
-	assert isset port
-
-	cli_device_headline "${port}" --long
-	exit ${EXIT_OK}
-}
+exit ${EXIT_OK}

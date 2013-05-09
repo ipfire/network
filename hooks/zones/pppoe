@@ -22,7 +22,7 @@
 . /usr/lib/network/header-zone
 
 HOOK_SETTINGS="HOOK ACCESS_CONCENTRATOR AUTH USERNAME PASSWORD"
-HOOK_SETTINGS="${HOOK_SETTINGS} SERVICE_NAME MTU PORT"
+HOOK_SETTINGS="${HOOK_SETTINGS} SERVICE_NAME MTU PORT IPV6 PREFIX_DELEGATION"
 
 # User credentials for the dialin.
 USERNAME=""
@@ -48,7 +48,13 @@ MTU=1492
 PPPOE_SUPPORTED_AUTH_METHODS="${PPP_SUPPORTED_AUTH_METHODS}"
 PPPOE_PLUGIN="rp-pppoe.so"
 
-function _check() {
+# Request an IPv6 address.
+IPV6="true"
+
+# Use IPv6 prefix delegation.
+PREFIX_DELEGATION="false"
+
+function hook_check() {
 	assert isset USERNAME
 	assert isset PASSWORD
 
@@ -57,9 +63,12 @@ function _check() {
 	# Check for a valid port setting.
 	assert isset PORT
 	assert port_exists ${PORT}
+
+	assert isset IPV6
+	assert isset PREFIX_DELEGATION
 }
 
-function _parse_cmdline() {
+function hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--access-concentrator=*)
@@ -67,6 +76,14 @@ function _parse_cmdline() {
 				;;
 			--auth=*)
 				AUTH=$(cli_get_val ${1})
+				;;
+			--ipv6=*)
+				local value="$(cli_get_val "${1}")"
+				if enabled value; then
+					IPV6="true"
+				else
+					IPV6="false"
+				fi
 				;;
 			--mtu=*)
 				MTU=$(cli_get_val ${1})
@@ -76,6 +93,9 @@ function _parse_cmdline() {
 				;;
 			--port=*)
 				PORT=$(cli_get_val ${1})
+				;;
+			--prefix-delegation=*)
+				PREFIX_DELEGATION="$(cli_get_bool "${1}")"
 				;;
 			--service-name=*)
 				SERVICE_NAME=$(cli_get_val ${1})
@@ -91,7 +111,7 @@ function _parse_cmdline() {
 	done
 }
 
-function _up() {
+function hook_up() {
 	local zone=${1}
 	assert isset zone
 
@@ -107,7 +127,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local zone=${1}
 	assert isset zone
 
@@ -123,7 +143,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _discover() {
+function hook_discover() {
 	local device=${1}
 
 	if [ "$(device_get_type ${device})" != "real" ]; then
@@ -153,7 +173,7 @@ function _discover() {
 	exit ${DISCOVER_OK}
 }
 
-function _status() {
+function hook_status() {
 	local zone=${1}
 	assert isset zone
 
@@ -205,7 +225,7 @@ function _status() {
 	exit ${EXIT_OK}
 }
 
-function _ppp_write_config() {
+function hook_ppp_write_config() {
 	local zone=${1}
 	assert isset zone
 
@@ -237,6 +257,7 @@ function _ppp_write_config() {
 		--password="${PASSWORD}" \
 		--mtu="${MTU}" \
 		--auth="${AUTH}" \
+		--ipv6="${IPV6}" \
 		\
 		--plugin="${PPPOE_PLUGIN}" \
 		--plugin-options="${plugin_options}"

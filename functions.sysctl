@@ -1,7 +1,8 @@
+#!/bin/bash
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2012  IPFire Network Development Team                         #
+# Copyright (C) 2013  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -18,5 +19,76 @@
 #                                                                             #
 ###############################################################################
 
-# Enable connection tracking accounting.
-net.netfilter.nf_conntrack_acct=1
+SYSCTL_PATH="/proc/sys"
+
+function sysctl_key_to_path() {
+	local key="${1}"
+	assert isset key
+
+	print "${SYSCTL_PATH}/${key//.//}"
+
+	return ${EXIT_OK}
+}
+
+function sysctl_key_exists() {
+	local key="${1}"
+	assert isset key
+
+	local path="$(sysctl_key_to_path "${key}")"
+
+	[ -e "${path}" ] && return ${EXIT_OK}
+	return ${EXIT_ERROR}
+}
+
+function sysctl_get() {
+	local key="${1}"
+	assert isset key
+
+	fread "$(sysctl_key_to_path "${key}")" || return $?
+	return ${EXIT_OK}
+}
+
+function sysctl_set() {
+	local key="${1}"
+	assert isset key
+
+	local value="${2}"
+
+	fwrite "$(sysctl_key_to_path "${key}")" "${value}" || return $?
+	return ${EXIT_OK}
+}
+
+function sysctl_set_bool() {
+	local key="${1}"
+
+	local value="${2}"
+	if enabled value; then
+		value="1"
+	else
+		value="0"
+	fi
+
+	sysctl_set "${key}" "${value}"
+}
+
+function sysctl_set_recursively() {
+	local basekey="${1}"
+	assert isset basekey
+
+	local subkey="${2}"
+	assert isset subkey
+
+	local value="${3}"
+
+	local basepath="$(sysctl_key_to_path "${basekey}")"
+	local subpath="/${subkey//\.//}"
+
+	local path
+	for path in $(find "${basepath}" -type f); do
+		[[ ${path} =~ ${subpath}$ ]] || continue
+
+		fwrite "${path}" "${value}"
+	done
+
+	return ${EXIT_OK}
+}

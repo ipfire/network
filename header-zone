@@ -18,47 +18,36 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #                                                                             #
 ###############################################################################
-#
-# Notes:
-#   - All functions in this scope must start with an underline (_) to not
-#     conflict with any functions that were defined somewhere else.
-#
 
-# _notimplemented
-#   Returns a soft error if a function was not implemented, yet.
-#
-function _notimplemented() {
-	warning "'$@' was not implemented."
-	exit ${EXIT_CONF_ERROR}
-}
-
-function _info() {
+function hook_info() {
 	echo "HOOK=\"${HOOK}\""
 }
 
-function _create() {
-	local zone=${1}
+function hook_create() {
+	local zone="${1}"
+	assert isset zone
 	shift
 
 	config_read $(zone_dir ${zone})/settings
 
-	_parse_cmdline $@
+	hook_parse_cmdline $@
 
 	config_write $(zone_dir ${zone})/settings ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
 
-function _edit() {
-	_create $@
+function hook_edit() {
+	hook_create $@
 }
 
-function _rem() {
-	_notimplemented _rem
+function hook_remove() {
+	cmd_not_implemented
 }
 
-function _status() {
-	local zone=${1}
+function hook_status() {
+	local zone="${1}"
+	assert isset zone
 
 	if device_is_up ${zone}; then
 		exit ${STATUS_UP}
@@ -67,21 +56,21 @@ function _status() {
 	exit ${STATUS_DOWN}
 }
 
-function _up() {
-	_notimplemented _up
+function hook_up() {
+	cmd_not_implemented
 }
 
-function _down() {
-	_notimplemented _down
+function hook_down() {
+	cmd_not_implemented
 }
 
-function _discover() {
+function hook_discover() {
 	# This hook does not support a discovery
 	exit ${DISCOVER_NOT_SUPPORTED}
 }
 
 # The default help function.
-function _help() {
+function hook_help() {
 	# If no man page has been configured, we print an error message.
 	if [ -z "${HOOK_MANPAGE}" ]; then
 		error "There is no help available for hook '${HOOK}'. Exiting."
@@ -96,16 +85,17 @@ function _parse_cmdline() {
 	return ${EXIT_OK}
 }
 
-function _port() {
-	local zone=${1}
-	local action=${2}
+function hook_port() {
+	local zone="${1}"
+	assert isset zone
+
+	local action="${2}"
 	shift 2
 
 	local ret
-
 	case "${action}" in
 		add|create|edit|rem|show)
-			_port_${action} ${zone} $@
+			hook_port_${action} "${zone}" $@
 			ret=$?
 			;;
 		*)
@@ -117,209 +107,213 @@ function _port() {
 	exit ${ret}
 }
 
-function _port_add() {
-	_port_cmd add $@
+function hook_port_add() {
+	hook_port_cmd add "$@"
 }
 
-function _port_edit() {
-	_port_cmd edit $@
+function hook_port_edit() {
+	_port_cmd edit "$@"
 }
 
-function _port_rem() {
-	_port_cmd rem $@
+function hook_port_rem() {
+	hook_port_cmd remove "$@"
 }
 
-function _port_show() {
-	_notimplemented _port_show
+function hook_port_show() {
+	cmd_not_implemented
 }
 
-function _port_status() {
-	_port_cmd status $@
+function hook_port_status() {
+	hook_port_cmd status "$@"
 }
 
-function _port_cmd() {
-	local cmd=${1}
-	local zone=${2}
-	local port=${3}
-	shift 3
-
+function hook_port_cmd() {
+	local cmd="${1}"
 	assert isset cmd
+
+	local zone="${2}"
 	assert isset zone
+
+	local port="${3}"
 	assert isset port
 
-	local hook_zone=$(zone_get_hook ${zone})
-	local hook_port=$(port_get_hook ${port})
+	shift 3
 
+	local hook_zone="$(zone_get_hook ${zone})"
 	assert isset hook_zone
+
+	local hook_port="$(port_get_hook ${port})"
 	assert isset hook_port
 
-	if ! listmatch ${hook_port} $(zone_get_supported_port_hooks ${zone}); then
-		error_log "Zone '${zone}' does not support port of type '${hook_port}'."
+	if ! listmatch "${hook_port}" $(zone_get_supported_port_hooks ${zone}); then
+		log ERROR "Zone '${zone}' does not support port of type '${hook_port}'."
 		exit ${EXIT_ERROR}
 	fi
 
-	hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} ${port} $@
-
+	hook_zone_port_exec "${hook_zone}" "${hook_port}" "${cmd}" "${zone}" "${port}" "$@"
 	exit $?
 }
 
-function _port_up() {
-	_port_cmd up $@
+function hook_port_up() {
+	hook_port_cmd up "$@"
 }
 
-function _port_down() {
-	_port_cmd down $@
+function hook_port_down() {
+	hook_port_cmd down "$@"
 }
 
-function _config() {
-	local zone=${1}
-	local action=${2}
+function hook_config() {
+	local zone="${1}"
+	assert isset zone
+
+	local action="${2}"
+	assert isset action
 	shift 2
 
 	local ret
-
 	case "${action}" in
 		create|edit|rem|show)
-			_config_${action} ${zone} $@
-			ret=$?
+			hook_config_${action} "${zone}" "$@"
+			exit $?
 			;;
 		*)
 			error "Unrecognized argument: '${action}'"
 			exit ${EXIT_ERROR}
 			;;
 	esac
-
-	exit ${ret}
 }
 
-# This function is not a public one
-function __configcmd() {
-	local cmd=${1}
-	local zone=${2}
-	local hook_config=${3}
+function hook_config_cmd() {
+	local cmd="${1}"
+	assert isset cmd
+
+	local zone="${2}"
+	assert isset zone
+
+	local hook_config="${3}"
+	assert isset hook_config
+
 	shift 3
 
-	local hook_zone=$(zone_get_hook ${zone})
-
-	if ! hook_zone_exists ${hook_zone}; then
-		error "Hook '${hook}' does not exist."
+	local hook_zone="$(zone_get_hook "${zone}")"
+	if ! hook_zone_exists "${hook_zone}"; then
+		log ERROR "Hook '${hook}' does not exist."
 		exit ${EXIT_ERROR}
 	fi
 
-	if ! hook_config_exists ${hook_zone} ${hook_config}; then
-		error "Hook '${hook_config}' is not supported for zone '${zone}'."
+	if ! hook_config_exists "${hook_zone}" "${hook_config}"; then
+		log ERROR "Hook '${hook_config}' is not supported for zone '${zone}'."
 		exit ${EXIT_ERROR}
 	fi
 
-	hook_zone_config_exec ${hook_zone} ${hook_config} ${cmd} ${zone} $@
+	hook_zone_config_exec "${hook_zone}" "${hook_config}" "${cmd}" "${zone}" "$@"
 }
 
-function _config_create() {
-	local zone=${1}
-	local hook_config=${2}
+function hook_config_create() {
+	local zone="${1}"
+	assert isset zone
+
+	local hook_config="${2}"
+	assert isset hook_config
+
 	shift 2
 
-	assert isset zone
-	assert isset hook_config
-	assert zone_exists ${zone}
-
-	if ! listmatch ${hook_config} $(zone_get_supported_config_hooks ${zone}); then
-		error_log "Zone '${zone}' does not support configuration of type '${hook_config}'."
+	if ! listmatch "${hook_config}" $(zone_get_supported_config_hooks ${zone}); then
+		log ERROR "Zone '${zone}' does not support configuration of type '${hook_config}'."
 		exit ${EXIT_ERROR}
 	fi
 
-	local hook_zone=$(zone_get_hook ${zone})
+	local hook_zone="$(zone_get_hook "${zone}")"
 	assert isset hook_zone
 
-	hook_zone_config_exec ${hook_zone} ${hook_config} create ${zone} $@
-
+	hook_zone_config_exec "${hook_zone}" "${hook_config}" create "${zone}" "$@"
 	exit $?
 }
 
-function _config_edit() {
-	__configcmd edit $@
+function hook_config_edit() {
+	hook_config_cmd edit "$@"
 }
 
-function _config_rem() {
-	_notimplemented _config_rem
+function hook_config_remove() {
+	cmd_not_implemented
 }
 
-function _config_show() {
-	_notimplemented _config_show
+function hook_config_show() {
+	cmd_not_implemented
 }
 
-function _ppp-write-config() {
-	_notimplemented _ppp_write_config
+function hook_ppp_write_config() {
+	cmd_not_implemented
 
 	# Arguments: <zone> <filename>
 }
 
-function _ppp-ip-pre-up() {
-	local zone=${1}
+function hook_ppp_ip_pre_up() {
+	local zone="${1}"
+	assert isset zone
 	shift
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
+	if ! zone_exists "${zone}"; then
+		log ERROR "Zone '${zone}' does not exist."
 		exit ${EXIT_ERROR}
 	fi
 
-	ppp_common_ip_pre_up ${zone} $@
-
+	ppp_common_ip_pre_up "${zone}" "$@"
 	exit $?
 }
 
-function _ppp-ip-up() {
-	local zone=${1}
+function hook_ppp_ipv4_up() {
+	local zone="${1}"
+	assert isset zone
 	shift
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
+	if ! zone_exists "${zone}"; then
+		log ERROR "Zone '${zone}' does not exist."
 		exit ${EXIT_ERROR}
 	fi
 
-	ppp_common_ip_up ${zone} $@
-
+	ppp_common_ipv4_up "${zone}" "$@"
 	exit $?
 }
 
-function _ppp-ip-down() {
-	local zone=${1}
+function hook_ppp_ipv4_down() {
+	local zone="${1}"
+	assert isset zone
 	shift
 
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
+	if ! zone_exists "${zone}"; then
+		log ERROR "Zone '${zone}' does not exist."
 		exit ${EXIT_ERROR}
 	fi
 
-	ppp_common_ip_down ${zone} $@
-
+	ppp_common_ipv4_down "${zone}" "$@"
 	exit $?
 }
 
-function _ppp-ipv6-up() {
-	local zone=${1}
+function hook_ppp_ipv6_up() {
+	local zone="${1}"
+	assert isset zone
 	shift
 
-	if ! zone_exists ${zone}; then
+	if ! zone_exists "${zone}"; then
 		error "Zone '${zone}' does not exist."
 		exit ${EXIT_ERROR}
 	fi
 
-	ppp_common_ipv6_up ${zone} $@
-
+	ppp_common_ipv6_up "${zone}" "$@"
 	exit $?
 }
 
-function _ppp-ipv6-down() {
-	local zone=${1}
+function hook_ppp_ipv6_down() {
+	local zone="${1}"
+	assert isset zone
 	shift
 
-	if ! zone_exists ${zone}; then
+	if ! zone_exists "${zone}"; then
 		error "Zone '${zone}' does not exist."
 		exit ${EXIT_ERROR}
 	fi
 
-	ppp_common_ipv6_down ${zone} $@
-
+	ppp_common_ipv6_down "${zone}" "$@"
 	exit $?
 }

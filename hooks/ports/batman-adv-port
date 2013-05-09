@@ -33,7 +33,7 @@ SSID=
 # to 1528, that normal ethernet packets with 1500 bytes can pass the network.
 MTU=1528
 
-function _check() {
+function hook_check() {
 	assert isset ADDRESS
 	assert ismac ADDRESS
 	assert isset CHANNEL
@@ -45,7 +45,7 @@ function _check() {
 	assert isset SSID
 }
 
-function _create() {
+function hook_create() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
@@ -85,7 +85,7 @@ function _create() {
 	exit ${EXIT_OK}
 }
 
-function _edit() {
+function hook_edit() {
 	local port=${1}
 	assert isset port
 	shift
@@ -118,7 +118,7 @@ function _edit() {
 	exit ${EXIT_OK}
 }
 
-function _up() {
+function hook_up() {
 	local port=${1}
 	assert isset port
 
@@ -155,7 +155,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local port=${1}
 	assert isset port
 
@@ -173,7 +173,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _hotplug() {
+function hook_hotplug() {
 	local port=${1}
 	assert isset port
 
@@ -198,7 +198,7 @@ function _hotplug() {
 	exit ${EXIT_OK}
 }
 
-function _find_parent() {
+function hook_find_parent() {
 	local port=${1}
 	assert isset port
 

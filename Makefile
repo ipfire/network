@@ -45,6 +45,7 @@ CLEANFILES =
 
 # man pages
 MAN_PAGES = \
+	man/firewall-config.8 \
 	man/network.8 \
 	man/network-config.8 \
 	man/network-device.8 \
@@ -103,6 +104,7 @@ install: $(MAN_PAGES)
 	-mkdir -pv $(DESTDIR)$(tmpfilesdir)
 	-mkdir -pv $(DESTDIR)$(datadir)/firewall
 
+	install -m 755 -v firewall-config $(DESTDIR)$(sbindir)
 	install -m 755 -v firewall6 $(DESTDIR)$(sbindir)
 	install -m 755 -v firewall4 $(DESTDIR)$(sbindir)
 	install -m 755 -v network $(DESTDIR)$(sbindir)

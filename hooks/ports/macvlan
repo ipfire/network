@@ -27,12 +27,12 @@
 
 HOOK_SETTINGS="HOOK ADDRESS PARENT"
 
-function _check() {
+function hook_check() {
 	assert isset PARENT
 	assert ismac ADDRESS
 }
 
-function _create() {
+function hook_create() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--parent-device=*)
@@ -58,7 +58,7 @@ function _create() {
 	exit ${EXIT_OK}
 }
 
-function _edit() {
+function hook_edit() {
 	local port=${1}
 	assert isset port
 	shift
@@ -82,7 +82,7 @@ function _edit() {
 	exit ${EXIT_OK}	
 }
 
-function _up() {
+function hook_up() {
 	local port=${1}
 	assert isset port
 
@@ -96,7 +96,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local port=${1}
 
 	assert isset port

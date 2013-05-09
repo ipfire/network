@@ -36,7 +36,7 @@ STP_HELLO=2
 STP_MAXAGE=20
 STP_PRIORITY=512
 
-function _check() {
+function hook_check() {
 	assert ismac MAC
 	assert isbool STP
 	assert isoneof STP_MODE stp rstp
@@ -46,7 +46,7 @@ function _check() {
 	assert isinteger MTU
 }
 
-function _parse_cmdline() {
+function hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--stp=*)
@@ -78,7 +78,7 @@ function _parse_cmdline() {
 	done
 }
 
-function _up() {
+function hook_up() {
 	local zone=${1}
 	assert isset zone
 
@@ -131,7 +131,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local zone=${1}
 	assert isset zone
 
@@ -152,7 +152,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _status() {
+function hook_status() {
 	local zone=${1}
 	assert isset zone
 
