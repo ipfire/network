@@ -36,7 +36,7 @@ SERVER_ADDRESS=""
 # The public IPv4 address of the tunnel client.
 PUBLIC_ADDRESS=""
 
-function _check() {
+function hook_check() {
 	assert isset SIX_RD_PREFIX
 	assert isset PUBLIC_ADDRESS
 	assert isset SERVER_ADDRESS
@@ -70,7 +70,7 @@ function _check() {
 	fi
 }
 
-function _parse_cmdline() {
+function hook_parse_cmdline() {
 	local value
 
 	while [ $# -gt 0 ]; do
@@ -96,7 +96,7 @@ function _parse_cmdline() {
 	done
 }
 
-function _up() {
+function hook_up() {
 	local zone="${1}"
 	assert isset zone
 
@@ -129,7 +129,7 @@ function _up() {
 	exit ${EXIT_OK}
 }
 
-function _down() {
+function hook_down() {
 	local zone=${1}
 	assert isset zone
 
@@ -144,7 +144,7 @@ function _down() {
 	exit ${EXIT_OK}
 }
 
-function _status() {
+function hook_status() {
 	local zone=${1}
 	assert isset zone
 
