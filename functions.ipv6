@@ -160,6 +160,14 @@ function ipv6_prefix_is_valid() {
 	return ${EXIT_TRUE}
 }
 
+function ipv6_get_prefix() {
+	ip_get_prefix "$@"
+}
+
+function ipv6_split_prefix() {
+	ip_split_prefix "$@"
+}
+
 function ipv6_implode() {
 	local address=${1}
 	assert isset address
@@ -251,4 +259,77 @@ function ipv6_get_network() {
 	assert isset PREFIX6
 
 	print "${PREFIX6}/${prefix}"
+}
+
+function ipv6_6rd_format_address() {
+	local isp_prefix="${1}"
+	assert ipv6_is_valid "${isp_prefix}"
+
+	local client_address="${2}"
+	assert ipv4_is_valid "${client_address}"
+
+	local prefix="$(ipv6_get_prefix "${isp_prefix}")"
+	isp_prefix="$(ipv6_split_prefix "${isp_prefix}")"
+
+	# This only works for prefix lengths up to 32 bit.
+	assert [ "${prefix}" -le 32 ]
+	assert [ "${prefix}" -gt  0 ]
+
+	# Explode the address and throw away the second 32 bit.
+	local address="$(ipv6_explode "${isp_prefix}")"
+
+	client_address="$(ipv6_6rd_format_client_address ${client_address})"
+	assert isset client_address
+
+	local block1="0x${address:0:4}"
+	local block2="0x${address:5:4}"
+	local block3="0x${address:10:4}"
+	local block4="0x${address:15:4}"
+
+	address="$(( (${block1} << 48) + (${block2} << 32) + (${block3} << 16) + ${block4} ))"
+	assert [ "${address}" -gt 0 ]
+
+	block1="0x${client_address:0:4}"
+	block2="0x${client_address:5:4}"
+
+	client_address="$(( (${block1} << 48) + (${block2} << 32) ))"
+
+	# Fix for numbers that are interpreted by bash as negative
+	# numbers and therefore filled up with ones when shifted to
+	# the right. Weird.
+	if [ "${client_address}" -gt 0 ]; then
+		client_address="$(( ${client_address} >> ${prefix} ))"
+	else
+		local bitmask="$(( 1 << 63 ))"
+		client_address="$(( ${client_address} >> 1 ))"
+		client_address="$(( ${client_address} ^ ${bitmask} ))"
+		client_address="$(( ${client_address} >> $(( ${prefix} - 1 )) ))"
+	fi
+	assert [ "${client_address}" -gt 0 ]
+
+	# XOR everything together
+	address="$(( ${address} ^ ${client_address} ))"
+	prefix="$(( ${prefix} + 32 ))"
+
+	local block formatted_address=":"
+	while [ ${address} -gt 0 ]; do
+		printf -v block "%x" "$(( ${address} & 0xffff ))"
+		formatted_address="${block}:${formatted_address}"
+
+		address="$(( ${address} >> 16 ))"
+	done
+
+	assert ipv6_is_valid "${formatted_address}"
+
+	# Implode the output IP address.
+	formatted_address="$(ipv6_implode "${formatted_address}")"
+
+	print "${formatted_address}/${prefix}"
+}
+
+function ipv6_6rd_format_client_address() {
+	local address="${1}"
+	assert isset address
+
+	print "%02x%02x:%02x%02x" ${address//\./ }
 }
