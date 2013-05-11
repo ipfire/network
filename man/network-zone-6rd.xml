@@ -1,0 +1,156 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-zone-6to4-tunnel">
+	<refentryinfo>
+		<title>network-zone-6rd</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Stefan</firstname>
+				<surname>Schantl</surname>
+				<email>stefan.schantl@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-zone-6rd</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-zone-6rd</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network zone create <replaceable>ZONE</replaceable> 6rd ...</command>
+		</cmdsynopsis>
+
+		<cmdsynopsis>
+			<command>network zone <replaceable>ZONE</replaceable> edit ...</command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			6rd specifies a protocol mechanism to deploy IPv6 to sites via the IPv4 network
+			of a service provider.
+		</para>
+
+		<para>
+			The 6rd hook is used to connect to IPv6 networks where your provider does not
+			provide native IPv6.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<para>
+			The following options are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<option>--6rd-prefix=<replaceable>...</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The 6rd prefix for the given 6rd domain.
+					</para>
+					<para> 
+						This is the 6rd IPv6 prefix for the given 6rd domain.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--server-address=<replaceable>...</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The address of the 6rd border relay server.
+					</para>
+					<para>
+						The IPv4 address of the 6rd Border Relay for a
+						given 6rd domain.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--public-ipv4-address=<replaceable>...</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The public IPv4 address that is used to connect to
+						the server.
+					</para>
+
+					<para>
+						There are several ways and services around to determine the own IPv4 public
+						address.
+					</para>
+
+					<para>
+						<emphasis>Attention!</emphasis>
+					</para>
+
+					<para>
+						In case your local tunnel endpoint is behind a NAT, you also need to
+						configure the "--local-ipv4-address" option.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--local-ipv4-address=<replaceable>...</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The local IPv4 address of the client system.
+					</para>
+
+					<para>
+						This option is only required if the local tunnel endpoint is behind a NAT.
+					</para>
+
+					<para>
+						If the system is directly connected to the Internet, this flag can be ignored.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-zone</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>
