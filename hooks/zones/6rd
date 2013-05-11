@@ -84,7 +84,7 @@ function hook_parse_cmdline() {
 			--local-ipv4-address=*)
 				LOCAL_ADDRESS=$(cli_get_val ${1})
 				;;
-			--public-address=*)
+			--public-ipv4-address=*)
 				PUBLIC_ADDRESS=$(cli_get_val ${1})
 				;;
 			*)
