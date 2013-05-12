@@ -38,6 +38,10 @@ function hook_hotplug_rename() {
 	exit ${EXIT_FALSE}
 }
 
+function hook_add() {
+	cmd_not_implemented
+}
+
 function hook_info() {
 	local port="${1}"
 	assert isset port
