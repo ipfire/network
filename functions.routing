@@ -53,14 +53,14 @@ function routing_default_update() {
 				# Go on if the device is not there anymore.
 				device_exists ${zone} || continue
 
+				# On other devices, we will use the gateway if we got one.
+				if isset gateway; then
+					routes="${routes} nexthop via ${gateway}"
+
 				# If we have got a Point-to-Point device, we will directly send all
 				# packets into the pipe.
-				if device_is_ptp ${zone}; then
+				elif device_is_ptp ${zone}; then
 					routes="${routes} dev ${zone}"
-
-				# On other devices, we will use the gateway if we got one.
-				elif isset gateway; then
-					routes="${routes} nexthop via ${gateway}"
 
 				# If none of the cases above apply, we cannot go on.
 				else
