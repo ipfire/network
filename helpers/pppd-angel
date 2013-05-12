@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2012  IPFire Network Development Team                         #
+# Copyright (C) 2013  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -21,34 +21,33 @@
 
 . /usr/lib/network/functions
 
-action="${1}"
-assert isset action
+function main() {
+	local zone="${1}"
+	assert isset zone
 
-zone="${2}"
-assert isset zone
-assert zone_exists ${zone}
+	if ! zone_exists "${zone}"; then
+		log ERROR "Must pass valid zone: ${zone}"
+		return ${EXIT_ERROR}
+	fi
 
-config_file="${RUN_DIR}/ppp/${zone}/pppd.conf"
+	# Find the hook of the zone, we got.
+	local hook="$(zone_get_hook "${zone}")"
+	assert isset hook
 
-case "${action}" in
-	create)
-		# Create the configuration file for this zone.
-		hook=$(zone_get_hook ${zone})
-		assert isset hook
+	# Write pppd configuration file.
+	local config_file="${RUN_DIR}/ppp/${zone}/pppd.conf"
+	hook_exec zone "${hook}" "ppp_write_config" "${zone}" "${config_file}"
 
-		hook_exec zone ${hook} ppp_write_config \
-			${zone} ${config_file}
-		exit $?
-		;;
+	# Create trap function
+	function cleanup() {
+		rm -f "${config_file}"
+	}
+	trap "cleanup" EXIT TERM KILL
 
-	remove)
-		rm -f ${config_file}
-		;;
+	# Start the angel process.
+	pppd_angel "${zone}" "${config_file}"
+}
 
-	*)
-		log ERROR "Unknown action passed: ${action}"
-		exit ${EXIT_ERROR}
-		;;
-esac
+main "$@" || exit $?
 
 exit ${EXIT_OK}
