@@ -1,0 +1,240 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-zone-pptp">
+	<refentryinfo>
+		<title>network-zone-pptp</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Stefan</firstname>
+				<surname>Schantl</surname>
+				<email>stefan.schantl@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-zone-pptp</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-zone-pptp</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network zone create <replaceable>ZONE</replaceable> pptp ...</command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			The pptp hook creates a Point-to-Point tunnel over IP and is used by some ISP for
+			internet dialin or other VPN services.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<para>
+			The following options are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<option>--peer-address=<replaceable>ADDRESS</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The IPv4 address of the system to connect to.
+					</para>
+					<para>
+						For PPTP dialin connections this will be IP address of your modem.
+						If you are using PPTP for VPN services use the address of the remote server.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--username=<replaceable>USERNAME</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Sets the username for authentication.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--password=<replaceable>PASSWORD</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Sets the password for authentication.
+					</para>
+					<para>
+						Use the <option>--auth=</option> option to transmit it
+						in a secure manner to the provider.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--port=<replaceable>PORT</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+                                              	This options sets the port, pppd is using to connect to
+						the modem. This may be a normal ethernet or vlan interface.
+					</para>
+					<para>
+						The port option is only required if you are using PPTP for
+						dialin connections.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--interface-address=<replaceable>ADDRESS</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Add this IPV4 address to the configured port.
+					</para>
+
+					<para>
+						Optionally a DHCP client can be used, istead of
+						configuring a static IPv4 address. Use the <option>--use-dhcp</option>
+						to benefit from this feature. 
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--prefix=<replaceable>PREFIX</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Sets the following network prefix to the configured port.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--use-dhcp=[<emphasis>false</emphasis>|true]</option>
+				</term>
+
+				<listitem>
+					<para>
+						Use a DHCP client to gather the interface address and prefix settings.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--ipv6=[<emphasis>true</emphasis>|false]</option>
+				</term>
+
+				<listitem>
+					<para>
+						By this option the support for IPv6 can be enabled or disabled.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--mtu=<emphasis>1492</emphasis></option>
+				</term>
+
+				<listitem>
+					<para>
+						Sets the default MTU of the PPP connection.
+						The default value is 1492 which is a common MTU used
+						for DSL.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--auth=[chap|pap]</option>
+				</term>
+
+				<listitem>
+					<para>
+						Define the authentication method that is used to
+						authenticate against your provider.
+						The default is to use the provider's preference.
+					</para>
+					<itemizedlist>
+						<listitem>
+							<para>
+								<emphasis>Challange-Handshake Authentication Protocol</emphasis>
+								(chap) is the preferred secure method.
+							</para>
+						</listitem>
+						<listitem>
+							<para>
+								<emphasis>Password Authentication Protocol</emphasis>
+								(pap) sends the plaintext password to the authentication
+								server which is the reason why it should be avoided to use PAP.
+							</para>
+						</listitem>
+					</itemizedlist>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--refuse-auth-methods=<replaceable>STRING</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						By this option, you may define a list of auth methods which
+						are not supported by the service provider.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-zone</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>

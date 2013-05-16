@@ -59,7 +59,8 @@ MAN_PAGES = \
 	man/network-zone-aiccu.8 \
 	man/network-zone-bridge.8 \
 	man/network-zone-config-pppoe-server.8 \
-	man/network-zone-pppoe.8
+	man/network-zone-pppoe.8 \
+	man/network-zone-pptp.8
 
 MAN_PAGES_HTML = $(patsubst %.xml,%.html,$(MAN_PAGES_XML))
 MAN_PAGES_XML  = $(patsubst %.8,%.xml,$(MAN_PAGES))
