@@ -81,7 +81,7 @@ function hook_help() {
 }
 
 # Do nothing
-function _parse_cmdline() {
+function hook_parse_cmdline() {
 	return ${EXIT_OK}
 }
 
@@ -112,7 +112,7 @@ function hook_port_add() {
 }
 
 function hook_port_edit() {
-	_port_cmd edit "$@"
+	hook_port_cmd edit "$@"
 }
 
 function hook_port_rem() {
