@@ -391,12 +391,30 @@ function __modem_get_network_operator() {
 	assert_check_retval $?
 
 	output=${output#*: }
+	output=${output//,/ }
 
-	local mode format operator act
-	read mode format operator act <<< "${output//,/ }"
-
-	# Remove all " from the operator string.
-	operator=${operator//\"/}
+	local arg mode format operator act
+	local i=0
+	while read -r arg; do
+		case "${i}" in
+			0)
+				mode="${arg}"
+				;;
+			1)
+				format="${arg}"
+				;;
+			2)
+				operator="$(strip ${arg})"
+				;;
+			3)
+				act="${arg}"
+				;;
+			*)
+				break
+				;;
+		esac
+		i="$(( ${i} + 1 ))"
+	done <<< "$(args ${output})"
 
 	print "${!argument}"
 	return ${EXIT_OK}
