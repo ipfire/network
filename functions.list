@@ -119,3 +119,13 @@ function list_join() {
 
 	print "${ret:${#delim}}"
 }
+
+function list_reverse() {
+	local reversed arg
+	for arg in $@; do
+		reversed="${arg} ${reversed}"
+	done
+
+	print "${reversed}"
+	return ${EXIT_OK}
+}

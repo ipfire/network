@@ -260,7 +260,14 @@ function backtrace() {
 	local i source
 	for i in $(seq ${start} ${#BASH_SOURCE[*]}); do
 		[ -z "${FUNCNAME[${i}]}" ] && continue
-		[ "${FUNCNAME[${i}]}" == "main" ] && continue
+
+		# Print called binary with arguments.
+		if [ "${FUNCNAME[${i}]}" == "main" ]; then
+			local args="$(list_reverse ${BASH_ARGV[*]})"
+			printf -v source "%20s" "$0"
+			error_log "  ${source} ${args}"
+			continue
+		fi
 
 		source=${BASH_SOURCE[$(( ${i} + 1 ))]}
 		error_log "  $(printf "%20s" "'${FUNCNAME[${i}]}'") called from ${source:-<shell>}:${BASH_LINENO[${i}]}"
