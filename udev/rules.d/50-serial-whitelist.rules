@@ -1,0 +1,21 @@
+
+# This file helps us to handle serial (USB) devices, that are not a
+# modem. We try to detect modems by sending AT commands to them and
+# wait for a response. Other devices may get confused by that, so
+# we maintain this whitelist that they won't be tested at all.
+
+# Skip all other actions except add and change.
+ACTION!="add|change", GOTO="skip_usb_serial_devices_whitelist"
+
+# Skip everything that is not ttyUSB*.
+KERNEL!="ttyUSB*", GOTO="skip_usb_serial_devices_whitelist"
+
+## Whitelist
+
+# Globalscale Dreamplug JTAG/UART adapter
+ATTRS{idVendor}=="9e88", ATTRS{idProduct}=="9e8f", ENV{NETWORK_USB_SERIAL_DEVICE_IGNORE}="1"
+
+# Prolific Technology, Inc. PL2303 Serial Port
+ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", ENV{NETWORK_USB_SERIAL_DEVICE_IGNORE}="1"
+
+LABEL="skip_usb_serial_devices_whitelist"
