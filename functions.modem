@@ -104,15 +104,14 @@ function __modem_chat_process_output() {
 	local counter=0
 
 	local line
-	while read line; do
-		log DEBUG "Output[${counter}]: ${line}"
-
+	while read -r line; do
 		# Also skip empty lines.
 		[ -n "${line}" ] || continue
 
 		# Ignore all volatile messages.
 		[ "${line:0:1}" = "^" ] && continue
 
+		log DEBUG "Output[${counter}]: ${line}"
 		counter=$(( ${counter} + 1 ))
 
 		# Skip the first line, because that's out command.
