@@ -45,7 +45,8 @@ function main() {
 	trap "cleanup" EXIT TERM KILL
 
 	# Start the angel process.
-	pppd_angel "${zone}" "${config_file}"
+	pppd_angel "${zone}" "${config_file}" \
+		--holdoff-time="10"
 }
 
 main "$@" || exit $?
