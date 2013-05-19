@@ -76,7 +76,7 @@ case "${ACTION}" in
 
 		# Initialize the modem here. Resets all established connections
 		# and so on.
-		modem_initialize "${DEVNAME}"
+		modem_initialize "${DEVNAME}" --sleep=3
 
 		# Unlock the SIM card if it has one.
 		if modem_sim_locked "${DEVNAME}"; then

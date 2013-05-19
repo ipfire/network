@@ -129,11 +129,34 @@ function __modem_chat_process_output() {
 function modem_initialize() {
 	local device="${1}"
 	assert isset device
+	shift
+
+	# Sleep for $sleep seconds, to give
+	# the modem a moment to initialize itself.
+	local sleep=1
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--sleep=*)
+				sleep="$(cli_get_val "${1}")"
+				;;
+			*)
+				warning "Unrecognized argument: ${1}"
+				;;
+		esac
+		shift
+	done
+	assert isinteger sleep
 
 	log INFO "Initializing modem ${device}"
 
 	# Reset the modem.
 	modem_chat "${device}" "${AT_INITIALIZE}"
+
+	# Wait...
+	if [ ${sleep} -gt 0 ]; then
+		sleep ${sleep}
+	fi
 }
 
 # Exit codes of the sim_status function.
