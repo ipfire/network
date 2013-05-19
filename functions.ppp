@@ -58,6 +58,8 @@ function pppd_angel() {
 		pppd_ret=$(( ${ret} % 0x0f ))
 		ret=$(( ${ret} >> 6 ))
 
+		log DEBUG "pppd exited with error code ${pppd_ret}"
+
 		case "${ret}" in
 			${EXIT_OK})
 				# pppd terminated gracefully. Propagating...
@@ -72,6 +74,7 @@ function pppd_angel() {
 				# pppd has a fatal error. We cannot go on from here
 				# because there is either no chance to establish a connection
 				# without any user interaction, or we will damage the system.
+				log ERROR "Fatal error. Not going to restart pppd."
 				return ${pppd_ret}
 				;;
 			*)
@@ -84,6 +87,7 @@ function pppd_angel() {
 
 		# When we got here, we need to wait a little bit and restart the
 		# ppp daemon soon.
+		log INFO "Restarting pppd in ${holdoff_time}s"
 		sleep ${holdoff_time}
 	done
 }
