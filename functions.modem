@@ -126,6 +126,16 @@ function __modem_chat_process_output() {
 	done
 }
 
+function modem_initialize() {
+	local device="${1}"
+	assert isset device
+
+	log INFO "Initializing modem ${device}"
+
+	# Reset the modem.
+	modem_chat "${device}" "${AT_INITIALIZE}"
+}
+
 # Exit codes of the sim_status function.
 EXIT_SIM_READY=0
 EXIT_SIM_PIN=1
@@ -204,6 +214,40 @@ function modem_sim_unlock() {
 	esac
 
 	return ${ret}
+}
+
+function modem_sim_auto_unlock() {
+	local device="${1}"
+	assert isset device
+
+	local pin="${2}"
+	assert isset pin
+
+	# Get the current state the SIM card is in.
+	modem_sim_status "${device}" &>/dev/null
+	local sim_status_code=$?
+
+	case "${sim_status_code}" in
+		${EXIT_SIM_READY})
+			# Everything's fine. The SIM card is
+			# already unlocked.
+			return ${EXIT_OK}
+			;;
+		${EXIT_SIM_PIN})
+			# Try to unlock the device.
+			if modem_sim_unlock ${device} ${pin}; then
+				return ${EXIT_OK}
+			else
+				return ${EXIT_ERROR}
+			fi
+			;;
+		${EXIT_SIM_PUK})
+			log ERROR "SIM card is PUK locked. Please unlock manually."
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
 }
 
 # Returns the vendor of the modem.
