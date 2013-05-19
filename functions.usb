@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2012  IPFire Network Development Team                         #
+# Copyright (C) 2013  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,66 +19,52 @@
 #                                                                             #
 ###############################################################################
 
-# This is a list of baudrates that are supported.
-SERIAL_BAUDRATES="921600 460800 230400 115200 57600 38400 19200 9600"
+function usb_device_find_by_tty() {
+	local tty="${1}"
+	assert isset tty
 
-function serial_exists() {
-	local device=${1}
+	# Strip /dev.
+	tty="$(basename "${tty}")"
 
-	[ -c "${device}" ]
+	local path="/sys/bus/usb-serial/devices/${tty}"
+
+	# Resolve symlink
+	path="$(readlink -m "${path}")"
+
+	print "$(dirname "${path}")"
+	return ${EXIT_OK}
 }
 
-function serial_is_locked() {
-	local device=${1}
-	assert isset device
+function usb_device_list_interfaces() {
+	local path="${1}"
+	assert [ -d "${path}" ]
 
-	device=$(basename ${device})
-
-	local dir
-	for dir in /var/lock /var/lock/ppp; do
-		[ -e "${dir}/LCK..${device}" ] \
-			&& return ${EXIT_TRUE}
+	local interface
+	for interface in ${path}/ep_*; do
+		[ -d "${interface}" ] || continue
+		print "${interface}"
 	done
 
-	return ${EXIT_FALSE}
+	return ${EXIT_OK}
 }
 
-function serial_is_unlocked() {
-	serial_is_locked ${device} \
-		&& return ${EXIT_FALSE} || return ${EXIT_TRUE}
+function usb_device_get_interface_type() {
+	local interface="${1}"
+	assert isset interface
+
+	fread "${interface}/type"
 }
 
-function serial_is_modem() {
-	local device=${1}
-	assert isset device
-
-	modem_chat --timeout=2 "${device}" "AT" &>/dev/null
-	local ret=$?
-
-	case "${ret}" in
-		${EXIT_OK})
-			return ${EXIT_TRUE}
-			;;
-		${EXIT_ERROR})
-			return ${EXIT_FALSE}
-			;;
-		*)
-			return ${EXIT_UNKNOWN}
-			;;
-	esac
-}
-
-function serial_get_bus_type() {
+function usb_device_has_interface_type_interrupt() {
 	local device="${1}"
 	assert isset device
 
-	case "${device}" in
-		/dev/ttyUSB*)
-			print "usb"
-			return ${EXIT_OK}
-			;;
-	esac
+	local interface type
+	while read -r interface; do
+		type="$(usb_device_get_interface_type "${interface}")"
 
-	print "unknown"
-	return ${EXIT_ERROR}
+		[ "${type}" = "Interrupt" ] && return ${EXIT_TRUE}
+	done <<< "$(usb_device_list_interfaces "${device}")"
+
+	return ${EXIT_FALSE}
 }

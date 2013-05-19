@@ -1,0 +1,120 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2011  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /usr/lib/network/functions
+
+# Setup logging.
+LOG_FACILITY="network-hotplug-serial"
+
+# Associated hooks.
+ASSOCIATED_HOOKS="modem"
+
+# Read network configuration.
+network_config_read
+
+log DEBUG "Called with ACTION='${ACTION}', DEVNAME='${DEVNAME}'."
+
+# If DEVNAME is not set, we cannot handle anything here and will
+# exit silently.
+isset DEVNAME || exit ${EXIT_OK}
+
+# Check if the udev environment variables are properly set.
+assert isset ACTION
+
+case "${ACTION}" in
+	add|register)
+		# Check if the device node already exists.
+		if ! serial_exists ${DEVNAME}; then
+			log DEBUG "Device node ${DEVNAME} does not exist"
+			exit ${EXIT_ERROR}
+		fi
+
+		# USB modems often register multiple serial interfaces.
+		# Some of them allow to send AT commands, some don't know.
+		# However, there is only one interface that can actually be used
+		# to connect to somewhere. This interface always runs in
+		# interrupt mode. Exit for all interfaces, not in this mode.
+		bus_type="$(serial_get_bus_type "${DEVNAME}")"
+		if [ "${bus_type}" = "usb" ]; then
+			# Find USB device.
+			usb_device="$(usb_device_find_by_tty "${DEVNAME}")"
+
+			# Find an interface in interrupt mode.
+			if ! usb_device_has_interface_type_interrupt "${usb_device}"; then
+				log DEBUG "USB device has no interface in interrupt mode: ${DEVNAME}"
+				exit ${EXIT_OK}
+			fi
+		fi
+
+		# Check if the device is actually a modem.
+		if ! serial_is_modem ${DEVNAME}; then
+			log DEBUG "${DEVNAME} does not look like a modem"
+			exit ${EXIT_OK}
+		fi
+
+		# When we get here, the modem is alive and responds to
+		# AT commands.
+		log DEBUG "${DEVNAME} looks like a modem"
+
+		# Initialize the modem here. Resets all established connections
+		# and so on.
+		modem_initialize "${DEVNAME}"
+
+		# Unlock the SIM card if it has one.
+		if modem_sim_locked "${DEVNAME}"; then
+			log ERROR "SIM card is locked. Needs unlocking."
+			exit ${EXIT_OK}
+		fi
+
+		# Try to find the zone configuration by the IMSI of the
+		# SIM card.
+		sim_imsi="$(modem_get_sim_imsi "${DEVNAME}")"
+		isset sim_imsi || exit ${EXIT_OK}
+
+		for zone in $(zones_get_all); do
+			# XXX Check if the zone is enabled.
+
+			# Skip unsupported hook types.
+			hook="$(zone_get_hook "${zone}")"
+			list_match "${hook}" ${ASSOCIATED_HOOKS} || continue
+
+			# Read IMSI from zone configuration.
+			zone_imsi="$(zone_config_option "${zone}" IMSI)"
+
+			# If IMSIs match, we start that zone.
+			if [ "${zone_imsi}" = "${sim_imsi}" ]; then
+				# Start the matching zone.
+				zone_up "${zone}"
+				break
+			fi
+		done
+
+		exit ${EXIT_OK}
+		;;
+
+	remove|unregister)
+		# After the interface has been removed/unplugged,
+		# there are often daemons (like pppd) which need
+		# to be stopped.
+		;;
+esac
+
+exit ${EXIT_OK}
