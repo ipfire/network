@@ -1,0 +1,13 @@
+[Unit]
+Description=Basic Initialization for Network Connectivity.
+After=firewall-init.service
+Before=network.target
+Wants=network.target
+Requires=firewall-init.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/network init
+
+[Install]
+WantedBy=multi-user.target

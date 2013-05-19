@@ -1,10 +1,16 @@
 [Unit]
 Description=Network Connectivity for zone %I
-After=firewall-init.service
-Requires=firewall-init.service
+After=firewall-init.service network-init.service
+Requires=firewall-init.service network-init.service
+Wants=network.target
+Before=network.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/sbin/network zone %I up
 ExecStop=/usr/sbin/network zone %I down
+
+[Install]
+WantedBy=network.target
+Alias=network.target.wants/network@%i.service
