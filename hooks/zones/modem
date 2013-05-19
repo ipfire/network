@@ -66,6 +66,10 @@ HOOK_SETTINGS="${HOOK_SETTINGS} PIN"
 PHONE_NUMBER=
 HOOK_SETTINGS="${HOOK_SETTINGS} PHONE_NUMBER"
 
+# IMSI
+IMSI=
+HOOK_SETTINGS="${HOOK_SETTINGS} IMSI"
+
 function hook_check() {
 	assert isset DEVICE
 	assert isset PHONE_NUMBER
@@ -99,6 +103,9 @@ function hook_parse_cmdline() {
 				;;
 			--device=*)
 				DEVICE=$(cli_get_val ${1})
+				;;
+			--imsi=*)
+				IMSI="$(cli_get_val "${1}")"
 				;;
 			--monitor-device=*)
 				MONITOR_DEVICE=$(cli_get_val ${1})
@@ -137,30 +144,12 @@ function hook_up() {
 
 	# If we have got a PIN, we try to unlock the device first.
 	if isset PIN; then
-		modem_sim_status ${DEVICE} &>/dev/null
-		local sim_status_code=$?
-
-		case "${sim_status_code}" in
-			${EXIT_SIM_READY})
-				# Everything's fine. The SIM card is
-				# already unlocked.
-				;;
-			${EXIT_SIM_PIN})
-				# Try to unlock the device.
-				if ! modem_sim_unlock ${DEVICE} ${PIN}; then
-					# Reset the PIN setting.
-					PIN=""
-					config_write $(zone_dir ${zone})/settings ${HOOK_SETTINGS}
-
-					error "Could not unlock the SIM card. Removing PIN from settings."
-					exit ${EXIT_ERROR}
-				fi
-				;;
-			${EXIT_SIM_PUK})
-				error "SIM card is PUK locked. Please unlock manually."
-				exit ${EXIT_ERROR}
-				;;
-		esac
+		if ! modem_sim_auto_unlock "${DEVICE}" "${PIN}"; then
+			# Reset the PIN setting.
+			PIN=""
+			config_write $(zone_dir ${zone})/settings ${HOOK_SETTINGS}
+			error "Could not unlock the SIM card. Removing PIN from settings."
+		fi
 
 	# For mobile devices, check if a PIN is required although none is set.
 	elif modem_is_mobile ${DEVICE} && modem_sim_locked ${DEVICE}; then
