@@ -79,6 +79,9 @@ function cli_device() {
 		unlock)
 			cli_device_serial_unlock ${device} $@
 			;;
+		ussd)
+			cli_device_send_ussd_command "${device}" $@
+			;;
 		*)
 			cli_show_man network-device
 			;;
@@ -380,6 +383,41 @@ function cli_device_serial_unlock() {
 	# Trying to unlock the SIM card.
 	modem_sim_unlock ${device} ${code} ${new_pin}
 
+	exit $?
+}
+
+function cli_device_send_ussd_command() {
+	local device="${1}"
+	assert isset device
+	shift
+
+	local command
+	local timeout
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--timeout=*)
+				timeout="$(cli_get_val "${1}")"
+				;;
+			*)
+				if isset command; then
+					warning "Unrecognized argument: ${1}"
+				else
+					command="${1}"
+				fi
+				;;
+		esac
+		shift
+	done
+
+	assert device_is_serial "${device}"
+
+	local args
+	if isset timeout; then
+		args="${args} --timeout=${timeout}"
+	fi
+
+	modem_ussd_send_command "${device}" "${command}" ${args}
 	exit $?
 }
 

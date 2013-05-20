@@ -612,3 +612,180 @@ function modem_get_bit_error_rate() {
 	print "%d" "${ber}"
 	return ${EXIT_OK}
 }
+
+# USDD stuff
+
+function modem_ussd_send_command() {
+	local device="${1}"
+	assert isset device
+
+	local command="${2}"
+	assert isset command
+	shift 2
+
+	local cleartext="false"
+	local timeout="20"
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--cleartext)
+				cleartext="true"
+				;;
+			--timeout=*)
+				timeout="$(cli_get_val "${1}")"
+				;;
+			*)
+				warning "Unrecognized argument: ${1}"
+				;;
+		esac
+		shift
+	done
+
+	local encoded_command="${command}"
+	if ! enabled cleartext; then
+		encoded_command="$(modem_ussd_encode "${command}")"
+	fi
+
+	log INFO "Sending USSD command '${command}' on ${device}"
+
+	local at_command="AT+CUSD=1,\"${encoded_command}\",${encoding}"
+
+	# Send the AT command and parse the output.
+	modem_chat --answer="nothing" --timeout="${timeout}" \
+		"${device}" "${at_command}" | __modem_ussd_parse_output
+
+	local ret=${PIPESTATUS[1]}
+	return ${ret}
+}
+
+function __modem_ussd_parse_output() {
+	local line
+	while read -r line; do
+		# Find the expected answer.
+		[ "${line:0:7}" = "+CUSD: " ] || continue
+
+		# Strip +CUSD:
+		line="${line:7}"
+
+		local response_type
+		local response
+		local response_encoding
+
+		line="${line//,/ }"
+
+		local section=0 arg
+		while read -r arg; do
+			case "${section}" in
+				0)
+					response_type="${arg}"
+					;;
+				1)
+					response="${arg}"
+					;;
+				2)
+					response_encoding="${arg}"
+					;;
+				*)
+					break
+					;;
+			esac
+			section=$(( ${section} + 1 ))
+		done <<< "$(args ${line})"
+
+		log DEBUG "USSD response type: ${response_type}"
+		log DEBUG "USSD response encoding: ${response_encoding}"
+		log DEBUG "USSD encoded response: ${response}"
+
+		# If we got anything else than a response (type 0),
+		# we don't know how to handle that.
+		if [ "${response_type}" -ne "0" ]; then
+			return ${EXIT_ERROR}
+		fi
+
+		# Decode the string if needed.
+		case "${response_encoding}" in
+			15)
+				response="$(modem_ussd_decode "${response}")"
+				;;
+		esac
+		log DEBUG "USSD response: ${response}"
+
+		print "${response}"
+		return ${EXIT_OK}
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function modem_ussd_encode() {
+	local string="${1}"
+	assert isset string
+
+	local output buffer char
+	while read -r char; do
+		char="$(char2bin "${char}")"
+		char="$(string_reverse "${char:1:7}")"
+
+		buffer="${buffer}${char}"
+	done <<< "$(string_split "${string}")"
+
+	local pos=0 len=8
+	while [ ${pos} -lt ${#buffer} ]; do
+		char="$(string_reverse "${buffer:${pos}:${len}}")"
+		pos=$(( ${pos} + ${len} ))
+
+		char="$(bin2hex "${char}")"
+		output="${output}${char}"
+	done
+
+	# Make everything uppercase.
+	output="${output^^}"
+
+	print "${output}"
+}
+
+function modem_ussd_decode() {
+	local string="${1}"
+	assert isset string
+
+	local buffer1 buffer2
+	local output char
+
+	local pos=0 len=2
+	while [ ${pos} -lt ${#string} ]; do
+		char="${string:${pos}:${len}}"
+		pos=$(( ${pos} + ${len} ))
+
+		char="$(hex2bin "${char}")"
+		char="$(string_reverse "${char}")"
+		buffer1="${buffer1}${char}"
+	done
+
+	# Reset pointers.
+	pos=0
+	len=7
+
+	while [ ${pos} -lt ${#buffer1} ]; do
+		char="${buffer1:${pos}:${len}}"
+		pos=$(( ${pos} + ${len} ))
+
+		buffer2="${buffer2}0${char}"
+	done
+	buffer2="${buffer2:1}"
+
+	# Reset pointers again.
+	pos=0
+	len=8
+
+	while [ ${pos} -lt ${#buffer2} ]; do
+		char="${buffer2:${pos}:${len}}"
+		pos=$(( ${pos} + ${len} ))
+
+		char="$(string_reverse "${char}")"
+		char="$(bin2char "${char}")"
+		output="${output}${char}"
+	done
+
+	print "${output}"
+	return ${EXIT_OK}
+}

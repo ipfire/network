@@ -455,6 +455,22 @@ function dec() {
 	printf "%d\n" "${hex}"
 }
 
+function chr() {
+	local char="${1}"
+
+	[ ${char} -lt 256 ] || return ${EXIT_ERROR}
+
+	printf "\\$(( ${char} / 64 * 100 + ${char} % 64 / 8 * 10 + ${char} % 8 ))\n"
+}
+
+function ord() {
+	LC_CTYPE="C" printf "%d\n" "'${1}"
+}
+
+function hex() {
+	printf "%X\n" "${1}"
+}
+
 function network_is_running() {
 	# Check, if the network service is running.
 	service_is_active network
@@ -471,4 +487,119 @@ function contains_spaces() {
 	fi
 
 	return ${EXIT_FALSE}
+}
+
+function string_split() {
+	local string="$@"
+
+	local pos=0
+	while [ ${pos} -lt ${#string} ]; do
+		print "${string:${pos}:1}"
+		pos=$(( ${pos} + 1 ))
+	done
+
+	return ${EXIT_OK}
+}
+
+function string_reverse() {
+	local string="$@"
+
+	local output
+	local pos=0
+	while [ ${pos} -lt ${#string} ]; do
+		output="${string:${pos}:1}${output}"
+		pos=$(( ${pos} + 1 ))
+	done
+
+	print "${output}"
+	return ${EXIT_OK}
+}
+
+function dec2bin() {
+	local number="${1}"
+
+	local output
+
+	local i div
+	for i in 7 6 5 4 3 2 1; do
+		div=$(( 2 ** ${i} ))
+
+		if [ $(( ${number} / ${div} )) -eq 1 ]; then
+			output="${output}1"
+		else
+			output="${output}0"
+		fi
+		number="$(( ${number} % ${div} ))"
+	done
+
+	if [ $(( ${number} % 2 )) -eq 1 ]; then
+		output="${output}1"
+	else
+		output="${output}0"
+	fi
+
+	print "${output}"
+}
+
+function bin2dec() {
+	local string="${1}"
+	local number=0
+
+	local pos=0 char
+	while [ ${pos} -lt ${#string} ]; do
+		char="${string:${pos}:1}"
+		pos=$(( ${pos} + 1 ))
+
+		number=$(( ${number} << 1 ))
+
+		case "${char}" in
+			0) ;;
+			1)
+				number=$(( ${number} + 1 ))
+				;;
+			*)
+				assert false "Invalid character: ${char}"
+				;;
+		esac
+	done
+
+	print "${number}"
+	return ${EXIT_OK}
+}
+
+function char2bin() {
+	local dec="$(ord "${1}")"
+
+	dec2bin "${dec}"
+}
+
+function bin2char() {
+	local dec="$(bin2dec "$@")"
+
+	chr "${dec}"
+}
+
+function bin2hex() {
+	local dec="$(bin2dec "$@")"
+
+	dec2hex "${dec}"
+}
+
+function hex2bin() {
+	local dec="$(hex2dec "$@")"
+
+	dec2bin "${dec}"
+}
+
+function hex2dec() {
+	local hex="${1}"
+
+	# Prepend 0x if necessary.
+	[ "${hex:0:2}" = "0x" ] || hex="0x${hex}"
+
+	printf "%d\n" "${hex}"
+}
+
+function dec2hex() {
+	printf "%02x\n" "${1}"
 }
