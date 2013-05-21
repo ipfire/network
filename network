@@ -520,7 +520,7 @@ function cli_zone() {
 		esac
 
 		case "${action}" in
-			config|down|edit|port|status|up)
+			config|disable|down|edit|enable|port|status|up)
 				zone_${action} ${zone} $@
 				;;
 			*)

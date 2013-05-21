@@ -69,6 +69,36 @@ function service_status() {
 	return $?
 }
 
+# This function calls the "enable" command from systemd,
+# to mark services to be automatically started during
+# boot up.
+function service_enable() {
+	local name=${1}
+	assert isset name
+
+	systemctl enable "${name}" >/dev/null 2>&1
+}
+
+# This function calls the "disable" command of systemd,
+# to drop the autostart ability of the service during the
+# boot up.
+function service_disable() {
+	local name=${1}
+	assert isset name
+
+	systemctl disable "${name}" >/dev/null 2>&1
+}
+
+# This function uses the systemd command "is-enabled" to check,
+# if a service has been enabled or not.
+function service_is_enabled() {
+	local name="${1}"
+	assert isset name
+
+	systemctl is-enabled "${name}" >/dev/null 2>&1
+	return $?
+}
+
 function service_is_active() {
 	local name=${1}
 	assert isset name

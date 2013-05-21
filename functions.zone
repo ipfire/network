@@ -91,6 +91,58 @@ function zone_stop() {
 	service_stop "network@${zone}.service"
 }
 
+function zone_enable() {
+	# This function will enable the zone
+	# with help of systemd.
+
+	local zone="${1}"
+	assert zone_exists "${zone}"
+
+	# Enable service for the zone
+	service_enable "network@${zone}.service"
+	local ret=$?
+
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log INFO "Auto-start enabled for zone ${zone}"
+		return ${EXIT_OK}
+	fi
+
+	log ERROR "Could not enable zone ${zone}: ${ret}"
+	return ${ret}
+}
+
+function zone_disable() {
+	# This function will disable the zone
+	# with help of systemd.
+
+	local zone="${1}"
+	assert zone_exists "${zone}"
+
+	# Disable service for the zone
+	service_disable "network@${zone}.service"
+	local ret=$?
+
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log INFO "Auto-start disabled for zone ${zone}"
+		return ${EXIT_OK}
+	fi
+
+	log ERROR "Could not disable zone ${zone}: ${ret}"
+	return ${ret}
+}
+
+function zone_is_enabled() {
+	local zone="${1}"
+	assert isset zone
+
+	# Ask systemd if the zone is enabled.
+	if service_is_enabled "network@${zone}.service"; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
 function zone_create() {
 	local zone=${1}
 	local hook=${2}
@@ -123,7 +175,11 @@ function zone_create() {
 	# If this is the case we remove the created zone immediately.
 	if [ "${ret}" = "${EXIT_ERROR}" ]; then
 		zone_remove_now ${zone}
+		return ${EXIT_ERROR}
 	fi
+
+	# Automatically enable zone.
+	zone_enable "${zone}"
 }
 
 function zone_edit() {
@@ -185,6 +241,9 @@ function zone_remove_now() {
 
 	# Force the zone down.
 	zone_is_up ${zone} && zone_set_down ${zone}
+
+	# Disable zone.
+	zone_disable "${zone}"
 
 	rm -rf $(zone_dir ${zone})
 }
