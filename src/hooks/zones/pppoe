@@ -116,6 +116,9 @@ hook_up() {
 
 	zone_settings_read "${zone}"
 
+	# Load the pppoe kernel module
+	module_load "pppoe"
+
 	# Bring up the port.
 	port_up "${port}"
 
