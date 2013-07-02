@@ -138,8 +138,11 @@ hook_down() {
 	pppd_stop ${zone}
 
 	# Bring down the port.
-	log DEBUG "Bringing down port '${PORT}'."
-	port_down ${PORT}
+	local port=$(__hook_get_port "${zone}")
+	if isset port; then
+		log DEBUG "Bringing down port '${port}'"
+		port_down "${port}"
+	fi
 
 	exit ${EXIT_OK}
 }
