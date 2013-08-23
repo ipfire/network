@@ -51,12 +51,6 @@ function hostapd_config_write() {
 			--country-code=*)
 				country_code=$(cli_get_val ${1})
 				;;
-			--mode=*)
-				mode=$(cli_get_val ${1})
-				;;
-			--ssid=*)
-				ssid=$(cli_get_val ${1})
-				;;
 			--encryption=*)
 				encryption=$(cli_get_val ${1})
 				;;
@@ -70,6 +64,12 @@ function hostapd_config_write() {
 				;;
 			--key=*)
 				key=$(cli_get_val ${1})
+				;;
+			--mode=*)
+				mode=$(cli_get_val ${1})
+				;;
+			--ssid=*)
+				ssid=$(cli_get_val ${1})
 				;;
 			*)
 				warning_log "Ignoring unknown argument '${1}'."
