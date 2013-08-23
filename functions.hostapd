@@ -35,6 +35,7 @@ function hostapd_config_write() {
 	local channel
 	local country_code
 	local encryption
+	local ieee80211d="1"
 	local key
 	local mode
 	local ssid
@@ -58,6 +59,14 @@ function hostapd_config_write() {
 				;;
 			--encryption=*)
 				encryption=$(cli_get_val ${1})
+				;;
+			--ieee80211d=*)
+				local val="$(cli_get_val "${1}")"
+				if enabled val; then
+					ieee80211d="1"
+				else
+					ieee80211d="0"
+				fi
 				;;
 			--key=*)
 				key=$(cli_get_val ${1})
@@ -124,6 +133,7 @@ function hostapd_config_write() {
 		print "channel=${channel}"
 		print "country_code=${country_code}"
 		print "hw_mode=${hw_mode}"
+		print "ieee80211d=${ieee80211d}"
 		print "ieee80211n=${ieee80211n}"
 		print "ignore_broadcast_ssid=${ignore_broadcast_ssid}"
 
