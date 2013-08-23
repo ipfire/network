@@ -189,3 +189,10 @@ function wireless_ibss_leave() {
 	log INFO "${device} leaving ibss network"
 	cmd_quiet iw dev "${device}" ibss leave
 }
+
+function wireless_is_radar_frequency() {
+	local frequency="${1}"
+	assert isset frequency
+
+	[[ ${frequency} -ge 5260 ]] && [[ ${frequency} -le 5700 ]]
+}
