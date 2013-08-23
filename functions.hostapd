@@ -39,6 +39,7 @@ function hostapd_config_write() {
 	local key
 	local mode
 	local ssid
+	local wmm="1"
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
@@ -70,6 +71,14 @@ function hostapd_config_write() {
 				;;
 			--ssid=*)
 				ssid=$(cli_get_val ${1})
+				;;
+			--wmm=*)
+				local val="$(cli_get_val "${1}")"
+				if enabled val; then
+					wmm="1"
+				else
+					wmm="0"
+				fi
 				;;
 			*)
 				warning_log "Ignoring unknown argument '${1}'."
@@ -142,6 +151,9 @@ function hostapd_config_write() {
 		else
 			print "ssid=${ssid}"
 		fi
+
+		# WMM
+		print "wmm_enabled=${wmm}"
 
 		print
 	) >> ${file}
