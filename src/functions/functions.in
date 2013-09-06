@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2012  IPFire Network Development Team                         #
+# Copyright (C) 2012-2013 IPFire Network Development Team                     #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -36,9 +36,9 @@ function init_run() {
 	done
 }
 
-# Include version information.
-. /usr/lib/network/version
+VERSION="@PACKAGE_VERSION@"
+NETWORK_VERSION="${VERSION}"
 
-for file in /usr/lib/network/functions.*; do
+for file in @networkdir@/functions.*; do
 	. ${file}
 done

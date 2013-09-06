@@ -1,0 +1,9 @@
+#!/bin/bash
+
+. ${networkdir}/functions
+
+if [ -n "${NETWORK_VERSION}" ]; then
+	exit 0
+fi
+
+exit 1

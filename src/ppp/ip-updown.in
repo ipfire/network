@@ -31,7 +31,7 @@ for i in ${PPP_VARIABLES}; do
 	unset ${i}
 done
 
-. /usr/lib/network/functions
+. @networkdir@/functions
 
 log DEBUG "Called."
 for i in ${PPP_VARIABLES}; do

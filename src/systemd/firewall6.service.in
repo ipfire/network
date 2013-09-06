@@ -7,8 +7,8 @@ Requires=firewall-init.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/sbin/firewall6 start
-ExecStop=/usr/sbin/firewall6 stop
+ExecStart=@sbindir@/firewall6 start
+ExecStop=@sbindir@/firewall6 stop
 
 [Install]
 WantedBy=multi-user.target

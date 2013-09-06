@@ -8,8 +8,8 @@ Before=network.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/sbin/network zone %I up
-ExecStop=/usr/sbin/network zone %I down
+ExecStart=@sbindir@/network zone %I up
+ExecStop=@sbindir@/network zone %I down
 
 [Install]
 WantedBy=network.target
