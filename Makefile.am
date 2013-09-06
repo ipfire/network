@@ -71,6 +71,7 @@ AM_V_XSLT_0 = @echo "  XSLT    " $@;
 # ------------------------------------------------------------------------------
 
 dist_doc_DATA = \
+	COPYING \
 	README
 
 dist_sbin_SCRIPTS = \
