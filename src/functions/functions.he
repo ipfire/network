@@ -45,7 +45,7 @@ function he_tunnelbroker_endpoint_update() {
 
 	# Send HTTP request.
 	local response=$(http_GET --username="${username}" --password="${password}" \
-		"https://ipv4.tunnelbroker.net/ipv4_end.php" "tid=${tunnel_id}")
+		"https://ipv4.tunnelbroker.net/nic/update" "hostname=${tunnel_id}")
 
 	log DEBUG "Server response: ${response}"
 
