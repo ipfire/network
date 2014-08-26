@@ -46,7 +46,6 @@ function phy_list() {
 
 function phy_get() {
 	local info=${1}
-
 	local phy
 
 	if listmatch ${info} $(phy_list); then
@@ -64,6 +63,8 @@ function phy_get() {
 			fi
 		done
 	fi
+
+	log DEBUG "Searching for phy = ${info}, found ${phy:-none}"
 
 	if [ -z "${phy}" ]; then
 		return ${EXIT_ERROR}

@@ -19,6 +19,12 @@
 #                                                                             #
 ###############################################################################
 
+# Sets the global wireless country code. Default is 00 = world.
+WIRELESS_REGULATORY_DOMAIN="00"
+NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} WIRELESS_REGULATORY_DOMAIN"
+
+init_register wireless_init_reg_domain
+
 function wireless_create() {
 	local device=${1}
 	assert isset device
@@ -93,6 +99,29 @@ function wireless_remove() {
 	fi
 
 	return ${ret}
+}
+
+function wireless_get_reg_domain() {
+	# Returns the country code for the wireless device.
+	# Defaults to 00 = world if unset.
+	print "${WIRELESS_REGULATORY_DOMAIN:-00}"
+}
+
+function wireless_init_reg_domain() {
+	local country_code="$(wireless_get_reg_domain)"
+
+	wireless_set_reg_domain "${country_code}"
+}
+
+function wireless_set_reg_domain() {
+	local country_code="${1}"
+	assert isset country_code
+
+	# Before the wireless reg domain is set, it helps to reset to 00 first.
+	iw reg set 00 &>/dev/null
+
+	log INFO "Setting wireless regulatory domain country to '${country_code}'"
+	iw reg set "${country_code}"
 }
 
 function wireless_channel_to_frequency() {

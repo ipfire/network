@@ -21,13 +21,12 @@
 
 . /usr/lib/network/header-port
 
-HOOK_SETTINGS="HOOK ADDRESS BROADCAST_SSID CHANNEL COUNTRY_CODE MODE PHY SSID"
+HOOK_SETTINGS="HOOK ADDRESS BROADCAST_SSID CHANNEL MODE PHY SSID"
 HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION KEY"
 
 ADDRESS=$(mac_generate)
 BROADCAST_SSID=on
 CHANNEL=1
-COUNTRY_CODE="US"
 ENCRYPTION=""
 KEY=""
 MODE="g"
@@ -39,7 +38,6 @@ function hook_check() {
 	assert isset BROADCAST_SSID
 	assert isbool BROADCAST_SSID
 	assert isset CHANNEL
-	assert isset COUNTRY_CODE
 	assert isset MODE
 	assert isoneof MODE a b g n
 	assert isset PHY
@@ -63,9 +61,6 @@ function hook_create() {
 				;;
 			--channel=*)
 				CHANNEL=$(cli_get_val ${1})
-				;;
-			--country-code=*)
-				COUNTRY_CODE=$(cli_get_val ${1})
 				;;
 			--encryption=*)
 				ENCRYPTION=$(cli_get_val ${1})
@@ -119,9 +114,6 @@ function hook_edit() {
 				;;
 			--channel=*)
 				CHANNEL=$(cli_get_val ${1})
-				;;
-			--country-code=*)
-				COUNTRY_CODE=$(cli_get_val ${1})
 				;;
 			--encryption=*)
 				ENCRYPTION=$(cli_get_val ${1})

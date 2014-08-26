@@ -33,7 +33,7 @@ function hostapd_config_write() {
 
 	local broadcast_ssid
 	local channel
-	local country_code
+	local country_code="$(wireless_get_reg_domain)"
 	local encryption
 	local ieee80211d="1"
 	local key
@@ -48,9 +48,6 @@ function hostapd_config_write() {
 				;;
 			--channel=*)
 				channel=$(cli_get_val ${1})
-				;;
-			--country-code=*)
-				country_code=$(cli_get_val ${1})
 				;;
 			--encryption=*)
 				encryption=$(cli_get_val ${1})
@@ -93,7 +90,6 @@ function hostapd_config_write() {
 	assert isset channel
 	assert isinteger channel
 
-	assert isset country_code
 	assert isset mode
 	assert isset ssid
 

@@ -30,16 +30,13 @@ function wpa_supplicant_config_write() {
 
 	shift 2
 
-	local ap_scan=1 country_code mode key ssid
+	local ap_scan=1 mode key ssid
 
 	local arg
 	for arg in "$@"; do
 		case "${arg}" in
 			--ap-scan=*)
 				ap_scan=$(cli_get_val ${arg})
-				;;
-			--country-code=*)
-				country_code=$(cli_get_val ${arg})
 				;;
 			--mode=*)
 				mode=$(cli_get_val ${arg})
@@ -64,6 +61,7 @@ function wpa_supplicant_config_write() {
 	assert isset mode
 
 	local auth_alg key_mgmt proto ssid psk wep_key0 wep_tx_keyidx
+	local country_code="$(wireless_get_reg_domain)"
 
 	case "${mode}" in
 		# Normal WPA.

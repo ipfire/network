@@ -21,11 +21,10 @@
 
 . /usr/lib/network/header-port
 
-HOOK_SETTINGS="HOOK ADDRESS MESH_ID SSID CHANNEL COUNTRY_CODE PHY"
+HOOK_SETTINGS="HOOK ADDRESS MESH_ID SSID CHANNEL PHY"
 
 ADDRESS=$(mac_generate)
 CHANNEL=1
-COUNTRY_CODE="US"
 MESH_ID=
 SSID=
 
@@ -37,7 +36,6 @@ function hook_check() {
 	assert isset ADDRESS
 	assert ismac ADDRESS
 	assert isset CHANNEL
-	assert isset COUNTRY_CODE
 	assert isset MESH_ID
 	assert ismac MESH_ID
 	assert isset PHY
@@ -53,9 +51,6 @@ function hook_create() {
 				;;
 			--channel=*)
 				CHANNEL=$(cli_get_val ${1})
-				;;
-			--country-code=*)
-				COUNTRY_CODE=$(cli_get_val ${1})
 				;;
 			--phy=*)
 				PHY=$(cli_get_val ${1})
@@ -96,9 +91,6 @@ function hook_edit() {
 		case "${1}" in
 			--channel=*)
 				CHANNEL=$(cli_get_val ${1})
-				;;
-			--country-code=*)
-				COUNTRY_CODE=$(cli_get_val ${1})
 				;;
 			--mesh-id=*)
 				MESH_ID=$(cli_get_val ${1})
