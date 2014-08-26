@@ -55,7 +55,7 @@ function wireless_create() {
 		shift
 	done
 
-	assert isoneof type ibss managed __ap
+	assert isoneof type ibss managed monitor __ap
 	assert phy_exists ${phy}
 	isset address || address=$(mac_generate)
 
@@ -182,6 +182,7 @@ function wireless_set_channel() {
 
 	device_exists ${device} || return ${EXIT_ERROR}
 
+	log DEBUG "Setting wireless channel on device '${device}' to channel '${channel}'"
 	cmd_quiet iw dev ${device} set channel ${channel}
 }
 
@@ -241,4 +242,36 @@ function wireless_is_radar_frequency() {
 	assert isset frequency
 
 	[[ ${frequency} -ge 5260 ]] && [[ ${frequency} -le 5700 ]]
+}
+
+function wireless_monitor() {
+	local device="${1}"
+	assert isset device
+	shift
+
+	local monitor_device="mon$$"
+
+	# Create an 802.11 monitoring device
+	wireless_create "${monitor_device}" --phy="${device}" --type="monitor"
+	local ret=$?
+
+	case "${ret}" in
+		0)
+			# Bring up the device
+			device_set_up "${monitor_device}"
+
+			# Starting tcpdump
+			tcpdump -i "${monitor_device}" "$@"
+
+			# Remove the monitoring interface.
+			wireless_remove "${monitor_device}"
+			;;
+
+		*)
+			log ERROR "Could not create a monitoring interface on ${device}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	return ${EXIT_OK}
 }

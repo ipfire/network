@@ -73,6 +73,9 @@ function cli_device() {
 		discover)
 			cli_device_discover ${device} $@
 			;;
+		monitor)
+			cli_device_monitor "${device}" $@
+			;;
 		status)
 			cli_device_status ${device}
 			;;
@@ -418,6 +421,19 @@ function cli_device_send_ussd_command() {
 	fi
 
 	modem_ussd_send_command "${device}" "${command}" ${args}
+	exit $?
+}
+
+function cli_device_monitor() {
+	local device="${1}"
+	assert isset device
+
+	if ! device_is_wireless "${device}"; then
+		error "This action only works with wireless devices. Exiting."
+		exit ${EXIT_ERROR}
+	fi
+
+	wireless_monitor "${device}"
 	exit $?
 }
 
