@@ -45,16 +45,23 @@ function phy_list() {
 }
 
 function phy_get() {
-	local info=${1}
+	local info="${1}"
 	local phy
 
-	if listmatch ${info} $(phy_list); then
-		phy="${info}"
-	elif device_exists ${info}; then
-		info=$(device_get_address ${info})
+	# As this is already a valid phy, we don't need to search on...
+	if phy_exists "${info}"; then
+		print "${info}"
+		return ${EXIT_OK}
 	fi
 
-	if [ -z "${phy}" ] && mac_is_valid ${info}; then
+	# If this is an existing device, we can figure out the name of the
+	# phy directly.
+	if device_exists ${info}; then
+		phy="$(device_get_phy ${info})"
+
+	# If we just got the MAC address we need to walk though all
+	# available phys and find the right one.
+	elif mac_is_valid ${info}; then
 		local i
 		for i in $(phy_list); do
 			if [ "${info}" = "$(phy_get_address ${i})" ]; then

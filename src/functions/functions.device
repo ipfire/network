@@ -261,6 +261,17 @@ function device_is_wireless() {
 	[ -d "${SYS_CLASS_NET}/${device}/phy80211" ]
 }
 
+function device_get_phy() {
+	local device="${1}"
+
+	if device_is_wireless "${device}"; then
+		print "$(<${SYS_CLASS_NET}/${device}/phy80211/name)"
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
+}
+
 function device_is_serial() {
 	serial_exists $@
 }
