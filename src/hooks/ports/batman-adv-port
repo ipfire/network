@@ -147,7 +147,7 @@ function hook_up() {
 		--bssid="${MESH_ID}" --essid="${SSID}"
 
 	# Add the device as a batman-adv device.
-	local parent="$(_find_parent ${port})"
+	local parent="$(hook_find_parent ${port})"
 	if isset parent; then
 		batman_adv_interface_add "${parent}" "${port}"
 	fi
@@ -208,7 +208,6 @@ function hook_find_parent() {
 
 		if [ "${hook}" = "batman-adv" ]; then
 			for child in $(port_get_children "${p}"); do
-				log ERROR "child=${child}"
 				[ "${child}" = "${port}" ] || continue
 
 				print "${p}"
