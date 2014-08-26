@@ -23,8 +23,6 @@
 WIRELESS_REGULATORY_DOMAIN="00"
 NETWORK_CONFIG_FILE_PARAMS="${NETWORK_CONFIG_FILE_PARAMS} WIRELESS_REGULATORY_DOMAIN"
 
-init_register wireless_init_reg_domain
-
 function wireless_create() {
 	local device=${1}
 	assert isset device
@@ -110,15 +108,34 @@ function wireless_get_reg_domain() {
 function wireless_init_reg_domain() {
 	local country_code="$(wireless_get_reg_domain)"
 
-	wireless_set_reg_domain "${country_code}"
+	wireless_set_reg_domain "${country_code}" --no-reset
 }
 
 function wireless_set_reg_domain() {
-	local country_code="${1}"
+	local country_code
+	local reset="true"
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--no-reset)
+				reset="false"
+				;;
+			-*)
+				log ERROR "Ignoring invalid option: ${1}"
+				;;
+			*)
+				country_code="${1}"
+				;;
+		esac
+		shift
+	done
+
 	assert isset country_code
 
 	# Before the wireless reg domain is set, it helps to reset to 00 first.
-	iw reg set 00 &>/dev/null
+	if enabled reset; then
+		iw reg set 00 &>/dev/null
+	fi
 
 	log INFO "Setting wireless regulatory domain country to '${country_code}'"
 	iw reg set "${country_code}"

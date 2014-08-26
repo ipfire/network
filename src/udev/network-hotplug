@@ -60,6 +60,9 @@ case "${ACTION}" in
 
 				# Handle batman-adv and wireless devices.
 				batman-adv|batman-adv-port|wireless)
+					# Load regulatory domain for wireless devices
+					wireless_init_reg_domain
+
 					# Save the phy of this device for later.
 					phy=$(phy_get ${INTERFACE})
 					assert isset phy
