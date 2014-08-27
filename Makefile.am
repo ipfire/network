@@ -194,7 +194,6 @@ dist_hooks_zones_SCRIPTS = \
 	src/hooks/zones/6rd \
 	src/hooks/zones/6to4-tunnel \
 	src/hooks/zones/aiccu \
-	src/hooks/zones/batman-adv \
 	src/hooks/zones/bridge \
 	src/hooks/zones/isdn \
 	src/hooks/zones/isdn-server \
