@@ -142,7 +142,6 @@ dist_network_SCRIPTS = \
 	src/functions/functions.serial \
 	src/functions/functions.service \
 	src/functions/functions.stp \
-	src/functions/functions.switch \
 	src/functions/functions.sysctl \
 	src/functions/functions.teredo \
 	src/functions/functions.usb \
@@ -200,7 +199,6 @@ dist_hooks_zones_SCRIPTS = \
 	src/hooks/zones/modem \
 	src/hooks/zones/pppoe \
 	src/hooks/zones/pptp \
-	src/hooks/zones/switch \
 	src/hooks/zones/teredo \
 	src/hooks/zones/wireless
 
