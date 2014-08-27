@@ -25,6 +25,9 @@ LOG_DISABLE_STDOUT="true"
 
 . /usr/lib/network/functions
 
+# Read network configuration.
+network_config_read
+
 # Setup the locking.
 LOCKFILE="${RUN_DIR}/.rename_lock"
 function cleanup() {
