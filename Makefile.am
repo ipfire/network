@@ -41,6 +41,7 @@ helpersdir       = $(networkdir)/helpers
 macrosdir        = $(libexecdir)/firewall/macros
 
 hooksdir         = $(networkdir)/hooks
+hooks_configsdir = $(hooksdir)/configs
 hooks_portsdir   = $(hooksdir)/ports
 hooks_zonesdir   = $(hooksdir)/zones
 
@@ -178,6 +179,12 @@ bridge-stp-uninstall-hook:
 
 INSTALL_EXEC_HOOKS += bridge-stp-install-hook
 UNINSTALL_EXEC_HOOKS += bridge-stp-uninstall-hook
+
+dist_hooks_configs_SCRIPTS = \
+	src/hooks/configs/ipv4-dhcp \
+	src/hooks/configs/ipv6-static \
+	src/hooks/configs/ipv4-static \
+	src/hooks/configs/pppoe-server
 
 dist_hooks_ports_SCRIPTS = \
 	src/hooks/ports/batman-adv \
