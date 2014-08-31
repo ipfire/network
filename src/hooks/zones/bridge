@@ -26,6 +26,8 @@ HOOK_MANPAGE="network-zone-bridge"
 HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE STP_MODE"
 HOOK_SETTINGS="${HOOK_SETTINGS} STP_PRIORITY MAC MTU"
 
+HOOK_PORT_SETTINGS="COST PRIORITY"
+
 # Default values
 MAC=$(mac_generate)
 MTU=1500
@@ -203,6 +205,140 @@ function hook_status() {
 	cli_headline 2 "Configurations"
 	zone_configs_cmd status ${zone}
 	cli_space
+
+	exit ${EXIT_OK}
+}
+
+function __parse_cmdline_args() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--priority=*)
+				PRIORITY="$(cli_get_val ${1})"
+				;;
+			--cost=*)
+				COST="$(cli_get_val ${1})"
+				;;
+		esac
+		shift
+	done
+
+	return ${EXIT_OK}
+}
+
+function hook_port_add() {
+	# Excepting at least two arguments here
+	assert [ $# -ge 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+	shift 2
+
+	__parse_cmdline_args "$@"
+	[ $? -eq ${EXIT_OK} ] || return ${EXIT_ERROR}
+
+	config_write "$(zone_dir "${zone}")/ports/${port}" ${HOOK_PORT_SETTINGS}
+
+	log INFO "Port '${port}' has been added to zone '${zone}'"
+
+	exit ${EXIT_OK}
+}
+
+function hook_port_edit() {
+	assert [ $# -ge 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+	shift 2
+
+	config_read "$(zone_dir "${zone}")/ports/${port}" ${HOOK_PORT_SETTINGS}
+
+	__parse_cmdline_args "$@"
+	[ $? -eq ${EXIT_OK} ] || return ${EXIT_ERROR}
+
+	config_write "$(zone_dir "${zone}")/ports/${port}" ${HOOK_PORT_SETTINGS}
+
+	log INFO "Port '${port}' (member of zone '${zone}') has been edited"
+
+	exit ${EXIT_OK}
+}
+
+function hook_port_remove() {
+	assert [ $# -eq 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+
+	# Shut down the port (if possible)
+	port_down "${port}"
+
+	log INFO "Port '${port}' has been removed from zone '${zone}'"
+	config_remove "$(zone_dir "${zone}")/ports/${port}"
+
+	exit ${EXIT_OK}
+}
+
+function hook_port_up() {
+	assert [ $# -eq 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+
+	port_up "${port}"
+
+	# Set same MTU to device that the bridge has got
+	device_set_mtu "${port}" $(device_get_mtu "${zone}")
+
+	bridge_attach_device "${zone}" "${port}"
+
+	# XXX must set cost and prio here
+
+	exit ${EXIT_OK}
+}
+
+function hook_port_down() {
+	assert [ $# -eq 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+
+	bridge_detach_device "${zone}" "${port}"
+
+	port_down "${port}"
+
+	exit ${EXIT_OK}
+}
+
+function hook_port_status() {
+	assert [ $# -eq 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+
+	# Do nothing for devices which are not up and running.
+	device_exists "${port}" || exit ${EXIT_OK}
+
+	local status
+
+	# Check if the device is down.
+	if ! device_is_up "${port}"; then
+		status="${MSG_DEVICE_STATUS_DOWN}"
+
+	# Check if the device has no carrier.
+	elif ! device_has_carrier "${port}"; then
+		status="${MSG_DEVICE_STATUS_NOCARRIER}"
+
+	# Check for STP information.
+	elif stp_is_enabled "${zone}"; then
+		local state="$(stp_port_get_state "${zone}" "${port}")"
+		state="MSG_STP_${state}"
+		status="${!state}"
+
+		status="${status} - DSR: $(stp_port_get_designated_root "${zone}" "${port}")"
+		status="${status} - Cost: $(stp_port_get_cost "${zone}" "${port}")"
+	else
+		status="${MSG_DEVICE_STATUS_UP}"
+	fi
+	cli_statusline 3 "${port}" "${status}"
 
 	exit ${EXIT_OK}
 }

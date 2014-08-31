@@ -108,15 +108,15 @@ function hook_port() {
 }
 
 function hook_port_add() {
-	hook_port_cmd add "$@"
+	return ${EXIT_NOT_SUPPORTED}
 }
 
 function hook_port_edit() {
-	hook_port_cmd edit "$@"
+	return ${EXIT_NOT_SUPPORTED}
 }
 
-function hook_port_rem() {
-	hook_port_cmd remove "$@"
+function hook_port_remove() {
+	return ${EXIT_NOT_SUPPORTED}
 }
 
 function hook_port_show() {
@@ -124,42 +124,15 @@ function hook_port_show() {
 }
 
 function hook_port_status() {
-	hook_port_cmd status "$@"
-}
-
-function hook_port_cmd() {
-	local cmd="${1}"
-	assert isset cmd
-
-	local zone="${2}"
-	assert isset zone
-
-	local port="${3}"
-	assert isset port
-
-	shift 3
-
-	local hook_zone="$(zone_get_hook ${zone})"
-	assert isset hook_zone
-
-	local hook_port="$(port_get_hook ${port})"
-	assert isset hook_port
-
-	if ! listmatch "${hook_port}" $(zone_get_supported_port_hooks ${zone}); then
-		log ERROR "Zone '${zone}' does not support port of type '${hook_port}'."
-		exit ${EXIT_ERROR}
-	fi
-
-	hook_zone_port_exec "${hook_zone}" "${hook_port}" "${cmd}" "${zone}" "${port}" "$@"
-	exit $?
+	return ${EXIT_NOT_SUPPORTED}
 }
 
 function hook_port_up() {
-	hook_port_cmd up "$@"
+	cmd_not_implemented
 }
 
 function hook_port_down() {
-	hook_port_cmd down "$@"
+	cmd_not_implemented
 }
 
 function hook_config() {

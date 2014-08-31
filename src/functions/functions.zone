@@ -353,15 +353,8 @@ function zone_port() {
 	assert isset action
 	assert zone_exists ${zone}
 
-	# Aliases
 	case "${action}" in
-		del|delete|remove)
-			action="rem"
-			;;
-	esac
-
-	case "${action}" in
-		add|edit|rem)
+		add|edit|remove)
 			zone_port_${action} ${zone} $@
 			;;
 		*)
@@ -373,50 +366,81 @@ function zone_port() {
 }
 
 function zone_port_add() {
-	local zone=${1}
-	shift
-
+	local zone="${1}"
 	assert isset zone
 
-	local hook=$(zone_get_hook ${zone})
+	local port="${2}"
+	assert isset port
 
+	shift 2
+
+	# Check if the port actually exists.
+	if ! port_exists "${port}"; then
+		error "Cannot add port '${port}' which does not exist"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if the port is already connected to this or any other zone.
+	local z
+	for z in $(zones_get_all); do
+		if zone_has_port "${z}" "${port}"; then
+			error "Port '${port}' is already assigned to zone '${z}'"
+			return ${EXIT_ERROR}
+		fi
+	done
+
+	local hook=$(zone_get_hook "${zone}")
 	assert isset hook
 
-	hook_zone_exec ${hook} port_add ${zone} $@
+	hook_zone_exec "${hook}" "port_add" "${zone}" "${port}" "$@"
 }
 
 function zone_port_edit() {
-	zone_port_cmd edit $@
-}
-
-function zone_port_rem() {
-	zone_port_cmd rem $@
-}
-
-function zone_port_cmd() {
-	local cmd=${1}
-	local zone=${2}
-	local port=${3}
-	shift 3
-
+	local zone="${1}"
 	assert isset zone
+
+	local port="${2}"
 	assert isset port
 
-	local hook_zone=$(zone_get_hook ${zone})
-	local hook_port=$(port_get_hook ${port})
+	shift 2
 
-	assert isset hook_zone
-	assert isset hook_port
+	# Check if the port actually exists.
+	if ! port_exists "${port}"; then
+		error "Port '${port}' does not exist"
+		return ${EXIT_ERROR}
+	fi
 
-	hook_zone_port_exec ${hook_zone} ${hook_port} ${cmd} ${zone} ${port} $@
+	# Check if the zone actually has this port.
+	if ! zone_has_port "${zone}" "${port}"; then
+		error "Port '${port}' is not attached to zone '${zone}'"
+		return ${EXIT_ERROR}
+	fi
+
+	local hook=$(zone_get_hook "${zone}")
+	assert isset hook
+
+	hook_zone_exec "${hook}" "port_edit" "${zone}" "${port}" "$@"
 }
 
-function zone_port_up() {
-	zone_port_cmd up $@
-}
+function zone_port_remove() {
+	local zone="${1}"
+	assert isset zone
 
-function zone_port_down() {
-	zone_port_cmd down $@
+	local port="${2}"
+	assert isset port
+
+	shift 2
+
+	# Check if the zone actually has this port.
+	if ! zone_has_port "${zone}" "${port}"; then
+		error "Port '${port}' is not attached to zone '${zone}'"
+		return ${EXIT_ERROR}
+	fi
+
+	local hook=$(zone_get_hook "${zone}")
+	assert isset hook
+
+	hook_zone_exec "${hook}" "port_remove" "${zone}" "${port}" "$@"
 }
 
 function zone_get_ports() {

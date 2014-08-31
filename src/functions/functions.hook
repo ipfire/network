@@ -111,8 +111,9 @@ function hook_exec() {
 	local ret=$?
 
 	case "${ret}" in
-		${EXIT_COMMAND_NOT_FOUND})
-			log ERROR "Hook command not implemented: ${hook_command} ($@)"
+		${EXIT_COMMAND_NOT_FOUND}|${EXIT_NOT_SUPPORTED})
+			log ERROR "Hook '${hook}' does not implement the method '${cmd}':"
+			log ERROR "  arguments: $@"
 			exit ${EXIT_COMMAND_NOT_FOUND}
 			;;
 		${EXIT_ERROR_ASSERT})
@@ -140,24 +141,11 @@ function hook_zone_exists() {
 	hook_exists zone $@
 }
 
-function hook_zone_port_exists() {
-	local hook_zone=${1}
-	local hook_port=${2}
-
-	hook_exists zone "${hook_zone}.ports/${hook_port}"
-}
-
 function hook_zone_config_exists() {
 	local hook_zone=${1}
 	local hook_config=${2}
 
 	hook_exists zone "${hook_zone}.configs/${hook_config}"
-}
-
-function hook_zone_has_ports() {
-	local hook=${1}
-
-	[ -d "${NETWORK_HOOKS_DIR_ZONES}/${hook}.ports" ]
 }
 
 function hook_zone_has_configs() {
@@ -168,14 +156,6 @@ function hook_zone_has_configs() {
 
 function hook_zone_exec() {
 	hook_exec zone $@
-}
-
-function hook_zone_port_exec() {
-	local hook_zone=${1}
-	local hook_port=${2}
-	shift 2
-
-	hook_zone_exec "${hook_zone}.ports/${hook_port}" $@
 }
 
 function hook_zone_config_exec() {
@@ -193,28 +173,6 @@ function hook_zone_get_all() {
 	for hook in $(hook_dir zone)/*; do
 		hook=$(basename ${hook})
 		hook_zone_exists ${hook} && echo "${hook}"
-	done
-}
-
-function hook_zone_ports_get_all() {
-	local hook=${1}
-
-	if ! hook_exists zone ${hook}; then
-		error "Hook '${hook}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	# If the zone hook has got no ports we exit silently
-	if ! hook_zone_has_ports ${hook}; then
-		return ${EXIT_OK}
-	fi
-
-	local h
-	for h in $(hook_dir zone)/${hook}.ports/*; do
-		h=$(basename ${h})
-		if hook_zone_port_exists ${hook} ${h}; then
-			echo "${h}"
-		fi
 	done
 }
 
