@@ -458,6 +458,24 @@ function zone_get_ports() {
 	done
 }
 
+function zone_get_ports_num() {
+	local zone="${1}"
+	assert isset zone
+
+	local counter=0
+	local port
+	for port in $(zone_dir "${zone}")/ports/*; do
+		port="$(basename "${port}")"
+
+		if port_exists "${port}"; then
+			counter=$(( ${counter} + 1 ))
+		fi
+	done
+
+	echo "${counter}"
+	return ${EXIT_OK}
+}
+
 function zone_has_port() {
 	# Check, if the given port is configured
 	# in this zone.
