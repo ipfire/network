@@ -170,7 +170,7 @@ dist_helpers_SCRIPTS = \
 	src/helpers/wpa_supplicant \
 	src/helpers/wpa_supplicant-config-helper
 
-bridge-stp-install-hook:
+bridge-stp-install-hook: bridge-stp-uninstall-hook
 	ln -svf --relative $(DESTDIR)$(helpersdir)/bridge-stp $(DESTDIR)$(sbindir)/
 
 bridge-stp-uninstall-hook:
