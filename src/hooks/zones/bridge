@@ -283,6 +283,8 @@ function hook_port_up() {
 	local zone="${1}"
 	local port="${2}"
 
+	config_read "$(zone_dir "${zone}")/ports/${port}" ${HOOK_PORT_SETTINGS}
+
 	port_up "${port}"
 
 	# Set same MTU to device that the bridge has got
@@ -290,7 +292,11 @@ function hook_port_up() {
 
 	bridge_attach_device "${zone}" "${port}"
 
-	# XXX must set cost and prio here
+	if isset COST; then
+		stp_port_set_cost "${zone}" "${port}" "${COST}"
+	fi
+
+	# TODO Apply priority (#10609)
 
 	exit ${EXIT_OK}
 }

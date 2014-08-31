@@ -475,6 +475,27 @@ function stp_port_get_cost() {
 	return ${EXIT_ERROR}
 }
 
+function stp_port_set_cost() {
+	assert [ $# -eq 3 ]
+
+	local bridge="${1}"
+	local port="${2}"
+	local cost="${3}"
+
+	local old_cost="$(stp_port_get_cost "${bridge}" "${port}")"
+	if [ "${cost}" -eq "${old_cost}" ]; then
+		return ${EXIT_OK}
+	fi
+
+	log DEBUG "Setting STP path costs of port '${port}' (bridge '${bridge}') to '${cost}'"
+
+	if stp_is_userspace "${bridge}"; then
+		cmd mstpctl setportpathcost "${bridge}" "${port}" "${cost}"
+	else
+		__device_set_file "${bridge}" "brif/${port}/path_cost" "${cost}"
+	fi
+}
+
 function stp_port_get_designated_root() {
 	local bridge=${1}
 	assert isset bridge

@@ -672,6 +672,22 @@ function __device_get_file() {
 	echo "$(<${path})"
 }
 
+function __device_set_file() {
+	assert [ $# -eq 3 ]
+
+	local device="${1}"
+	local file="${2}"
+	local value="${3}"
+
+	local path="${SYS_CLASS_NET}/${device}/${file}"
+	if [ ! -w "${path}" ]; then
+		log DEBUG "Cannot write to file '${file}' (${value})"
+		return ${EXIT_ERROR}
+	fi
+
+	echo "${value}" > "${path}"
+}
+
 function device_get_rx_bytes() {
 	local device=${1}
 
