@@ -27,6 +27,9 @@ LOG_FACILITY=$(basename ${0})
 
 . /usr/lib/network/functions
 
+# Read network configuration.
+network_config_read
+
 zone=${1}
 assert isset zone
 
@@ -63,7 +66,7 @@ case "${STP_MODE}" in
 		# Do this after the bridge has been added.
 		(
 			sleep 2
-			stp_bridge_set_protocol ${bridge} ${STP_MODE}
+			stp_bridge_set_protocol "${zone}" "${STP_MODE}"
 		) &
 
 		# Tell mstpd that STP has to be enabled/disabled.
