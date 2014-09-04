@@ -311,14 +311,14 @@ dist_macros_DATA = \
 # ------------------------------------------------------------------------------
 
 MANPAGES = \
-	man/firewall-config.8 \
+	man/firewall-settings.8 \
 	man/network.8 \
-	man/network-config.8 \
 	man/network-device.8 \
 	man/network-dns-server.8 \
 	man/network-port-batman-adv.8 \
 	man/network-port-batman-adv-port.8 \
 	man/network-route.8 \
+	man/network-settings.8 \
 	man/network-zone.8 \
 	man/network-zone-6rd.8 \
 	man/network-zone-6to4-tunnel.8 \
