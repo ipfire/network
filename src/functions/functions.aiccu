@@ -98,7 +98,7 @@ function aiccu_write_config() {
 	assert isset server
 	assert isset protocol
 	assert isset require_tls
-	assert isoneof ${protocol} ${AICCU_SUPPORTED_PROTOCOLS}
+	assert isoneof protocol ${AICCU_SUPPORTED_PROTOCOLS}
 
 	# Write configuration file header.
 	config_header "aiccu configuration file for ${zone}" > ${file}
