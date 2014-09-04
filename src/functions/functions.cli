@@ -79,7 +79,19 @@ function cli_device_headline() {
 
 	# Print the hook for all zones.
 	if [ "${type}" = "zone" ]; then
-		headline_prefix="${headline_prefix} ($(zone_get_hook ${device}))"
+		local enabled
+		zone_is_enabled "${device}"
+		case "$?" in
+			${EXIT_TRUE})
+				enabled="enabled"
+				;;
+			${EXIT_FALSE})
+				enabled="disabled"
+				;;
+		esac
+
+		local hook="$(zone_get_hook "${device}")"
+		headline_prefix="${headline_prefix} (${enabled}, ${hook})"
 	fi
 	cli_headline 1 "${headline_prefix}"
 
