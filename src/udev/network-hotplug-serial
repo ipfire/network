@@ -27,8 +27,8 @@ LOG_FACILITY="network-hotplug-serial"
 # Associated hooks.
 ASSOCIATED_HOOKS="modem"
 
-# Read network configuration.
-network_config_read
+# Read network settings
+network_settings_read
 
 log DEBUG "Called with ACTION='${ACTION}', DEVNAME='${DEVNAME}'."
 
@@ -97,7 +97,7 @@ case "${ACTION}" in
 			list_match "${hook}" ${ASSOCIATED_HOOKS} || continue
 
 			# Read IMSI from zone configuration.
-			zone_imsi="$(zone_config_option "${zone}" IMSI)"
+			zone_imsi="$(zone_settings_get "${zone}" IMSI)"
 
 			# If IMSIs match, we start that zone.
 			if [ "${zone_imsi}" = "${sim_imsi}" ]; then

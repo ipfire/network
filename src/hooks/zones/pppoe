@@ -105,7 +105,7 @@ function hook_up() {
 	local zone=${1}
 	assert isset zone
 
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	# Bring up the port.
 	local port=$(__hook_get_port "${zone}")
@@ -121,7 +121,7 @@ function hook_down() {
 	local zone=${1}
 	assert isset zone
 
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	# Stop the ppp daemon.
 	pppd_stop ${zone}
@@ -169,7 +169,7 @@ function hook_status() {
 
 	cli_device_headline ${zone}
 
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	cli_headline 2 "Configuration"
 	cli_print_fmt1 2 "Username" "${USERNAME}"
@@ -227,7 +227,7 @@ function hook_ppp_write_config() {
 	assert isset file
 
 	# Read in the configuration files.
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	# A port has to be assigned for this action
 	local port=$(__hook_get_port "${zone}")
@@ -295,7 +295,7 @@ function hook_port_add() {
 		return ${EXIT_ERROR}
 	fi
 
-	config_write "$(zone_dir "${zone}")/ports/${port}"
+	zone_port_settings_write "${zone}" "${port}"
 	log INFO "Port '${port}' has been added to zone '${zone}'"
 
 	exit ${EXIT_OK}
@@ -311,7 +311,7 @@ function hook_port_remove() {
 	port_down "${port}"
 
 	log INFO "Port '${port}' has been removed from zone '${zone}'"
-	config_remove "$(zone_dir "${zone}")/ports/${port}"
+	zone_port_settings_remove "${zone}" "${port}"
 
 	exit ${EXIT_OK}
 }

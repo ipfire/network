@@ -543,35 +543,15 @@ function zone_config() {
 	esac
 }
 
-function zone_config_option() {
-	local zone=${1}
-	local option=${2}
-	local default=${3}
-	shift 2
-
-	assert isset zone
-	assert isset option
-
-	(
-		VALUE="${default}"
-		zone_config_read ${zone}
-
-		VALUE="${!option}"
-		echo "${VALUE}"
-	)
-}
-
 function zone_config_create() {
-	local zone=${1}
+	local zone="${1}"
+	assert isset zone
 	shift
 
-	assert isset zone
-
-	local hook=$(zone_get_hook ${zone})
-
+	local hook=$(zone_get_hook "${zone}")
 	assert isset hook
 
-	hook_zone_exec ${hook} config_create ${zone} $@
+	hook_zone_exec "${hook}" "config_create" "${zone}" "$@"
 }
 
 function zone_show() {
@@ -792,7 +772,7 @@ function zone_file() {
 	echo "$(zone_dir ${zone})/settings"
 }
 
-function zone_config_read() {
+function zone_settings_read() {
 	local zone=${1}
 
 	assert isset zone
@@ -800,21 +780,21 @@ function zone_config_read() {
 	# Save the HOOK variable.
 	local hook="${HOOK}"
 
-	config_read $(zone_file ${zone})
+	settings_read $(zone_file ${zone})
 
 	# Restore hook.
 	HOOK="${hook}"
 }
 
-function zone_config_write() {
+function zone_settings_write() {
 	local zone=${1}
 
 	assert isset zone
 
-	config_write $(zone_file ${zone}) ${HOOK_SETTINGS}
+	settings_write $(zone_file ${zone}) ${HOOK_SETTINGS}
 }
 
-function zone_config_set() {
+function zone_settings_set() {
 	local zone=${1}
 	shift
 	local args="$@"
@@ -822,17 +802,17 @@ function zone_config_set() {
 	assert isset zone
 
 	(
-		zone_config_read ${zone}
+		zone_settings_read ${zone}
 
 		for arg in ${args}; do
 			eval "${arg}"
 		done
 	
-		zone_config_write ${zone}
+		zone_settings_write ${zone}
 	)
 }
 
-function zone_config_get() {
+function zone_settings_get() {
 	local zone=${1}
 	local key=${2}
 
@@ -840,8 +820,62 @@ function zone_config_get() {
 	assert isset key
 
 	(
-		zone_config_read ${zone}
+		zone_settings_read ${zone}
 
 		echo "${!key}"
 	)
+}
+
+function zone_config_settings_read() {
+	assert [ $# -gt 2 ]
+
+	local zone="${1}"
+	local config="${2}"
+	shift 2
+
+	local path="$(zone_dir "${zone}")/configs/${config}"
+	settings_read "${path}" "$@"
+}
+
+function zone_config_settings_write() {
+	assert [ $# -gt 2 ]
+
+	local zone="${1}"
+	local config="${2}"
+	shift 2
+
+	local path="$(zone_dir "${zone}")/configs/${config}"
+	settings_write "${path}" "$@"
+}
+
+function zone_port_settings_read() {
+	assert [ $# -gt 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+	shift 2
+
+	local path="$(zone_dir "${zone}")/ports/${port}"
+	settings_read "${path}" "$@"
+}
+
+function zone_port_settings_write() {
+	assert [ $# -gt 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+	shift 2
+
+	local path="$(zone_dir "${zone}")/ports/${port}"
+	settings_write "${path}" "$@"
+}
+
+function zone_port_settings_remove() {
+	assert [ $# -eq 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+
+	local path="$(zone_dir "${zone}")/ports/${port}"
+	settings_remove "${path}"
 }

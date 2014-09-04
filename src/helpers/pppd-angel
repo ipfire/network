@@ -21,6 +21,9 @@
 
 . /usr/lib/network/functions
 
+# Read network settings
+network_settings_read
+
 function main() {
 	local zone="${1}"
 	assert isset zone

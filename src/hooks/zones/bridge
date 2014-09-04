@@ -84,7 +84,7 @@ function hook_up() {
 	local zone=${1}
 	assert isset zone
 
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	# Create the bridge if it does not already exist.
 	if ! device_exists ${zone}; then
@@ -236,7 +236,7 @@ function hook_port_add() {
 	__parse_cmdline_args "$@"
 	[ $? -eq ${EXIT_OK} ] || return ${EXIT_ERROR}
 
-	config_write "$(zone_dir "${zone}")/ports/${port}" ${HOOK_PORT_SETTINGS}
+	zone_port_settings_write "${zone}" "${port}" ${HOOK_PORT_SETTINGS}
 
 	log INFO "Port '${port}' has been added to zone '${zone}'"
 
@@ -250,12 +250,12 @@ function hook_port_edit() {
 	local port="${2}"
 	shift 2
 
-	config_read "$(zone_dir "${zone}")/ports/${port}" ${HOOK_PORT_SETTINGS}
+	zone_port_settings_read "${zone}" "${port}" ${HOOK_PORT_SETTINGS}
 
 	__parse_cmdline_args "$@"
 	[ $? -eq ${EXIT_OK} ] || return ${EXIT_ERROR}
 
-	config_write "$(zone_dir "${zone}")/ports/${port}" ${HOOK_PORT_SETTINGS}
+	zone_port_settings_write "${zone}" "${port}" ${HOOK_PORT_SETTINGS}
 
 	log INFO "Port '${port}' (member of zone '${zone}') has been edited"
 
@@ -272,7 +272,7 @@ function hook_port_remove() {
 	port_down "${port}"
 
 	log INFO "Port '${port}' has been removed from zone '${zone}'"
-	config_remove "$(zone_dir "${zone}")/ports/${port}"
+	zone_port_settings_remove "${zone}" "${port}"
 
 	exit ${EXIT_OK}
 }
@@ -283,7 +283,7 @@ function hook_port_up() {
 	local zone="${1}"
 	local port="${2}"
 
-	config_read "$(zone_dir "${zone}")/ports/${port}" ${HOOK_PORT_SETTINGS}
+	zone_port_settings_read "${zone}" "${port}" ${HOOK_PORT_SETTINGS}
 
 	port_up "${port}"
 

@@ -47,7 +47,7 @@ function hook_info() {
 	assert isset port
 	shift
 
-	config_read "$(port_file ${port})"
+	settings_read "$(port_file ${port})"
 
 	local key val
 	for key in PORT_PARENTS PORT_CHILDREN; do

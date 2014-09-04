@@ -56,7 +56,7 @@ function firewall_zone_read() {
 	local file=$(firewall_zone_config ${zone})
 	assert isset file
 
-	config_read ${file} ${FIREWALL_ZONE_SETTINGS}
+	settings_read ${file} ${FIREWALL_ZONE_SETTINGS}
 
 	local arg default
 	for arg in ${FIREWALL_ZONE_SETTINGS}; do
@@ -76,7 +76,7 @@ function firewall_zone_write() {
 	local file=$(firewall_zone_config ${zone})
 	assert isset file
 
-	config_write ${file} ${FIREWALL_ZONE_SETTINGS}
+	settings_write ${file} ${FIREWALL_ZONE_SETTINGS}
 	return ${EXIT_OK}
 }
 
@@ -86,7 +86,7 @@ function firewall_zone_print() {
 
 	(
 		firewall_zone_read ${zone}
-		config_print ${FIREWALL_ZONE_SETTINGS}
+		settings_print ${FIREWALL_ZONE_SETTINGS}
 	)
 
 	return ${EXIT_OK}

@@ -23,6 +23,9 @@ LOG_FACILITY="miredo-helper"
 
 . /usr/lib/network/functions
 
+# Read network settings
+network_settings_read
+
 action="${STATE}"
 assert isset action
 

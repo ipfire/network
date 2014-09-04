@@ -42,7 +42,7 @@ function hook_create() {
 	ADDRESS=""
 	DEVICE=$(device_get_address ${port})
 
-	config_write $(port_file ${port}) ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
@@ -52,7 +52,7 @@ function hook_up() {
 	assert isset port
 
 	# Read in the confguration file.
-	port_config_read ${port}
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	# Check if the MAC address is the right one.
 	if isset ADDRESS; then
@@ -83,7 +83,7 @@ function hook_hotplug_rename() {
 	assert isset device
 
 	# Read in the conifguration file.
-	port_config_read ${port}
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	# Get the current MAC address of the device.
 	local address=$(device_get_address ${device})

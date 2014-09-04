@@ -86,7 +86,7 @@ function hook_check() {
 			error "PREFIX is greater than 30."
 			exit ${EXIT_ERROR}
 		fi
-        fi
+	fi
 
 	# Check if the peer-address is valid.
 	if ! ipv4_is_valid "${PEER_ADDRESS}"; then
@@ -167,12 +167,10 @@ function hook_up() {
 	local zone="${1}"
 	assert isset zone
 
-
-	zone_config_read "${zone}"
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	# Check if a port will be used.
 	if isset PORT; then
-
 		# Bring up the port.
 		log DEBUG "Bringing up port '${PORT}'."
 		port_up "${PORT}"
@@ -197,15 +195,13 @@ function hook_down() {
 	local zone="${1}"
 	assert isset zone
 
-	zone_config_read "${zone}"
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	# Stop the ppp daemon.
 	pppd_stop "${zone}"
 
-
 	# Check if a port has been used.
 	if isset PORT; then
-
 		# Stop DHCP-Client or remove static IP address.
 		if enabled USE_DHCP; then
 			# Stop dhclient for IPv4 on this zone.
@@ -229,7 +225,7 @@ function hook_status() {
 
 	cli_device_headline "${zone}"
 
-	zone_config_read "${zone}"
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	# Display port configuration if a port is used.
 	if isset PORT; then
@@ -287,7 +283,7 @@ function hook_ppp_write_config() {
 	assert isset file
 
 	# Read in the configuration files.
-	zone_config_read "${zone}"
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	# Prepare the command line options for the pptp plugin.
 	local pptp_commandline="pptp ${PEER_ADDRESS} --nolaunchpppd"

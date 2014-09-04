@@ -46,7 +46,7 @@ function hook_check() {
 		LOCAL_ADDRESS="${PUBLIC_ADDRESS}"
 	fi
 
-        assert isset LOCAL_ADDRESS
+	assert isset LOCAL_ADDRESS
 
 	# Check input.
 	if ! ipv6_is_valid "${SIX_RD_PREFIX}"; then
@@ -101,7 +101,7 @@ function hook_up() {
 	assert isset zone
 
 	# Read configuration options.
-	zone_config_read "${zone}"
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	# Configure the tunnel.
 	if ! device_exists "${zone}"; then
@@ -150,7 +150,7 @@ function hook_status() {
 
 	cli_device_headline ${zone}
 
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	local server_line="${SERVER_ADDRESS}"
 	local server_hostname=$(dns_get_hostname ${SERVER_ADDRESS})

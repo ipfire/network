@@ -21,6 +21,9 @@
 
 . /usr/lib/network/functions
 
+# Read network settings
+network_settings_read
+
 action="${1}"
 assert isset action
 
@@ -32,7 +35,7 @@ config_file="$(port_config_dir ${port})/hostapd.conf"
 case "${action}" in
 	create)
 		# Create the configuration file for this port.
-		port_config_read ${port} || exit $?
+		port_settings_read ${port} || exit $?
 
 		hostapd_config_write ${port} ${config_file} \
 			--broadcast-ssid="${BROADCAST_SSID}" \

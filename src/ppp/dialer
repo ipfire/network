@@ -26,6 +26,9 @@ LOG_DISABLE_STDOUT="true"
 
 . /usr/lib/network/functions
 
+# Read network settings
+network_settings_read
+
 log DEBUG "dialer called with arguments: $@"
 
 # The zone is an optional argument.
@@ -35,7 +38,7 @@ assert isset ZONE
 # If we have the zone information, we will
 # load the zone configuration.
 if zone_exists ${ZONE}; then
-	zone_config_read ${ZONE}
+	zone_settings_read "${ZONE}"
 fi
 
 # The default speaker settings is on.

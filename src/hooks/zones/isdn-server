@@ -118,7 +118,7 @@ function hook_up() {
 
 	assert isset zone
 
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	assert [ -e "/dev/${DEVICE}" ]
 
@@ -191,7 +191,7 @@ function hook_status() {
 
 	cli_device_headline ${zone}
 
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	cli_headline "  Configuration:"
 	printf "${DEVICE_PRINT_LINE1}" "User:" "${USER}"

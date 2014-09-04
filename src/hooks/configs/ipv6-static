@@ -59,7 +59,7 @@ function hook_create() {
 		GATEWAY=$(ipv6_implode ${GATEWAY})
 	fi
 
-	config_write $(zone_dir ${zone})/configs/${HOOK}.$(ipv6_hash ${ADDRESS}).${PREFIX} ${HOOK_SETTINGS}
+	zone_config_settings_write "${zone}" "${HOOK}.$(ipv6_hash ${ADDRESS}).${PREFIX}" ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
@@ -74,7 +74,7 @@ function hook_up() {
 		exit ${EXIT_ERROR}
 	fi
 	
-	config_read $(zone_dir ${zone})/configs/${config}
+	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
 
 	ip_address_add ${zone} ${ADDRESS}/${PREFIX}
 
@@ -99,7 +99,7 @@ function hook_down() {
 	# Remove routing information from database.
 	routing_db_remove ${zone} ipv6
 	
-	config_read $(zone_dir ${zone})/configs/${config}
+	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
 
 	ip_address_del ${zone} ${ADDRESS}/${PREFIX}
 
@@ -119,7 +119,7 @@ function hook_status() {
 		exit ${EXIT_ERROR}
 	fi
 	
-	config_read $(zone_dir ${zone})/configs/${config}
+	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
 
 	# Make sure ADDRESS is as short as possible.
 	ADDRESS=$(ipv6_implode ${ADDRESS})

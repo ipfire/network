@@ -102,7 +102,7 @@ function hook_up() {
 	assert isset zone
 
 	# Read configuration options.
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	if enabled AUTO_UPDATE_ENDPOINT; then
 		log DEBUG "Updating tunnel endpoint"
@@ -156,7 +156,7 @@ function hook_status() {
 
 	cli_device_headline ${zone}
 
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	local server_line="${SERVER_ADDRESS}"
 	local server_hostname=$(dns_get_hostname ${SERVER_ADDRESS})

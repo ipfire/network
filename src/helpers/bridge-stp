@@ -27,8 +27,8 @@ LOG_FACILITY=$(basename ${0})
 
 . /usr/lib/network/functions
 
-# Read network configuration.
-network_config_read
+# Read network settings
+network_settings_read
 
 zone=${1}
 assert isset zone
@@ -42,8 +42,8 @@ if ! zone_exists ${zone}; then
 	exit ${EXIT_KERNEL_STP}
 fi
 
-# Read zone configuration.
-zone_config_read ${zone}
+# Read zone settings
+zone_settings_read ${zone}
 
 # Make sure STP is enabled for this zone.
 assert enabled STP

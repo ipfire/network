@@ -94,7 +94,7 @@ function hook_create() {
 	local port=$(port_find_free ${PORT_PATTERN_ACCESSPOINT})
 	assert isset port
 
-	config_write $(port_file ${port}) ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
@@ -105,7 +105,7 @@ function hook_edit() {
 
 	assert isset port
 
-	config_read $(port_file ${port})
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
@@ -134,7 +134,7 @@ function hook_edit() {
 		shift
 	done
 
-	config_write $(port_file ${port}) ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}	
 }
@@ -143,7 +143,7 @@ function hook_up() {
 	local port=${1}
 	assert isset port
 
-	config_read $(port_file ${port})
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	# Check if the PHY is present.
 	local phy=$(phy_get ${PHY})
@@ -195,7 +195,7 @@ function hook_hotplug() {
 	assert port_exists ${port}
 
 	# Read configuration of port.
-	config_read $(port_file ${port})
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	# Get the address of the phy.
 	local phy_address=$(phy_get_address ${phy})

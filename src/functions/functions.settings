@@ -1,0 +1,217 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2014  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function settings_read() {
+	local file=${1}
+	assert isset file
+	shift
+
+	local valid_keys=$@
+
+	# Exit if the file cannot be read.
+	[ -r "${file}" ] || return ${EXIT_ERROR}
+
+	local line key val
+	while read -r line; do
+		case "${line}" in
+			*=*)
+				key=$(cli_get_key ${line})
+
+				# If valid keys is set, key must be in the list.
+				if [ -n "${valid_keys}" ]; then
+					if ! listmatch ${key} ${valid_keys}; then
+						log DEBUG "Ignoring configuration setting: ${key}"
+						continue
+					fi
+				fi
+
+				val=$(cli_get_val ${line})
+				val=$(settings_strip ${val})
+
+				# Assign variable.
+				printf -v ${key} "%s" "${val}"
+				;;
+			*)
+				log DEBUG "Invalid line in configuration file: ${line}"
+				;;
+		esac
+	done < ${file}
+}
+
+function settings_read_array() {
+	local file=${1}
+	assert isset file
+	shift
+
+	local array=${1}
+	assert isset array
+	shift
+
+	local valid_keys=$@
+
+	# Exit if the file cannot be read.
+	[ -r "${file}" ] || return ${EXIT_ERROR}
+
+	local line key val
+	while read -r line; do
+		case "${line}" in
+			*=*)
+				key=$(cli_get_key ${line})
+
+				# If valid_keys is set, key must be in the list.
+				if [ -n "${valid_keys}" ]; then
+					if ! listmatch ${key} ${valid_keys}; then
+						log DEBUG "Ignoring configuration setting: ${key}"
+						continue
+					fi
+				fi
+
+				val=$(cli_get_val ${line})
+				val=$(settings_strip ${val})
+
+				# Assign variable.
+				printf -v  "${array}["${key}"]" "%s" "${val}"
+				;;
+			*)
+				log DEBUG "Invalid line in configuration file: ${line}"
+				;;
+		esac
+	done < ${file}
+}
+
+# Strip leading and trailing "s.
+function settings_strip() {
+	local var="$@"
+
+	# Do nothing for strings that contain spaces.
+	if contains_spaces ${var}; then
+		print "${var}"
+		return ${EXIT_OK}
+	fi
+
+	unquote "${var}"
+}
+
+function settings_write() {
+	local settings_file=${1}
+	assert isset settings_file
+	shift
+
+	# Check if all values to be written are sane
+	if ! settings_check; then
+		log CRITICAL "Configuration check failed. No settings have been written."
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Writing settings file ${settings_file}."
+
+	mkdir -p $(dirname ${settings_file}) 2>/dev/null
+	> ${settings_file}
+
+	local param
+	for param in $(listsort $@); do
+		echo "${param}=\"${!param}\"" >> ${settings_file}
+	done
+}
+
+function settings_remove() {
+	local settings_file="${1}"
+
+	local abspath="$(readlink -e "${settings_file}")"
+	if [ "${settings_file}" != "${abspath}" ]; then
+		log ERROR "Can only handle absolute paths"
+		return ${EXIT_ERROR}
+	fi
+
+	rm -f "${settings_file}"
+}
+
+function settings_print() {
+	local param
+
+	for param in $(listsort $@); do
+		printf "%-32s = %s\n" "${param}" "${!param}"
+	done
+}
+
+function settings_check() {
+	# If there is a function defined that is called __check
+	# we call that function
+	if [ -n "$(type -t _check)" ]; then
+		_check || return $?
+	fi
+
+	return ${EXIT_OK}
+}
+
+function settings_set() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			*=*)
+				local key=$(cli_get_key ${1})
+				local val=$(cli_get_val ${1})
+
+				log INFO "Setting configuration option '${key}=${val}'".
+
+				printf -v ${key} "%s" "${val}"
+				;;
+			*)
+				warning "Invalid parameter given: ${1}"
+				;;
+		esac
+		shift
+	done
+}
+
+function network_settings_read() {
+	local options="${NETWORK_SETTINGS_FILE_PARAMS}"
+
+	# If the DEBUG variable has already been set,
+	# don't overwrite it.
+	if [ -n "${DEBUG}" ]; then
+		list_remove options DEBUG
+	fi
+
+	settings_read "${NETWORK_SETTINGS_FILE}" ${options}
+}
+
+function network_settings_write() {
+	settings_write "${NETWORK_SETTINGS_FILE}" ${NETWORK_SETTINGS_FILE_PARAMS}
+
+	# Update DNS configuration.
+	dns_generate_resolvconf
+}
+
+function network_settings_print() {
+	settings_print ${NETWORK_SETTINGS_FILE_PARAMS}
+}
+
+function firewall_settings_read() {
+	settings_read "${FIREWALL_SETTINGS_FILE}" "${FIREWALL_SETTINGS_PARAMS}"
+}
+
+function firewall_settings_write() {
+	settings_write "${FIREWALL_SETTINGS_FILE}" "${FIREWALL_SETTINGS_PARAMS}"
+}
+
+function firewall_settings_print() {
+	settings_print "${FIREWALL_SETTINGS_PARAMS}"
+}

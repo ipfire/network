@@ -81,7 +81,7 @@ function hook_up() {
 	assert isset zone
 
 	# Read zone configuration.
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	if ! device_exists ${zone}; then
 		#  Create the wireless interface.

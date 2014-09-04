@@ -142,6 +142,7 @@ dist_network_SCRIPTS = \
 	src/functions/functions.routing \
 	src/functions/functions.serial \
 	src/functions/functions.service \
+	src/functions/functions.settings \
 	src/functions/functions.stp \
 	src/functions/functions.sysctl \
 	src/functions/functions.teredo \

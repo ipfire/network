@@ -65,7 +65,7 @@ function hook_create() {
 		shift
 	done
 
-	config_write $(zone_dir ${zone})/configs/${HOOK} ${HOOK_SETTINGS}
+	zone_config_settings_write "${zone}" "${HOOK}" ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
@@ -106,8 +106,8 @@ function hook_status() {
 		error "Zone '${zone}' doesn't exist."
 		exit ${EXIT_ERROR}
 	fi
-	
-	config_read $(zone_dir ${zone})/configs/${config}
+
+	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
 
 	local status
 	if pppoe_server_status ${zone}; then

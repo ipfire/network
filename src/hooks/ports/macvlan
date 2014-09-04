@@ -51,7 +51,7 @@ function hook_create() {
 	local port=$(port_find_free "${PARENT}${MACVLAN_PORT_INTERFIX}N")
 	assert isset port
 
-	if config_write $(port_file ${port}) ${HOOK_SETTINGS}; then
+	if port_settings_write "${port}" ${HOOK_SETTINGS}; then
 		log INFO "New macvlan port '${port}' has been created."
 	fi
 
@@ -63,7 +63,7 @@ function hook_edit() {
 	assert isset port
 	shift
 
-	config_read $(port_file ${port})
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
@@ -77,7 +77,7 @@ function hook_edit() {
 		shift
 	done
 
-	config_write $(port_file ${port}) ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}	
 }
@@ -86,7 +86,7 @@ function hook_up() {
 	local port=${1}
 	assert isset port
 
-	config_read $(port_file ${port})
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	# Create device if not already exists.
 	if ! device_exists ${port}; then
@@ -101,7 +101,7 @@ function hook_down() {
 
 	assert isset port
 
-	config_read $(port_file ${port})
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	if ! device_exists ${port}; then
 		exit ${EXIT_OK}

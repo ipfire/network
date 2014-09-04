@@ -68,7 +68,7 @@ function hook_create() {
 
 	local port="${PARENT_DEVICE}${VLAN_PORT_INTERFIX}${TAG}"
 
-	config_write $(port_file ${port}) ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
@@ -78,7 +78,7 @@ function hook_edit() {
 	assert isset port
 	shift
 
-	config_read $(port_file ${port})
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
@@ -92,7 +92,7 @@ function hook_edit() {
 		shift
 	done
 
-	config_write $(port_file ${port}) ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}	
 }
@@ -103,7 +103,7 @@ function hook_up() {
 
 	if ! device_exists ${port}; then
 		# Read configuration file.
-		config_read $(port_file ${port}) ${HOOK_SETTINGS}
+		port_settings_read "${port}" ${HOOK_SETTINGS}
 
 		vlan_create ${port} ${PARENT_DEVICE} ${TAG} ${ADDRESS}
 	fi

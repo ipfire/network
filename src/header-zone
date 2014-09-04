@@ -28,11 +28,11 @@ function hook_create() {
 	assert isset zone
 	shift
 
-	config_read $(zone_dir ${zone})/settings
+	settings_read $(zone_dir ${zone})/settings
 
 	hook_parse_cmdline $@
 
-	config_write $(zone_dir ${zone})/settings ${HOOK_SETTINGS}
+	settings_write $(zone_dir ${zone})/settings ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }

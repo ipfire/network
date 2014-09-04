@@ -90,7 +90,7 @@ function hook_edit() {
 	# Remove any whitespace
 	SLAVES=$(echo ${SLAVES})
 
-	port_config_write ${port} ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}
 }
@@ -99,7 +99,7 @@ function hook_up() {
 	local device=${1}
 	assert isset device
 
-	port_config_read ${device}
+	port_settings_read "${device}" ${HOOK_SETTINGS}
 
 	if device_exists ${device}; then
 		log DEBUG "Bonding device '${device}' does already exist."

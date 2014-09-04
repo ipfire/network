@@ -25,13 +25,16 @@
 LOG_FACILITY="pppoe-server"
 . /usr/lib/network/functions
 
+# Read network settings
+network_settings_read
+
 zone=${1}
 assert zone_exists ${zone}
 
 action=${2}
 
 # Read the configuration file of this hook.
-config_read $(zone_dir ${zone})/configs/pppoe-server
+zone_config_settings_read "${zone}" "pppoe-server"
 assert isset SUBNET
 
 pppd_options="${RUN_DIR}/${zone}/pppoe-server-options"

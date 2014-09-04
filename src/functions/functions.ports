@@ -37,24 +37,26 @@ function port_config_dir() {
 	return ${EXIT_OK}
 }
 
-function port_config_read() {
-	local port=${1}
+function port_settings_read() {
+	local port="${1}"
 	assert isset port
+	shift
 
 	# Save the HOOK variable.
 	local hook="${HOOK}"
 
-	config_read $(port_file ${port})
+	settings_read "$(port_file "${port}")" "$@"
 
 	# Restore hook.
 	HOOK="${hook}"
 }
 
-function port_config_write() {
-	local port=${1}
+function port_settings_write() {
+	local port="${1}"
 	assert isset port
+	shift
 
-	config_write $(port_file ${port})
+	settings_write "$(port_file "${port}")" "$@"
 }
 
 function ports_get_all() {
@@ -68,7 +70,7 @@ function ports_get_all() {
 }
 
 function port_file() {
-	local port=${1}
+	local port="${1}"
 	assert isset port
 
 	echo "$(port_dir)/${port}"

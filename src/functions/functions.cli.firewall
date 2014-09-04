@@ -103,17 +103,17 @@ function firewall_cli_panic() {
 	firewall_panic ${admin_hosts}
 }
 
-function firewall_cli_config() {
+function firewall_cli_settings() {
 	if cli_help_requested $@; then
-		cli_show_man firewall-config
+		cli_show_man firewall-settings
 		exit ${EXIT_OK}
 	fi
 
 	if [ -n "${1}" ]; then
-		config_set "$@"
-		firewall_config_write
+		settings_set "$@"
+		firewall_settings_write
 	else
-		firewall_config_print
+		firewall_settings_print
 	fi
 }
 

@@ -35,20 +35,20 @@ done
 
 . /usr/lib/network/functions
 
-# Read network configuration.
-network_config_read
+# Read network settings
+network_settings_read
 
-function cli_config() {
+function cli_settings() {
 	if cli_help_requested $@; then
-		cli_show_man network-config
+		cli_show_man network-settings
 		exit ${EXIT_OK}
 	fi
 
 	if [ -n "${1}" ]; then
-		config_set $@
-		network_config_write
+		settings_set $@
+		network_settings_write
 	else
-		network_config_print
+		network_settings_print
 	fi
 }
 
@@ -1154,7 +1154,7 @@ case "${action}" in
 		init_run
 		;;
 
-	config|hostname|port|device|zone|start|stop|restart|status|reset|route)
+	settings|hostname|port|device|zone|start|stop|restart|status|reset|route)
 		cli_${action} $@
 		;;
 

@@ -48,7 +48,7 @@ function hook_create() {
 	local port=$(port_find_free ${DUMMY_PORT_PATTERN})
 	assert isset port
 
-	if config_write $(port_file ${port}) ${HOOK_SETTINGS}; then
+	if port_settings_write "${port}" ${HOOK_SETTINGS}; then
 		log INFO "New dummy port '${port}' has been created"
 	fi
 
@@ -60,7 +60,7 @@ function hook_edit() {
 	assert isset port
 	shift
 
-	config_read $(port_file ${port})
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
@@ -74,7 +74,7 @@ function hook_edit() {
 		shift
 	done
 
-	config_write $(port_file ${port}) ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS}
 
 	exit ${EXIT_OK}	
 }
@@ -83,7 +83,7 @@ function hook_up() {
 	local port=${1}
 	assert isset port
 
-	config_read $(port_file ${port})
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	# Create device if not already exists.
 	if ! device_exists ${port}; then
@@ -120,7 +120,7 @@ function hook_hotplug_rename() {
 	local device=${2}
 	assert isset device
 
-	config_read $(port_file ${port})
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	if [ "${ADDRESS}" = "$(device_get_address ${device})" ]; then
 		log DEBUG "Device '${device}' equals port '${port}'."

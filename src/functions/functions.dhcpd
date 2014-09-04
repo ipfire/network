@@ -359,7 +359,7 @@ function dhcpd_global_settings_read() {
 	assert isset settings
 
 	dhcpd_global_settings_defaults ${proto}
-	config_read ${file} ${settings}
+	settings_read ${file} ${settings}
 }
 
 function dhcpd_global_settings_write() {
@@ -372,7 +372,7 @@ function dhcpd_global_settings_write() {
 	local settings=$(dhcpd_settings ${proto})
 	assert isset settings
 
-	config_write ${file} ${settings}
+	settings_write ${file} ${settings}
 }
 
 function dhcpd_global_options_read() {
@@ -382,7 +382,7 @@ function dhcpd_global_options_read() {
 	local options_file=$(dhcpd_options_file ${proto})
 	local options_list=$(dhcpd_options_list ${proto})
 
-	config_read_array ${options_file} options ${!options_list}
+	settings_read_array ${options_file} options ${!options_list}
 
 	# Check if domain-name is set.
 	if [ -z "${options["domain-name"]}" ]; then
@@ -566,7 +566,7 @@ function dhcpd_subnet_edit() {
 	# XXX Check for subnet collisions!
 
 	local file="$(dhcpd_subnet_path ${proto} ${id})/settings"
-	config_write ${file} ${settings}
+	settings_write ${file} ${settings}
 }
 
 function dhcpd_subnet_remove() {
@@ -610,7 +610,7 @@ function dhcpd_subnet_read() {
 	assert isset id
 
 	local file="$(dhcpd_subnet_path ${proto} ${id})/settings"
-	config_read ${file}
+	settings_read ${file}
 }
 
 function dhcpd_subnet_range_path() {
@@ -773,7 +773,7 @@ function dhcpd_subnet_range_edit() {
 	local file=$(dhcpd_subnet_range_path ${proto} ${subnet_id} ${range_id})
 	assert isset file
 
-	config_write ${file} ${settings}
+	settings_write ${file} ${settings}
 }
 
 function dhcpd_subnet_range_remove() {
@@ -815,7 +815,7 @@ function dhcpd_subnet_range_read() {
 	assert isset range_id
 
 	local file=$(dhcpd_subnet_range_path ${proto} ${subnet_id} ${range_id})
-	config_read ${file}
+	settings_read ${file}
 }
 
 function dhcpd_subnet_settings() {
@@ -931,7 +931,7 @@ function _dhcpd_read_options() {
 	local options_list=${2}
 	assert isset options_list
 
-	config_read_array ${file} options ${!options_list}
+	setttings_read_array ${file} options ${!options_list}
 }
 
 function _dhcpd_write_subnet() {

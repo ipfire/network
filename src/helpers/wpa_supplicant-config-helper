@@ -21,6 +21,9 @@
 
 . /usr/lib/network/functions
 
+# Read network settings
+network_settings_read
+
 action="${1}"
 assert isset action
 
@@ -33,7 +36,7 @@ config_file="$(wpa_supplicant_config_dir ${zone})/wpa_supplicant.conf"
 case "${action}" in
 	create)
 		# Create the configuration file for this zone.
-		zone_config_read ${zone} || exit $?
+		zone_settings_read ${zone} || exit $?
 
 		wpa_supplicant_config_write ${zone} ${config_file} \
 			--mode="${ENCRYPTION}" \

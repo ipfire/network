@@ -71,7 +71,7 @@ function hook_status() {
 	# Print a nice header.
 	cli_device_headline ${zone}
 
-	zone_config_read ${zone}
+	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	cli_headline 2 "Configuration"
 	cli_print_fmt1 2 "Server" "${SERVER}"
