@@ -483,7 +483,7 @@ function stp_port_set_cost() {
 	local cost="${3}"
 
 	local old_cost="$(stp_port_get_cost "${bridge}" "${port}")"
-	if [ "${cost}" -eq "${old_cost}" ]; then
+	if [ "${cost}" = "${old_cost}" ]; then
 		return ${EXIT_OK}
 	fi
 
