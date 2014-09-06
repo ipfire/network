@@ -135,7 +135,12 @@ function fwrite() {
 	assert isset file
 	shift
 
-	print "%s" "$@" >> ${file}
+	if [ ! -w "${file}" ]; then
+		log ERROR "${file}: No such file"
+		return ${EXIT_ERROR}
+	fi
+
+	print "%s" "$@" >> ${file} 2>/dev/null
 }
 
 function enabled() {
