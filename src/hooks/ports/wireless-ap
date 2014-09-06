@@ -203,10 +203,7 @@ function hook_hotplug() {
 	# Check if the phy is the same we have
 	# read from the configuration file.
 	if [ "${PHY}" = "${phy_address}" ]; then
-		wireless_create ${port} --phy="${phy_address}" --type="ap" \
-			--address="${ADDRESS}"
-
-		exit ${EXIT_OK}
+		hook_up "${port}"
 	fi
 
 	exit ${EXIT_NOT_HANDLED}
