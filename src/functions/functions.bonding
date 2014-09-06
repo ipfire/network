@@ -24,11 +24,7 @@ BONDING_ALLOWED_MODES="balance-rr active-backup balance-xor broadcast 802.3ad \
 BONDING_MASTERS="/sys/class/net/bonding_masters"
 
 function bonding_init() {
-	if ! grep -q "^bonding" /proc/modules; then
-		modprobe bonding
-
-		bonding_remove bond0
-	fi
+	module_load "bonding"
 }
 
 function bonding_create() {
@@ -73,7 +69,7 @@ function bonding_create() {
 	bonding_init
 
 	# Create the bonding device.
-	print "+${device}" > ${BONDING_MASTERS}
+	fwrite "${BONDING_MASTERS}" "+${device}"
 	local ret=$?
 
 	if [ ${ret} -eq ${EXIT_OK} ]; then
@@ -84,16 +80,10 @@ function bonding_create() {
 	fi
 
 	# Set the mode of the bonding device.
-	print "${mode}" > ${SYS_CLASS_NET}/${device}/bonding/mode
-	local ret=$?
-
-	if [ ${ret} -ne ${EXIT_OK} ]; then
-		log ERROR "Could not set mode of bonding device '${device}': ${Mmode}"
-		return ${EXIT_ERROR}
-	fi
+	bonding_set_mode "${device}" "${mode}"
 
 	if isset address; then
-		device_set_address ${device} ${address}
+		device_set_address "${device}" "${address}"
 	fi
 
 	return ${EXIT_OK}
@@ -111,7 +101,7 @@ function bonding_remove() {
 	device_set_down ${device}
 
 	# Remove the device.
-	print "-${device}" > ${BONDING_MASTERS}
+	fwrite "${BONDING_MASTERS}" "-${device}"
 	local ret=$?
 
 	if [ ${ret} -eq ${EXIT_OK} ]; then
@@ -133,6 +123,22 @@ function bonding_get_mode() {
 	print "${mode}"
 }
 
+function bonding_set_mode() {
+	assert [ $# -eq 2 ]
+
+	local device="${1}"
+	local mode="${2}"
+
+	if fwrite "${SYS_CLASS_NET}/${device}/bonding/mode" "${mode}"; then
+		log DEBUG "Set mode of bond '${device}' to '${mode}'"
+	else
+		log ERROR "Could not set mode of bond '${device}' to '${mode}'"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
 function bonding_enslave_device() {
 	local device=${1}
 	assert isset device
@@ -151,13 +157,13 @@ function bonding_enslave_device() {
 	fi
 
 	# Add it.
-	print "+${slave}" > ${SYS_CLASS_NET}/${device}/bonding/slaves
+	fwrite "${SYS_CLASS_NET}/${device}/bonding/slaves" "+${slave}"
 	local ret=$?
 
 	if [ ${ret} -eq ${EXIT_OK} ]; then
-		log DEBUG "Successfully enslaved '${slave}' to '${device}'."
+		log DEBUG "Successfully enslaved '${slave}' to '${device}'"
 	else
-		log ERROR "Could not enslave '${slave}' to '${device}'."
+		log ERROR "Could not enslave '${slave}' to '${device}'"
 		return ${EXIT_ERROR}
 	fi
 

@@ -36,10 +36,18 @@ assert isset INTERFACE
 # Check, if the device is a physical network interface and
 # if we can handle it.
 if device_exists ${INTERFACE}; then
-	if ! device_is_ethernet ${INTERFACE}; then
-		log DEBUG "Called for interface '${INTERFACE}' which is a virtual interface. Exiting."
-		exit ${EXIT_OK}
-	fi
+	type="$(device_get_type "${INTERFACE}")"
+	case "${type}" in
+		# Remove automatically created bonding interface without any configuration
+		bonding)
+			port_exists "${INTERFACE}" || bonding_remove "${INTERFACE}"
+			exit ${EXIT_OK}
+			;;
+		ethernet)
+			log DEBUG "Called for interface '${INTERFACE}' which is a virtual interface. Exiting."
+			exit ${EXIT_OK}
+			;;
+	esac
 fi
 
 case "${ACTION}" in
