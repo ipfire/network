@@ -98,6 +98,28 @@ function zone_reload() {
 	service_reload "network@${zone}.service"
 }
 
+function zone_hotplug_event() {
+	local zone="${1}"
+	assert zone_exists "${zone}"
+
+	# If the zone has already been started, we
+	# will reload it so the current configuration
+	# is re-applied.
+	if zone_is_active "${zone}"; then
+		zone_reload "${zone}"
+		return ${?}
+
+	# If the zone is still down, but in auto-start mode,
+	# we will start it.
+	elif zone_is_enabled "${zone}"; then
+		zone_start "${zone}"
+		return ${?}
+	fi
+
+	# Otherwise, nothing will be done.
+	return ${EXIT_OK}
+}
+
 function zone_enable() {
 	# This function will enable the zone
 	# with help of systemd.

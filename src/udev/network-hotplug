@@ -52,8 +52,14 @@ fi
 
 case "${ACTION}" in
 	add|register)
-		# Check, if there is a configuration for that device.
-		if port_exists ${INTERFACE}; then
+		# Handle hotplug events for zones.
+		if zone_exists "${INTERFACE}"; then
+			# TODO When e.g. a wireless device is plugged in,
+			# the right zone needs to be searched and started.
+			exit ${EXIT_OK}
+
+		# Check, if there is a port configuration for that device.
+		elif port_exists ${INTERFACE}; then
 			port=${INTERFACE}
 
 		# Create new configuration for _real_ network devices.
@@ -106,18 +112,12 @@ case "${ACTION}" in
 			exit ${EXIT_OK}
 		fi
 
-		zone=$(port_zone ${port})
-
 		# Check, if the device is configured in a zone.
 		# If not, there is nothing to do.
-		isset zone || exit ${EXIT_OK}
-
-		# If the zone is already up or enabled for auto-start,
-		# we add the device to the zone.
-		if zone_is_active "${zone}"; then
-			zone_reload "${zone}"
-		elif zone_is_enabled "${zone}"; then
-			zone_start "${zone}"
+		zone=$(port_zone "${port}")
+		if isset zone; then
+			zone_hotplug_event "${zone}"
+			exit ${?}
 		fi
 		;;
 
