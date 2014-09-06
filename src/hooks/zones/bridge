@@ -283,15 +283,23 @@ function hook_port_up() {
 	local zone="${1}"
 	local port="${2}"
 
-	zone_port_settings_read "${zone}" "${port}" ${HOOK_PORT_SETTINGS}
-
+	# Try bringing up the port
 	port_up "${port}"
 
-	# Set same MTU to device that the bridge has got
-	device_set_mtu "${port}" $(device_get_mtu "${zone}")
+	# If the port could not be brought up, we will
+	# log an error message and exit.
+	if ! device_exists "${port}"; then
+		log WARNING "Port '${port}' cannot be attached to zone '${zone}' as it does not exist"
+		exit ${EXIT_OK}
+	fi
 
+	# Read configuration values
+	zone_port_settings_read "${zone}" "${port}" ${HOOK_PORT_SETTINGS}
+
+	# Attach the port to the bridge
 	bridge_attach_device "${zone}" "${port}"
 
+	# Set STP configuration
 	if isset COST; then
 		stp_port_set_cost "${zone}" "${port}" "${COST}"
 	fi

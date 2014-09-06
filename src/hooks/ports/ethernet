@@ -51,6 +51,11 @@ function hook_up() {
 	local port=${1}
 	assert isset port
 
+	if ! device_exists "${port}"; then
+		log WARNING "Cannot bring up port '${port}' which does not exist"
+		exit ${EXIT_OK}
+	fi
+
 	# Read in the confguration file.
 	port_settings_read "${port}" ${HOOK_SETTINGS}
 
@@ -60,7 +65,7 @@ function hook_up() {
 	fi
 
 	# Bring up the device.
-	device_set_up ${port}
+	device_set_up "${port}"
 
 	exit ${EXIT_OK}
 }

@@ -108,6 +108,10 @@ function bridge_attach_device() {
 		return ${EXIT_OK}
 	fi
 
+	# Make sure that the MTU of the device that is to be attached
+	# to the bridge matches the MTU of the bridge.
+	device_adjust_mtu "${device}" "${bridge}"
+
 	# Actually connect bridge and device.
 	cmd_quiet ip link set ${device} master ${bridge}
 	local ret=$?

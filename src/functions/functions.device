@@ -631,6 +631,16 @@ function device_set_mtu() {
 	return ${ret}
 }
 
+function device_adjust_mtu() {
+	assert [ $# -eq 2 ]
+
+	local device="${1}"
+	local other_device="${2}"
+
+	local mtu="$(device_get_mtu "${other_device}")"
+	device_set_mtu "${device}" "${mtu}"
+}
+
 function device_discover() {
 	local device=${1}
 
