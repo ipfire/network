@@ -134,18 +134,18 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_hotplug() {
-	local port=${1}
-	assert isset port
-
-	local phy=${2}
-	assert isset phy
-
-	# Bring up the device.
-	port_up "${port}"
-
-	exit ${EXIT_OK}
-}
+#function hook_hotplug() {
+#	local port=${1}
+#	assert isset port
+#
+#	local phy=${2}
+#	assert isset phy
+#
+#	# Bring up the device.
+#	port_up "${port}"
+#
+#	exit ${EXIT_OK}
+#}
 
 function hook_status() {
 	local port=${1}
