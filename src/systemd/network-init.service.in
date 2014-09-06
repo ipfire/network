@@ -7,7 +7,5 @@ Requires=firewall-init.service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=@sbindir@/network init
-
-[Install]
-WantedBy=multi-user.target
