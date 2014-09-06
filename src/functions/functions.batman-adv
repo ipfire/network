@@ -34,8 +34,6 @@ function batman_adv_interface_add() {
 	# Make sure, batman is running.
 	batman_adv_start
 
-	assert device_is_batman_adv_port "${port}"
-
 	fwrite "${SYS_CLASS_NET}/${port}/batman_adv/mesh_iface" "${device}"
 }
 
