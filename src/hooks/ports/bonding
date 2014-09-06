@@ -26,6 +26,7 @@ HOOK_SETTINGS="HOOK ADDRESS MIIMON MODE SLAVES"
 ADDRESS=$(mac_generate)
 SLAVES=""
 MIIMON=100
+MODE="balance-rr"
 
 function hook_check() {
 	assert isset ADDRESS
@@ -36,7 +37,7 @@ function hook_check() {
 }
 
 function hook_create() {
-	_edit $@
+	hook_edit $@
 }
 
 function hook_edit() {
@@ -96,52 +97,45 @@ function hook_edit() {
 }
 
 function hook_up() {
-	local device=${1}
+	local device="${1}"
 	assert isset device
 
 	port_settings_read "${device}" ${HOOK_SETTINGS}
 
-	if device_exists ${device}; then
-		log DEBUG "Bonding device '${device}' does already exist."
-
-		device_set_address ${device} ${ADDRESS}
-		device_set_up ${device}
-
-		exit ${EXIT_OK}
+	if ! device_exists ${device}; then
+		bonding_create "${device}" \
+			--address="${ADDRESS}" \
+			--mode="${MODE}" || exit ${EXIT_ERROR}
 	fi
 
-	bonding_create ${device} --address="${ADDRESS}" --mode="${MODE}"
-	local ret=$?
-
-	[ ${ret} -eq ${EXIT_OK} ] || exit ${EXIT_ERROR}
-
-	bonding_set_miimon ${device} ${MIIMON}
-	device_set_up ${device}
+	device_set_address "${device}" "${ADDRESS}"
+	bonding_set_miimon "${device}" "${MIIMON}"
+	device_set_up "${device}"
 
 	local slave
 	for slave in $(unquote ${SLAVES}); do
 		if ! device_exists ${slave}; then
-			warning_log "${device}: configured slave '${slave}' is not available."
+			log WARNING "Cannot enslave '${slave}' to '${device}' as it is not available"
 			continue
 		fi
 
-		bonding_enslave_device ${device} ${slave}
+		bonding_enslave_device "${device}" "${slave}"
 	done
 
 	# Bring up the device.
-	device_set_up ${device}
+	device_set_up "${device}"
 
 	exit ${EXIT_OK}
 }
 
 function hook_down() {
-	local device=${1}
+	local device="${1}"
 
-	bonding_remove ${device}
+	bonding_remove "${device}"
 
 	local slave
 	for slave in ${SLAVES}; do
-		device_set_down ${slave}
+		device_set_down "${slave}"
 	done
 
 	exit ${EXIT_OK}
