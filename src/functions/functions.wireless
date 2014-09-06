@@ -249,7 +249,7 @@ function wireless_monitor() {
 	assert isset device
 	shift
 
-	local monitor_device="mon$$"
+	local monitor_device="$(port_find_free "${PORT_PATTERN_WIRELESS_MONITOR}")"
 
 	# Create an 802.11 monitoring device
 	wireless_create "${monitor_device}" --phy="${device}" --type="monitor"

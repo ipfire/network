@@ -73,6 +73,19 @@ function device_exists() {
 	serial_exists ${device}
 }
 
+function device_matches_pattern() {
+	local device="${1}"
+	assert isset device
+
+	local pattern="${2}"
+	assert isset pattern
+
+	pattern="^${pattern//N/[[:digit:]]+}$"
+
+	[[ ${device} =~ ${pattern} ]] \
+		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
 function device_delete() {
 	local device=${1}
 	assert isset device
@@ -191,6 +204,14 @@ function device_is_bridge() {
 function device_is_bridge_attached() {
 	local device=${1}
 	[ -d "${SYS_CLASS_NET}/${device}/brport" ]
+}
+
+function device_is_wireless_monitor() {
+	local device="${1}"
+	assert isset device
+
+	device_is_wireless "${device}" && \
+		device_matches_pattern "${device}" "${PORT_PATTERN_WIRELESS_MONITOR}"
 }
 
 function device_get_bridge() {

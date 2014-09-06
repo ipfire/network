@@ -36,6 +36,11 @@ assert isset INTERFACE
 # Check, if the device is a physical network interface and
 # if we can handle it.
 if device_exists ${INTERFACE}; then
+	# Skip wireless monitor devices
+	if device_is_wireless_monitor "${INTERFACE}"; then
+		exit ${EXIT_OK}
+	fi
+
 	type="$(device_get_type "${INTERFACE}")"
 	case "${type}" in
 		# Remove automatically created bonding interface without any configuration
