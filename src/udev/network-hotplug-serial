@@ -90,7 +90,10 @@ case "${ACTION}" in
 		isset sim_imsi || exit ${EXIT_OK}
 
 		for zone in $(zones_get_all); do
-			# XXX Check if the zone is enabled.
+			# Skip zones that are not enabled for auto-start.
+			if ! zone_is_enabled "${zone}"; then
+				continue
+			fi
 
 			# Skip unsupported hook types.
 			hook="$(zone_get_hook "${zone}")"

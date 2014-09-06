@@ -90,10 +90,10 @@ case "${ACTION}" in
 		# If not, there is nothing to do.
 		isset zone || exit ${EXIT_OK}
 
-		# If the zone is already up, we add the device
-		# to the zone.
-		if zone_is_up ${zone}; then
-			zone_up ${zone}
+		# If the zone is already up or enabled for auto-start,
+		# we add the device to the zone.
+		if zone_is_up "${zone}" || zone_is_enabled "${zone}"; then
+			zone_up "${zone}"
 		fi
 		;;
 
