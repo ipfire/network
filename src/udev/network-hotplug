@@ -97,10 +97,9 @@ case "${ACTION}" in
 						case "${ret}" in
 							${EXIT_OK})
 								log DEBUG "phy '${phy}' was handled by port '${port}'"
-								break
 								;;
 							${EXIT_NOT_HANDLED})
-								log DEBUG "phy '${phy}' was not handled by port '${port}'"
+								: # do nothing
 								;;
 							*)
 								log WARNING "Unknown exit code for port '${port}': ${ret}"
