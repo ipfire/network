@@ -153,7 +153,22 @@ function device_is_batman_adv() {
 
 # Check if the device is a batman-adv bridge port
 function device_is_batman_adv_port() {
-	[ -d "${SYS_CLASS_NET}/${1}/batman_adv" ]
+	local device="${1}"
+
+	if [ -d "${SYS_CLASS_NET}/${device}/batman_adv" ]; then
+		local status="$(<${SYS_CLASS_NET}/${device}/batman_adv/iface_status)"
+
+		case "${status}" in
+			"active")
+				return ${EXIT_TRUE}
+				;;
+			*)
+				return ${EXIT_FALSE}
+				;;
+		esac
+	fi
+
+	return ${EXIT_FALSE}
 }
 
 # Check if the device is a bonding device
