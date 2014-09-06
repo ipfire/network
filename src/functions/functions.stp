@@ -176,18 +176,18 @@ function stp_bridge_set_forward_delay() {
 	local fdelay=${2}
 	assert isinteger fdelay
 
-	# Check if the setting we want is already set.
-	local current_fdelay=$(stp_bridge_get_forward_delay ${bridge})
-	[ ${fdelay} -eq ${current_fdelay} ] && return ${EXIT_OK}
-
 	# The smallest value that may be set is 2.
 	if [ ${fdelay} -lt 2 ]; then
 		fdelay=2
 	fi
 
+	# Check if the setting we want is already set.
+	local current_fdelay=$(stp_bridge_get_forward_delay ${bridge})
+	[ ${fdelay} -eq ${current_fdelay} ] && return ${EXIT_OK}
+
 	# Set the new value.
-	log INFO "Changing forward delay for '${bridge}': ${current_fdelay} --> ${fdelay}"
-	print "$(( ${fdelay} * 100 ))" > ${SYS_CLASS_NET}/${bridge}/bridge/forward_delay
+	log DEBUG "Setting forward delay on bridge '${bridge}' from '${current_fdelay}' to '${fdelay}'"
+	fwrite "${SYS_CLASS_NET}/${bridge}/bridge/forward_delay" "$(( ${fdelay} * 100 ))"
 
 	return ${EXIT_OK}
 }
