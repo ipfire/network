@@ -180,7 +180,7 @@ function device_is_bonding() {
 function device_is_bonded() {
 	local device=${1}
 
-	[ -d "${SYS_CLASS_NET}/${device}/master" ]
+	[ -d "${SYS_CLASS_NET}/${device}/bonding_slave" ]
 }
 
 # Check if the device is a bridge
