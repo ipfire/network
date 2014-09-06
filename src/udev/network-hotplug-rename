@@ -76,8 +76,8 @@ case "${type}" in
 		port=$(port_find_free ${PORT_PATTERN})
 		echo "${port}"
 
-		log DEBUG "Could not find an existing port configuration for '${INTERFACE}'."
-		log DEBUG "${INTERFACE} --> ${port}"
+		log DEBUG "Could not find an existing port configuration for '${INTERFACE}'"
+		log DEBUG "Renaming interface '${INTERFACE}' to '${port}'"
 		;;
 esac
 
