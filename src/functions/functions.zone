@@ -91,6 +91,13 @@ function zone_stop() {
 	service_stop "network@${zone}.service"
 }
 
+function zone_reload() {
+	local zone="${1}"
+	assert zone_exists "${zone}"
+
+	service_reload "network@${zone}.service"
+}
+
 function zone_enable() {
 	# This function will enable the zone
 	# with help of systemd.
@@ -137,6 +144,17 @@ function zone_is_enabled() {
 
 	# Ask systemd if the zone is enabled.
 	if service_is_enabled "network@${zone}.service"; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
+function zone_is_active() {
+	local zone="${1}"
+	assert isset zone
+
+	if service_is_active "network@${zone}.service"; then
 		return ${EXIT_TRUE}
 	fi
 

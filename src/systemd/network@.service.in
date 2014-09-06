@@ -10,6 +10,7 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStart=@sbindir@/network zone %I up
 ExecStop=@sbindir@/network zone %I down
+ExecReload=@sbindir@/network zone %I reload
 
 [Install]
 WantedBy=network.target

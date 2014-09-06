@@ -114,8 +114,10 @@ case "${ACTION}" in
 
 		# If the zone is already up or enabled for auto-start,
 		# we add the device to the zone.
-		if zone_is_up "${zone}" || zone_is_enabled "${zone}"; then
-			zone_up "${zone}"
+		if zone_is_active "${zone}"; then
+			zone_reload "${zone}"
+		elif zone_is_enabled "${zone}"; then
+			zone_start "${zone}"
 		fi
 		;;
 
