@@ -178,16 +178,18 @@ function hook_hotplug() {
 	port_settings_read "${port}" ${HOOK_SETTINGS}
 
 	# Get the address of the phy.
-	local phy_address=$(phy_get_address ${phy})
+	local phy_address=$(phy_get_address "${phy}")
 
 	# Check if the phy is the same we have
 	# read from the configuration file.
 	if [ "${PHY}" = "${phy_address}" ]; then
 		# Bring up the device.
 		port_up "${port}"
+
+		exit ${EXIT_OK}
 	fi
 
-	exit ${EXIT_OK}
+	exit ${EXIT_NOT_HANDLED}
 }
 
 function hook_find_parent() {

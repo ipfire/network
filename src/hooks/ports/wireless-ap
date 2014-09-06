@@ -205,7 +205,9 @@ function hook_hotplug() {
 	if [ "${PHY}" = "${phy_address}" ]; then
 		wireless_create ${port} --phy="${phy_address}" --type="ap" \
 			--address="${ADDRESS}"
+
+		exit ${EXIT_OK}
 	fi
 
-	exit ${EXIT_OK}
+	exit ${EXIT_NOT_HANDLED}
 }

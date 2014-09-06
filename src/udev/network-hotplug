@@ -72,7 +72,21 @@ case "${ACTION}" in
 
 					# Create configured child devices.
 					for port in $(ports_get_all); do
-						port_cmd hotplug ${port} ${phy}
+						port_cmd hotplug "${port}" "${phy}"
+						ret=$?
+
+						case "${ret}" in
+							${EXIT_OK})
+								log DEBUG "phy '${phy}' was handled by port '${port}'"
+								break
+								;;
+							${EXIT_NOT_HANDLED})
+								log DEBUG "phy '${phy}' was not handled by port '${port}'"
+								;;
+							*)
+								log WARNING "Unknown exit code for port '${port}': ${ret}"
+								;;
+						esac
 					done
 					;;
 
