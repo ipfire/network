@@ -379,31 +379,39 @@ function device_get_address() {
 }
 
 function device_set_address() {
-	local device=${1}
-	local addr=${2}
+	assert [ $# -eq 2 ]
+
+	local device="${1}"
+	local addr="${2}"
 	
-	if ! device_exists ${device}; then
+	if ! device_exists "${device}"; then
 		error "Device '${device}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
-	log INFO "Setting address of '${device}' to '${addr}' - was $(device_get_address ${device})."
+	# Do nothing if the address has not changed
+	local old_addr="$(device_get_address "${device}")"
+	if [ -n "${old_addr}" -a "${addr}" = "${old_addr}" ]; then
+		return ${EXIT_OK}
+	fi
+
+	log DEBUG "Setting address of '${device}' from '${old_addr}' to '${addr}'"
 
 	local up
-	if device_is_up ${device}; then
-		device_set_down ${device}
+	if device_is_up "${device}"; then
+		device_set_down "${device}"
 		up=1
 	fi
 
-	ip link set ${device} address ${addr}
+	ip link set "${device}" address "${addr}"
 	local ret=$?
 
 	if [ "${up}" = "1" ]; then
-		device_set_up ${device}
+		device_set_up "${device}"
 	fi
 
 	if [ "${ret}" != "0" ]; then
-		error_log "Could not set address '${addr}' on device '${device}'."
+		error_log "Could not set address '${addr}' on device '${device}'"
 	fi
 
 	return ${ret}
