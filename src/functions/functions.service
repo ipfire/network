@@ -23,11 +23,16 @@ function service_start() {
 	local name=${1}
 	assert isset name
 
-	systemctl start ${name}
+	# Don't start anything if this is already running
+	if service_is_active "${name}"; then
+		return ${EXIT_OK}
+	fi
+
+	systemctl start "${name}"
 
 	# Check, if the service was successfully started and
 	# return a proper exit code.
-	service_is_active ${name}
+	service_is_active "${name}"
 	local ret=$?
 
 	log INFO "Started service '${name}', code=${ret}."
@@ -36,25 +41,25 @@ function service_start() {
 }
 
 function service_stop() {
-	local name=${1}
+	local name="${1}"
 	assert isset name
 
-	systemctl stop ${name}
+	systemctl stop "${name}"
 }
 
 function service_restart() {
-	local name=${1}
+	local name="${1}"
 	assert isset name
 
-	systemctl restart ${name}
+	systemctl restart "${name}"
 }
 
 function service_reload() {
-	local name=${1}
+	local name="${1}"
 	assert isset name
 
-	if service_status ${name}; then
-		systemctl reload ${name}
+	if service_status "${name}"; then
+		systemctl reload "${name}"
 		return $?
 	else
 		log WARNING "Cannot reload service '${name}' which is currently not running."
@@ -62,10 +67,10 @@ function service_reload() {
 }
 
 function service_status() {
-	local name=${1}
+	local name="${1}"
 	assert isset name
 
-	systemctl status ${name} >/dev/null 2>&1
+	systemctl status "${name}" >/dev/null 2>&1
 	return $?
 }
 
@@ -73,7 +78,7 @@ function service_status() {
 # to mark services to be automatically started during
 # boot up.
 function service_enable() {
-	local name=${1}
+	local name="${1}"
 	assert isset name
 
 	systemctl enable "${name}" >/dev/null 2>&1
@@ -83,7 +88,7 @@ function service_enable() {
 # to drop the autostart ability of the service during the
 # boot up.
 function service_disable() {
-	local name=${1}
+	local name="${1}"
 	assert isset name
 
 	systemctl disable "${name}" >/dev/null 2>&1
@@ -100,10 +105,10 @@ function service_is_enabled() {
 }
 
 function service_is_active() {
-	local name=${1}
+	local name="${1}"
 	assert isset name
 
-	systemctl is-active ${name}.service >/dev/null 2>&1
+	systemctl is-active "${name}" >/dev/null 2>&1
 	return $?
 }
 
@@ -111,6 +116,6 @@ function service_get_exitcode() {
 	local name=${1}
 	assert isset name
 
-	local output=$(systemctl show ${name} --property="ExecMainStatus")
+	local output=$(systemctl show "${name}" --property="ExecMainStatus")
 	cli_get_val "${output}"
 }
