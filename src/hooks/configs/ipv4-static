@@ -21,6 +21,8 @@
 
 . /usr/lib/network/header-config
 
+HOOK_MANPAGE="network-config-ipv4-static"
+
 HOOK_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
 
 function hook_check() {
@@ -35,29 +37,73 @@ function hook_check() {
 
 function hook_create() {
 	local zone="${1}"
-	assert isset zone
+	assert zone_exists "${zone}"
 	shift
 
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--address=*)
-				ADDRESS=${1#--address=}
+	local arg
+	while read -r arg; do
+		local key="$(cli_get_key "${arg}")"
+		local val="$(cli_get_val "${arg}")"
+
+		case "${key}" in
+			address)
+				if ! ipv4_is_valid "${val}"; then
+					error "Invalid IPv4 address: ${val}"
+					exit ${EXIT_CONF_ERROR}
+				fi
+
+				ADDRESS="${val}"
 				;;
-			--netmask=*)
-				NETMASK=${1#--netmask=}
+
+			prefix)
+				if ! ipv4_prefix_is_valid "${val}"; then
+					error "Invalid IPv4 prefix: ${val}"
+					exit ${EXIT_CONF_ERROR}
+				fi
+
+				PREFIX="${val}"
 				;;
-			--prefix=*)
-				PREFIX=${1#--prefix=}
+
+			gateway)
+				if ! ipv4_is_valid "${val}"; then
+					error "Invalid IPv4 address for gateway: ${val}"
+					exit ${EXIT_CONF_ERROR}
+				fi
+
+				GATEWAY="${val}"
 				;;
-			--gateway=*)
-				GATEWAY=${1#--gateway=}
+
+			# Compatibility switches
+			netmask)
+				if ! ipv4_netmask_is_valid "${val}"; then
+					error "Invalid netmask: ${val}"
+					exit ${EXIT_CONF_ERROR}
+				fi
+
+				# The netmask will be converted into a prefix
+				PREFIX="$(ipv4_netmask2prefix ${val})"
+				;;
+
+			# Unknown switches
+			*)
+				error "Unhandled argument: ${arg}"
+				exit ${EXIT_CONF_ERROR}
 				;;
 		esac
-		shift
-	done
+	done <<< "$(args $@)"
 
-	if [ -z "${PREFIX}" -a -n "${NETMASK}" ]; then
-		PREFIX=$(ipv4_mask_to_cidr ${NETMASK})
+	if ! isset ADDRESS; then
+		error "You need to provide an IPv4 address"
+		exit ${EXIT_CONF_ERROR}
+	fi
+
+	if ! isset PREFIX; then
+		error "You need to provide an IPv4 prefix"
+		exit ${EXIT_CONF_ERROR}
+	fi
+
+	if ! isset GATEWAY && zone_is_nonlocal "${zone}"; then
+		warning "You did not configure a gateway for a non-local zone"
 	fi
 
 	# XXX maybe we can add some hashing to identify a configuration again
@@ -141,25 +187,3 @@ function hook_status() {
 	exit ${EXIT_OK}
 }
 
-function ipv4_mask_to_cidr() {
-	local mask=0
-
-	local field
-	for field in $(tr '.' ' ' <<<${1}); do
-		mask=$(( $(( ${mask} << 8 )) | ${field} ))
-	done
-
-	local cidr=0
-	local x=$(( 128 << 24 )) # 0x80000000
-
-	while [ $(( ${x} & ${mask} )) -ne 0 ]; do
-		[ ${mask} -eq ${x} ] && mask=0 || mask=$(( ${mask} << 1 ))
-		cidr=$((${cidr} + 1))
-	done
-
-	if [ $(( ${mask} & 2147483647 )) -ne 0 ]; then # 2147483647 = 0x7fffffff
-		echo "Invalid net mask: $1" >&2
-	else
-		echo ${cidr}
-	fi
-}

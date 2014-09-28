@@ -69,17 +69,6 @@ function hook_discover() {
 	exit ${DISCOVER_NOT_SUPPORTED}
 }
 
-# The default help function.
-function hook_help() {
-	# If no man page has been configured, we print an error message.
-	if [ -z "${HOOK_MANPAGE}" ]; then
-		error "There is no help available for hook '${HOOK}'. Exiting."
-		exit ${EXIT_ERROR}
-	fi
-
-	cli_show_man ${HOOK_MANPAGE}
-}
-
 # Do nothing
 function hook_parse_cmdline() {
 	return ${EXIT_OK}

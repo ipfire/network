@@ -45,6 +45,15 @@ function ipv4_prefix_is_valid() {
 	return ${EXIT_TRUE}
 }
 
+function ipv4_netmask_is_valid() {
+	local netmask="${1}"
+
+	# XXX this check could be much better by checking
+	# if the netmask only contains leading ones
+
+	ipv4_is_valid "${netmask}"
+}
+
 function ipv4_detect_duplicate() {
 	local device=${1}
 	local address=${2}
@@ -159,6 +168,30 @@ function ipv4_prefix2netmask() {
 			assert false NOT IMPLEMENTED
 			;;
 	esac
+}
+
+function ipv4_netmask2prefix() {
+	local netmask="${1}"
+	assert isset netmask
+
+	local mask=0
+
+	local field
+	for field in ${netmask//\./ }; do
+		mask=$(( $(( ${mask} << 8 )) | ${field} ))
+	done
+
+	local cidr=0
+	local x="$(( 128 << 24 ))" # 0x80000000
+
+	while [ $(( ${x} & ${mask} )) -ne 0 ]; do
+		[ ${mask} -eq ${x} ] && mask=0 || mask=$(( ${mask} << 1 ))
+		cidr=$(( ${cidr} + 1 ))
+	done
+
+	assert [ $(( ${mask} & 2147483647 )) -eq 0 ]
+
+	print "${cidr}"
 }
 
 function ipv4_get_network() {

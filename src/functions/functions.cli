@@ -26,11 +26,11 @@ function cli_help_requested() {
 
 	if [ -n "${argument}" ]; then
 		if listmatch ${argument} help -h --help; then
-			return ${EXIT_OK}
+			return ${EXIT_TRUE}
 		fi
 	fi
 
-	return ${EXIT_ERROR}
+	return ${EXIT_FALSE}
 }
 
 function cli_run_help() {
