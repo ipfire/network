@@ -34,7 +34,8 @@ function hook_check() {
 }
 
 function hook_create() {
-	local zone=${1}
+	local zone="${1}"
+	assert isset zone
 	shift
 
 	while [ $# -gt 0 ]; do

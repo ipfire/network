@@ -155,8 +155,8 @@ function settings_print() {
 function settings_check() {
 	# If there is a function defined that is called __check
 	# we call that function
-	if [ -n "$(type -t _check)" ]; then
-		_check || return $?
+	if [ -n "$(type -t hook_check)" ]; then
+		hook_check || return $?
 	fi
 
 	return ${EXIT_OK}

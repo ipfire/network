@@ -530,68 +530,60 @@ function zone_has_port() {
 	[ -e "$(zone_dir ${zone})/ports/${port}" ]
 }
 
-# XXX overwritten some lines below
 function zone_config() {
-	local zone=${1}
-	shift
-
-	if ! zone_exists ${zone}; then
-		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	local hook=$(config_get_hook $(zone_dir ${zone})/settings)
-
-	if [ -z "${hook}" ]; then
-		error "Config file did not provide any hook."
-		return ${EXIT_ERROR}
-	fi
-
-	if ! hook_zone_exists ${hook}; then
-		error "Hook '${hook}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	hook_zone_exec ${hook} config ${zone} $@
-}
-
-function zone_config() {
-	local zone=${1}
-	local action=${2}
+	local zone="${1}"
+	local cmd="${2}"
 	shift 2
 
 	assert isset zone
-	assert isset action
-	assert zone_exists ${zone}
+	assert isset cmd
+	assert zone_exists "${zone}"
 
-	# Aliases
-	case "${action}" in
-		del|delete|remove)
-			action="rem"
+	case "${cmd}" in
+		create)
+			zone_config_create "${zone}" "$@"
 			;;
-	esac
-
-	case "${action}" in
-		create|edit|rem)
-			zone_config_${action} ${zone} $@
+		edit)
+			zone_config_edit "${zone}" "$@"
+			;;
+		remove)
+			zone_config_remove "${zone}" "$@"
 			;;
 		*)
-			error "Unrecognized argument: ${action}"
+			error "Unrecognized argument: ${cmd}"
 			cli_usage root-zone-config-subcommands
 			exit ${EXIT_ERROR}
 			;;
 	esac
 }
 
-function zone_config_create() {
-	local zone="${1}"
-	assert isset zone
-	shift
+function zone_config_cmd() {
+	assert [ $# -gt 2 ]
 
-	local hook=$(zone_get_hook "${zone}")
+	local cmd="${1}"
+	local zone="${2}"
+	shift 2
+
+	local hook="$(zone_get_hook "${zone}")"
 	assert isset hook
 
-	hook_zone_exec "${hook}" "config_create" "${zone}" "$@"
+	hook_zone_exec "${hook}" "config_${cmd}" "${zone}" "$@"
+}
+
+function zone_config_create() {
+	zone_config_cmd "create" "$@"
+}
+
+function zone_config_edit() {
+	zone_config_cmd "edit" "$@"
+}
+
+function zone_config_remove() {
+	zone_config_cmd "remove" "$@"
+}
+
+function zone_config_show() {
+	zone_config_cmd "show" "$@"
 }
 
 function zone_show() {
@@ -723,6 +715,33 @@ function zone_ports_status() {
 	zone_ports_cmd port_status $@
 }
 
+function zone_configs_cmd() {
+	assert [ $# -gt 2 ]
+
+	local cmd="${1}"
+	local zone="${2}"
+	shift 2
+
+	assert zone_exists "${zone}"
+
+	local config
+	for config in $(zone_get_configs "${zone}"); do
+		hook_config_exec "${config}" "${cmd}" "${zone}" $@
+	done
+}
+
+function zone_configs_up() {
+	zone_configs_cmd "up" $@
+}
+
+function zone_configs_down() {
+	zone_configs_cmd "down" $@
+}
+
+function zone_configs_status() {
+	zone_configs_cmd "status" $@
+}
+
 function zone_configs_list() {
 	local zone=${1}
 
@@ -732,34 +751,6 @@ function zone_configs_list() {
 
 		basename ${config}
 	done
-}
-
-function zone_configs_cmd() {
-	local cmd=${1}
-	local zone=${2}
-	shift 2
-
-	local hook_zone=$(config_get_hook $(zone_dir ${zone})/settings)
-
-	local hook_config
-	local config
-	for config in $(zone_configs_list ${zone}); do
-		hook_config=$(config_get_hook $(zone_dir ${zone})/configs/${config})
-
-		hook_zone_config_exec ${hook_zone} ${hook_config} ${cmd} ${zone} ${config} $@
-	done
-}
-
-function zone_configs_up() {
-	zone_configs_cmd up $@
-}
-
-function zone_configs_down() {
-	zone_configs_cmd down $@
-}
-
-function zone_configs_status() {
-	zone_configs_cmd config_status $@
 }
 
 function zone_has_ip() {
@@ -797,11 +788,7 @@ function zone_get_supported_port_hooks() {
 }
 
 function zone_get_supported_config_hooks() {
-	local zone=${1}
-
-	local hook=$(zone_get_hook ${zone})
-
-	hook_zone_configs_get_all ${hook}
+	hook_config_get_all
 }
 
 function zone_file() {

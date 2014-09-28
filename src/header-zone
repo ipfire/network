@@ -174,41 +174,26 @@ function hook_config_cmd() {
 		exit ${EXIT_ERROR}
 	fi
 
-	if ! hook_config_exists "${hook_zone}" "${hook_config}"; then
-		log ERROR "Hook '${hook_config}' is not supported for zone '${zone}'."
-		exit ${EXIT_ERROR}
-	fi
+	#if ! hook_config_exists "${hook_zone}" "${hook_config}"; then
+	#	log ERROR "Hook '${hook_config}' is not supported for zone '${zone}'."
+	#	exit ${EXIT_ERROR}
+	#fi
 
-	hook_zone_config_exec "${hook_zone}" "${hook_config}" "${cmd}" "${zone}" "$@"
+	hook_config_exec "${hook_config}" "${cmd}" "${zone}" "$@"
 }
 
 function hook_config_create() {
-	local zone="${1}"
-	assert isset zone
+	assert [ $# -gt 2 ]
 
-	local hook_config="${2}"
-	assert isset hook_config
-
-	shift 2
-
-	if ! listmatch "${hook_config}" $(zone_get_supported_config_hooks ${zone}); then
-		log ERROR "Zone '${zone}' does not support configuration of type '${hook_config}'."
-		exit ${EXIT_ERROR}
-	fi
-
-	local hook_zone="$(zone_get_hook "${zone}")"
-	assert isset hook_zone
-
-	hook_zone_config_exec "${hook_zone}" "${hook_config}" create "${zone}" "$@"
-	exit $?
+	hook_config_cmd "create" "$@"
 }
 
 function hook_config_edit() {
-	hook_config_cmd edit "$@"
+	hook_config_cmd "edit" "$@"
 }
 
 function hook_config_remove() {
-	cmd_not_implemented
+	hook_config_cmd "remove" "$@"
 }
 
 function hook_config_show() {
