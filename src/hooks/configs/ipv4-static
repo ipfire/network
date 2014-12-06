@@ -159,8 +159,12 @@ function hook_down() {
 }
 
 function hook_status() {
-	local zone=${1}
-	local config=${2}
+	local zone="${1}"
+	assert isset zone
+
+	local config="${2}"
+	assert isset config
+
 	shift 2
 
 	if ! device_exists ${zone}; then

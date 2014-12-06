@@ -237,8 +237,7 @@ function zone_edit() {
 		return ${EXIT_ERROR}
 	fi
 
-	local hook=$(config_get_hook $(zone_dir ${zone})/settings)
-
+	local hook="$(zone_get_hook "${zone}")"
 	if [ -z "${hook}" ]; then
 		error "Config file did not provide any hook."
 		return ${EXIT_ERROR}
@@ -303,8 +302,7 @@ function zone_up() {
 		return ${EXIT_ERROR}
 	fi
 
-	local hook=$(config_get_hook $(zone_dir ${zone})/settings)
-
+	local hook="$(zone_get_hook "${zone}")"
 	if [ -z "${hook}" ]; then
 		error "Config file did not provide any hook."
 		return ${EXIT_ERROR}
@@ -331,8 +329,7 @@ function zone_down() {
 		return ${EXIT_ERROR}
 	fi
 
-	local hook=$(config_get_hook $(zone_dir ${zone})/settings)
-
+	local hook="$(zone_get_hook "${zone}")"
 	if [ -z "${hook}" ]; then
 		error "Config file did not provide any hook."
 		return ${EXIT_ERROR}
@@ -356,27 +353,27 @@ function zone_down() {
 }
 
 function zone_status() {
-	local zone=${1}
+	local zone="${1}"
+	assert isset zone
 	shift
 
-	if ! zone_exists ${zone}; then
+	if ! zone_exists "${zone}"; then
 		error "Zone '${zone}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
-	local hook=$(config_get_hook $(zone_dir ${zone})/settings)
-
+	local hook="$(zone_get_hook "${zone}")"
 	if [ -z "${hook}" ]; then
 		error "Config file did not provide any hook."
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_zone_exists ${hook}; then
+	if ! hook_zone_exists "${hook}"; then
 		error "Hook '${hook}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
-	hook_zone_exec ${hook} status ${zone} $@
+	hook_zone_exec "${hook}" "status" "${zone}" "$@"
 
 	# Show that the zone it to be removed soon.
 	if zone_has_remove_tag ${zone}; then
@@ -716,7 +713,7 @@ function zone_ports_status() {
 }
 
 function zone_configs_cmd() {
-	assert [ $# -gt 2 ]
+	assert [ $# -ge 2 ]
 
 	local cmd="${1}"
 	local zone="${2}"
@@ -725,8 +722,11 @@ function zone_configs_cmd() {
 	assert zone_exists "${zone}"
 
 	local config
-	for config in $(zone_get_configs "${zone}"); do
-		hook_config_exec "${config}" "${cmd}" "${zone}" $@
+	for config in $(zone_configs_list "${zone}"); do
+		local config_hook="$(zone_config_get_hook "${zone}" "${config}")"
+		assert isset config_hook
+
+		hook_config_exec "${config_hook}" "${cmd}" "${zone}" "${config}" $@
 	done
 }
 
@@ -751,6 +751,22 @@ function zone_configs_list() {
 
 		basename ${config}
 	done
+}
+
+function zone_config_get_hook() {
+	assert [ $# -eq 2 ]
+
+	local zone="${1}"
+	assert isset zone
+
+	local config="${2}"
+	assert isset config
+
+	local HOOK
+	zone_config_settings_read "${zone}" "${config}" \
+		--ignore-superfluous-settings HOOK
+
+	print "${HOOK}"
 }
 
 function zone_has_ip() {
