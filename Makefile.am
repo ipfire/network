@@ -125,7 +125,6 @@ dist_network_SCRIPTS = \
 	src/functions/functions.ip-tunnel \
 	src/functions/functions.ipv4 \
 	src/functions/functions.ipv6 \
-	src/functions/functions.isdn \
 	src/functions/functions.list \
 	src/functions/functions.lock \
 	src/functions/functions.logging \
@@ -199,8 +198,6 @@ dist_hooks_zones_SCRIPTS = \
 	src/hooks/zones/6to4-tunnel \
 	src/hooks/zones/aiccu \
 	src/hooks/zones/bridge \
-	src/hooks/zones/isdn \
-	src/hooks/zones/isdn-server \
 	src/hooks/zones/modem \
 	src/hooks/zones/pppoe \
 	src/hooks/zones/pptp \
