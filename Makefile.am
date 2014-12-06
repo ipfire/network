@@ -145,7 +145,6 @@ dist_network_SCRIPTS = \
 	src/functions/functions.settings \
 	src/functions/functions.stp \
 	src/functions/functions.sysctl \
-	src/functions/functions.teredo \
 	src/functions/functions.usb \
 	src/functions/functions.util \
 	src/functions/functions.vlan \
@@ -166,8 +165,6 @@ dist_helpers_SCRIPTS = \
 	src/helpers/dhcpd-config-helper \
 	src/helpers/firewall-kernel-init \
 	src/helpers/hostapd-config-helper \
-	src/helpers/miredo-config-helper \
-	src/helpers/miredo-helper \
 	src/helpers/pppd-angel \
 	src/helpers/wpa_supplicant \
 	src/helpers/wpa_supplicant-config-helper
@@ -207,7 +204,6 @@ dist_hooks_zones_SCRIPTS = \
 	src/hooks/zones/modem \
 	src/hooks/zones/pppoe \
 	src/hooks/zones/pptp \
-	src/hooks/zones/teredo \
 	src/hooks/zones/wireless
 
 # ------------------------------------------------------------------------------
