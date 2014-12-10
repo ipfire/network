@@ -356,6 +356,11 @@ function cmd_not_implemented() {
 	assert false "not implemented"
 }
 
+# Increase security of the read command
+function read() {
+	builtin read -r $@
+}
+
 function seq() {
 	if [ $# -eq 2 ]; then
 		eval echo {${1}..${2}}

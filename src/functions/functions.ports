@@ -297,3 +297,58 @@ function port_zone() {
 
 	return ${EXIT_OK}
 }
+
+function port_hotplug_event() {
+	local port="${1}"
+	assert isset port
+
+	hotplug_assert_in_hotplug_event
+
+	port_cmd "hotplug" "${port}"
+}
+
+function port_get_slaves() {
+	local port="${1}"
+
+	port_settings_read "${port}" \
+		--ignore-superfluous-settings SLAVES
+	print "${SLAVES}"
+}
+
+function port_device_is_slave() {
+	assert [ $# -eq 2 ]
+
+	local port="${1}"
+	local device="${2}"
+
+	# Get slaves of port
+	local slaves="$(port_get_slaves "${port}")"
+
+	# Returns true if device is in slaves
+	list_match "${device}" ${slaves}
+}
+
+function port_get_phy() {
+	local port="${1}"
+
+	port_settings_read "${port}" \
+		--ignore-superfluous-settings PHY
+	print "${PHY}"
+}
+
+function port_uses_phy() {
+	assert [ $# -eq 2 ]
+
+	local port="${1}"
+	local phy="${2}"
+
+	# Nothing to do if an empty argument is given
+	if ! isset phy; then
+		return ${EXIT_FALSE}
+	fi
+
+	phy="$(phy_get_address "${phy}")"
+
+	local port_phy="$(port_get_phy "${port}")"
+	[ "${port_phy}" = "${phy}" ]
+}

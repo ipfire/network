@@ -119,6 +119,7 @@ dist_network_SCRIPTS = \
 	src/functions/functions.he \
 	src/functions/functions.hook \
 	src/functions/functions.hostapd \
+	src/functions/functions.hotplug \
 	src/functions/functions.http \
 	src/functions/functions.ip \
 	src/functions/functions.iptables \
@@ -185,12 +186,12 @@ dist_hooks_configs_SCRIPTS = \
 
 dist_hooks_ports_SCRIPTS = \
 	src/hooks/ports/batman-adv \
-	src/hooks/ports/batman-adv-port \
 	src/hooks/ports/bonding \
 	src/hooks/ports/dummy \
 	src/hooks/ports/ethernet \
 	src/hooks/ports/macvlan \
 	src/hooks/ports/vlan \
+	src/hooks/ports/wireless-adhoc \
 	src/hooks/ports/wireless-ap
 
 dist_hooks_zones_SCRIPTS = \

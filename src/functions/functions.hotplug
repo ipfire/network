@@ -1,0 +1,86 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2014  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+function hotplug_assert_in_hotplug_event() {
+	assert [ -n "${IN_HOTPLUG_EVENT}" ]
+}
+
+function hotplug_action() {
+	hotplug_assert_in_hotplug_event
+
+	echo "${ACTION}"
+}
+
+function hotplug_propagate_all_ports() {
+	hotplug_assert_in_hotplug_event
+
+	# Create configured child devices.
+	local port
+	for port in $(ports_get_all); do
+		port_hotplug_event "${port}"
+		local ret="${?}"
+
+		# Log warning for crashed hooks
+		case "${ret}" in
+			${EXIT_OK}|${EXIT_NOT_HANDLED})
+				: # do nothing
+				;;
+			*)
+				log WARNING "Unknown exit code for port '${port}': ${ret}"
+				;;
+		esac
+	done
+}
+
+function hotplug_event_port_is_interface() {
+	hotplug_assert_in_hotplug_event
+
+	local port="${1}"
+	assert isset port
+
+	[ "${port}" = "${INTERFACE}" ]
+}
+
+function hotplug_event_port_is_slave() {
+	hotplug_assert_in_hotplug_event
+
+	local port="${1}"
+	assert isset port
+
+	# Return false if INTERFACE is not set
+	isset INTERFACE || return ${EXIT_FALSE}
+
+	local slaves="$(port_get_slaves "${port}")"
+	list_match "${INTERFACE}" ${SLAVES}
+}
+
+function hotplug_event_port_uses_phy() {
+	hotplug_assert_in_hotplug_event
+
+	local port="${1}"
+	assert isset port
+
+	# Return false if PHY is not set
+	isset PHY || return ${EXIT_FALSE}
+
+	# Returns true if port uses PHY
+	port_uses_phy "${port}" "${PHY}"
+}

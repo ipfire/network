@@ -159,7 +159,7 @@ function hook_up() {
 	fi
 
 	# Start the hostapd service.
-	hostapd_start ${port}
+	#hostapd_start ${port}
 	local ret=$?
 
 	if [ ${ret} -ne ${EXIT_OK} ]; then
@@ -174,37 +174,41 @@ function hook_down() {
 	local port=${1}
 	assert isset port
 
-	# Stop the hostapd daemon.
-	hostapd_stop ${port}
-
-	# Remove the device if it is still present.
-	if device_exists ${port}; then
-		wireless_remove ${port}
+	# Remove the device if present
+	if device_exists "${port}"; then
+		wireless_remove "${port}"
 	fi
 
 	exit ${EXIT_OK}
 }
 
 function hook_hotplug() {
-	local port=${1}
+	local port="${1}"
 	assert isset port
 
-	local phy=${2}
-	assert isset phy
+	case "$(hotplug_action)" in
+		add)
+			# Start hostapd after the port has been brought up
+			if hotplug_event_port_is_interface "${port}"; then
+				hostapd_start "${port}"
 
-	assert port_exists ${port}
+			# Bring up the port when the phy is plugged in
+			elif hotplug_event_port_uses_phy "${port}"; then
+				hook_up "${port}"
+			fi
+			;;
 
-	# Read configuration of port.
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+		remove)
+			# Stop hostapd
+			if hotplug_event_port_is_interface "${port}"; then
+				hostapd_stop "${port}"
+			fi
+			;;
 
-	# Get the address of the phy.
-	local phy_address=$(phy_get_address ${phy})
+		*)
+			exit ${EXIT_NOT_HANDLED}
+			;;
+	esac
 
-	# Check if the phy is the same we have
-	# read from the configuration file.
-	if [ "${PHY}" = "${phy_address}" ]; then
-		hook_up "${port}"
-	fi
-
-	exit ${EXIT_NOT_HANDLED}
+	exit ${EXIT_OK}
 }

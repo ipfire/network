@@ -5,7 +5,7 @@
 ACTION=="add", SUBSYSTEM=="net", PROGRAM="/usr/lib/udev/network-hotplug-rename", RESULT=="?*", NAME="$result"
 
 # Handle all plugged-in devices.
-SUBSYSTEM=="net", RUN+="/usr/lib/udev/network-hotplug"
+ACTION=="add|remove", SUBSYSTEM=="net|ieee80211", RUN+="/usr/lib/udev/network-hotplug"
 
 # Handle all serial devices (like modems and so on...).
 KERNEL=="ttyUSB*", ENV{NETWORK_USB_SERIAL_DEVICE_IGNORE}!="1", RUN+="/usr/lib/udev/network-hotplug-serial"

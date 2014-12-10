@@ -24,7 +24,31 @@ function batman_adv_start() {
 	module_load "batman-adv"
 }
 
-function batman_adv_interface_add() {
+function batman_adv_add() {
+	local device="${1}"
+	assert isset device
+
+	local cmd="ip link add name ${device} type batadv"
+	cmd_quiet "${cmd}"
+	local ret=$?
+
+	if [ ${ret} -eq ${EXIT_OK} ]; then
+		log DEBUG "batman-adv device '${device}' has been created"
+	else
+		log ERROR "batman-adv device '${device}' could not be created: ${ret}"
+	fi
+
+	return ${ret}
+}
+
+function batman_adv_delete() {
+	local device="${1}"
+	assert isset device
+
+	device_delete "${device}"
+}
+
+function batman_adv_attach() {
 	local device=${1}
 	assert isset device
 
@@ -37,7 +61,7 @@ function batman_adv_interface_add() {
 	fwrite "${SYS_CLASS_NET}/${port}/batman_adv/mesh_iface" "${device}"
 }
 
-function batman_adv_interface_del() {
+function batman_adv_detach() {
 	local port=${1}
 	assert isset port
 

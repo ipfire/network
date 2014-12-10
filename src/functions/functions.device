@@ -164,8 +164,8 @@ function device_is_batman_adv() {
 	[ -d "${SYS_CLASS_NET}/${1}/mesh" ]
 }
 
-# Check if the device is a batman-adv bridge port
-function device_is_batman_adv_port() {
+# Check if the device is a batman-adv slave port
+function device_is_batman_adv_slave() {
 	local device="${1}"
 
 	if [ -d "${SYS_CLASS_NET}/${device}/batman_adv" ]; then
@@ -212,6 +212,14 @@ function device_is_wireless_monitor() {
 
 	device_is_wireless "${device}" && \
 		device_matches_pattern "${device}" "${PORT_PATTERN_WIRELESS_MONITOR}"
+}
+
+function device_is_wireless_adhoc() {
+	local device="${1}"
+	assert isset device
+
+	device_is_wireless "${device}" && \
+		device_matches_pattern "${device}" "${PORT_PATTERN_WIRELESS_ADHOC}"
 }
 
 function device_get_bridge() {
@@ -356,11 +364,11 @@ function device_get_type() {
 	elif device_is_batman_adv ${device}; then
 		echo "batman-adv"
 
-	elif device_is_batman_adv_port ${device}; then
-		echo "batman-adv-port"
-
 	elif device_is_loopback ${device}; then
 		echo "loopback"
+
+	elif device_is_wireless_adhoc ${device}; then
+		echo "wireless-adhoc"
 
 	elif device_is_wireless ${device}; then
 		echo "wireless"

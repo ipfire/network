@@ -21,24 +21,21 @@
 
 . /usr/lib/network/header-port
 
-HOOK_SETTINGS="HOOK ADDRESS MESH_ID SSID CHANNEL PHY"
+HOOK_SETTINGS="HOOK ADDRESS BSSID SSID CHANNEL MTU PHY"
 
 ADDRESS=$(mac_generate)
+BSSID=
 CHANNEL=1
-MESH_ID=
+MTU=1500
 PHY=
 SSID=
-
-# batman-adv inserts an additional header of 28 bytes, so we set the MTU
-# to 1560, that normal ethernet packets with 1500 bytes can pass the network.
-MTU=1560
 
 function hook_check() {
 	assert isset ADDRESS
 	assert ismac ADDRESS
 	assert isset CHANNEL
-	assert isset MESH_ID
-	assert ismac MESH_ID
+	assert isset BSSID
+	assert ismac BSSID
 	assert isset PHY
 	assert ismac PHY
 	assert isset SSID
@@ -50,17 +47,20 @@ function hook_create() {
 			--address=*)
 				ADDRESS=$(cli_get_val ${1})
 				;;
+			--bssid=*)
+				BSSID=$(cli_get_val ${1})
+				;;
 			--channel=*)
 				CHANNEL=$(cli_get_val ${1})
+				;;
+			--mtu=*)
+				MTU="$(cli_get_val "${1}")"
 				;;
 			--phy=*)
 				PHY=$(cli_get_val ${1})
 				;;
 			--ssid=*)
 				SSID=$(cli_get_val ${1})
-				;;
-			--mesh-id=*)
-				MESH_ID=$(cli_get_val ${1})
 				;;
 			*)
 				warning "Ignoring unknown argument '${1}'"
@@ -73,7 +73,7 @@ function hook_create() {
 	PHY=$(phy_get ${PHY})
 	PHY=$(phy_get_address ${PHY})
 
-	local port=$(port_find_free ${PORT_PATTERN_BATMAN_ADV_PORT})
+	local port=$(port_find_free ${PORT_PATTERN_WIRELESS_ADHOC})
 	assert isset port
 
 	port_settings_write "${port}" ${HOOK_SETTINGS}
@@ -90,11 +90,14 @@ function hook_edit() {
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
+			--bssid=*)
+				BSSID=$(cli_get_val ${1})
+				;;
 			--channel=*)
 				CHANNEL=$(cli_get_val ${1})
 				;;
-			--mesh-id=*)
-				MESH_ID=$(cli_get_val ${1})
+			--mtu=*)
+				MTU="$(cli_get_val "${1}")"
 				;;
 			--ssid=*)
 				SSID=$(cli_get_val ${1})
@@ -126,71 +129,62 @@ function hook_up() {
 
 	# Create the wireless device, if it does not exist, yet.
 	if ! device_exists ${port}; then
-		wireless_create ${port} \
-			--address="${ADDRESS}" \
-			--phy="${phy}" \
-			--type="ibss"
-	fi
-
-	# Set the MTU.
-	device_set_mtu "${port}" "${MTU}"
-
-	# Join the ad-hoc network.
-	wireless_ibss_join "${port}" --channel="${CHANNEL}" \
-		--bssid="${MESH_ID}" --essid="${SSID}"
-
-	# Add the device as a batman-adv device.
-	local parent="$(hook_find_parent ${port})"
-	if isset parent; then
-		batman_adv_interface_add "${parent}" "${port}"
+		wireless_create ${port} --address="${ADDRESS}" \
+			--phy="${phy}" --type="ibss"
 	fi
 
 	exit ${EXIT_OK}
 }
 
 function hook_down() {
-	local port=${1}
+	local port="${1}"
 	assert isset port
 
-	# Remove the batman-adv device.
-	batman_adv_interface_del "${port}"
+	# Do nothing if the device already went away
+	if ! device_exists "${port}"; then
+		exit ${EXIT_OK}
+	fi
 
 	# Leave the ad-hoc network.
 	wireless_ibss_leave "${port}"
 
 	# Remove the device if it is still present.
-	if device_exists ${port}; then
-		wireless_remove ${port}
-	fi
+	wireless_remove "${port}"
 
 	exit ${EXIT_OK}
 }
 
 function hook_hotplug() {
-	local port=${1}
+	local port="${1}"
 	assert isset port
 
-	local phy=${2}
-	assert isset phy
-
-	assert port_exists ${port}
-
-	# Read configuration of port.
 	port_settings_read "${port}" ${HOOK_SETTINGS}
 
-	# Get the address of the phy.
-	local phy_address=$(phy_get_address "${phy}")
+	case "$(hotplug_action)" in
+		add)
+			# Join the adhoc network after the device has
+			# been created...
+			if hotplug_event_port_is_interface "${port}"; then
+				# Set the MTU.
+				if isinteger MTU; then
+					device_set_mtu "${port}" "${MTU}"
+				fi
 
-	# Check if the phy is the same we have
-	# read from the configuration file.
-	if [ "${PHY}" = "${phy_address}" ]; then
-		# Bring up the device.
-		port_up "${port}"
+				wireless_ibss_join "${port}" --channel="${CHANNEL}" \
+					--bssid="${BSSID}" --essid="${SSID}"
 
-		exit ${EXIT_OK}
-	fi
+			# Bring up the port when the phy is plugged in
+			elif hotplug_event_port_uses_phy "${port}"; then
+				hook_up "${port}"
+			fi
+			;;
 
-	exit ${EXIT_NOT_HANDLED}
+		*)
+			exit ${EXIT_NOT_HANDLED}
+			;;
+	esac
+
+	exit ${EXIT_OK}
 }
 
 function hook_find_parent() {

@@ -19,118 +19,120 @@
 #                                                                             #
 ###############################################################################
 
+IN_HOTPLUG_EVENT=1
+
+# Setup logging.
+LOG_FACILITY="network-hotplug"
+
 . /usr/lib/network/functions
 
 # Read network settings
 network_settings_read
 
-# Setup logging.
-LOG_FACILITY="network-hotplug"
-
-log DEBUG "Called with ACTION='${ACTION}', INTERFACE='${INTERFACE}'."
+log DEBUG "Called with SUBSYSTEM='${SUBSYSTEM}', ACTION='${ACTION}'"
 
 # Check if the udev environment variables are properly set.
 assert isset ACTION
-assert isset INTERFACE
 
-# Check, if the device is a physical network interface and
-# if we can handle it.
-if device_exists ${INTERFACE}; then
-	# Skip wireless monitor devices
-	if device_is_wireless_monitor "${INTERFACE}"; then
-		exit ${EXIT_OK}
-	fi
-
-	type="$(device_get_type "${INTERFACE}")"
-	case "${type}" in
-		# Remove automatically created bonding interface without any configuration
-		bonding)
-			port_exists "${INTERFACE}" || bonding_remove "${INTERFACE}"
-			exit ${EXIT_OK}
-			;;
-		ethernet)
-			log DEBUG "Called for interface '${INTERFACE}' which is a virtual interface. Exiting."
-			exit ${EXIT_OK}
-			;;
-	esac
-fi
-
-case "${ACTION}" in
-	add|register)
-		# Handle hotplug events for zones.
-		if zone_exists "${INTERFACE}"; then
-			# TODO When e.g. a wireless device is plugged in,
-			# the right zone needs to be searched and started.
-			exit ${EXIT_OK}
-
-		# Check, if there is a port configuration for that device.
-		elif port_exists ${INTERFACE}; then
-			port=${INTERFACE}
-
-		# Create new configuration for _real_ network devices.
+case "${SUBSYSTEM}" in
+	ieee80211)
+		PHY="$(basename "${DEVPATH}")"
+		if phy_exists "${PHY}"; then
+			PHY_ADDRESS="$(phy_get_address "${PHY}")"
+			log DEBUG "  PHY='${PHY}', PHY_ADDRESS='${PHY_ADDRESS}'"
 		else
-			type=$(device_get_type ${INTERFACE})
-			case "${type}" in
-				# If the given device was not configured,
-				# we create an initial configuration.
-				ethernet|real)
-					port_create ethernet ${INTERFACE}
-					;;
-
-				# Handle batman-adv and wireless devices.
-				batman-adv|batman-adv-port|wireless)
-					# Load regulatory domain for wireless devices
-					wireless_init_reg_domain
-
-					# Save the phy of this device for later.
-					phy=$(phy_get ${INTERFACE})
-					assert isset phy
-
-					# Remove the unconfigured wireless device.
-					wireless_remove ${INTERFACE}
-
-					# Create configured child devices.
-					for port in $(ports_get_all); do
-						port_cmd hotplug "${port}" "${phy}"
-						ret=$?
-
-						case "${ret}" in
-							${EXIT_OK})
-								log DEBUG "phy '${phy}' was handled by port '${port}'"
-								;;
-							${EXIT_NOT_HANDLED})
-								: # do nothing
-								;;
-							*)
-								log WARNING "Unknown exit code for port '${port}': ${ret}"
-								;;
-						esac
-					done
-					;;
-
-				# Do nothing for all the rest.
-				*)
-					log DEBUG "Don't create a port configuration for device '${INTERFACE}' of type '${type}'."
-					;;
-			esac
-			exit ${EXIT_OK}
+			PHY=""
 		fi
 
-		# Check, if the device is configured in a zone.
-		# If not, there is nothing to do.
-		zone=$(port_zone "${port}")
-		if isset zone; then
-			zone_hotplug_event "${zone}"
-			exit ${?}
-		fi
+		# Propagate the hotplug event to all configured port hooks
+		hotplug_propagate_all_ports || exit ${EXIT_ERROR}
 		;;
 
-	remove|unregister)
-		# After the interface has been removed/unplugged,
-		# there are often daemons (like hostapd) which need
-		# to be stopped.
-		port_exists ${INTERFACE} && port_down ${INTERFACE}
+	net)
+		assert isset INTERFACE
+
+		# Don't do anything for zones
+		if zone_exists "${INTERFACE}"; then
+			exit ${EXIT_OK}
+		fi
+
+		# Get the internal type of the device for later processing
+		TYPE="$(device_get_type "${INTERFACE}")"
+
+		log DEBUG "  INTERFACE='${INTERFACE}', TYPE='${TYPE}'"
+
+		# Stop processing rules for wireless monitoring devices
+		if device_is_wireless_monitor "${INTERFACE}"; then
+			exit ${EXIT_OK}
+		fi
+
+		# Handle special cases like removing automatically created
+		# devices that we don't want
+		case "${ACTION},${TYPE}" in
+			# Bonding
+			add,bonding)
+				# Remove bonding devices without configuration
+				if ! port_exists "${INTERFACE}"; then
+					bonding_remove "${INTERFACE}"
+					exit ${EXIT_OK}
+				fi
+				;;
+
+			# Ethernet
+			add,ethernet)
+				# Create a default port for all ethernet devices
+				if ! port_exists "${INTERFACE}"; then
+					port_create "ethernet" "${INTERFACE}"
+					exit ${EXIT_OK}
+				fi
+				;;
+
+			# Wireless devices
+			add,wireless)
+				# Remove wireless devices without configuration
+				if ! port_exists "${INTERFACE}"; then
+					wireless_remove "${INTERFACE}"
+					exit ${EXIT_OK}
+				fi
+
+				# Load regulatory domain for wireless devices
+				wireless_init_reg_domain
+				;;
+
+			# Don't propagate removal events for ports that don't exist
+			remove,*)
+				if ! port_exists "${INTERFACE}"; then
+					exit ${EXIT_OK}
+				fi
+				;;
+		esac
+
+		if ! port_exists "${INTERFACE}"; then
+			log ERROR "Got to hotplug event for a port which does not exist: ${INTERFACE}"
+			exit ${EXIT_ERROR}
+		fi
+
+		# Propagate the hotplug event to all configured port hooks
+		hotplug_propagate_all_ports || exit ${EXIT_ERROR}
+
+		# Check, if the device is configured in a zone.
+		# If so, propagate the event to the zone, too.
+		case "${ACTION}" in
+			add)
+				zone="$(port_zone "${INTERFACE}")"
+				if isset zone; then
+					zone_hotplug_event "${zone}" || exit ${EXIT_ERROR}
+				fi
+				;;
+		esac
+
+		exit ${EXIT_OK}
+		;;
+
+	*)
+		log ERROR "Called for an unsupported subsystem: ${SUBSYSTEM}"
+		exit ${EXIT_ERROR}
 		;;
 esac
 
-exit ${EXIT_OK}
+exit ${EXIT_NOT_HANDLED}

@@ -100,22 +100,16 @@ function hook_up() {
 
 	port_settings_read "${port}" ${HOOK_SETTINGS}
 
-	# This cannot be started manually, but is created automatically
-	# when a slave device is brought up and set up by _hotplug.
-
-	local slave
-	for slave in ${SLAVES}; do
-		port_up "${slave}"
-	done
-
-	# If the port has been created (does not happen, when there are
-	# no slaves), we bring it up.
-	if device_exists "${port}"; then
-		# Set the address.
-		device_set_address "${port}" "${ADDRESS}"
-
-		device_set_up "${port}"
+	# Create batman device if it does not exist, yet.
+	if ! device_exists "${port}"; then
+		batman_adv_add "${port}"
 	fi
+
+	# Set the address.
+	device_set_address "${port}" "${ADDRESS}"
+
+	# Bring up the port
+	device_set_up "${port}"
 
 	exit ${EXIT_OK}
 }
@@ -131,21 +125,66 @@ function hook_down() {
 		port_down "${slave}"
 	done
 
+	# Remove the batman device
+	device_exists "${port}" && batman_adv_delete "${port}"
+
 	exit ${EXIT_OK}
 }
 
-#function hook_hotplug() {
-#	local port=${1}
-#	assert isset port
-#
-#	local phy=${2}
-#	assert isset phy
-#
-#	# Bring up the device.
-#	port_up "${port}"
-#
-#	exit ${EXIT_OK}
-#}
+function hook_hotplug() {
+	local port="${1}"
+	assert isset port
+
+	case "$(hotplug_action)" in
+		add)
+			# Don't handle this event if the batman
+			# device has not been started, yet.
+			#if ! device_exists "${port}"; then
+			#	exit ${EXIT_NOT_HANDLED}
+			#fi
+
+			# Handle events of the same interface
+			if hotplug_event_port_is_interface "${port}"; then
+				# Read configuration
+				port_settings_read "${port}"
+
+				# Bring up all slaves
+				# They will be attached by their own hotplug event
+				local slave
+				for slave in ${SLAVES}; do
+					if port_exists "${slave}"; then
+						port_up "${slave}"
+					fi
+				done
+
+				exit ${EXIT_OK}
+
+			# Handle slave devices that have just been created and
+			# attach them.
+			elif hotplug_event_port_is_slave "${port}"; then
+				device_exists "${port}" || port_up "${port}"
+
+				batman_adv_attach "${port}" "${INTERFACE}"
+			fi
+
+			exit ${EXIT_OK}
+			;;
+
+		remove)
+			# Bring down all slaves when the batman device went down
+			local slave
+			for slave in ${SLAVES}; do
+				port_down "${slave}"
+			done
+
+			exit ${EXIT_OK}
+			;;
+
+		*)
+			exit ${EXIT_NOT_HANDLED}
+			;;
+	esac
+}
 
 function hook_status() {
 	local port=${1}

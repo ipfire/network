@@ -90,3 +90,17 @@ function phy_get_address() {
 
 	print "$(<${path})"
 }
+
+function phy_get_devices() {
+	local phy="${1}"
+	assert isset phy
+
+	local device
+	for device in $(device_get_all); do
+		local p="$(device_get_phy "${device}")"
+
+		if [ "${phy}" = "${p}" ]; then
+			print "${device}"
+		fi
+	done
+}
