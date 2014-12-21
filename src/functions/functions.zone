@@ -81,24 +81,7 @@ function zone_start() {
 	service_start "network@${zone}.service"
 }
 
-function zone_stop() {
-	# This function will bring down the zone
-	# 'asynchronously' with help of systemd.
-
-	local zone=${1}
-	assert zone_exists ${zone}
-
-	service_stop "network@${zone}.service"
-}
-
-function zone_reload() {
-	local zone="${1}"
-	assert zone_exists "${zone}"
-
-	service_reload "network@${zone}.service"
-}
-
-function zone_hotplug_event() {
+function zone_start_auto() {
 	local zone="${1}"
 	assert zone_exists "${zone}"
 
@@ -118,6 +101,32 @@ function zone_hotplug_event() {
 
 	# Otherwise, nothing will be done.
 	return ${EXIT_OK}
+}
+
+function zone_stop() {
+	# This function will bring down the zone
+	# 'asynchronously' with help of systemd.
+
+	local zone=${1}
+	assert zone_exists ${zone}
+
+	service_stop "network@${zone}.service"
+}
+
+function zone_reload() {
+	local zone="${1}"
+	assert zone_exists "${zone}"
+
+	service_reload "network@${zone}.service"
+}
+
+function zone_hotplug_event() {
+	local zone="${1}"
+	assert isset zone
+
+	hotplug_assert_in_hotplug_event
+
+	zone_cmd "hotplug" "${zone}"
 }
 
 function zone_enable() {
@@ -181,6 +190,27 @@ function zone_is_active() {
 	fi
 
 	return ${EXIT_FALSE}
+}
+
+function zone_is_enabled_or_active() {
+	local zone="${1}"
+	assert isset zone
+
+	zone_is_enabled "${zone}" || zone_is_active "${zone}"
+}
+
+function zone_cmd() {
+	local cmd="${1}"
+	local port="${2}"
+	shift 2
+
+	assert isset cmd
+	assert isset zone
+
+	local hook="$(zone_get_hook ${zone})"
+	assert isset hook
+
+	hook_exec zone "${hook}" "${cmd}" "${zone}" $@
 }
 
 function zone_create() {

@@ -87,88 +87,117 @@ function hook_up() {
 	zone_settings_read "${zone}" ${HOOK_SETTINGS}
 
 	# Create the bridge if it does not already exist.
-	if ! device_exists ${zone}; then
-		bridge_create ${zone} \
-			--address=${MAC} --mtu=${MTU}
-
-	# Adjust MAC address and MTU if needed.
-	else
-		device_set_address ${zone} ${MAC}
-		device_set_mtu ${zone} ${MTU}
+	if ! device_exists "${zone}"; then
+		bridge_create "${zone}" \
+			--address="${MAC}" \
+			--mtu="${MTU}"
 	fi
 
 	# Enable STP
 	if enabled STP; then
-		stp_enable ${zone}
+		stp_enable "${zone}"
 
-		if [ -n "${STP_FORWARD_DELAY}" ]; then
-			stp_bridge_set_forward_delay ${zone} ${STP_FORWARD_DELAY}
+		if isset STP_FORWARD_DELAY; then
+			stp_bridge_set_forward_delay "${zone}" "${STP_FORWARD_DELAY}"
 		fi
 
-		if [ -n "${STP_HELLO}" ]; then
-			stp_bridge_set_hello_time ${zone} ${STP_HELLO}
+		if isset STP_HELLO; then
+			stp_bridge_set_hello_time "${zone}" "${STP_HELLO}"
 		fi
 
-		if [ -n "${STP_MAXAGE}" ]; then
-			stp_bridge_set_max_age ${zone} ${STP_MAXAGE}
+		if isset STP_MAXAGE; then
+			stp_bridge_set_max_age "${zone}" "${STP_MAXAGE}"
 		fi
 
-		if [ -n "${STP_PRIORITY}" ]; then
-			stp_bridge_set_priority ${zone} ${STP_PRIORITY}
+		if isset STP_PRIORITY; then
+			stp_bridge_set_priority "${zone}" "${STP_PRIORITY}"
 		fi
 	else
-		stp_disable ${zone}
+		stp_disable "${zone}"
 	fi
 
-	device_set_up ${zone}
+	device_set_up "${zone}"
 
 	# XXX Currently, there is a bug (in the linux kernel?) that we need to
 	# set our bridges to promisc mode.
-	device_set_promisc ${zone} on
+	device_set_promisc "${zone}" on
 
-	# Bring all ports up
-	zone_ports_up ${zone}
-	zone_configs_up ${zone}
+	# Bring up all ports
+	zone_ports_up "${zone}"
+
+	# Bring up all configurations
+	zone_configs_up "${zone}"
+
+	exit ${EXIT_OK}
+}
+
+function hook_hotplug() {
+	local zone="${1}"
+	assert isset zone
+
+	case "$(hotplug_action)" in
+		add)
+			# Handle ports of this zone that have just been added
+			if hotplug_event_interface_is_port_of_zone "${zone}"; then
+				# Bring up the zone if it is enabled but not active, yet.
+				if zone_is_enabled "${zone}" && ! zone_is_active "${zone}"; then
+					zone_start "${zone}"
+				fi
+
+				hook_port_up "${zone}" "${INTERFACE}"
+			fi
+			;;
+		remove)
+			# Handle ports of this zone that have just been removed
+			if hotplug_event_interface_is_port_of_zone "${zone}"; then
+				hook_port_down "${zone}" "${INTERFACE}"
+			fi
+			;;
+		*)
+			exit ${EXIT_NOT_HANDLED}
+			;;
+	esac
 
 	exit ${EXIT_OK}
 }
 
 function hook_down() {
-	local zone=${1}
+	local zone="${1}"
 	assert isset zone
 
-	if ! device_is_up ${zone}; then
+	if ! device_is_up "${zone}"; then
 		warning "Zone '${zone}' is not up"
 		exit ${EXIT_OK}
 	fi
 
-	zone_configs_down ${zone}
-	zone_ports_down ${zone}
+	# Stop all the configs.
+	zone_configs_down "${zone}"
 
-	# XXX See remark in _up().
-	device_set_promisc ${zone} off
+	# Bring down all the ports.
+	zone_ports_down "${zone}"
 
-	device_set_down ${zone}
-	bridge_delete ${zone}
+	# Remove the bridge.
+	device_set_down "${zone}"
+	bridge_delete "${zone}"
 
 	exit ${EXIT_OK}
 }
 
 function hook_status() {
-	local zone=${1}
+	local zone="${1}"
 	assert isset zone
 
 	# Print the default header.
-	cli_device_headline ${zone}
+	cli_device_headline "${zone}"
 
 	# Exit if zone is down
-	if ! zone_is_up ${zone}; then
+	if ! zone_is_up "${zone}"; then
 		echo # Empty line
 		exit ${EXIT_ERROR}
 	fi
 
 	cli_headline 2 "Spanning Tree Protocol information"
-	if stp_is_enabled ${zone}; then
+	if stp_is_enabled "${zone}"; then
 		local proto=$(stp_bridge_get_protocol ${zone})
 
 		cli_print_fmt1 2 "Version"	"$(stp_get_name ${proto})"
@@ -199,11 +228,11 @@ function hook_status() {
 	fi
 
 	cli_headline 2 "Ports"
-	zone_ports_status ${zone}
+	zone_ports_status "${zone}"
 	cli_space
 
 	cli_headline 2 "Configurations"
-	zone_configs_cmd status ${zone}
+	zone_configs_cmd status "${zone}"
 	cli_space
 
 	exit ${EXIT_OK}
@@ -283,13 +312,13 @@ function hook_port_up() {
 	local zone="${1}"
 	local port="${2}"
 
-	# Try bringing up the port
-	port_up "${port}"
-
-	# If the port could not be brought up, we will
-	# log an error message and exit.
+	# Try bringing up the port if it has not been
+	# brought up before.
+	# We will get here as soon as the port device has
+	# been created and will then connect it with the bridge.
 	if ! device_exists "${port}"; then
-		log WARNING "Port '${port}' cannot be attached to zone '${zone}' as it does not exist"
+		port_up "${port}"
+
 		exit ${EXIT_OK}
 	fi
 
@@ -306,6 +335,9 @@ function hook_port_up() {
 
 	# TODO Apply priority (#10609)
 
+	# Make sure that the port is up
+	device_set_up "${port}"
+
 	exit ${EXIT_OK}
 }
 
@@ -315,9 +347,11 @@ function hook_port_down() {
 	local zone="${1}"
 	local port="${2}"
 
-	bridge_detach_device "${zone}" "${port}"
+	if device_exists "${port}"; then
+		bridge_detach_device "${zone}" "${port}"
 
-	port_down "${port}"
+		port_down "${port}"
+	fi
 
 	exit ${EXIT_OK}
 }

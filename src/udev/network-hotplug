@@ -115,16 +115,8 @@ case "${SUBSYSTEM}" in
 		# Propagate the hotplug event to all configured port hooks
 		hotplug_propagate_all_ports || exit ${EXIT_ERROR}
 
-		# Check, if the device is configured in a zone.
-		# If so, propagate the event to the zone, too.
-		case "${ACTION}" in
-			add)
-				zone="$(port_zone "${INTERFACE}")"
-				if isset zone; then
-					zone_hotplug_event "${zone}" || exit ${EXIT_ERROR}
-				fi
-				;;
-		esac
+		# Propagate the hotplug event to all configured zones
+		hotplug_propagate_all_zones || exit ${EXIT_ERROR}
 
 		exit ${EXIT_OK}
 		;;

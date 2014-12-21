@@ -23,6 +23,12 @@ function hook_info() {
 	echo "HOOK=\"${HOOK}\""
 }
 
+function hook_hotplug() {
+	# If the hook does not handle the hotplug event, it
+	# must return EXIT_NOT_HANDLED.
+	exit ${EXIT_NOT_HANDLED}
+}
+
 function hook_create() {
 	local zone="${1}"
 	assert isset zone

@@ -161,7 +161,7 @@ function hook_hotplug() {
 
 			# Handle slave devices that have just been created and
 			# attach them.
-			elif hotplug_event_port_is_slave "${port}"; then
+			elif hotplug_event_interface_is_slave_of_port "${port}"; then
 				device_exists "${port}" || port_up "${port}"
 
 				batman_adv_attach "${port}" "${INTERFACE}"
