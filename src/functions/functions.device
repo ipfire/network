@@ -797,3 +797,22 @@ function device_get_duplex() {
 
 	__device_get_file ${device} duplex
 }
+
+function device_get_link_string() {
+	local device="${1}"
+	assert isset device
+
+	local s
+
+	local speed="$(device_get_speed "${device}")"
+	if isset speed; then
+		list_append s "${speed} MBit/s"
+	fi
+
+	local duplex="$(device_get_duplex "${device}")"
+	if isset duplex; then
+		list_append s "${duplex} duplex"
+	fi
+
+	print "${s}"
+}
