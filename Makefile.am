@@ -130,7 +130,6 @@ dist_network_SCRIPTS = \
 	src/functions/functions.lock \
 	src/functions/functions.logging \
 	src/functions/functions.macros \
-	src/functions/functions.macvlan \
 	src/functions/functions.modem \
 	src/functions/functions.phy \
 	src/functions/functions.ports \
@@ -189,7 +188,6 @@ dist_hooks_ports_SCRIPTS = \
 	src/hooks/ports/bonding \
 	src/hooks/ports/dummy \
 	src/hooks/ports/ethernet \
-	src/hooks/ports/macvlan \
 	src/hooks/ports/vlan \
 	src/hooks/ports/wireless-adhoc \
 	src/hooks/ports/wireless-ap
