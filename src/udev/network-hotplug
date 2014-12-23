@@ -78,6 +78,15 @@ case "${SUBSYSTEM}" in
 				fi
 				;;
 
+			# dummy
+			add,dummy)
+				# Remove the by default created dummy device
+				if [ "${INTERFACE}" = "dummy0" ]; then
+					dummy_remove "${INTERFACE}"
+					exit ${EXIT_OK}
+				fi
+				;;
+
 			# Ethernet
 			add,ethernet)
 				# Create a default port for all ethernet devices
