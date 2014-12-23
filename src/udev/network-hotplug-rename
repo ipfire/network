@@ -60,7 +60,7 @@ type=$(device_get_type ${INTERFACE})
 log DEBUG "Interface '${INTERFACE}' is of type '${type}'."
 
 case "${type}" in
-	ethernet|real)
+	ethernet)
 		# Search within all the port configurations
 		# if this port has already been configured.
 		for port in $(ports_get_all); do

@@ -239,8 +239,8 @@ function cli_device_discover() {
 	local device=${1}
 	shift
 
-	local device_type=$(device_get_type ${device})
-	if [ "${device_type}" != "real" ]; then
+	# This can only be executed for ethernet (or compatible) devices
+	if ! device_is_ethernet_compatible "${device}"; then
 		return ${EXIT_OK}
 	fi
 

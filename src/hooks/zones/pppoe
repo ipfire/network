@@ -136,7 +136,8 @@ function hook_down() {
 function hook_discover() {
 	local device=${1}
 
-	if [ "$(device_get_type ${device})" != "real" ]; then
+	# This obviously only works on ethernet (or compatible) devices
+	if ! device_is_ethernet_compatible "${device}"; then
 		exit ${EXIT_ERROR}
 	fi
 
