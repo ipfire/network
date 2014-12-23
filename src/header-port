@@ -72,3 +72,57 @@ function hook_status() {
 	cli_device_headline "${port}" --long
 	exit ${EXIT_OK}
 }
+
+# Create any virtual devices, but don't bring them up
+# Must tolerate that the device may already exist
+function hook_create() {
+	cmd_not_implemented
+}
+
+# Must tolerate that the device may not exist
+function hook_remove() {
+	cmd_not_implemented
+}
+
+# Just bring up the device
+function hook_default_up() {
+	local port="${1}"
+	assert isset port
+
+	if ! device_exists "${port}"; then
+		log ERROR "Port '${port}' does not exist and cannot be brought up"
+		exit ${EXIT_ERROR}
+	fi
+
+	# Bring up the port
+	device_set_up "${port}"
+
+	# Bring up all slaves if the port has any
+	local slave
+	for slave in $(port_get_slaves "${port}"); do
+		port_up "${slave}"
+	done
+}
+
+function hook_up() {
+	hook_default_up $@
+}
+
+function hook_default_down() {
+	local port="${1}"
+	assert isset port
+
+	if device_exists "${port}"; then
+		device_set_down "${port}"
+	fi
+
+	# Bring down all slaves if the port has any
+	local slave
+	for slave in $(port_get_slaves "${port}"); do
+		port_down "${slave}"
+	done
+}
+
+function hook_down() {
+	hook_default_down $@
+}

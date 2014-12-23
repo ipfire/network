@@ -730,6 +730,14 @@ function zone_ports_cmd() {
 	done
 }
 
+function zone_ports_create() {
+	zone_ports_cmd "port_create" $@
+}
+
+function zone_ports_remove() {
+	zone_ports_cmd "port_remove" $@
+}
+
 function zone_ports_up() {
 	zone_ports_cmd port_up $@
 }

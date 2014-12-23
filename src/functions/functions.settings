@@ -123,10 +123,10 @@ function settings_strip() {
 	local var="$@"
 
 	# Do nothing for strings that contain spaces.
-	if contains_spaces ${var}; then
-		print "${var}"
-		return ${EXIT_OK}
-	fi
+	#if contains_spaces ${var}; then
+	#	print "${var}"
+	#	return ${EXIT_OK}
+	#fi
 
 	unquote "${var}"
 }

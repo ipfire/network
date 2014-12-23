@@ -36,7 +36,7 @@ function hook_check() {
 	assert isinteger MIIMON
 }
 
-function hook_create() {
+function hook_new() {
 	hook_edit $@
 }
 
@@ -96,47 +96,122 @@ function hook_edit() {
 	exit ${EXIT_OK}
 }
 
-function hook_up() {
-	local device="${1}"
-	assert isset device
+function hook_create() {
+	local port="${1}"
+	assert isset port
 
-	port_settings_read "${device}" ${HOOK_SETTINGS}
+	# Exit silently if the device already exists
+	device_exists "${port}" && exit ${EXIT_OK}
 
-	if ! device_exists ${device}; then
-		bonding_create "${device}" \
-			--address="${ADDRESS}" \
-			--mode="${MODE}" || exit ${EXIT_ERROR}
-	fi
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
-	device_set_address "${device}" "${ADDRESS}"
-	bonding_set_miimon "${device}" "${MIIMON}"
-	device_set_up "${device}"
+	# Create the bonding devices
+	bonding_create "${port}" \
+		--address="${ADDRESS}" \
+		--mode="${MODE}" || exit ${EXIT_ERROR}
 
-	local slave
-	for slave in $(unquote ${SLAVES}); do
-		if ! device_exists ${slave}; then
-			log WARNING "Cannot enslave '${slave}' to '${device}' as it is not available"
-			continue
-		fi
-
-		bonding_enslave_device "${device}" "${slave}"
-	done
-
-	# Bring up the device.
-	device_set_up "${device}"
+	bonding_set_miimon "${port}" "${MIIMON}"
 
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
-	local device="${1}"
+function hook_remove() {
+	local port="${1}"
+	assert isset port
 
-	bonding_remove "${device}"
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
+	# Remove the bonding device
+	if device_exists "${port}"; then
+		bonding_remove "${port}"
+	fi
+}
+
+function hook_up() {
+	local port="${1}"
+	assert isset port
+
+	port_settings_read "${port}" ${HOOK_SETTINGS}
+
+	# Execute the default action
+	hook_default_up "${port}"
+
+	# Bring up all slaves
 	local slave
-	for slave in ${SLAVES}; do
-		device_set_down "${slave}"
+	for slave in $(unquote ${SLAVES}); do
+		port_up "${slave}"
+	done
+}
+
+function hook_down() {
+	local port="${1}"
+	assert isset port
+
+	port_settings_read "${port}" ${HOOK_SETTINGS}
+
+	# Bring down all slaves
+	local slave
+	for slave in $(unquote ${SLAVES}); do
+		port_down "${slave}"
 	done
 
-	exit ${EXIT_OK}
+	# Execute the default action
+	hook_default_down "${port}"
+}
+
+function hook_hotplug() {
+	local port="${1}"
+	assert isset port
+
+	case "$(hotplug_action)" in
+		add)
+			# Handle events of the same interface
+			if hotplug_event_port_is_interface "${port}"; then
+				# Read configuration
+				port_settings_read "${port}" ${HOOK_SETTINGS}
+
+				# Bring up all slaves
+				# Attach those which already exist and try to create
+				# those which don't exist yet. They will be attached
+				# in their own hotplug event.
+				local slave
+				for slave in $(unquote ${SLAVES}); do
+					if device_exists "${slave}"; then
+						bonding_enslave_device "${port}" "${slave}"
+					else
+						port_create "${slave}"
+					fi
+				done
+
+				exit ${EXIT_OK}
+
+			# Handle slave devices that have just been created and
+			# attach them.
+			elif hotplug_event_interface_is_slave_of_port "${port}"; then
+				bonding_enslave_device "${port}" "${INTERFACE}"
+
+				# If the parent device has been set up, we will
+				# bring up the slave device as well.
+				if device_is_up "${port}"; then
+					port_up "${INTERFACE}"
+				fi
+			fi
+
+			exit ${EXIT_OK}
+			;;
+
+		remove)
+			if hotplug_event_port_is_interface "${port}"; then
+				# Bring down all slaves after the parent device went away
+				local slave
+				for slave in $(port_get_slaves "${port}"); do
+					port_remove "${slave}"
+				done
+
+				exit ${EXIT_OK}
+			fi
+			;;
+	esac
+
+	exit ${EXIT_NOT_HANDLED}
 }

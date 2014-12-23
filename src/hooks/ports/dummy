@@ -27,7 +27,7 @@ function hook_check() {
 	assert ismac ADDRESS
 }
 
-function hook_create() {
+function hook_new() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
@@ -79,16 +79,30 @@ function hook_edit() {
 	exit ${EXIT_OK}	
 }
 
-function hook_up() {
-	local port=${1}
+function hook_create() {
+	local port="${1}"
 	assert isset port
 
+	# Read configuration
 	port_settings_read "${port}" ${HOOK_SETTINGS}
 
-	# Create device if not already exists.
-	if ! device_exists ${port}; then
-		dummy_create ${port} "${ADDRESS}"
-	fi
+	# Create the dummy device
+	dummy_create "${port}" "${ADDRESS}"
+
+	exit ${EXIT_OK}
+}
+
+function hook_remove() {
+	local port="${1}"
+	assert isset port
+
+	# Remove the dummy device
+	dummy_remove "${port}"
+}
+
+function hook_up() {
+	local port="${1}"
+	assert isset port
 
 	# Bring up the port.
 	device_set_up ${port}
@@ -97,18 +111,11 @@ function hook_up() {
 }
 
 function hook_down() {
-	local port=${1}
+	local port="${1}"
 	assert isset port
-
-	if ! device_exists ${port}; then
-		exit ${EXIT_OK}
-	fi
 
 	# Tear down the port.
 	device_set_down ${port}
-
-	# Remove the dummy port.
-	dummy_remove ${port}
 
 	exit ${EXIT_OK}
 }

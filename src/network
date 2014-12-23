@@ -468,22 +468,9 @@ function cli_port() {
 		action=${2}
 		shift 2
 
-		# Action aliases
 		case "${action}" in
-			start)
-				action="up"
-				;;
-			stop)
-				action="down"
-				;;
-			show)
-				action="status"
-				;;
-		esac
-
-		case "${action}" in
-			edit|up|down|status)
-				port_${action} ${port} $@
+			edit|create|remove|up|down|status)
+				port_${action} "${port}" $@
 				;;
 			*)
 				error "Unrecognized argument: ${action}"
@@ -495,7 +482,7 @@ function cli_port() {
 		shift
 
 		case "${action}" in
-			create|destroy)
+			new|destroy)
 				port_${action} $@
 				;;
 			*)
@@ -1053,7 +1040,7 @@ function cli_reset() {
 
 	local port
 	for port in $(ports_get --all); do
-		port_remove ${port}
+		port_destroy "${port}"
 	done
 
 	# Flush all DNS servers.

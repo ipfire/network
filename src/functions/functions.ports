@@ -111,7 +111,7 @@ function port_is_attached() {
 	return ${EXIT_ERROR}
 }
 
-function port_create() {
+function port_new() {
 	#local port=${1}
 	#shift
 	#
@@ -134,7 +134,7 @@ function port_create() {
 	#	port_destroy ${port}
 	#fi
 
-	hook_exec port ${hook} create $@
+	hook_exec port ${hook} new $@
 }
 
 function port_destroy() {
@@ -180,8 +180,20 @@ function port_destroy() {
 	rm -f $(port_file ${port})
 }
 
+function port_create() {
+	port_cmd "create" $@
+}
+
 function port_remove() {
-	port_destroy $@
+	local port="${1}"
+	assert isset port
+
+	# If the device is still up, we need to bring it down first.
+	if device_is_up "${port}"; then
+		port_down "${port}"
+	fi
+
+	port_cmd "remove" "${port}"
 }
 
 function port_edit() {

@@ -47,7 +47,7 @@ function hook_check() {
 	done
 }
 
-function hook_create() {
+function hook_new() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--parent-device=*)
@@ -97,37 +97,28 @@ function hook_edit() {
 	exit ${EXIT_OK}	
 }
 
-function hook_up() {
-	local port=${1}
+function hook_create() {
+	local port="${1}"
 	assert isset port
 
-	if ! device_exists ${port}; then
-		# Read configuration file.
-		port_settings_read "${port}" ${HOOK_SETTINGS}
+	device_exists "${port}" && exit ${EXIT_OK}
 
-		vlan_create ${port} ${PARENT_DEVICE} ${TAG} ${ADDRESS}
-	fi
+	# Read configruation
+	port_settings_read "${port}" ${HOOK_SETTINGS}
 
-	# Bring up the device.
-	device_set_up ${port}
+	# Create the VLAN device
+	vlan_create "${port}" "${PARENT_DEVICE}" "${TAG}" "${ADDRESS}"
 
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
-	local port=${1}
+function hook_remove() {
+	local port="${1}"
 	assert isset port
 
-	# Exit, if the port does not exist.
-	if ! device_exists ${port}; then
-		exit ${EXIT_OK}
+	if device_exists "${port}"; then
+		vlan_remove "${port}"
 	fi
-
-	# Tear down the port.
-	device_set_down ${port}
-
-	# Remove the port.
-	vlan_remove ${port}
 
 	exit ${EXIT_OK}
 }

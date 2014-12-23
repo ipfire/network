@@ -123,6 +123,7 @@ function hook_up() {
 	device_set_promisc "${zone}" on
 
 	# Bring up all ports
+	zone_ports_create "${zone}"
 	zone_ports_up "${zone}"
 
 	# Bring up all configurations
@@ -175,6 +176,7 @@ function hook_down() {
 
 	# Bring down all the ports.
 	zone_ports_down "${zone}"
+	zone_ports_remove "${zone}"
 
 	# Remove the bridge.
 	device_set_down "${zone}"
@@ -291,7 +293,7 @@ function hook_port_edit() {
 	exit ${EXIT_OK}
 }
 
-function hook_port_remove() {
+function hook_port_destroy() {
 	assert [ $# -eq 2 ]
 
 	local zone="${1}"
@@ -336,7 +338,7 @@ function hook_port_up() {
 	# TODO Apply priority (#10609)
 
 	# Make sure that the port is up
-	device_set_up "${port}"
+	port_up "${port}"
 
 	exit ${EXIT_OK}
 }

@@ -53,7 +53,7 @@ function hook_check() {
 	fi
 }
 
-function hook_create() {
+function hook_new() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--broadcast-ssid=*)
@@ -139,9 +139,11 @@ function hook_edit() {
 	exit ${EXIT_OK}	
 }
 
-function hook_up() {
-	local port=${1}
+function hook_create() {
+	local port="${1}"
 	assert isset port
+
+	device_exists "${port}" && exit ${EXIT_OK}
 
 	port_settings_read "${port}" ${HOOK_SETTINGS}
 
@@ -152,26 +154,17 @@ function hook_up() {
 		exit ${EXIT_ERROR}
 	fi
 
-	# Create the wireless device, if it does not exist, yet.
-	if ! device_exists ${port}; then
-		wireless_create ${port} --phy="${phy}" --type="ap" \
-			--address="${ADDRESS}"
-	fi
-
-	# Start the hostapd service.
-	#hostapd_start ${port}
-	local ret=$?
-
-	if [ ${ret} -ne ${EXIT_OK} ]; then
-		log ERROR "Could not start hostapd on port '${port}': ${ret}"
-		exit ${EXIT_ERROR}
-	fi
+	# Create the wireless device
+	wireless_create "${port}" \
+		--phy="${phy}" \
+		--type="ap" \
+		--address="${ADDRESS}"
 
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
-	local port=${1}
+function hook_remove() {
+	local port="${1}"
 	assert isset port
 
 	# Remove the device if present
@@ -182,19 +175,34 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
+function hook_up() {
+	local port="${1}"
+	assert isset port
+
+	# The port must already exist before
+	# hostapd is started. Otherwise it will
+	# fail horribly over and over again.
+	assert device_exists "${port}"
+
+	hostapd_start "${port}"
+}
+
+function hook_down() {
+	local port="${1}"
+	assert isset port
+
+	hostapd_stop "${port}"
+}
+
 function hook_hotplug() {
 	local port="${1}"
 	assert isset port
 
 	case "$(hotplug_action)" in
 		add)
-			# Start hostapd after the port has been brought up
-			if hotplug_event_port_is_interface "${port}"; then
-				hostapd_start "${port}"
-
-			# Bring up the port when the phy is plugged in
-			elif hotplug_event_port_uses_phy "${port}"; then
-				hook_up "${port}"
+			# Create the port when the phy is plugged in
+			if hotplug_event_port_uses_phy "${port}"; then
+				hook_create "${port}"
 			fi
 			;;
 
@@ -202,13 +210,11 @@ function hook_hotplug() {
 			# Stop hostapd
 			if hotplug_event_port_is_interface "${port}"; then
 				hostapd_stop "${port}"
-			fi
-			;;
 
-		*)
-			exit ${EXIT_NOT_HANDLED}
+				exit ${EXIT_OK}
+			fi
 			;;
 	esac
 
-	exit ${EXIT_OK}
+	exit ${EXIT_NOT_HANDLED}
 }

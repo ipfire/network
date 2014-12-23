@@ -110,7 +110,7 @@ function hook_port_edit() {
 	return ${EXIT_NOT_SUPPORTED}
 }
 
-function hook_port_remove() {
+function hook_port_destroy() {
 	return ${EXIT_NOT_SUPPORTED}
 }
 
@@ -120,6 +120,32 @@ function hook_port_show() {
 
 function hook_port_status() {
 	return ${EXIT_NOT_SUPPORTED}
+}
+
+function hook_default_port_create() {
+	assert [ $# -ge 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+
+	port_create "${port}"
+}
+
+function hook_port_create() {
+	hook_default_port_create $@
+}
+
+function hook_default_port_remove() {
+	assert [ $# -ge 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+
+	port_remove "${port}"
+}
+
+function hook_port_remove() {
+	hook_default_port_remove $@
 }
 
 function hook_port_up() {

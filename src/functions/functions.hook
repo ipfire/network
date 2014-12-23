@@ -22,8 +22,8 @@
 HOOK_COMMANDS_CONFIG="hook_create hook_down hook_edit hook_status hook_remove"
 HOOK_COMMANDS_CONFIG="${HOOK_COMMANDS_CONFIG} hook_up"
 
-HOOK_COMMANDS_PORT="hook_create hook_down hook_edit hook_hotplug \
-	hook_hotplug_rename hook_info hook_status hook_up"
+HOOK_COMMANDS_PORT="hook_new hook_edit hook_create hook_remove hook_up hook_down \
+	hook_hotplug hook_hotplug_rename hook_info hook_status"
 
 HOOK_COMMANDS_ZONE="hook_add hook_create hook_discover hook_down hook_edit hook_help \
 	hook_info hook_remove hook_status hook_up hook_hotplug \
@@ -107,7 +107,7 @@ function hook_exec() {
 		assert isset HOOK
 
 		# Execute the requested command.
-		cmd "${hook_cmd}" "$@"
+		"${hook_cmd}" "$@"
 	)
 	local ret=$?
 
