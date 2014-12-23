@@ -82,8 +82,8 @@ function hook_edit() {
 
 	local slave
 	for slave in $(unquote ${SLAVES}); do
-		if ! device_is_ethernet ${slave}; then
-			error "Slave device '${slave}' is not an ethernet device."
+		if ! device_is_ethernet_compatible ${slave}; then
+			error "The slave device '${slave}' is not able to transport ethernet frames"
 			exit ${EXIT_ERROR}
 		fi
 	done
