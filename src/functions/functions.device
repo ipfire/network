@@ -349,7 +349,12 @@ function device_is_ethernet() {
 function device_get_type() {
 	local device=${1}
 
-	if device_is_vlan ${device}; then
+	# If the device does not exist (happens on udev remove events),
+	# we do not bother to run all checks.
+	if ! device_exists "${device}"; then
+		echo "unknown"
+
+	elif device_is_vlan ${device}; then
 		echo "vlan"
 
 	elif device_is_bonding ${device}; then
