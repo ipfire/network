@@ -128,6 +128,11 @@ function cli_device_status() {
 
 	cli_print_fmt1 1 "Status"	"${status}"
 	cli_print_fmt1 1 "Type"		"${type}"
+
+	# Ethernet-compatible?
+	device_is_ethernet_compatible "${device}" &>/dev/null
+	cli_print_fmt1 1 "Ethernet-compatible" "$(cli_print_bool $?)"
+
 	cli_print_fmt1 1 "Address"	"$(device_get_address ${device})"
 	cli_space
 

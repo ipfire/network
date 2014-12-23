@@ -389,6 +389,14 @@ function device_get_type() {
 	fi
 }
 
+function device_is_ethernet_compatible() {
+	local device="${1}"
+
+	# /sys/class/net/*/type must equal 1 for ethernet compatible devices
+	local type="$(__device_get_file "${device}" "type")"
+	[[ "${type}" = "1" ]]
+}
+
 function device_get_status() {
 	local device=${1}
 	assert isset device
