@@ -941,7 +941,7 @@ function zone_port_settings_read() {
 }
 
 function zone_port_settings_write() {
-	assert [ $# -gt 2 ]
+	assert [ $# -ge 2 ]
 
 	local zone="${1}"
 	local port="${2}"
