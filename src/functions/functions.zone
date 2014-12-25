@@ -327,7 +327,7 @@ function zone_up() {
 	fi
 
 	# Check if a zone has got the remove tag.
-	if zone_has_remove_tag ${zone}; then
+	if zone_has_destroy_tag ${zone}; then
 		error "Cannot bring up any zone which is to be removed."
 		return ${EXIT_ERROR}
 	fi
@@ -406,7 +406,7 @@ function zone_status() {
 	hook_zone_exec "${hook}" "status" "${zone}" "$@"
 
 	# Show that the zone it to be removed soon.
-	if zone_has_remove_tag ${zone}; then
+	if zone_has_destroy_tag ${zone}; then
 		warning "This zone is tagged for removal."
 	fi
 }
