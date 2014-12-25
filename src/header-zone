@@ -29,7 +29,7 @@ function hook_hotplug() {
 	exit ${EXIT_NOT_HANDLED}
 }
 
-function hook_create() {
+function hook_new() {
 	local zone="${1}"
 	assert isset zone
 	shift

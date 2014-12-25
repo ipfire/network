@@ -213,7 +213,7 @@ function zone_cmd() {
 	hook_exec zone "${hook}" "${cmd}" "${zone}" $@
 }
 
-function zone_create() {
+function zone_new() {
 	local zone=${1}
 	local hook=${2}
 	shift 2
@@ -238,13 +238,13 @@ function zone_create() {
 	# Create directories for configs and ports
 	mkdir -p $(zone_dir ${zone})/{configs,ports}
 
-	hook_zone_exec ${hook} create ${zone} $@
+	hook_zone_exec "${hook}" "new" "${zone}" $@
 	local ret=$?
 
-	# Maybe the zone create hook did not exit correctly.
+	# Maybe the zone new hook did not exit correctly.
 	# If this is the case we remove the created zone immediately.
 	if [ "${ret}" = "${EXIT_ERROR}" ]; then
-		zone_remove_now ${zone}
+		zone_destroy_now "${zone}"
 		return ${EXIT_ERROR}
 	fi
 
@@ -262,7 +262,7 @@ function zone_edit() {
 	fi
 
 	# Check if the zone is tagged for removal.
-	if zone_has_remove_tag ${zone}; then
+	if zone_has_destroy_tag ${zone}; then
 		error "You cannot edit a zone that is tagged for removal."
 		return ${EXIT_ERROR}
 	fi
@@ -282,39 +282,39 @@ function zone_edit() {
 }
 
 
-function zone_remove() {
-	local zone=${1}
-	assert zone_exists ${zone}
+function zone_destroy() {
+	local zone="${1}"
+	assert zone_exists "${zone}"
 
 	# Make the zone for removal.
-	touch $(zone_dir ${zone})/.remove
+	touch "$(zone_dir "${zone}")/.destroy"
 
 	log INFO "Zone '${zone}' has been tagged for removal."
 }
 
-function zone_has_remove_tag() {
-	local zone=${1}
-	assert zone_exists ${zone}
+function zone_has_destroy_tag() {
+	local zone="${1}"
+	assert zone_exists "${zone}"
 
-	[ -e "$(zone_dir ${zone})/.remove" ]
+	[ -e "$(zone_dir "${zone}")/.destroy" ]
 }
 
 # This function will remove the given zone
-# RIGHT NOW. Use zone_remove to remove it
+# RIGHT NOW. Use zone_destroy to remove it
 # at the next status change.
-function zone_remove_now() {
-	local zone=${1}
-	assert zone_exists ${zone}
+function zone_destroy_now() {
+	local zone="${1}"
+	assert zone_exists "${zone}"
 
 	log INFO "Removing zone '${zone}' right now."
 
 	# Force the zone down.
-	zone_is_up ${zone} && zone_set_down ${zone}
+	zone_is_up "${zone}" && zone_set_down "${zone}"
 
 	# Disable zone.
 	zone_disable "${zone}"
 
-	rm -rf $(zone_dir ${zone})
+	rm -rf "$(zone_dir "${zone}")"
 }
 
 function zone_up() {
@@ -377,8 +377,8 @@ function zone_down() {
 	zone_db ${zone} stopped
 
 	# Remove the zone, if it has got a remove tag.
-	if zone_has_remove_tag ${zone}; then
-		zone_remove_now ${zone}
+	if zone_has_destroy_tag "${zone}"; then
+		zone_destroy_now "${zone}"
 	fi
 }
 

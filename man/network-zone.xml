@@ -29,7 +29,7 @@
 
 	<refsynopsisdiv>
 		<cmdsynopsis>
-			<command>network zone <arg choice="plain">[create|remove]</arg> <replaceable>ZONE</replaceable> ...</command>
+			<command>network zone <arg choice="plain">[new|destroy]</arg> <replaceable>ZONE</replaceable> ...</command>
 		</cmdsynopsis>
 
 		<cmdsynopsis>
@@ -65,7 +65,7 @@
 		<variablelist>
 			<varlistentry>
 				<term>
-					<command>create <replaceable>ZONE</replaceable> <replaceable>HOOK</replaceable> <arg choice="opt" rep="repeat">OPTIONS</arg></command>
+					<command>new <replaceable>ZONE</replaceable> <replaceable>HOOK</replaceable> <arg choice="opt" rep="repeat">OPTIONS</arg></command>
 				</term>
 
 				<listitem>
@@ -84,12 +84,12 @@
 
 			<varlistentry>
 				<term>
-					<command>remove <replaceable>ZONE</replaceable></command>
+					<command>destroy <replaceable>ZONE</replaceable></command>
 				</term>
 
 				<listitem>
 					<para>
-						A zone can be simple removed with this command.
+						A zone can be destroyed with this command.
 					</para>
 					<para>
 						There are two possible ways to remove a zone. The case
