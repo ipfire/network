@@ -856,11 +856,19 @@ function zone_file() {
 function zone_settings_read() {
 	local zone=${1}
 	assert isset zone
+	shift
+
+	local args
+	if [ $# -eq 0 ] && [ -n "${HOOK_SETTINGS}" ]; then
+		list_append args ${HOOK_SETTINGS}
+	else
+		list_append args $@
+	fi
 
 	# Save the HOOK variable.
 	local hook="${HOOK}"
 
-	settings_read "${zone}" ${HOOK_SETTINGS}
+	settings_read "$(zone_file "${zone}")" ${args}
 
 	# Restore hook.
 	HOOK="${hook}"

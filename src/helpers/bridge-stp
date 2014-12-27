@@ -43,7 +43,8 @@ if ! zone_exists ${zone}; then
 fi
 
 # Read zone settings
-zone_settings_read ${zone}
+zone_settings_read "${zone}" --ignore-superfluous-settings \
+	STP STP_MODE
 
 # Make sure STP is enabled for this zone.
 assert enabled STP
