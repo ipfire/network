@@ -49,16 +49,10 @@ function pppd_angel() {
 		shift
 	done
 
-	local pppd_ret ret
 	while :; do
 		# Execute ppp daemon.
 		pppd_exec "${device}" "${config_file}"
-		ret=$?
-
-		pppd_ret=$(( ${ret} % 0x0f ))
-		ret=$(( ${ret} >> 6 ))
-
-		log DEBUG "pppd exited with error code ${pppd_ret}"
+		local ret=${?}
 
 		case "${ret}" in
 			${EXIT_OK})
@@ -75,7 +69,7 @@ function pppd_angel() {
 				# because there is either no chance to establish a connection
 				# without any user interaction, or we will damage the system.
 				log ERROR "Fatal error. Not going to restart pppd."
-				return ${pppd_ret}
+				return ${EXIT_ERROR}
 				;;
 			*)
 				log ERROR "Invalid return code: ${ret}"
@@ -104,123 +98,135 @@ function pppd_exec() {
 	cmd "pppd file ${config_file} $@"
 	local ret=$?
 
+	# Get the hook of the zone
+	local hook
+	if zone_exists "${device}"; then
+		hook="$(zone_get_hook "${zone}")"
+	fi
+
+	log DEBUG "pppd exited with code: ${ret}"
+
 	# Evaluate return code.
 	local error_code
-	case "${ret}" in
-		0)
+	case "${ret},${hook}" in
+		0,*)
 			# Pppd has detached, or otherwise the connection was successfully
 			# established and terminated at the peer's request.
 			log DEBUG "pppd exited gracefully"
-			error_code=${EXIT_OK}
+			return ${EXIT_OK}
 			;;
-		1)
+		1,*)
 			# An immediately fatal error of some kind occurred, such as an
 			# essential system call failing, or running out of virtual memory.
 			log ERROR "pppd crashed for an unknown reason"
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
-		2)
+		2,*)
 			# An error was detected in processing the options given, such as two
 			# mutually exclusive options being used.
 			log ERROR "pppd: Configuration error"
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
-		3)
+		3,*)
 			# Pppd is not setuid-root and the invoking user is not root.
 			log ERROR "pppd: Launched with insufficient privileges"
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
-		4)
+		4,*)
 			# The kernel does not support PPP, for example, the PPP kernel driver is
 			# not included or cannot be loaded.
 			log ERROR "pppd: Kernel does not support PPP"
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
-		5)
+		5,*)
 			# Pppd terminated because it was sent a SIGINT, SIGTERM or SIGHUP signal.
 			log ERROR "pppd: Received SIGINT, SIGTERM or SIGHUP signal"
-			error_code=${EXIT_PPPD_ERROR}
+			return ${EXIT_PPPD_ERROR}
 			;;
-		6)
+		6,*)
 			# The serial port could not be locked.
 			log ERROR "pppd: Serial port could not be locked"
-			error_code=${EXIT_PPPD_ERROR}
+			return ${EXIT_PPPD_ERROR}
 			;;
-		7)
+		7,*)
 			# The serial port could not be opened.
 			log ERROR "pppd: Serial port could not be opened"
-			error_code=${EXIT_PPPD_ERROR}
+			return ${EXIT_PPPD_ERROR}
 			;;
-		8)
+		8,pppoe)
+			# For PPPoE this tells us that we were not able to contact
+			# the DSLAM (i.e. timeout waiting for PADO packets)
+			log ERROR "pppd: Unable to contact the DSLAM"
+			return ${EXIT_PPPD_ERROR}
+			;;
+		8,*)
 			# The connect script failed (returned a non-zero exit status).
 			log ERROR "pppd: Connect script failed"
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
-		9)
+		9,*)
 			# The command specified as the argument to the pty option could not be run.
 			log ERROR "pppd: Could not run pty command"
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
-		10)
+		10,*)
 			# The PPP negotiation failed, that is, it didn't reach the point where at
 			# least one network protocol (e.g. IP) was running.
 			log ERROR "pppd: Protocol negotiation failed"
-			error_code=${EXIT_PPPD_ERROR}
+			return ${EXIT_PPPD_ERROR}
 			;;
-		11)
+		11,*)
 			# The peer system failed (or refused) to authenticate itself.
 			log ERROR "pppd: peer system failed (or refused) to authenticate itself"
-			error_code=${EXIT_PPPD_ERROR}
+			return ${EXIT_PPPD_ERROR}
 			;;
-		12)
+		12,*)
 			# The link was established successfully and terminated because it was idle.
 			log ERROR "pppd: Terminated because of idleness"
-			error_code=${EXIT_PPPD_ERROR}
+			return ${EXIT_PPPD_ERROR}
 			;;
-		13)
+		13,*)
 			# The link was established successfully and terminated because the connect time
 			# limit was reached.
 			log ERROR "pppd: connect time limit was reached"
-			error_code=${EXIT_PPPD_ERROR}
+			return ${EXIT_PPPD_ERROR}
 			;;
-		14)
+		14,*)
 			# Callback was negotiated and an incoming call should arrive shortly.
 			# We should not be using this, so make it fatal that nobody is able to
 			# abuse the feature.
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
-		15)
+		15,*)
 			# The link was terminated because the peer is not responding to echo requests.
 			log ERROR "pppd: Peer is not responding to echo requests"
-			error_code=${EXIT_PPPD_ERROR}
+			return ${EXIT_PPPD_ERROR}
 			;;
-		16)
+		16,*)
 			# The link was terminated by the modem hanging up.
 			log ERROR "pppd: Modem hung up"
-			error_code=${EXIT_PPPD_ERROR}
+			return ${EXIT_PPPD_ERROR}
 			;;
-		17)
+		17,*)
 			# The PPP negotiation failed because serial loopback was detected.
 			log ERROR "pppd: Serial loopback detected"
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
-		18)
+		18,*)
 			# The init script failed (returned a non-zero exit status).
 			log ERROR "pppd: Init script failed"
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
-		19)
+		19,*)
 			# We failed to authenticate ourselves to the peer.
 			log ERROR "pppd: Authentication failed"
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
 		*)
 			log ERROR "pppd: Unhandled exit code: ${ret}"
-			error_code=${EXIT_PPPD_ERROR_FATAL}
+			return ${EXIT_PPPD_ERROR_FATAL}
 			;;
 	esac
-
-	return $(( (${error_code} << 6) + ${ret} ))
 }
 
 function pppd_start() {

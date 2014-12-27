@@ -133,6 +133,33 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
+function hook_hotplug() {
+	local zone="${1}"
+
+	case "$(hotplug_action)" in
+		add)
+			if hotplug_event_interface_is_port_of_zone "${zone}"; then
+				# Bring up the zone if it is enabled but not active, yet.
+				zone_start_auto "${zone}"
+
+				exit ${EXIT_OK}
+			fi
+			;;
+		remove)
+			# PPPoE cannot work if the ethernet device has been removed
+			if hotplug_event_interface_is_port_of_zone "${zone}"; then
+				if zone_is_active "${zone}"; then
+					zone_stop "${zone}"
+				fi
+
+				exit ${EXIT_OK}
+			fi
+			;;
+	esac
+
+	exit ${EXIT_NOT_HANDLED}
+}
+
 function hook_discover() {
 	local device=${1}
 
