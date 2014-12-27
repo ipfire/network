@@ -240,23 +240,17 @@ function hook_status() {
 	exit ${EXIT_OK}
 }
 
-function __parse_cmdline_args() {
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--priority=*)
-				PRIORITY="$(cli_get_val ${1})"
-				;;
-			--cost=*)
-				COST="$(cli_get_val ${1})"
-				;;
-		esac
-		shift
-	done
+function hook_check_port_settings() {
+	if isset COST; then
+		assert isinteger COST
+	fi
 
-	return ${EXIT_OK}
+	if isset PRIORITY; then
+		assert isinteger PRIORITY
+	fi
 }
 
-function hook_port_add() {
+function hook_port_attach() {
 	# Excepting at least two arguments here
 	assert [ $# -ge 2 ]
 
@@ -264,36 +258,31 @@ function hook_port_add() {
 	local port="${2}"
 	shift 2
 
-	__parse_cmdline_args "$@"
-	[ $? -eq ${EXIT_OK} ] || return ${EXIT_ERROR}
+	if zone_has_port "${zone}" "${port}"; then
+		zone_port_settings_read "${zone}" "${port}"
+	fi
 
-	zone_port_settings_write "${zone}" "${port}" ${HOOK_PORT_SETTINGS}
+	local arg
+	local val
+	while read arg; do
+		case "${arg}" in
+			--cost=*)
+				COST="$(cli_get_val "${arg}")"
+				;;
+			--priority=*)
+				PRIORITY="$(cli_get_val "${arg}")"
+				;;
+		esac
+	done <<< "$(args $@)"
 
-	log INFO "Port '${port}' has been added to zone '${zone}'"
-
-	exit ${EXIT_OK}
-}
-
-function hook_port_edit() {
-	assert [ $# -ge 2 ]
-
-	local zone="${1}"
-	local port="${2}"
-	shift 2
-
-	zone_port_settings_read "${zone}" "${port}" ${HOOK_PORT_SETTINGS}
-
-	__parse_cmdline_args "$@"
-	[ $? -eq ${EXIT_OK} ] || return ${EXIT_ERROR}
-
-	zone_port_settings_write "${zone}" "${port}" ${HOOK_PORT_SETTINGS}
-
-	log INFO "Port '${port}' (member of zone '${zone}') has been edited"
+	if ! zone_port_settings_write "${zone}" "${port}"; then
+		exit ${EXIT_ERROR}
+	fi
 
 	exit ${EXIT_OK}
 }
 
-function hook_port_destroy() {
+function hook_port_detach() {
 	assert [ $# -eq 2 ]
 
 	local zone="${1}"
@@ -302,10 +291,15 @@ function hook_port_destroy() {
 	# Shut down the port (if possible)
 	port_down "${port}"
 
-	log INFO "Port '${port}' has been removed from zone '${zone}'"
-	zone_port_settings_remove "${zone}" "${port}"
+	if ! zone_port_settings_remove "${zone}" "${port}"; then
+		exit ${EXIT_ERROR}
+	fi
 
 	exit ${EXIT_OK}
+}
+
+function hook_port_edit() {
+	hook_port_attach $@
 }
 
 function hook_port_up() {

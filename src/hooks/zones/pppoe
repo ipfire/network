@@ -105,10 +105,18 @@ function hook_up() {
 	local zone=${1}
 	assert isset zone
 
+	# If this zone's port is not set, we will return
+	# with EXIT_OK so that this zone will remain active,
+	# but we cannot start pppd.
+	local port=$(__hook_get_port "${zone}")
+	if ! isset port || ! port_exists "${port}"; then
+		log WARNING "Could not bring up zone '${zone}' because no port is attached"
+		exit ${EXIT_OK}
+	fi
+
 	zone_settings_read "${zone}"
 
 	# Bring up the port.
-	local port=$(__hook_get_port "${zone}")
 	port_up "${port}"
 
 	# Start the ppp daemon.
@@ -306,7 +314,7 @@ function __hook_get_port() {
 	return ${EXIT_ERROR}
 }
 
-function hook_port_add() {
+function hook_port_attach() {
 	# Excepting at least two arguments here
 	assert [ $# -ge 2 ]
 
@@ -317,29 +325,34 @@ function hook_port_add() {
 	# PPPoE can only use one port
 	local ports_num="$(zone_get_ports_num "${zone}")"
 	if [ ${ports_num} -ge 1 ]; then
-		local port=$(__hook_get_port "${zone}")
+		local ports="$(zone_get_ports "${zone}")"
 		error "The pppoe zone hook only supports assigning one port"
-		error "  port '${port}' has already been assigned to zone '${zone}'"
+		error "  port '${ports}' has already been assigned to zone '${zone}'"
 		return ${EXIT_ERROR}
 	fi
 
-	zone_port_settings_write "${zone}" "${port}"
-	log INFO "Port '${port}' has been added to zone '${zone}'"
+	if ! zone_port_settings_write "${zone}" "${port}"; then
+		exit ${EXIT_ERROR}
+	fi
 
 	exit ${EXIT_OK}
 }
 
-function hook_port_remove() {
+function hook_port_detach() {
 	assert [ $# -eq 2 ]
 
 	local zone="${1}"
 	local port="${2}"
 
-	# Shut down the port (if possible)
-	port_down "${port}"
+	# Shut down the entire zone here, because it cannot
+	# run without a port any way and removing the port would
+	# create a hotplug event which will be processed after the
+	# port has already been detached...
+	zone_stop "${zone}"
 
-	log INFO "Port '${port}' has been removed from zone '${zone}'"
-	zone_port_settings_remove "${zone}" "${port}"
+	if ! zone_port_settings_remove "${zone}" "${port}"; then
+		exit ${EXIT_ERROR}
+	fi
 
 	exit ${EXIT_OK}
 }

@@ -102,15 +102,15 @@ function hook_port() {
 	exit ${ret}
 }
 
-function hook_port_add() {
+function hook_port_attach() {
+	return ${EXIT_NOT_SUPPORTED}
+}
+
+function hook_port_detach() {
 	return ${EXIT_NOT_SUPPORTED}
 }
 
 function hook_port_edit() {
-	return ${EXIT_NOT_SUPPORTED}
-}
-
-function hook_port_destroy() {
 	return ${EXIT_NOT_SUPPORTED}
 }
 

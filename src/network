@@ -526,7 +526,10 @@ function cli_zone() {
 		esac
 
 		case "${action}" in
-			config|disable|down|edit|enable|port|status|up)
+			port)
+				cli_zone_port "${zone}" $@
+				;;
+			config|disable|down|edit|enable|status|up)
 				zone_${action} ${zone} $@
 				;;
 			*)
@@ -580,6 +583,50 @@ function cli_zone_destroy() {
 	else
 		echo "Removing zone '${zone}' now..."
 		zone_destroy_now "${zone}"
+	fi
+
+	exit ${EXIT_OK}
+}
+
+function cli_zone_port() {
+	if cli_help_requested $@; then
+		cli_show_man network-zone-port
+		exit ${EXIT_OK}
+	fi
+
+	local zone="${1}"
+	assert zone_exists "${zone}"
+
+	if port_exists "${2}"; then
+		local port="${2}"
+		local action="${3}"
+		shift 3
+
+		case "${action}" in
+			edit)
+				zone_port_edit "${zone}" "${port}" $@
+				;;
+			*)
+				error "Unrecognised argument: ${action}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	else
+		local action="${2}"
+		shift 2
+
+		case "${action}" in
+			attach)
+				zone_port_attach "${zone}" $@
+				;;
+			detach)
+				zone_port_detach "${zone}" $@
+				;;
+			*)
+				error "Unrecognised argument: ${action}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
 	fi
 
 	exit ${EXIT_OK}
