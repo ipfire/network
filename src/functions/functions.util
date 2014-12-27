@@ -436,6 +436,16 @@ function binary_exists() {
 	return ${EXIT_ERROR}
 }
 
+function function_exists() {
+	local function="${1}"
+
+	if [ "$(type -t "${function}")" = "function" ]; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
 function process_kill() {
 	local process=${1}
 

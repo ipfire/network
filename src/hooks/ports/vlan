@@ -25,7 +25,7 @@ HOOK_SETTINGS="HOOK ADDRESS PARENT_DEVICE TAG"
 
 PORT_PARENTS_VAR="PARENT"
 
-function hook_check() {
+function hook_check_settings() {
 	assert isset PARENT_DEVICE
 	assert isinteger TAG
 

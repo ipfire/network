@@ -40,12 +40,11 @@ function port_config_dir() {
 function port_settings_read() {
 	local port="${1}"
 	assert isset port
-	shift
 
 	# Save the HOOK variable.
 	local hook="${HOOK}"
 
-	settings_read "$(port_file "${port}")" "$@"
+	settings_read "$(port_file "${port}")" ${HOOK_SETTINGS}
 
 	# Restore hook.
 	HOOK="${hook}"
@@ -56,7 +55,13 @@ function port_settings_write() {
 	assert isset port
 	shift
 
-	settings_write "$(port_file "${port}")" "$@"
+	local args
+	if function_exists "hook_check_settings"; then
+		list_append args "--check=\"hook_check_settings\""
+	fi
+	list_append args ${HOOK_SETTINGS}
+
+	settings_write "$(port_file "${port}")" ${args}
 }
 
 function ports_get_all() {

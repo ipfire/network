@@ -24,6 +24,19 @@
 
 function list_append() {
 	local list=${1}
+	assert isset list
+	shift
+
+	local arg
+	for arg in $@; do
+		list_append_one "${list}" "${arg}"
+	done
+}
+
+function list_append_one() {
+	assert [ $# -eq 2 ]
+
+	local list="${1}"
 	shift
 
 	assert isset list

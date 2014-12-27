@@ -31,7 +31,7 @@ SSID=
 KEY=
 ENCRYPTION_MODE=
 
-function hook_check() {
+function hook_check_settings() {
 	assert isset SSID
 
 	if isset ADDRESS; then
@@ -81,7 +81,7 @@ function hook_up() {
 	assert isset zone
 
 	# Read zone configuration.
-	zone_settings_read "${zone}" ${HOOK_SETTINGS}
+	zone_settings_read "${zone}"
 
 	if ! device_exists ${zone}; then
 		#  Create the wireless interface.

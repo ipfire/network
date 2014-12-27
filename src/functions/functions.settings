@@ -132,13 +132,30 @@ function settings_strip() {
 }
 
 function settings_write() {
-	local settings_file=${1}
+	local settings_file="${1}"
 	assert isset settings_file
 	shift
 
+	local check_func
+
+	local arg
+	while read arg; do
+		case "${arg}" in
+			--check=*)
+				check_func="$(cli_get_val "${arg}")"
+				;;
+
+			# Stop argument processing when reaching the first
+			# configuration parameter
+			*)
+				break
+				;;
+		esac
+		shift
+	done <<< "$(args $@)"
+
 	# Check if all values to be written are sane
-	if ! settings_check; then
-		log CRITICAL "Configuration check failed. No settings have been written."
+	if isset check_func && ! settings_check "${check_func}"; then
 		return ${EXIT_ERROR}
 	fi
 
@@ -174,13 +191,34 @@ function settings_print() {
 }
 
 function settings_check() {
-	# If there is a function defined that is called __check
-	# we call that function
-	if [ -n "$(type -t hook_check)" ]; then
-		hook_check || return $?
-	fi
+	local check_func="${1}"
 
-	return ${EXIT_OK}
+	# Execute the check function
+	"${check_func}"
+	local ret="${?}"
+
+	case "${ret}" in
+		# OK
+		${EXIT_OK}|${EXIT_TRUE})
+			log DEBUG "Configuration check succeeded."
+			return ${EXIT_TRUE}
+			;;
+
+		# Error
+		${EXIT_ERROR}|${EXIT_FALSE})
+			log CRITICAL "Configuration check failed. No settings have been written."
+			return ${EXIT_FALSE}
+			;;
+
+		# Command not found
+		${EXIT_COMMAND_NOT_FOUND})
+			log CRITICAL "Configuration check function '${check_func}' was not found."
+			return ${EXIT_FALSE}
+			;;
+	esac
+
+	log CRITICAL "Unhandled exit code for '${check_func}': ${ret}"
+	return ${EXIT_ERROR}
 }
 
 function settings_set() {

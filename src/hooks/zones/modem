@@ -70,7 +70,7 @@ HOOK_SETTINGS="${HOOK_SETTINGS} PHONE_NUMBER"
 IMSI=
 HOOK_SETTINGS="${HOOK_SETTINGS} IMSI"
 
-function hook_check() {
+function hook_check_settings() {
 	assert isset DEVICE
 	assert isset PHONE_NUMBER
 
@@ -140,14 +140,14 @@ function hook_up() {
 	assert isset zone
 
 	# Load configuration file.
-	zone_settings_read "${zone}" ${HOOK_SETTINGS}
+	zone_settings_read "${zone}"
 
 	# If we have got a PIN, we try to unlock the device first.
 	if isset PIN; then
 		if ! modem_sim_auto_unlock "${DEVICE}" "${PIN}"; then
 			# Reset the PIN setting.
 			PIN=""
-			zone_settings_write "${zone}" ${HOOK_SETTINGS}
+			zone_settings_write "${zone}"
 			error "Could not unlock the SIM card. Removing PIN from settings."
 		fi
 
@@ -179,7 +179,7 @@ function hook_status() {
 
 	cli_device_headline ${zone}
 
-	zone_settings_read "${zone}" ${HOOK_SETTINGS}
+	zone_settings_read "${zone}"
 
 	cli_headline 2 "Configuration"
 	cli_print_fmt1 2 "Username" "${USERNAME}"
@@ -272,7 +272,7 @@ function hook_ppp_write_config() {
 	assert isset file
 
 	# Read in the configuration files.
-	zone_settings_read "${zone}" ${HOOK_SETTINGS}
+	zone_settings_read "${zone}"
 
 	pppd_write_config ${file} \
 		--interface="${zone}" \

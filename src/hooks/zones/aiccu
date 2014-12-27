@@ -30,7 +30,7 @@ PROTOCOL="tic"
 TUNNEL_ID=
 REQUIRE_TLS="true"
 
-function hook_check() {
+function hook_check_settings() {
 	assert isset USERNAME
 	assert isset PASSWORD
 	assert isset SERVER
@@ -109,7 +109,7 @@ function hook_status() {
 
 	cli_device_headline ${zone}
 
-	zone_settings_read "${zone}" ${HOOK_SETTINGS}
+	zone_settings_read "${zone}"
 
 	cli_headline 2 "Configuration"
 	cli_print_fmt1 2 "User" "${USERNAME}"

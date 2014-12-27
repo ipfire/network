@@ -38,7 +38,7 @@ STP_HELLO=2
 STP_MAXAGE=20
 STP_PRIORITY=512
 
-function hook_check() {
+function hook_check_settings() {
 	assert ismac MAC
 	assert isbool STP
 	assert isoneof STP_MODE stp rstp
@@ -84,7 +84,7 @@ function hook_up() {
 	local zone=${1}
 	assert isset zone
 
-	zone_settings_read "${zone}" ${HOOK_SETTINGS}
+	zone_settings_read "${zone}"
 
 	# Create the bridge if it does not already exist.
 	if ! device_exists "${zone}"; then

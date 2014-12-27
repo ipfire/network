@@ -28,7 +28,7 @@ PORT_CHILDREN_VAR="SLAVES"
 ADDRESS=$(mac_generate)
 SLAVES=
 
-function hook_check() {
+function hook_check_settings() {
 	assert isset ADDRESS
 	assert ismac ADDRESS
 }

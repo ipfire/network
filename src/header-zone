@@ -34,17 +34,17 @@ function hook_new() {
 	assert isset zone
 	shift
 
-	settings_read $(zone_dir ${zone})/settings
+	zone_settings_read "${zone}"
 
 	hook_parse_cmdline $@
 
-	settings_write $(zone_dir ${zone})/settings ${HOOK_SETTINGS}
+	zone_settings_write "${zone}"
 
 	exit ${EXIT_OK}
 }
 
 function hook_edit() {
-	hook_create $@
+	hook_new $@
 }
 
 function hook_remove() {

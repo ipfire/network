@@ -36,7 +36,7 @@ SERVER_ADDRESS=""
 # The public IPv4 address of the tunnel client.
 PUBLIC_ADDRESS=""
 
-function hook_check() {
+function hook_check_settings() {
 	assert isset SIX_RD_PREFIX
 	assert isset PUBLIC_ADDRESS
 	assert isset SERVER_ADDRESS
@@ -101,7 +101,7 @@ function hook_up() {
 	assert isset zone
 
 	# Read configuration options.
-	zone_settings_read "${zone}" ${HOOK_SETTINGS}
+	zone_settings_read "${zone}"
 
 	# Configure the tunnel.
 	if ! device_exists "${zone}"; then
@@ -150,7 +150,7 @@ function hook_status() {
 
 	cli_device_headline ${zone}
 
-	zone_settings_read "${zone}" ${HOOK_SETTINGS}
+	zone_settings_read "${zone}"
 
 	local server_line="${SERVER_ADDRESS}"
 	local server_hostname=$(dns_get_hostname ${SERVER_ADDRESS})

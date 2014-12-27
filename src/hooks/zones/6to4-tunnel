@@ -44,7 +44,7 @@ TUNNEL_ID=
 USERNAME=
 PASSWORD=
 
-function hook_check() {
+function hook_check_settings() {
 	assert isset SERVER_ADDRESS
 	assert isset LOCAL_ADDRESS
 	assert isset LOCAL_ADDRESS6
@@ -102,7 +102,7 @@ function hook_up() {
 	assert isset zone
 
 	# Read configuration options.
-	zone_settings_read "${zone}" ${HOOK_SETTINGS}
+	zone_settings_read "${zone}"
 
 	if enabled AUTO_UPDATE_ENDPOINT; then
 		log DEBUG "Updating tunnel endpoint"
@@ -156,7 +156,7 @@ function hook_status() {
 
 	cli_device_headline ${zone}
 
-	zone_settings_read "${zone}" ${HOOK_SETTINGS}
+	zone_settings_read "${zone}"
 
 	local server_line="${SERVER_ADDRESS}"
 	local server_hostname=$(dns_get_hostname ${SERVER_ADDRESS})
