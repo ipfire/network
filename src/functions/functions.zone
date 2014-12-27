@@ -309,7 +309,7 @@ function zone_destroy_now() {
 	log INFO "Removing zone '${zone}' right now."
 
 	# Force the zone down.
-	zone_is_up "${zone}" && zone_set_down "${zone}"
+	zone_is_active "${zone}" && zone_stop "${zone}"
 
 	# Disable zone.
 	zone_disable "${zone}"
