@@ -53,6 +53,21 @@
 		<variablelist>
 			<varlistentry>
 				<term>
+					<command>list</command>
+				</term>
+
+				<listitem>
+					<para>
+						The <command>list</command> command will show a list
+						of all devices that are currently plugged in or active
+						on the system.
+						This includes PHYs and serial devices as well.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
 					<command><replaceable>DEVICE</replaceable> status</command>
 				</term>
 
@@ -100,6 +115,22 @@
 					</para>
 					<para>
 						For the PIN or PUK code, the user will be prompted.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command><replaceable>DEVICE</replaceable> monitor</command>
+				</term>
+
+				<listitem>
+					<para>
+						The <command>monitor</command> command is used to
+						create a monitor interface for wireless modules.
+						An instance of tcpdump will be started and show
+						all frames that are sent or received on the 802.11
+						layer (layer 2) of the wireless network.
 					</para>
 				</listitem>
 			</varlistentry>
