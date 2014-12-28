@@ -58,35 +58,45 @@ function cli_device() {
 		exit ${EXIT_OK}
 	fi
 
-	local device=${1}
-	local action=${2}
-	shift 2
-
-	if ! isset device; then
-		cli_show_man network-device
-		return ${EXIT_ERROR}
-	fi
-
-	assert device_exists ${device}
+	local action="${1}"
+	shift
 
 	case "${action}" in
-		discover)
-			cli_device_discover ${device} $@
-			;;
-		monitor)
-			cli_device_monitor "${device}" $@
-			;;
-		status)
-			cli_device_status ${device}
-			;;
-		unlock)
-			cli_device_serial_unlock ${device} $@
-			;;
-		ussd)
-			cli_device_send_ussd_command "${device}" $@
+		list)
+			cli_device_list $@
 			;;
 		*)
-			cli_show_man network-device
+			local device="${action}"
+			action="${1}"
+			shift
+
+			if ! isset device; then
+				cli_show_man network-device
+				return ${EXIT_ERROR}
+			fi
+
+			assert device_exists ${device}
+
+			case "${action}" in
+				discover)
+					cli_device_discover ${device} $@
+					;;
+				monitor)
+					cli_device_monitor "${device}" $@
+					;;
+				status)
+					cli_device_status ${device}
+					;;
+				unlock)
+					cli_device_serial_unlock ${device} $@
+					;;
+				ussd)
+					cli_device_send_ussd_command "${device}" $@
+					;;
+				*)
+					cli_show_man network-device
+					;;
+			esac
 			;;
 	esac
 
@@ -94,8 +104,8 @@ function cli_device() {
 }
 
 function cli_device_status() {
-	local device=${1}
-	assert device_exists ${device}
+	local device="${1}"
+	assert isset device
 
 	# Disable debugging output here.
 	local log_disable_stdout=${LOG_DISABLE_STDOUT}
@@ -107,11 +117,17 @@ function cli_device_status() {
 	cli_headline 1 "Device status: ${device}"
 	cli_print_fmt1 1 "Name"		"${device}"
 
-	# Handle serial devices.
-	if [ "${type}" = "serial" ]; then
-		cli_device_status_serial ${device}
-		return $?
-	fi
+	# Handle special devices
+	case "${type}" in
+		phy)
+			cli_device_status_phy "${device}"
+			return $?
+			;;
+		serial)
+			cli_device_status_serial "${device}"
+			return $?
+			;;
+	esac
 
 	# Print the device status.
 	device_is_up ${device} &>/dev/null
@@ -169,6 +185,18 @@ function cli_device_status() {
 		done
 		cli_space
 	fi
+
+	case "${type}" in
+		wireless*)
+			local phy="$(device_get_phy "${device}")"
+			if isset phy; then
+				cli_headline 2 "PHY"
+				cli_print_fmt1 2 "Name" "${phy}"
+				cli_print_fmt1 2 "Address" "$(phy_get_address "${phy}")"
+				cli_space
+			fi
+			;;
+	esac
 
 	# Reset the logging level.
 	LOG_DISABLE_STDOUT=${log_disable_stdout}
@@ -233,6 +261,28 @@ function cli_device_status_serial() {
 		fi
 	fi
 	cli_space
+}
+
+function cli_device_status_phy() {
+	local phy="${1}"
+	assert phy_exists "${phy}"
+
+	local address="$(phy_get_address "${phy}")"
+	cli_print_fmt1 1 "Address" "${address}"
+	cli_space
+
+	local devices="$(phy_get_devices "${phy}")"
+	if isset devices; then
+		cli_headline 2 "Soft interfaces"
+
+		local device
+		for device in ${devices}; do
+			cli_print 2 "* %s" "${device}"
+		done
+		cli_space
+	fi
+
+	return ${EXIT_OK}
 }
 
 function cli_device_discover() {
@@ -438,6 +488,15 @@ function cli_device_monitor() {
 
 	wireless_monitor "${device}"
 	exit $?
+}
+
+function cli_device_list() {
+	local device
+	for device in $(device_list); do
+		cli_device_status "${device}"
+	done
+
+	exit ${EXIT_OK}
 }
 
 function cli_hostname() {

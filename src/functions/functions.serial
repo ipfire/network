@@ -22,6 +22,15 @@
 # This is a list of baudrates that are supported.
 SERIAL_BAUDRATES="921600 460800 230400 115200 57600 38400 19200 9600"
 
+function serial_list() {
+	local device
+	for device in /dev/ttyUSB*; do
+		if serial_exists "${device}"; then
+			echo "${device}"
+		fi
+	done
+}
+
 function serial_exists() {
 	local device=${1}
 

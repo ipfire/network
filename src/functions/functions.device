@@ -58,6 +58,22 @@ function macify() {
 	return ${EXIT_ERROR}
 }
 
+function device_list() {
+	local devices
+
+	# Add all interfaces
+	list_append devices $(devices_get_all)
+
+	# Add all PHYs
+	list_append devices $(phy_list)
+
+	# Add all serial devices
+	list_append devices $(serial_list)
+
+	# Return a sorted result
+	list_sort ${devices}
+}
+
 # Check if the device exists
 function device_exists() {
 	local device=${1}
@@ -68,7 +84,11 @@ function device_exists() {
 	# Check for a normal network device.
 	[ -d "${SYS_CLASS_NET}/${device}" ] && return ${EXIT_OK}
 
-	# If the check above, did not find a result,
+	# If the check above did not find a result,
+	# we check for PHYs.
+	phy_exists "${device}" && return ${EXIT_OK}
+
+	# If the check above did not find a result,
 	# we check for serial devices.
 	serial_exists ${device}
 }
@@ -324,6 +344,10 @@ function device_get_phy() {
 	return ${EXIT_ERROR}
 }
 
+function device_is_phy() {
+	phy_exists $@
+}
+
 function device_is_serial() {
 	serial_exists $@
 }
@@ -397,6 +421,9 @@ function device_get_type() {
 
 	elif device_is_serial ${device}; then
 		echo "serial"
+
+	elif device_is_phy ${device}; then
+		echo "phy"
 
 	else
 		echo "unknown"
