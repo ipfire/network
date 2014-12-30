@@ -1208,7 +1208,7 @@ function cli_dns_server() {
 
 	case "${cmd}" in
 		list)
-			dns_server_list
+			dns_server_show
 			exit ${EXIT_OK}
 			;;
 		add)
@@ -1252,6 +1252,9 @@ function cli_raw() {
 	case "${cmd}" in
 		list-devices)
 			device_list
+			;;
+		list-dns-servers)
+			dns_server_list
 			;;
 		list-free-ports)
 			port_list_free

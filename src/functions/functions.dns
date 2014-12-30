@@ -61,14 +61,10 @@ function dns_server_list() {
 
 	local line
 	local ${NETWORK_CONFIG_DNS_SERVER_PARAMS}
-
-	local format="%-20s %-8s"
-	print "${format}" "SERVER" "PRIORITY"
-
-	while read -r line; do
+	while read line; do
 		dns_server_parse_line ${line} || continue
 
-		print "${format}" "${server}" "${priority}"
+		print "${server}"
 	done < ${DNS_SERVER_CONFIG_FILE}
 
 	return ${EXIT_OK}
@@ -104,6 +100,24 @@ function dns_server_list_sorted() {
 	# Return the list but remove duplicate entries, keeping
 	# the first and removing all others.
 	list_unique ${server_list}
+
+	return ${EXIT_OK}
+}
+
+function dns_server_show() {
+	[ -r "${DNS_SERVER_CONFIG_FILE}" ] || return ${EXIT_OK}
+
+	local line
+	local ${NETWORK_CONFIG_DNS_SERVER_PARAMS}
+
+	local format="%-20s %-8s"
+	print "${format}" "SERVER" "PRIORITY"
+
+	while read -r line; do
+		dns_server_parse_line ${line} || continue
+
+		print "${format}" "${server}" "${priority}"
+	done < ${DNS_SERVER_CONFIG_FILE}
 
 	return ${EXIT_OK}
 }

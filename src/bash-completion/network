@@ -74,16 +74,32 @@ function _network_device_subcommand() {
 
 	local commands="discover monitor status unlock ussd"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
-
 	if [[ -z "${cmd}" ]]; then
-		COMPREPLY=( $(compgen -W "discover monitor status unlock ussd" \
-			-- "${cur}") )
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
 		return 0
 	fi
 			
 	case "${cmd}" in
 		ussd)
 			# TODO
+			;;
+	esac
+}
+
+function _network_dns_server() {
+	local words=( $@ )
+
+	local commands="add list remove update"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+	case "${cmd}" in
+		remove)
+			COMPREPLY=( $(compgen -W "$(network raw list-dns-servers)" \
+				-- "${cur}") )
 			;;
 	esac
 }
@@ -122,6 +138,30 @@ function _network_port_subcommand() {
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
 		return 0
 	fi
+}
+
+function _network_route() {
+	local words=( $@ )
+
+	local commands="add list remove"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+	case "${cmd}" in
+		add)
+			if [[ "${cur}" = -* ]]; then
+				COMPREPLY=( $(compgen -W "--blackhole --gateway= --mtu= \
+					--prohibit --unreachable" -- "${cur}") )
+			fi
+			;;
+		list)
+			# TODO auto-complete options like --protocol here
+			COMPREPLY=( $(compgen -W "--protocol=" -- "${cur}") )
+			;;
+	esac
 }
 
 function _network_settings() {
@@ -252,8 +292,8 @@ function _network() {
 				COMPREPLY=( $(compgen -W "--debug" -- "${cur}") )
 				;;
 			*)
-				COMPREPLY=( $(compgen -W "device hostname port settings status zone" \
-					-- "${cur}") )
+				COMPREPLY=( $(compgen -W "device dns-server help hostname \
+					port reset route settings status zone" -- "${cur}") )
 				;;
 		esac
 
@@ -265,8 +305,14 @@ function _network() {
 		device)
 			_network_device ${args}
 			;;
+		dns-server)
+			_network_dns_server ${args}
+			;;
 		port)
 			_network_port ${args}
+			;;
+		route)
+			_network_route ${args}
 			;;
 		settings)
 			_network_settings ${args}
