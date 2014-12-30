@@ -1244,6 +1244,42 @@ function cli_dns_server() {
 	exit ${EXIT_OK}
 }
 
+function cli_raw() {
+	local cmd="${1}"
+	assert isset cmd
+	shift
+
+	case "${cmd}" in
+		list-devices)
+			device_list
+			;;
+		list-free-ports)
+			port_list_free
+			;;
+		list-hooks)
+			hook_list $@
+			;;
+		list-ports)
+			port_list
+			;;
+		list-ports-of-zone)
+			zone_get_ports $@
+			;;
+		list-settings)
+			network_settings_list
+			;;
+		list-zones)
+			zones_get_all
+			;;
+		*)
+			error "No such command: ${cmd}"
+			exit ${EXIT_ERROR}
+			;;
+	esac
+
+	exit ${EXIT_OK}
+}
+
 # Process the given action
 case "${action}" in
 	init)
@@ -1266,6 +1302,10 @@ case "${action}" in
 
 	""|help|--help|-h)
 		cli_help $@
+		;;
+
+	raw)
+		cli_raw $@
 		;;
 
 	*)

@@ -263,6 +263,10 @@ function network_settings_print() {
 	settings_print ${NETWORK_SETTINGS_FILE_PARAMS}
 }
 
+function network_settings_list() {
+	print "${NETWORK_SETTINGS_FILE_PARAMS}"
+}
+
 function firewall_settings_read() {
 	settings_read "${FIREWALL_SETTINGS_FILE}" "${FIREWALL_SETTINGS_PARAMS}"
 }

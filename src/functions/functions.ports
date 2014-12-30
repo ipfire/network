@@ -23,6 +23,47 @@ function port_dir() {
 	echo "${NETWORK_CONFIG_DIR}/ports"
 }
 
+function port_list() {
+	local port
+	for port in $(port_dir)/*; do
+		port="$(basename "${port}")"
+		if port_exists "${port}"; then
+			print "${port}"
+		fi
+	done
+}
+
+function port_list_in_use() {
+	local ports_in_use
+
+	# Collect all ports that are attached to a zone
+	local zone
+	for zone in $(zones_get_all); do
+		list_append ports_in_use $(zone_get_ports "${zone}")
+	done
+
+	# Collect all ports that are enslaved by an other port
+	local port
+	for port in $(port_list); do
+		list_append ports_in_use $(port_get_slaves "${port}")
+	done
+
+	list_sort ${ports_in_use}
+}
+
+function port_list_free() {
+	local ports_in_use="$(port_list_in_use)"
+
+	local port
+	for port in $(port_list); do
+		if ! list_match "${port}" ${ports_in_use}; then
+			print "${port}"
+		fi
+	done
+
+	return ${EXIT_OK}
+}
+
 function port_get_hook() {
 	local port=${1}
 	assert isset port
@@ -65,13 +106,7 @@ function port_settings_write() {
 }
 
 function ports_get_all() {
-	local port
-
-	for port in $(port_dir)/*; do
-		[ -f "${port}" ] || continue
-
-		basename ${port}
-	done
+	port_list
 }
 
 function port_file() {

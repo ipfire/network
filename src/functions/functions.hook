@@ -30,6 +30,22 @@ function hook_dir() {
 }
 NETWORK_HOOKS_DIR_ZONES="$(hook_dir zone)"
 
+function hook_list() {
+	local type="${1}"
+	assert isoneof type port zone
+
+	local dir="$(hook_dir "${type}")"
+	assert isset dir
+
+	local hook
+	for hook in ${dir}/*; do
+		hook_exists "${hook}" || continue
+		print "${hook}"
+	done
+
+	return ${EXIT_OK}
+}
+
 function hook_exists() {
 	local type=${1}
 	local hook=${2}

@@ -28,6 +28,7 @@ AUTOMAKE_OPTIONS = color-tests
 # keep itermediate files
 .SECONDARY:
 
+bashcompletiondir= $(datadir)/bash-completion/completions
 libexecdir       = $(prefix)/lib
 pkgconfigdatadir = $(datadir)/pkgconfig
 pppdir           = $(sysconfdir)/ppp
@@ -258,6 +259,11 @@ EXTRA_DIST += \
 
 dist_sysctl_DATA = \
 	src/sysctl/network.conf
+
+# ------------------------------------------------------------------------------
+
+dist_bashcompletion_SCRIPTS = \
+	src/bash-completion/network
 
 # ------------------------------------------------------------------------------
 
