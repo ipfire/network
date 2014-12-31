@@ -931,7 +931,7 @@ function _dhcpd_read_options() {
 	local options_list=${2}
 	assert isset options_list
 
-	setttings_read_array ${file} options ${!options_list}
+	settings_read_array ${file} options ${!options_list}
 }
 
 function _dhcpd_write_subnet() {
