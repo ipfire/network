@@ -200,7 +200,6 @@ dist_hooks_zones_SCRIPTS = \
 	src/hooks/zones/bridge \
 	src/hooks/zones/modem \
 	src/hooks/zones/pppoe \
-	src/hooks/zones/pptp \
 	src/hooks/zones/wireless
 
 # ------------------------------------------------------------------------------
@@ -323,8 +322,7 @@ MANPAGES = \
 	man/network-zone-aiccu.8 \
 	man/network-zone-bridge.8 \
 	man/network-zone-config-pppoe-server.8 \
-	man/network-zone-pppoe.8 \
-	man/network-zone-pptp.8
+	man/network-zone-pppoe.8
 
 MANPAGES_XML  = $(patsubst %.8,%.xml,$(MANPAGES))
 MANPAGES_HTML = $(patsubst %.xml,%.html,$(MANPAGES_XML))
