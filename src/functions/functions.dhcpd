@@ -332,6 +332,13 @@ function dhcpd_options() {
 	return ${EXIT_OK}
 }
 
+function dhcpd_global_settings_list() {
+	local proto="${1}"
+	assert isset proto
+
+	dhcpd_settings "${proto}"
+}
+
 function dhcpd_global_settings_defaults() {
 	local proto=${1}
 	assert isset proto
@@ -842,21 +849,7 @@ function dhcpd_subnet_options_file() {
 
 function dhcpd_subnet_options_list() {
 	local proto=${1}
-
-	case "${proto}" in
-		ipv6)
-			print "DHCPV6D_SUBNET_OPTIONS"
-			;;
-		ipv4)
-			print "DHCPV4D_SUBNET_OPTIONS"
-			;;
-	esac
-
-	return ${EXIT_OK}
-}
-
-function dhcpd_subnet_options() {
-	local proto=${1}
+	assert isset proto
 
 	case "${proto}" in
 		ipv6)

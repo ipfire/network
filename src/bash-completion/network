@@ -86,6 +86,121 @@ function _network_device_subcommand() {
 	esac
 }
 
+function _network_dhcpd() {
+	local proto="${1}"
+	shift
+
+	local words=( $@ )
+
+	local commands="edit reload restart show start stop subnet"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+	local args="${words[@]:1}"
+	case "${cmd}" in
+		subnet)
+			_network_dhcpd_subnet "${proto}" ${args}
+			;;
+	esac
+}
+
+function _network_dhcpd_subnet() {
+	local proto="${1}"
+	shift
+
+	local words=( $@ )
+
+	local commands="new remove show $(network raw list-dhcpd-subnets "${proto}")"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+	local subnet="${words[0]}"
+	local args="${words[@]:1}"
+	case "${cmd}" in
+		new)
+			: # TODO
+			;;
+		remove)
+			: # TODO
+			;;
+		[0-9]*)
+			_network_dhcpd_subnet_subcommand "${proto}" "${subnet}" ${args}
+			;;
+	esac
+}
+
+function _network_dhcpd_subnet_subcommand() {
+	local proto="${1}"
+	local subnet="${2}"
+	shift 2
+
+	local words=( $@ )
+
+	local commands="edit options range show"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+	local args="${words[@]:1}"
+	case "${cmd}" in
+		edit)
+			: # TODO
+			;;
+		options)
+			_network_dhcpd_subnet_subcommand_options "${proto}" "${subnet}" ${args}
+			;;
+		range)
+			_network_dhcpd_subnet_subcommand_range "${proto}" "${subnet}" ${args}
+			;;
+	esac
+}
+
+function _network_dhcpd_subnet_subcommand_options() {
+	local proto="${1}"
+	local subnet="${2}"
+	shift 2
+
+	local options option
+	for option in $(network raw list-dhcpd-subnet-options "${proto}"); do
+		options="${options} ${option}="
+	done
+
+	COMPREPLY=( $(compgen -W "${options}" -- "${cur}") )
+}
+
+function _network_dhcpd_subnet_subcommand_range() {
+	local proto="${1}"
+	local subnet="${2}"
+	shift 2
+
+	local words=( $@ )
+
+	local commands="new remove"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+	case "${cmd}" in
+		new)
+			COMPREPLY=( $(compgen -W "--end= --start=" -- "${cur}") )
+			;;
+		remove)
+			COMPREPLY=( $(compgen -W "$(network raw list-dhcpd-ranges-of-subnet "${proto}" "${subnet}")" \
+				-- "${cur}") )
+			;;
+	esac
+}
+
 function _network_dns_server() {
 	local words=( $@ )
 
@@ -292,8 +407,9 @@ function _network() {
 				COMPREPLY=( $(compgen -W "--debug" -- "${cur}") )
 				;;
 			*)
-				COMPREPLY=( $(compgen -W "device dns-server help hostname \
-					port reset route settings status zone" -- "${cur}") )
+				COMPREPLY=( $(compgen -W "device dhcpv4 dhcpv6 dns-server \
+					help hostname port reset route settings status zone" \
+					-- "${cur}") )
 				;;
 		esac
 
@@ -304,6 +420,9 @@ function _network() {
 	case "${cmd}" in
 		device)
 			_network_device ${args}
+			;;
+		dhcpv[64])
+			_network_dhcpd "${cmd/dhcpv/ipv}" ${args}
 			;;
 		dns-server)
 			_network_dns_server ${args}

@@ -996,7 +996,7 @@ function cli_dhcpd_subnet_show() {
 		cli_headline $(( ${level} + 2 )) "Options"
 
 		local option
-		for option in $(dhcpd_subnet_options ${proto}); do
+		for option in $(dhcpd_subnet_options_list ${proto}); do
 			[ -n "${options[${option}]}" ] || continue
 
 			cli_print_fmt1 $(( ${level} + 2 )) \
@@ -1024,7 +1024,7 @@ function cli_dhcpd_subnet_show() {
 	cli_space
 }
 
-function cli_dhcpd_options() {
+function cli_dhcpd_subnet_options() {
 	local proto=${1}
 	assert isset proto
 	shift
@@ -1032,8 +1032,6 @@ function cli_dhcpd_options() {
 	local subnet_id=${1}
 	assert isset subnet_id
 	shift
-
-	local valid_options=$(dhcpd_subnet_options ${proto})
 
 	local key val
 	while [ $# -gt 0 ]; do
@@ -1252,6 +1250,18 @@ function cli_raw() {
 	case "${cmd}" in
 		list-devices)
 			device_list
+			;;
+		list-dhcpd-ranges-of-subnet)
+			dhcpd_subnet_range_list $@
+			;;
+		list-dhcpd-settings)
+			dhcpd_global_settings_list $@
+			;;
+		list-dhcpd-subnets)
+			dhcpd_subnet_list $@
+			;;
+		list-dhcpd-subnet-options)
+			dhcpd_subnet_options_list $@
 			;;
 		list-dns-servers)
 			dns_server_list
