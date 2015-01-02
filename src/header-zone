@@ -200,7 +200,7 @@ function hook_config_cmd() {
 }
 
 function hook_config_create() {
-	assert [ $# -gt 2 ]
+	assert [ $# -ge 2 ]
 
 	hook_config_cmd "create" "$@"
 }
