@@ -215,7 +215,7 @@ function port_destroy() {
 		return ${EXIT_ERROR}
 	fi
 
-	port_down ${port}
+	port_remove "${port}"
 
 	rm -f $(port_file ${port})
 }
