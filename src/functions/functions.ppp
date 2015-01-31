@@ -553,6 +553,13 @@ function pppd_write_config() {
 		) >> ${file}
 	fi
 
+	# DNS
+	(
+		print "# DNS"
+		print "usepeerdns"
+		print
+	) >> ${file}
+
 	# IPv6
 	if enabled ipv6; then
 		(
