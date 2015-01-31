@@ -83,6 +83,252 @@ function ipv6_split_prefix() {
 	ip_split_prefix "$@"
 }
 
+function ipv6_address_add() {
+	local address="${1}"
+	assert isset address
+
+	local device="${2}"
+	assert device_exists "${device}"
+	shift 2
+
+	local scope="global"
+	local preferred_lft valid_lft
+
+	# Enable to wait until DAD has finished and return
+	# an error if it has failed
+	local wait_for_dad="true"
+
+	local arg
+	while read arg; do
+		case "${arg}" in
+			--preferred-lifetime=*)
+				preferred_lft="$(cli_get_val "${arg}")"
+				;;
+			--valid-lifetime=*)
+				valid_lft="$(cli_get_val "${arg}")"
+				;;
+			--no-wait-for-dad)
+				wait_for_dad="false"
+				;;
+		esac
+	done <<< "$(args $@)"
+
+	local cmd="ip addr add ${address} dev ${device} scope ${scope}"
+
+	# Preferred lifetime
+	if isinteger preferred_lft; then
+		list_append cmd "preferred_lft ${preferred_lft}"
+	fi
+
+	# Valid lifetime
+	if isinteger valid_lft; then
+		list_append cmd "valid_lft ${valid_lft}"
+	fi
+
+	cmd_quiet "${cmd}" || return ${EXIT_ERROR}
+
+	if enabled wait_for_dad; then
+		log DEBUG "Waiting for DAD to complete..."
+
+		ipv6_wait_for_dad "${address}" "${device}"
+		local ret="${?}"
+
+		case "${ret}" in
+			# DAD OK
+			${EXIT_DAD_OK})
+				log DEBUG "DAD successfully completed"
+				return ${EXIT_OK}
+				;;
+
+			# DAD failed
+			${EXIT_DAD_FAILED})
+				log ERROR "DAD failed"
+
+				# Remove the IP address again
+				ipv6_address_del "${address}" "${device}"
+
+				return ${EXIT_ERROR}
+				;;
+
+			# Any unknown errors
+			*)
+				log ERROR "DAD failed with unhandled error: ${ret}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+	fi
+
+	return ${EXIT_OK}
+}
+
+function ipv6_address_del() {
+	local address="${1}"
+	local device="${2}"
+
+	ip_address_del "${device}" "${address}"
+}
+
+function ipv6_address_flush() {
+	local device="${1}"
+	assert isset device
+
+	log DEBUG "Flushing all IPv6 addresses on ${device}"
+
+	# Remove any stale addresses from aborted clients
+	cmd_quiet ip -6 addr flush dev "${device}" scope global permanent
+}
+
+function ipv6_address_change_lifetime() {
+	local address="${1}"
+	assert isset address
+
+	local device="${2}"
+	assert device_exists "${device}"
+	shift 2
+
+	local preferred_lft
+	local valid_lft
+
+	local arg
+	while read arg; do
+		case "${arg}" in
+			--preferred-lifetime=*)
+				preferred_lft="$(cli_get_val "${arg}")"
+				;;
+			--valid-lifetime=*)
+				valid_lft="$(cli_get_val "${arg}")"
+				;;
+		esac
+	done <<< "$(args $@)"
+
+	local cmd="ip -6 addr change ${address} dev ${device} scope global"
+
+	if isinteger preferred_lft; then
+		list_append cmd "preferred_lft" "${preferred_lft}"
+	fi
+
+	if isinteger valid_lft; then
+		list_append cmd "valid_lft" "${valid_lft}"
+	fi
+
+	if ! cmd_quiet "${cmd}"; then
+		log ERROR "Could not change lifetimes of ${address} (${device})"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Changed lifetimes of ${address} (${device}) to:"
+	if isset preferred_lft; then
+		log DEBUG "  preferred: ${preferred_lft}"
+	fi
+
+	if isset valid_lft; then
+		log DEBUG "  valid: ${valid_lft}"
+	fi
+
+	return ${EXIT_OK}
+}
+
+function ipv6_get_dad_status() {
+	local address="${1}"
+	assert isset address
+
+	local device="${2}"
+	assert isset device
+
+	# Strip prefix from address
+	address="$(ipv6_split_prefix "${address}")"
+
+	local output="$(ip -o addr show dev "${device}" to "${address}")"
+	if ! isset output; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Abort if DAD failed
+	if [[ ${output} =~ "dadfailed" ]]; then
+		return ${EXIT_DAD_FAILED}
+	fi
+
+	# Wait a little more if DAD is still in progress
+	if [[ ${output} =~ "tentative" ]]; then
+		return ${EXIT_DAD_TENTATIVE}
+	fi
+
+	# DAD has successfully completed
+	return ${EXIT_DAD_OK}
+}
+
+function ipv6_wait_for_dad() {
+	local address="${1}"
+	assert isset address
+
+	local device="${2}"
+	assert isset device
+
+	# Strip prefix from address
+	address="$(ipv6_split_prefix "${address}")"
+
+	local i
+	for i in {0..10}; do
+		# Check DAD status
+		ipv6_get_dad_status "${address}" "${interface}"
+		local ret="${?}"
+
+		case "${ret}" in
+			# DAD is still in progress. Give it a moment to settle...
+			${EXIT_DAD_TENTATIVE})
+				sleep 0.5
+				continue
+				;;
+
+			# Raise all other error codes
+			${EXIT_DAD_OK}|${EXIT_DAD_FAILED}|*)
+				return ${ret}
+				;;
+		esac
+	done
+
+	return ${EXIT_ERROR}
+}
+
+function ipv6_device_get_addresses() {
+	local device="${1}"
+	assert isset device
+	shift
+
+	local scope
+
+	local arg
+	while read arg; do
+		case "${arg}" in
+			--scope=*)
+				scope="$(cli_get_val "${arg}")"
+				;;
+		esac
+	done <<< "$(args $@)"
+
+	local cmd="ip -o addr show dev ${device}"
+	if isset scope; then
+		assert isoneof scope global dynamic link
+		list_append cmd "scope ${scope}"
+	fi
+
+	local addresses
+	local line args
+	while read line; do
+		args=( ${line} )
+
+		local i
+		for (( i=0; i < ${#args[@]} - 1; i++ )); do
+			if [ "${args[${i}]}" = "inet6" ]; then
+				list_append_one addresses "${args[$(( ${i} + 1 ))]}"
+				break
+			fi
+		done
+	done <<< "$(${cmd})"
+
+	list_sort ${addresses}
+}
+
 function ipv6_implode() {
 	local address=${1}
 	assert isset address

@@ -82,16 +82,12 @@ dhclient_write_config() {
 	assert isset file
 
 	local hostname=${HOSTNAME%%.*}
-	local prefix_delegation="false"
 	local vendor=$(distro_get_pretty_name)
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--hostname=*)
 				hostname=$(cli_get_val ${1})
-				;;
-			--prefix-delegation=*)
-				prefix_delegation="$(cli_get_bool "${1}")"
 				;;
 			--vendor=*)
 				vendor=$(cli_get_val ${1})
@@ -128,14 +124,6 @@ dhclient_write_config() {
 
 		if isset hostname; then
 			echo "	send host-name \"${hostname}\";"
-			print
-		fi
-
-		# Prefix delegation (IPv6).
-		if enabled prefix_delegation; then
-			print "	# Prefix delegation"
-			print "	also request dhcp6.ia-pd 1;"
-			print "	send dhcp6.ia-na 1;"
 			print
 		fi
 
