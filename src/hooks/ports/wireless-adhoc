@@ -41,7 +41,7 @@ function hook_check_settings() {
 	assert isset SSID
 }
 
-function hook_create() {
+function hook_new() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
