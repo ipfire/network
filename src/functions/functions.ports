@@ -151,6 +151,10 @@ function port_is_attached() {
 	return ${EXIT_ERROR}
 }
 
+function port_is_up() {
+	device_is_up $@
+}
+
 function port_new() {
 	#local port=${1}
 	#shift

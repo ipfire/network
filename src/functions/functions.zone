@@ -651,9 +651,7 @@ function zone_port_attach() {
 			log INFO "${port} has been attached to ${zone}"
 
 			# Automatically connect the port
-			if zone_is_active "${zone}"; then
-				zone_port_create "${zone}" "${port}"
-			fi
+			zone_port_start "${zone}" "${port}"
 			;;
 		*)
 			log CRITICAL "${port} could not be attached to ${zone}"
@@ -716,9 +714,7 @@ function zone_port_detach() {
 			log INFO "${port} has been detached from ${zone}"
 
 			# Bring down the port if needed
-			if zone_is_active "${zone}"; then
-				zone_port_remove "${zone}" "${port}"
-			fi
+			zone_port_stop "${zone}" "${port}"
 			;;
 		*)
 			log CRITICAL "${port} could not be detached from ${zone}"
@@ -761,6 +757,43 @@ function zone_port_up() {
 
 function zone_port_down() {
 	zone_port_cmd "port_down" $@
+}
+
+# The next two functions automagically bring up and down
+# port that are attached to a bridge or similar.
+# The problem that is tried to overcome here is that there
+# are ports which exist all the time (like ethernet ports)
+# and therefore do not dispatch a hotplug event when
+# port_create is called.
+
+function zone_port_start() {
+	local zone="${1}"
+	local port="${2}"
+
+	if zone_is_active "${zone}"; then
+		if device_exists "${port}"; then
+			zone_port_up "${zone}" "${port}"
+			return ${?}
+		else
+			zone_port_create "${zone}" "${port}"
+			return ${?}
+		fi
+	fi
+
+	return ${EXIT_OK}
+}
+
+function zone_port_stop() {
+	local zone="${1}"
+	local port="${2}"
+
+	# Shut down the port if necessary
+	if zone_is_active "${zone}" && port_is_up "${port}"; then
+		zone_port_down "${zone}" "${port}"
+	fi
+
+	# Remove the port
+	zone_port_remove "${zone}" "${port}"
 }
 
 function zone_port_status() {
