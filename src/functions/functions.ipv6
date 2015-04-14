@@ -27,6 +27,12 @@ function ipv6_device_autoconf_enable() {
 
 	sysctl_set "net.ipv6.conf.${device}.accept_ra" 1
 	sysctl_set "net.ipv6.conf.${device}.autoconf" 1
+
+	log INFO "Enabled IPv6 auto-configuration on '${device}'"
+
+	# Disable IPv6 forwarding which cannot be used when the
+	# device is using IPv6 auto-configuration.
+	ipv6_device_forwarding_disable "${device}"
 }
 
 function ipv6_device_autoconf_disable() {
@@ -35,6 +41,30 @@ function ipv6_device_autoconf_disable() {
 
 	sysctl_set "net.ipv6.conf.${device}.accept_ra" 0
 	sysctl_set "net.ipv6.conf.${device}.autoconf" 0
+
+	log INFO "Disabled IPv6 auto-configuration on '${device}'"
+
+	# Enable IPv6 forwarding again
+	ipv6_device_forwarding_enable "${device}"
+
+	# Automatically disable privacy extensions
+	ipv6_device_privacy_extensions_disable "${device}"
+}
+
+function ipv6_device_forwarding_enable() {
+	local device="${1}"
+
+	sysctl_set "net.ipv6.conf.${device}.forwarding" 1
+
+	log INFO "Enabled IPv6 forwarding on '${device}'"
+}
+
+function ipv6_device_forwarding_disable() {
+	local device="${1}"
+
+	sysctl_set "net.ipv6.conf.${device}.forwarding" 0
+
+	log INFO "Disabled IPv6 forwarding on '${device}'"
 }
 
 # Enable IPv6 RFC3041 privacy extensions if desired
