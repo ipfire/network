@@ -180,8 +180,9 @@ UNINSTALL_EXEC_HOOKS += bridge-stp-uninstall-hook
 
 dist_hooks_configs_SCRIPTS = \
 	src/hooks/configs/ipv4-dhcp \
-	src/hooks/configs/ipv6-static \
 	src/hooks/configs/ipv4-static \
+	src/hooks/configs/ipv6-auto \
+	src/hooks/configs/ipv6-static \
 	src/hooks/configs/pppoe-server
 
 dist_hooks_ports_SCRIPTS = \
