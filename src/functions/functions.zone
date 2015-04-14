@@ -1008,25 +1008,38 @@ function zone_settings_get() {
 }
 
 function zone_config_settings_read() {
-	assert [ $# -gt 2 ]
+	assert [ $# -ge 2 ]
 
 	local zone="${1}"
 	local config="${2}"
 	shift 2
 
+	local args
+	if [ $# -eq 0 ] && [ -n "${HOOK_CONFIG_SETTINGS}" ]; then
+		list_append args ${HOOK_CONFIG_SETTINGS}
+	else
+		list_append args $@
+	fi
+
 	local path="$(zone_dir "${zone}")/configs/${config}"
-	settings_read "${path}" "$@"
+	settings_read "${path}" ${args}
 }
 
 function zone_config_settings_write() {
-	assert [ $# -gt 2 ]
+	assert [ $# -ge 2 ]
 
 	local zone="${1}"
 	local config="${2}"
 	shift 2
 
+	local args
+	if function_exists "hook_check_config_settings"; then
+		list_append args "--check=\"hook_check_config_settings\""
+	fi
+	list_append args ${HOOK_CONFIG_SETTINGS}
+
 	local path="$(zone_dir "${zone}")/configs/${config}"
-	settings_write "${path}" "$@"
+	settings_write "${path}" ${args}
 }
 
 function zone_port_settings_read() {
