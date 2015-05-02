@@ -104,16 +104,6 @@ routing_default_update() {
 	done
 }
 
-# XXX deprecated function
-routing_table_exists() {
-	route_table_exists $@
-}
-
-# XXX deprecated function
-routing_table_create() {
-	route_table_create $@
-}
-
 routing_db_from_ppp() {
 	local zone=${1}
 	local proto=${2}
@@ -164,7 +154,7 @@ routing_update() {
 	fi
 
 	# Create routing table if not exists
-	routing_table_create ${table}
+	route_table_create ${table}
 
 	log DEBUG "Flushing routing table ${table}"
 	cmd ${ip_cmd} route flush table ${table}
