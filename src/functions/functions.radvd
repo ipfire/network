@@ -83,7 +83,7 @@ __radvd_config_interface() {
 	fi
 
 	print
-	print "	prefix ${prefix} {"
+	print "	prefix ::/64 {"
 	print "		AdvOnLink on;"
 
 	if enabled dhcpd; then
