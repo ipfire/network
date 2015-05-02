@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function usb_device_find_by_tty() {
+usb_device_find_by_tty() {
 	local tty="${1}"
 	assert isset tty
 
@@ -35,7 +35,7 @@ function usb_device_find_by_tty() {
 	return ${EXIT_OK}
 }
 
-function usb_device_list_interfaces() {
+usb_device_list_interfaces() {
 	local path="${1}"
 	assert [ -d "${path}" ]
 
@@ -48,14 +48,14 @@ function usb_device_list_interfaces() {
 	return ${EXIT_OK}
 }
 
-function usb_device_get_interface_type() {
+usb_device_get_interface_type() {
 	local interface="${1}"
 	assert isset interface
 
 	fread "${interface}/type"
 }
 
-function usb_device_has_interface_type_interrupt() {
+usb_device_has_interface_type_interrupt() {
 	local device="${1}"
 	assert isset device
 

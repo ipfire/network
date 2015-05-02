@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function hook_dir() {
+hook_dir() {
 	local type=${1}
 
 	if [ -n "${type}" ]; then
@@ -30,7 +30,7 @@ function hook_dir() {
 }
 NETWORK_HOOKS_DIR_ZONES="$(hook_dir zone)"
 
-function hook_list() {
+hook_list() {
 	local type="${1}"
 	assert isoneof type port zone
 
@@ -46,7 +46,7 @@ function hook_list() {
 	return ${EXIT_OK}
 }
 
-function hook_exists() {
+hook_exists() {
 	local type=${1}
 	local hook=${2}
 
@@ -59,7 +59,7 @@ function hook_exists() {
 	[ ! -d "${hook}" ] && [ -x "${hook}" ]
 }
 
-function hook_exec() {
+hook_exec() {
 	local type="${1}"
 	assert isset type
 
@@ -113,7 +113,7 @@ function hook_exec() {
 	return ${ret}
 }
 
-function hook_list() {
+hook_list() {
 	local type="${1}"
 
 	local dir="$(hook_dir "${type}")"
@@ -130,7 +130,7 @@ function hook_list() {
 }
 
 # The default help function.
-function hook_help() {
+hook_help() {
 	# If no man page has been configured, we print an error message.
 	if [ -z "${HOOK_MANPAGE}" ]; then
 		error "There is no help available for hook '${HOOK}'. Exiting."
@@ -142,7 +142,7 @@ function hook_help() {
 	exit $?
 }
 
-function config_get_hook() {
+config_get_hook() {
 	local config=${1}
 
 	assert isset config
@@ -154,31 +154,31 @@ function config_get_hook() {
 	)
 }
 
-function hook_zone_exists() {
+hook_zone_exists() {
 	hook_exists zone $@
 }
 
-function hook_zone_exec() {
+hook_zone_exec() {
 	hook_exec zone $@
 }
 
-function hook_zone_get_all() {
+hook_zone_get_all() {
 	hook_list zone
 }
 
-function hook_config_exists() {
+hook_config_exists() {
 	hook_exists config $@
 }
 
-function hook_config_exec() {
+hook_config_exec() {
 	hook_exec config $@
 }
 
-function hook_config_get_all() {
+hook_config_get_all() {
 	hook_list config
 }
 
-function hook_valid_command() {
+hook_valid_command() {
 	local type="${1}"
 	local cmd="${2}"
 
@@ -200,7 +200,7 @@ function hook_valid_command() {
 	return ${EXIT_FALSE}
 }
 
-function hook_valid_command_config() {
+hook_valid_command_config() {
 	local cmd="${1}"
 
 	case "${cmd}" in
@@ -212,7 +212,7 @@ function hook_valid_command_config() {
 	return ${EXIT_FALSE}
 }
 
-function hook_valid_command_port() {
+hook_valid_command_port() {
 	local cmd="${1}"
 
 	case "${cmd}" in
@@ -240,7 +240,7 @@ function hook_valid_command_port() {
 	return ${EXIT_FALSE}
 }
 
-function hook_valid_command_zone() {
+hook_valid_command_zone() {
 	local cmd="${1}"
 
 	case "${cmd}" in

@@ -21,62 +21,58 @@
 
 . /usr/lib/network/header-config
 
-HOOK_SETTINGS="HOOK MTU SERVICE_NAME SUBNET MAX_SESSIONS"
+HOOK_CONFIG_SETTINGS="HOOK PRIVACY_EXTENSIONS"
 
-# Maximum Transmission Unit.
-MTU=1492
+# Privacy Extensions are disabled by default
+PRIVACY_EXTENSIONS="off"
 
-# Service Name.
-SERVICE_NAME=
-
-# A subnet. Addresses from this subnet will be given to the remote hosts.
-# The net address will be the gateway address for the PPPoE server.
-SUBNET=
-
-# Defines the max. number of sessions per MAC address.
-# 0 = unlimited.
-MAX_SESSIONS=0
-
-hook_check() {
-	assert isset MTU
-	assert isset SUBNET
-	assert isset MAX_SESSIONS
+hook_check_config_settings() {
+	assert isbool PRIVACY_EXTENSIONS
 }
 
 hook_create() {
-	local zone=${1}
+	local zone="${1}"
 	shift
 
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--max-sessions=*)
-				MAX_SESSIONS=$(cli_get_val ${1})
-				;;
-			--mtu=*)
-				MTU=$(cli_get_val ${1})
-				;;
-			--service-name=*)
-				SERVICE_NAME=$(cli_get_val ${1})
-				;;
-			--subnet=*)
-				SUBNET=$(cli_get_val ${1})
+	while read arg; do
+		case "${arg}" in
+			--privacy-extensions=*)
+				local val="$(cli_get_val "${arg}")"
+
+				if enabled val; then
+					PRIVACY_EXTENSIONS="on"
+				else
+					PRIVACY_EXTENSIONS="off"
+				fi
 				;;
 		esac
-		shift
-	done
+	done <<< "$(args $@)"
 
-	zone_config_settings_write "${zone}" "${HOOK}" ${HOOK_SETTINGS}
+	zone_config_settings_write "${zone}" "${HOOK}"
 
 	exit ${EXIT_OK}
 }
 
 hook_up() {
 	local zone=${1}
-	local config=${2}
-	shift 2
+	shift
 
-	# Start the PPPoE server.
-	pppoe_server_start ${zone}
+	if ! device_exists ${zone}; then
+		error "Zone '${zone}' doesn't exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	zone_config_settings_read "${zone}" "${HOOK}"
+
+	# Enable IPv6 auto-configuration
+	ipv6_device_autoconf_enable "${zone}"
+
+	# Set up privacy extensions (RFC3041)
+	if enabled PRIVACY_EXTENSIONS; then
+		ipv6_device_privacy_extensions_enable "${zone}"
+	else
+		ipv6_device_privacy_extensions_disable "${zone}"
+	fi
 
 	exit ${EXIT_OK}
 }
@@ -91,8 +87,8 @@ hook_down() {
 		exit ${EXIT_ERROR}
 	fi
 
-	# Stop the PPPoE server.
-	pppoe_server_stop ${zone}
+	# Disable IPv6 auto-configuration
+	ipv6_device_autoconf_disable "${zone}"
 
 	exit ${EXIT_OK}
 }
@@ -107,33 +103,26 @@ hook_status() {
 		exit ${EXIT_ERROR}
 	fi
 
-	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
+	zone_config_settings_read "${zone}" "${config}"
 
+	local addresses=$(ipv6_device_get_addresses "${zone}" --scope="global")
 	local status
-	if pppoe_server_status ${zone}; then
+	if isset addresses; then
 		status="${MSG_HOOK_UP}"
 	else
 		status="${MSG_HOOK_DOWN}"
 	fi
-	cli_statusline 3 "PPPoE server" "${status}"
+	cli_statusline 3 "${HOOK}" "${status}"
 
-	local gateway=$(ipv4_get_network ${SUBNET})
-	cli_print_fmt1 3 "Gateway" "${gateway}"
-
-	local start_address=$(ipv4_encode ${gateway})
-	start_address=$(( ${start_address} + 1 ))
-	start_address=$(ipv4_decode ${start_address})
-	local end_address=$(ipv4_get_broadcast ${SUBNET})
-
-	cli_print_fmt1 3 "Client range" \
-		"${start_address}-${end_address}"
-	cli_space
-
-	local max_sessions=${MAX_SESSIONS}
-	if [ "${max_sessions}" = "0" ]; then
-		max_sessions="unlimited"
+	if enabled PRIVACY_EXTENSIONS; then
+		cli_print_fmt1 3 "Privacy Extensions enabled"
+		cli_space
 	fi
-	cli_print_fmt1 3 "${max_sessions} session(s) per MAC"
+
+	local addr
+	for addr in ${addresses}; do
+		cli_print_fmt1 3 "IPv6 address" "${addr}"
+	done
 	cli_space
 
 	exit ${EXIT_OK}

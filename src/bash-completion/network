@@ -20,7 +20,7 @@
 ###############################################################################
 # network(8) completion
 
-function _network_find_on_cmdline () {
+_network_find_on_cmdline () {
 	local word subcommand c=0
 	while [ ${c} -lt ${cword} ]; do
 		word="${words[c]}"
@@ -34,21 +34,21 @@ function _network_find_on_cmdline () {
 	done
 }
 
-function _network_complete_hooks() {
+_network_complete_hooks() {
 	local type="${1}"
 
 	COMPREPLY=( $(compgen -W "$(network raw list-hooks "${type}")" -- "${cur}") )
 }
 
-function _network_complete_ports() {
+_network_complete_ports() {
 	COMPREPLY=( $(compgen -W "$(network raw list-ports)" -- "${cur}") )
 }
 
-function _network_complete_zones() {
+_network_complete_zones() {
 	COMPREPLY=( $(compgen -W "$(network raw list-zones)" -- "${cur}") )
 }
 
-function _network_device() {
+_network_device() {
 	local words=( $@ )
 
 	local commands="list $(network raw list-devices)"
@@ -69,7 +69,7 @@ function _network_device() {
 	esac
 }
 
-function _network_device_subcommand() {
+_network_device_subcommand() {
 	local words=( $@ )
 
 	local commands="discover monitor status unlock ussd"
@@ -86,7 +86,7 @@ function _network_device_subcommand() {
 	esac
 }
 
-function _network_dhcpd() {
+_network_dhcpd() {
 	local proto="${1}"
 	shift
 
@@ -107,7 +107,7 @@ function _network_dhcpd() {
 	esac
 }
 
-function _network_dhcpd_subnet() {
+_network_dhcpd_subnet() {
 	local proto="${1}"
 	shift
 
@@ -135,7 +135,7 @@ function _network_dhcpd_subnet() {
 	esac
 }
 
-function _network_dhcpd_subnet_subcommand() {
+_network_dhcpd_subnet_subcommand() {
 	local proto="${1}"
 	local subnet="${2}"
 	shift 2
@@ -163,7 +163,7 @@ function _network_dhcpd_subnet_subcommand() {
 	esac
 }
 
-function _network_dhcpd_subnet_subcommand_options() {
+_network_dhcpd_subnet_subcommand_options() {
 	local proto="${1}"
 	local subnet="${2}"
 	shift 2
@@ -176,7 +176,7 @@ function _network_dhcpd_subnet_subcommand_options() {
 	COMPREPLY=( $(compgen -W "${options}" -- "${cur}") )
 }
 
-function _network_dhcpd_subnet_subcommand_range() {
+_network_dhcpd_subnet_subcommand_range() {
 	local proto="${1}"
 	local subnet="${2}"
 	shift 2
@@ -201,7 +201,7 @@ function _network_dhcpd_subnet_subcommand_range() {
 	esac
 }
 
-function _network_dns_server() {
+_network_dns_server() {
 	local words=( $@ )
 
 	local commands="add list remove update"
@@ -219,7 +219,7 @@ function _network_dns_server() {
 	esac
 }
 
-function _network_port() {
+_network_port() {
 	local words=( $@ )
 
 	local commands="new destroy $(network raw list-ports)"
@@ -244,7 +244,7 @@ function _network_port() {
 	esac
 }
 
-function _network_port_subcommand() {
+_network_port_subcommand() {
 	local words=( $@ )
 
 	local commands="create down edit remove status up"
@@ -255,7 +255,7 @@ function _network_port_subcommand() {
 	fi
 }
 
-function _network_route() {
+_network_route() {
 	local words=( $@ )
 
 	local commands="add list remove"
@@ -279,7 +279,7 @@ function _network_route() {
 	esac
 }
 
-function _network_settings() {
+_network_settings() {
 	local words=( $@ )
 
 	local key keys
@@ -289,7 +289,7 @@ function _network_settings() {
 	COMPREPLY=( $(compgen -W "${keys}" -- "${cur}") )
 }
 
-function _network_zone() {
+_network_zone() {
 	local words=( $@ )
 
 	local commands="new destroy $(network raw list-zones)"
@@ -316,7 +316,7 @@ function _network_zone() {
 	esac
 }
 
-function _network_zone_subcommand() {
+_network_zone_subcommand() {
 	local zone="${1}"
 	shift
 
@@ -340,7 +340,7 @@ function _network_zone_subcommand() {
 	esac
 }
 
-function _network_zone_subcommand_port() {
+_network_zone_subcommand_port() {
 	local zone="${1}"
 	shift
 
@@ -370,7 +370,7 @@ function _network_zone_subcommand_port() {
 	esac
 }
 
-function _network_zone_subcommand_port_subcommand() {
+_network_zone_subcommand_port_subcommand() {
 	local zone="${1}"
 	local port="${2}"
 	shift 2
@@ -391,7 +391,7 @@ function _network_zone_subcommand_port_subcommand() {
 	esac
 }
 
-function _network() {
+_network() {
 	local cur prev words cword
 	_init_completion || return
 

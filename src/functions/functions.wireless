@@ -23,7 +23,7 @@
 WIRELESS_REGULATORY_DOMAIN="00"
 NETWORK_SETTINGS_FILE_PARAMS="${NETWORK_SETTINGS_FILE_PARAMS} WIRELESS_REGULATORY_DOMAIN"
 
-function wireless_create() {
+wireless_create() {
 	local device=${1}
 	assert isset device
 	shift
@@ -75,7 +75,7 @@ function wireless_create() {
 	return ${ret}
 }
 
-function wireless_remove() {
+wireless_remove() {
 	local device=${1}
 	assert isset device
 
@@ -99,19 +99,19 @@ function wireless_remove() {
 	return ${ret}
 }
 
-function wireless_get_reg_domain() {
+wireless_get_reg_domain() {
 	# Returns the country code for the wireless device.
 	# Defaults to 00 = world if unset.
 	print "${WIRELESS_REGULATORY_DOMAIN:-00}"
 }
 
-function wireless_init_reg_domain() {
+wireless_init_reg_domain() {
 	local country_code="$(wireless_get_reg_domain)"
 
 	wireless_set_reg_domain "${country_code}" --no-reset
 }
 
-function wireless_set_reg_domain() {
+wireless_set_reg_domain() {
 	local country_code
 	local reset="true"
 
@@ -141,7 +141,7 @@ function wireless_set_reg_domain() {
 	iw reg set "${country_code}"
 }
 
-function wireless_channel_to_frequency() {
+wireless_channel_to_frequency() {
 	# http://en.wikipedia.org/wiki/List_of_WLAN_channels
 
 	local channel=${1}
@@ -173,7 +173,7 @@ function wireless_channel_to_frequency() {
 	return ${EXIT_ERROR}
 }
 
-function wireless_set_channel() {
+wireless_set_channel() {
 	local device=${1}
 	assert isset device
 
@@ -186,7 +186,7 @@ function wireless_set_channel() {
 	cmd_quiet iw dev ${device} set channel ${channel}
 }
 
-function wireless_ibss_join() {
+wireless_ibss_join() {
 	local device=${1}
 	assert isset device
 	shift
@@ -229,7 +229,7 @@ function wireless_ibss_join() {
 		"${frequency}" fixed-freq "${bssid}"
 }
 
-function wireless_ibss_leave() {
+wireless_ibss_leave() {
 	local device=${1}
 	assert isset device
 
@@ -237,14 +237,14 @@ function wireless_ibss_leave() {
 	cmd_quiet iw dev "${device}" ibss leave
 }
 
-function wireless_is_radar_frequency() {
+wireless_is_radar_frequency() {
 	local frequency="${1}"
 	assert isset frequency
 
 	[[ ${frequency} -ge 5260 ]] && [[ ${frequency} -le 5700 ]]
 }
 
-function wireless_monitor() {
+wireless_monitor() {
 	local device="${1}"
 	assert isset device
 	shift

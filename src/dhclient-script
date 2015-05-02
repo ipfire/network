@@ -5,6 +5,8 @@
 # Configure logging
 LOG_FACILITY="dhclient-script"
 
+network_settings_read
+
 assert isset interface
 assert isset reason
 
@@ -13,12 +15,150 @@ assert device_exists ${interface}
 basename="$(basename $0)"
 log DEBUG "${basename} called for interface=${interface} reason=${reason}"
 
+# Log all information from dhclient
+if enabled DEBUG; then
+	while read line; do
+		[[ ${line} =~ ^(cur|old|new)_ ]] || continue
+		log DEBUG "  ${line}"
+	done <<< "$(printenv | sort)"
+fi
+
 # Main pitchfork.
 case "${reason}" in
 	MEDIUM)
 		# Linux does not handle MEDIUM.
 		exit 0
 		;;
+
+	# IPv6
+
+	PREINIT6)
+		if ! device_is_up "${interface}"; then
+			log WARNING "Device '${interface}' was not brought up before starting the DHCP client"
+			device_set_up "${interface}"
+		fi
+
+		# Flush all other aborted IP addresses
+		ipv6_address_flush "${interface}"
+
+		# Disable autoconf because DHCP is handling this
+		ipv6_device_autoconf_disable "${interface}"
+
+		# Enable forwarding because we are acting as a host
+		# to uplink network zones.
+		ipv6_device_forwarding_enable "${interface}" --accept-ra
+
+		# Wait until DAD for the link-local address has finished
+		for address in $(ipv6_device_get_addresses "${interface}" --scope="link"); do
+			ipv6_wait_for_dad "${address}" "${interface}" && exit ${EXIT_OK}
+		done
+
+		log ERROR "There is no active link-local address on ${interface}"
+
+		exit ${EXIT_ERROR}
+		;;
+
+	BOUND6)
+		# We will be called twice. Once for the assigned address and once for an assigned prefix.
+
+		# Handle temporarily-assigned address
+		if isset new_ip6_address && isset new_ip6_prefixlen; then
+			ipv6_address_add "${new_ip6_address}/${new_ip6_prefixlen}" "${interface}" \
+				--valid-lifetime="${new_max_life}" --preferred-lifetime="${new_preferred_life}"
+
+			# Save configuration
+			db_set "${interface}/ipv6/local-ip-address" "${new_ip6_address}/${new_ip6_prefixlen}"
+			db_set "${interface}/ipv6/active" 1
+			#db_set "${interface}/ipv6/domain-name" "${new_
+
+			# Update the routing tables
+			routing_update "${interface}" ipv6
+
+			exit 0
+
+		# Handle Prefix Delegation
+		elif isset new_ip6_prefix; then
+			db_set "${interface}/ipv6/delegated-prefix" "${new_ip6_prefix}"
+
+			exit 0
+		fi
+		;;
+
+	RENEW6|REBIND6)
+		# Will be called twice like BOUND6.
+
+		if isset new_ip6_address && isset new_ip6_prefixlen; then
+			# Update nameservers if those have changed
+			if [[ "${old_dhcp6_name_servers}" != "${new_dhcp6_name_servers}" ]]; then
+				db_set "${interface}/ipv6/domain-name-servers" "${new_dhcp6_name_servers}"
+				dns_generate_resolvconf
+			fi
+
+			# Update the lifetime if the address has not changed
+			if [[ "${old_ip6_address}" = "${new_ip6_address}" ]]; then
+				ipv6_address_change_lifetime "${new_ip6_address}/${new_ip6_prefixlen}" "${interface}" \
+					--valid-lifetime="${new_max_life}" --preferred-lifetime="${new_preferred_life}"
+
+				exit ${EXIT_OK}
+			fi
+
+			# Remove any old IP addresses
+			if [ -n "${old_ip6_address}" ]; then
+				ipv6_address_del "${old_ip6_address}/${old_ip6_prefixlen}" "${interface}"
+			fi
+
+			# Update the database
+			db_set "${interface}/ipv6/local-ip-address" \
+				"${new_ip6_address}/${new_ip6_prefixlen}"
+
+			# Add the new one
+			ipv6_address_add "${new_ip6_address}/${new_ip6_prefixlen}" "${interface}" \
+				--valid-lifetime="${new_max_life}" --preferred-lifetime="${new_preferred_life}"
+
+			# Update the routing tables
+			routing_update "${interface}" ipv6
+
+			exit ${EXIT_OK}
+
+		# Handle Prefix Delegation
+		elif isset new_ip6_prefix || isset old_ip6_prefix; then
+			if [[ "${old_ip6_prefix}" = "${new_ip6_prefix}" ]]; then
+				# TODO What do we need to do if the prefix hasn't changed?
+				exit ${EXIT_OK}
+			fi
+
+			log DEBUG "The delegated prefix has changed from ${old_ip6_prefix} to ${new_ip6_prefix}"
+			db_set "${interface}/ipv6/delegated-prefix" "${new_ip6_prefix}"
+
+			exit ${EXIT_OK}
+		fi
+		;;
+
+	DEPREF6)
+		# Check if all necessary information is there
+		if ! isset cur_ip6_address || ! isset cur_ip6_prefixlen; then
+			exit ${EXIT_ERROR}
+		fi
+
+		# Set lifetime to zero
+		ipv6_address_change_lifetime "${cur_ip6_address}/${cur_ip6_prefixlen}" "${interface}" \
+			--preferred-lifetime=0 || exit ${EXIT_ERROR}
+		;;
+
+	EXPIRE6|FAIL6|RELEASE6|STOP6)
+		# Remove the currently configured addresses from the device.
+		ipv6_address_flush "${interface}"
+
+		# Reset autoconf mode and disable forwarding
+		ipv6_device_forwarding_disable "${interface}"
+		ipv6_device_autoconf_disable "${interface}"
+
+		db_delete "${interface}/ipv6"
+
+		exit 0
+		;;
+
+	# IPv4
 
 	PREINIT)
 		# Bring up the device if it hasn't been done before.
@@ -61,7 +201,6 @@ case "${reason}" in
 		exit 0
 		;;
 
-
 	BOUND|RENEW|REBIND|REBOOT)
 		# Check if the IP address has changed. If so, delete all routes and stuff.
 		if [ -n "${old_ip_address}" -a "${old_ip_address}" != "${new_ip_address}" ]; then
@@ -93,13 +232,16 @@ case "${reason}" in
 					fi
 
 					# Save configuration
-					routing_db_set ${interface} ipv4 type "ipv4-dhcp"
-					routing_db_set ${interface} ipv4 local-ip-address "${new_ip_address}/${new_prefix}"
-					routing_db_set ${interface} ipv4 remote-ip-address "${new_routers}"
-					routing_db_set ${interface} ipv4 active 1
-					routing_db_set ${interface} ipv4 domain-name "${new_domain_name}"
-					routing_db_set ${interface} ipv4 domain-name-servers "${new_domain_name_servers}"
-					routing_db_set ${interface} ipv4 domain-name-servers-priority "${DNS_SERVER_DYNAMIC_PRIORITY}"
+					db_set "${interface}/ipv4/type" "ipv4-dhcp"
+					db_set "${interface}/ipv4/local-ip-address" \
+						"${new_ip_address}/${new_prefix}"
+					db_set "${interface}/ipv4/remote-ip-address" "${new_routers}"
+					db_set "${interface}/ipv4/active" 1
+					db_set "${interface}/ipv4/domain-name" "${new_domain_name}"
+					db_set "${interface}/ipv4/domain-name-servers" \
+						"${new_domain_name_servers}"
+					db_set "${interface}/ipv4/domain-name-servers-priority" \
+						"${DNS_SERVER_DYNAMIC_PRIORITY}"
 
 					# Update the routing tables.
 					routing_update ${interface} ipv4
@@ -120,10 +262,14 @@ case "${reason}" in
 			ipv4_flush_device ${interface}
 		fi
 
-		routing_db_remove ${interface} ipv4
+		db_delete "${interface}/ipv4"
 		routing_default_update
 
 		exit 0
+		;;
+
+	*)
+		log ERROR "Unhandled reason: ${reason}"
 		;;
 esac
 

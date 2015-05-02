@@ -20,7 +20,7 @@
 ###############################################################################
 
 # A simple print statement
-function print() {
+print() {
 	local fmt=${1}; shift
 
 	printf -- "${fmt}\n" "$@"
@@ -29,11 +29,11 @@ function print() {
 # The args() function takes a number of arguments like
 #   var1="abc d" var2="abc" var3="abcd e"
 # and splits them into several arguments, devided by newline
-function args() {
+args() {
 	echo "$@" | xargs printf "%s\n"
 }
 
-function unquote() {
+unquote() {
 	local var="$@"
 
 	if [ "${var:0:1}" = "\"" ]; then
@@ -48,11 +48,11 @@ function unquote() {
 	print "${var}"
 }
 
-function quote() {
+quote() {
 	print "\"%s\"" "$@"
 }
 
-function strip() {
+strip() {
 	local value="$@"
 
 	# remove leading whitespace characters
@@ -65,43 +65,43 @@ function strip() {
 }
 
 # Print a pretty error message
-function error() {
+error() {
 	echo -e " ${CLR_RED_B}ERROR${CLR_RESET}  : $@" >&2
 }
 
-function error_log() {
+error_log() {
 	log ERROR "$@"
 }
 
 # Print a pretty warn message
-function warning() {
+warning() {
 	echo -e " ${CLR_YELLOW_B}WARNING${CLR_RESET}: $@" >&2
 }
 
-function warning_log() {
+warning_log() {
 	log WARNING "$@"
 }
 
 # The next three functions are kept for backwards
 # compatibility. The need to be dropped at some time.
-function listsort() {
+listsort() {
 	list_sort $@
 }
 
-function listmatch() {
+listmatch() {
 	list_match $@
 }
 
-function listlength() {
+listlength() {
 	list_length $@
 }
 
 # Speedup function to avoid a call of the basename binary
-function basename() {
+basename() {
 	echo "${1##*/}"
 }
 
-function format() {
+format() {
 	local key=${1}
 	assert isset key
 
@@ -113,7 +113,7 @@ function format() {
 	printf -v "${key}" "${format}" "$@"
 }
 
-function assign() {
+assign() {
 	local key=${1}
 	assert isset key
 	shift
@@ -121,7 +121,7 @@ function assign() {
 	format "${key}" "%s" "$@"
 }
 
-function fread() {
+fread() {
 	local file=${1}
 	assert isset file
 
@@ -130,7 +130,7 @@ function fread() {
 	print "$(<${file})"
 }
 
-function fwrite() {
+fwrite() {
 	local file=${1}
 	assert isset file
 	shift
@@ -143,13 +143,20 @@ function fwrite() {
 	print "%s" "$@" >> ${file} 2>/dev/null
 }
 
-function enabled() {
+make_parent_dir() {
+	local path="${1}"
+
+	local dirname="$(dirname "${path}")"
+	mkdir -p "${dirname}"
+}
+
+enabled() {
 	local param=${1}
 
 	list_match "${!param}" yes on true 1
 }
 
-function mac_generate() {
+mac_generate() {
 	# Get a bunch of random hex digits
 	# and remove all dashes from the input.
 	local random=$(</proc/sys/kernel/random/uuid)
@@ -184,7 +191,7 @@ function mac_generate() {
 	echo "${output}"
 }
 
-function mac_format() {
+mac_format() {
 	local mac=${1}
 	assert isset mac
 
@@ -209,54 +216,54 @@ function mac_format() {
 	print "${output}"
 }
 
-function mac_is_valid() {
+mac_is_valid() {
 	local mac=${1}
 
 	[[ ${mac} =~ ^([0-9a-f]{2}\:){5}[0-9a-f]{2}$ ]]
 }
 
-function uuid() {
+uuid() {
 	echo $(</proc/sys/kernel/random/uuid)
 }
 
-function isset() {
+isset() {
 	local var=${1}
 
 	[ -n "${!var}" ]
 }
 
-function isoneof() {
+isoneof() {
 	local var=${!1}
 	shift
 
 	list_match "${var}" "$@"
 }
 
-function isbool() {
+isbool() {
 	local var=${1}
 
 	isoneof ${var} 0 1 no yes on off
 }
 
-function isinteger() {
+isinteger() {
 	local var=${!1}
 
 	[[ ${var} =~ ^[0-9]+$ ]]
 }
 
-function ismac() {
+ismac() {
 	local mac=${!1}
 
 	mac_is_valid ${mac}
 }
 
-function isipaddress() {
+isipaddress() {
 	local addr=${!1}
 
 	ip_is_valid ${addr}
 }
 
-function backtrace() {
+backtrace() {
 	local start=1
 
 	echo # Empty line
@@ -279,7 +286,7 @@ function backtrace() {
 	done
 }
 
-function assert() {
+assert() {
 	local assertion="$@"
 
 	if ! ${assertion}; then
@@ -293,7 +300,7 @@ function assert() {
 
 # This function checks, if the given argument is an assert error
 # exit code. If this is the case, the script will halt immediately.
-function assert_check_retval() {
+assert_check_retval() {
 	local ret=${1}
 
 	if [ ${ret} -eq ${EXIT_ERROR_ASSERT} ]; then
@@ -303,7 +310,7 @@ function assert_check_retval() {
 	return ${ret}
 }
 
-function exec_cmd() {
+exec_cmd() {
 	local cmd=$@
 
 	log DEBUG "Running command: ${cmd}"
@@ -324,7 +331,7 @@ function exec_cmd() {
 	return ${ret}
 }
 
-function cmd() {
+cmd() {
 	local cmd=$@
 
 	log DEBUG "Running command: ${cmd}"
@@ -337,11 +344,11 @@ function cmd() {
 	return ${ret}
 }
 
-function cmd_quiet() {
+cmd_quiet() {
 	cmd $@ &>/dev/null
 }
 
-function cmd_exec() {
+cmd_exec() {
 	local cmd=$@
 
 	log DEBUG "Exec'ing command: ${cmd}"
@@ -352,16 +359,16 @@ function cmd_exec() {
 	exit ${EXIT_ERROR}
 }
 
-function cmd_not_implemented() {
+cmd_not_implemented() {
 	assert false "not implemented"
 }
 
 # Increase security of the read command
-function read() {
+read() {
 	builtin read -r $@
 }
 
-function seq() {
+seq() {
 	if [ $# -eq 2 ]; then
 		eval echo {${1}..${2}}
 	elif [ $# -eq 3 ]; then
@@ -369,16 +376,16 @@ function seq() {
 	fi
 }
 
-function which() {
+which() {
 	type -P $@
 }
 
 # Prints the number of seconds since epoch.
-function timestamp() {
+timestamp() {
 	date -u "+%s"
 }
 
-function beautify_time() {
+beautify_time() {
 	local value=${1}
 
 	local unit
@@ -404,7 +411,7 @@ function beautify_time() {
 	echo "${value}${unit}"
 }
 
-function beautify_bytes() {
+beautify_bytes() {
 	local value=${1}
 
 	local unit
@@ -417,7 +424,7 @@ function beautify_bytes() {
 	echo "${value}${unit}"
 }
 
-function module_load() {
+module_load() {
 	local module=${1}
 
 	if ! grep -q "^${module}" /proc/modules; then
@@ -426,7 +433,7 @@ function module_load() {
 	fi
 }
 
-function binary_exists() {
+binary_exists() {
 	local binary=${1}
 
 	if [ -n "$(type -p ${binary})" ]; then
@@ -436,7 +443,7 @@ function binary_exists() {
 	return ${EXIT_ERROR}
 }
 
-function function_exists() {
+function_exists() {
 	local function="${1}"
 
 	if [ "$(type -t "${function}")" = "function" ]; then
@@ -446,7 +453,7 @@ function function_exists() {
 	return ${EXIT_FALSE}
 }
 
-function process_kill() {
+process_kill() {
 	local process=${1}
 
 	if ! isinteger process; then
@@ -465,7 +472,7 @@ function process_kill() {
 	done
 }
 
-function dec() {
+dec() {
 	local hex=${1}
 
 	if [ "${hex:0:2}" != "0x" ]; then
@@ -475,7 +482,7 @@ function dec() {
 	printf "%d\n" "${hex}"
 }
 
-function chr() {
+chr() {
 	local char="${1}"
 
 	[ ${char} -lt 256 ] || return ${EXIT_ERROR}
@@ -483,20 +490,20 @@ function chr() {
 	printf "\\$(( ${char} / 64 * 100 + ${char} % 64 / 8 * 10 + ${char} % 8 ))\n"
 }
 
-function ord() {
+ord() {
 	LC_CTYPE="C" printf "%d\n" "'${1}"
 }
 
-function hex() {
+hex() {
 	printf "%X\n" "${1}"
 }
 
-function network_is_running() {
+network_is_running() {
 	# Check, if the network service is running.
 	service_is_active network
 }
 
-function contains_spaces() {
+contains_spaces() {
 	local var="$@"
 
 	# Eliminate spaces.
@@ -509,7 +516,7 @@ function contains_spaces() {
 	return ${EXIT_FALSE}
 }
 
-function string_split() {
+string_split() {
 	local string="$@"
 
 	local pos=0
@@ -521,7 +528,7 @@ function string_split() {
 	return ${EXIT_OK}
 }
 
-function string_reverse() {
+string_reverse() {
 	local string="$@"
 
 	local output
@@ -535,7 +542,7 @@ function string_reverse() {
 	return ${EXIT_OK}
 }
 
-function dec2bin() {
+dec2bin() {
 	local number="${1}"
 
 	local output
@@ -561,7 +568,7 @@ function dec2bin() {
 	print "${output}"
 }
 
-function bin2dec() {
+bin2dec() {
 	local string="${1}"
 	local number=0
 
@@ -587,31 +594,31 @@ function bin2dec() {
 	return ${EXIT_OK}
 }
 
-function char2bin() {
+char2bin() {
 	local dec="$(ord "${1}")"
 
 	dec2bin "${dec}"
 }
 
-function bin2char() {
+bin2char() {
 	local dec="$(bin2dec "$@")"
 
 	chr "${dec}"
 }
 
-function bin2hex() {
+bin2hex() {
 	local dec="$(bin2dec "$@")"
 
 	dec2hex "${dec}"
 }
 
-function hex2bin() {
+hex2bin() {
 	local dec="$(hex2dec "$@")"
 
 	dec2bin "${dec}"
 }
 
-function hex2dec() {
+hex2dec() {
 	local hex="${1}"
 
 	# Prepend 0x if necessary.
@@ -620,6 +627,6 @@ function hex2dec() {
 	printf "%d\n" "${hex}"
 }
 
-function dec2hex() {
+dec2hex() {
 	printf "%02x\n" "${1}"
 }

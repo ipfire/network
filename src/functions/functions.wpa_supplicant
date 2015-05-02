@@ -21,7 +21,7 @@
 
 WPA_SUPPLICANT_SOCKET_DIR="${RUN_DIR}/wpa_supplicant/ctrl"
 
-function wpa_supplicant_config_write() {
+wpa_supplicant_config_write() {
 	local device=${1}
 	assert isset device
 
@@ -180,28 +180,28 @@ function wpa_supplicant_config_write() {
 	return ${EXIT_OK}
 }
 
-function wpa_supplicant_config_dir() {
+wpa_supplicant_config_dir() {
 	local device=${1}
 	assert isset device
 
 	echo "${RUN_DIR}/wpa_supplicant/${device}"
 }
 
-function wpa_supplicant_start() {
+wpa_supplicant_start() {
 	local device=${1}
 	assert isset device
 
 	service_start "wpa_supplicant@${device}.service"
 }
 
-function wpa_supplicant_stop() {
+wpa_supplicant_stop() {
 	local device=${1}
 	assert isset device
 
 	service_stop "wpa_supplicant@${device}.service"
 }
 
-function wpa_supplicant_client() {
+wpa_supplicant_client() {
 	local device=${1}
 	assert isset device
 	shift
@@ -213,14 +213,14 @@ function wpa_supplicant_client() {
 	cmd wpa_cli -p${WPA_SUPPLICANT_SOCKET_DIR} -i${device} ${cmd}
 }
 
-function wpa_cli_status() {
+wpa_cli_status() {
 	local device=${1}
 	assert isset device
 
 	wpa_supplicant_client ${device} status verbose
 }
 
-function wpa_cli_status_get() {
+wpa_cli_status_get() {
 	local device=${1}
 	assert isset device
 
@@ -240,7 +240,7 @@ function wpa_cli_status_get() {
 	return ${EXIT_ERROR}
 }
 
-function wpa_cli_bss() {
+wpa_cli_bss() {
 	local device=${1}
 	assert isset device
 
@@ -250,7 +250,7 @@ function wpa_cli_bss() {
 	wpa_supplicant_client ${device} bss ${bss}
 }
 
-function wpa_cli_bss_get() {
+wpa_cli_bss_get() {
 	local device=${1}
 	assert isset device
 
@@ -273,7 +273,7 @@ function wpa_cli_bss_get() {
 	return ${EXIT_ERROR}
 }
 
-function wpa_cli_bss_get_frequency() {
+wpa_cli_bss_get_frequency() {
 	local device=${1}
 	assert isset device
 
@@ -283,7 +283,7 @@ function wpa_cli_bss_get_frequency() {
 	wpa_cli_bss_get ${device} ${bssid} freq
 }
 
-function wpa_cli_bss_get_noise() {
+wpa_cli_bss_get_noise() {
 	local device=${1}
 	assert isset device
 
@@ -293,7 +293,7 @@ function wpa_cli_bss_get_noise() {
 	wpa_cli_bss_get ${device} ${bssid} noise
 }
 
-function wpa_cli_bss_get_quality() {
+wpa_cli_bss_get_quality() {
 	local device=${1}
 	assert isset device
 
@@ -303,7 +303,7 @@ function wpa_cli_bss_get_quality() {
 	wpa_cli_bss_get ${device} ${bssid} qual
 }
 
-function wpa_cli_bss_get_flags() {
+wpa_cli_bss_get_flags() {
 	local device=${1}
 	assert isset device
 

@@ -21,7 +21,7 @@
 
 DUMMY_PORT_PATTERN="dN"
 
-function dummy_create() {
+dummy_create() {
 	local device=${1}
 	assert isset device
 
@@ -46,7 +46,7 @@ function dummy_create() {
 	return ${ret}
 }
 
-function dummy_remove() {
+dummy_remove() {
 	local device=${1}
 	assert isset device
 

@@ -38,7 +38,7 @@ done
 # Read network settings
 network_settings_read
 
-function cli_settings() {
+cli_settings() {
 	if cli_help_requested $@; then
 		cli_show_man network-settings
 		exit ${EXIT_OK}
@@ -52,7 +52,7 @@ function cli_settings() {
 	fi
 }
 
-function cli_device() {
+cli_device() {
 	if cli_help_requested $@; then
 		cli_show_man network-device
 		exit ${EXIT_OK}
@@ -103,7 +103,7 @@ function cli_device() {
 	return ${EXIT_OK}
 }
 
-function cli_device_status() {
+cli_device_status() {
 	local device="${1}"
 	assert isset device
 
@@ -202,7 +202,7 @@ function cli_device_status() {
 	LOG_DISABLE_STDOUT=${log_disable_stdout}
 }
 
-function cli_device_status_serial() {
+cli_device_status_serial() {
 	local device=${1}
 	assert device_is_serial ${device}
 
@@ -263,7 +263,7 @@ function cli_device_status_serial() {
 	cli_space
 }
 
-function cli_device_status_phy() {
+cli_device_status_phy() {
 	local phy="${1}"
 	assert phy_exists "${phy}"
 
@@ -285,7 +285,7 @@ function cli_device_status_phy() {
 	return ${EXIT_OK}
 }
 
-function cli_device_discover() {
+cli_device_discover() {
 	local device=${1}
 	shift
 
@@ -356,7 +356,7 @@ function cli_device_discover() {
 	[ "${up}" = "1" ] || device_set_down ${device}
 }
 
-function cli_device_serial_unlock() {
+cli_device_serial_unlock() {
 	if cli_help_requested $@; then
 		cli_show_man network-device
 		exit ${EXIT_OK}
@@ -442,7 +442,7 @@ function cli_device_serial_unlock() {
 	exit $?
 }
 
-function cli_device_send_ussd_command() {
+cli_device_send_ussd_command() {
 	local device="${1}"
 	assert isset device
 	shift
@@ -477,7 +477,7 @@ function cli_device_send_ussd_command() {
 	exit $?
 }
 
-function cli_device_monitor() {
+cli_device_monitor() {
 	local device="${1}"
 	assert isset device
 
@@ -490,7 +490,7 @@ function cli_device_monitor() {
 	exit $?
 }
 
-function cli_device_list() {
+cli_device_list() {
 	local device
 	for device in $(device_list); do
 		cli_device_status "${device}"
@@ -499,7 +499,7 @@ function cli_device_list() {
 	exit ${EXIT_OK}
 }
 
-function cli_hostname() {
+cli_hostname() {
 	if cli_help_requested $@; then
 		cli_show_man network
 		exit ${EXIT_OK}
@@ -518,7 +518,7 @@ function cli_hostname() {
 	exit ${EXIT_OK}
 }
 
-function cli_port() {
+cli_port() {
 	if cli_help_requested $@; then
 		cli_show_man network-port
 		exit ${EXIT_OK}
@@ -557,7 +557,7 @@ function cli_port() {
 	fi
 }
 
-function cli_zone() {
+cli_zone() {
 	if cli_help_requested $@; then
 		cli_show_man network-zone
 		exit ${EXIT_OK}
@@ -627,7 +627,7 @@ function cli_zone() {
 # Removes a zone either immediately, if it is currently down,
 # or adds a tag that the removal will be done when the zone
 # is brought down the next time.
-function cli_zone_destroy() {
+cli_zone_destroy() {
 	if cli_help_requested $@; then
 		cli_show_man network-zone
 		exit ${EXIT_OK}
@@ -647,7 +647,7 @@ function cli_zone_destroy() {
 	exit ${EXIT_OK}
 }
 
-function cli_zone_port() {
+cli_zone_port() {
 	if cli_help_requested $@; then
 		cli_show_man network-zone-port
 		exit ${EXIT_OK}
@@ -691,7 +691,7 @@ function cli_zone_port() {
 	exit ${EXIT_OK}
 }
 
-function cli_list_hooks() {
+cli_list_hooks() {
 	local type=${1}
 	shift
 
@@ -711,7 +711,7 @@ function cli_list_hooks() {
 	done | sort -u
 }
 
-function cli_route() {
+cli_route() {
 	if cli_help_requested $@; then
 		cli_show_man network-route
 		exit ${EXIT_OK}
@@ -748,7 +748,7 @@ function cli_route() {
 	exit ${EXIT_OK}
 }
 
-function cli_dhcpd() {
+cli_dhcpd() {
 	local proto=${1}
 	shift
 
@@ -790,7 +790,7 @@ function cli_dhcpd() {
 	exit ${EXIT_OK}
 }
 
-function cli_dhcpd_show() {
+cli_dhcpd_show() {
 	local proto=${1}
 	assert isset proto
 
@@ -860,7 +860,7 @@ function cli_dhcpd_show() {
 	fi
 }
 
-function cli_dhcpd_subnet() {
+cli_dhcpd_subnet() {
 	local proto=${1}
 	shift
 
@@ -937,7 +937,7 @@ function cli_dhcpd_subnet() {
 	exit ${EXIT_OK}
 }
 
-function cli_dhcpd_subnet_range() {
+cli_dhcpd_subnet_range() {
 	local proto=${1}
 	assert isset proto
 	shift
@@ -966,7 +966,7 @@ function cli_dhcpd_subnet_range() {
 	esac
 }
 
-function cli_dhcpd_subnet_show() {
+cli_dhcpd_subnet_show() {
 	local proto=${1}
 	assert isset proto
 
@@ -1024,7 +1024,7 @@ function cli_dhcpd_subnet_show() {
 	cli_space
 }
 
-function cli_dhcpd_subnet_options() {
+cli_dhcpd_subnet_options() {
 	local proto=${1}
 	assert isset proto
 	shift
@@ -1045,7 +1045,7 @@ function cli_dhcpd_subnet_options() {
 	done
 }
 
-function cli_start() {
+cli_start() {
 	if cli_help_requested $@; then
 		cli_show_man network
 		exit ${EXIT_OK}
@@ -1061,7 +1061,7 @@ function cli_start() {
 	wait # until everything is settled
 }
 
-function cli_stop() {
+cli_stop() {
 	if cli_help_requested $@; then
 		cli_show_man network
 		exit ${EXIT_OK}
@@ -1077,7 +1077,7 @@ function cli_stop() {
 	wait # until everything is settled
 }
 
-function cli_restart() {
+cli_restart() {
 	if cli_help_requested $@; then
 		cli_show_man network
 		exit ${EXIT_OK}
@@ -1091,7 +1091,7 @@ function cli_restart() {
 	cli_start $@
 }
 
-function cli_status() {
+cli_status() {
 	if cli_help_requested $@; then
 		cli_show_man network
 		exit ${EXIT_OK}
@@ -1114,7 +1114,7 @@ function cli_status() {
 	LOG_DISABLE_STDOUT=${log_disable_stdout}
 }
 
-function cli_reset() {
+cli_reset() {
 	if cli_help_requested $@; then
 		cli_show_man network
 		exit ${EXIT_OK}
@@ -1164,7 +1164,7 @@ function cli_reset() {
 # Help function: will show the default man page to the user.
 # Optionally, there are two arguments taken, the type of hook
 # and which hook should be shown.
-function cli_help() {
+cli_help() {
 	local type=${1}
 	local what=${2}
 
@@ -1187,7 +1187,7 @@ function cli_help() {
 	hook_exec ${type} ${what} help
 }
 
-function cli_dns_server() {
+cli_dns_server() {
 	if cli_help_requested $@; then
 		cli_show_man network-dns-server
 		exit ${EXIT_OK}
@@ -1242,12 +1242,15 @@ function cli_dns_server() {
 	exit ${EXIT_OK}
 }
 
-function cli_raw() {
+cli_raw() {
 	local cmd="${1}"
 	assert isset cmd
 	shift
 
 	case "${cmd}" in
+		db-dump)
+			db_dump
+			;;
 		list-devices)
 			device_list
 			;;

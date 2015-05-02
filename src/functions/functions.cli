@@ -21,7 +21,7 @@
 
 IDENT="  "
 
-function cli_help_requested() {
+cli_help_requested() {
 	local argument="${1}"
 
 	if [ -n "${argument}" ]; then
@@ -33,14 +33,14 @@ function cli_help_requested() {
 	return ${EXIT_FALSE}
 }
 
-function cli_run_help() {
+cli_run_help() {
 	local command="$@"
 
 	print "Run \"${command} help\" to get more information."
 	return ${EXIT_OK}
 }
 
-function cli_device_headline() {
+cli_device_headline() {
 	local device=${1}
 	assert isset device
 
@@ -140,7 +140,7 @@ function cli_device_headline() {
 	fi
 }
 
-function cli_device_stats() {
+cli_device_stats() {
 	local level=${1}
 	local device=${2}
 
@@ -166,7 +166,7 @@ function cli_device_stats() {
 	cli_space
 }
 
-function cli_device_vlan() {
+cli_device_vlan() {
 	local device=${1}
 
 	cli_headline 2 "VLAN"
@@ -176,7 +176,7 @@ function cli_device_vlan() {
 	cli_space
 }
 
-function cli_device_bonded() {
+cli_device_bonded() {
 	local device=${1}
 
 	cli_headline 2 "Bonding information"
@@ -197,7 +197,7 @@ function cli_device_bonded() {
 	cli_space
 }
 
-function cli_device_bonding() {
+cli_device_bonding() {
 	local device=${1}
 	assert isset device
 
@@ -242,7 +242,7 @@ function cli_device_bonding() {
 	cli_space
 }
 
-function cli_headline() {
+cli_headline() {
 	local level=${1}
 	local format=${2}
 	shift 2
@@ -254,7 +254,7 @@ function cli_headline() {
 	printf "${out}"
 }
 
-function cli_statusline() {
+cli_statusline() {
 	local level=${1}
 	shift
 
@@ -264,7 +264,7 @@ function cli_statusline() {
 	cli_print $(( ${level} - 1 )) "%-12s %s" "${head}" "$@"
 }
 
-function cli_print() {
+cli_print() {
 	local level=${1}
 	local format=${2}
 	shift 2
@@ -276,7 +276,7 @@ function cli_print() {
 	printf "${out}"
 }
 
-function cli_print_fmt1() {
+cli_print_fmt1() {
 	local level=${1}
 	shift
 
@@ -286,7 +286,7 @@ function cli_print_fmt1() {
 	cli_print ${level} "${format}" "$@"
 }
 
-function cli_print_bool() {
+cli_print_bool() {
 	if [ "${1}" = "${EXIT_TRUE}" ]; then
 		echo "true"
 	else
@@ -294,7 +294,7 @@ function cli_print_bool() {
 	fi
 }
 
-function cli_print_yesno() {
+cli_print_yesno() {
 	if [ "${1}" = "${EXIT_TRUE}" ]; then
 		echo "yes"
 	else
@@ -302,24 +302,24 @@ function cli_print_yesno() {
 	fi
 }
 
-function cli_print_enabled() {
+cli_print_enabled() {
 	enabled ${1}
 
 	cli_print_bool $?
 }
 
-function cli_print_warning() {
+cli_print_warning() {
 	local level=${1}
 	shift
 
 	cli_print ${level} "${CLR_YELLOW_B}%s${CLR_RESET}" "$@"
 }
 
-function cli_space() {
+cli_space() {
 	printf "\n"
 }
 
-function cli_ident() {
+cli_ident() {
 	local level=${1}
 	assert isinteger level
 
@@ -332,7 +332,7 @@ function cli_ident() {
 	print "${ident}"
 }
 
-function cli_yesno() {
+cli_yesno() {
 	local message="$@ [y/n] "
 	local yesno
 
@@ -351,16 +351,16 @@ function cli_yesno() {
 	done
 }
 
-function cli_get_key() {
+cli_get_key() {
 	local key="${1%%=*}"
 	echo "${key/--/}"
 }
 
-function cli_get_val() {
+cli_get_val() {
 	echo "${@#*=}"
 }
 
-function cli_get_bool() {
+cli_get_bool() {
 	local value="$(cli_get_val "$@")"
 
 	if enabled value; then
@@ -372,7 +372,7 @@ function cli_get_bool() {
 	return ${EXIT_FALSE}
 }
 
-function cli_usage() {
+cli_usage() {
 	local command="$@"
 	local basename="$(basename ${0})"
 
@@ -384,7 +384,7 @@ function cli_usage() {
 	echo "Please run '${command}' for detailed help." >&2
 }
 
-function cli_show_man() {
+cli_show_man() {
 	local manpage=${1}
 	assert isset manpage
 

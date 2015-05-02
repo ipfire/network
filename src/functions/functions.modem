@@ -25,7 +25,7 @@ CHAT_INVALID=1
 CHAT_ERROR=2
 CHAT_TIMEOUT=3
 
-function modem_chat() {
+modem_chat() {
 	local answer="OK"
 	local device
 	local timeout=2
@@ -91,7 +91,7 @@ function modem_chat() {
 	return ${EXIT_ERROR}
 }
 
-function __modem_chat_process_output() {
+__modem_chat_process_output() {
 	local answer=${1}
 	local quiet=${2}
 
@@ -125,7 +125,7 @@ function __modem_chat_process_output() {
 	done
 }
 
-function modem_initialize() {
+modem_initialize() {
 	local device="${1}"
 	assert isset device
 	shift
@@ -164,7 +164,7 @@ EXIT_SIM_PIN=1
 EXIT_SIM_PUK=2
 EXIT_SIM_UNKNOWN=3
 
-function modem_sim_status() {
+modem_sim_status() {
 	local device=${1}
 	assert isset device
 
@@ -194,7 +194,7 @@ function modem_sim_status() {
 	return ${EXIT_SIM_UNKNOWN}
 }
 
-function modem_sim_unlocked() {
+modem_sim_unlocked() {
 	local device=${1}
 	assert isset device
 
@@ -204,11 +204,11 @@ function modem_sim_unlocked() {
 	[ ${ret} -eq ${EXIT_SIM_READY} ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
-function modem_sim_locked() {
+modem_sim_locked() {
 	modem_sim_unlocked $@ && return ${EXIT_FALSE} || return ${EXIT_TRUE}
 }
 
-function modem_sim_unlock() {
+modem_sim_unlock() {
 	local device=${1}
 	assert isset device
 
@@ -238,7 +238,7 @@ function modem_sim_unlock() {
 	return ${ret}
 }
 
-function modem_sim_auto_unlock() {
+modem_sim_auto_unlock() {
 	local device="${1}"
 	assert isset device
 
@@ -274,7 +274,7 @@ function modem_sim_auto_unlock() {
 
 # Returns the vendor of the modem.
 # For example: "huawei"
-function modem_get_manufacturer() {
+modem_get_manufacturer() {
 	local device=${1}
 	assert isset device
 
@@ -288,7 +288,7 @@ function modem_get_manufacturer() {
 	print "${output}"
 }
 
-function modem_get_model() {
+modem_get_model() {
 	local device=${1}
 	assert isset device
 
@@ -302,7 +302,7 @@ function modem_get_model() {
 	print "${output}"
 }
 
-function modem_get_software_version() {
+modem_get_software_version() {
 	local device=${1}
 	assert isset device
 
@@ -316,7 +316,7 @@ function modem_get_software_version() {
 	print "${output}"
 }
 
-function modem_get_sim_imsi() {
+modem_get_sim_imsi() {
 	local device=${1}
 	assert isset device
 
@@ -326,7 +326,7 @@ function modem_get_sim_imsi() {
 	modem_chat ${device} "AT+CIMI"
 }
 
-function modem_get_device_imei() {
+modem_get_device_imei() {
 	local device=${1}
 	assert isset device
 
@@ -341,7 +341,7 @@ function modem_get_device_imei() {
 	return ${ret}
 }
 
-function modem_is_mobile() {
+modem_is_mobile() {
 	local device=${1}
 	assert isset device
 
@@ -360,7 +360,7 @@ EXIT_REG_REGISTRATION_DENIED=3
 EXIT_REG_REGISTERED_ROAMING=4
 EXIT_REG_UNKNOWN=5
 
-function modem_get_network_registration() {
+modem_get_network_registration() {
 	local device=${1}
 	assert isset device
 
@@ -413,7 +413,7 @@ function modem_get_network_registration() {
 	modem_get_network_registration ${device}
 }
 
-function modem_set_network_registration() {
+modem_set_network_registration() {
 	local device=${1}
 	assert isset device
 
@@ -426,7 +426,7 @@ function modem_set_network_registration() {
 	modem_chat ${device} "AT+CREG=${mode}"
 }
 
-function modem_scan_networks() {
+modem_scan_networks() {
 	local device=${1}
 	assert isset device
 
@@ -442,7 +442,7 @@ function modem_scan_networks() {
 	# XXX the output is not very nice to parse.
 }
 
-function __modem_get_network_operator() {
+__modem_get_network_operator() {
 	local device=${1}
 	assert isset device
 
@@ -486,7 +486,7 @@ function __modem_get_network_operator() {
 	return ${EXIT_OK}
 }
 
-function modem_get_network_operator() {
+modem_get_network_operator() {
 	local device=${1}
 	assert isset device
 
@@ -503,7 +503,7 @@ EXIT_OPMODE_UMTS_WITH_HSUPA=5
 EXIT_OPMODE_UMTS_WITH_HSDPA_AND_HSUPA=6
 EXIT_OPMODE_UNKNOWN=7
 
-function modem_get_network_mode() {
+modem_get_network_mode() {
 	local device=${1}
 	assert isset device
 
@@ -543,7 +543,7 @@ function modem_get_network_mode() {
 	esac
 }
 
-function __modem_get_signal_quality() {
+__modem_get_signal_quality() {
 	local device=${1}
 	assert isset device
 
@@ -575,7 +575,7 @@ function __modem_get_signal_quality() {
 	return ${EXIT_ERROR}
 }
 
-function modem_get_signal_quality() {
+modem_get_signal_quality() {
 	local device=${1}
 	assert isset device
 
@@ -595,7 +595,7 @@ function modem_get_signal_quality() {
 	return ${EXIT_OK}
 }
 
-function modem_get_bit_error_rate() {
+modem_get_bit_error_rate() {
 	local device=${1}
 	assert isset device
 
@@ -615,7 +615,7 @@ function modem_get_bit_error_rate() {
 
 # USDD stuff
 
-function modem_ussd_send_command() {
+modem_ussd_send_command() {
 	local device="${1}"
 	assert isset device
 
@@ -658,7 +658,7 @@ function modem_ussd_send_command() {
 	return ${ret}
 }
 
-function __modem_ussd_parse_output() {
+__modem_ussd_parse_output() {
 	local line
 	while read -r line; do
 		# Find the expected answer.
@@ -717,7 +717,7 @@ function __modem_ussd_parse_output() {
 	return ${EXIT_ERROR}
 }
 
-function modem_ussd_encode() {
+modem_ussd_encode() {
 	local string="${1}"
 	assert isset string
 
@@ -744,7 +744,7 @@ function modem_ussd_encode() {
 	print "${output}"
 }
 
-function modem_ussd_decode() {
+modem_ussd_decode() {
 	local string="${1}"
 	assert isset string
 

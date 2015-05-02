@@ -19,20 +19,20 @@
 #                                                                             #
 ###############################################################################
 
-function zone_dir() {
+zone_dir() {
 	local zone=${1}
 
 	echo "${NETWORK_ZONE_DIR}/zones/${zone}"
 }
 
-function zone_exists() {
+zone_exists() {
 	local zone=${1}
 	assert isset zone
 
 	[ -d "$(zone_dir ${zone})" ]
 }
 
-function zone_match() {
+zone_match() {
 	local match
 
 	local i
@@ -43,7 +43,7 @@ function zone_match() {
 	echo "${match:1:${#match}}"
 }
 
-function zone_name_is_valid() {
+zone_name_is_valid() {
 	local zone=${1}
 
 	# Don't accept empty strings.
@@ -52,26 +52,26 @@ function zone_name_is_valid() {
 	[[ ${zone} =~ $(zone_match) ]]
 }
 
-function zone_is_local() {
+zone_is_local() {
 	local zone=${1}
 
 	[[ "${zone:0:${#ZONE_LOCAL}}" = "${ZONE_LOCAL}" ]]
 }
 
-function zone_is_nonlocal() {
+zone_is_nonlocal() {
 	local zone=${1}
 
 	[[ "${zone:0:${#ZONE_NONLOCAL}}" = "${ZONE_NONLOCAL}" ]]
 }
 
-function zone_get_hook() {
+zone_get_hook() {
 	local zone=${1}
 	assert isset zone
 
 	config_get_hook $(zone_dir ${zone})/settings
 }
 
-function zone_start() {
+zone_start() {
 	# This function will bring up the zone
 	# 'asynchronously' with help of systemd.
 
@@ -81,7 +81,7 @@ function zone_start() {
 	service_start "network@${zone}.service"
 }
 
-function zone_start_auto() {
+zone_start_auto() {
 	local zone="${1}"
 	assert zone_exists "${zone}"
 
@@ -103,7 +103,7 @@ function zone_start_auto() {
 	return ${EXIT_OK}
 }
 
-function zone_stop() {
+zone_stop() {
 	# This function will bring down the zone
 	# 'asynchronously' with help of systemd.
 
@@ -113,14 +113,14 @@ function zone_stop() {
 	service_stop "network@${zone}.service"
 }
 
-function zone_reload() {
+zone_reload() {
 	local zone="${1}"
 	assert zone_exists "${zone}"
 
 	service_reload "network@${zone}.service"
 }
 
-function zone_hotplug_event() {
+zone_hotplug_event() {
 	local zone="${1}"
 	assert isset zone
 
@@ -129,7 +129,7 @@ function zone_hotplug_event() {
 	zone_cmd "hotplug" "${zone}"
 }
 
-function zone_enable() {
+zone_enable() {
 	# This function will enable the zone
 	# with help of systemd.
 
@@ -149,7 +149,7 @@ function zone_enable() {
 	return ${ret}
 }
 
-function zone_disable() {
+zone_disable() {
 	# This function will disable the zone
 	# with help of systemd.
 
@@ -169,7 +169,7 @@ function zone_disable() {
 	return ${ret}
 }
 
-function zone_is_enabled() {
+zone_is_enabled() {
 	local zone="${1}"
 	assert isset zone
 
@@ -181,7 +181,7 @@ function zone_is_enabled() {
 	return ${EXIT_FALSE}
 }
 
-function zone_is_active() {
+zone_is_active() {
 	local zone="${1}"
 	assert isset zone
 
@@ -192,14 +192,14 @@ function zone_is_active() {
 	return ${EXIT_FALSE}
 }
 
-function zone_is_enabled_or_active() {
+zone_is_enabled_or_active() {
 	local zone="${1}"
 	assert isset zone
 
 	zone_is_enabled "${zone}" || zone_is_active "${zone}"
 }
 
-function zone_cmd() {
+zone_cmd() {
 	local cmd="${1}"
 	local port="${2}"
 	shift 2
@@ -213,7 +213,7 @@ function zone_cmd() {
 	hook_exec zone "${hook}" "${cmd}" "${zone}" $@
 }
 
-function zone_new() {
+zone_new() {
 	local zone=${1}
 	local hook=${2}
 	shift 2
@@ -255,7 +255,7 @@ function zone_new() {
 	zone_start "${zone}"
 }
 
-function zone_edit() {
+zone_edit() {
 	local zone=${1}
 	shift
 
@@ -285,7 +285,7 @@ function zone_edit() {
 }
 
 
-function zone_destroy() {
+zone_destroy() {
 	local zone="${1}"
 	assert zone_exists "${zone}"
 
@@ -295,7 +295,7 @@ function zone_destroy() {
 	log INFO "Zone '${zone}' has been tagged for removal."
 }
 
-function zone_has_destroy_tag() {
+zone_has_destroy_tag() {
 	local zone="${1}"
 	assert zone_exists "${zone}"
 
@@ -305,7 +305,7 @@ function zone_has_destroy_tag() {
 # This function will remove the given zone
 # RIGHT NOW. Use zone_destroy to remove it
 # at the next status change.
-function zone_destroy_now() {
+zone_destroy_now() {
 	local zone="${1}"
 	assert zone_exists "${zone}"
 
@@ -320,7 +320,7 @@ function zone_destroy_now() {
 	rm -rf "$(zone_dir "${zone}")"
 }
 
-function zone_up() {
+zone_up() {
 	local zone=${1}
 	shift
 
@@ -353,7 +353,7 @@ function zone_up() {
 	zone_db ${zone} started
 }
 
-function zone_down() {
+zone_down() {
 	local zone=${1}
 	shift
 
@@ -385,7 +385,7 @@ function zone_down() {
 	fi
 }
 
-function zone_status() {
+zone_status() {
 	local zone="${1}"
 	assert isset zone
 	shift
@@ -414,7 +414,7 @@ function zone_status() {
 	fi
 }
 
-function zone_get_ports() {
+zone_get_ports() {
 	local zone=${1}
 
 	assert isset zone
@@ -429,7 +429,7 @@ function zone_get_ports() {
 	done
 }
 
-function zone_get_ports_num() {
+zone_get_ports_num() {
 	local zone="${1}"
 	assert isset zone
 
@@ -447,7 +447,7 @@ function zone_get_ports_num() {
 	return ${EXIT_OK}
 }
 
-function zone_has_port() {
+zone_has_port() {
 	# Check, if the given port is configured
 	# in this zone.
 
@@ -461,7 +461,7 @@ function zone_has_port() {
 	[ -e "$(zone_dir ${zone})/ports/${port}" ]
 }
 
-function zone_config() {
+zone_config() {
 	local zone="${1}"
 	local cmd="${2}"
 	shift 2
@@ -488,7 +488,7 @@ function zone_config() {
 	esac
 }
 
-function zone_config_cmd() {
+zone_config_cmd() {
 	assert [ $# -gt 2 ]
 
 	local cmd="${1}"
@@ -501,23 +501,23 @@ function zone_config_cmd() {
 	hook_zone_exec "${hook}" "config_${cmd}" "${zone}" "$@"
 }
 
-function zone_config_create() {
+zone_config_create() {
 	zone_config_cmd "create" "$@"
 }
 
-function zone_config_edit() {
+zone_config_edit() {
 	zone_config_cmd "edit" "$@"
 }
 
-function zone_config_remove() {
+zone_config_remove() {
 	zone_config_cmd "remove" "$@"
 }
 
-function zone_config_show() {
+zone_config_show() {
 	zone_config_cmd "show" "$@"
 }
 
-function zone_show() {
+zone_show() {
 	local zone=${1}
 
 	echo "${zone}"
@@ -525,7 +525,7 @@ function zone_show() {
 	echo
 }
 
-function zones_show() {
+zones_show() {
 	local zone
 
 	for zone in $(zones_get $@); do
@@ -533,7 +533,7 @@ function zones_show() {
 	done
 }
 
-function zones_get_all() {
+zones_get_all() {
 	local zone
 	for zone in $(zone_dir)/*; do
 		zone=$(basename ${zone})
@@ -543,21 +543,21 @@ function zones_get_all() {
 	done
 }
 
-function zones_get_local() {
+zones_get_local() {
 	local zone
 	for zone in $(zones_get_all); do
 		zone_is_local ${zone} && echo "${zone}"
 	done
 }
 
-function zones_get_nonlocal() {
+zones_get_nonlocal() {
 	local zone
 	for zone in $(zones_get_all); do
 		zone_is_nonlocal ${zone} && echo "${zone}"
 	done
 }
 
-function zones_get() {
+zones_get() {
 	local local=1
 	local remote=1
 
@@ -605,7 +605,7 @@ function zones_get() {
 	fi
 }
 
-function zone_ports_list() {
+zone_ports_list() {
 	local zone=${1}
 
 	local port
@@ -616,7 +616,7 @@ function zone_ports_list() {
 	done
 }
 
-function zone_port_attach() {
+zone_port_attach() {
 	local zone="${1}"
 	assert isset zone
 
@@ -651,9 +651,7 @@ function zone_port_attach() {
 			log INFO "${port} has been attached to ${zone}"
 
 			# Automatically connect the port
-			if zone_is_active "${zone}"; then
-				zone_port_create "${zone}" "${port}"
-			fi
+			zone_port_start "${zone}" "${port}"
 			;;
 		*)
 			log CRITICAL "${port} could not be attached to ${zone}"
@@ -663,7 +661,7 @@ function zone_port_attach() {
 	return ${ret}
 }
 
-function zone_port_edit() {
+zone_port_edit() {
 	local zone="${1}"
 	assert isset zone
 
@@ -690,7 +688,7 @@ function zone_port_edit() {
 	hook_zone_exec "${hook}" "port_edit" "${zone}" "${port}" "$@"
 }
 
-function zone_port_detach() {
+zone_port_detach() {
 	local zone="${1}"
 	assert isset zone
 
@@ -716,9 +714,7 @@ function zone_port_detach() {
 			log INFO "${port} has been detached from ${zone}"
 
 			# Bring down the port if needed
-			if zone_is_active "${zone}"; then
-				zone_port_remove "${zone}" "${port}"
-			fi
+			zone_port_stop "${zone}" "${port}"
 			;;
 		*)
 			log CRITICAL "${port} could not be detached from ${zone}"
@@ -728,7 +724,7 @@ function zone_port_detach() {
 	return ${ret}
 }
 
-function zone_port_cmd() {
+zone_port_cmd() {
 	local cmd="${1}"
 	assert isset cmd
 
@@ -747,27 +743,64 @@ function zone_port_cmd() {
 	hook_zone_exec "${hook}" "${cmd}" "${zone}" "${port}" $@
 }
 
-function zone_port_create() {
+zone_port_create() {
 	zone_port_cmd "port_create" $@
 }
 
-function zone_port_remove() {
+zone_port_remove() {
 	zone_port_cmd "port_remove" $@
 }
 
-function zone_port_up() {
+zone_port_up() {
 	zone_port_cmd "port_up" $@
 }
 
-function zone_port_down() {
+zone_port_down() {
 	zone_port_cmd "port_down" $@
 }
 
-function zone_port_status() {
+# The next two functions automagically bring up and down
+# port that are attached to a bridge or similar.
+# The problem that is tried to overcome here is that there
+# are ports which exist all the time (like ethernet ports)
+# and therefore do not dispatch a hotplug event when
+# port_create is called.
+
+zone_port_start() {
+	local zone="${1}"
+	local port="${2}"
+
+	if zone_is_active "${zone}"; then
+		if device_exists "${port}"; then
+			zone_port_up "${zone}" "${port}"
+			return ${?}
+		else
+			zone_port_create "${zone}" "${port}"
+			return ${?}
+		fi
+	fi
+
+	return ${EXIT_OK}
+}
+
+zone_port_stop() {
+	local zone="${1}"
+	local port="${2}"
+
+	# Shut down the port if necessary
+	if zone_is_active "${zone}" && port_is_up "${port}"; then
+		zone_port_down "${zone}" "${port}"
+	fi
+
+	# Remove the port
+	zone_port_remove "${zone}" "${port}"
+}
+
+zone_port_status() {
 	zone_port_cmd "port_status" $@
 }
 
-function zone_ports_cmd() {
+zone_ports_cmd() {
 	local cmd="${1}"
 	assert isset cmd
 
@@ -784,27 +817,27 @@ function zone_ports_cmd() {
 	done
 }
 
-function zone_ports_create() {
+zone_ports_create() {
 	zone_ports_cmd "port_create" $@
 }
 
-function zone_ports_remove() {
+zone_ports_remove() {
 	zone_ports_cmd "port_remove" $@
 }
 
-function zone_ports_up() {
+zone_ports_up() {
 	zone_ports_cmd "port_up" $@
 }
 
-function zone_ports_down() {
+zone_ports_down() {
 	zone_ports_cmd "port_down" $@
 }
 
-function zone_ports_status() {
+zone_ports_status() {
 	zone_ports_cmd "port_status" $@
 }
 
-function zone_configs_cmd() {
+zone_configs_cmd() {
 	assert [ $# -ge 2 ]
 
 	local cmd="${1}"
@@ -822,19 +855,19 @@ function zone_configs_cmd() {
 	done
 }
 
-function zone_configs_up() {
+zone_configs_up() {
 	zone_configs_cmd "up" $@
 }
 
-function zone_configs_down() {
+zone_configs_down() {
 	zone_configs_cmd "down" $@
 }
 
-function zone_configs_status() {
+zone_configs_status() {
 	zone_configs_cmd "status" $@
 }
 
-function zone_configs_list() {
+zone_configs_list() {
 	local zone=${1}
 
 	local config
@@ -845,7 +878,7 @@ function zone_configs_list() {
 	done
 }
 
-function zone_config_get_hook() {
+zone_config_get_hook() {
 	assert [ $# -eq 2 ]
 
 	local zone="${1}"
@@ -861,11 +894,11 @@ function zone_config_get_hook() {
 	print "${HOOK}"
 }
 
-function zone_has_ip() {
+zone_has_ip() {
 	device_has_ip $@
 }
 
-function zone_db() {
+zone_db() {
 	local zone=${1}
 	local action=${2}
 	shift 2
@@ -877,17 +910,17 @@ function zone_db() {
 	esac
 }
 
-function zone_is_up() {
+zone_is_up() {
 	local zone=${1}
 
 	device_is_up ${zone}
 }
 
-function zone_is_down() {
+zone_is_down() {
 	! zone_is_up $@
 }
 
-function zone_get_supported_port_hooks() {
+zone_get_supported_port_hooks() {
 	local zone=${1}
 
 	local hook=$(zone_get_hook ${zone})
@@ -895,11 +928,11 @@ function zone_get_supported_port_hooks() {
 	hook_zone_ports_get_all ${hook}
 }
 
-function zone_get_supported_config_hooks() {
+zone_get_supported_config_hooks() {
 	hook_config_get_all
 }
 
-function zone_file() {
+zone_file() {
 	local zone=${1}
 
 	assert isset zone
@@ -907,7 +940,7 @@ function zone_file() {
 	echo "$(zone_dir ${zone})/settings"
 }
 
-function zone_settings_read() {
+zone_settings_read() {
 	local zone=${1}
 	assert isset zone
 	shift
@@ -928,7 +961,7 @@ function zone_settings_read() {
 	HOOK="${hook}"
 }
 
-function zone_settings_write() {
+zone_settings_write() {
 	local zone="${1}"
 	assert isset zone
 
@@ -941,7 +974,7 @@ function zone_settings_write() {
 	settings_write "$(zone_file ${zone})" ${args}
 }
 
-function zone_settings_set() {
+zone_settings_set() {
 	local zone=${1}
 	shift
 	local args="$@"
@@ -959,7 +992,7 @@ function zone_settings_set() {
 	)
 }
 
-function zone_settings_get() {
+zone_settings_get() {
 	local zone=${1}
 	local key=${2}
 
@@ -974,29 +1007,42 @@ function zone_settings_get() {
 	)
 }
 
-function zone_config_settings_read() {
-	assert [ $# -gt 2 ]
+zone_config_settings_read() {
+	assert [ $# -ge 2 ]
 
 	local zone="${1}"
 	local config="${2}"
 	shift 2
 
+	local args
+	if [ $# -eq 0 ] && [ -n "${HOOK_CONFIG_SETTINGS}" ]; then
+		list_append args ${HOOK_CONFIG_SETTINGS}
+	else
+		list_append args $@
+	fi
+
 	local path="$(zone_dir "${zone}")/configs/${config}"
-	settings_read "${path}" "$@"
+	settings_read "${path}" ${args}
 }
 
-function zone_config_settings_write() {
-	assert [ $# -gt 2 ]
+zone_config_settings_write() {
+	assert [ $# -ge 2 ]
 
 	local zone="${1}"
 	local config="${2}"
 	shift 2
 
+	local args
+	if function_exists "hook_check_config_settings"; then
+		list_append args "--check=\"hook_check_config_settings\""
+	fi
+	list_append args ${HOOK_CONFIG_SETTINGS}
+
 	local path="$(zone_dir "${zone}")/configs/${config}"
-	settings_write "${path}" "$@"
+	settings_write "${path}" ${args}
 }
 
-function zone_port_settings_read() {
+zone_port_settings_read() {
 	assert [ $# -ge 2 ]
 
 	local zone="${1}"
@@ -1014,7 +1060,7 @@ function zone_port_settings_read() {
 	settings_read "${path}" ${args}
 }
 
-function zone_port_settings_write() {
+zone_port_settings_write() {
 	assert [ $# -ge 2 ]
 
 	local zone="${1}"
@@ -1031,7 +1077,7 @@ function zone_port_settings_write() {
 	settings_write "${path}" ${args}
 }
 
-function zone_port_settings_remove() {
+zone_port_settings_remove() {
 	assert [ $# -eq 2 ]
 
 	local zone="${1}"

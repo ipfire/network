@@ -19,62 +19,77 @@
 #                                                                             #
 ###############################################################################
 
-if [ -z "${LOG_FACILITY}" ]; then
-	LOG_FACILITY="network"
-fi
+. /usr/lib/network/header-config
 
-LOG_LEVEL="DEBUG"
+HOOK_CONFIG_SETTINGS="HOOK"
 
-if [ -z "${LOG_DISABLE_STDOUT}" ]; then
-	LOG_DISABLE_STDOUT=false
-fi
-
-log() {
-	local level=${1}
+hook_create() {
+	local zone="${1}"
 	shift
-	local message="$@"
-	local message_log="${message}"
 
-	if [ -z "${DEBUG}" ] && [ "${level}" = "DEBUG" ]; then
-		return
+	zone_config_settings_write "${zone}" "${HOOK}"
+
+	exit ${EXIT_OK}
+}
+
+hook_up() {
+	local zone="${1}"
+	local config="${2}"
+	shift 2
+
+	if ! device_exists "${zone}"; then
+		error "Zone '${zone}' doesn't exist."
+		exit ${EXIT_ERROR}
 	fi
 
-	local funcname="${FUNCNAME[1]}"
-	message_log="${funcname}: ${message_log}"
+	# Start dhclient for IPv6 on this zone.
+	dhclient_start "${zone}" "ipv6"
 
-	# Set a prefix if we are in a hook.
-	if [ -n "${HOOK}" ]; then
-		message_log="${HOOK}: ${message_log}"
+	exit ${EXIT_OK}
+}
+
+hook_down() {
+	local zone="${1}"
+	local config="${2}"
+	shift 2
+
+	if ! device_exists "${zone}"; then
+		error "Zone '${zone}' doesn't exist."
+		exit ${EXIT_ERROR}
 	fi
 
-	logger -t "${LOG_FACILITY}[$$]" "${message_log}"
+	# Stop dhclient for IPv6 on this zone.
+	dhclient_stop "${zone}" "ipv6"
 
-	# Leave here, when there should be no output on the console.
-	[ "${LOG_DISABLE_STDOUT}" = "true" ] && return 0
+	exit ${EXIT_OK}
+}
 
-	local colour
-	local console="2"
-	case "${level}" in
-		DEBUG)
-			colour="${CLR_CYAN_R}"
-			;;
-		INFO)
-			console="1"
-			;;
-		WARNING)
-			colour="${CLR_YELLOW_R}"
-			;;
-		CRITICAL|ERROR)
-			colour="${CLR_RED_B}"
-			;;
-	esac
+hook_status() {
+	local zone="${1}"
+	local config="${2}"
+	shift 2
 
-	case "${console}" in
-		1)
-			printf "${colour}${message}${CLR_RESET}\n"
-			;;
-		2)
-			printf "${colour}${message}${CLR_RESET}\n" >&2
-			;;
-	esac
+	if ! device_exists "${zone}"; then
+		error "Zone '${zone}' doesn't exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	zone_config_settings_read "${zone}" "${config}"
+
+	local status
+	if dhclient_status "${zone}" "ipv6"; then
+		status="${MSG_HOOK_UP}"
+	else
+		status="${MSG_HOOK_DOWN}"
+	fi
+	cli_statusline 3 "${HOOK}" "${status}"
+
+	cli_print_fmt1 3 "IPv6 address" "$(db_get "${zone}/ipv6/local-ip-address")"
+	local gateway="$(db_get "${zone}/ipv6/remote-ip-address")"
+	if isset gateway; then
+		cli_print_fmt1 3 "Gateway" "${gateway}"
+	fi
+	cli_space
+
+	exit ${EXIT_OK}
 }

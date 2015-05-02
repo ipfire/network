@@ -22,14 +22,14 @@
 # A list of supported versions of the IP protocol
 IP_SUPPORTED_PROTOCOLS=""
 
-function ip_split_prefix() {
+ip_split_prefix() {
 	local address=${1}
 	assert isset address
 
 	echo "${address%%/*}"
 }
 
-function ip_get_prefix() {
+ip_get_prefix() {
 	local address=${1}
 	assert isset address
 
@@ -39,7 +39,7 @@ function ip_get_prefix() {
 	echo "${address##*/}"
 }
 
-function ip_detect_protocol() {
+ip_detect_protocol() {
 	local address=${1}
 
 	assert isset address
@@ -55,7 +55,7 @@ function ip_detect_protocol() {
 	return ${EXIT_ERROR}
 }
 
-function ip_protocol_is_supported() {
+ip_protocol_is_supported() {
 	local proto=${1}
 
 	assert isset proto
@@ -63,7 +63,7 @@ function ip_protocol_is_supported() {
 	listmatch ${proto} ${IP_SUPPORTED_PROTOCOLS}
 }
 
-function ip_is_valid() {
+ip_is_valid() {
 	local address=${1}
 	assert isset address
 
@@ -71,7 +71,7 @@ function ip_is_valid() {
 	isset proto && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
-function ip_is_network() {
+ip_is_network() {
 	local network=${1}
 	assert isset network
 
@@ -93,7 +93,7 @@ function ip_is_network() {
 	return ${EXIT_TRUE}
 }
 
-function ip_prefix_is_valid() {
+ip_prefix_is_valid() {
 	local proto=${1}
 	assert isset proto
 
@@ -113,7 +113,7 @@ function ip_prefix_is_valid() {
 	assert ip_protocol_is_supported ${proto}
 }
 
-function ip_address_add() {
+ip_address_add() {
 	local device=${1}
 	local address=${2}
 
@@ -157,7 +157,7 @@ function ip_address_add() {
 	return ${EXIT_OK}
 }
 
-function ip_address_del() {
+ip_address_del() {
 	local device=${1}
 	local address=${2}
 

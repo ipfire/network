@@ -22,7 +22,7 @@
 # Functions for nice handling of lists.
 #
 
-function list_append() {
+list_append() {
 	local list=${1}
 	assert isset list
 	shift
@@ -33,7 +33,7 @@ function list_append() {
 	done
 }
 
-function list_append_one() {
+list_append_one() {
 	assert [ $# -eq 2 ]
 
 	local list="${1}"
@@ -48,7 +48,7 @@ function list_append_one() {
 	fi
 }
 
-function list_remove() {
+list_remove() {
 	local list=${1}
 	shift
 
@@ -64,7 +64,7 @@ function list_remove() {
 	eval "${list}=\"${_list}\""
 }
 
-function list_sort() {
+list_sort() {
 	local i
 	for i in $@; do
 		print "${i}"
@@ -72,7 +72,7 @@ function list_sort() {
 	print
 }
 
-function list_unique() {
+list_unique() {
 	local items item
 	for item in $@; do
 		# Check if the item has already been processed.
@@ -83,7 +83,7 @@ function list_unique() {
 	done
 }
 
-function list_match() {
+list_match() {
 	local match=${1}
 	shift
 
@@ -95,7 +95,7 @@ function list_match() {
 	return ${EXIT_ERROR}
 }
 
-function list_length() {
+list_length() {
 	local length=0
 
 	local i
@@ -107,7 +107,7 @@ function list_length() {
 }
 
 # Count how often $1 occurs in the list.
-function list_count() {
+list_count() {
 	local what=${1}
 	shift
 
@@ -123,7 +123,7 @@ function list_count() {
 	print "${counter}"
 }
 
-function list_join() {
+list_join() {
 	local list=${1}
 	local delim=${2}
 
@@ -133,7 +133,7 @@ function list_join() {
 	print "${ret:${#delim}}"
 }
 
-function list_reverse() {
+list_reverse() {
 	local reversed arg
 	for arg in $@; do
 		reversed="${arg} ${reversed}"
@@ -141,4 +141,14 @@ function list_reverse() {
 
 	print "${reversed}"
 	return ${EXIT_OK}
+}
+
+list_head() {
+	local arg
+	for arg in $@; do
+		print "${arg}"
+		return ${EXIT_OK}
+	done
+
+	return ${EXIT_ERROR}
 }

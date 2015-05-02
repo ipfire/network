@@ -49,9 +49,9 @@ PPPOE_PLUGIN="rp-pppoe.so"
 IPV6="true"
 
 # Use IPv6 prefix delegation.
-PREFIX_DELEGATION="false"
+PREFIX_DELEGATION="true"
 
-function hook_check_settings() {
+hook_check_settings() {
 	assert isset USERNAME
 	assert isset PASSWORD
 
@@ -61,7 +61,7 @@ function hook_check_settings() {
 	assert isset PREFIX_DELEGATION
 }
 
-function hook_parse_cmdline() {
+hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--access-concentrator=*)
@@ -101,7 +101,7 @@ function hook_parse_cmdline() {
 	done
 }
 
-function hook_up() {
+hook_up() {
 	local zone=${1}
 	assert isset zone
 
@@ -125,7 +125,7 @@ function hook_up() {
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
+hook_down() {
 	local zone=${1}
 	assert isset zone
 
@@ -141,7 +141,7 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_hotplug() {
+hook_hotplug() {
 	local zone="${1}"
 
 	case "$(hotplug_action)" in
@@ -168,7 +168,7 @@ function hook_hotplug() {
 	exit ${EXIT_NOT_HANDLED}
 }
 
-function hook_discover() {
+hook_discover() {
 	local device=${1}
 
 	# This obviously only works on ethernet (or compatible) devices
@@ -199,7 +199,7 @@ function hook_discover() {
 	exit ${DISCOVER_OK}
 }
 
-function hook_status() {
+hook_status() {
 	local zone=${1}
 	assert isset zone
 
@@ -228,7 +228,7 @@ function hook_status() {
 	cli_headline 2 "Point-to-Point-over-Ethernet protocol"
 	local proto
 	for proto in ${IP_SUPPORTED_PROTOCOLS}; do
-		routing_db_exists ${zone} ${proto} || continue
+		db_exists "${zone}/${proto}" || continue
 
 		local headline
 		case "${proto}" in
@@ -244,18 +244,18 @@ function hook_status() {
 		esac
 		cli_headline 3 "${headline}"
 
-		cli_print_fmt1 3 "IP address"  "$(routing_db_get ${zone} ${proto} local-ip-address)"
-		cli_print_fmt1 3 "Gateway"     "$(routing_db_get ${zone} ${proto} remote-ip-address)"
-		cli_print_fmt1 3 "DNS servers" "$(routing_db_get ${zone} ${proto} dns)"
+		cli_print_fmt1 3 "IP address"  "$(db_get "${zone}/${proto}/local-ip-address")"
+		cli_print_fmt1 3 "Gateway"     "$(db_get "${zone}/${proto}/remote-ip-address")"
+		cli_print_fmt1 3 "DNS servers" "$(db_get "${zone}/${proto}/dns")"
 		cli_space
-		cli_print_fmt1 3 "MAC-Remote"  "$(routing_db_get ${zone} ${proto} remote-address)"
+		cli_print_fmt1 3 "MAC-Remote"  "$(db_get "${zone}/${proto}/remote-address")"
 		cli_space
 	done
 
 	exit ${EXIT_OK}
 }
 
-function hook_ppp_write_config() {
+hook_ppp_write_config() {
 	local zone=${1}
 	assert isset zone
 
@@ -302,7 +302,7 @@ function hook_ppp_write_config() {
 	exit ${EXIT_OK}
 }
 
-function __hook_get_port() {
+__hook_get_port() {
 	local zone="${1}"
 
 	local port
@@ -314,7 +314,7 @@ function __hook_get_port() {
 	return ${EXIT_ERROR}
 }
 
-function hook_port_attach() {
+hook_port_attach() {
 	# Excepting at least two arguments here
 	assert [ $# -ge 2 ]
 
@@ -338,7 +338,7 @@ function hook_port_attach() {
 	exit ${EXIT_OK}
 }
 
-function hook_port_detach() {
+hook_port_detach() {
 	assert [ $# -eq 2 ]
 
 	local zone="${1}"
@@ -352,6 +352,36 @@ function hook_port_detach() {
 
 	if ! zone_port_settings_remove "${zone}" "${port}"; then
 		exit ${EXIT_ERROR}
+	fi
+
+	exit ${EXIT_OK}
+}
+
+hook_ppp_ipv6_up() {
+	local zone="${1}"
+
+	ppp_common_ipv6_up "${zone}"
+
+	# Read configuration
+	zone_settings_read "${zone}"
+
+	if enabled PREFIX_DELEGATION; then
+		dhclient_start "${zone}" ipv6
+	fi
+
+	exit ${EXIT_OK}
+}
+
+hook_ppp_ipv6_down() {
+	local zone="${1}"
+
+	ppp_common_ipv6_down "${zone}"
+
+	# Read configuration
+	zone_settings_read "${zone}"
+
+	if enabled PREFIX_DELEGATION; then
+		dhclient_stop "${zone}" ipv6
 	fi
 
 	exit ${EXIT_OK}

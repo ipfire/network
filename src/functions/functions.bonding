@@ -23,11 +23,11 @@ BONDING_ALLOWED_MODES="balance-rr active-backup balance-xor broadcast 802.3ad \
 	balance-tlb balance-alb"
 BONDING_MASTERS="/sys/class/net/bonding_masters"
 
-function bonding_init() {
+bonding_init() {
 	module_load "bonding"
 }
 
-function bonding_create() {
+bonding_create() {
 	local device=${1}
 	assert isset device
 	shift
@@ -89,7 +89,7 @@ function bonding_create() {
 	return ${EXIT_OK}
 }
 
-function bonding_remove() {
+bonding_remove() {
 	local device=${1}
 	assert isset device
 
@@ -114,7 +114,7 @@ function bonding_remove() {
 	return ${EXIT_OK}
 }
 
-function bonding_get_mode() {
+bonding_get_mode() {
 	local device=${1}
 	assert isset device
 
@@ -123,7 +123,7 @@ function bonding_get_mode() {
 	print "${mode}"
 }
 
-function bonding_set_mode() {
+bonding_set_mode() {
 	assert [ $# -eq 2 ]
 
 	local device="${1}"
@@ -139,7 +139,7 @@ function bonding_set_mode() {
 	return ${EXIT_OK}
 }
 
-function bonding_enslave_device() {
+bonding_enslave_device() {
 	local device=${1}
 	assert isset device
 
@@ -170,7 +170,7 @@ function bonding_enslave_device() {
 	return ${EXIT_OK}
 }
 
-function bonding_get_slaves() {
+bonding_get_slaves() {
 	local device=${1}
 	assert isset device
 	shift
@@ -194,7 +194,7 @@ function bonding_get_slaves() {
 	return ${EXIT_OK}
 }
 
-function bonding_get_lacp_rate() {
+bonding_get_lacp_rate() {
 	local device=${1}
 	assert isset device
 
@@ -206,14 +206,14 @@ function bonding_get_lacp_rate() {
 	return ${EXIT_OK}
 }
 
-function bonding_get_miimon() {
+bonding_get_miimon() {
 	local device=${1}
 	assert isset device
 
 	fread ${SYS_CLASS_NET}/${device}/bonding/miimon
 }
 
-function bonding_set_miimon() {
+bonding_set_miimon() {
 	local device=${1}
 	assert isset device
 
@@ -223,7 +223,7 @@ function bonding_set_miimon() {
 	print "${miimon}" > ${SYS_CLASS_NET}/${device}/bonding/miimon
 }
 
-function bonding_slave_get_master() {
+bonding_slave_get_master() {
 	local slave=${1}
 	assert isset slave
 

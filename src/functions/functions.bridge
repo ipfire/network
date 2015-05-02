@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function bridge_create() {
+bridge_create() {
 	local bridge=${1}
 	assert isset bridge
 	shift
@@ -77,14 +77,14 @@ function bridge_create() {
 	return ${ret}
 }
 
-function bridge_delete() {
+bridge_delete() {
 	local bridge=${1}
 	assert isset bridge
 
 	device_delete ${bridge}
 }
 
-function bridge_attach_device() {
+bridge_attach_device() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -125,7 +125,7 @@ function bridge_attach_device() {
 	return ${ret}
 }
 
-function bridge_detach_device() {
+bridge_detach_device() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -161,7 +161,7 @@ function bridge_detach_device() {
 	return ${ret}
 }
 
-function bridge_get_members() {
+bridge_get_members() {
 	local bridge=${1}
 
 	assert isset bridge
@@ -175,7 +175,7 @@ function bridge_get_members() {
 	done
 }
 
-function bridge_is_forwarding() {
+bridge_is_forwarding() {
 	local seconds=45
 	local zone=${1}
 
@@ -196,7 +196,7 @@ function bridge_is_forwarding() {
 	return ${EXIT_ERROR}
 }
 
-function bridge_has_carrier() {
+bridge_has_carrier() {
 	local zone=${1}
 
 	local has_carrier=${EXIT_ERROR}

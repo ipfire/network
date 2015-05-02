@@ -38,7 +38,7 @@ STP_HELLO=2
 STP_MAXAGE=20
 STP_PRIORITY=512
 
-function hook_check_settings() {
+hook_check_settings() {
 	assert ismac MAC
 	assert isbool STP
 	assert isoneof STP_MODE stp rstp
@@ -48,7 +48,7 @@ function hook_check_settings() {
 	assert isinteger MTU
 }
 
-function hook_parse_cmdline() {
+hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--stp=*)
@@ -80,7 +80,7 @@ function hook_parse_cmdline() {
 	done
 }
 
-function hook_up() {
+hook_up() {
 	local zone=${1}
 	assert isset zone
 
@@ -132,7 +132,7 @@ function hook_up() {
 	exit ${EXIT_OK}
 }
 
-function hook_hotplug() {
+hook_hotplug() {
 	local zone="${1}"
 	assert isset zone
 
@@ -162,7 +162,7 @@ function hook_hotplug() {
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
+hook_down() {
 	local zone="${1}"
 	assert isset zone
 
@@ -185,7 +185,7 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_status() {
+hook_status() {
 	local zone="${1}"
 	assert isset zone
 
@@ -240,7 +240,7 @@ function hook_status() {
 	exit ${EXIT_OK}
 }
 
-function hook_check_port_settings() {
+hook_check_port_settings() {
 	if isset COST; then
 		assert isinteger COST
 	fi
@@ -250,7 +250,7 @@ function hook_check_port_settings() {
 	fi
 }
 
-function hook_port_attach() {
+hook_port_attach() {
 	# Excepting at least two arguments here
 	assert [ $# -ge 2 ]
 
@@ -282,7 +282,7 @@ function hook_port_attach() {
 	exit ${EXIT_OK}
 }
 
-function hook_port_detach() {
+hook_port_detach() {
 	assert [ $# -eq 2 ]
 
 	local zone="${1}"
@@ -298,11 +298,11 @@ function hook_port_detach() {
 	exit ${EXIT_OK}
 }
 
-function hook_port_edit() {
+hook_port_edit() {
 	hook_port_attach $@
 }
 
-function hook_port_up() {
+hook_port_up() {
 	assert [ $# -eq 2 ]
 
 	local zone="${1}"
@@ -337,7 +337,7 @@ function hook_port_up() {
 	exit ${EXIT_OK}
 }
 
-function hook_port_down() {
+hook_port_down() {
 	assert [ $# -eq 2 ]
 
 	local zone="${1}"
@@ -352,7 +352,7 @@ function hook_port_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_port_status() {
+hook_port_status() {
 	assert [ $# -eq 2 ]
 
 	local zone="${1}"

@@ -19,7 +19,112 @@
 #                                                                             #
 ###############################################################################
 
-function db_connection_init() {
+_db_key2path() {
+	local key="${1}"
+	assert isset key
+
+	print "${NETWORK_DB_DIR}/${key}"
+}
+
+db_exists() {
+	local key="${1}"
+
+	local path="$(_db_key2path "${key}")"
+
+	if [ -e "${path}" ]; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
+db_get() {
+	local key="${1}"
+
+	local path="$(_db_key2path "${key}")"
+	fread "${path}"
+}
+
+db_set() {
+	local key="${1}"
+	shift
+
+	local value="$@"
+	local path="$(_db_key2path "${key}")"
+
+	if [ -r "${path}" ]; then
+		log DEBUG "Setting '${key}' = '${value}'"
+	else
+		log DEBUG "Adding '${key}' = '${value}'"
+	fi
+
+	make_parent_dir "${path}"
+	print "${value}" > "${path}"
+}
+
+db_delete() {
+	local key="${1}"
+
+	local path="$(_db_key2path "${key}")"
+
+	log DEBUG "Deleting key = '${key}'"
+
+	if [ -d "${path}" ]; then
+		_db_delete_recursive "${path}"
+	fi
+
+	rm -f - "${path}"
+}
+
+_db_delete_recursive() {
+	local path="${1}"
+
+	local key
+	for key in $(_db_list_path "${path}"); do
+		db_delete "${key}"
+	done
+
+	rmdir "${path}"
+}
+
+db_dump() {
+	_db_dump_recursive "${NETWORK_DB_DIR}"
+}
+
+_db_dump_key() {
+	local key="${1}"
+	local val="$(db_get "${key}")"
+
+	printf "%-38s = %s\n" "${key}" "${val}"
+}
+
+_db_dump_recursive() {
+	local path="${1}"
+
+	local key
+	for key in $(_db_list_path "${path}"); do
+		path="$(_db_key2path "${key}")"
+
+		if [ -d "${path}" ]; then
+			_db_dump_recursive "${path}"
+		else
+			_db_dump_key "${key}"
+		fi
+	done
+}
+
+_db_list_path() {
+	local path="${1}"
+
+	local element
+	for element in ${path}/*; do
+		[ -e "${element}" ] || continue
+
+		print "${element#${NETWORK_DB_DIR}/}"
+	done
+}
+
+db_connection_init() {
 	if [ -e "${DB_CONNECTION_FILE}" ]; then
 		return ${EXIT_OK}
 	fi
@@ -40,7 +145,7 @@ CREATE VIEW current as
 EOF
 }
 
-function db_connection_update() {
+db_connection_update() {
 	local zone=${1}
 	local action=${2}
 	shift 2
@@ -55,7 +160,7 @@ INSERT INTO log(zone, time, state)
 EOF
 }
 
-function db_ppp_init() {
+db_ppp_init() {
 	local file=${1}
 
 	if [ -e "${file}" ]; then
@@ -75,7 +180,7 @@ CREATE TABLE accounting(
 EOF
 } 
 
-function db_ppp_update() {
+db_ppp_update() {
 	local zone=${1}
 	shift
 

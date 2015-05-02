@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function firewall_cli() {
+firewall_cli() {
 	local protocol="${1}"
 	assert isset protocol
 	shift
@@ -76,7 +76,7 @@ function firewall_cli() {
 	exit ${EXIT_OK}
 }
 
-function firewall_cli_panic() {
+firewall_cli_panic() {
 	local protocol="${1}"
 	assert isset protocol
 	shift
@@ -103,7 +103,7 @@ function firewall_cli_panic() {
 	firewall_panic ${admin_hosts}
 }
 
-function firewall_cli_settings() {
+firewall_cli_settings() {
 	if cli_help_requested $@; then
 		cli_show_man firewall-settings
 		exit ${EXIT_OK}
@@ -117,7 +117,7 @@ function firewall_cli_settings() {
 	fi
 }
 
-function firewall_cli_zone() {
+firewall_cli_zone() {
 	local protocol="${1}"
 	assert isset protocol
 	shift 
@@ -183,7 +183,7 @@ function firewall_cli_zone() {
 }
 
 # Show firewall zone conifguration.
-function firewall_cli_zone_status() {
+firewall_cli_zone_status() {
 	local zone=${1}
 	assert isset zone
 
@@ -200,7 +200,7 @@ function firewall_cli_zone_status() {
 }
 
 # Edit firewall zone configuration.
-function firewall_cli_zone_edit() {
+firewall_cli_zone_edit() {
 	firewall_zone_edit "$@"
 
 	exit ${EXIT_OK}

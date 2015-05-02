@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function macro_file() {
+macro_file() {
 	local macro=${1}
 	assert isset macro
 
@@ -40,7 +40,7 @@ function macro_file() {
 	return ${EXIT_ERROR}
 }
 
-function macro_exists() {
+macro_exists() {
 	local macro=${1}
 	assert isset macro
 
@@ -48,7 +48,7 @@ function macro_exists() {
 		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
-function macro_read() {
+macro_read() {
 	local macro=${1}
 	assert isset macro
 

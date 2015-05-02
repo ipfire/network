@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function device_list() {
+device_list() {
 	local devices
 
 	# Add all interfaces
@@ -36,7 +36,7 @@ function device_list() {
 }
 
 # Check if the device exists
-function device_exists() {
+device_exists() {
 	local device=${1}
 
 	# If device name was not found, exit.
@@ -54,7 +54,7 @@ function device_exists() {
 	serial_exists ${device}
 }
 
-function device_matches_pattern() {
+device_matches_pattern() {
 	local device="${1}"
 	assert isset device
 
@@ -67,7 +67,7 @@ function device_matches_pattern() {
 		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
-function device_delete() {
+device_delete() {
 	local device=${1}
 	assert isset device
 
@@ -86,7 +86,7 @@ function device_delete() {
 	return ${ret}
 }
 
-function device_has_flag() {
+device_has_flag() {
 	local device=${1}
 	local flag=${2}
 
@@ -100,7 +100,7 @@ function device_has_flag() {
 }
 
 # Check if the device is up
-function device_is_up() {
+device_is_up() {
 	local device=${1}
 
 	device_exists ${device} || return ${EXIT_ERROR}
@@ -108,7 +108,7 @@ function device_is_up() {
 	device_has_flag ${device} 0x1
 }
 
-function device_ifindex_to_name() {
+device_ifindex_to_name() {
 	local idx=${1}
 	assert isset idx
 
@@ -128,7 +128,7 @@ function device_ifindex_to_name() {
 	return ${EXIT_ERROR}
 }
 
-function device_get_ifindex() {
+device_get_ifindex() {
 	local device=${1}
 	assert isset device
 
@@ -141,12 +141,12 @@ function device_get_ifindex() {
 }
 
 # Check if the device is a batman-adv bridge
-function device_is_batman_adv() {
+device_is_batman_adv() {
 	[ -d "${SYS_CLASS_NET}/${1}/mesh" ]
 }
 
 # Check if the device is a batman-adv slave port
-function device_is_batman_adv_slave() {
+device_is_batman_adv_slave() {
 	local device="${1}"
 
 	if [ -d "${SYS_CLASS_NET}/${device}/batman_adv" ]; then
@@ -166,28 +166,28 @@ function device_is_batman_adv_slave() {
 }
 
 # Check if the device is a bonding device
-function device_is_bonding() {
+device_is_bonding() {
 	[ -d "/sys/class/net/${1}/bonding" ]
 }
 
 # Check if the device bonded in a bonding device
-function device_is_bonded() {
+device_is_bonded() {
 	local device=${1}
 
 	[ -d "${SYS_CLASS_NET}/${device}/bonding_slave" ]
 }
 
 # Check if the device is a bridge
-function device_is_bridge() {
+device_is_bridge() {
 	[ -d "/sys/class/net/${1}/bridge" ]
 }
 
-function device_is_bridge_attached() {
+device_is_bridge_attached() {
 	local device=${1}
 	[ -d "${SYS_CLASS_NET}/${device}/brport" ]
 }
 
-function device_is_wireless_monitor() {
+device_is_wireless_monitor() {
 	local device="${1}"
 	assert isset device
 
@@ -195,7 +195,7 @@ function device_is_wireless_monitor() {
 		device_matches_pattern "${device}" "${PORT_PATTERN_WIRELESS_MONITOR}"
 }
 
-function device_is_wireless_adhoc() {
+device_is_wireless_adhoc() {
 	local device="${1}"
 	assert isset device
 
@@ -203,7 +203,7 @@ function device_is_wireless_adhoc() {
 		device_matches_pattern "${device}" "${PORT_PATTERN_WIRELESS_ADHOC}"
 }
 
-function device_get_bridge() {
+device_get_bridge() {
 	local device=${1}
 	assert isset device
 
@@ -220,7 +220,7 @@ function device_get_bridge() {
 }
 
 # Check if the device is a vlan device
-function device_is_vlan() {
+device_is_vlan() {
 	local device=${1}
 	assert isset device
 
@@ -228,7 +228,7 @@ function device_is_vlan() {
 }
 
 # Check if the device has vlan devices
-function device_has_vlans() {
+device_has_vlans() {
 	local device=${1}
 	assert isset device
 
@@ -240,7 +240,7 @@ function device_has_vlans() {
 	[ -n "${vlans}" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
 }
 
-function device_get_vlans() {
+device_get_vlans() {
 	local device=${1}
 	assert isset device
 
@@ -257,7 +257,7 @@ function device_get_vlans() {
 }
 
 # Check if the device is a ppp device
-function device_is_ppp() {
+device_is_ppp() {
 	local device=${1}
 
 	local type=$(__device_get_file ${device} type)
@@ -266,14 +266,14 @@ function device_is_ppp() {
 }
 
 # Check if the device is a pointopoint device.
-function device_is_ptp() {
+device_is_ptp() {
 	local device=${1}
 
 	device_has_flag ${device} 0x10
 }
 
 # Check if the device is a loopback device
-function device_is_loopback() {
+device_is_loopback() {
 	local device=${1}
 
 	[ "${device}" = "lo" ]
@@ -281,20 +281,20 @@ function device_is_loopback() {
 
 # Check if the device is a dummy device
 #  This is the worst possible check, but all I could come up with
-function device_is_dummy() {
+device_is_dummy() {
 	local device="${1}"
 
 	[[ ${device} =~ ^dummy[0-9]+$ ]]
 }
 
 # Check if the device is a wireless device
-function device_is_wireless() {
+device_is_wireless() {
 	local device=${1}
 
 	[ -d "${SYS_CLASS_NET}/${device}/phy80211" ]
 }
 
-function device_get_phy() {
+device_get_phy() {
 	local device="${1}"
 
 	if device_is_wireless "${device}"; then
@@ -305,16 +305,16 @@ function device_get_phy() {
 	return ${EXIT_ERROR}
 }
 
-function device_is_phy() {
+device_is_phy() {
 	phy_exists $@
 }
 
-function device_is_serial() {
+device_is_serial() {
 	serial_exists $@
 }
 
 # Check if the device is a physical network interface
-function device_is_ethernet() {
+device_is_ethernet() {
 	local device=${1}
 
 	device_is_ethernet_compatible "${device}" || \
@@ -342,7 +342,7 @@ function device_is_ethernet() {
 }
 
 # Get the device type
-function device_get_type() {
+device_get_type() {
 	local device=${1}
 
 	# If the device does not exist (happens on udev remove events),
@@ -391,7 +391,7 @@ function device_get_type() {
 	fi
 }
 
-function device_is_ethernet_compatible() {
+device_is_ethernet_compatible() {
 	local device="${1}"
 
 	# /sys/class/net/*/type must equal 1 for ethernet compatible devices
@@ -399,7 +399,7 @@ function device_is_ethernet_compatible() {
 	[[ "${type}" = "1" ]]
 }
 
-function device_get_status() {
+device_get_status() {
 	local device=${1}
 	assert isset device
 
@@ -416,13 +416,13 @@ function device_get_status() {
 	echo "${status}"
 }
 
-function device_get_address() {
+device_get_address() {
 	local device=${1}
 
 	cat ${SYS_CLASS_NET}/${device}/address 2>/dev/null
 }
 
-function device_set_address() {
+device_set_address() {
 	assert [ $# -eq 2 ]
 
 	local device="${1}"
@@ -461,7 +461,7 @@ function device_set_address() {
 	return ${ret}
 }
 
-function device_get() {
+device_get() {
 	local device
 	local devices
 
@@ -478,12 +478,12 @@ function device_get() {
 	return ${EXIT_OK}
 }
 
-function devices_get_all() {
+devices_get_all() {
 	device_get
 }
 
 # Check if a device has a cable plugged in
-function device_has_carrier() {
+device_has_carrier() {
 	local device=${1}
 	assert isset device
 
@@ -491,13 +491,13 @@ function device_has_carrier() {
 	[ "${carrier}" = "1" ]
 }
 
-function device_is_promisc() {
+device_is_promisc() {
 	local device=${1}
 
 	device_has_flag ${device} 0x200
 }
 
-function device_set_promisc() {
+device_set_promisc() {
 	local device=${1}
 	local state=${2}
 
@@ -509,12 +509,12 @@ function device_set_promisc() {
 }
 
 # Check if the device is free
-function device_is_free() {
+device_is_free() {
 	! device_is_used $@
 }
 
 # Check if the device is used
-function device_is_used() {
+device_is_used() {
 	local device=${1}
 
 	device_has_vlans ${device} && \
@@ -528,7 +528,7 @@ function device_is_used() {
 }
 
 # Give the device a new name
-function device_set_name() {
+device_set_name() {
 	local source=$1
 	local destination=${2}
 
@@ -551,7 +551,7 @@ function device_set_name() {
 }
 
 # Set device up
-function device_set_up() {
+device_set_up() {
 	local device=${1}
 
 	# Silently fail if device was not found
@@ -567,7 +567,7 @@ function device_set_up() {
 	ip link set ${device} up
 }
 
-function device_set_parent_up() {
+device_set_parent_up() {
 	local device=${1}
 	local parent
 
@@ -586,7 +586,7 @@ function device_set_parent_up() {
 }
 
 # Set device down
-function device_set_down() {
+device_set_down() {
 	local device=${1}
 	assert isset device
 
@@ -604,7 +604,7 @@ function device_set_down() {
 	return ${ret}
 }
 
-function device_set_parent_down() {
+device_set_parent_down() {
 	local device=${1}
 	local parent
 
@@ -623,7 +623,7 @@ function device_set_parent_down() {
 	return ${EXIT_OK}
 }
 
-function device_get_mtu() {
+device_get_mtu() {
 	local device=${1}
 
 	if ! device_exists ${device}; then
@@ -635,7 +635,7 @@ function device_get_mtu() {
 }
 
 # Set mtu to a device
-function device_set_mtu() {
+device_set_mtu() {
 	local device=${1}
 	local mtu=${2}
 
@@ -673,7 +673,7 @@ function device_set_mtu() {
 	return ${ret}
 }
 
-function device_adjust_mtu() {
+device_adjust_mtu() {
 	assert [ $# -eq 2 ]
 
 	local device="${1}"
@@ -683,7 +683,7 @@ function device_adjust_mtu() {
 	device_set_mtu "${device}" "${mtu}"
 }
 
-function device_discover() {
+device_discover() {
 	local device=${1}
 
 	log INFO "Running discovery process on device '${device}'."
@@ -694,7 +694,7 @@ function device_discover() {
 	done
 }
 
-function device_has_ip() {
+device_has_ip() {
 	local device=${1}
 	local addr=${2}
 
@@ -712,7 +712,7 @@ function device_has_ip() {
 	listmatch ${addr} $(device_get_addresses ${device})
 }
 
-function device_get_addresses() {
+device_get_addresses() {
 	local device=${1}
 
 	assert device_exists ${device}
@@ -726,7 +726,7 @@ function device_get_addresses() {
 		done
 }
 
-function __device_get_file() {
+__device_get_file() {
 	local device=${1}
 	local file=${2}
 
@@ -739,7 +739,7 @@ function __device_get_file() {
 	echo "$(<${path})"
 }
 
-function __device_set_file() {
+__device_set_file() {
 	assert [ $# -eq 3 ]
 
 	local device="${1}"
@@ -755,55 +755,55 @@ function __device_set_file() {
 	echo "${value}" > "${path}"
 }
 
-function device_get_rx_bytes() {
+device_get_rx_bytes() {
 	local device=${1}
 
 	__device_get_file ${device} statistics/rx_bytes
 }
 
-function device_get_tx_bytes() {
+device_get_tx_bytes() {
 	local device=${1}
 
 	__device_get_file ${device} statistics/tx_bytes
 }
 
-function device_get_rx_packets() {
+device_get_rx_packets() {
 	local device=${1}
 
 	__device_get_file ${device} statistics/rx_packets
 }
 
-function device_get_tx_packets() {
+device_get_tx_packets() {
 	local device=${1}
 
 	__device_get_file ${device} statistics/tx_packets
 }
 
-function device_get_rx_errors() {
+device_get_rx_errors() {
 	local device=${1}
 
 	__device_get_file ${device} statistics/rx_errors
 }
 
-function device_get_tx_errors() {
+device_get_tx_errors() {
 	local device=${1}
 
 	__device_get_file ${device} statistics/tx_errors
 }
 
-function device_get_speed() {
+device_get_speed() {
 	local device=${1}
 
 	__device_get_file ${device} speed
 }
 
-function device_get_duplex() {
+device_get_duplex() {
 	local device=${1}
 
 	__device_get_file ${device} duplex
 }
 
-function device_get_link_string() {
+device_get_link_string() {
 	local device="${1}"
 	assert isset device
 

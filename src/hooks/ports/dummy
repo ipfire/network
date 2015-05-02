@@ -23,11 +23,11 @@
 
 HOOK_SETTINGS="HOOK ADDRESS"
 
-function hook_check_settings() {
+hook_check_settings() {
 	assert ismac ADDRESS
 }
 
-function hook_new() {
+hook_new() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
@@ -55,7 +55,7 @@ function hook_new() {
 	exit ${EXIT_OK}
 }
 
-function hook_edit() {
+hook_edit() {
 	local port=${1}
 	assert isset port
 	shift
@@ -79,7 +79,7 @@ function hook_edit() {
 	exit ${EXIT_OK}	
 }
 
-function hook_create() {
+hook_create() {
 	local port="${1}"
 	assert isset port
 
@@ -92,7 +92,7 @@ function hook_create() {
 	exit ${EXIT_OK}
 }
 
-function hook_remove() {
+hook_remove() {
 	local port="${1}"
 	assert isset port
 
@@ -100,7 +100,7 @@ function hook_remove() {
 	dummy_remove "${port}"
 }
 
-function hook_up() {
+hook_up() {
 	local port="${1}"
 	assert isset port
 
@@ -110,7 +110,7 @@ function hook_up() {
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
+hook_down() {
 	local port="${1}"
 	assert isset port
 
@@ -120,7 +120,7 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_hotplug_rename() {
+hook_hotplug_rename() {
 	local port=${1}
 	assert isset port
 

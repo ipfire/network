@@ -23,7 +23,7 @@
 
 HOOK_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
 
-function hook_check() {
+hook_check() {
 	assert isset ADDRESS
 	assert isinteger PREFIX
 
@@ -33,7 +33,7 @@ function hook_check() {
 	fi
 }
 
-function hook_create() {
+hook_create() {
 	local zone=${1}
 	shift
 
@@ -64,7 +64,7 @@ function hook_create() {
 	exit ${EXIT_OK}
 }
 
-function hook_up() {
+hook_up() {
 	local zone=${1}
 	local config=${2}
 	shift 2
@@ -78,15 +78,16 @@ function hook_up() {
 
 	ip_address_add ${zone} ${ADDRESS}/${PREFIX}
 
-	routing_db_set ${zone} ipv6 local-ip-address ${ADDRESS}/${PREFIX}
-	routing_db_set ${zone} ipv6 remote-ip-address ${GATEWAY}
-	routing_db_set ${zone} ipv6 active 1
+	db_set "${zone}/ipv6/local-ip-address" "${ADDRESS}/${PREFIX}"
+	db_set "${zone}/ipv6/remote-ip-address" "${GATEWAY}"
+	db_set "${zone}/ipv6/active" 1
+
 	routing_default_update
 
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
+hook_down() {
 	local zone=${1}
 	local config=${2}
 	shift 2
@@ -97,7 +98,7 @@ function hook_down() {
 	fi
 
 	# Remove routing information from database.
-	routing_db_remove ${zone} ipv6
+	db_delete "${zone}/ipv6"
 	
 	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
 
@@ -109,7 +110,7 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_status() {
+hook_status() {
 	local zone=${1}
 	local config=${2}
 	shift 2

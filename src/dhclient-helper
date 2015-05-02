@@ -16,6 +16,8 @@ assert zone_exists ${interface}
 
 case "${action}" in
 	start)
+		leases_file=""
+
 		# Create dhclient configuration file.
 		case "${proto}" in
 			ipv4)
@@ -23,12 +25,15 @@ case "${action}" in
 				;;
 			ipv6)
 				config_file="${RUN_DIR}/dhclient/${interface}/dhclient6.conf"
+				leases_file="/var/lib/dhclient/dhclient6-${interface}.leases"
 				;;
 		esac
 		assert isset config_file
 
-		dhclient_write_config ${interface} ${config_file} \
-			--hostname="${HOSTNAME%%.*}"
+		# Update the dhclient configuration files
+		dhclient_write_config "${interface}" \
+			--config-file="${config_file}" \
+			--leases-file="${leases_file}" || exit $?
 
 		exit ${EXIT_OK}
 		;;

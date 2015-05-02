@@ -21,7 +21,7 @@
 
 RADVD_CONFIGFILE="/etc/radvd.conf"
 
-function radvd_update() {
+radvd_update() {
 	# (Re-)write the configuration file
 	radvd_write_config
 
@@ -29,7 +29,7 @@ function radvd_update() {
 	service_reload radvd
 }
 
-function radvd_write_config() {
+radvd_write_config() {
 	config_header "radv daemon configuration file" > ${RADVD_CONFIGFILE}
 
 	# Write the configuration for all zones.
@@ -42,7 +42,7 @@ function radvd_write_config() {
 	return ${EXIT_OK}
 }
 
-function __radvd_config_interface() {
+__radvd_config_interface() {
 	local zone=${1}
 	assert isset zone
 
@@ -50,16 +50,16 @@ function __radvd_config_interface() {
 
 	# If the interface does not provide any routing information,
 	# we can skip this whole stuff.
-	if ! routing_db_exists ${zone} ipv6; then
+	if ! db_exists "${zone}/ipv6"; then
 		return ${EXIT_OK}
 	fi
 
 	# Skip if zone is not active.
-	local active=$(routing_db_get ${zone} ipv6 active)
+	local active="$(db_get "${zone}/ipv6/active")"
 	[ "${active}" = "0" ] && return ${EXIT_OK}
 
 	# Skip if there is no prefix or prefix is link-local.
-	local addr=$(routing_db_get ${zone} ipv6 local-ip-address)
+	local addr="$(db_get "${zone}/ipv6/local-ip-address")"
 	if [ -z "${addr}" ] || [ "${addr:0:5}" = "fe80:" ]; then
 		return ${EXIT_OK}
 	fi
@@ -104,7 +104,7 @@ function __radvd_config_interface() {
 	print
 }
 
-function __radvd_config_dns() {
+__radvd_config_dns() {
 	local zone=${1}
 
 	# Do nothing, when this option is not enabled.

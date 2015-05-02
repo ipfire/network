@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function service_start() {
+service_start() {
 	local name=${1}
 	assert isset name
 
@@ -40,21 +40,21 @@ function service_start() {
 	return ${ret}
 }
 
-function service_stop() {
+service_stop() {
 	local name="${1}"
 	assert isset name
 
 	systemctl stop "${name}"
 }
 
-function service_restart() {
+service_restart() {
 	local name="${1}"
 	assert isset name
 
 	systemctl restart "${name}"
 }
 
-function service_reload() {
+service_reload() {
 	local name="${1}"
 	assert isset name
 
@@ -66,7 +66,7 @@ function service_reload() {
 	fi
 }
 
-function service_status() {
+service_status() {
 	local name="${1}"
 	assert isset name
 
@@ -77,7 +77,7 @@ function service_status() {
 # This function calls the "enable" command from systemd,
 # to mark services to be automatically started during
 # boot up.
-function service_enable() {
+service_enable() {
 	local name="${1}"
 	assert isset name
 
@@ -87,7 +87,7 @@ function service_enable() {
 # This function calls the "disable" command of systemd,
 # to drop the autostart ability of the service during the
 # boot up.
-function service_disable() {
+service_disable() {
 	local name="${1}"
 	assert isset name
 
@@ -96,7 +96,7 @@ function service_disable() {
 
 # This function uses the systemd command "is-enabled" to check,
 # if a service has been enabled or not.
-function service_is_enabled() {
+service_is_enabled() {
 	local name="${1}"
 	assert isset name
 
@@ -104,7 +104,7 @@ function service_is_enabled() {
 	return $?
 }
 
-function service_is_active() {
+service_is_active() {
 	local name="${1}"
 	assert isset name
 
@@ -112,7 +112,7 @@ function service_is_active() {
 	return $?
 }
 
-function service_get_exitcode() {
+service_get_exitcode() {
 	local name=${1}
 	assert isset name
 

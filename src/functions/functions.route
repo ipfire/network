@@ -22,14 +22,14 @@
 # Functions for static routing.
 #
 
-function route_init() {
+route_init() {
 	# Apply configured static routes.
 	route_apply
 }
 
 init_register route_init
 
-function route_add() {
+route_add() {
 	local ${NETWORK_CONFIG_ROUTES_PARAMS}
 
 	while [ $# -gt 0 ]; do
@@ -141,7 +141,7 @@ function route_add() {
 	return ${EXIT_OK}
 }
 
-function route_remove() {
+route_remove() {
 	local _network=${1}
 	assert isset _network
 
@@ -173,7 +173,7 @@ function route_remove() {
 	return ${EXIT_OK}
 }
 
-function route_list() {
+route_list() {
 	local protocol
 
 	while [ $# -gt 0 ]; do
@@ -225,7 +225,7 @@ function route_list() {
 	done < ${NETWORK_CONFIG_ROUTES}
 }
 
-function route_find_duplicate() {
+route_find_duplicate() {
 	local _network=${1}
 
 	[ -r "${NETWORK_CONFIG_ROUTES}" ] || return ${EXIT_FALSE}
@@ -243,7 +243,7 @@ function route_find_duplicate() {
 	return ${EXIT_FALSE}
 }
 
-function route_parse_line() {
+route_parse_line() {
 	local arg
 
 	# Reset all possible settings.
@@ -303,7 +303,7 @@ function route_parse_line() {
 	return ${EXIT_OK}
 }
 
-function route_apply() {
+route_apply() {
 	local table="static"
 	local type
 
@@ -341,7 +341,7 @@ function route_apply() {
 	route_rule_add --lookup="static" --priority=1000
 }
 
-function route_entry_add() {
+route_entry_add() {
 	local gateway
 	local network
 	local proto
@@ -432,7 +432,7 @@ function route_entry_add() {
 	cmd_quiet "${command}"
 }
 
-function route_table_create() {
+route_table_create() {
 	local table=${1}
 	assert isset table
 
@@ -452,7 +452,7 @@ function route_table_create() {
 	return ${EXIT_OK}
 }
 
-function _route_table_next_id() {
+_route_table_next_id() {
 	# The Linux kernel is able to manage 255 routing tables (1-255).
 	# This function returns the next free id, starting from 255.
 	local next_id
@@ -467,7 +467,7 @@ function _route_table_next_id() {
 	return ${EXIT_FALSE}
 }
 
-function route_table_flush() {
+route_table_flush() {
 	local protocol
 	local table
 
@@ -515,7 +515,7 @@ function route_table_flush() {
 	return ${EXIT_OK}
 }
 
-function route_table_exists() {
+route_table_exists() {
 	local _id _table
 
 	while [ $# -gt 0 ]; do
@@ -545,7 +545,7 @@ function route_table_exists() {
 	return ${EXIT_FALSE}
 }
 
-function route_rule_add() {
+route_rule_add() {
 	local priority
 	local protocols=${IP_SUPPORTED_PROTOCOLS}
 	local lookup
@@ -608,7 +608,7 @@ function route_rule_add() {
 	done
 }
 
-function route_rule_exists() {
+route_rule_exists() {
 	local from
 	local lookup
 	local proto
@@ -669,7 +669,7 @@ function route_rule_exists() {
 	return ${EXIT_FALSE}
 }
 
-function _route_rule_exists_parse() {
+_route_rule_exists_parse() {
 	# Reset all variables.
 	_lookup=
 	_from=

@@ -22,7 +22,7 @@
 # Define protocols which are supported by aiccu.
 AICCU_SUPPORTED_PROTOCOLS="tic tsp l2tp"
 
-function aiccu_start() {
+aiccu_start() {
 	local device=${1}
 	assert isset device
 
@@ -40,7 +40,7 @@ function aiccu_start() {
 	return ${EXIT_OK}
 }
 
-function aiccu_stop() {
+aiccu_stop() {
 	local device=${1}
 	assert isset device
 
@@ -48,7 +48,7 @@ function aiccu_stop() {
 	service_stop "aiccu@${device}.service"
 }
 
-function aiccu_write_config() {
+aiccu_write_config() {
 	local device=${1}
 	local file=${2}
 	shift 2

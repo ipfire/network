@@ -26,12 +26,12 @@ HOOK_SETTINGS="HOOK DELAY"
 # Default settings.
 DELAY=0
 
-function hook_check() {
+hook_check() {
 	assert isset DELAY
 	assert isinteger DELAY
 }
 
-function hook_create() {
+hook_create() {
 	local zone=${1}
 	shift
 
@@ -49,7 +49,7 @@ function hook_create() {
 	exit ${EXIT_OK}
 }
 
-function hook_up() {
+hook_up() {
 	local zone=${1}
 	local config=${2}
 	shift 2
@@ -65,7 +65,7 @@ function hook_up() {
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
+hook_down() {
 	local zone=${1}
 	local config=${2}
 	shift 2
@@ -81,7 +81,7 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_status() {
+hook_status() {
 	local zone=${1}
 	local config=${2}
 	shift 2
@@ -101,8 +101,8 @@ function hook_status() {
 	fi
 	cli_statusline 3 "${HOOK}" "${status}"
 
-	cli_print_fmt1 3 "IPv4 address" "$(routing_db_get ${zone} ipv4 local-ip-address)"
-	local gateway=$(routing_db_get ${zone} ipv4 remote-ip-address)
+	cli_print_fmt1 3 "IPv4 address" "$(db_get "${zone}/ipv4/local-ip-address")"
+	local gateway="$(db_get "${zone}/ipv4/remote-ip-address")"
 	if isset gateway; then
 		cli_print_fmt1 3 "Gateway" "${gateway}"
 	fi

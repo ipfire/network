@@ -19,17 +19,17 @@
 #                                                                             #
 ###############################################################################
 
-function hook_info() {
+hook_info() {
 	echo "HOOK=\"${HOOK}\""
 }
 
-function hook_hotplug() {
+hook_hotplug() {
 	# If the hook does not handle the hotplug event, it
 	# must return EXIT_NOT_HANDLED.
 	exit ${EXIT_NOT_HANDLED}
 }
 
-function hook_new() {
+hook_new() {
 	local zone="${1}"
 	assert isset zone
 	shift
@@ -43,15 +43,15 @@ function hook_new() {
 	exit ${EXIT_OK}
 }
 
-function hook_edit() {
+hook_edit() {
 	hook_new $@
 }
 
-function hook_remove() {
+hook_remove() {
 	cmd_not_implemented
 }
 
-function hook_status() {
+hook_status() {
 	local zone="${1}"
 	assert isset zone
 
@@ -62,25 +62,25 @@ function hook_status() {
 	exit ${STATUS_DOWN}
 }
 
-function hook_up() {
+hook_up() {
 	cmd_not_implemented
 }
 
-function hook_down() {
+hook_down() {
 	cmd_not_implemented
 }
 
-function hook_discover() {
+hook_discover() {
 	# This hook does not support a discovery
 	exit ${DISCOVER_NOT_SUPPORTED}
 }
 
 # Do nothing
-function hook_parse_cmdline() {
+hook_parse_cmdline() {
 	return ${EXIT_OK}
 }
 
-function hook_port() {
+hook_port() {
 	local zone="${1}"
 	assert isset zone
 
@@ -102,23 +102,23 @@ function hook_port() {
 	exit ${ret}
 }
 
-function hook_port_attach() {
+hook_port_attach() {
 	return ${EXIT_NOT_SUPPORTED}
 }
 
-function hook_port_detach() {
+hook_port_detach() {
 	return ${EXIT_NOT_SUPPORTED}
 }
 
-function hook_port_edit() {
+hook_port_edit() {
 	return ${EXIT_NOT_SUPPORTED}
 }
 
-function hook_port_status() {
+hook_port_status() {
 	return ${EXIT_NOT_SUPPORTED}
 }
 
-function hook_default_port_create() {
+hook_default_port_create() {
 	assert [ $# -ge 2 ]
 
 	local zone="${1}"
@@ -127,11 +127,11 @@ function hook_default_port_create() {
 	port_create "${port}"
 }
 
-function hook_port_create() {
+hook_port_create() {
 	hook_default_port_create $@
 }
 
-function hook_default_port_remove() {
+hook_default_port_remove() {
 	assert [ $# -ge 2 ]
 
 	local zone="${1}"
@@ -140,19 +140,19 @@ function hook_default_port_remove() {
 	port_remove "${port}"
 }
 
-function hook_port_remove() {
+hook_port_remove() {
 	hook_default_port_remove $@
 }
 
-function hook_port_up() {
+hook_port_up() {
 	cmd_not_implemented
 }
 
-function hook_port_down() {
+hook_port_down() {
 	cmd_not_implemented
 }
 
-function hook_config() {
+hook_config() {
 	local zone="${1}"
 	assert isset zone
 
@@ -173,7 +173,7 @@ function hook_config() {
 	esac
 }
 
-function hook_config_cmd() {
+hook_config_cmd() {
 	local cmd="${1}"
 	assert isset cmd
 
@@ -199,31 +199,31 @@ function hook_config_cmd() {
 	hook_config_exec "${hook_config}" "${cmd}" "${zone}" "$@"
 }
 
-function hook_config_create() {
-	assert [ $# -gt 2 ]
+hook_config_create() {
+	assert [ $# -ge 2 ]
 
 	hook_config_cmd "create" "$@"
 }
 
-function hook_config_edit() {
+hook_config_edit() {
 	hook_config_cmd "edit" "$@"
 }
 
-function hook_config_remove() {
+hook_config_remove() {
 	hook_config_cmd "remove" "$@"
 }
 
-function hook_config_show() {
+hook_config_show() {
 	cmd_not_implemented
 }
 
-function hook_ppp_write_config() {
+hook_ppp_write_config() {
 	cmd_not_implemented
 
 	# Arguments: <zone> <filename>
 }
 
-function hook_ppp_ip_pre_up() {
+hook_ppp_ip_pre_up() {
 	local zone="${1}"
 	assert isset zone
 	shift
@@ -237,7 +237,7 @@ function hook_ppp_ip_pre_up() {
 	exit $?
 }
 
-function hook_ppp_ipv4_up() {
+hook_ppp_ipv4_up() {
 	local zone="${1}"
 	assert isset zone
 	shift
@@ -251,7 +251,7 @@ function hook_ppp_ipv4_up() {
 	exit $?
 }
 
-function hook_ppp_ipv4_down() {
+hook_ppp_ipv4_down() {
 	local zone="${1}"
 	assert isset zone
 	shift
@@ -265,7 +265,7 @@ function hook_ppp_ipv4_down() {
 	exit $?
 }
 
-function hook_ppp_ipv6_up() {
+hook_ppp_ipv6_up() {
 	local zone="${1}"
 	assert isset zone
 	shift
@@ -279,7 +279,7 @@ function hook_ppp_ipv6_up() {
 	exit $?
 }
 
-function hook_ppp_ipv6_down() {
+hook_ppp_ipv6_down() {
 	local zone="${1}"
 	assert isset zone
 	shift

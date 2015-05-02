@@ -22,7 +22,7 @@
 # This is a list of baudrates that are supported.
 SERIAL_BAUDRATES="921600 460800 230400 115200 57600 38400 19200 9600"
 
-function serial_list() {
+serial_list() {
 	local device
 	for device in /dev/ttyUSB*; do
 		if serial_exists "${device}"; then
@@ -31,13 +31,13 @@ function serial_list() {
 	done
 }
 
-function serial_exists() {
+serial_exists() {
 	local device=${1}
 
 	[ -c "${device}" ]
 }
 
-function serial_is_locked() {
+serial_is_locked() {
 	local device=${1}
 	assert isset device
 
@@ -52,12 +52,12 @@ function serial_is_locked() {
 	return ${EXIT_FALSE}
 }
 
-function serial_is_unlocked() {
+serial_is_unlocked() {
 	serial_is_locked ${device} \
 		&& return ${EXIT_FALSE} || return ${EXIT_TRUE}
 }
 
-function serial_is_modem() {
+serial_is_modem() {
 	local device=${1}
 	assert isset device
 
@@ -77,7 +77,7 @@ function serial_is_modem() {
 	esac
 }
 
-function serial_get_bus_type() {
+serial_get_bus_type() {
 	local device="${1}"
 	assert isset device
 

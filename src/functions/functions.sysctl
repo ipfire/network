@@ -21,7 +21,7 @@
 
 SYSCTL_PATH="/proc/sys"
 
-function sysctl_key_to_path() {
+sysctl_key_to_path() {
 	local key="${1}"
 	assert isset key
 
@@ -30,7 +30,7 @@ function sysctl_key_to_path() {
 	return ${EXIT_OK}
 }
 
-function sysctl_key_exists() {
+sysctl_key_exists() {
 	local key="${1}"
 	assert isset key
 
@@ -40,7 +40,7 @@ function sysctl_key_exists() {
 	return ${EXIT_ERROR}
 }
 
-function sysctl_get() {
+sysctl_get() {
 	local key="${1}"
 	assert isset key
 
@@ -48,7 +48,7 @@ function sysctl_get() {
 	return ${EXIT_OK}
 }
 
-function sysctl_set() {
+sysctl_set() {
 	local key="${1}"
 	assert isset key
 
@@ -58,7 +58,7 @@ function sysctl_set() {
 	return ${EXIT_OK}
 }
 
-function sysctl_set_bool() {
+sysctl_set_bool() {
 	local key="${1}"
 
 	local value="${2}"
@@ -71,7 +71,7 @@ function sysctl_set_bool() {
 	sysctl_set "${key}" "${value}"
 }
 
-function sysctl_set_recursively() {
+sysctl_set_recursively() {
 	local basekey="${1}"
 	assert isset basekey
 
