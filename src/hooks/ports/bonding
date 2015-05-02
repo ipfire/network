@@ -28,7 +28,7 @@ SLAVES=""
 MIIMON=100
 MODE="balance-rr"
 
-function hook_check_settings() {
+hook_check_settings() {
 	assert isset ADDRESS
 	assert ismac ADDRESS
 
@@ -36,11 +36,11 @@ function hook_check_settings() {
 	assert isinteger MIIMON
 }
 
-function hook_new() {
+hook_new() {
 	hook_edit $@
 }
 
-function hook_edit() {
+hook_edit() {
 	local port=${1}
 	assert isset port
 	shift
@@ -96,7 +96,7 @@ function hook_edit() {
 	exit ${EXIT_OK}
 }
 
-function hook_create() {
+hook_create() {
 	local port="${1}"
 	assert isset port
 
@@ -115,7 +115,7 @@ function hook_create() {
 	exit ${EXIT_OK}
 }
 
-function hook_remove() {
+hook_remove() {
 	local port="${1}"
 	assert isset port
 
@@ -127,7 +127,7 @@ function hook_remove() {
 	fi
 }
 
-function hook_up() {
+hook_up() {
 	local port="${1}"
 	assert isset port
 
@@ -143,7 +143,7 @@ function hook_up() {
 	done
 }
 
-function hook_down() {
+hook_down() {
 	local port="${1}"
 	assert isset port
 
@@ -159,7 +159,7 @@ function hook_down() {
 	hook_default_down "${port}"
 }
 
-function hook_hotplug() {
+hook_hotplug() {
 	local port="${1}"
 	assert isset port
 

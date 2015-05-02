@@ -25,11 +25,11 @@ export PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/bin:/bin:${PATH}"
 
 INIT_FUNCTIONS=""
 
-function init_register() {
+init_register() {
 	INIT_FUNCTIONS="${INIT_FUNCTIONS} $@"
 }
 
-function init_run() {
+init_run() {
 	local init
 	for init in ${INIT_FUNCTIONS}; do
 		${init}

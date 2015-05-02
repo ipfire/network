@@ -19,17 +19,17 @@
 #                                                                             #
 ###############################################################################
 
-function hotplug_assert_in_hotplug_event() {
+hotplug_assert_in_hotplug_event() {
 	assert [ -n "${IN_HOTPLUG_EVENT}" ]
 }
 
-function hotplug_action() {
+hotplug_action() {
 	hotplug_assert_in_hotplug_event
 
 	echo "${ACTION}"
 }
 
-function hotplug_propagate_all_ports() {
+hotplug_propagate_all_ports() {
 	hotplug_assert_in_hotplug_event
 
 	# Create configured child devices.
@@ -50,7 +50,7 @@ function hotplug_propagate_all_ports() {
 	done
 }
 
-function hotplug_propagate_all_zones() {
+hotplug_propagate_all_zones() {
 	hotplug_assert_in_hotplug_event
 
 	local zone
@@ -70,7 +70,7 @@ function hotplug_propagate_all_zones() {
 	done
 }
 
-function hotplug_event_port_is_interface() {
+hotplug_event_port_is_interface() {
 	hotplug_assert_in_hotplug_event
 
 	local port="${1}"
@@ -79,7 +79,7 @@ function hotplug_event_port_is_interface() {
 	[ "${port}" = "${INTERFACE}" ]
 }
 
-function hotplug_event_interface_is_slave_of_port() {
+hotplug_event_interface_is_slave_of_port() {
 	hotplug_assert_in_hotplug_event
 
 	local port="${1}"
@@ -92,7 +92,7 @@ function hotplug_event_interface_is_slave_of_port() {
 	list_match "${INTERFACE}" ${slaves}
 }
 
-function hotplug_event_interface_is_port_of_zone() {
+hotplug_event_interface_is_port_of_zone() {
 	hotplug_assert_in_hotplug_event
 
 	local zone="${1}"
@@ -105,7 +105,7 @@ function hotplug_event_interface_is_port_of_zone() {
 	list_match "${INTERFACE}" ${ports}
 }
 
-function hotplug_event_port_uses_phy() {
+hotplug_event_port_uses_phy() {
 	hotplug_assert_in_hotplug_event
 
 	local port="${1}"

@@ -25,7 +25,7 @@ INFO_SETTINGS="HOOK PORT_PARENTS PORT_CHILDREN"
 # into the system and got its correct name.
 # The function is intended to create child ports and things
 # like that.
-function hook_hotplug() {
+hook_hotplug() {
 	# If the hook does not handle the hotplug event, it
 	# must return EXIT_NOT_HANDLED.
 	exit ${EXIT_NOT_HANDLED}
@@ -36,15 +36,15 @@ function hook_hotplug() {
 # The first argument is the port which should be tested
 # against the second argument which is the device that
 # has been plugged in.
-function hook_hotplug_rename() {
+hook_hotplug_rename() {
 	exit ${EXIT_FALSE}
 }
 
-function hook_add() {
+hook_add() {
 	cmd_not_implemented
 }
 
-function hook_info() {
+hook_info() {
 	local port="${1}"
 	assert isset port
 	shift
@@ -65,7 +65,7 @@ function hook_info() {
 	exit ${ERROR_OK}
 }
 
-function hook_status() {
+hook_status() {
 	local port="${1}"
 	assert isset port
 
@@ -75,17 +75,17 @@ function hook_status() {
 
 # Create any virtual devices, but don't bring them up
 # Must tolerate that the device may already exist
-function hook_create() {
+hook_create() {
 	cmd_not_implemented
 }
 
 # Must tolerate that the device may not exist
-function hook_remove() {
+hook_remove() {
 	cmd_not_implemented
 }
 
 # Just bring up the device
-function hook_default_up() {
+hook_default_up() {
 	local port="${1}"
 	assert isset port
 
@@ -104,11 +104,11 @@ function hook_default_up() {
 	done
 }
 
-function hook_up() {
+hook_up() {
 	hook_default_up $@
 }
 
-function hook_default_down() {
+hook_default_down() {
 	local port="${1}"
 	assert isset port
 
@@ -123,6 +123,6 @@ function hook_default_down() {
 	done
 }
 
-function hook_down() {
+hook_down() {
 	hook_default_down $@
 }

@@ -26,7 +26,7 @@
 
 HOOK_SETTINGS="HOOK ADDRESS DEVICE"
 
-function hook_check_settings() {
+hook_check_settings() {
 	assert ismac DEVICE
 
 	if isset ADDRESS; then
@@ -34,7 +34,7 @@ function hook_check_settings() {
 	fi
 }
 
-function hook_new() {
+hook_new() {
 	local port=${1}
 	assert isset port
 	shift
@@ -47,17 +47,17 @@ function hook_new() {
 	exit ${EXIT_OK}
 }
 
-function hook_create() {
+hook_create() {
 	# Nothing to do here. Real ethernet devices cannot
 	# be created. They are just there.
 	exit ${EXIT_OK}
 }
 
-function hook_remove() {
+hook_remove() {
 	exit ${EXIT_OK}
 }
 
-function hook_hotplug_rename() {
+hook_hotplug_rename() {
 	local port=${1}
 	assert isset port
 

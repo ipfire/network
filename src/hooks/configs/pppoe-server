@@ -37,13 +37,13 @@ SUBNET=
 # 0 = unlimited.
 MAX_SESSIONS=0
 
-function hook_check() {
+hook_check() {
 	assert isset MTU
 	assert isset SUBNET
 	assert isset MAX_SESSIONS
 }
 
-function hook_create() {
+hook_create() {
 	local zone=${1}
 	shift
 
@@ -70,7 +70,7 @@ function hook_create() {
 	exit ${EXIT_OK}
 }
 
-function hook_up() {
+hook_up() {
 	local zone=${1}
 	local config=${2}
 	shift 2
@@ -81,7 +81,7 @@ function hook_up() {
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
+hook_down() {
 	local zone=${1}
 	local config=${2}
 	shift 2
@@ -97,7 +97,7 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_status() {
+hook_status() {
 	local zone=${1}
 	local config=${2}
 	shift 2

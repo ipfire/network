@@ -30,7 +30,7 @@ network_settings_read
 
 # Setup the locking.
 LOCKFILE="${RUN_DIR}/.rename_lock"
-function cleanup() {
+cleanup() {
 	lock_release ${LOCKFILE}
 }
 trap cleanup EXIT TERM KILL

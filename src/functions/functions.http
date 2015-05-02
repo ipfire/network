@@ -19,13 +19,13 @@
 #                                                                             #
 ###############################################################################
 
-function http_format_args() {
+http_format_args() {
 	local args="$@"
 
 	list_join args "&"
 }
 
-function http_GET() {
+http_GET() {
 	local username
 	local password
 
@@ -68,7 +68,7 @@ function http_GET() {
 	http_call "${url}"
 }
 
-function http_call() {
+http_call() {
 	# Argument list for invoking curl.
 	local args
 

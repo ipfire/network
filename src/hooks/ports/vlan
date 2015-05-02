@@ -25,7 +25,7 @@ HOOK_SETTINGS="HOOK ADDRESS PARENT_DEVICE TAG"
 
 PORT_PARENTS_VAR="PARENT"
 
-function hook_check_settings() {
+hook_check_settings() {
 	assert isset PARENT_DEVICE
 	assert isinteger TAG
 
@@ -47,7 +47,7 @@ function hook_check_settings() {
 	done
 }
 
-function hook_new() {
+hook_new() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--parent-device=*)
@@ -73,7 +73,7 @@ function hook_new() {
 	exit ${EXIT_OK}
 }
 
-function hook_edit() {
+hook_edit() {
 	local port=${1}
 	assert isset port
 	shift
@@ -97,7 +97,7 @@ function hook_edit() {
 	exit ${EXIT_OK}	
 }
 
-function hook_create() {
+hook_create() {
 	local port="${1}"
 	assert isset port
 
@@ -112,7 +112,7 @@ function hook_create() {
 	exit ${EXIT_OK}
 }
 
-function hook_remove() {
+hook_remove() {
 	local port="${1}"
 	assert isset port
 

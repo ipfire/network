@@ -70,7 +70,7 @@ HOOK_SETTINGS="${HOOK_SETTINGS} PHONE_NUMBER"
 IMSI=
 HOOK_SETTINGS="${HOOK_SETTINGS} IMSI"
 
-function hook_check_settings() {
+hook_check_settings() {
 	assert isset DEVICE
 	assert isset PHONE_NUMBER
 
@@ -86,7 +86,7 @@ function hook_check_settings() {
 	isset AUTH && assert isoneof AUTH ${MODEM_ALLOWED_AUTH_METHODS}
 }
 
-function hook_parse_cmdline() {
+hook_parse_cmdline() {
 	local value
 
 	while [ $# -gt 0 ]; do
@@ -135,7 +135,7 @@ function hook_parse_cmdline() {
 	done
 }
 
-function hook_up() {
+hook_up() {
 	local zone=${1}
 	assert isset zone
 
@@ -163,7 +163,7 @@ function hook_up() {
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
+hook_down() {
 	local zone=${1}
 	assert isset zone
 
@@ -173,7 +173,7 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_status() {
+hook_status() {
 	local zone=${1}
 	assert isset zone
 
@@ -264,7 +264,7 @@ function hook_status() {
 	exit ${EXIT_OK}
 }
 
-function hook_ppp_write_config() {
+hook_ppp_write_config() {
 	local zone=${1}
 	assert isset zone
 

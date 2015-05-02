@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function policy_zone_add() {
+policy_zone_add() {
 	local zone=${1}
 	assert isset zone
 
@@ -42,7 +42,7 @@ function policy_zone_add() {
 	done
 }
 
-function policy_zone_masquerade4() {
+policy_zone_masquerade4() {
 	local zone=${1}
 	assert isset zone
 
@@ -52,7 +52,7 @@ function policy_zone_masquerade4() {
 		-j MASQUERADE --random
 }
 
-function policy_zone_allow_all() {
+policy_zone_allow_all() {
 	local zone=${1}
 	assert isset zone
 
@@ -65,7 +65,7 @@ function policy_zone_allow_all() {
 	iptables -A "${chain}" -m conntrack --ctstate NEW -j ACCEPT
 }
 
-function policy_zone_deny_all() {
+policy_zone_deny_all() {
 	local zone=${1}
 	assert isset zone
 
@@ -78,13 +78,13 @@ function policy_zone_deny_all() {
 	iptables -A "${chain}" -j DROP
 }
 
-function policy_drop_all() {
+policy_drop_all() {
 	# Nothing to do here, because that is the
 	# default policy of the INPUT/OUTPUT/FORWARD chain.
 	:
 }
 
-function policy_import_all_rules() {
+policy_import_all_rules() {
 	# This will populate all chains with the rules
 	# for the given zone.
 
@@ -103,7 +103,7 @@ function policy_import_all_rules() {
 	#	-A ${chain}_RULES_INC
 }
 
-function policy_load() {
+policy_load() {
 	local zone_from=${1}
 	assert isset zone_from
 

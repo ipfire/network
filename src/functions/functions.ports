@@ -19,11 +19,11 @@
 #                                                                             #
 ###############################################################################
 
-function port_dir() {
+port_dir() {
 	echo "${NETWORK_CONFIG_DIR}/ports"
 }
 
-function port_list() {
+port_list() {
 	local port
 	for port in $(port_dir)/*; do
 		port="$(basename "${port}")"
@@ -33,7 +33,7 @@ function port_list() {
 	done
 }
 
-function port_list_in_use() {
+port_list_in_use() {
 	local ports_in_use
 
 	# Collect all ports that are attached to a zone
@@ -51,7 +51,7 @@ function port_list_in_use() {
 	list_sort ${ports_in_use}
 }
 
-function port_list_free() {
+port_list_free() {
 	local ports_in_use="$(port_list_in_use)"
 
 	local port
@@ -64,21 +64,21 @@ function port_list_free() {
 	return ${EXIT_OK}
 }
 
-function port_get_hook() {
+port_get_hook() {
 	local port=${1}
 	assert isset port
 
 	config_get_hook $(port_file ${port})
 }
 
-function port_config_dir() {
+port_config_dir() {
 	local port=${1}
 
 	print "${RUN_DIR}/ports/${port}"
 	return ${EXIT_OK}
 }
 
-function port_settings_read() {
+port_settings_read() {
 	local port="${1}"
 	assert isset port
 
@@ -91,7 +91,7 @@ function port_settings_read() {
 	HOOK="${hook}"
 }
 
-function port_settings_write() {
+port_settings_write() {
 	local port="${1}"
 	assert isset port
 	shift
@@ -105,24 +105,24 @@ function port_settings_write() {
 	settings_write "$(port_file "${port}")" ${args}
 }
 
-function ports_get_all() {
+ports_get_all() {
 	port_list
 }
 
-function port_file() {
+port_file() {
 	local port="${1}"
 	assert isset port
 
 	echo "$(port_dir)/${port}"
 }
 
-function port_exists() {
+port_exists() {
 	local port=${1}
 
 	[ -f "${NETWORK_CONFIG_DIR}/ports/${port}" ]
 }
 
-function port_get_hook() {
+port_get_hook() {
 	local port=${1}
 
 	assert isset port
@@ -130,7 +130,7 @@ function port_get_hook() {
 	config_get_hook $(port_file ${port})
 }
 
-function port_is_attached() {
+port_is_attached() {
 	local port=${1}
 	shift
 
@@ -151,11 +151,11 @@ function port_is_attached() {
 	return ${EXIT_ERROR}
 }
 
-function port_is_up() {
+port_is_up() {
 	device_is_up $@
 }
 
-function port_new() {
+port_new() {
 	#local port=${1}
 	#shift
 	#
@@ -181,7 +181,7 @@ function port_new() {
 	hook_exec port ${hook} new $@
 }
 
-function port_destroy() {
+port_destroy() {
 	local port=${1}
 
 	assert isset port
@@ -224,11 +224,11 @@ function port_destroy() {
 	rm -f $(port_file ${port})
 }
 
-function port_create() {
+port_create() {
 	port_cmd "create" $@
 }
 
-function port_remove() {
+port_remove() {
 	local port="${1}"
 	assert isset port
 
@@ -240,27 +240,27 @@ function port_remove() {
 	port_cmd "remove" "${port}"
 }
 
-function port_edit() {
+port_edit() {
 	port_cmd edit $@
 }
 
-function port_up() {
+port_up() {
 	port_cmd up $@
 }
 
-function port_down() {
+port_down() {
 	port_cmd down $@
 }
 
-function port_status() {
+port_status() {
 	port_cmd status $@
 }
 
-function port_info() {
+port_info() {
 	port_cmd info $@
 }
 
-function port_cmd() {
+port_cmd() {
 	local cmd=${1}
 	local port=${2}
 	shift 2
@@ -275,7 +275,7 @@ function port_cmd() {
 	hook_exec port ${hook} ${cmd} ${port} $@
 }
 
-function ports_get() {
+ports_get() {
 	local port
 	for port in $(port_dir)/*; do
 		port=$(basename ${port})
@@ -285,7 +285,7 @@ function ports_get() {
 	done
 }
 
-function port_find_free() {
+port_find_free() {
 	local pattern=${1}
 
 	assert isset pattern
@@ -305,7 +305,7 @@ function port_find_free() {
 	return ${EXIT_ERROR}
 }
 
-function port_get_info() {
+port_get_info() {
 	local port=${1}
 	local key=${2}
 
@@ -319,19 +319,19 @@ function port_get_info() {
 	)
 }
 
-function port_get_parents() {
+port_get_parents() {
 	local port=${1}
 
 	port_get_info ${port} PORT_PARENTS
 }
 
-function port_get_children() {
+port_get_children() {
 	local port=${1}
 
 	port_get_info ${port} PORT_CHILDREN
 }
 
-function port_zone() {
+port_zone() {
 	# Get name of the zones, this port is configured in.
 	local port=${1}
 	shift
@@ -349,7 +349,7 @@ function port_zone() {
 	return ${EXIT_OK}
 }
 
-function port_hotplug_event() {
+port_hotplug_event() {
 	local port="${1}"
 	assert isset port
 
@@ -358,7 +358,7 @@ function port_hotplug_event() {
 	port_cmd "hotplug" "${port}"
 }
 
-function port_get_slaves() {
+port_get_slaves() {
 	local port="${1}"
 
 	port_settings_read "${port}" \
@@ -366,7 +366,7 @@ function port_get_slaves() {
 	print "${SLAVES}"
 }
 
-function port_device_is_slave() {
+port_device_is_slave() {
 	assert [ $# -eq 2 ]
 
 	local port="${1}"
@@ -379,7 +379,7 @@ function port_device_is_slave() {
 	list_match "${device}" ${slaves}
 }
 
-function port_get_phy() {
+port_get_phy() {
 	local port="${1}"
 
 	port_settings_read "${port}" \
@@ -387,7 +387,7 @@ function port_get_phy() {
 	print "${PHY}"
 }
 
-function port_uses_phy() {
+port_uses_phy() {
 	assert [ $# -eq 2 ]
 
 	local port="${1}"
@@ -404,7 +404,7 @@ function port_uses_phy() {
 	[ "${port_phy}" = "${phy}" ]
 }
 
-function ports_lowest_address() {
+ports_lowest_address() {
 	local address
 	local addresses
 

@@ -19,28 +19,28 @@
 #                                                                             #
 ###############################################################################
 
-function pppoe_server_start() {
+pppoe_server_start() {
 	local zone=${1}
 	assert isset zone
 
 	service_start "pppoe-server@${zone}.service"
 }
 
-function pppoe_server_stop() {
+pppoe_server_stop() {
 	local zone=${1}
 	assert isset zone
 
 	service_stop "pppoe-server@${zone}.service"
 }
 
-function pppoe_server_status() {
+pppoe_server_status() {
 	local zone=${1}
 	assert isset zone
 
 	service_status "pppoe-server@${zone}.service"
 }
 
-function pppoe_server_options() {
+pppoe_server_options() {
 	local file=${1}
 	assert isset file
 
@@ -161,7 +161,7 @@ function pppoe_server_options() {
 	return ${EXIT_OK}
 }
 
-function pppoe_server_poolfile() {
+pppoe_server_poolfile() {
 	local file=${1}
 	assert isset file
 

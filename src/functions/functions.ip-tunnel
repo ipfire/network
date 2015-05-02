@@ -21,7 +21,7 @@
 
 IP_TUNNEL_MODES="sit"
 
-function ip_tunnel_add() {
+ip_tunnel_add() {
 	local device=${1}
 	shift
 
@@ -78,7 +78,7 @@ function ip_tunnel_add() {
 	assert [ $? -eq 0 ]
 }
 
-function ip_tunnel_del() {
+ip_tunnel_del() {
 	local device=${1}
 	assert device_exists ${device}
 
@@ -91,7 +91,7 @@ function ip_tunnel_del() {
 	assert [ $? -eq 0 ]
 }
 
-function ip_tunnel_6rd_set_prefix() {
+ip_tunnel_6rd_set_prefix() {
 	local device="${1}"
 	assert isset device
 

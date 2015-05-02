@@ -26,7 +26,7 @@ EXIT_PPPD_ERROR_FATAL=$(( ${EXIT_ERROR} + 1 ))
 
 # This function monitors the pppd activity.
 
-function pppd_angel() {
+pppd_angel() {
 	local device="${1}"
 	assert isset device
 
@@ -86,7 +86,7 @@ function pppd_angel() {
 	done
 }
 
-function pppd_exec() {
+pppd_exec() {
 	local device="${1}"
 	assert isset device
 
@@ -229,7 +229,7 @@ function pppd_exec() {
 	esac
 }
 
-function pppd_start() {
+pppd_start() {
 	local device="${1}"
 	assert isset device
 
@@ -238,21 +238,21 @@ function pppd_start() {
 	service_start "pppd@${device}.service"
 }
 
-function pppd_stop() {
+pppd_stop() {
 	local device="${1}"
 	assert isset device
 
 	service_stop "pppd@${device}.service"
 }
 
-function pppd_status() {
+pppd_status() {
 	local device="${1}"
 	assert isset device
 
 	service_status "pppd@${device}.service"
 }
 
-function ppp_common_ip_pre_up() {
+ppp_common_ip_pre_up() {
 	local zone=${1}
 	shift
 
@@ -266,7 +266,7 @@ function ppp_common_ip_pre_up() {
 	return ${EXIT_OK}
 }
 
-function ppp_common_ipv4_up() {
+ppp_common_ipv4_up() {
 	local zone=${1}
 	shift
 
@@ -282,7 +282,7 @@ function ppp_common_ipv4_up() {
 	return ${EXIT_OK}
 }
 
-function ppp_common_ipv4_down() {
+ppp_common_ipv4_down() {
 	local zone=${1}
 	shift
 
@@ -303,7 +303,7 @@ function ppp_common_ipv4_down() {
 	return ${EXIT_OK}
 }
 
-function ppp_common_ipv6_up() {
+ppp_common_ipv6_up() {
 	local zone=${1}
 	shift
 
@@ -322,7 +322,7 @@ function ppp_common_ipv6_up() {
 	return ${EXIT_OK}
 }
 
-function ppp_common_ipv6_down() {
+ppp_common_ipv6_down() {
 	local zone=${1}
 	shift
 
@@ -343,7 +343,7 @@ function ppp_common_ipv6_down() {
 	return ${EXIT_OK}
 }
 
-function ppp_secret() {
+ppp_secret() {
 	local USER=${1}
 	local SECRET=${2}
 	local a
@@ -362,7 +362,7 @@ function ppp_secret() {
 	rm -f ${PPP_SECRETS}.tmp
 }
 
-function ppp_accounting() {
+ppp_accounting() {
 	local zone=${1}
 	shift
 
@@ -370,7 +370,7 @@ function ppp_accounting() {
 		--rcvd="${BYTES_RCVD}" --sent="${BYTES_SENT}"
 }
 
-function pppd_write_config() {
+pppd_write_config() {
 	local file=${1}; shift
 	assert isset file
 

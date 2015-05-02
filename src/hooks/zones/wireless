@@ -31,7 +31,7 @@ SSID=
 KEY=
 ENCRYPTION_MODE=
 
-function hook_check_settings() {
+hook_check_settings() {
 	assert isset SSID
 
 	if isset ADDRESS; then
@@ -46,7 +46,7 @@ function hook_check_settings() {
 	fi
 }
 
-function hook_parse_cmdline() {
+hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--phy=*|--parent-device=*)
@@ -76,7 +76,7 @@ function hook_parse_cmdline() {
 	PHY=$(phy_get_address ${PHY})
 }
 
-function hook_up() {
+hook_up() {
 	local zone=${1}
 	assert isset zone
 
@@ -100,7 +100,7 @@ function hook_up() {
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
+hook_down() {
 	local zone=${1}
 	shift
 
@@ -118,7 +118,7 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_status() {
+hook_status() {
 	local zone=${1}
 	assert isset zone
 

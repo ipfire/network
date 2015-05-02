@@ -21,7 +21,7 @@
 
 IP_SUPPORTED_PROTOCOLS="${IP_SUPPORTED_PROTOCOLS} ipv6"
 
-function ipv6_device_autoconf_enable() {
+ipv6_device_autoconf_enable() {
 	local device="${1}"
 	assert device_exists "${device}"
 
@@ -35,7 +35,7 @@ function ipv6_device_autoconf_enable() {
 	ipv6_device_forwarding_disable "${device}"
 }
 
-function ipv6_device_autoconf_disable() {
+ipv6_device_autoconf_disable() {
 	local device="${1}"
 	assert device_exists "${device}"
 
@@ -51,7 +51,7 @@ function ipv6_device_autoconf_disable() {
 	ipv6_device_privacy_extensions_disable "${device}"
 }
 
-function ipv6_device_forwarding_enable() {
+ipv6_device_forwarding_enable() {
 	local device="${1}"
 
 	sysctl_set "net.ipv6.conf.${device}.forwarding" 1
@@ -59,7 +59,7 @@ function ipv6_device_forwarding_enable() {
 	log INFO "Enabled IPv6 forwarding on '${device}'"
 }
 
-function ipv6_device_forwarding_disable() {
+ipv6_device_forwarding_disable() {
 	local device="${1}"
 
 	sysctl_set "net.ipv6.conf.${device}.forwarding" 0
@@ -68,21 +68,21 @@ function ipv6_device_forwarding_disable() {
 }
 
 # Enable IPv6 RFC3041 privacy extensions if desired
-function ipv6_device_privacy_extensions_enable() {
+ipv6_device_privacy_extensions_enable() {
 	local device="${1}"
 	assert device_exists "${device}"
 
 	sysctl_set "net.ipv6.conf.${device}.use_tempaddr" 2
 }
 
-function ipv6_device_privacy_extensions_disable() {
+ipv6_device_privacy_extensions_disable() {
 	local device="${1}"
 	assert device_exists "${device}"
 
 	sysctl_set "net.ipv6.conf.${device}.use_tempaddr" 0
 }
 
-function ipv6_is_valid() {
+ipv6_is_valid() {
 	ipcalc --ipv6 -c $@ >/dev/null 2>&1
 
 	case "$?" in
@@ -95,7 +95,7 @@ function ipv6_is_valid() {
 	esac
 }
 
-function ipv6_prefix_is_valid() {
+ipv6_prefix_is_valid() {
 	local prefix=${1}
 	assert isset prefix
 
@@ -105,15 +105,15 @@ function ipv6_prefix_is_valid() {
 	return ${EXIT_TRUE}
 }
 
-function ipv6_get_prefix() {
+ipv6_get_prefix() {
 	ip_get_prefix "$@"
 }
 
-function ipv6_split_prefix() {
+ipv6_split_prefix() {
 	ip_split_prefix "$@"
 }
 
-function ipv6_address_add() {
+ipv6_address_add() {
 	local address="${1}"
 	assert isset address
 
@@ -191,14 +191,14 @@ function ipv6_address_add() {
 	return ${EXIT_OK}
 }
 
-function ipv6_address_del() {
+ipv6_address_del() {
 	local address="${1}"
 	local device="${2}"
 
 	ip_address_del "${device}" "${address}"
 }
 
-function ipv6_address_flush() {
+ipv6_address_flush() {
 	local device="${1}"
 	assert isset device
 
@@ -208,7 +208,7 @@ function ipv6_address_flush() {
 	cmd_quiet ip -6 addr flush dev "${device}" scope global permanent
 }
 
-function ipv6_address_change_lifetime() {
+ipv6_address_change_lifetime() {
 	local address="${1}"
 	assert isset address
 
@@ -258,7 +258,7 @@ function ipv6_address_change_lifetime() {
 	return ${EXIT_OK}
 }
 
-function ipv6_get_dad_status() {
+ipv6_get_dad_status() {
 	local address="${1}"
 	assert isset address
 
@@ -287,7 +287,7 @@ function ipv6_get_dad_status() {
 	return ${EXIT_DAD_OK}
 }
 
-function ipv6_wait_for_dad() {
+ipv6_wait_for_dad() {
 	local address="${1}"
 	assert isset address
 
@@ -320,7 +320,7 @@ function ipv6_wait_for_dad() {
 	return ${EXIT_ERROR}
 }
 
-function ipv6_device_get_addresses() {
+ipv6_device_get_addresses() {
 	local device="${1}"
 	assert isset device
 	shift
@@ -359,7 +359,7 @@ function ipv6_device_get_addresses() {
 	list_sort ${addresses}
 }
 
-function ipv6_implode() {
+ipv6_implode() {
 	local address=${1}
 	assert isset address
 
@@ -370,7 +370,7 @@ function ipv6_implode() {
 	print "${ADDRESS6_IMPL}"
 }
 
-function ipv6_explode() {
+ipv6_explode() {
 	local address=${1}
 	assert isset address
 
@@ -387,7 +387,7 @@ function ipv6_explode() {
 	print "${ADDRESS6_EXPL}"
 }
 
-function ipv6_addr_eq() {
+ipv6_addr_eq() {
 	local addr1=${1}
 	assert isset addr1
 
@@ -403,7 +403,7 @@ function ipv6_addr_eq() {
 		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
-function ipv6_addr_gt() {
+ipv6_addr_gt() {
 	local addr1=${1}
 	assert isset addr1
 
@@ -426,7 +426,7 @@ function ipv6_addr_gt() {
 	return ${EXIT_FALSE}
 }
 
-function ipv6_hash() {
+ipv6_hash() {
 	local address=${1}
 
 	assert isset address
@@ -437,7 +437,7 @@ function ipv6_hash() {
 	echo "${address//:/}"
 }
 
-function ipv6_get_network() {
+ipv6_get_network() {
 	local addr=${1}
 	assert isset addr
 
@@ -452,7 +452,7 @@ function ipv6_get_network() {
 	print "${PREFIX6}/${prefix}"
 }
 
-function ipv6_6rd_format_address() {
+ipv6_6rd_format_address() {
 	local isp_prefix="${1}"
 	assert ipv6_is_valid "${isp_prefix}"
 
@@ -518,7 +518,7 @@ function ipv6_6rd_format_address() {
 	print "${formatted_address}/${prefix}"
 }
 
-function ipv6_6rd_format_client_address() {
+ipv6_6rd_format_client_address() {
 	local address="${1}"
 	assert isset address
 

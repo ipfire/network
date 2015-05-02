@@ -28,7 +28,7 @@ STP_DEFAULT_MODE="rstp"
 # Allowed modes of the spanning tree protocol.
 STP_ALLOWED_MODES="rstp stp"
 
-function stp_enable() {
+stp_enable() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -36,7 +36,7 @@ function stp_enable() {
 	print 1 > ${SYS_CLASS_NET}/${bridge}/bridge/stp_state
 }
 
-function stp_disable() {
+stp_disable() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -44,7 +44,7 @@ function stp_disable() {
 	print 0 > ${SYS_CLASS_NET}/${bridge}/bridge/stp_state
 }
 
-function stp_is_enabled() {
+stp_is_enabled() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -60,7 +60,7 @@ function stp_is_enabled() {
 	esac
 }
 
-function stp_is_userspace() {
+stp_is_userspace() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -75,7 +75,7 @@ function stp_is_userspace() {
 	esac
 }
 
-function stp_get_name() {
+stp_get_name() {
 	local proto=${1}
 
 	case "${proto}" in
@@ -93,7 +93,7 @@ function stp_get_name() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_set_protocol() {
+stp_bridge_set_protocol() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -111,7 +111,7 @@ function stp_bridge_set_protocol() {
 	assert [ $? -eq 0 ]
 }
 
-function stp_bridge_get_protocol() {
+stp_bridge_get_protocol() {
 	local bridge=${1}
 
 	assert isset bridge
@@ -146,7 +146,7 @@ function stp_bridge_get_protocol() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_get_id() {
+stp_bridge_get_id() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -155,7 +155,7 @@ function stp_bridge_get_id() {
 	return $?
 }
 
-function stp_bridge_get_forward_delay() {
+stp_bridge_get_forward_delay() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -169,7 +169,7 @@ function stp_bridge_get_forward_delay() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_set_forward_delay() {
+stp_bridge_set_forward_delay() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -192,7 +192,7 @@ function stp_bridge_set_forward_delay() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_get_hello_time() {
+stp_bridge_get_hello_time() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -202,7 +202,7 @@ function stp_bridge_get_hello_time() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_set_hello_time() {
+stp_bridge_set_hello_time() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -220,7 +220,7 @@ function stp_bridge_set_hello_time() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_get_max_age() {
+stp_bridge_get_max_age() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -230,7 +230,7 @@ function stp_bridge_get_max_age() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_set_max_age() {
+stp_bridge_set_max_age() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -248,7 +248,7 @@ function stp_bridge_set_max_age() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_get_priority() {
+stp_bridge_get_priority() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -256,7 +256,7 @@ function stp_bridge_get_priority() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_set_priority() {
+stp_bridge_set_priority() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -274,7 +274,7 @@ function stp_bridge_set_priority() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_get_designated_root() {
+stp_bridge_get_designated_root() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -297,7 +297,7 @@ function stp_bridge_get_designated_root() {
 	fi
 }
 
-function stp_bridge_get_root_path_cost() {
+stp_bridge_get_root_path_cost() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -310,7 +310,7 @@ function stp_bridge_get_root_path_cost() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_get_root_port_id() {
+stp_bridge_get_root_port_id() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -330,7 +330,7 @@ function stp_bridge_get_root_port_id() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_get_root_port() {
+stp_bridge_get_root_port() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -349,7 +349,7 @@ function stp_bridge_get_root_port() {
 	return ${EXIT_ERROR}
 }
 
-function stp_bridge_is_root() {
+stp_bridge_is_root() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -362,7 +362,7 @@ function stp_bridge_is_root() {
 	return ${EXIT_FALSE}
 }
 
-function stp_bridge_get_topology_change_count() {
+stp_bridge_get_topology_change_count() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -375,7 +375,7 @@ function stp_bridge_get_topology_change_count() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_get_topology_change_timer() {
+stp_bridge_get_topology_change_timer() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -388,7 +388,7 @@ function stp_bridge_get_topology_change_timer() {
 	return ${EXIT_OK}
 }
 
-function stp_bridge_get_topology_change_detected() {
+stp_bridge_get_topology_change_detected() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -409,7 +409,7 @@ function stp_bridge_get_topology_change_detected() {
 	fi
 }
 
-function stp_port_get_state() {
+stp_port_get_state() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -448,7 +448,7 @@ function stp_port_get_state() {
 	return ${EXIT_OK}
 }
 
-function stp_port_get_id() {
+stp_port_get_id() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -459,7 +459,7 @@ function stp_port_get_id() {
 	return ${EXIT_OK}
 }
 
-function stp_port_get_cost() {
+stp_port_get_cost() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -475,7 +475,7 @@ function stp_port_get_cost() {
 	return ${EXIT_ERROR}
 }
 
-function stp_port_set_cost() {
+stp_port_set_cost() {
 	assert [ $# -eq 3 ]
 
 	local bridge="${1}"
@@ -496,7 +496,7 @@ function stp_port_set_cost() {
 	fi
 }
 
-function stp_port_get_designated_root() {
+stp_port_get_designated_root() {
 	local bridge=${1}
 	assert isset bridge
 
@@ -521,7 +521,7 @@ function stp_port_get_designated_root() {
 	return ${EXIT_ERROR}
 }
 
-function __stp_div_100() {
+__stp_div_100() {
 	local val=${1}
 
 	local split=$((${#val} - 2))

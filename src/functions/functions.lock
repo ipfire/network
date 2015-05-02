@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function lock_acquire() {
+lock_acquire() {
 	local lockfile="${1}"
 	assert isset lockfile
 
@@ -48,7 +48,7 @@ function lock_acquire() {
 	chmod 600 ${lockfile}
 }
 
-function lock_release() {
+lock_release() {
 	local lockfile="${1}"
 
 	log DEBUG "Releasing lock '${lockfile}'."

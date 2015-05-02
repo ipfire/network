@@ -23,7 +23,7 @@
 
 HOOK_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
 
-function hook_check() {
+hook_check() {
 	assert isset ADDRESS
 	assert isinteger PREFIX
 
@@ -33,7 +33,7 @@ function hook_check() {
 	fi
 }
 
-function hook_create() {
+hook_create() {
 	local zone=${1}
 	shift
 
@@ -64,7 +64,7 @@ function hook_create() {
 	exit ${EXIT_OK}
 }
 
-function hook_up() {
+hook_up() {
 	local zone=${1}
 	local config=${2}
 	shift 2
@@ -86,7 +86,7 @@ function hook_up() {
 	exit ${EXIT_OK}
 }
 
-function hook_down() {
+hook_down() {
 	local zone=${1}
 	local config=${2}
 	shift 2
@@ -109,7 +109,7 @@ function hook_down() {
 	exit ${EXIT_OK}
 }
 
-function hook_status() {
+hook_status() {
 	local zone=${1}
 	local config=${2}
 	shift 2

@@ -21,7 +21,7 @@
 
 IPTABLES_TABLES="filter mangle nat"
 
-function iptables() {
+iptables() {
 	local protocol="${1}"
 	assert isset protocol
 	shift
@@ -100,7 +100,7 @@ function iptables() {
 	assert_check_retval $?
 }
 
-function iptables_chain_create() {
+iptables_chain_create() {
 	local protocol="${1}"
 	assert isset protocol
 	shift
@@ -136,7 +136,7 @@ function iptables_chain_create() {
 }
 
 # Calls the binary iptables command.
-function _iptables() {
+_iptables() {
 	local protocol="${1}"
 	assert isset protocol
 	shift
@@ -157,7 +157,7 @@ function _iptables() {
 	return $?
 }
 
-function iptables_status() {
+iptables_status() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -171,7 +171,7 @@ function iptables_status() {
 	return ${EXIT_OK}
 }
 
-function iptables_rulesfile() {
+iptables_rulesfile() {
 	local proto=${1}
 	proto=${proto/ipv/}
 
@@ -181,7 +181,7 @@ function iptables_rulesfile() {
 	print "${IPTABLES_TMPDIR}/${chain}${proto}"
 }
 
-function iptables_init() {
+iptables_init() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -210,7 +210,7 @@ function iptables_init() {
 }
 
 # Load the created ruleset into the kernel.
-function iptables_commit () {
+iptables_commit () {
 	local protocol="${1}"
 	assert isset protocol
 	shift
@@ -277,7 +277,7 @@ function iptables_commit () {
 	return ${EXIT_OK}
 }
 
-function _iptables_commit_cat_rulesfile() {
+_iptables_commit_cat_rulesfile() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -298,7 +298,7 @@ function _iptables_commit_cat_rulesfile() {
 	assert [ -s "${rulesfile}" ]
 }
 
-function _iptables_commit_load_rulesfile() {
+_iptables_commit_load_rulesfile() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -356,7 +356,7 @@ function _iptables_commit_load_rulesfile() {
 	return ${ret}
 }
 
-function iptables_dump() {
+iptables_dump() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -391,7 +391,7 @@ function iptables_dump() {
 	done < "${rulesfile}"
 }
 
-function iptables_LOG() {
+iptables_LOG() {
 	local prefix="${1}"
 	local ret
 
@@ -425,7 +425,7 @@ function iptables_LOG() {
 	print "${ret}"
 }
 
-function iptables_protocol() {
+iptables_protocol() {
 	local PROTO
 	PROTO=$1
 	for proto in tcp udp esp ah; do
@@ -440,15 +440,15 @@ IPTABLES_PORT=0
 IPTABLES_MULTIPORT=1
 IPTABLES_PORTRANGE=2
 
-function _iptables_port_range() {
+_iptables_port_range() {
 	grep -q ":" <<< $@
 }
 
-function _iptables_port_multiport() {
+_iptables_port_multiport() {
 	grep -q "," <<< $@
 }
 
-function _iptables_port() {
+_iptables_port() {
 	if _iptables_port_range "$@"; then
 		echo $IPTABLES_PORTRANGE
 	elif _iptables_port_multiport "$@"; then
@@ -458,7 +458,7 @@ function _iptables_port() {
 	fi
 }
 
-function iptables_source_port() {
+iptables_source_port() {
 	[ -z "$@" ] && return
 	local type
 	type=$(_iptables_port $@)
@@ -469,7 +469,7 @@ function iptables_source_port() {
 	fi
 }
 
-function iptables_destination_port() {
+iptables_destination_port() {
 	[ -z "$@" ] && return
 	local type
 	type=$(_iptables_port $@)

@@ -24,7 +24,7 @@ PROC_NET_VLAN_CONFIG="${PROC_NET_VLAN}/config"
 
 VLAN_PORT_INTERFIX="v"
 
-function vlan_init() {
+vlan_init() {
 	ebtables-restore <<EOF
 *filter
 :INPUT ACCEPT
@@ -37,7 +37,7 @@ function vlan_init() {
 EOF
 }
 
-function vlan_create() {
+vlan_create() {
 	local device=${1}
 	assert isset device
 
@@ -87,7 +87,7 @@ function vlan_create() {
 	return ${ret}
 }
 
-function vlan_remove() {
+vlan_remove() {
 	local device=${1}
 	assert isset device
 
@@ -97,7 +97,7 @@ function vlan_remove() {
 	device_delete ${device}
 }
 
-function vlan_get_parent() {
+vlan_get_parent() {
 	local device=${1}
 	assert isset device
 
@@ -115,7 +115,7 @@ function vlan_get_parent() {
 	return ${EXIT_ERROR}
 }
 
-function vlan_get_id() {
+vlan_get_id() {
 	local device=${1}
 	assert isset device
 
@@ -133,7 +133,7 @@ function vlan_get_id() {
 	return ${EXIT_ERROR}
 }
 
-function vlan_get_by_parent_and_vid() {
+vlan_get_by_parent_and_vid() {
 	local parent=${1}
 	assert isset parent
 

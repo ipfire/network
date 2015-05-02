@@ -19,12 +19,12 @@
 #                                                                             #
 ###############################################################################
 
-function batman_adv_start() {
+batman_adv_start() {
 	# Load the batman kernel module.
 	module_load "batman-adv"
 }
 
-function batman_adv_add() {
+batman_adv_add() {
 	local device="${1}"
 	assert isset device
 
@@ -41,14 +41,14 @@ function batman_adv_add() {
 	return ${ret}
 }
 
-function batman_adv_delete() {
+batman_adv_delete() {
 	local device="${1}"
 	assert isset device
 
 	device_delete "${device}"
 }
 
-function batman_adv_attach() {
+batman_adv_attach() {
 	local device=${1}
 	assert isset device
 
@@ -61,14 +61,14 @@ function batman_adv_attach() {
 	fwrite "${SYS_CLASS_NET}/${port}/batman_adv/mesh_iface" "${device}"
 }
 
-function batman_adv_detach() {
+batman_adv_detach() {
 	local port=${1}
 	assert isset port
 
 	fwrite "${SYS_CLASS_NET}/${port}/batman_adv/mesh_iface" "none"
 }
 
-function batman_adv_get_aggregated_ogms() {
+batman_adv_get_aggregated_ogms() {
 	local device=${1}
 	assert isset device
 
@@ -85,7 +85,7 @@ function batman_adv_get_aggregated_ogms() {
 	return ${EXIT_ERROR}
 }
 
-function batman_adv_get_ap_isolation() {
+batman_adv_get_ap_isolation() {
 	local device=${1}
 	assert isset device
 
@@ -102,7 +102,7 @@ function batman_adv_get_ap_isolation() {
 	return ${EXIT_ERROR}
 }
 
-function batman_adv_get_bonding_mode() {
+batman_adv_get_bonding_mode() {
 	local device=${1}
 	assert isset device
 
@@ -119,7 +119,7 @@ function batman_adv_get_bonding_mode() {
 	return ${EXIT_ERROR}
 }
 
-function batman_adv_get_distributed_arp_table() {
+batman_adv_get_distributed_arp_table() {
 	local device=${1}
 	assert isset device
 
@@ -136,7 +136,7 @@ function batman_adv_get_distributed_arp_table() {
 	return ${EXIT_ERROR}
 }
 
-function batman_adv_get_bridge_loop_avoidance() {
+batman_adv_get_bridge_loop_avoidance() {
 	local device=${1}
 	assert isset device
 
@@ -153,7 +153,7 @@ function batman_adv_get_bridge_loop_avoidance() {
 	return ${EXIT_ERROR}
 }
 
-function batman_adv_get_fragmentation() {
+batman_adv_get_fragmentation() {
 	local device=${1}
 	assert isset device
 
@@ -170,7 +170,7 @@ function batman_adv_get_fragmentation() {
 	return ${EXIT_ERROR}
 }
 
-function batman_adv_get_gateway_mode() {
+batman_adv_get_gateway_mode() {
 	local device=${1}
 	assert isset device
 
@@ -187,35 +187,35 @@ function batman_adv_get_gateway_mode() {
 	return ${EXIT_ERROR}
 }
 
-function batman_adv_get_gateway_bandwidth() {
+batman_adv_get_gateway_bandwidth() {
 	local device=${1}
 	assert isset device
 
 	fread "${SYS_CLASS_NET}/${device}/mesh/gw_bandwidth"
 }
 
-function batman_adv_get_gateway_selection_class() {
+batman_adv_get_gateway_selection_class() {
 	local device=${1}
 	assert isset device
 
 	fread "${SYS_CLASS_NET}/${device}/mesh/gw_sel_class"
 }
 
-function batman_adv_get_hop_penalty() {
+batman_adv_get_hop_penalty() {
 	local device=${1}
 	assert isset device
 
 	fread "${SYS_CLASS_NET}/${device}/mesh/hop_penalty"
 }
 
-function batman_adv_get_originator_interval() {
+batman_adv_get_originator_interval() {
 	local device=${1}
 	assert isset device
 
 	fread "${SYS_CLASS_NET}/${device}/mesh/orig_interval"
 }
 
-function batman_adv_get_routing_algorithm() {
+batman_adv_get_routing_algorithm() {
 	local device=${1}
 	assert isset device
 

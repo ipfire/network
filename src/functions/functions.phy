@@ -21,20 +21,20 @@
 
 PHY_DIR="/sys/class/ieee80211"
 
-function phy_dir() {
+phy_dir() {
 	local phy=${1}
 
 	echo "${PHY_DIR}/${phy}"
 }
 
-function phy_exists() {
+phy_exists() {
 	local phy=${1}
 	assert isset phy
 
 	[ -d "$(phy_dir ${phy})" ]
 }
 
-function phy_list() {
+phy_list() {
 	local phy
 
 	for phy in $(phy_dir)/*; do
@@ -44,7 +44,7 @@ function phy_list() {
 	done
 }
 
-function phy_get() {
+phy_get() {
 	local info="${1}"
 	local phy
 
@@ -81,7 +81,7 @@ function phy_get() {
 	return ${EXIT_OK}
 }
 
-function phy_get_address() {
+phy_get_address() {
 	local phy=${1}
 	assert isset phy
 
@@ -91,7 +91,7 @@ function phy_get_address() {
 	print "$(<${path})"
 }
 
-function phy_get_devices() {
+phy_get_devices() {
 	local phy="${1}"
 	assert isset phy
 

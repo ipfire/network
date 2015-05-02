@@ -21,7 +21,7 @@
 
 # This function initializes all kernel parameters that need to be adjusted
 # to run this firewall properly.
-function firewall_kernel_init() {
+firewall_kernel_init() {
 	log INFO "Configuring kernel parameters..."
 	local option
 
@@ -151,7 +151,7 @@ function firewall_kernel_init() {
 
 # High-level function which will create a ruleset for the current firewall
 # configuration and load it into the kernel.
-function firewall_start() {
+firewall_start() {
 	local protocol="${1}"
 	assert isset protocol
 	shift
@@ -215,7 +215,7 @@ function firewall_start() {
 	firewall_lock_release
 }
 
-function firewall_stop() {
+firewall_stop() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -231,7 +231,7 @@ function firewall_stop() {
 	firewall_lock_release
 }
 
-function firewall_show() {
+firewall_show() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -241,7 +241,7 @@ function firewall_show() {
 	return ${EXIT_OK}
 }
 
-function firewall_panic() {
+firewall_panic() {
 	local protocol="${1}"
 	assert isset protocol
 	shift
@@ -267,7 +267,7 @@ function firewall_panic() {
 	firewall_lock_release
 }
 
-function firewall_lock_acquire() {
+firewall_lock_acquire() {
 	lock_acquire ${RUN_DIR}/.firewall_lock
 
 	# Make sure the lock is released after the firewall
@@ -279,7 +279,7 @@ function firewall_lock_acquire() {
 	IPTABLES_TMPDIR=$(mktemp -d)
 }
 
-function firewall_lock_release() {
+firewall_lock_release() {
 	if isset IPTABLES_TMPDIR; then
 		# Remove all temporary data.
 		rm -rf ${IPTABLES_TMPDIR}
@@ -294,7 +294,7 @@ function firewall_lock_release() {
 	lock_release ${RUN_DIR}/.firewall_lock
 }
 
-function firewall_custom_chains() {
+firewall_custom_chains() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -323,7 +323,7 @@ function firewall_custom_chains() {
 	iptables "${protocol}" -t nat -A OUTPUT -j CUSTOMOUTPUT
 }
 
-function firewall_filter_invalid_packets() {
+firewall_filter_invalid_packets() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -464,7 +464,7 @@ function firewall_filter_invalid_packets() {
 	iptables "${protocol}" -A FILTER_INVALID -m conntrack --ctstate INVALID -j DROP
 }
 
-function firewall_tcp_clamp_mss() {
+firewall_tcp_clamp_mss() {
 	# Do nothing if this has been disabled.
 	enabled FIREWALL_CLAMP_PATH_MTU || return ${EXIT_OK}
 
@@ -477,7 +477,7 @@ function firewall_tcp_clamp_mss() {
 		-p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 }
 
-function firewall_connection_tracking() {
+firewall_connection_tracking() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -493,7 +493,7 @@ function firewall_connection_tracking() {
 	iptables "${protocol}" -A FORWARD -j CONNTRACK
 }
 
-function firewall_localhost_create_chains() {
+firewall_localhost_create_chains() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -504,7 +504,7 @@ function firewall_localhost_create_chains() {
 	iptables "${protocol}" -A OUTPUT -o lo -j ACCEPT
 }
 
-function firewall_filter_rh0_headers() {
+firewall_filter_rh0_headers() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -521,7 +521,7 @@ function firewall_filter_rh0_headers() {
 	iptables "${protocol}" -A OUTPUT  -j FILTER_RH0
 }
 
-function firewall_filter_icmp() {
+firewall_filter_icmp() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -582,7 +582,7 @@ function firewall_filter_icmp() {
 	return ${EXIT_OK}
 }
 
-function firewall_zone_create_chains() {
+firewall_zone_create_chains() {
 	local protocol="${1}"
 	assert isset protocol
 
@@ -662,7 +662,7 @@ function firewall_zone_create_chains() {
 	return ${EXIT_OK}
 }
 
-function firewall_parse_rules() {
+firewall_parse_rules() {
 	local file=${1}
 	assert isset file
 	shift
@@ -723,7 +723,7 @@ function firewall_parse_rules() {
 	done < ${file}
 }
 
-function _firewall_parse_rule_line() {
+_firewall_parse_rule_line() {
 	local arg
 
 	# Clear all values.

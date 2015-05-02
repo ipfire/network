@@ -29,7 +29,7 @@ if [ -z "${LOG_DISABLE_STDOUT}" ]; then
 	LOG_DISABLE_STDOUT=false
 fi
 
-function log() {
+log() {
 	local level=${1}
 	shift
 	local message="$@"

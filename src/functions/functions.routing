@@ -19,11 +19,11 @@
 #                                                                             #
 ###############################################################################
 
-function routing_has_default() {
+routing_has_default() {
 	ip route | grep -q "^default"
 }
 
-function routing_default_update() {
+routing_default_update() {
 	local routes
 
 	local zones=$(zones_get_nonlocal)
@@ -105,16 +105,16 @@ function routing_default_update() {
 }
 
 # XXX deprecated function
-function routing_table_exists() {
+routing_table_exists() {
 	route_table_exists $@
 }
 
 # XXX deprecated function
-function routing_table_create() {
+routing_table_create() {
 	route_table_create $@
 }
 
-function routing_db_path() {
+routing_db_path() {
 	local zone=${1}
 	local proto=${2}
 
@@ -125,21 +125,21 @@ function routing_db_path() {
 	echo "${ROUTING_DB_DIR}/${zone}/${proto}"
 }
 
-function routing_db_exists() {
+routing_db_exists() {
 	[ -d "$(routing_db_path $@)" ]
 }
 
-function routing_db_create() {
+routing_db_create() {
 	routing_db_exists $@ && return ${EXIT_OK}
 
 	mkdir -p $(routing_db_path $@)
 }
 
-function routing_db_remove() {
+routing_db_remove() {
 	rm -rf $(routing_db_path $@)
 }
 
-function routing_db_set() {
+routing_db_set() {
 	local zone=${1}
 	local proto=${2}
 	local parameter=${3}
@@ -154,7 +154,7 @@ function routing_db_set() {
 	echo "${value}" > $(routing_db_path ${zone} ${proto})/${parameter}
 }
 
-function routing_db_get() {
+routing_db_get() {
 	local zone=${1}
 	local proto=${2}
 	local parameter=${3}
@@ -163,7 +163,7 @@ function routing_db_get() {
 	cat $(routing_db_path ${zone} ${proto})/${parameter} 2>/dev/null
 }
 
-function routing_db_from_ppp() {
+routing_db_from_ppp() {
 	local zone=${1}
 	local proto=${2}
 
@@ -186,7 +186,7 @@ function routing_db_from_ppp() {
 	routing_db_set ${zone} ${proto} remote-address ${PPP_MACREMOTE,,}
 }
 
-function routing_update() {
+routing_update() {
 	local zone=${1}
 	assert isset zone
 

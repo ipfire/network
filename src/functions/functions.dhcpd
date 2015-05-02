@@ -97,7 +97,7 @@ DHCPV4D_DEFAULT_LEASE_TIME="43200"	# 12h
 DHCPV4D_MAX_LEASE_TIME="86400"		# 24h
 DHCPV4D_MIN_LEASE_TIME=""
 
-function dhcpd_service() {
+dhcpd_service() {
 	case "${1}" in
 		ipv6)
 			print "dhcpd6.service"
@@ -113,7 +113,7 @@ function dhcpd_service() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_start() {
+dhcpd_start() {
 	local services=$(dhcpd_service $@)
 
 	local service
@@ -122,7 +122,7 @@ function dhcpd_start() {
 	done
 }
 
-function dhcpd_stop() {
+dhcpd_stop() {
 	local services=$(dhcpd_service $@)
 
 	local service
@@ -131,7 +131,7 @@ function dhcpd_stop() {
 	done
 }
 
-function dhcpd_restart() {
+dhcpd_restart() {
 	# DHCP does not support a reload, so
 	# we retsart it.
 	local services=$(dhcpd_service $@)
@@ -142,11 +142,11 @@ function dhcpd_restart() {
 	done
 }
 
-function dhcpd_reload() {
+dhcpd_reload() {
 	dhcpd_restart $@
 }
 
-function dhcpd_edit() {
+dhcpd_edit() {
 	local proto=${1}
 	assert isset proto
 	shift
@@ -169,7 +169,7 @@ function dhcpd_edit() {
 	dhcpd_global_settings_write ${proto}
 }
 
-function _dhcpd_edit_ipv4() {
+_dhcpd_edit_ipv4() {
 	local val
 
 	while [ $# -gt 0 ]; do
@@ -223,7 +223,7 @@ function _dhcpd_edit_ipv4() {
 	fi
 }
 
-function _dhcpd_edit_ipv6() {
+_dhcpd_edit_ipv6() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--preferred-lifetime=*)
@@ -251,7 +251,7 @@ function _dhcpd_edit_ipv6() {
 	done
 }
 
-function dhcpd_settings_file() {
+dhcpd_settings_file() {
 	local proto=${1}
 	assert isset proto
 
@@ -267,7 +267,7 @@ function dhcpd_settings_file() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_settings() {
+dhcpd_settings() {
 	local proto=${1}
 	assert isset proto
 
@@ -283,7 +283,7 @@ function dhcpd_settings() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_options_file() {
+dhcpd_options_file() {
 	local proto=${1}
 	assert isset proto
 
@@ -299,7 +299,7 @@ function dhcpd_options_file() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_options_list() {
+dhcpd_options_list() {
 	local proto=${1}
 	assert isset proto
 
@@ -315,7 +315,7 @@ function dhcpd_options_list() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_options() {
+dhcpd_options() {
 	local proto=${1}
 	assert isset proto
 
@@ -331,14 +331,14 @@ function dhcpd_options() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_global_settings_list() {
+dhcpd_global_settings_list() {
 	local proto="${1}"
 	assert isset proto
 
 	dhcpd_settings "${proto}"
 }
 
-function dhcpd_global_settings_defaults() {
+dhcpd_global_settings_defaults() {
 	local proto=${1}
 	assert isset proto
 
@@ -354,7 +354,7 @@ function dhcpd_global_settings_defaults() {
 	done
 }
 
-function dhcpd_global_settings_read() {
+dhcpd_global_settings_read() {
 	local proto=${1}
 	assert isset proto
 
@@ -368,7 +368,7 @@ function dhcpd_global_settings_read() {
 	settings_read ${file} ${settings}
 }
 
-function dhcpd_global_settings_write() {
+dhcpd_global_settings_write() {
 	local proto=${1}
 	assert isset proto
 
@@ -381,7 +381,7 @@ function dhcpd_global_settings_write() {
 	settings_write ${file} ${settings}
 }
 
-function dhcpd_global_options_read() {
+dhcpd_global_options_read() {
 	local proto=${1}
 	assert isset proto
 
@@ -396,7 +396,7 @@ function dhcpd_global_options_read() {
 	fi
 }
 
-function dhcpd_subnet_path() {
+dhcpd_subnet_path() {
 	local proto=${1}
 	assert isset proto
 
@@ -418,7 +418,7 @@ function dhcpd_subnet_path() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_subnet_exists() {
+dhcpd_subnet_exists() {
 	local proto=${1}
 	assert isset proto
 
@@ -431,7 +431,7 @@ function dhcpd_subnet_exists() {
 	[ -d "${path}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
-function dhcpd_subnet_match() {
+dhcpd_subnet_match() {
 	local proto=${1}
 	assert isset proto
 
@@ -452,7 +452,7 @@ function dhcpd_subnet_match() {
 	return ${EXIT_FALSE}
 }
 
-function dhcpd_new_subnet_id() {
+dhcpd_new_subnet_id() {
 	local proto=${1}
 	assert isset proto
 
@@ -469,7 +469,7 @@ function dhcpd_new_subnet_id() {
 	return ${EXIT_ERROR}
 }
 
-function dhcpd_subnet_new() {
+dhcpd_subnet_new() {
 	local proto=${1}
 	assert isset proto
 	shift
@@ -495,7 +495,7 @@ function dhcpd_subnet_new() {
 	fi
 }
 
-function dhcpd_subnet_edit() {
+dhcpd_subnet_edit() {
 	local proto=${1}
 	assert isset proto
 	shift
@@ -575,7 +575,7 @@ function dhcpd_subnet_edit() {
 	settings_write ${file} ${settings}
 }
 
-function dhcpd_subnet_remove() {
+dhcpd_subnet_remove() {
 	local proto=${1}
 	assert isset proto
 
@@ -589,7 +589,7 @@ function dhcpd_subnet_remove() {
 	rm -rf ${path}
 }
 
-function dhcpd_subnet_list() {
+dhcpd_subnet_list() {
 	local proto=${1}
 	assert isset proto
 
@@ -608,7 +608,7 @@ function dhcpd_subnet_list() {
 	done
 }
 
-function dhcpd_subnet_read() {
+dhcpd_subnet_read() {
 	local proto=${1}
 	assert isset proto
 
@@ -619,7 +619,7 @@ function dhcpd_subnet_read() {
 	settings_read ${file}
 }
 
-function dhcpd_subnet_range_path() {
+dhcpd_subnet_range_path() {
 	local proto=${1}
 	assert isset proto
 
@@ -633,7 +633,7 @@ function dhcpd_subnet_range_path() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_subnet_range_settings() {
+dhcpd_subnet_range_settings() {
 	local proto=${1}
 
 	case "${proto}" in
@@ -648,7 +648,7 @@ function dhcpd_subnet_range_settings() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_subnet_new_range_id() {
+dhcpd_subnet_new_range_id() {
 	local proto=${1}
 	assert isset proto
 
@@ -669,7 +669,7 @@ function dhcpd_subnet_new_range_id() {
 	return ${EXIT_ERROR}
 }
 
-function dhcpd_subnet_range_new() {
+dhcpd_subnet_range_new() {
 	local proto=${1}
 	assert isset proto
 	shift
@@ -699,7 +699,7 @@ function dhcpd_subnet_range_new() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_subnet_range_edit() {
+dhcpd_subnet_range_edit() {
 	local proto=${1}
 	assert isset proto
 	shift
@@ -782,14 +782,14 @@ function dhcpd_subnet_range_edit() {
 	settings_write ${file} ${settings}
 }
 
-function dhcpd_subnet_range_remove() {
+dhcpd_subnet_range_remove() {
 	local path=$(dhcpd_subnet_range_path $@)
 	assert isset path
 
 	rm -f ${path}
 }
 
-function dhcpd_subnet_range_list() {
+dhcpd_subnet_range_list() {
 	local proto=${1}
 	assert isset proto
 
@@ -810,7 +810,7 @@ function dhcpd_subnet_range_list() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_subnet_range_read() {
+dhcpd_subnet_range_read() {
 	local proto=${1}
 	assert isset proto
 
@@ -824,7 +824,7 @@ function dhcpd_subnet_range_read() {
 	settings_read ${file}
 }
 
-function dhcpd_subnet_settings() {
+dhcpd_subnet_settings() {
 	local proto=${1}
 
 	case "${proto}" in
@@ -839,14 +839,14 @@ function dhcpd_subnet_settings() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_subnet_options_file() {
+dhcpd_subnet_options_file() {
 	local path=$(dhcpd_subnet_path $@)
 	assert isset path
 
 	print "${path}/options"
 }
 
-function dhcpd_subnet_options_list() {
+dhcpd_subnet_options_list() {
 	local proto=${1}
 	assert isset proto
 
@@ -862,7 +862,7 @@ function dhcpd_subnet_options_list() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_subnet_options_read() {
+dhcpd_subnet_options_read() {
 	local proto=${1}
 	assert isset proto
 
@@ -876,7 +876,7 @@ function dhcpd_subnet_options_read() {
 }
 
 # Helper functions to create a DHCP configuration file.
-function _dhcpd_write_options() {
+_dhcpd_write_options() {
 	local proto=${1}
 	assert isset proto
 
@@ -916,7 +916,7 @@ function _dhcpd_write_options() {
 	fi
 }
 
-function _dhcpd_read_options() {
+_dhcpd_read_options() {
 	local file=${1}
 	assert isset file
 
@@ -926,7 +926,7 @@ function _dhcpd_read_options() {
 	settings_read_array ${file} options ${!options_list}
 }
 
-function _dhcpd_write_subnet() {
+_dhcpd_write_subnet() {
 	local proto=${1}
 	assert isset proto
 
@@ -978,7 +978,7 @@ function _dhcpd_write_subnet() {
 	return ${EXIT_OK}
 }
 
-function _dhcpd_write_subnet_options() {
+_dhcpd_write_subnet_options() {
 	local proto=${1}
 	assert isset proto
 
@@ -1018,7 +1018,7 @@ function _dhcpd_write_subnet_options() {
 	_dhcpd_write_options ${proto} ${file} ${options_list} "\t"
 }
 
-function _dhcpd_search_routers() {
+_dhcpd_search_routers() {
 	local proto=${1}
 	assert isset proto
 
@@ -1043,7 +1043,7 @@ function _dhcpd_search_routers() {
 	list_join routers ", "
 }
 
-function _dhcpd_write_subnet_range() {
+_dhcpd_write_subnet_range() {
 	local proto=${1}
 	assert isset proto
 
@@ -1079,7 +1079,7 @@ function _dhcpd_write_subnet_range() {
 	return ${EXIT_OK}
 }
 
-function dhcpd_write_config() {
+dhcpd_write_config() {
 	local proto=${1}
 	assert isset proto
 

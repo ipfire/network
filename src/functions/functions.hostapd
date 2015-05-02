@@ -21,7 +21,7 @@
 
 HOSTAPD_CONTROL_INTERFACE_DIR="/run/hostapd/ctrl"
 
-function hostapd_config_write() {
+hostapd_config_write() {
 	local device=${1}
 	assert isset device
 
@@ -191,7 +191,7 @@ function hostapd_config_write() {
 	return ${EXIT_OK}
 }
 
-function hostapd_start() {
+hostapd_start() {
 	local device=${1}
 	assert isset device
 
@@ -208,7 +208,7 @@ function hostapd_start() {
 	return ${EXIT_OK}
 }
 
-function hostapd_stop() {
+hostapd_stop() {
 	local device=${1}
 	assert isset device
 

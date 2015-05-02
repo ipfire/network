@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function firewall_zone_create() {
+firewall_zone_create() {
 	local zone=${1}
 	assert isset zone
 
@@ -35,7 +35,7 @@ function firewall_zone_create() {
 	return ${EXIT_OK}
 }
 
-function firewall_zone_config() {
+firewall_zone_config() {
 	local zone=${1}
 	assert isset zone
 
@@ -43,13 +43,13 @@ function firewall_zone_config() {
 	return ${EXIT_OK}
 }
 
-function firewall_zone_exists() {
+firewall_zone_exists() {
 	local file=$(firewall_zone_config $@)
 
 	[ -r "${file}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
-function firewall_zone_read() {
+firewall_zone_read() {
 	local zone=${1}
 	assert isset zone
 
@@ -69,7 +69,7 @@ function firewall_zone_read() {
 	return ${EXIT_OK}
 }
 
-function firewall_zone_write() {
+firewall_zone_write() {
 	local zone=${1}
 	assert isset zone
 
@@ -80,7 +80,7 @@ function firewall_zone_write() {
 	return ${EXIT_OK}
 }
 
-function firewall_zone_print() {
+firewall_zone_print() {
 	local zone=${1}
 	assert isset zone
 
@@ -92,7 +92,7 @@ function firewall_zone_print() {
 	return ${EXIT_OK}
 }
 
-function firewall_zone_edit() {
+firewall_zone_edit() {
 	local zone=${1}
 	assert isset zone
 	shift
@@ -130,7 +130,7 @@ function firewall_zone_edit() {
 	)
 }
 
-function firewall_zone_reset() {
+firewall_zone_reset() {
 	local zone=${1}
 	assert isset zone
 

@@ -21,7 +21,7 @@
 
 IP_SUPPORTED_PROTOCOLS="${IP_SUPPORTED_PROTOCOLS} ipv4"
 
-function ipv4_is_valid() {
+ipv4_is_valid() {
 	ipcalc --ipv4 -c $@ >/dev/null 2>&1
 
 	case "$?" in
@@ -34,7 +34,7 @@ function ipv4_is_valid() {
 	esac
 }
 
-function ipv4_prefix_is_valid() {
+ipv4_prefix_is_valid() {
 	local prefix=${1}
 
 	isset prefix || return ${EXIT_FALSE}
@@ -45,7 +45,7 @@ function ipv4_prefix_is_valid() {
 	return ${EXIT_TRUE}
 }
 
-function ipv4_netmask_is_valid() {
+ipv4_netmask_is_valid() {
 	local netmask="${1}"
 
 	# XXX this check could be much better by checking
@@ -54,7 +54,7 @@ function ipv4_netmask_is_valid() {
 	ipv4_is_valid "${netmask}"
 }
 
-function ipv4_detect_duplicate() {
+ipv4_detect_duplicate() {
 	local device=${1}
 	local address=${2}
 
@@ -73,7 +73,7 @@ function ipv4_detect_duplicate() {
 	return ${EXIT_ERROR}
 }
 
-function ipv4_update_neighbours() {
+ipv4_update_neighbours() {
 	local device=${1}
 	local address=${2}
 
@@ -84,7 +84,7 @@ function ipv4_update_neighbours() {
 	( sleep 2; arping -q -U -c 1 -I ${device} ${address} ) >/dev/null 2>&1 </dev/null &
 }
 
-function ipv4_get_netaddress() {
+ipv4_get_netaddress() {
 	local address=${1}
 	assert isset address
 
@@ -105,7 +105,7 @@ function ipv4_get_netaddress() {
 	return ${EXIT_OK}
 }
 
-function ipv4_get_prefix() {
+ipv4_get_prefix() {
 	local address=${1}
 	local broadcast=${2}
 
@@ -120,7 +120,7 @@ function ipv4_get_prefix() {
 	return ${EXIT_OK}
 }
 
-function ipv4_get_netmask() {
+ipv4_get_netmask() {
 	local address=${1}
 	assert isset address
 
@@ -136,7 +136,7 @@ function ipv4_get_netmask() {
 	return ${EXIT_OK}
 }
 
-function ipv4_flush_device() {
+ipv4_flush_device() {
 	#
 	# Flushes all routes, addresses from the device
 	# and clears the ARP cache.
@@ -152,7 +152,7 @@ function ipv4_flush_device() {
 	return 0
 }
 
-function ipv4_prefix2netmask() {
+ipv4_prefix2netmask() {
 	local prefix=${1}
 	shift
 
@@ -170,7 +170,7 @@ function ipv4_prefix2netmask() {
 	esac
 }
 
-function ipv4_netmask2prefix() {
+ipv4_netmask2prefix() {
 	local netmask="${1}"
 	assert isset netmask
 
@@ -194,13 +194,13 @@ function ipv4_netmask2prefix() {
 	print "${cidr}"
 }
 
-function ipv4_get_network() {
+ipv4_get_network() {
 	local network=$(ipv4_get_network_encoded $@)
 
 	ipv4_decode ${network}
 }
 
-function ipv4_get_network_encoded() {
+ipv4_get_network_encoded() {
 	local net=${1}
 
 	local prefix=$(ip_get_prefix ${net})
@@ -217,13 +217,13 @@ function ipv4_get_network_encoded() {
 	print "%d" $(( ${addr} & ${mask} ))
 }
 
-function ipv4_get_broadcast() {
+ipv4_get_broadcast() {
 	local broadcast=$(ipv4_get_broadcast_encoded $@)
 
 	ipv4_decode ${broadcast}
 }
 
-function ipv4_get_broadcast_encoded() {
+ipv4_get_broadcast_encoded() {
 	local net=${1}
 
 	local prefix=$(ip_get_prefix ${net})
@@ -246,7 +246,7 @@ function ipv4_get_broadcast_encoded() {
 	print "%d" $(( $(( ${addr} & ${netmask} )) | ${broadcast} ))
 }
 
-function ipv4_encode() {
+ipv4_encode() {
 	local addr=${1}
 	local int=0
 
@@ -258,7 +258,7 @@ function ipv4_encode() {
 	print "${int}"
 }
 
-function ipv4_decode() {
+ipv4_decode() {
 	local int=${1}
 
 	local addr=$(( ${int} & 255 ))
@@ -272,7 +272,7 @@ function ipv4_decode() {
 	print "${addr}"
 }
 
-function ipv4_addr_eq() {
+ipv4_addr_eq() {
 	local addr1=${1}
 	assert isset addr1
 
@@ -283,7 +283,7 @@ function ipv4_addr_eq() {
 		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
-function ipv4_addr_gt() {
+ipv4_addr_gt() {
 	local addr1=${1}
 	assert isset addr1
 
@@ -299,7 +299,7 @@ function ipv4_addr_gt() {
 		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
-function ipv4_range() {
+ipv4_range() {
 	local range=${1}
 
 	local first=${1%-*}
@@ -308,7 +308,7 @@ function ipv4_range() {
 	_ipv4_range "$(ipv4_encode ${first})" "$(ipv4_encode ${last})"
 }
 
-function _ipv4_range() {
+_ipv4_range() {
 	local first=${1}
 	local last=${2}
 
@@ -341,7 +341,7 @@ function _ipv4_range() {
 	done
 }
 
-function ipv4_range_explicit() {
+ipv4_range_explicit() {
 	local range=${1}
 
 	local first last
@@ -360,7 +360,7 @@ function ipv4_range_explicit() {
 	_ipv4_range_explicit "$(ipv4_encode ${first})" "$(ipv4_encode ${last})"
 }
 
-function _ipv4_range_explicit() {
+_ipv4_range_explicit() {
 	local first=${1}
 	local last=${2}
 
@@ -377,7 +377,7 @@ function _ipv4_range_explicit() {
 	done
 }
 
-function ipv4_in_subnet() {
+ipv4_in_subnet() {
 	local addr=${1}
 	assert isset addr
 
@@ -396,7 +396,7 @@ function ipv4_in_subnet() {
 	return ${EXIT_FALSE}
 }
 
-function ipv4_ttl_valid() {
+ipv4_ttl_valid() {
 	local ttl="${1}"
 
 	isinteger ttl || return ${EXIT_FALSE}

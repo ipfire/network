@@ -45,7 +45,7 @@ DNS_SERVER_DYNAMIC_PRIORITY="10"
 # Path to the configuration file of the DNS resolver.
 RESOLV_CONF="/etc/resolv.conf"
 
-function dns_get_hostname() {
+dns_get_hostname() {
 	local address=${1}
 	assert isset address
 
@@ -56,7 +56,7 @@ function dns_get_hostname() {
 	)
 }
 
-function dns_server_list() {
+dns_server_list() {
 	[ -r "${DNS_SERVER_CONFIG_FILE}" ] || return ${EXIT_OK}
 
 	local line
@@ -70,7 +70,7 @@ function dns_server_list() {
 	return ${EXIT_OK}
 }
 
-function dns_server_list_sorted() {
+dns_server_list_sorted() {
 	[ -r "${DNS_SERVER_CONFIG_FILE}" ] || return ${EXIT_OK}
 
 	local servers=$(
@@ -104,7 +104,7 @@ function dns_server_list_sorted() {
 	return ${EXIT_OK}
 }
 
-function dns_server_show() {
+dns_server_show() {
 	[ -r "${DNS_SERVER_CONFIG_FILE}" ] || return ${EXIT_OK}
 
 	local line
@@ -122,7 +122,7 @@ function dns_server_show() {
 	return ${EXIT_OK}
 }
 
-function dns_server_add() {
+dns_server_add() {
 	local server=${1}
 	assert isset server
 
@@ -139,7 +139,7 @@ function dns_server_add() {
 	return ${EXIT_OK}
 }
 
-function dns_server_exists() {
+dns_server_exists() {
 	local entry=${1}
 	assert isset entry
 
@@ -155,7 +155,7 @@ function dns_server_exists() {
 	return ${EXIT_FALSE}
 }
 
-function dns_server_remove() {
+dns_server_remove() {
 	local entry=${1}
 	assert isset entry
 
@@ -185,11 +185,11 @@ function dns_server_remove() {
 	return ${EXIT_OK}
 }
 
-function dns_server_flush() {
+dns_server_flush() {
 	: > ${DNS_SERVER_CONFIG_FILE}
 }
 
-function dns_server_parse_line() {
+dns_server_parse_line() {
 	local arg
 
 	for arg in ${NETWORK_CONFIG_DNS_SERVER_PARAMS}; do
@@ -228,7 +228,7 @@ function dns_server_parse_line() {
 # Update resolv.conf(5) when initializing the network.
 init_register dns_generate_resolvconf
 
-function dns_generate_resolvconf() {
+dns_generate_resolvconf() {
 	local file=${RESOLV_CONF}
 
 	log INFO "Updating resolver configuration..."
@@ -260,7 +260,7 @@ function dns_generate_resolvconf() {
 	done >> ${file}
 }
 
-function dns_get_search_domains() {
+dns_get_search_domains() {
 	# Add search domains.
 	local search_domains="$(unquote ${DNS_SEARCH_DOMAINS})"
 
@@ -280,7 +280,7 @@ function dns_get_search_domains() {
 	list_unique ${search_domains}
 }
 
-function dns_server_get_zone_name_servers() {
+dns_server_get_zone_name_servers() {
 	local priority proto server servers zone
 
 	for zone in $(zones_get_all); do

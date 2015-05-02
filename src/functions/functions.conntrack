@@ -21,11 +21,11 @@
 
 # Accounting
 
-function conntrack_get_accounting() {
+conntrack_get_accounting() {
 	sysctl_get "net.netfilter.nf_conntrack_acct"
 }
 
-function conntrack_set_accounting() {
+conntrack_set_accounting() {
 	local value="${1}"
 	assert isset value
 
@@ -43,11 +43,11 @@ function conntrack_set_accounting() {
 
 # Max. connections
 
-function conntrack_get_max_connections() {
+conntrack_get_max_connections() {
 	sysctl_get "net.netfilter.nf_conntrack_max"
 }
 
-function conntrack_set_max_connections() {
+conntrack_set_max_connections() {
 	local value="${1}"
 	assert isinteger value
 
@@ -57,11 +57,11 @@ function conntrack_set_max_connections() {
 
 # UDP timeout
 
-function conntrack_get_udp_timeout() {
+conntrack_get_udp_timeout() {
 	sysctl_get "net.netfilter.nf_conntrack_udp_timeout"
 }
 
-function conntrack_set_udp_timeout() {
+conntrack_set_udp_timeout() {
 	local value="${1}"
 	assert isinteger value
 

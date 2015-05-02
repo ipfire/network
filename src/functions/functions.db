@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-function db_connection_init() {
+db_connection_init() {
 	if [ -e "${DB_CONNECTION_FILE}" ]; then
 		return ${EXIT_OK}
 	fi
@@ -40,7 +40,7 @@ CREATE VIEW current as
 EOF
 }
 
-function db_connection_update() {
+db_connection_update() {
 	local zone=${1}
 	local action=${2}
 	shift 2
@@ -55,7 +55,7 @@ INSERT INTO log(zone, time, state)
 EOF
 }
 
-function db_ppp_init() {
+db_ppp_init() {
 	local file=${1}
 
 	if [ -e "${file}" ]; then
@@ -75,7 +75,7 @@ CREATE TABLE accounting(
 EOF
 } 
 
-function db_ppp_update() {
+db_ppp_update() {
 	local zone=${1}
 	shift
 
