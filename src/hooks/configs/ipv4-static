@@ -127,10 +127,10 @@ hook_up() {
 	ip_address_add ${zone} ${ADDRESS}/${PREFIX}
 
 	# Save configuration
-	routing_db_set ${zone} ipv4 type "${HOOK}"
-	routing_db_set ${zone} ipv4 local-ip-address "${ADDRESS}/${PREFIX}"
-	routing_db_set ${zone} ipv4 remote-ip-address "${GATEWAY}"
-	routing_db_set ${zone} ipv4 active 1
+	db_set "${zone}/ipv4/type" "${HOOK}"
+	db_set "${zone}/ipv4/local-ip-address" "${ADDRESS}/${PREFIX}"
+	db_set "${zone}/ipv4/remote-ip-address" "${GATEWAY}"
+	db_set "${zone}/ipv4/active" 1
 
 	routing_update ${zone} ipv4
 	routing_default_update

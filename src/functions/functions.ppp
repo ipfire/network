@@ -275,7 +275,8 @@ ppp_common_ipv4_up() {
 		return ${EXIT_ERROR}
 	fi
 
-	routing_db_set ${zone} ipv4 active 1
+	db_set "${zone}/ipv4/active" 1
+
 	routing_update ${zone} ipv4
 	routing_default_update
 
@@ -293,7 +294,8 @@ ppp_common_ipv4_down() {
 
 	# Remove the information about this zone from the routing database
 	# and update the routing table.
-	routing_db_remove ${zone} ipv4
+	db_delete "${zone}/ipv4"
+
 	routing_update ${zone} ipv4
 	routing_default_update
 
@@ -315,7 +317,8 @@ ppp_common_ipv6_up() {
 	# Add information about this zone to the routing database.
 	routing_db_from_ppp ${zone} ipv6
 
-	routing_db_set ${zone} ipv6 active 1
+	db_set "${zone}/ipv6/active" 1
+
 	routing_update ${zone} ipv6
 	routing_default_update
 
@@ -333,7 +336,8 @@ ppp_common_ipv6_down() {
 
 	# Remove the information about this zone from the routing database
 	# and update the routing table.
-	routing_db_remove ${zone} ipv6
+	db_delete "${zone}/ipv6"
+
 	routing_update ${zone} ipv6
 	routing_default_update
 

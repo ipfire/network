@@ -50,16 +50,16 @@ __radvd_config_interface() {
 
 	# If the interface does not provide any routing information,
 	# we can skip this whole stuff.
-	if ! routing_db_exists ${zone} ipv6; then
+	if ! db_exists "${zone}/ipv6"; then
 		return ${EXIT_OK}
 	fi
 
 	# Skip if zone is not active.
-	local active=$(routing_db_get ${zone} ipv6 active)
+	local active="$(db_get "${zone}/ipv6/active")"
 	[ "${active}" = "0" ] && return ${EXIT_OK}
 
 	# Skip if there is no prefix or prefix is link-local.
-	local addr=$(routing_db_get ${zone} ipv6 local-ip-address)
+	local addr="$(db_get "${zone}/ipv6/local-ip-address")"
 	if [ -z "${addr}" ] || [ "${addr:0:5}" = "fe80:" ]; then
 		return ${EXIT_OK}
 	fi

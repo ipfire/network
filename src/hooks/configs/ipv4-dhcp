@@ -101,8 +101,8 @@ hook_status() {
 	fi
 	cli_statusline 3 "${HOOK}" "${status}"
 
-	cli_print_fmt1 3 "IPv4 address" "$(routing_db_get ${zone} ipv4 local-ip-address)"
-	local gateway=$(routing_db_get ${zone} ipv4 remote-ip-address)
+	cli_print_fmt1 3 "IPv4 address" "$(db_get "${zone}/ipv4/local-ip-address")"
+	local gateway="$(db_get "${zone}/ipv4/remote-ip-address")"
 	if isset gateway; then
 		cli_print_fmt1 3 "Gateway" "${gateway}"
 	fi

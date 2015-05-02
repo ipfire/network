@@ -124,9 +124,9 @@ hook_up() {
 	ip_address_add ${zone} ${LOCAL_ADDRESS6}
 
 	# Update routing information.
-	routing_db_set ${zone} ipv6 type "${HOOK}"
-	routing_db_set ${zone} ipv6 local-ip-address "${LOCAL_ADDRESS6}"
-	routing_db_set ${zone} ipv6 active 1
+	db_set "${zone}/ipv6/type" "${HOOK}"
+	db_set "${zone}/ipv6/local-ip-address" "${LOCAL_ADDRESS6}"
+	db_set "${zone}/ipv6/active" 1
 
 	# Update the routing database.
 	routing_update ${zone} ipv6
@@ -140,7 +140,8 @@ hook_down() {
 	assert isset zone
 
 	# Remove everything from the routing db.
-	routing_db_remove ${zone} ipv6
+	db_delete "${zone}/ipv6"
+
 	routing_update ${zone} ipv6
 	routing_default_update
 

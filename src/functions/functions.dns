@@ -269,7 +269,7 @@ dns_get_search_domains() {
 
 	for zone in $(zones_get_all); do
 		for proto in ${IP_SUPPORTED_PROTOCOLS}; do
-			domain=$(routing_db_get ${zone} ${proto} domain-name)
+			domain="$(db_get "${zone}/${proto}/domain-name")"
 			isset domain || continue
 
 			list_append search_domains "${domainname}"
@@ -285,10 +285,10 @@ dns_server_get_zone_name_servers() {
 
 	for zone in $(zones_get_all); do
 		for proto in ${IP_SUPPORTED_PROTOCOLS}; do
-			priority=$(routing_db_get ${zone} ${proto} domain-name-servers-priority)
+			priority="$(db_get "${zone}/${proto}/domain-name-servers-priority")"
 			isset priority || priority="${DNS_SERVER_DYNAMIC_PRIORITY}"
 
-			servers=$(routing_db_get ${zone} ${proto} domain-name-servers)
+			servers="$(db_get "${zone}/${proto}/domain-name-servers")"
 			for server in ${servers}; do
 				print "${priority} ${server}"
 			done

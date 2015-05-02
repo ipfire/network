@@ -1248,6 +1248,9 @@ cli_raw() {
 	shift
 
 	case "${cmd}" in
+		db-dump)
+			db_dump
+			;;
 		list-devices)
 			device_list
 			;;

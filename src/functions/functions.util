@@ -143,6 +143,13 @@ fwrite() {
 	print "%s" "$@" >> ${file} 2>/dev/null
 }
 
+make_parent_dir() {
+	local path="${1}"
+
+	local dirname="$(dirname "${path}")"
+	mkdir -p "${dirname}"
+}
+
 enabled() {
 	local param=${1}
 

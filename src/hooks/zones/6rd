@@ -117,10 +117,10 @@ hook_up() {
 	device_set_up "${zone}"
 
 	# Update routing information.
-	routing_db_set "${zone}" ipv6 "type" "${HOOK}"
-	routing_db_set "${zone}" ipv6 "local-ip-address" "::${LOCAL_ADDRESS}"
-	routing_db_set "${zone}" ipv6 "remote-ip-address" "::${SERVER_ADDRESS}"
-	routing_db_set "${zone}" ipv6 "active" 1
+	db_set "${zone}/ipv6/type" "${HOOK}"
+	db_set "${zone}/ipv6/local-ip-address" "::${LOCAL_ADDRESS}"
+	db_set "${zone}/ipv6/remote-ip-address" "::${SERVER_ADDRESS}"
+	db_set "${zone}/ipv6/active" 1
 
 	# Update the routing database.
 	routing_update ${zone} ipv6
@@ -134,7 +134,8 @@ hook_down() {
 	assert isset zone
 
 	# Remove everything from the routing db.
-	routing_db_remove ${zone} ipv6
+	db_delete "${zone}/ipv6"
+
 	routing_update ${zone} ipv6
 	routing_default_update
 

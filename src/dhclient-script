@@ -60,15 +60,15 @@ case "${reason}" in
 				--valid-lifetime="${new_max_life}" --preferred-lifetime="${new_preferred_life}"
 
 			# Save configuration
-			routing_db_set "${interface}" "ipv6" "local-ip-address" "${new_ip6_address}/${new_ip6_prefixlen}"
-			routing_db_set "${interface}" "ipv6" "active" 1
-			#routing_db_set "${interface}" "ipv6" "domain-name" "${new_
+			db_set "${interface}/ipv6/local-ip-address" "${new_ip6_address}/${new_ip6_prefixlen}"
+			db_set "${interface}/ipv6/active" 1
+			#db_set "${interface}/ipv6/domain-name" "${new_
 
 			exit 0
 
 		# Handle Prefix Delegation
 		elif isset new_ip6_prefix; then
-			routing_db_set "${interface}" "ipv6" "delegated-prefix" "${new_ip6_prefix}"
+			db_set "${interface}/ipv6/delegated-prefix" "${new_ip6_prefix}"
 
 			exit 0
 		fi
@@ -80,7 +80,7 @@ case "${reason}" in
 		if isset new_ip6_address && isset new_ip6_prefixlen; then
 			# Update nameservers if those have changed
 			if [[ "${old_dhcp6_name_servers}" != "${new_dhcp6_name_servers}" ]]; then
-				routing_db_set "${interface}" "ipv6" "domain-name-servers" "${new_dhcp6_name_servers}"
+				db_set "${interface}/ipv6/domain-name-servers" "${new_dhcp6_name_servers}"
 				dns_generate_resolvconf
 			fi
 
@@ -97,6 +97,10 @@ case "${reason}" in
 				ipv6_address_del "${old_ip6_address}/${old_ip6_prefixlen}" "${interface}"
 			fi
 
+			# Update the database
+			db_set "${interface}/ipv6/local-ip-address" \
+				"${new_ip6_address}/${new_ip6_prefixlen}"
+
 			# Add the new one
 			ipv6_address_add "${new_ip6_address}/${new_ip6_prefixlen}" "${interface}" \
 				--valid-lifetime="${new_max_life}" --preferred-lifetime="${new_preferred_life}"
@@ -111,7 +115,7 @@ case "${reason}" in
 			fi
 
 			log DEBUG "The delegated prefix has changed from ${old_ip6_prefix} to ${new_ip6_prefix}"
-			routing_db_set "${interface}" "ipv6" "delegated-prefix" "${new_ip6_prefix}"
+			db_set "${interface}/ipv6/delegated-prefix" "${new_ip6_prefix}"
 
 			exit ${EXIT_OK}
 		fi
@@ -202,13 +206,16 @@ case "${reason}" in
 					fi
 
 					# Save configuration
-					routing_db_set ${interface} ipv4 type "ipv4-dhcp"
-					routing_db_set ${interface} ipv4 local-ip-address "${new_ip_address}/${new_prefix}"
-					routing_db_set ${interface} ipv4 remote-ip-address "${new_routers}"
-					routing_db_set ${interface} ipv4 active 1
-					routing_db_set ${interface} ipv4 domain-name "${new_domain_name}"
-					routing_db_set ${interface} ipv4 domain-name-servers "${new_domain_name_servers}"
-					routing_db_set ${interface} ipv4 domain-name-servers-priority "${DNS_SERVER_DYNAMIC_PRIORITY}"
+					db_set "${interface}/ipv4/type" "ipv4-dhcp"
+					db_set "${interface}/ipv4/local-ip-address" \
+						"${new_ip_address}/${new_prefix}"
+					db_set "${interface}/ipv4/remote-ip-address" "${new_routers}"
+					db_set "${interface}/ipv4/active" 1
+					db_set "${interface}/ipv4/domain-name" "${new_domain_name}"
+					db_set "${interface}/ipv4/domain-name-servers" \
+						"${new_domain_name_servers}"
+					db_set "${interface}/ipv4/domain-name-servers-priority" \
+						"${DNS_SERVER_DYNAMIC_PRIORITY}"
 
 					# Update the routing tables.
 					routing_update ${interface} ipv4
@@ -229,7 +236,7 @@ case "${reason}" in
 			ipv4_flush_device ${interface}
 		fi
 
-		routing_db_remove ${interface} ipv4
+		db_delete "${interface}/ipv4"
 		routing_default_update
 
 		exit 0

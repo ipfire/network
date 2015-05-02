@@ -1032,7 +1032,7 @@ _dhcpd_search_routers() {
 
 	local zone addr
 	for zone in $(zones_get_all); do
-		addr=$(routing_db_get ${zone} ${proto} local-ip-address)
+		addr="$(db_get "${zone}/${proto}/local-ip-address")"
 		isset addr || continue
 
 		if ipv4_in_subnet ${addr} ${subnet}; then

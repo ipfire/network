@@ -78,9 +78,10 @@ hook_up() {
 
 	ip_address_add ${zone} ${ADDRESS}/${PREFIX}
 
-	routing_db_set ${zone} ipv6 local-ip-address ${ADDRESS}/${PREFIX}
-	routing_db_set ${zone} ipv6 remote-ip-address ${GATEWAY}
-	routing_db_set ${zone} ipv6 active 1
+	db_set "${zone}/ipv6/local-ip-address" "${ADDRESS}/${PREFIX}"
+	db_set "${zone}/ipv6/remote-ip-address" "${GATEWAY}"
+	db_set "${zone}/ipv6/active" 1
+
 	routing_default_update
 
 	exit ${EXIT_OK}
@@ -97,7 +98,7 @@ hook_down() {
 	fi
 
 	# Remove routing information from database.
-	routing_db_remove ${zone} ipv6
+	db_delete "${zone}/ipv6"
 	
 	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
 

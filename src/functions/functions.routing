@@ -45,10 +45,10 @@ routing_default_update() {
 
 		for zone in ${zones}; do
 			# Skip if zone is not up
-			routing_db_exists ${zone} ${proto} || continue
+			db_exists "${zone}/${proto}" || continue
 
-			if [ "$(routing_db_get ${zone} ${proto} active)" = "1" ]; then
-				gateway=$(routing_db_get ${zone} ${proto} remote-ip-address)
+			if [ "$(db_get "${zone}/${proto}/active")" = "1" ]; then
+				gateway="$(db_get "${zone}/${proto}/remote-ip-address")"
 
 				# Go on if the device is not there anymore.
 				device_exists ${zone} || continue
@@ -68,7 +68,7 @@ routing_default_update() {
 				fi
 
 				# Apply weight.
-				weight=$(routing_db_get ${zone} ${proto} weight)
+				weight="$(db_get "${zone}/${proto}/weight")"
 				if isinteger ${weight}; then
 					routes="${routes} weight ${weight}"
 				fi
@@ -114,55 +114,6 @@ routing_table_create() {
 	route_table_create $@
 }
 
-routing_db_path() {
-	local zone=${1}
-	local proto=${2}
-
-	assert isset zone
-	assert isset proto
-	assert isoneof proto ${IP_SUPPORTED_PROTOCOLS}
-
-	echo "${ROUTING_DB_DIR}/${zone}/${proto}"
-}
-
-routing_db_exists() {
-	[ -d "$(routing_db_path $@)" ]
-}
-
-routing_db_create() {
-	routing_db_exists $@ && return ${EXIT_OK}
-
-	mkdir -p $(routing_db_path $@)
-}
-
-routing_db_remove() {
-	rm -rf $(routing_db_path $@)
-}
-
-routing_db_set() {
-	local zone=${1}
-	local proto=${2}
-	local parameter=${3}
-	shift 3
-
-	local value="$@"
-
-	log INFO "Updating database (${zone} - ${proto}): ${parameter} = ${value}"
-
-	routing_db_create ${zone} ${proto}
-
-	echo "${value}" > $(routing_db_path ${zone} ${proto})/${parameter}
-}
-
-routing_db_get() {
-	local zone=${1}
-	local proto=${2}
-	local parameter=${3}
-	shift 3
-
-	cat $(routing_db_path ${zone} ${proto})/${parameter} 2>/dev/null
-}
-
 routing_db_from_ppp() {
 	local zone=${1}
 	local proto=${2}
@@ -171,19 +122,27 @@ routing_db_from_ppp() {
 	assert isset proto
 
 	# Save ppp configuration
-	routing_db_set ${zone} ${proto} type "ppp"
+	db_set "${zone}/${proto}/type" "ppp"
 
 	if [ "${proto}" = "ipv6" ]; then
-		routing_db_set ${zone} ${proto} local-ip-address ${PPP_LLLOCAL}
-		routing_db_set ${zone} ${proto} remote-ip-address ${PPP_LLREMOTE}
+		db_set "${zone}/${proto}/local-ip-address" "${PPP_LLLOCAL}"
+		db_set "${zone}/${proto}/remote-ip-address" "${PPP_LLREMOTE}"
 	elif [ "${proto}" = "ipv4" ]; then
-		routing_db_set ${zone} ${proto} local-ip-address ${PPP_IPLOCAL}
-		routing_db_set ${zone} ${proto} remote-ip-address ${PPP_IPREMOTE}
+		db_set "${zone}/${proto}/local-ip-address" "${PPP_IPLOCAL}"
+		db_set "${zone}/${proto}/remote-ip-address" "${PPP_IPREMOTE}"
 	fi
 
-	routing_db_set ${zone} ${proto} dns ${PPP_DNS1} ${PPP_DNS2}
+	# Save the transmitted DNS servers
+	if isset PPP_DNS1 || isset PPP_DNS2; then
+		db_set "${zone}/${proto}/domain-name-servers" "${PPP_DNS1} ${PPP_DNS2}"
+	else
+		db_set "${zone}/${proto}/domain-name-servers"
+	fi
 
-	routing_db_set ${zone} ${proto} remote-address ${PPP_MACREMOTE,,}
+	# Save the MAC address of the remote DSLAM
+	if isset PPP_MACREMOTE; then
+		db_set "${zone}/${proto}/remote-address" "${PPP_MACREMOTE,,}"
+	fi
 }
 
 routing_update() {
@@ -211,12 +170,12 @@ routing_update() {
 	cmd ${ip_cmd} route flush table ${table}
 
 	# Exit here if there is no routing information.
-	if ! routing_db_exists ${zone} ${proto}; then
+	if ! db_exists "${zone}/${proto}"; then
 		return ${EXIT_OK}
 	fi
 
-	local local_ip_address=$(routing_db_get ${zone} ${proto} local-ip-address)
-	local remote_ip_address=$(routing_db_get ${zone} ${proto} remote-ip-address)
+	local local_ip_address="$(db_get "${zone}/${proto}/local-ip-address")"
+	local remote_ip_address="$(db_get "${zone}/${proto}/remote-ip-address")"
 
 	case "${proto}" in
 		ipv4)
