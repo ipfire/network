@@ -19,6 +19,8 @@
 #                                                                             #
 ###############################################################################
 
+NETWORK_DHCP_DUID_FILE="${NETWORK_CONFIG_DIR}/dhcp-duid"
+
 dhclient_start() {
 	local interface=${1}
 	local proto=${2}
@@ -74,23 +76,30 @@ dhclient_proto2service() {
 }
 
 dhclient_write_config() {
-	local interface=${1}
-	local file=${2}
-	shift 2
+	local interface="${1}"
+	shift
 
 	assert isset interface
-	assert isset file
 
-	local hostname=${HOSTNAME%%.*}
-	local vendor=$(distro_get_pretty_name)
+	local hostname
+	local vendor
+
+	local config_file
+	local leases_file
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
+			--config-file=*)
+				config_file="$(cli_get_val "${1}")"
+				;;
 			--hostname=*)
-				hostname=$(cli_get_val ${1})
+				hostname="$(cli_get_val "${1}")"
+				;;
+			--leases-file=*)
+				leases_file="$(cli_get_val "${1}")"
 				;;
 			--vendor=*)
-				vendor=$(cli_get_val ${1})
+				vendor="$(cli_get_val "${1}")"
 				;;
 			*)
 				log WARNING $"Unknown configuration option passed: ${1}."
@@ -99,8 +108,19 @@ dhclient_write_config() {
 		shift
 	done
 
+	assert isset config_file
+
+	# Set default values
+	if ! isset hostname; then
+		hostname="$(config_hostname)"
+	fi
+
+	if ! isset vendor; then
+		vendor="$(distro_get_pretty_name)"
+	fi
+
 	# Clear configuration file (if any).
-	mkdir -p $(dirname ${file}) 2>/dev/null
+	mkdir -p $(dirname ${config_file}) 2>/dev/null
 	: > ${file}
 
 	# Print the header.
@@ -112,11 +132,11 @@ dhclient_write_config() {
 		echo "# $(date -u)"
 		echo "#"
 		echo
-	) >>${file}
+	) >> "${config_file}"
 
 	# Global options.
-	echo "send vendor-class-identifier \"${vendor}\";" >>${file}
-	echo
+	fwrite "${config_file}" "send vendor-class-identifier \"${vendor}\";"
+	fwrite "${config_file}" # empty line
 
 	# Interface options.
 	(
@@ -128,7 +148,104 @@ dhclient_write_config() {
 		fi
 
 		echo "}"
-	) >>${file}
+	) >> "${config_file}"
+
+	# Update leases file
+	if isset leases_file; then
+		__dhclient_update_leases_file "${leases_file}" || return $?
+	fi
 
 	return ${EXIT_OK}
+}
+
+dhclient_get_duid() {
+	# If the DUID already exists, we do not do anything at all.
+	if [ -s "${NETWORK_DHCP_DUID_FILE}" ]; then
+		print "$(<${NETWORK_DHCP_DUID_FILE})"
+		return ${EXIT_OK}
+	fi
+
+	# If no DUID exists, we will need to create a new one
+	local duid="$(dhclient_generate_duid)"
+	log DEBUG "Created new DHCP DUID: ${duid}"
+
+	# Save the new DUID to file and return it
+	print "${duid}" > "${NETWORK_DHCP_DUID_FILE}"
+
+	print "${duid}"
+	return ${EXIT_OK}
+}
+
+
+dhclient_generate_duid() {
+	# Find lowest MAC/link-local address
+	local address="$(ports_lowest_address)"
+
+	# Use a random MAC address if no physical address could
+	# be found.
+	if ! isset address; then
+		log WARNING "Could not determine the lowest MAC/link-local address"
+		address="$(mac_generate)"
+	fi
+
+	log DEBUG "Using '${address}' to generate the DHCP DUID"
+
+	print "00030001${address//\:/}"
+	return ${EXIT_OK}
+}
+
+__dhclient_update_leases_file() {
+	local file="${1}"
+
+	local duid="$(dhclient_get_duid)"
+
+	if [ -e "${leases_file}" ]; then
+		local old_duid="$(__dhclient_get_duid_from_leases_file "${leases_file}")"
+
+		if [ "${duid}" = "${old_duid}" ]; then
+			log DEBUG "DUID in leases file matches. Nothing to do"
+			return ${EXIT_OK}
+		fi
+	fi
+
+	# If the leases file does not exist, yet, or the
+	# DUID in there is different, we will create/overwrite
+	# the leases file with the correct DUID.
+
+	(
+		printf "default-duid \""
+
+		local i=0
+		while [ ${i} -lt ${#duid} ]; do
+			printf "\\\\\\\\"
+			printf "x${duid:${i}:2}"
+			i=$(( ${i} + 2 ))
+		done
+
+		print "\";"
+	) > "${leases_file}"
+
+	return ${EXIT_OK}
+}
+
+__dhclient_get_duid_from_leases_file() {
+	local file="${1}"
+
+	# Do nothing if the leases file cannot be read
+	[ -r "${file}" ] || return ${EXIT_OK}
+
+	local line
+	while read line; do
+		if [[ ${line} =~ ^default-duid ]]; then
+			line="${line/default-duid/}"
+			line="${line//\\\\x/}"
+			line="${line//;/}"
+
+			line="$(strip "${line}")"
+			unquote "${line}"
+			return ${EXIT_OK}
+		fi
+	done < "${file}"
+
+	return ${EXIT_ERROR}
 }

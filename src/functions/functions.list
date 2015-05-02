@@ -142,3 +142,13 @@ function list_reverse() {
 	print "${reversed}"
 	return ${EXIT_OK}
 }
+
+function list_head() {
+	local arg
+	for arg in $@; do
+		print "${arg}"
+		return ${EXIT_OK}
+	done
+
+	return ${EXIT_ERROR}
+}

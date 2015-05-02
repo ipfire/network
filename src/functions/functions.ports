@@ -403,3 +403,27 @@ function port_uses_phy() {
 	local port_phy="$(port_get_phy "${port}")"
 	[ "${port_phy}" = "${phy}" ]
 }
+
+function ports_lowest_address() {
+	local address
+	local addresses
+
+	local port
+	for port in $(port_list); do
+		# Skip all ports that do not exist
+		# any more or are not plugged in
+		device_exists "${port}" || continue
+
+		# Skip all ports that are not proper ethernet devices
+		device_is_wireless "${port}" && continue
+		device_is_ethernet "${port}" || continue
+
+		list_append addresses "$(device_get_address "${port}")"
+	done
+
+	# Sort the list
+	addresses="$(list_sort ${addresses})"
+
+	# Get the first element which is the lowest MAC address
+	list_head ${addresses}
+}
