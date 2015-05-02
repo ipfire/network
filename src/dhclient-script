@@ -41,6 +41,13 @@ case "${reason}" in
 		# Flush all other aborted IP addresses
 		ipv6_address_flush "${interface}"
 
+		# Disable autoconf because DHCP is handling this
+		ipv6_device_autoconf_disable "${interface}"
+
+		# Enable forwarding because we are acting as a host
+		# to uplink network zones.
+		ipv6_device_forwarding_enable "${interface}" --accept-ra
+
 		# Wait until DAD for the link-local address has finished
 		for address in $(ipv6_device_get_addresses "${interface}" --scope="link"); do
 			ipv6_wait_for_dad "${address}" "${interface}" && exit ${EXIT_OK}
@@ -63,6 +70,9 @@ case "${reason}" in
 			db_set "${interface}/ipv6/local-ip-address" "${new_ip6_address}/${new_ip6_prefixlen}"
 			db_set "${interface}/ipv6/active" 1
 			#db_set "${interface}/ipv6/domain-name" "${new_
+
+			# Update the routing tables
+			routing_update "${interface}" ipv6
 
 			exit 0
 
@@ -105,6 +115,9 @@ case "${reason}" in
 			ipv6_address_add "${new_ip6_address}/${new_ip6_prefixlen}" "${interface}" \
 				--valid-lifetime="${new_max_life}" --preferred-lifetime="${new_preferred_life}"
 
+			# Update the routing tables
+			routing_update "${interface}" ipv6
+
 			exit ${EXIT_OK}
 
 		# Handle Prefix Delegation
@@ -130,6 +143,19 @@ case "${reason}" in
 		# Set lifetime to zero
 		ipv6_address_change_lifetime "${cur_ip6_address}/${cur_ip6_prefixlen}" "${interface}" \
 			--preferred-lifetime=0 || exit ${EXIT_ERROR}
+		;;
+
+	EXPIRE6|FAIL6|RELEASE6|STOP6)
+		# Remove the currently configured addresses from the device.
+		ipv6_address_flush "${interface}"
+
+		# Reset autoconf mode and disable forwarding
+		ipv6_device_forwarding_disable "${interface}"
+		ipv6_device_autoconf_disable "${interface}"
+
+		db_delete "${interface}/ipv6"
+
+		exit 0
 		;;
 
 	# IPv4

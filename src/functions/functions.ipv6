@@ -53,10 +53,32 @@ ipv6_device_autoconf_disable() {
 
 ipv6_device_forwarding_enable() {
 	local device="${1}"
+	shift
+
+	local accept_ra=0
+
+	local arg
+	while read arg; do
+		case "${arg}" in
+			--accept-ra)
+				accept_ra=2
+				;;
+		esac
+	done <<< "$(args $@)"
 
 	sysctl_set "net.ipv6.conf.${device}.forwarding" 1
 
 	log INFO "Enabled IPv6 forwarding on '${device}'"
+
+	# If forwarding is enabled, the kernel won't process
+	# any router advertisements any more, which is not good
+	# when we still want a default route when running in
+	# DHCP client mode on an uplink zone.
+	if [ ${accept_ra} -gt 0 ]; then
+		log INFO "  and accepting router advertisements"
+
+		sysctl_set "net.ipv6.conf.${device}.accept_ra" 2
+	fi
 }
 
 ipv6_device_forwarding_disable() {
@@ -206,6 +228,7 @@ ipv6_address_flush() {
 
 	# Remove any stale addresses from aborted clients
 	cmd_quiet ip -6 addr flush dev "${device}" scope global permanent
+	cmd_quiet ip -6 addr flush dev "${device}" scope global dynamic
 }
 
 ipv6_address_change_lifetime() {
