@@ -75,6 +75,18 @@ function ipv6_prefix_is_valid() {
 	return ${EXIT_TRUE}
 }
 
+ipv6_prefix_size_is_valid_for_delegation() {
+	local prefix_size="${1}"
+	assert isinteger prefix_size
+
+	# For prefix delegation, the prefix must be between /48 and /64
+	# (RFC3769, section 3.1)
+	[[ ${prefix_size} -lt 48 ]] && return ${EXIT_FALSE}
+	[[ ${prefix_size} -gt 64 ]] && return ${EXIT_FALSE}
+
+	return ${EXIT_TRUE}
+}
+
 function ipv6_get_prefix() {
 	ip_get_prefix "$@"
 }
@@ -137,6 +149,9 @@ function ipv6_addr_gt() {
 	local addr
 	for addr in addr1 addr2; do
 		printf -v ${addr} "%s" $(ipv6_explode ${!addr})
+
+		# Remove all colons
+		printf -v ${addr} "${!addr//:/}"
 	done
 
 	local i addr1_oct addr2_oct

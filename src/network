@@ -989,7 +989,7 @@ function cli_dhcpd_subnet_show() {
 
 	# Read the options.
 	local -A options
-	dhcpd_subnet_options_read ${proto} ${subnet_id}
+	dhcpd_subnet_options_read "${proto}" "${subnet_id}"
 
 	# Print the options if any.
 	if [ ${#options[*]} -gt 0 ]; then

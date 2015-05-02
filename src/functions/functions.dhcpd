@@ -36,7 +36,7 @@ DHCPD_SETTINGS="\
 "
 DHCPV6D_SETTINGS="\
 	${DHCPD_SETTINGS} \
-	PREFERRED_LIFETIME
+	PREFERRED_LIFETIME \
 	VALID_LIFETIME
 "
 DHCPV4D_SETTINGS="\
@@ -50,9 +50,10 @@ DHCPD_SUBNET_PREFIX="subnet-"
 #DHCPD_SUBNET_POOL_PREFIX="pool-"
 DHCPD_SUBNET_RANGE_PREFIX="range-"
 
-DHCPD_SUBNET_SETTINGS="ADDRESS PREFIX ROUTERS"
-DHCPV6D_SUBNET_SETTINGS="${DHCPD_SUBNET_SETTINGS}"
-DHCPV4D_SUBNET_SETTINGS="${DHCPD_SUBNET_SETTINGS}"
+DHCPD_SUBNET_SETTINGS="ADDRESS PREFIX"
+DHCPV6D_SUBNET_SETTINGS="${DHCPD_SUBNET_SETTINGS} PREFIX_DELEGATION \
+	DELEGATED_PREFIX_FIRST DELEGATED_PREFIX_LAST DELEGATED_PREFIX_SIZE"
+DHCPV4D_SUBNET_SETTINGS="${DHCPD_SUBNET_SETTINGS} ROUTERS"
 
 DHCPD_SUBNET_RANGE_SETTINGS="START END"
 DHCPV6D_SUBNET_RANGE_SETTINGS="${DHCPD_SUBNET_RANGE_SETTINGS}"
@@ -86,6 +87,9 @@ DHCPV4D_OPTIONS="\
 
 DHCPV6D_SUBNET_OPTIONS="${DHCPV6D_OPTIONS}"
 DHCPV4D_SUBNET_OPTIONS="${DHCPV4D_OPTIONS}"
+
+# Global defaults
+DHCP_DEFAULT_DELEGATED_PREFIX_SIZE="64"
 
 # Defaults for DHCPv6.
 DHCPV6D_PREFERRED_LIFETIME=""
@@ -520,8 +524,9 @@ function dhcpd_subnet_edit() {
 	dhcpd_subnet_read ${proto} ${id} || :
 
 	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--address=*)
+		case "${proto},${1}" in
+			# Common options
+			ipv[64],--address=*)
 				ADDRESS=$(cli_get_val ${1})
 
 				local prefix=$(ip_get_prefix ${ADDRESS})
@@ -530,10 +535,63 @@ function dhcpd_subnet_edit() {
 					ADDRESS=$(ip_split_prefix ${ADDRESS})
 				fi
 				;;
-			--prefix=*)
+			ipv[64],--prefix=*)
 				PREFIX=$(cli_get_val ${1})
 				;;
-			--routers=*)
+
+			# IPv6 options
+
+			ipv6,--delegated-prefix=*)
+				local subnet="$(cli_get_val "${1}")"
+				if [[ -n "${subnet}" ]]; then
+					local delegated_prefix_first="${subnet%-*}"
+					local delegated_prefix_last="${subnet#*-}"
+
+					# Check for correct syntax
+					if ! isset delegated_prefix_first || ! isset delegated_prefix_last; then
+						error "--delegated-prefix= must be formatted like 2001:db8:aaaa::-2001:db8:bbbb::"
+						return ${EXIT_ERROR}
+					fi
+
+					# Check if the addresses are correct
+					local addr
+					for addr in ${delegated_prefix_first} ${delegated_prefix_last}; do
+						if ! ipv6_is_valid "${addr}"; then
+							error "Invalid IP address: ${addr}"
+							return ${EXIT_ERROR}
+						fi
+					done
+
+					# Make sure this is a range
+					if ! ipv6_addr_gt "${delegated_prefix_last}" "${delegated_prefix_first}"; then
+						error "--delegated-prefix: The second address must be larger than the first one"
+						return ${EXIT_ERROR}
+					fi
+
+					PREFIX_DELEGATION="on"
+					DELEGATED_PREFIX_FIRST="${delegated_prefix_first}"
+					DELEGATED_PREFIX_LAST="${delegated_prefix_last}"
+
+				# Prefix delegation has been disabled
+				else
+					PREFIX_DELEGATION="off"
+				fi
+				;;
+
+			ipv6,--delegated-prefix-size=*)
+				local prefix_size="$(cli_get_val "${1}")"
+
+				if ipv6_prefix_size_is_valid_for_delegation "${prefix_size}"; then
+					DELEGATED_PREFIX_SIZE="${prefix_size}"
+				else
+					error "Invalid prefix size for prefix delegation: ${prefix_size}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
+			# IPv4 options
+
+			ipv4,--routers=*)
 				ROUTERS=$(cli_get_val ${1})
 				;;
 			*)
@@ -888,32 +946,45 @@ function _dhcpd_write_options() {
 
 	local ident=${4}
 
+	print "${ident}# Options" >> ${file}
+
 	# Dump options array.
 	local key val fmt
 	for key in ${!options_list}; do
 		val=${options[${key}]}
+
+		# Skip the rest if val is empty
+		isset val || continue
+
+		# Enable raw formatting (i.e. quote the value?)
+		local raw="false"
+
+		# Update the formatting of some options
+		case "${key}" in
+			name-servers)
+				val="$(list_join val ", ")"
+				raw="true"
+				;;
+		esac
 
 		# Prepend dhcp6 on IPv6 options.
 		if [ "${proto}" = "ipv6" ]; then
 			key="dhcp6.${key}"
 		fi
 
-		if isset val; then
-			if isinteger val; then
-				fmt="option %s %d;"
-			elif isipaddress val; then
-				fmt="option %s %s;"
-			else
-				fmt="option %s \"%s\";"
-			fi
-			print "${ident}${fmt}" "${key}" "${val}"
+		if isinteger val; then
+			fmt="option %s %d;"
+		elif enabled raw || isipaddress val; then
+			fmt="option %s %s;"
+		else
+			fmt="option %s \"%s\";"
 		fi
+
+		print "${ident}${fmt}" "${key}" "${val}"
 	done >> ${file}
 
-	# Append an empty line when options have been written.
-	if [ -n "${!options[@]}" ]; then
-		print >> ${file}
-	fi
+	# Empty line
+	print >> ${file}
 }
 
 function _dhcpd_read_options() {
@@ -966,6 +1037,11 @@ function _dhcpd_write_subnet() {
 	# Add options.
 	_dhcpd_write_subnet_options ${proto} ${subnet_id} ${file}
 
+	# Prefix Delegation for IPv6
+	if [[ "${proto}" = "ipv6" ]]; then
+		_dhcpd_write_subnet_pd "${subnet_id}" "${file}"
+	fi
+
 	# Add the ranges.
 	local range_id
 	for range_id in $(dhcpd_subnet_range_list ${proto} ${subnet_id} ${range_id}); do
@@ -1016,6 +1092,30 @@ function _dhcpd_write_subnet_options() {
 	fi
 
 	_dhcpd_write_options ${proto} ${file} ${options_list} "\t"
+}
+
+_dhcpd_write_subnet_pd() {
+	# Nothing to do if prefix delegation is not enabled
+	enabled PREFIX_DELEGATION || return ${EXIT_OK}
+
+	local subnet_id="${1}"
+	assert isset subnet_id
+
+	local file="${2}"
+	assert isset file
+
+	local prefix_size="${DELEGATED_PREFIX_SIZE}"
+	isset prefix_size || prefix_size="${DHCP_DEFAULT_DELEGATED_PREFIX_SIZE}"
+
+	assert ipv6_is_valid "${DELEGATED_PREFIX_FIRST}"
+	assert ipv6_is_valid "${DELEGATED_PREFIX_LAST}"
+	assert ipv6_prefix_size_is_valid_for_delegation "${prefix_size}"
+
+	(
+		print "	# Prefix Delegation"
+		print "	prefix6 ${DELEGATED_PREFIX_FIRST} ${DELEGATED_PREFIX_LAST} /${prefix_size};"
+		print ""
+	) >> "${file}"
 }
 
 function _dhcpd_search_routers() {
@@ -1100,6 +1200,9 @@ function dhcpd_write_config() {
 	# Writing header.
 	config_header "DHCP ${proto} daemon configuration file" > ${file}
 
+	# Read global DHCP configuration
+	dhcpd_global_settings_read "${proto}"
+
 	# Authoritative.
 	if enabled AUTHORITATIVE; then
 		(
@@ -1116,7 +1219,7 @@ function dhcpd_write_config() {
 	case "${proto}" in
 		ipv6)
 			# Lease times.
-			if ininteger VALID_LIFETIME; then
+			if isinteger VALID_LIFETIME; then
 				print "default-lease-time %d;" "${VALID_LIFETIME}" >> ${file}
 			fi
 
