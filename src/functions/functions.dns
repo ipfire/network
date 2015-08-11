@@ -276,6 +276,9 @@ dns_get_search_domains() {
 		done
 	done
 
+	# Add our own domain
+	list_append search_domains "$(config_domainname)"
+
 	# Sort out duplicate entries.
 	list_unique ${search_domains}
 }
