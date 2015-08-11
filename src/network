@@ -603,7 +603,7 @@ cli_zone() {
 
 		case "${action}" in
 			new)
-				zone_new $@
+				cli_zone_new $@
 				;;
 			destroy)
 				cli_zone_destroy $@
@@ -622,6 +622,15 @@ cli_zone() {
 				;;
 		esac
 	fi
+}
+
+cli_zone_new() {
+	if cli_help_requested $@ || [ $# -lt 2 ]; then
+		cli_show_man network-zone-new
+		exit ${EXIT_OK}
+	fi
+
+	zone_new $@
 }
 
 # Removes a zone either immediately, if it is currently down,
