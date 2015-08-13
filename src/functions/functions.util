@@ -157,36 +157,20 @@ enabled() {
 }
 
 mac_generate() {
-	# Get a bunch of random hex digits
-	# and remove all dashes from the input.
-	local random=$(</proc/sys/kernel/random/uuid)
-	random=${random//-/}
-	assert isset random
+	local b="$(random 12)"
+
+	# Remove multicast bit
+	# and set address is software assigned
+	local first_byte=$(( 0x${b:0:2} & 0xfe ))
+	first_byte=$(( ${first_byte} | 0x02 ))
 
 	local output
+	printf -v output "%02x" "${first_byte}"
 
-	local i o
-	for i in $(seq 0 5); do
-		o="0x${random:0:2}"
-		random="${random:2:${#random}}"
-
-		case "${i}" in
-			0)
-				# Remove multicast bit
-				# and set address is software assigned
-				o=$(( ${o} & 0xfe ))
-				o=$(( ${o} | 0x02 ))
-
-				printf -v output "%02x" "${o}"
-				;;
-			*)
-				printf -v output "%s:%02x" "${output}" "${o}"
-				;;
-		esac
-	done
+	output="${output}:${b:2:2}:${b:4:2}:${b:6:2}:${b:8:2}:${b:10:2}"
 
 	# Check if output is valid
-	assert mac_is_valid ${output}
+	assert mac_is_valid "${output}"
 
 	echo "${output}"
 }
@@ -224,6 +208,22 @@ mac_is_valid() {
 
 uuid() {
 	echo $(</proc/sys/kernel/random/uuid)
+}
+
+rand() {
+	local uuid="$(uuid)"
+	echo "${uuid//-/}"
+}
+
+random() {
+	local length="${1:-8}"
+
+	local random
+	while [ ${#random} -lt ${length} ]; do
+		random="${random}$(rand)"
+	done
+
+	echo "${random:0:${length}}"
 }
 
 isset() {
