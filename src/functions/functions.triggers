@@ -2,7 +2,7 @@
 ###############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2012-2013 IPFire Network Development Team                     #
+# Copyright (C) 2015  IPFire Network Development Team                         #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -19,29 +19,54 @@
 #                                                                             #
 ###############################################################################
 
-# Make sure that helpers which are exec'ed have a working
-# PATH variable.
-export PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/bin:/bin:${PATH}"
+TRIGGER_ACTIONS="init up down online"
 
-INIT_FUNCTIONS=""
+trigger_execute() {
+	local trigger="$1"
+	shift
 
-init_register() {
-	INIT_FUNCTIONS="${INIT_FUNCTIONS} $@"
+	local environment=$@
+
+	if [ ! -x "${trigger}" ]; then
+		log WARNING "Trigger is not executable: ${trigger}"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Executing trigger ${trigger}..."
+	cmd_clean_environment ${environment} "${trigger}" &>/dev/null
+	local ret=${?}
+
+	if [ ${ret} -ne ${EXIT_OK} ]; then
+		log WARNING "Trigger ${trigger} exited with exit code: ${ret}"
+		log WARNING "  Environment: ${environment}"
+	fi
+
+	return ${ret}
 }
 
-init_run() {
-	local init
-	for init in ${INIT_FUNCTIONS}; do
-		${init}
+triggers_execute_all() {
+	local action="${1}"
+	shift
+
+	# Check if the action is valid
+	assert list_match "${action}" ${TRIGGER_ACTIONS}
+
+	local environment=$@
+
+	# Check if the directory exists
+	[ -d "${NETWORK_TRIGGERS_DIR}" ] || return ${EXIT_ERROR}
+
+	local trigger
+	for trigger in ${NETWORK_TRIGGERS_DIR}/*; do
+		# Check if the trigger can be executed
+		if [ ! -x "${trigger}" ]; then
+			log DEBUG "Trigger is not executable: ${trigger}"
+			continue
+		fi
+
+		# Execute the trigger
+		trigger_execute "${trigger}" ${environment} ACTION="${action}"
 	done
 
-	# Also execute all triggers
-	triggers_execute_all "init"
+	return ${EXIT_OK}
 }
-
-VERSION="@PACKAGE_VERSION@"
-NETWORK_VERSION="${VERSION}"
-
-for file in @networkdir@/functions.*; do
-	. ${file}
-done

@@ -81,18 +81,15 @@ routing_default_update() {
 		routes=$(echo ${routes})
 
 		# Remove all default routes.
-		while ${cmd} | grep -q "^default"; do
-			${cmd} del default
-		done
-
 		if [ -z "${routes}" ]; then
+			cmd ${cmd} del default
 			log INFO "Removed default route for ${proto}."
 			return ${EXIT_OK}
 		fi
 
 		log INFO "Setting default route for ${proto}: ${routes}"
 
-		cmd ${cmd} add default ${routes}
+		cmd ${cmd} replace default ${routes}
 		assert [ $? -eq 0 ]
 
 		case "${proto}" in
@@ -101,6 +98,8 @@ routing_default_update() {
 				radvd_update
 				;;
 		esac
+
+		triggers_execute_all "online"
 	done
 }
 

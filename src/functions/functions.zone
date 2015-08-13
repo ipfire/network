@@ -351,6 +351,9 @@ zone_up() {
 	hook_zone_exec ${hook} up ${zone} $@
 
 	zone_db ${zone} started
+
+	# Execute all triggers after the zone got up
+	triggers_execute_all "up" ZONE="${zone}"
 }
 
 zone_down() {
@@ -378,6 +381,9 @@ zone_down() {
 	hook_zone_exec ${hook} down ${zone} $@
 
 	zone_db ${zone} stopped
+
+	# Execute all triggers after the zone went down
+	triggers_execute_all "down" ZONE="${zone}"
 
 	# Remove the zone, if it has got a remove tag.
 	if zone_has_destroy_tag "${zone}"; then

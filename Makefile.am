@@ -46,6 +46,8 @@ hooks_configsdir = $(hooksdir)/configs
 hooks_portsdir   = $(hooksdir)/ports
 hooks_zonesdir   = $(hooksdir)/zones
 
+triggersdir      = $(networkdir)/triggers
+
 CLEANFILES =
 DISTCLEANFILES =
 EXTRA_DIST =
@@ -145,6 +147,7 @@ dist_network_SCRIPTS = \
 	src/functions/functions.settings \
 	src/functions/functions.stp \
 	src/functions/functions.sysctl \
+	src/functions/functions.triggers \
 	src/functions/functions.usb \
 	src/functions/functions.util \
 	src/functions/functions.vlan \
@@ -306,6 +309,11 @@ dist_macros_DATA = \
 	src/macros/HTTP \
 	src/macros/HTTPS \
 	src/macros/WWW
+
+# ------------------------------------------------------------------------------
+
+INSTALL_DIRS = \
+	$(triggersdir)
 
 # ------------------------------------------------------------------------------
 
