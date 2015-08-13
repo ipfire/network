@@ -29,7 +29,7 @@ HOOK_SETTINGS="${HOOK_SETTINGS} STP_PRIORITY MAC MTU"
 HOOK_PORT_SETTINGS="COST PRIORITY"
 
 # Default values
-MAC=$(mac_generate)
+MAC=""
 MTU=1500
 STP="on"
 STP_MODE="rstp"
@@ -78,6 +78,9 @@ hook_parse_cmdline() {
 		esac
 		shift
 	done
+
+	# Generate a random MAC address if the user passed no one
+	isset MAC || MAC="$(mac_generate)"
 }
 
 hook_up() {
