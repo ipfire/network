@@ -156,29 +156,15 @@ port_is_up() {
 }
 
 port_new() {
-	#local port=${1}
-	#shift
-	#
-	#if port_exists ${port}; then
-	#	error "Port '${port}' does already exist."
-	#	return ${EXIT_ERROR}
-	#fi
-
-	local hook=${1}
+	local hook="${1}"
 	shift
 
-	if ! hook_exists port ${hook}; then
+	if ! hook_exists port "${hook}"; then
 		error "Port hook '${hook}' does not exist."
 		return ${EXIT_ERROR}
 	fi
 
-	#port_edit ${port} ${hook} $@
-	#
-	#if [ $? -ne ${EXIT_OK} ]; then
-	#	port_destroy ${port}
-	#fi
-
-	hook_exec port ${hook} new $@
+	hook_exec port "${hook}" new $@
 }
 
 port_destroy() {
