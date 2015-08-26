@@ -121,6 +121,7 @@ aiccu_write_config() {
 		print
 
 		print "ipv6_interface ${device}"
+		print "setupscript /usr/lib/network/helpers/aiccu"
 		print
 
 		print "# Security"
@@ -128,6 +129,7 @@ aiccu_write_config() {
 		print
 
 		# Misc.
+		print "defaultroute false"
 		print "verbose true"
 		print "daemonize false"
 		print "automatic true"

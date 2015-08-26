@@ -163,6 +163,7 @@ dist_network_SCRIPTS = \
 	src/ppp/pppoe-server
 
 dist_helpers_SCRIPTS = \
+	src/helpers/aiccu \
 	src/helpers/aiccu-config-helper \
 	src/helpers/bridge-stp \
 	src/helpers/dhcpd-config-helper \
