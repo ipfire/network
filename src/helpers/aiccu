@@ -1,0 +1,56 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2015  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /usr/lib/network/functions
+
+# Read network settings
+network_settings_read
+
+assert isset ACTION
+assert isset INTERFACE
+
+case "${ACTION}" in
+	up)
+		db_set "${INTERFACE}/ipv6/local-ip-address" "${LOCAL_ADDRESS}"
+		db_set "${INTERFACE}/ipv6/remote-ip-address" "${REMOTE_ADDRESS}"
+		db_set "${INTERFACE}/ipv6/active" "1"
+		db_set "${INTERFACE}/ipv6/mtu" "${MTU}"
+
+		# Refresh routing
+		routing_update "${INTERFACE}" ipv6
+		routing_default_update
+		;;
+
+	down)
+		db_delete "${INTERFACE}/ipv6"
+
+		# Refresh routing
+		routing_update "${INTERFACE}" ipv6
+		routing_default_update
+		;;
+
+	*)
+		log ERROR "Unhandled action called: ${ACTION}"
+		exit ${EXIT_ERROR}
+		;;
+esac
+
+exit ${EXIT_OK}
