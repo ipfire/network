@@ -23,9 +23,9 @@
 
 HOOK_MANPAGE="network-config-ipv4-static"
 
-HOOK_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
+HOOK_CONFIG_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
 
-hook_check() {
+hook_check_config_settings() {
 	assert isset ADDRESS
 	assert isinteger PREFIX
 
@@ -35,7 +35,7 @@ hook_check() {
 	fi
 }
 
-hook_create() {
+hook_new() {
 	local zone="${1}"
 	assert zone_exists "${zone}"
 	shift
@@ -107,7 +107,7 @@ hook_create() {
 	fi
 
 	# XXX maybe we can add some hashing to identify a configuration again
-	zone_config_settings_write "${zone}" "${HOOK}.$(uuid)" ${HOOK_SETTINGS}
+	zone_config_settings_write "${zone}" "${HOOK}.$(uuid)"
 
 	exit ${EXIT_OK}
 }
@@ -122,7 +122,7 @@ hook_up() {
 		exit ${EXIT_ERROR}
 	fi
 
-	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
+	zone_config_settings_read "${zone}" "${config}"
 
 	ip_address_add ${zone} ${ADDRESS}/${PREFIX}
 
@@ -148,7 +148,7 @@ hook_down() {
 		exit ${EXIT_ERROR}
 	fi
 	
-	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
+	zone_config_settings_read "${zone}" "${config}"
 
 	ip_address_del ${zone} ${ADDRESS}/${PREFIX}
 
@@ -172,7 +172,7 @@ hook_status() {
 		exit ${EXIT_ERROR}
 	fi
 
-	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
+	zone_config_settings_read "${zone}" "${config}"
 
 	local status
 	if zone_has_ip ${zone} ${ADDRESS}/${PREFIX}; then
@@ -190,4 +190,3 @@ hook_status() {
 
 	exit ${EXIT_OK}
 }
-

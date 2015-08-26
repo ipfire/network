@@ -21,30 +21,30 @@
 
 . /usr/lib/network/header-config
 
-HOOK_SETTINGS="HOOK DELAY"
+HOOK_CONFIG_SETTINGS="HOOK DELAY"
 
 # Default settings.
 DELAY=0
 
-hook_check() {
+hook_check_config_settings() {
 	assert isset DELAY
 	assert isinteger DELAY
 }
 
-hook_create() {
-	local zone=${1}
+hook_new() {
+	local zone="${1}"
 	shift
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--delay=*)
-				DELAY=${1#--delay=}
+				DELAY="$(cli_get_val "${1}")"
 				;;
 		esac
 		shift
 	done
 
-	zone_config_settings_write "${zone}" "${HOOK}" ${HOOK_SETTINGS}
+	zone_config_settings_write "${zone}" "${HOOK}"
 
 	exit ${EXIT_OK}
 }
@@ -91,7 +91,7 @@ hook_status() {
 		exit ${EXIT_ERROR}
 	fi
 
-	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
+	zone_config_settings_read "${zone}" "${config}"
 
 	local status
 	if dhclient_status ${zone} ipv4; then

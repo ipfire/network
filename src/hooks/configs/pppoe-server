@@ -21,7 +21,7 @@
 
 . /usr/lib/network/header-config
 
-HOOK_SETTINGS="HOOK MTU SERVICE_NAME SUBNET MAX_SESSIONS"
+HOOK_CONFIG_SETTINGS="HOOK MTU SERVICE_NAME SUBNET MAX_SESSIONS"
 
 # Maximum Transmission Unit.
 MTU=1492
@@ -37,13 +37,13 @@ SUBNET=
 # 0 = unlimited.
 MAX_SESSIONS=0
 
-hook_check() {
+hook_check_config_settings() {
 	assert isset MTU
 	assert isset SUBNET
 	assert isset MAX_SESSIONS
 }
 
-hook_create() {
+hook_new() {
 	local zone=${1}
 	shift
 
@@ -65,7 +65,7 @@ hook_create() {
 		shift
 	done
 
-	zone_config_settings_write "${zone}" "${HOOK}" ${HOOK_SETTINGS}
+	zone_config_settings_write "${zone}" "${HOOK}"
 
 	exit ${EXIT_OK}
 }
@@ -107,7 +107,7 @@ hook_status() {
 		exit ${EXIT_ERROR}
 	fi
 
-	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
+	zone_config_settings_read "${zone}" "${config}"
 
 	local status
 	if pppoe_server_status ${zone}; then

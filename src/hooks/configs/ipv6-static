@@ -19,11 +19,11 @@
 #                                                                             #
 ###############################################################################
 
-. /usr/lib/network/header-port
+. /usr/lib/network/header-config
 
-HOOK_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
+HOOK_CONFIG_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
 
-hook_check() {
+hook_check_config_settings() {
 	assert isset ADDRESS
 	assert isinteger PREFIX
 
@@ -33,7 +33,7 @@ hook_check() {
 	fi
 }
 
-hook_create() {
+hook_new() {
 	local zone=${1}
 	shift
 
@@ -59,7 +59,7 @@ hook_create() {
 		GATEWAY=$(ipv6_implode ${GATEWAY})
 	fi
 
-	zone_config_settings_write "${zone}" "${HOOK}.$(ipv6_hash ${ADDRESS}).${PREFIX}" ${HOOK_SETTINGS}
+	zone_config_settings_write "${zone}" "${HOOK}.$(ipv6_hash ${ADDRESS}).${PREFIX}"
 
 	exit ${EXIT_OK}
 }
@@ -74,7 +74,7 @@ hook_up() {
 		exit ${EXIT_ERROR}
 	fi
 	
-	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
+	zone_config_settings_read "${zone}" "${config}"
 
 	ip_address_add ${zone} ${ADDRESS}/${PREFIX}
 
@@ -100,7 +100,7 @@ hook_down() {
 	# Remove routing information from database.
 	db_delete "${zone}/ipv6"
 	
-	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
+	zone_config_settings_read "${zone}" "${config}"
 
 	ip_address_del ${zone} ${ADDRESS}/${PREFIX}
 
@@ -120,7 +120,7 @@ hook_status() {
 		exit ${EXIT_ERROR}
 	fi
 	
-	zone_config_settings_read "${zone}" "${config}" ${HOOK_SETTINGS}
+	zone_config_settings_read "${zone}" "${config}"
 
 	# Make sure ADDRESS is as short as possible.
 	ADDRESS=$(ipv6_implode ${ADDRESS})
