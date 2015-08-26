@@ -204,7 +204,7 @@ hook_valid_command_config() {
 	local cmd="${1}"
 
 	case "${cmd}" in
-		create|remove|edit|up|down|status)
+		new|destroy|edit|up|down|status)
 			return ${EXIT_TRUE}
 			;;
 	esac
@@ -249,7 +249,7 @@ hook_valid_command_zone() {
 			return ${EXIT_TRUE}
 			;;
 
-		config_create|config_edit|config_remove|config_show)
+		config_new|config_destroy|config_edit|config_show)
 			return ${EXIT_TRUE}
 			;;
 

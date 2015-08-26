@@ -477,14 +477,14 @@ zone_config() {
 	assert zone_exists "${zone}"
 
 	case "${cmd}" in
-		create)
-			zone_config_create "${zone}" "$@"
+		new)
+			zone_config_new "${zone}" "$@"
+			;;
+		destroy)
+			zone_config_destroy "${zone}" "$@"
 			;;
 		edit)
 			zone_config_edit "${zone}" "$@"
-			;;
-		remove)
-			zone_config_remove "${zone}" "$@"
 			;;
 		*)
 			error "Unrecognized argument: ${cmd}"
@@ -507,16 +507,16 @@ zone_config_cmd() {
 	hook_zone_exec "${hook}" "config_${cmd}" "${zone}" "$@"
 }
 
-zone_config_create() {
-	zone_config_cmd "create" "$@"
+zone_config_new() {
+	zone_config_cmd "new" "$@"
+}
+
+zone_config_destroy() {
+	zone_config_cmd "destroy" "$@"
 }
 
 zone_config_edit() {
 	zone_config_cmd "edit" "$@"
-}
-
-zone_config_remove() {
-	zone_config_cmd "remove" "$@"
 }
 
 zone_config_show() {

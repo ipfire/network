@@ -162,7 +162,7 @@ hook_config() {
 
 	local ret
 	case "${action}" in
-		create|edit|rem|show)
+		new|destroy|edit|show)
 			hook_config_${action} "${zone}" "$@"
 			exit $?
 			;;
@@ -199,18 +199,18 @@ hook_config_cmd() {
 	hook_config_exec "${hook_config}" "${cmd}" "${zone}" "$@"
 }
 
-hook_config_create() {
+hook_config_new() {
 	assert [ $# -ge 2 ]
 
-	hook_config_cmd "create" "$@"
+	hook_config_cmd "new" "$@"
+}
+
+hook_config_destroy() {
+	hook_config_cmd "destroy" "$@"
 }
 
 hook_config_edit() {
 	hook_config_cmd "edit" "$@"
-}
-
-hook_config_remove() {
-	hook_config_cmd "remove" "$@"
 }
 
 hook_config_show() {
