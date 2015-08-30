@@ -19,9 +19,17 @@
 #                                                                             #
 ###############################################################################
 
+pppoe_server_init() {
+	# Load the pppoe kernel module
+	module_load "pppoe"
+}
+
 pppoe_server_start() {
 	local zone=${1}
 	assert isset zone
+
+	# Initialise the system for this
+	pppoe_server_init
 
 	service_start "pppoe-server@${zone}.service"
 }
