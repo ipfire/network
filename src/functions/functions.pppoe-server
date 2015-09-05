@@ -60,6 +60,7 @@ pppoe_server_options() {
 	local auth="false"
 	local default_asyncmap="true"
 	local dns_servers
+	local ipv6="true"
 	local lcp_echo_failure=5
 	local lcp_echo_interval=60
 	local proxyarp="true"
@@ -73,6 +74,9 @@ pppoe_server_options() {
 				;;
 			--default-asyncmap=*)
 				default_asyncmap=$(cli_get_val ${1})
+				;;
+			--disable-ipv6)
+				ipv6="false"
 				;;
 			--dns-server=*)
 				dns_servers="${dns_servers} $(cli_get_val ${1})"
@@ -118,6 +122,17 @@ pppoe_server_options() {
 			print "require-${method}"
 		done >> ${file}
 		print >> ${file}
+	fi
+
+	# IPv6
+	if enabled ipv6; then
+		# Generate a random gateway address
+		local gw_addr="::$(random 4):$(random 4)"
+		(
+			print "# IPv6"
+			print "ipv6 ${gw_addr}"
+			print
+		) >> ${file}
 	fi
 
 	# DNS servers
