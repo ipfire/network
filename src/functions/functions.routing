@@ -130,7 +130,7 @@ routing_db_from_ppp() {
 
 	# Save the MAC address of the remote DSLAM
 	if isset PPP_MACREMOTE; then
-		db_set "${zone}/${proto}/remote-address" "${PPP_MACREMOTE,,}"
+		db_set "${zone}/remote-address" "${PPP_MACREMOTE,,}"
 	fi
 }
 

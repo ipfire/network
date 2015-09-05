@@ -232,6 +232,9 @@ hook_status() {
 	# XXX display time since connection started
 
 	cli_headline 2 "Point-to-Point-over-Ethernet protocol"
+	cli_print_fmt1 2 "MAC-Remote"  "$(db_get "${zone}/remote-address")"
+	cli_space
+
 	local proto
 	for proto in ${IP_SUPPORTED_PROTOCOLS}; do
 		db_exists "${zone}/${proto}" || continue
@@ -253,8 +256,6 @@ hook_status() {
 		cli_print_fmt1 3 "IP address"  "$(db_get "${zone}/${proto}/local-ip-address")"
 		cli_print_fmt1 3 "Gateway"     "$(db_get "${zone}/${proto}/remote-ip-address")"
 		cli_print_fmt1 3 "DNS servers" "$(db_get "${zone}/${proto}/domain-name-servers")"
-		cli_space
-		cli_print_fmt1 3 "MAC-Remote"  "$(db_get "${zone}/${proto}/remote-address")"
 		cli_space
 	done
 
