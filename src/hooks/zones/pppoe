@@ -252,7 +252,7 @@ hook_status() {
 
 		cli_print_fmt1 3 "IP address"  "$(db_get "${zone}/${proto}/local-ip-address")"
 		cli_print_fmt1 3 "Gateway"     "$(db_get "${zone}/${proto}/remote-ip-address")"
-		cli_print_fmt1 3 "DNS servers" "$(db_get "${zone}/${proto}/dns")"
+		cli_print_fmt1 3 "DNS servers" "$(db_get "${zone}/${proto}/domain-name-servers")"
 		cli_space
 		cli_print_fmt1 3 "MAC-Remote"  "$(db_get "${zone}/${proto}/remote-address")"
 		cli_space
