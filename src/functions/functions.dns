@@ -225,6 +225,16 @@ dns_server_parse_line() {
 	return ${EXIT_OK}
 }
 
+# This function should be called after any configuration
+# changes have been made to the DNS servers.
+dns_server_update() {
+	# Regenerate /etc/resolv.conf
+	dns_generate_resolvconf
+
+	# Restart radvd which propagates IPv6 DNS servers
+	radvd_update
+}
+
 # Update resolv.conf(5) when initializing the network.
 init_register dns_generate_resolvconf
 

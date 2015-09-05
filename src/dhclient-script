@@ -91,7 +91,7 @@ case "${reason}" in
 			# Update nameservers if those have changed
 			if [[ "${old_dhcp6_name_servers}" != "${new_dhcp6_name_servers}" ]]; then
 				db_set "${interface}/ipv6/domain-name-servers" "${new_dhcp6_name_servers}"
-				dns_generate_resolvconf
+				dns_server_update
 			fi
 
 			# Update the lifetime if the address has not changed
@@ -247,8 +247,8 @@ case "${reason}" in
 					routing_update ${interface} ipv4
 					routing_default_update
 
-					# Update resolv.conf
-					dns_generate_resolvconf
+					# Update DNS configuration
+					dns_server_update
 				fi
 				;;
 		esac

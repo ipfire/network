@@ -1245,8 +1245,7 @@ cli_dns_server() {
 	esac
 
 	# Update the local DNS configuration after changes have been made.
-	dns_generate_resolvconf
-	radvd_update
+	dns_server_update
 
 	exit ${EXIT_OK}
 }
