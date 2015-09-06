@@ -80,6 +80,9 @@ routing_default_update() {
 		# Remove too much spaces.
 		routes=$(echo ${routes})
 
+		# Reload radvd configuration
+		[[ "${proto}" = "ipv6" ]] && radvd_update
+
 		# Remove all default routes.
 		if [ -z "${routes}" ]; then
 			cmd ${cmd} del default
@@ -91,13 +94,6 @@ routing_default_update() {
 
 		cmd ${cmd} replace default ${routes}
 		assert [ $? -eq 0 ]
-
-		case "${proto}" in
-			ipv6)
-				# Apply radvd configuration.
-				radvd_update
-				;;
-		esac
 
 		triggers_execute_all "online"
 	done

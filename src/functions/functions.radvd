@@ -25,8 +25,14 @@ radvd_update() {
 	# (Re-)write the configuration file
 	radvd_write_config
 
-	# Reload the radvd service.
-	service_reload radvd
+	# Reload the radvd service if it is already running
+	if service_is_active radvd; then
+		service_reload radvd
+		return ${EXIT_OK}
+	fi
+
+	# Start the radvd service
+	service_start radvd
 }
 
 radvd_write_config() {
