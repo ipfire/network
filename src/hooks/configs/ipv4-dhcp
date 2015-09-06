@@ -105,8 +105,13 @@ hook_status() {
 	local gateway="$(db_get "${zone}/ipv4/remote-ip-address")"
 	if isset gateway; then
 		cli_print_fmt1 3 "Gateway" "${gateway}"
+		cli_space
 	fi
-	cli_space
+	local dns_servers="$(db_get "${zone}/ipv4/domain-name-servers")"
+	if isset dns_servers; then
+		cli_print_fmt1 3 "DNS-Servers" "${dns_servers}"
+		cli_space
+	fi
 
 	exit ${EXIT_OK}
 }
