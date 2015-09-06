@@ -322,7 +322,7 @@ _network_zone_subcommand() {
 
 	local words=( $@ )
 
-	local commands="config disable down edit enable port status up"
+	local commands="config disable down edit enable port rename status up"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )

@@ -180,6 +180,26 @@
 					</para>
 				</listitem>
 			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command><replaceable>ZONE</replaceable> rename <replaceable>NAME</replaceable></command>
+				</term>
+
+				<listitem>
+					<para>
+						Renames the zone to <replaceable>NAME</replaceable>.
+					</para>
+					<para>
+						The command will shut down the zone if it is up and
+						start it again with the new name. If the zone is not
+						up it won't be started.
+					</para>
+					<para>
+						Zones that are marked to be destroyed cannot be renamed.
+					</para>
+				</listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 

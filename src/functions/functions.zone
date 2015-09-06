@@ -284,6 +284,46 @@ zone_edit() {
 	hook_zone_exec ${hook} edit ${zone} $@
 }
 
+zone_rename() {
+	assert [ $# -eq 2 ]
+
+	local zone="${1}"
+	local name="${2}"
+
+	assert zone_exists "${zone}"
+	assert not zone_has_destroy_tag "${zone}"
+	assert not zone_exists "${name}"
+
+	# The zone must be shut down before, is then renamed and
+	# potentially brought up again
+
+	# Save if the zone is running right now
+	zone_is_active "${zone}"
+	local zone_was_active="${?}"
+
+	# Save if the zone is enabled (i.e. auto-start)
+	zone_is_enabled "${zone}"
+	local zone_was_enabled="${?}"
+
+	# Stop the zone
+	zone_stop "${zone}"
+
+	# Disable the zone
+	zone_disable "${zone}"
+
+	# Rename the configuration files
+	mv -f "$(zone_dir "${zone}")" "$(zone_dir "${name}")"
+
+	# Enable the zone if it was enabled before
+	[ ${zone_was_enabled} -eq ${EXIT_TRUE} ] && zone_enable "${name}"
+
+	# Start the zone if it was up before
+	[ ${zone_was_active} -eq ${EXIT_TRUE} ] && zone_start "${name}"
+
+	log INFO "Zone ${zone} was renamed to ${name}"
+	return ${EXIT_OK}
+}
+
 
 zone_destroy() {
 	local zone="${1}"

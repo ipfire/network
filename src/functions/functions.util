@@ -310,6 +310,13 @@ assert_check_retval() {
 	return ${ret}
 }
 
+# This function executes the given command and inverses the return code
+not() {
+	local command="$@"
+
+	${command} && return ${EXIT_FALSE} || return ${EXIT_TRUE}
+}
+
 exec_cmd() {
 	local cmd=$@
 

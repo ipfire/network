@@ -588,6 +588,9 @@ cli_zone() {
 			port)
 				cli_zone_port "${zone}" $@
 				;;
+			rename)
+				cli_zone_rename "${zone}" $@
+				;;
 			config|disable|down|edit|enable|status|up)
 				zone_${action} ${zone} $@
 				;;
@@ -695,6 +698,53 @@ cli_zone_port() {
 				exit ${EXIT_ERROR}
 				;;
 		esac
+	fi
+
+	exit ${EXIT_OK}
+}
+
+cli_zone_rename() {
+	if cli_help_requested $@; then
+		cli_show_man network-zone
+		exit ${EXIT_OK}
+	fi
+
+	local zone="${1}"
+	local name="${2}"
+	shift 2
+
+	if ! isset name; then
+		error "You need to pass a new name"
+		exit ${EXIT_ERROR}
+	fi
+
+	if ! zone_name_is_valid "${name}"; then
+		error "Invalid new zone name: ${name}"
+		exit ${EXIT_ERROR}
+	fi
+
+	# Check if the zone exists
+	if ! zone_exists "${zone}"; then
+		error "Zone ${zone} does not exist"
+		exit ${EXIT_ERROR}
+	fi
+
+	# Destroyed zones cannot be renamed
+	if zone_has_destroy_tag "${zone}"; then
+		error "Zone ${zone} is about to be destroyed and cannot be renamed"
+		exit ${EXIT_ERROR}
+	fi
+
+	# Check if a zone with the new name already exists
+	if zone_exists "${name}"; then
+		error "Zone ${name} already exists"
+		exit ${EXIT_ERROR}
+	fi
+
+	# Rename
+	if ! zone_rename "${zone}" "${name}"; then
+		error "Could not rename zone ${zone} to ${name}"
+		exit ${EXIT_ERROR}
 	fi
 
 	exit ${EXIT_OK}
