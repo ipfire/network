@@ -30,7 +30,7 @@ hook_check_config_settings() {
 	assert isbool PRIVACY_EXTENSIONS
 }
 
-hook_create() {
+hook_new() {
 	local zone="${1}"
 	shift
 
