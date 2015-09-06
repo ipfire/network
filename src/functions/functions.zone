@@ -508,7 +508,18 @@ zone_config_cmd() {
 }
 
 zone_config_new() {
-	zone_config_cmd "new" "$@"
+	local zone="${1}"
+	shift
+
+	# Create a new configuration, but exit when that was
+	# not successful.
+	zone_config_cmd "new" "${zone}" "$@" || return ${?}
+
+	# If the config could be created, we will try to bring
+	# it up if the zone is up, too.
+	if zone_is_up "${zone}"; then
+		zone_configs_up "${zone}"
+	fi
 }
 
 zone_config_destroy() {
