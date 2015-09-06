@@ -21,7 +21,7 @@
 
 . /usr/lib/network/header-config
 
-HOOK_CONFIG_SETTINGS="HOOK MTU SERVICE_NAME SUBNET MAX_SESSIONS"
+HOOK_CONFIG_SETTINGS="HOOK DNS_SERVERS MTU SERVICE_NAME SUBNET MAX_SESSIONS"
 
 # Maximum Transmission Unit.
 MTU=1492
@@ -41,6 +41,11 @@ hook_check_config_settings() {
 	assert isset MTU
 	assert isset SUBNET
 	assert isset MAX_SESSIONS
+
+	local server
+	for server in ${DNS_SERVERS}; do
+		assert ipv4_is_valid "${server}"
+	done
 }
 
 hook_new() {
@@ -49,6 +54,19 @@ hook_new() {
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
+			--dns-server=*)
+				local dns_servers="$(cli_get_val "${1}")"
+
+				local dns_server
+				for dns_server in ${dns_servers}; do
+					if ! ipv4_is_valid "${dns_server}"; then
+						warning  "Invalid IPv4 address: ${dns_server}. Skipped."
+						continue
+					fi
+
+					list_append DNS_SERVERS "${dns_server}"
+				done
+				;;
 			--max-sessions=*)
 				MAX_SESSIONS=$(cli_get_val ${1})
 				;;

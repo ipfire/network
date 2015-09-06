@@ -75,7 +75,8 @@ case "${action}" in
 		fi
 
 		# Create the pppoe-server-options file.
-		pppoe_server_options ${pppd_options} ${zone}
+		pppoe_server_options ${pppd_options} ${zone} \
+			--dns-servers="${DNS_SERVERS}"
 		pppoe_cmdline="${pppoe_cmdline} -O ${pppd_options}"
 
 		# Configure the IP addresses.

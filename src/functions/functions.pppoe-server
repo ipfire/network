@@ -78,8 +78,8 @@ pppoe_server_options() {
 			--disable-ipv6)
 				ipv6="false"
 				;;
-			--dns-server=*)
-				dns_servers="${dns_servers} $(cli_get_val ${1})"
+			--dns-servers=*)
+				dns_servers="$(cli_get_val ${1})"
 				;;
 			--lcp-echo-failure=*)
 				lcp_echo_failure=$(cli_get_val ${1})
