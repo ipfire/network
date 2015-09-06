@@ -39,7 +39,7 @@ case "${action}" in
 		zone_settings_read ${zone} || exit $?
 
 		wpa_supplicant_config_write ${zone} ${config_file} \
-			--mode="${ENCRYPTION}" \
+			--mode="${ENCRYPTION_MODE}" \
 			--ssid="${SSID}" \
 			--key="${KEY}" \
 		|| exit $?
