@@ -52,6 +52,42 @@ PKG_PROG_PKG_CONFIG
 # This makes sure pkg.m4 is available.
 m4_pattern_forbid([^_?PKG_[A-Z_]+$],[*** pkg.m4 missing, please install pkg-config])
 
+# C Compiler
+AC_PROG_CC
+AC_PROG_CC_C99
+AC_PROG_CC_C_O
+AC_PROG_GCC_TRADITIONAL
+
+CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
+	-pipe \
+	-Wall \
+	-Wextra \
+	-Wno-inline \
+	-Wundef \
+	"-Wformat=2 -Wformat-security -Wformat-nonliteral" \
+	-Wno-unused-parameter \
+	-Wno-unused-result \
+	-fno-strict-aliasing \
+	-ffunction-sections \
+	-fdata-sections \
+	-fstack-protector-all \
+	--param=ssp-buffer-size=4])
+AC_SUBST([OUR_CFLAGS], $with_cflags)
+
+AS_CASE([$CFLAGS], [*-O[[12345g\ ]]*],
+	[CC_CHECK_FLAGS_APPEND([with_cppflags], [CPPFLAGS], [\
+		-Wp,-D_FORTIFY_SOURCE=2])],
+	[AC_MSG_RESULT([skipping -D_FORTIFY_SOURCE, optimization not enabled])])
+AC_SUBST([OUR_CPPFLAGS], $with_cppflags)
+
+CC_CHECK_FLAGS_APPEND([with_ldflags], [LDFLAGS], [\
+	-Wl,--as-needed \
+	-Wl,--no-undefined \
+	-Wl,--gc-sections \
+	-Wl,-z,relro \
+	-Wl,-z,now])
+AC_SUBST([OUR_LDFLAGS], $with_ldflags)
+
 # ------------------------------------------------------------------------------
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
@@ -74,6 +110,10 @@ AC_CONFIG_FILES([
 AC_OUTPUT
 AC_MSG_RESULT([
 	$PACKAGE_NAME $VERSION
+
+	CFLAGS:               ${OUR_CFLAGS} ${CFLAGS}
+	CPPFLAGS:             ${OUR_CPPFLAGS} ${CPPFLAGS}
+	LDFLAGS:              ${OUR_LDFLAGS} ${LDFLAGS}
 
 	prefix:               $prefix
 

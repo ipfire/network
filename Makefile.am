@@ -56,6 +56,10 @@ INSTALL_EXEC_HOOKS =
 UNINSTALL_EXEC_HOOKS =
 noinst_DATA =
 
+AM_CFLAGS       = $(OUR_CFLAGS)
+AM_CPPFLAGS     = $(OUR_CPPFLAGS)
+AM_LDFLAGS      = $(OUR_LDFLAGS)
+
 DISTCHECK_CONFIGURE_FLAGS = \
 	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) \
 	--with-udevdir=$$dc_install_base/$(udevdir)
