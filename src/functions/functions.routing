@@ -164,10 +164,10 @@ routing_update() {
 
 	case "${proto}" in
 		ipv4)
-			local net_address=$(ipv4_get_netaddress ${local_ip_address})
+			local network=$(ipv4_get_network "${local_ip_address}")
 
 			log DEBUG "Adding route for subnet ${local_ip_address} to table ${table}"
-			cmd ${ip_cmd} route add table ${table} ${net_address} dev ${zone}
+			cmd ${ip_cmd} route add table "${table}" "${network}" dev "${zone}"
 			;;
 	esac
 

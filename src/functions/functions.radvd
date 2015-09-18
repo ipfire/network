@@ -69,11 +69,11 @@ __radvd_config_interface() {
 	if [ -z "${addr}" ] || [ "${addr:0:5}" = "fe80:" ]; then
 		return ${EXIT_OK}
 	fi
-	local prefix=$(ipv6_get_network ${addr})
 
 	# Check if the subnet is configured by the DHCP server.
 	local dhcpd="false"
-	if dhcpd_subnet_match ipv6 "${prefix}"; then
+	local prefix="$(ipv6_get_network "${addr}")"
+	if isset prefix && dhcpd_subnet_match ipv6 "${prefix}"; then
 		dhcpd="true"
 	fi
 

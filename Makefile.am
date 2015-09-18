@@ -177,6 +177,12 @@ dist_helpers_SCRIPTS = \
 	src/helpers/wpa_supplicant \
 	src/helpers/wpa_supplicant-config-helper
 
+bin_PROGRAMS = \
+	src/inetcalc
+
+src_inetcalc_SOURCES = \
+	src/inetcalc.c
+
 bridge-stp-install-hook: bridge-stp-uninstall-hook
 	ln -svf --relative $(DESTDIR)$(helpersdir)/bridge-stp $(DESTDIR)$(sbindir)/
 

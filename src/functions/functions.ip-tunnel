@@ -99,7 +99,7 @@ ip_tunnel_6rd_set_prefix() {
 	assert isset prefix
 
 	# Validate the prefix.
-	assert ipv6_is_valid "${prefix}"
+	assert ipv6_net_is_valid "${prefix}"
 
 	log INFO "Setting 6rd-prefix ${prefix} on ${device}"
 

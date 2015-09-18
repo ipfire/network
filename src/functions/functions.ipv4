@@ -22,16 +22,7 @@
 IP_SUPPORTED_PROTOCOLS="${IP_SUPPORTED_PROTOCOLS} ipv4"
 
 ipv4_is_valid() {
-	ipcalc --ipv4 -c $@ >/dev/null 2>&1
-
-	case "$?" in
-		0)
-			return ${EXIT_OK}
-			;;
-		*)
-			return ${EXIT_ERROR}
-			;;
-	esac
+	inetcalc -4 -c $@ && return ${EXIT_OK} || return ${EXIT_ERROR}
 }
 
 ipv4_prefix_is_valid() {
@@ -84,56 +75,13 @@ ipv4_update_neighbours() {
 	( sleep 2; arping -q -U -c 1 -I ${device} ${address} ) >/dev/null 2>&1 </dev/null &
 }
 
-ipv4_get_netaddress() {
-	local address=${1}
-	assert isset address
+ipv4_calculate_prefix() {
+	assert [ $# -eq 2 ]
 
-	local prefix=$(ip_get_prefix ${address})
-	isset prefix || prefix="32"
+	local address="${1}"
+	local broadcast="${2}"
 
-	# Assume host-only address if no prefix has been given.
-	if [ "${prefix}" = "32" ]; then
-		echo "${address}/${prefix}"
-		return ${EXIT_OK}
-	fi
-
-	local NETWORK
-	eval $(ipcalc --network ${address})
-	assert isset NETWORK
-
-	echo "${NETWORK}/${prefix}"
-	return ${EXIT_OK}
-}
-
-ipv4_get_prefix() {
-	local address=${1}
-	local broadcast=${2}
-
-	assert isset address
-	assert isset broadcast
-
-	local PREFIX
-	eval $(ipcalc --prefix ${address} ${broadcast})
-	assert isset PREFIX
-
-	echo "${PREFIX}"
-	return ${EXIT_OK}
-}
-
-ipv4_get_netmask() {
-	local address=${1}
-	assert isset address
-
-	# Add prefix if none given.
-	local prefix=$(ip_get_prefix ${address})
-	isset prefix || address="${address}/32"
-
-	local NETMASK
-	eval $(ipcalc --netmask ${address})
-	assert isset NETMASK
-
-	print "${NETMASK}"
-	return ${EXIT_OK}
+	inetcalc -4 -p "${address}" "${broadcast}"
 }
 
 ipv4_flush_device() {
@@ -153,21 +101,114 @@ ipv4_flush_device() {
 }
 
 ipv4_prefix2netmask() {
-	local prefix=${1}
-	shift
-
-	assert isinteger prefix
-
-	# XXX this function is a stub
+	local prefix="${1}"
 
 	case "${prefix}" in
+		32)
+			echo "255.255.255.255"
+			;;
+		31)
+			echo "255.255.255.254"
+			;;
+		30)
+			echo "255.255.255.252"
+			;;
+		29)
+			echo "255.255.255.248"
+			;;
+		28)
+			echo "255.255.255.240"
+			;;
+		27)
+			echo "255.255.255.224"
+			;;
+		26)
+			echo "255.255.255.192"
+			;;
+		25)
+			echo "255.255.255.128"
+			;;
 		24)
 			echo "255.255.255.0"
 			;;
+		23)
+			echo "255.255.254.0"
+			;;
+		22)
+			echo "255.255.252.0"
+			;;
+		21)
+			echo "255.255.248.0"
+			;;
+		20)
+			echo "255.255.240.0"
+			;;
+		19)
+			echo "255.255.224.0"
+			;;
+		18)
+			echo "255.255.192.0"
+			;;
+		17)
+			echo "255.255.128.0"
+			;;
+		16)
+			echo "255.255.0.0"
+			;;
+		15)
+			echo "255.254.0.0"
+			;;
+		14)
+			echo "255.252.0.0"
+			;;
+		13)
+			echo "255.248.0.0"
+			;;
+		12)
+			echo "255.240.0.0"
+			;;
+		11)
+			echo "255.224.0.0"
+			;;
+		10)
+			echo "255.192.0.0"
+			;;
+		9)
+			echo "255.128.0.0"
+			;;
+		8)
+			echo "255.0.0.0"
+			;;
+		7)
+			echo "254.0.0.0"
+			;;
+		6)
+			echo "252.0.0.0"
+			;;
+		5)
+			echo "248.0.0.0"
+			;;
+		4)
+			echo "240.0.0.0"
+			;;
+		3)
+			echo "224.0.0.0"
+			;;
+		2)
+			echo "192.0.0.0"
+			;;
+		1)
+			echo "128.0.0.0"
+			;;
+		0)
+			echo "0.0.0.0"
+			;;
 		*)
-			assert false NOT IMPLEMENTED
+			return ${EXIT_ERROR}
 			;;
 	esac
+
+	return ${EXIT_OK}
 }
 
 ipv4_netmask2prefix() {
@@ -195,55 +236,11 @@ ipv4_netmask2prefix() {
 }
 
 ipv4_get_network() {
-	local network=$(ipv4_get_network_encoded $@)
-
-	ipv4_decode ${network}
-}
-
-ipv4_get_network_encoded() {
-	local net=${1}
-
-	local prefix=$(ip_get_prefix ${net})
-	isset prefix || prefix=32
-
-	local mask=0
-	if [ ${prefix} -ne 0 ]; then
-		mask=$(( -1 << $(( 32 - ${prefix} )) ))
-	fi
-
-	local addr=$(ip_split_prefix ${net})
-	addr=$(ipv4_encode ${addr})
-
-	print "%d" $(( ${addr} & ${mask} ))
+	ip_get_network $@
 }
 
 ipv4_get_broadcast() {
-	local broadcast=$(ipv4_get_broadcast_encoded $@)
-
-	ipv4_decode ${broadcast}
-}
-
-ipv4_get_broadcast_encoded() {
-	local net=${1}
-
-	local prefix=$(ip_get_prefix ${net})
-	assert isset prefix
-
-	prefix=$(( 32 - ${prefix} ))
-
-	local netmask=0
-	local broadcast=-1
-	if [ ${prefix} -eq 32 ]; then
-		:
-	else
-		netmask=$(( -1 << ${prefix} ))
-		broadcast=$(( $(( 1 << ${prefix} )) - 1))
-	fi
-
-	local addr=$(ip_split_prefix ${net})
-	addr=$(ipv4_encode ${addr})
-
-	print "%d" $(( $(( ${addr} & ${netmask} )) | ${broadcast} ))
+	inetcalc -4 -b $@ && return ${EXIT_OK} || return ${EXIT_ERROR}
 }
 
 ipv4_encode() {
@@ -353,7 +350,9 @@ ipv4_range_explicit() {
 			;;
 		*.*.*.*/*)
 			first=$(ipv4_get_network ${range})
+			first="$(ip_split_prefix "${range}")"
 			last=$(ipv4_get_broadcast ${range})
+			last="$(ip_split_prefix "${range}")"
 			;;
 	esac
 

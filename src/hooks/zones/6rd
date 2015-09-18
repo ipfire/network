@@ -49,7 +49,7 @@ hook_check_settings() {
 	assert isset LOCAL_ADDRESS
 
 	# Check input.
-	if ! ipv6_is_valid "${SIX_RD_PREFIX}"; then
+	if ! ipv6_net_is_valid "${SIX_RD_PREFIX}"; then
 		log ERROR "Invalid 6rd prefix. Please use a valid IPv6 prefix."
 		return ${EXIT_ERROR}
 	fi

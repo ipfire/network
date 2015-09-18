@@ -218,7 +218,7 @@ case "${reason}" in
 
 
 					# Calc a prefix out of address and subnet mask.
-					new_prefix="$(ipv4_get_prefix ${new_ip_address} ${new_subnet_mask})"
+					new_prefix="$(ipv4_calculate_prefix ${new_ip_address} ${new_subnet_mask})"
 
 					# Set the new ip address.
 					ip_address_add ${interface} ${new_ip_address}/${new_prefix}

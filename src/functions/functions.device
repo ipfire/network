@@ -705,7 +705,7 @@ device_has_ip() {
 	local protocol=$(ip_detect_protocol ${addr})
 	case "${protocol}" in
 		ipv6)
-			addr=$(ipv6_implode ${addr})
+			addr=$(ipv6_format "${addr}")
 			;;
 	esac
 

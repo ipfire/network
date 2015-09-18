@@ -1029,7 +1029,7 @@ _dhcpd_write_subnet() {
 			print "subnet6 ${ADDRESS}/${PREFIX} {" >> ${file}
 			;;
 		ipv4)
-			local netmask=$(ipv4_get_netmask ${ADDRESS}/${PREFIX})
+			local netmask="$(ipv4_prefix2netmask "${PREFIX}")"
 			print "subnet ${ADDRESS} netmask ${netmask} {" >> ${file}
 			;;
 	esac

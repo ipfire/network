@@ -53,10 +53,10 @@ hook_new() {
 	done
 
 	# Store IPv6 address in small format.
-	ADDRESS=$(ipv6_implode ${ADDRESS})
+	ADDRESS=$(ipv6_format "${ADDRESS}")
 
 	if [ -n "${GATEWAY}" ]; then
-		GATEWAY=$(ipv6_implode ${GATEWAY})
+		GATEWAY=$(ipv6_format "${GATEWAY}")
 	fi
 
 	zone_config_settings_write "${zone}" "${HOOK}.$(ipv6_hash ${ADDRESS}).${PREFIX}"
@@ -123,7 +123,7 @@ hook_status() {
 	zone_config_settings_read "${zone}" "${config}"
 
 	# Make sure ADDRESS is as short as possible.
-	ADDRESS=$(ipv6_implode ${ADDRESS})
+	ADDRESS=$(ipv6_format "${ADDRESS}")
 
 	local status
 	if zone_has_ip ${zone} ${ADDRESS}/${PREFIX}; then

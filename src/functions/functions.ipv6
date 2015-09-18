@@ -105,16 +105,16 @@ ipv6_device_privacy_extensions_disable() {
 }
 
 ipv6_is_valid() {
-	ipcalc --ipv6 -c $@ >/dev/null 2>&1
+	inetcalc -6 -c $@ && return ${EXIT_OK} || return ${EXIT_ERROR}
+}
 
-	case "$?" in
-		0)
-			return ${EXIT_OK}
-			;;
-		*)
-			return ${EXIT_ERROR}
-			;;
-	esac
+ipv6_net_is_valid() {
+	local net="${1}"
+
+	local prefix="$(ip_get_prefix "${net}")"
+	local addr="$(ip_split_prefix "${net}")"
+
+	ipv6_prefix_is_valid "${prefix}" && ipv6_is_valid "${addr}"
 }
 
 ipv6_prefix_is_valid() {
@@ -394,105 +394,45 @@ ipv6_device_get_addresses() {
 	list_sort ${addresses}
 }
 
-ipv6_implode() {
-	local address=${1}
-	assert isset address
-
-	local ADDRESS6_IMPL
-	eval $(ipcalc -6 -i ${address} 2>/dev/null)
-	assert isset ADDRESS6_IMPL
-
-	print "${ADDRESS6_IMPL}"
-}
-
-ipv6_explode() {
-	local address=${1}
-	assert isset address
-
-	# Nothing to do if the length of the address is 39.
-	if [ ${#address} -eq 39 ]; then
-		print "${address}"
-		return ${EXIT_OK}
-	fi
-
-	local ADDRESS6_EXPL
-	eval $(ipcalc -6 -e ${address} 2>/dev/null)
-	assert isset ADDRESS6_EXPL
-
-	print "${ADDRESS6_EXPL}"
+ipv6_format() {
+	inetcalc -6 -f $@
 }
 
 ipv6_addr_eq() {
-	local addr1=${1}
-	assert isset addr1
+	assert [[ $# -eq 2 ]]
 
-	local addr2=${2}
-	assert isset addr2
+	local addr1="${1}"
+	local addr2="${2}"
 
-	local addr
-	for addr in addr1 addr2; do
-		printf -v ${addr} "%s" $(ipv6_explode ${!addr})
-	done
-
-	[[ "${addr1}" = "${addr2}" ]] \
+	inetcalc -6 -e "${addr1}" "${addr2}" \
 		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
 ipv6_addr_gt() {
-	local addr1=${1}
-	assert isset addr1
+	assert [[ $# -eq 2 ]]
 
-	local addr2=${2}
-	assert isset addr2
+	local addr1="${1}"
+	local addr2="${2}"
 
-	local addr
-	for addr in addr1 addr2; do
-		printf -v ${addr} "%s" $(ipv6_explode ${!addr})
-
-		# Remove all colons
-		printf -v ${addr} "${!addr//:/}"
-	done
-
-	local i addr1_oct addr2_oct
-	for i in 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30; do
-		addr1_oct="0x${addr1:${i}:2}"
-		addr2_oct="0x${addr2:${i}:2}"
-
-		[[ ${addr1_oct} -gt ${addr2_oct} ]] && return ${EXIT_TRUE}
-	done
-
-	return ${EXIT_FALSE}
+	inetcalc -6 -g "${addr1}" "${addr2}" \
+		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
 ipv6_hash() {
-	local address=${1}
-
+	local address="${1}"
 	assert isset address
 
-	# Explode address
-	address=$(ipv6_explode ${address})
-
+	address="$(ipv6_format "${address}")"
 	echo "${address//:/}"
 }
 
 ipv6_get_network() {
-	local addr=${1}
-	assert isset addr
-
-	# Check if a prefix (e.g. /64) is provided.
-	local prefix=$(ip_get_prefix ${addr})
-	assert ipv6_prefix_is_valid ${prefix}
-
-	local PREFIX6
-	eval $(ipcalc --ipv6 -p ${addr})
-	assert isset PREFIX6
-
-	print "${PREFIX6}/${prefix}"
+	ip_get_network $@
 }
 
 ipv6_6rd_format_address() {
 	local isp_prefix="${1}"
-	assert ipv6_is_valid "${isp_prefix}"
+	assert ipv6_net_is_valid "${isp_prefix}"
 
 	local client_address="${2}"
 	assert ipv4_is_valid "${client_address}"
@@ -505,7 +445,15 @@ ipv6_6rd_format_address() {
 	assert [ "${prefix}" -gt  0 ]
 
 	# Explode the address and throw away the second 32 bit.
-	local address="$(ipv6_explode "${isp_prefix}")"
+	local address
+	local segment
+	for segment in ${isp_prefix//:/ }; do
+		while [[ ${#segment} -lt 4 ]]; do
+			segment="0${segment}"
+		done
+		list_append address "${segment}"
+	done
+	address="$(list_join ":" ${address})"
 
 	client_address="$(ipv6_6rd_format_client_address ${client_address})"
 	assert isset client_address
@@ -551,7 +499,7 @@ ipv6_6rd_format_address() {
 	assert ipv6_is_valid "${formatted_address}"
 
 	# Implode the output IP address.
-	formatted_address="$(ipv6_implode "${formatted_address}")"
+	formatted_address="$(ipv6_format "${formatted_address}")"
 
 	print "${formatted_address}/${prefix}"
 }

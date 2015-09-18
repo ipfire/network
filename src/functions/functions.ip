@@ -40,13 +40,13 @@ ip_get_prefix() {
 }
 
 ip_detect_protocol() {
-	local address=${1}
+	local address="${1}"
 
 	assert isset address
 
 	local protocol
 	for protocol in ${IP_SUPPORTED_PROTOCOLS}; do
-		if ${protocol}_is_valid ${address}; then
+		if ${protocol}_is_valid "${address}"; then
 			echo "${protocol}"
 			return ${EXIT_OK}
 		fi
@@ -113,6 +113,10 @@ ip_prefix_is_valid() {
 	assert ip_protocol_is_supported ${proto}
 }
 
+ip_get_network() {
+	inetcalc -n $@ && return ${EXIT_OK} || return ${EXIT_ERROR}
+}
+
 ip_address_add() {
 	local device=${1}
 	local address=${2}
@@ -124,10 +128,22 @@ ip_address_add() {
 	address=$(ip_split_prefix ${address})
 
 	assert isset prefix
+	assert isset address
+
+	echo "ADDRESS = $address"
 
 	# Detect the protocol version
-	local protocol=$(ip_detect_protocol ${address}/${prefix})
-	assert ip_protocol_is_supported ${protocol}
+	local protocol=$(ip_detect_protocol "${address}")
+	assert ip_protocol_is_supported "${protocol}"
+
+	case "${protocol}" in
+		ipv6)
+			assert ipv6_prefix_is_valid "${prefix}"
+			;;
+		ipv4)
+			assert ipv4_prefix_is_valid "${prefix}"
+			;;
+	esac
 
 	case "${protocol}" in
 		ipv4)
@@ -170,8 +186,8 @@ ip_address_del() {
 	assert isset prefix
 
 	# Detect the protocol version
-	local protocol=$(ip_detect_protocol ${address}/${prefix})
-	assert ip_protocol_is_supported ${protocol}
+	local protocol=$(ip_detect_protocol "${address}")
+	assert ip_protocol_is_supported "${protocol}"
 
 	if device_has_ip ${device} ${address}/${prefix}; then
 		assert ip addr del ${address}/${prefix} dev ${device}
