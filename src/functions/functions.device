@@ -313,6 +313,13 @@ device_is_serial() {
 	serial_exists $@
 }
 
+# Returns true if a device is a tun device
+device_is_tun() {
+	local device="${1}"
+
+	[ -e "${SYS_CLASS_NET}/${device}/tun_flags" ]
+}
+
 # Check if the device is a physical network interface
 device_is_ethernet() {
 	local device=${1}
@@ -336,6 +343,9 @@ device_is_ethernet() {
 		return ${EXIT_ERROR}
 
 	device_is_dummy ${device} && \
+		return ${EXIT_ERROR}
+
+	device_is_tun ${device} && \
 		return ${EXIT_ERROR}
 
 	return ${EXIT_OK}
@@ -376,6 +386,9 @@ device_get_type() {
 
 	elif device_is_dummy ${device}; then
 		echo "dummy"
+
+	elif device_is_tun ${device}; then
+		echo "tun"
 
 	elif device_is_ethernet ${device}; then
 		echo "ethernet"
