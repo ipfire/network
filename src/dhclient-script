@@ -217,12 +217,12 @@ case "${reason}" in
 					[ ! "${old_interface_mtu}" = "${new_interface_mtu}" ]; then
 
 
-					# Calc a prefix out of address and subnet mask.
-					new_prefix="$(ipv4_calculate_prefix ${new_ip_address} ${new_subnet_mask})"
+					# Calc the prefix from the subnet mask
+					new_prefix="$(ipv4_netmask2prefix "${new_subnet_mask}")"
 
 					# Set the new ip address.
-					ip_address_add ${interface} ${new_ip_address}/${new_prefix}
-					device_set_up ${interface}
+					ip_address_add "${interface}" "${new_ip_address}/${new_prefix}"
+					device_set_up "${interface}"
 
 
 					# A MTU of 576 is used for X.25 and dialup connections. Some broken DHCP
