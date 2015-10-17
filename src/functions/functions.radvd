@@ -35,8 +35,16 @@ radvd_update() {
 	service_start radvd
 }
 
-radvd_write_config() {
+radvd_clear_config() {
+	log DEBUG "Clearing radv daemon configuration file"
+
 	config_header "radv daemon configuration file" > ${RADVD_CONFIGFILE}
+
+	return ${EXIT_OK}
+}
+
+radvd_write_config() {
+	radvd_clear_config
 
 	# Write the configuration for all zones.
 	local zone
