@@ -399,7 +399,7 @@ ipv6_format() {
 }
 
 ipv6_addr_eq() {
-	assert [[ $# -eq 2 ]]
+	assert [ $# -eq 2 ]
 
 	local addr1="${1}"
 	local addr2="${2}"
@@ -409,7 +409,7 @@ ipv6_addr_eq() {
 }
 
 ipv6_addr_gt() {
-	assert [[ $# -eq 2 ]]
+	assert [ $# -eq 2 ]
 
 	local addr1="${1}"
 	local addr2="${2}"
