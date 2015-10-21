@@ -30,17 +30,26 @@
 
 typedef struct ip_address {
 	int family;
-	__uint128_t addr;
+	struct in6_addr addr;
 	int prefix;
 } ip_address_t;
 
-static __uint128_t prefix_to_bitmask(int prefix) {
-	__uint128_t bitmask = ~0;
+static struct in6_addr prefix_to_bitmask(int prefix) {
+	assert(prefix <= 128);
 
-	for (int i = 0; i < 128 - prefix; i++)
-		bitmask >>= 1;
+	struct in6_addr bitmask;
 
-	return bitmask;	
+	for (int i = 0; i < 16; i++)
+		bitmask.s6_addr[i] = 0;
+
+	for (int i = prefix, j = 0; i > 0; i -= 8, j++) {
+		if (i >= 8)
+			bitmask.s6_addr[j] = 0xff;
+		else
+			bitmask.s6_addr[j] = 0xff << (8 - i);
+	}
+
+	return bitmask;
 }
 
 static int bitmask_to_prefix(uint32_t bits) {
@@ -171,7 +180,7 @@ static int ip_address_eq(const ip_address_t* a1, const ip_address_t* a2) {
 	if (a1->family != a2->family)
 		return 1;
 
-	if (a1->addr != a2->addr)
+	if (a1->addr.s6_addr != a2->addr.s6_addr)
 		return 1;
 
 	if (a1->prefix != a2->prefix)
@@ -184,7 +193,7 @@ static int ip_address_gt(const ip_address_t* a1, const ip_address_t* a2) {
 	if (a1->family != a2->family || a1->prefix != a2->prefix)
 		return -1;
 
-	if (a1->addr > a2->addr)
+	if (a1->addr.s6_addr > a2->addr.s6_addr)
 		return 0;
 
 	return 1;
@@ -193,7 +202,7 @@ static int ip_address_gt(const ip_address_t* a1, const ip_address_t* a2) {
 static int ip_address_format_string(char* buffer, size_t size, const ip_address_t* ip) {
 	assert(ip->family == AF_INET || ip->family == AF_INET6);
 
-	const char* p = inet_ntop(ip->family, &ip->addr, buffer, size);
+	const char* p = inet_ntop(ip->family, &ip->addr.s6_addr, buffer, size);
 	if (!p)
 		return errno;
 
@@ -218,21 +227,25 @@ static void ip_address_print(const ip_address_t* ip) {
 static void ip_address_make_network(ip_address_t* net, const ip_address_t* ip) {
 	assert(ip->prefix >= 0);
 
-	__uint128_t mask = prefix_to_bitmask(ip->prefix);
+	struct in6_addr mask = prefix_to_bitmask(ip->prefix);
 
 	net->family = ip->family;
 	net->prefix = ip->prefix;
-	net->addr = ip->addr & mask;
+
+	for (int i = 0; i < 16; i++)
+		net->addr.s6_addr[i] = ip->addr.s6_addr[i] & mask.s6_addr[i];
 }
 
 static void ip_address_make_broadcast(ip_address_t* broadcast, const ip_address_t* ip) {
 	assert(ip->family == AF_INET && ip->prefix >= 0);
 
-	__uint128_t mask = prefix_to_bitmask(ip->prefix);
+	struct in6_addr mask = prefix_to_bitmask(ip->prefix);
 
 	broadcast->family = ip->family;
 	broadcast->prefix = ip->prefix;
-	broadcast->addr = ip->addr | ~mask;
+
+	for (int i = 0; i < 16; i++)
+		broadcast->addr.s6_addr[i] = ip->addr.s6_addr[i] | ~mask.s6_addr[i];
 }
 
 static int action_check(const int family, const char* address) {
@@ -342,7 +355,13 @@ static int action_prefix(const int family, const char* addr1, const char* addr2)
 	if (r)
 		return r;
 
-	uint32_t mask = ntohl(network.addr ^ broadcast.addr);
+	struct in6_addr netmask;
+	for (int i = 0; i < 16; i++)
+		netmask.s6_addr[i] = network.addr.s6_addr[i] ^ broadcast.addr.s6_addr[i];
+
+	uint32_t mask = netmask.s6_addr[0] << 24 | netmask.s6_addr[1] << 16 |
+		netmask.s6_addr[2] << 8 | netmask.s6_addr[3];
+
 	int prefix = bitmask_to_prefix(~mask);
 	if (prefix < 0)
 		return 1;
