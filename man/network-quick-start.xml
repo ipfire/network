@@ -1,0 +1,155 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network">
+	<refentryinfo>
+		<title>network-quick-start</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-quick-start</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-quick-start</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsect1>
+		<title>Quick Start Guide</title>
+
+		<para>
+			The <command>network</command> is a very powerful command that allows
+			you to configure the entire networking stack. Unfortunately that makes
+			it quite complicated to use as well.
+			This guide tries to be a good starting point to set up basic networking
+			with the <command>network</command> command.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Add an uplink zone</title>
+
+		<para>
+			The first step is to create a new uplink zone with name
+			<replaceable>upl0</replaceable>.
+			This zone will be of the <replaceable>bridge</replaceable> type which is
+			the default for all local networks.
+		</para>
+
+		<programlisting># network zone new <replaceable>upl0</replaceable> <replaceable>bridge</replaceable></programlisting>
+
+		<para>
+			The zone will be created and brought up immediately.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Attaching ports</title>
+
+		<para>
+			To connect the zone to the physical world outside of our box we will need
+			to attach ports to the zone.
+			That is done with a single command.
+			To execute this command, we will need to know which ports are available.
+			One of the easiest way to find out about that is to use the auto-completion
+			feature of the shell like this:
+		</para>
+
+		<programlisting># network zone <replaceable>upl0</replaceable> port attach [TAB] [TAB]</programlisting>
+
+		<para>
+			That will list all not yet attached ports.
+			The following command will actually attach the port
+			(which is <replaceable>p0</replaceable> in this example).
+		</para>
+
+		<programlisting># network zone <replaceable>upl0</replaceable> port attach <replaceable>p0</replaceable></programlisting>
+
+		<para>
+			You can as well get a list of all detected devices,
+			zones and ports by running:
+		</para>
+
+		<programlisting># network device list</programlisting>
+
+		<para>
+			To a zone of the <replaceable>bridge</replaceable> type you may attach more
+			than just one port if you wish so.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>IP connectivity</title>
+
+		<para>
+			After a zone has been created and ports have been attached, you are now
+			able to add IP connectivity.
+			The easiest way to do that is using DHCP which can be enabled by this
+			simple command:
+		</para>
+
+		<programlisting># network zone <replaceable>upl0</replaceable> config new <replaceable>ipv6-dhcp</replaceable></programlisting>
+
+		<para>
+			And for IPv4:
+		</para>
+
+		<programlisting># network zone <replaceable>upl0</replaceable> config new <replaceable>ipv4-dhcp</replaceable></programlisting>
+	</refsect1>
+
+	<refsect1>
+		<title>Debugging</title>
+
+		<para>
+			You may see the current status of the network by running this command:
+		</para>
+
+		<programlisting># network status</programlisting>
+
+		<para>
+			The entire network can be restarted by running:
+		</para>
+
+		<programlisting># network restart</programlisting>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-config</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-device</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-port</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-zone</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>

@@ -335,6 +335,7 @@ MANPAGES = \
 	man/network-dns-server.8 \
 	man/network-port-batman-adv.8 \
 	man/network-port-batman-adv-port.8 \
+	man/network-quick-start.8 \
 	man/network-route.8 \
 	man/network-settings.8 \
 	man/network-zone.8 \
