@@ -460,6 +460,35 @@ zone_status() {
 	fi
 }
 
+zone_identify() {
+	assert [ $# -ge 1 ]
+
+	local zone="${1}"
+	shift
+
+	assert zone_exists "${zone}"
+
+	log INFO "Identifying zone ${zone}"
+	local pids
+
+	local pid
+	local port
+	for port in $(zone_get_ports "${zone}"); do
+		# Identify all the ports
+		port_identify "${port}" --background $@
+
+		# Save the PIDs of the subprocesses
+		list_append pids "$(cmd_background_get_pid)"
+	done
+
+	# Wait until all port_identfy processes have finished
+	for pid in ${pids}; do
+		cmd_background_result "${pid}"
+	done
+
+	return ${EXIT_OK}
+}
+
 zone_get_ports() {
 	local zone=${1}
 
@@ -700,6 +729,9 @@ zone_port_attach() {
 	local hook="$(zone_get_hook "${zone}")"
 	assert isset hook
 
+	# Make the port briefly flash if supported
+	port_identify "${port}" --background
+
 	hook_zone_exec "${hook}" "port_attach" "${zone}" "${port}" "$@"
 	local ret="${?}"
 
@@ -762,6 +794,9 @@ zone_port_detach() {
 
 	local hook=$(zone_get_hook "${zone}")
 	assert isset hook
+
+	# Make the port briefly flash if supported
+	port_identify "${port}" --background
 
 	hook_zone_exec "${hook}" "port_detach" "${zone}" "${port}" "$@"
 	local ret="${?}"

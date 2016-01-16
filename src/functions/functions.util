@@ -383,6 +383,22 @@ cmd_clean_environment() {
 	return ${ret}
 }
 
+# Executes the given command in background
+cmd_background() {
+	cmd_quiet $@ &
+}
+
+# Prints the PID of the process that was started last
+cmd_background_get_pid() {
+	print "${!}"
+}
+
+cmd_background_result() {
+	local pids=$@
+
+	wait ${pids}
+}
+
 # Increase security of the read command
 read() {
 	builtin read -r $@

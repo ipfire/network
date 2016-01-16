@@ -413,3 +413,7 @@ ports_lowest_address() {
 	# Get the first element which is the lowest MAC address
 	list_head ${addresses}
 }
+
+port_identify() {
+	device_identify $@
+}

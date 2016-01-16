@@ -81,6 +81,9 @@ cli_device() {
 				discover)
 					cli_device_discover ${device} $@
 					;;
+				identify)
+					device_identify "${device}" $@
+					;;
 				monitor)
 					cli_device_monitor "${device}" $@
 					;;
@@ -533,7 +536,7 @@ cli_port() {
 		shift 2
 
 		case "${action}" in
-			edit|create|remove|up|down|status)
+			edit|create|remove|up|down|status|identify)
 				port_${action} "${port}" $@
 				;;
 			*)
@@ -591,7 +594,7 @@ cli_zone() {
 			rename)
 				cli_zone_rename "${zone}" $@
 				;;
-			config|disable|down|edit|enable|status|up)
+			config|disable|down|edit|enable|identify|status|up)
 				zone_${action} ${zone} $@
 				;;
 			*)

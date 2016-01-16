@@ -707,6 +707,56 @@ device_discover() {
 	done
 }
 
+device_identify() {
+	assert [ $# -ge 1 ]
+
+	local device="${1}"
+
+	# Flash for ten seconds by default
+	local seconds="10"
+
+	# Run in background?
+	local background="false"
+
+	local arg
+	while read arg; do
+		case "${arg}" in
+			--background)
+				background="true"
+				;;
+			--seconds=*)
+				seconds="$(cli_get_val "${arg}")"
+				;;
+		esac
+	done <<< "$(args $@)"
+
+	assert isinteger seconds
+
+	if ! device_exists "${device}"; then
+		log ERROR "Cannot identify device ${device}: Does not exist"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! device_is_ethernet "${device}"; then
+		log DEBUG "Cannot identify device ${device}: Not an ethernet device"
+		return ${EXIT_NOT_SUPPORTED}
+	fi
+
+	log DEBUG "Identifying device ${device}"
+
+	local command="ethtool --identify ${device} ${seconds}"
+	local ret=0
+
+	if enabled background; then
+		cmd_background "${command}"
+	else
+		cmd_quiet "${command}"
+		ret=$?
+	fi
+
+	return ${ret}
+}
+
 device_has_ip() {
 	local device=${1}
 	local addr=${2}

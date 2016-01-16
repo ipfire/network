@@ -72,7 +72,7 @@ _network_device() {
 _network_device_subcommand() {
 	local words=( $@ )
 
-	local commands="discover monitor status unlock ussd"
+	local commands="discover identify monitor status unlock ussd"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
@@ -247,7 +247,7 @@ _network_port() {
 _network_port_subcommand() {
 	local words=( $@ )
 
-	local commands="create down edit remove status up"
+	local commands="create down edit identify remove status up"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
@@ -322,7 +322,7 @@ _network_zone_subcommand() {
 
 	local words=( $@ )
 
-	local commands="config disable down edit enable port rename status up"
+	local commands="config disable down edit enable identify port rename status up"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
