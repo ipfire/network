@@ -346,7 +346,8 @@ MANPAGES = \
 	man/network-zone-bridge.8 \
 	man/network-zone-config-pppoe-server.8 \
 	man/network-zone-modem.8 \
-	man/network-zone-pppoe.8
+	man/network-zone-pppoe.8 \
+	man/network-zone-wireless.8
 
 MANPAGES_XML  = $(patsubst %.8,%.xml,$(MANPAGES))
 MANPAGES_HTML = $(patsubst %.xml,%.html,$(MANPAGES_XML))

@@ -1,0 +1,168 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-zone-wireless">
+	<refentryinfo>
+		<title>network-zone-wireless</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-zone-wireless</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-zone-wireless</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network zone new <replaceable>ZONE</replaceable> wireless ...</command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			The wireless hook uses a WiFi interface and connects to a
+			wireless access point in station mode.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<para>
+			The following options are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<option>--phy=<replaceable>PHY</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Takes the MAC address or name of the physical layer
+						that is used to create a virtual wireless interface.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--address=<replaceable>ADDRESS</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Define a MAC address that is used for the virtual
+						wireless device. This parameter is optional and
+						a random MAC address will be generated when omitted.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--ssid=<replaceable>SSID</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Connect to this SSID.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--encryption-mode=<replaceable>ALGO</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Sets the encryption mode that is used to connect to the
+						wireless network.
+					</para>
+					<para>
+						<replaceable>ALGO</replaceable> can be one of the following:
+					</para>
+					<itemizedlist>
+						<listitem>
+							<para>
+								<emphasis>WPA2-PSK</emphasis>
+								WPA2 with pre-shared key
+							</para>
+						</listitem>
+						<listitem>
+							<para>
+								<emphasis>WPA2-PSK-SHA256</emphasis>
+								WPA2 with pre-shared key and stronger hash
+							</para>
+						</listitem>
+						<listitem>
+							<para>
+								<emphasis>WPA-PSK</emphasis>
+								WPA with pre-shared key
+							</para>
+						</listitem>
+						<listitem>
+							<para>
+								<emphasis>WPA-PSK-SHA256</emphasis>
+								WPA with pre-shared key and stronger hash
+							</para>
+						</listitem>
+						<listitem>
+							<para>
+								<emphasis>WEP</emphasis>
+								WEP
+							</para>
+						</listitem>
+						<listitem>
+							<para>
+								<emphasis>8021X</emphasis>
+								IEEE802.1X Wireless Enterprise
+							</para>
+						</listitem>
+						<listitem>
+							<para>
+								<emphasis>NONE</emphasis>
+								No encryption
+							</para>
+						</listitem>
+					</itemizedlist>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-zone</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>
