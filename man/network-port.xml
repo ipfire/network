@@ -1,0 +1,212 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-port">
+	<refentryinfo>
+		<title>network-port</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-port</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-port</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network port <arg choice="plain">[new|destroy]</arg> <replaceable>PORT</replaceable> ...</command>
+		</cmdsynopsis>
+
+		<cmdsynopsis>
+			<command>network port <replaceable>PORT</replaceable> <arg choice="plain">command</arg> ...</command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			With help of the <command>port</command> command, you can create, delete,
+			change and view the configuration and status of ports.
+		</para>
+
+		<para>
+			A port is a physical or virtual device that is directly connected
+			to an other network. If connects those and zones together.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Commands</title>
+
+		<para>
+			The following commands are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<command>new <replaceable>HOOK</replaceable> <arg choice="opt" rep="repeat">ARGUMENTS</arg></command>
+				</term>
+
+				<listitem>
+					<para>
+						A new port may be created by the <command>new</command>
+						command.
+					</para>
+					<para>
+						<replaceable>HOOK</replaceable> must be a valid
+						hook which may require more <replaceable>ARGUMENTS</replaceable>.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command>destroy <replaceable>PORT</replaceable></command>
+				</term>
+
+				<listitem>
+					<para>
+						A port can be destroyed with this command.
+					</para>
+					<para>
+						The port is removed from any zones it is attached
+						to and shut down.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+
+		<para>
+			For all other commands, the name of the port needs to be passed first:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<command><replaceable>PORT</replaceable> create</command>
+				</term>
+
+				<listitem>
+					<para>
+						This will create an existing <replaceable>PORT</replaceable>.
+					</para>
+					<para>
+						This does not create a new port. It will just create the (possibly
+						virtual) interface this port (i.e. create an interface for a WiFi
+						module or a VLAN device).
+					</para>
+					<para>
+						The interface is not brought up. Use the <command>up</command> command
+						to do that.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command><replaceable>PORT</replaceable> remove</command>
+				</term>
+
+				<listitem>
+					<para>
+						This will remove an existing <replaceable>PORT</replaceable>.
+					</para>
+					<para>
+						This does not destroy the port. It inverses the operation performed
+						by the <command>create</command> command.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command><replaceable>PORT</replaceable> [up|down]</command>
+				</term>
+
+				<listitem>
+					<para>
+						These commands will bring the port up or down. It has to be
+						created first.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command><replaceable>PORT</replaceable> edit <arg choice="opt" rep="repeat">ARGUMENTS</arg></command>
+				</term>
+
+				<listitem>
+					<para>
+						The <command>edit</command> command can be used to alter
+						the configuration of a port. Consult the documentation of the
+						port hook to find out which <replaceable>ARGUMENTS</replaceable>
+						are supported.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command><replaceable>PORT</replaceable> status</command>
+				</term>
+
+				<listitem>
+					<para>
+						This will show some detailed information about the state
+						if the specified port.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command><replaceable>PORT</replaceable> identify</command>
+				</term>
+
+				<listitem>
+					<para>
+						This command will make the port flash for a few seconds
+						so that you can identify the correct network adapters
+						in the system.
+					</para>
+					<para>
+						This is not supported by all network adapters.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>,
+			</citerefentry>
+			<citerefentry>
+				<refentrytitle>network-zone</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>
