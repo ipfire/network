@@ -333,6 +333,7 @@ MANPAGES = \
 	man/network.8 \
 	man/network-device.8 \
 	man/network-dns-server.8 \
+	man/network-port.8 \
 	man/network-port-batman-adv.8 \
 	man/network-port-batman-adv-port.8 \
 	man/network-quick-start.8 \
@@ -344,6 +345,7 @@ MANPAGES = \
 	man/network-zone-aiccu.8 \
 	man/network-zone-bridge.8 \
 	man/network-zone-config-pppoe-server.8 \
+	man/network-zone-modem.8 \
 	man/network-zone-pppoe.8
 
 MANPAGES_XML  = $(patsubst %.8,%.xml,$(MANPAGES))
