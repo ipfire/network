@@ -217,7 +217,9 @@ hook_status() {
 		device=${dev}
 	done
 
-	if isset device; then
+	if isset device && modem_is_mobile "${device}"; then
+		cli_print_fmt1 2 "Network Registration" \
+			"$(modem_get_network_registration ${device})"
 		cli_print_fmt1 2 "Operator" \
 			"$(modem_get_network_operator ${device})"
 		cli_print_fmt1 2 "SIM IMSI" \

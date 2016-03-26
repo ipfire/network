@@ -384,21 +384,27 @@ modem_get_network_registration() {
 			local stat=${output#*,}
 			case "${stat}" in
 				0)
+					print "Registered"
 					return ${EXIT_REG_NOT_REGISTERED_NOT_SEARCHING}
 					;;
 				1)
+					print "Registered to home network"
 					return ${EXIT_REG_REGISTERED_TO_HOME_NETWORK}
 					;;
 				2)
+					print "Registered, Searching"
 					return ${EXIT_REG_NOT_REGISTERED_SEARCHING}
 					;;
 				3)
+					print "Registration denied"
 					return ${EXIT_REG_REGISTRATION_DENIED}
 					;;
 				5)
+					print "Registered, Roaming"
 					return ${EXIT_REG_REGISTERED_ROAMING}
 					;;
 				*)
+					print "Unknown"
 					return ${EXIT_REG_UNKNOWN}
 					;;
 			esac
