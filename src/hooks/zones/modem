@@ -83,7 +83,9 @@ hook_check_settings() {
 
 	assert isoneof BAUDRATE ${SERIAL_BAUDRATES}
 
-	isset AUTH && assert isoneof AUTH ${MODEM_ALLOWED_AUTH_METHODS}
+	if isset AUTH; then
+		assert isoneof AUTH ${MODEM_ALLOWED_AUTH_METHODS}
+	fi
 }
 
 hook_parse_cmdline() {
