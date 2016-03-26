@@ -225,45 +225,17 @@ cli_device_status_serial() {
 	cli_print_fmt1 1 "Software version" \
 		"$(modem_get_software_version ${device})"
 
-	if modem_is_mobile ${device}; then
+	# Mobile
+	if modem_is_mobile "${device}"; then
 		cli_print_fmt1 1 "IMEI" \
 			"$(modem_get_device_imei ${device})"
-		cli_space
-
-		cli_headline 2 "Network status"
-		modem_sim_status ${device} &>/dev/null
-		local sim_status_code=$?
-
-		local sim_status="unknown"
-		case "${sim_status_code}" in
-			${EXIT_SIM_READY})
-				sim_status="SIM ready"
-				;;
-			${EXIT_SIM_PIN})
-				sim_status="PIN locked"
-				;;
-			${EXIT_SIM_PUK})
-				sim_status="PUK locked"
-				;;
-		esac
-		cli_print_fmt1 2 "SIM status" "${sim_status}"
-
-		if [ ${sim_status_code} -eq ${EXIT_SIM_READY} ]; then
-			cli_print_fmt1 2 "IMSI" \
-				"$(modem_get_sim_imsi ${device})"
-			cli_print_fmt1 2 "Operator" \
-				"$(modem_get_network_operator ${device})"
-			cli_print_fmt1 2 "Mode" \
-				"$(modem_get_network_mode ${device})"
-			cli_print_fmt1 2 "Signal quality" \
-				"$(modem_get_signal_quality ${device}) dBm"
-
-			local ber=$(modem_get_bit_error_rate ${device})
-			isset ber || ber="unknown"
-			cli_print_fmt1 2 "Bit Error Rate" "${ber}"
-		fi
 	fi
 	cli_space
+
+	if modem_is_mobile "${device}"; then
+		modem_mobile_network_status "${device}" 2
+		cli_space
+	fi
 }
 
 cli_device_status_phy() {

@@ -197,8 +197,6 @@ hook_status() {
 	cli_print_fmt1 2 "MTU/MRU" "${MTU}"
 	cli_space
 
-	cli_headline 2 "Carrier network"
-
 	# If the device and the monitor device are both locked,
 	# we cannot show any carrier information.
 	local device dev
@@ -215,19 +213,7 @@ hook_status() {
 	done
 
 	if isset device && modem_is_mobile "${device}"; then
-		cli_print_fmt1 2 "Network Registration" \
-			"$(modem_get_network_registration ${device})"
-		cli_print_fmt1 2 "Operator" \
-			"$(modem_get_network_operator ${device})"
-		cli_print_fmt1 2 "SIM IMSI" \
-			"$(modem_get_sim_imsi ${device})"
-		cli_print_fmt1 2 "Mode" \
-			"$(modem_get_network_mode ${device})"
-		cli_print_fmt1 2 "Signal strength" \
-			"$(modem_get_signal_quality ${device}) dBm"
-		local ber=$(modem_get_bit_error_rate ${device})
-		isset ber || ber="unknown"
-		cli_print_fmt1 2 "Bit error rate" "${ber}"
+		modem_mobile_network_status "${device}" 2
 	else
 		cli_print 2 "Device is locked."
 	fi

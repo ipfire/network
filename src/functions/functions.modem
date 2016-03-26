@@ -348,6 +348,52 @@ modem_is_mobile() {
 	modem_get_device_imei ${device} &>/dev/null
 }
 
+modem_mobile_network_status() {
+	local device="${1}"
+	assert isset device
+
+	local ident="${2}"
+	isset ident || ident=1
+
+	cli_headline "${ident}" "Network status"
+
+	modem_sim_status ${device} &>/dev/null
+	local sim_status_code=$?
+
+	local sim_status="unknown"
+	case "${sim_status_code}" in
+		${EXIT_SIM_READY})
+			sim_status="SIM ready"
+			;;
+		${EXIT_SIM_PIN})
+			sim_status="PIN locked"
+			;;
+		${EXIT_SIM_PUK})
+			sim_status="PUK locked"
+			;;
+	esac
+	cli_print_fmt1 "${ident}" "SIM status" "${sim_status}"
+
+	if [ ${sim_status_code} -eq ${EXIT_SIM_READY} ]; then
+		cli_print_fmt1 "${ident}" "Network Registration" \
+			"$(modem_get_network_registration ${device})"
+		cli_print_fmt1 "${ident}" "Operator" \
+			"$(modem_get_network_operator ${device})"
+		cli_print_fmt1 "${ident}" "Mode" \
+			"$(modem_get_network_mode ${device})"
+		cli_print_fmt1 "${ident}" "IMSI" \
+			"$(modem_get_sim_imsi ${device})"
+		cli_print_fmt1 "${ident}" "Signal quality" \
+			"$(modem_get_signal_quality ${device}) dBm"
+
+		local ber=$(modem_get_bit_error_rate ${device})
+		isset ber || ber="unknown"
+		cli_print_fmt1 "${ident}" "Bit Error Rate" "${ber}"
+	fi
+
+	return ${EXIT_OK}
+}
+
 # Exit codes of the network registration function.
 EXIT_REG_REGISTERED_TO_HOME_NETWORK=0
 EXIT_REG_NOT_REGISTERED_NOT_SEARCHING=1
