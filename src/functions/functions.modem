@@ -51,7 +51,6 @@ modem_chat() {
 	done
 
 	assert serial_exists ${device}
-	assert serial_is_unlocked ${device}
 	assert isset answer
 	assert isset timeout
 
@@ -320,9 +319,6 @@ modem_get_sim_imsi() {
 	local device=${1}
 	assert isset device
 
-	# Make sure the SIM card is unlocked for this operation.
-	assert modem_sim_unlocked ${device}
-
 	modem_chat ${device} "AT+CIMI"
 }
 
@@ -363,9 +359,6 @@ EXIT_REG_UNKNOWN=5
 modem_get_network_registration() {
 	local device=${1}
 	assert isset device
-
-	# Make sure the SIM card is unlocked for this operation.
-	assert modem_sim_unlocked ${device}
 
 	local output
 	output=$(modem_chat ${device} "AT+CREG?")
@@ -423,9 +416,6 @@ modem_set_network_registration() {
 	local device=${1}
 	assert isset device
 
-	# Make sure the SIM card is unlocked for this operation.
-	assert modem_sim_unlocked ${device}
-
 	local mode=${2}
 	assert isset mode
 
@@ -435,9 +425,6 @@ modem_set_network_registration() {
 modem_scan_networks() {
 	local device=${1}
 	assert isset device
-
-	# Make sure the SIM card is unlocked for this operation.
-	assert modem_sim_unlocked ${device}
 
 	local output
 	output=$(modem_chat --timeout=60 ${device} "AT+COPS=?")
@@ -451,9 +438,6 @@ modem_scan_networks() {
 __modem_get_network_operator() {
 	local device=${1}
 	assert isset device
-
-	# Make sure the SIM card is unlocked for this operation.
-	assert modem_sim_unlocked ${device}
 
 	local argument=${2}
 	assert isset argument
@@ -561,9 +545,6 @@ modem_get_network_mode() {
 __modem_get_signal_quality() {
 	local device=${1}
 	assert isset device
-
-	# Make sure the SIM card is unlocked for this operation.
-	assert modem_sim_unlocked ${device}
 
 	local argument=${2}
 	assert isset argument
