@@ -21,12 +21,11 @@
 
 . /usr/lib/network/header-zone
 
-HOOK_SETTINGS="HOOK PHY MAC MTU SSID KEY ENCRYPTION_MODE"
+HOOK_SETTINGS="HOOK PHY MAC SSID KEY ENCRYPTION_MODE"
 
 # Default values
 ADDRESS=$(mac_generate)
 PHY=
-MTU=1500
 SSID=
 KEY=
 ENCRYPTION_MODE=
@@ -38,7 +37,6 @@ hook_check_settings() {
 		assert ismac ADDRESS
 	fi
 
-	assert isinteger MTU
 	assert ismac PHY
 
 	if [ -n "${ENCRYPTION_MODE}" ]; then
