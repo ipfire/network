@@ -496,12 +496,13 @@ modem_get_network_operator() {
 # Exit codes of the network operator mode function.
 EXIT_OPMODE_GSM=0
 EXIT_OPMODE_COMPACTGSM=1
-EXIT_OPMODE_GSM_WITH_EGPRS=2
-EXIT_OPMODE_UMTS=3
+EXIT_OPMODE_UMTS=2
+EXIT_OPMODE_GSM_WITH_EGPRS=3
 EXIT_OPMODE_UMTS_WITH_HSDPA=4
 EXIT_OPMODE_UMTS_WITH_HSUPA=5
 EXIT_OPMODE_UMTS_WITH_HSDPA_AND_HSUPA=6
-EXIT_OPMODE_UNKNOWN=7
+EXIT_OPMODE_LTE=7
+EXIT_OPMODE_UNKNOWN=8
 
 modem_get_network_mode() {
 	local device=${1}
@@ -525,16 +526,24 @@ modem_get_network_mode() {
 			return ${EXIT_OPMODE_UMTS}
 			;;
 		3)
-			print "UMTS with HSDPA"
-			return ${EXIT_OPMODE_UMTS_WITH_HSDPA}
+			print "EDGE (GSM+EGPRS)"
+			return ${EXIT_OPMODE_GSM_WITH_EGPRS}
 			;;
 		4)
-			print "UMTS with HSUPA"
-			return ${EXIT_OPMODE_UMTS_WITH_HSUPA}
+			print "UMTS +HSDPA"
+			return ${EXIT_OPMODE_UMTS_WITH_HSDPA}
 			;;
 		5)
-			print "UMTS with HSDPA and HSUPA"
+			print "UMTS +HSUPA"
+			return ${EXIT_OPMODE_UMTS_WITH_HSUPA}
+			;;
+		6)
+			print "UMTS +HSDPA +HSUPA"
 			return ${EXIT_OPMODE_UMTS_WITH_HSDPA_AND_HSUPA}
+			;;
+		7)
+			print "LTE"
+			return ${EXIT_OPMODE_LTE}
 			;;
 		*)
 			print "Unknown"
