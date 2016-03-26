@@ -113,12 +113,6 @@ println "OK" "${at_dial}${PHONE_NUMBER}"
 # Wait for the CONNECT string.
 println "CONNECT" "\\c"
 
-# If login credentials were set, we send them.
-if isset USERNAME && isset PASSWORD; then
-	println "ogin:--ogin:" "${USERNAME}"
-	println "assword:" "${PASSWORD}"
-fi
-
 # Exec the chat command which will start talking to the modem.
 log DEBUG "Exec'ing chat with command line: ${commandline}"
 exec chat ${commandline}
