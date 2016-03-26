@@ -206,6 +206,7 @@ hook_status() {
 		if ! serial_exists ${dev}; then
 			continue
 		fi
+
 		if serial_is_locked ${dev}; then
 			continue
 		fi
