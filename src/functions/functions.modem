@@ -557,7 +557,7 @@ __modem_get_signal_quality() {
 
 	case "${output}" in
 		*,*)
-			local rssi=${output%,*}
+			local asu=${output%,*}
 			local ber=${output#*,}
 
 			print "${!argument}"
@@ -571,24 +571,86 @@ __modem_get_signal_quality() {
 	return ${EXIT_ERROR}
 }
 
+__modem_rssi_to_dbm() {
+	local rssi="${1}"
+
+	# 99 indicates unknown signal strength
+	[ ${rssi} -eq 99 ] && return ${EXIT_UNKNOWN}
+
+	print "$(( ${rssi} * 2 - 113 ))"
+	return ${EXIT_OK}
+}
+
+__modem_rscp_to_dbm() {
+	local rscp="${1}"
+
+	# 255 indicates unknown signal strength
+	[ ${rscp} -eq 255 ] && return ${EXIT_UNKNOWN}
+
+	print "$(( ${rscp} - 116 ))"
+	return ${EXIT_OK}
+}
+
+__modem_rsrp_to_dbm() {
+	local rsrp="${1}"
+
+	case "${rsrp}" in
+		0)
+			print "< -140"
+			;;
+		97)
+			print "> -44"
+			;;
+		*)
+			# This is only an approximation since RSRP references
+			# to a range of +/-1dbm
+			print "$(( ${rsrp} - 141 ))"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
 modem_get_signal_quality() {
 	local device=${1}
 	assert isset device
 
-	local rssi
-	rssi=$(__modem_get_signal_quality ${device} rssi)
+	# Arbritrary Strength Unit
+	local asu
+	asu=$(__modem_get_signal_quality ${device} asu)
 	assert_check_retval $?
 
-	isset rssi || return ${EXIT_ERROR}
+	isset asu || return ${EXIT_ERROR}
 
-	# 99 indicates an unknown signal strength.
-	[ ${rssi} -eq 99 ] && return ${EXIT_UNKNOWN}
+	local network_mode="$(modem_get_network_mode ${device} &>/dev/null; echo $?)"
 
-	local dbm=$(( ${rssi} * 2 ))
-	dbm=$(( ${dbm} - 113 ))
+	local ret
+	case "${network_mode}" in
+		# GSM
+		${EXIT_OPMODE_GSM}|${EXIT_OPMODE_COMPACTGSM}|${GSM_WITH_EGPRS})
+			__modem_rssi_to_dbm "${asu}"
+			ret=${?}
+			;;
 
-	print "%d" "${dbm}"
-	return ${EXIT_OK}
+		# UMTS
+		${EXIT_OPMODE_UMTS}|${EXIT_OPMODE_UMTS_WITH_HSDPA}|${EXIT_OPMODE_UMTS_WITH_HSUPA}|${EXIT_OPMODE_UMTS_WITH_HSDPA_AND_HSUPA})
+			__modem_rscp_to_dbm "${asu}"
+			ret=${?}
+			;;
+
+		# LTE
+		${EXIT_OPMODE_LTE})
+			__modem_rsrp_to_dbm "${asu}"
+			ret=${?}
+			;;
+
+		# unknown
+		*)
+			ret=${EXIT_ERROR}
+			;;
+	esac
+
+	return ${ret}
 }
 
 modem_get_bit_error_rate() {
