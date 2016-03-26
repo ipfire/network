@@ -197,12 +197,6 @@ hook_status() {
 	cli_print_fmt1 2 "MTU/MRU" "${MTU}"
 	cli_space
 
-	# Exit if zone is down
-	if ! zone_is_up ${zone}; then
-		echo # Empty line
-		exit ${EXIT_ERROR}
-	fi
-
 	cli_headline 2 "Carrier network"
 
 	# If the device and the monitor device are both locked,
@@ -237,6 +231,12 @@ hook_status() {
 		cli_print 2 "Device is locked."
 	fi
 	cli_space
+
+	# Exit if zone is down
+	if ! zone_is_up ${zone}; then
+		echo # Empty line
+		exit ${EXIT_ERROR}
+	fi
 
 	# XXX display time since connection started
 
