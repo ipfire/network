@@ -395,8 +395,11 @@ route_entry_add() {
 		ipv4)
 			command="ip route add"
 			;;
+		*)
+			log ERROR "Could not detect protocol for ${network}"
+			return ${EXIT_ERROR}
+			;;
 	esac
-	assert isset command
 
 	# Add type.
 	list_append command "${type}"
