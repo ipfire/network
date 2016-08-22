@@ -21,7 +21,7 @@
 AC_PREREQ([2.64])
 
 AC_INIT([network],
-	[007],
+	[008],
 	[info@ipfire.org],
 	[network],
 	[http://www.ipfire.org/])
