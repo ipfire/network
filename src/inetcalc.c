@@ -180,7 +180,7 @@ static int ip_address_eq(const ip_address_t* a1, const ip_address_t* a2) {
 	if (a1->family != a2->family)
 		return 1;
 
-	if (a1->addr.s6_addr != a2->addr.s6_addr)
+	if (!IN6_ARE_ADDR_EQUAL(&a1->addr, &a2->addr))
 		return 1;
 
 	if (a1->prefix != a2->prefix)
