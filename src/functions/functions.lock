@@ -40,7 +40,12 @@ lock_acquire() {
 		sleep 0.25
 	done
 
-	assert ${free} "Could not acquire lock '${lockfile}'"
+	if ! ${free}; then
+		log ERROR "Could not acquire lock '${lockfile}'"
+		return ${EXIT_ERROR}
+	fi
+
+	assert [ ! -e "${lockfile}" ]
 
 	# Write out pid to the lockfile and make sure that
 	# nobody else can access it.

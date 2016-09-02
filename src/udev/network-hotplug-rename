@@ -45,7 +45,7 @@ log DEBUG "Called for interface '${INTERFACE}'."
 device_exists ${INTERFACE} || exit ${EXIT_ERROR}
 
 # Acquiring lock for this operation.
-lock_acquire ${LOCKFILE}
+lock_acquire ${LOCKFILE} || exit ${EXIT_ERROR}
 
 # Check if the device is already in use and
 # prevent the script to touch it in any way.
