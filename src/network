@@ -45,7 +45,7 @@ cli_settings() {
 	fi
 
 	if [ -n "${1}" ]; then
-		settings_set $@
+		network_settings_set $@
 		network_settings_write
 	else
 		network_settings_print

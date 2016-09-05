@@ -259,6 +259,30 @@ network_settings_write() {
 	dns_generate_resolvconf
 }
 
+network_settings_set() {
+	# Save all settings first
+	settings_set $@ || return $?
+
+	# Process any settings that require immediate actin
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			*=*)
+				local key=$(cli_get_key ${1})
+				local val=$(cli_get_val ${1})
+
+				case "${key}" in
+					WIRELESS_REGULATORY_DOMAIN)
+						wireless_set_reg_domain "${val}"
+						;;
+				esac
+				;;
+		esac
+		shift
+	done
+
+	return ${EXIT_OK}
+}
+
 network_settings_print() {
 	settings_print ${NETWORK_SETTINGS_FILE_PARAMS}
 }
