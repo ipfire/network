@@ -257,15 +257,15 @@ network_settings_write() {
 }
 
 network_settings_set() {
-	# Save all settings first
-	settings_set $@ || return $?
-
 	# Process any settings that require immediate actin
 	while [ $# -gt 0 ]; do
-		case "${1}" in
+		local arg=${1}
+		shift
+
+		case "${arg}" in
 			*=*)
-				local key=$(cli_get_key ${1})
-				local val=$(cli_get_val ${1})
+				local key=$(cli_get_key ${arg})
+				local val=$(cli_get_val ${arg})
 
 				case "${key}" in
 					DNS_RANDOMIZE|DNS_SEARCH_DOMAIN|DNS_USE_LOCAL_RESOLVER)
@@ -273,12 +273,21 @@ network_settings_set() {
 						;;
 
 					WIRELESS_REGULATORY_DOMAIN)
-						wireless_set_reg_domain "${val}"
+						if ! wireless_valid_reg_domain "${val}"; then
+							warning "Ignoring invalid wireless regulatory domain: ${val}"
+							continue
+						fi
+
+						if ! wireless_set_reg_domain "${val}"; then
+							error "Error setting wireless regulatory domain: ${val}"
+						fi
 						;;
 				esac
 				;;
 		esac
-		shift
+
+		# Save setting
+		settings_set ${arg}
 	done
 
 	return ${EXIT_OK}

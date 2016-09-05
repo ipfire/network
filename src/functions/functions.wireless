@@ -23,6 +23,8 @@
 WIRELESS_REGULATORY_DOMAIN="00"
 NETWORK_SETTINGS_FILE_PARAMS="${NETWORK_SETTINGS_FILE_PARAMS} WIRELESS_REGULATORY_DOMAIN"
 
+WIRELESS_REGULATORY_DOMAIN_DATABASE="/usr/lib/crda/regulatory.bin"
+
 wireless_create() {
 	local device=${1}
 	assert isset device
@@ -130,7 +132,11 @@ wireless_set_reg_domain() {
 		shift
 	done
 
-	assert isset country_code
+	# Check if configuration value is valid
+	if ! wireless_valid_reg_domain "${country_code}"; then
+		log ERROR "Invalid wireless regulatory domain: ${country_code}"
+		return ${EXIT_ERROR}
+	fi
 
 	# Before the wireless reg domain is set, it helps to reset to 00 first.
 	if enabled reset; then
@@ -139,6 +145,37 @@ wireless_set_reg_domain() {
 
 	log INFO "Setting wireless regulatory domain country to '${country_code}'"
 	iw reg set "${country_code}"
+}
+
+wireless_valid_reg_domain() {
+	local country_code="${1}"
+
+	# Empty country codes are invalid
+	isset country_code || return ${EXIT_FALSE}
+
+	local valid_country_codes="$(wireless_list_reg_domains)"
+
+	if list_match "${country_code}" ${valid_country_codes}; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
+wireless_list_reg_domains() {
+	if [ ! -r "${WIRELESS_REGULATORY_DOMAIN_DATABASE}" ]; then
+		log ERROR "Could not read ${WIRELESS_REGULATORY_DOMAIN_DATABASE}"
+		return ${EXIT_ERROR}
+	fi
+
+	local line
+	while read line; do
+		# Check if line starts with "country"
+		[ "${line:0:7}" = "country" ] || continue
+
+		# Print country code
+		print "${line:8:2}"
+	done <<< "$(regdbdump ${WIRELESS_REGULATORY_DOMAIN_DATABASE})"
 }
 
 wireless_channel_to_frequency() {
