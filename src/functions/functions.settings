@@ -254,9 +254,6 @@ network_settings_read() {
 
 network_settings_write() {
 	settings_write "${NETWORK_SETTINGS_FILE}" ${NETWORK_SETTINGS_FILE_PARAMS}
-
-	# Update DNS configuration.
-	dns_generate_resolvconf
 }
 
 network_settings_set() {
@@ -271,6 +268,10 @@ network_settings_set() {
 				local val=$(cli_get_val ${1})
 
 				case "${key}" in
+					DNS_RANDOMIZE|DNS_SEARCH_DOMAIN|DNS_USE_LOCAL_RESOLVER)
+						dns_generate_resolvconf
+						;;
+
 					WIRELESS_REGULATORY_DOMAIN)
 						wireless_set_reg_domain "${val}"
 						;;
