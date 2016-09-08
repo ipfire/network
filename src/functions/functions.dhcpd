@@ -755,6 +755,12 @@ dhcpd_subnet_range_new() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Check if range already exists
+	if dhcpd_subnet_range_exists ${proto} ${subnet} ${range}; then
+		error "DHCP subnet range ${range} already exists"
+		return ${EXIT_ERROR}
+	fi
+
 	# Write the configuration to file.
 	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} "${START}-${END}")
 	assert isset file
