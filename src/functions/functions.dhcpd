@@ -400,12 +400,33 @@ dhcpd_global_options_read() {
 	fi
 }
 
-dhcpd_subnet_path() {
-	local proto=${1}
-	assert isset proto
+dhcpd_subnet_escape() {
+	assert [ $# -eq 1 ]
 
-	local subnet_id=${2}
-	assert isset subnet_id
+	local subnet="${1}"
+
+	# Escape any slashes
+	subnet="${subnet//\//-}"
+
+	print "${subnet}"
+}
+
+dhcpd_subnet_unescape() {
+	assert [ $# -eq 1 ]
+
+	local subnet="${1}"
+
+	# Unescape any slashes
+	subnet="${subnet//-/\/}"
+
+	print "${subnet}"
+}
+
+dhcpd_subnet_path() {
+	assert [ $# -ge 1 -a $# -le 2 ]
+
+	local proto=${1}
+	local subnet=${2}
 
 	local path
 	case "${proto}" in
@@ -418,7 +439,18 @@ dhcpd_subnet_path() {
 	esac
 	assert isset path
 
-	print "${path}/${DHCPD_SUBNET_PREFIX}${subnet_id}"
+	if ! isset subnet; then
+		print "${path}"
+		return ${EXIT_OK}
+	fi
+
+	# Escape subnet
+	subnet="$(dhcpd_subnet_escape ${subnet})"
+
+	# Add path prefix
+	subnet="${DHCPD_SUBNET_PREFIX}${subnet}"
+
+	print "${path}/${subnet}"
 	return ${EXIT_OK}
 }
 
@@ -426,10 +458,10 @@ dhcpd_subnet_exists() {
 	local proto=${1}
 	assert isset proto
 
-	local subnet_id=${2}
-	assert isset subnet_id
+	local subnet=${2}
+	assert isset subnet
 
-	local path=$(dhcpd_subnet_path ${proto} ${subnet_id})
+	local path=$(dhcpd_subnet_path ${proto} ${subnet})
 	assert isset path
 
 	[ -d "${path}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
@@ -445,9 +477,9 @@ dhcpd_subnet_match() {
 	local settings=$(dhcpd_subnet_settings ${proto})
 	assert isset settings
 
-	local subnet_id ${settings}
-	for subnet_id in $(dhcpd_subnet_list ${proto}); do
-		dhcpd_subnet_read ${proto} ${subnet_id}
+	local _subnet ${settings}
+	for _subnet in $(dhcpd_subnet_list ${proto}); do
+		dhcpd_subnet_read ${proto} ${_subnet}
 
 		${proto}_addr_eq "${ADDRESS}/${PREFIX}" "${subnet}" \
 			&& return ${EXIT_TRUE}
@@ -456,21 +488,8 @@ dhcpd_subnet_match() {
 	return ${EXIT_FALSE}
 }
 
-dhcpd_new_subnet_id() {
-	local proto=${1}
-	assert isset proto
-
-	local id=1
-	while :; do
-		if ! dhcpd_subnet_exists ${proto} ${id}; then
-			print "${id}"
-			return ${EXIT_OK}
-		fi
-
-		id=$(( ${id} + 1 ))
-	done
-
-	return ${EXIT_ERROR}
+dhcpd_subnet_exists() {
+	dhcpd_subnet_match $@
 }
 
 dhcpd_subnet_new() {
@@ -478,35 +497,21 @@ dhcpd_subnet_new() {
 	assert isset proto
 	shift
 
-	# Allocate a new subnet id.
-	local subnet_id=$(dhcpd_new_subnet_id ${proto})
-	assert isinteger subnet_id
-
-	# Create directory structure.
-	local path=$(dhcpd_subnet_path ${proto} ${subnet_id})
-	assert isset path
-
-	mkdir -p ${path}
-	touch ${path}/settings
-
-	dhcpd_subnet_edit ${proto} ${subnet_id} $@
-	local ret=$?
-
-	# Remove the new subnet, when the edit method returned
-	# an error.
-	if [ ${ret} -ne ${EXIT_OK} ]; then
-		dhcpd_subnet_remove ${proto} ${subnet_id}
-	fi
+	dhcpd_subnet_edit ${proto} "new" $@
 }
 
 dhcpd_subnet_edit() {
-	local proto=${1}
-	assert isset proto
-	shift
+	assert [ $# -ge 2 ]
 
-	local id=${1}
-	assert isset id
-	shift
+	local proto=${1}
+	local subnet=${2}
+	shift 2
+
+	local mode="edit"
+	if [ "${subnet}" = "new" ]; then
+		mode="new"
+		subnet=""
+	fi
 
 	local settings
 	case "${proto}" in
@@ -520,28 +525,24 @@ dhcpd_subnet_edit() {
 	assert isset settings
 	local ${settings}
 
-	# Read current settings.
-	dhcpd_subnet_read ${proto} ${id} || :
+	# Read current settings
+	if [ "${mode}" = "edit" ]; then
+		dhcpd_subnet_read ${proto} ${subnet}
+	fi
 
 	while [ $# -gt 0 ]; do
-		case "${proto},${1}" in
+		case "${proto},${mode},${1}" in
 			# Common options
-			ipv[64],--address=*)
-				ADDRESS=$(cli_get_val ${1})
+			ipv6,new,*:*/*|ipv4,new,*.*.*.*/*)
+				local subnet="$(cli_get_val ${1})"
 
-				local prefix=$(ip_get_prefix ${ADDRESS})
-				if isset prefix; then
-					PREFIX=${prefix}
-					ADDRESS=$(ip_split_prefix ${ADDRESS})
-				fi
-				;;
-			ipv[64],--prefix=*)
-				PREFIX=$(cli_get_val ${1})
+				ADDRESS="$(ip_split_prefix ${subnet})"
+				PREFIX="$(ip_get_prefix ${subnet})"
 				;;
 
 			# IPv6 options
 
-			ipv6,--delegated-prefix=*)
+			ipv6,*,--delegated-prefix=*)
 				local subnet="$(cli_get_val "${1}")"
 				if [[ -n "${subnet}" ]]; then
 					local delegated_prefix_first="${subnet%-*}"
@@ -578,7 +579,7 @@ dhcpd_subnet_edit() {
 				fi
 				;;
 
-			ipv6,--delegated-prefix-size=*)
+			ipv6,*,--delegated-prefix-size=*)
 				local prefix_size="$(cli_get_val "${1}")"
 
 				if ipv6_prefix_size_is_valid_for_delegation "${prefix_size}"; then
@@ -589,11 +590,13 @@ dhcpd_subnet_edit() {
 				fi
 				;;
 
+
 			# IPv4 options
 
-			ipv4,--routers=*)
+			ipv4,*,--routers=*)
 				ROUTERS=$(cli_get_val ${1})
 				;;
+
 			*)
 				error "Unknown argument: ${1}"
 				return ${EXIT_ERROR}
@@ -602,45 +605,33 @@ dhcpd_subnet_edit() {
 		shift
 	done
 
-	case "${proto}" in
-		ipv6)
-			if ! ipv6_is_valid ${ADDRESS}; then
-				error "'${ADDRESS}' is not a valid IPv6 address."
-				return ${EXIT_ERROR}
-			fi
+	if ! ${proto}_is_valid ${ADDRESS} || ! ${proto}_prefix_is_valid ${PREFIX}; then
+		error "Invalid subnet: ${ADDRESS}/${PREFIX}"
+		return ${EXIT_ERROR}
+	fi
 
-			if ! ipv6_prefix_is_valid ${PREFIX}; then
-				error "'${PREFIX}' is not  a valid IPv6 prefix."
-				return ${EXIT_ERROR}
-			fi
-			;;
-		ipv4)
-			if ! ipv4_is_valid ${ADDRESS}; then
-				error "'${ADDRESS}' is not a valid IPv4 address."
-				return ${EXIT_ERROR}
-			fi
+	# XXX Check for subnet collisions!
 
-			if ! ipv4_prefix_is_valid ${PREFIX}; then
-				error "'${PREFIX}' is not a valid IPv4 prefix."
+	case "${mode}" in
+		new)
+			if dhcpd_subnet_exists ${proto} "${ADDRESS}/${PREFIX}"; then
+				error "DHCP subnet configuration already exists for subnet ${ADDRESS}/${PREFIX}"
 				return ${EXIT_ERROR}
 			fi
 			;;
 	esac
 
-	# XXX Check for subnet collisions!
-
-	local file="$(dhcpd_subnet_path ${proto} ${id})/settings"
+	local file="$(dhcpd_subnet_path ${proto} "${ADDRESS}/${PREFIX}")/settings"
 	settings_write ${file} ${settings}
 }
 
 dhcpd_subnet_remove() {
+	assert [ $# -eq 2 ]
+
 	local proto=${1}
-	assert isset proto
+	local subnet=${2}
 
-	local id=${2}
-	assert isset id
-
-	local path=$(dhcpd_subnet_path ${proto} ${id})
+	local path=$(dhcpd_subnet_path ${proto} ${subnet})
 	assert isset path
 
 	# Remove everything of this subnet.
@@ -651,8 +642,7 @@ dhcpd_subnet_list() {
 	local proto=${1}
 	assert isset proto
 
-	local path=$(dhcpd_subnet_path ${proto} 0)
-	path=$(dirname ${path})
+	local path=$(dhcpd_subnet_path ${proto})
 
 	# Return an error of the directory does not exist.
 	[ -d "${path}" ] || return ${EXIT_ERROR}
@@ -662,7 +652,10 @@ dhcpd_subnet_list() {
 		[ -d "${p}" ] || continue
 
 		p=$(basename ${p})
-		print "${p:${#DHCPD_SUBNET_PREFIX}}"
+		p="${p:${#DHCPD_SUBNET_PREFIX}}"
+
+		# Return unescaped subnet
+		dhcpd_subnet_unescape "${p}"
 	done
 }
 
@@ -670,24 +663,21 @@ dhcpd_subnet_read() {
 	local proto=${1}
 	assert isset proto
 
-	local id=${2}
-	assert isset id
+	local subnet=${2}
+	assert isset subnet
 
-	local file="$(dhcpd_subnet_path ${proto} ${id})/settings"
+	local file="$(dhcpd_subnet_path ${proto} ${subnet})/settings"
 	settings_read ${file}
 }
 
 dhcpd_subnet_range_path() {
+	assert [ $# -eq 3 ]
+
 	local proto=${1}
-	assert isset proto
-
-	local subnet_id=${2}
-	assert isinteger subnet_id
-
+	local subnet=${2}
 	local range_id=${3}
-	assert isinteger range_id
 
-	print "$(dhcpd_subnet_path ${proto} ${subnet_id})/${DHCPD_SUBNET_RANGE_PREFIX}${range_id}"
+	print "$(dhcpd_subnet_path ${proto} ${subnet})/${DHCPD_SUBNET_RANGE_PREFIX}${range_id}"
 	return ${EXIT_OK}
 }
 
@@ -710,12 +700,12 @@ dhcpd_subnet_new_range_id() {
 	local proto=${1}
 	assert isset proto
 
-	local subnet_id=${2}
-	assert isset subnet_id
+	local subnet=${2}
+	assert isset subnet
 
 	local id=1 path
 	while :; do
-		path=$(dhcpd_subnet_range_path ${proto} ${subnet_id} ${id})
+		path=$(dhcpd_subnet_range_path ${proto} ${subnet} ${id})
 		if [ ! -f "${path}" ]; then
 			print "${id}"
 			return ${EXIT_OK}
@@ -732,25 +722,25 @@ dhcpd_subnet_range_new() {
 	assert isset proto
 	shift
 
-	local subnet_id=${1}
-	assert isset subnet_id
+	local subnet=${1}
+	assert isset subnet
 	shift
 
 	# Allocate a new range id.
-	local range_id=$(dhcpd_subnet_new_range_id ${proto} ${subnet_id})
+	local range_id=$(dhcpd_subnet_new_range_id ${proto} ${subnet})
 	assert isinteger range_id
 
-	local path=$(dhcpd_subnet_range_path ${proto} ${subnet_id} ${range_id})
+	local path=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range_id})
 	assert isset path
 
 	# Create file (as a placeholder).
 	touch ${path}
 
-	dhcpd_subnet_range_edit ${proto} ${subnet_id} ${range_id} $@
+	dhcpd_subnet_range_edit ${proto} ${subnet} ${range_id} $@
 	local ret=$?
 
 	if [ ${ret} -ne ${EXIT_OK} ]; then
-		dhcpd_subnet_range_remove ${proto} ${subnet_id} ${range_id}
+		dhcpd_subnet_range_remove ${proto} ${subnet} ${range_id}
 		return ${EXIT_ERROR}
 	fi
 
@@ -762,8 +752,8 @@ dhcpd_subnet_range_edit() {
 	assert isset proto
 	shift
 
-	local subnet_id=${1}
-	assert isset subnet_id
+	local subnet=${1}
+	assert isset subnet
 	shift
 
 	local range_id=${1}
@@ -834,7 +824,7 @@ dhcpd_subnet_range_edit() {
 	fi
 
 	# Write the configuration to file.
-	local file=$(dhcpd_subnet_range_path ${proto} ${subnet_id} ${range_id})
+	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range_id})
 	assert isset file
 
 	settings_write ${file} ${settings}
@@ -851,10 +841,10 @@ dhcpd_subnet_range_list() {
 	local proto=${1}
 	assert isset proto
 
-	local subnet_id=${2}
-	assert isset subnet_id
+	local subnet=${2}
+	assert isset subnet
 
-	local path=$(dhcpd_subnet_range_path ${proto} ${subnet_id} 0)
+	local path=$(dhcpd_subnet_range_path ${proto} ${subnet} 0)
 	path=$(dirname ${path})
 
 	local p
@@ -872,13 +862,13 @@ dhcpd_subnet_range_read() {
 	local proto=${1}
 	assert isset proto
 
-	local subnet_id=${2}
-	assert isset subnet_id
+	local subnet=${2}
+	assert isset subnet
 
 	local range_id=${3}
 	assert isset range_id
 
-	local file=$(dhcpd_subnet_range_path ${proto} ${subnet_id} ${range_id})
+	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range_id})
 	settings_read ${file}
 }
 
@@ -924,10 +914,10 @@ dhcpd_subnet_options_read() {
 	local proto=${1}
 	assert isset proto
 
-	local subnet_id=${2}
-	assert isset subnet_id
+	local subnet=${2}
+	assert isset subnet
 
-	local options_file=$(dhcpd_subnet_options_file ${proto} ${subnet_id})
+	local options_file=$(dhcpd_subnet_options_file ${proto} ${subnet})
 	local options_list=$(dhcpd_subnet_options_list ${proto})
 
 	_dhcpd_read_options ${options_file} ${options_list}
@@ -998,14 +988,11 @@ _dhcpd_read_options() {
 }
 
 _dhcpd_write_subnet() {
+	assert [ $# -eq 3 ]
+
 	local proto=${1}
-	assert isset proto
-
-	local subnet_id=${2}
-	assert isset subnet_id
-
+	local subnet=${2}
 	local file=${3}
-	assert isset file
 
 	# Check which settings we do expect.
 	local settings
@@ -1021,9 +1008,9 @@ _dhcpd_write_subnet() {
 	local ${settings}
 
 	# Read configuration settings.
-	dhcpd_subnet_read ${proto} ${subnet_id}
+	dhcpd_subnet_read ${proto} ${subnet}
 
-	print "# Subnet declaration for subnet id ${subnet_id}." >> ${file}
+	print "# Subnet declaration" >> ${file}
 	case "${proto}" in
 		ipv6)
 			print "subnet6 ${ADDRESS}/${PREFIX} {" >> ${file}
@@ -1035,17 +1022,17 @@ _dhcpd_write_subnet() {
 	esac
 
 	# Add options.
-	_dhcpd_write_subnet_options ${proto} ${subnet_id} ${file}
+	_dhcpd_write_subnet_options ${proto} ${subnet} ${file}
 
 	# Prefix Delegation for IPv6
 	if [[ "${proto}" = "ipv6" ]]; then
-		_dhcpd_write_subnet_pd "${subnet_id}" "${file}"
+		_dhcpd_write_subnet_pd "${subnet}" "${file}"
 	fi
 
 	# Add the ranges.
 	local range_id
-	for range_id in $(dhcpd_subnet_range_list ${proto} ${subnet_id} ${range_id}); do
-		_dhcpd_write_subnet_range ${proto} ${subnet_id} ${range_id} ${file}
+	for range_id in $(dhcpd_subnet_range_list ${proto} ${subnet} ${range_id}); do
+		_dhcpd_write_subnet_range ${proto} ${subnet} ${range_id} ${file}
 	done
 
 	# End this subnet block.
@@ -1055,17 +1042,14 @@ _dhcpd_write_subnet() {
 }
 
 _dhcpd_write_subnet_options() {
+	assert [ $# -eq 3 ]
+
 	local proto=${1}
-	assert isset proto
-
-	local subnet_id=${2}
-	assert isset subnet_id
-
+	local subnet=${2}
 	local file=${3}
-	assert isset file
 
 	local settings
-	local options_file="$(dhcpd_subnet_path ${proto} ${subnet_id})/options"
+	local options_file="$(dhcpd_subnet_path ${proto} ${subnet})/options"
 	local options_list
 	case "${proto}" in
 		ipv6)
@@ -1081,7 +1065,7 @@ _dhcpd_write_subnet_options() {
 	assert isset options_list
 
 	local ${settings}
-	dhcpd_subnet_read ${proto} ${subnet_id}
+	dhcpd_subnet_read ${proto} ${subnet}
 
 	local -A options
 	_dhcpd_read_options ${options_file} ${options_list}
@@ -1098,11 +1082,10 @@ _dhcpd_write_subnet_pd() {
 	# Nothing to do if prefix delegation is not enabled
 	enabled PREFIX_DELEGATION || return ${EXIT_OK}
 
-	local subnet_id="${1}"
-	assert isset subnet_id
+	assert [ $# -eq 2 ]
 
+	local subnet="${1}"
 	local file="${2}"
-	assert isset file
 
 	local prefix_size="${DELEGATED_PREFIX_SIZE}"
 	isset prefix_size || prefix_size="${DHCP_DEFAULT_DELEGATED_PREFIX_SIZE}"
@@ -1119,18 +1102,15 @@ _dhcpd_write_subnet_pd() {
 }
 
 _dhcpd_search_routers() {
+	assert [ $# -eq 2 ]
+
 	local proto=${1}
-	assert isset proto
+	local subnet=${2}
 
 	# Do nothing for IPv6 (yet?).
 	[ "${proto}" = "ipv6" ] && return ${EXIT_OK}
 
-	local subnet=${2}
-	assert isset subnet
-
-	local routers
-
-	local zone addr
+	local routers zone addr
 	for zone in $(zones_get_all); do
 		addr="$(db_get "${zone}/${proto}/local-ip-address")"
 		isset addr || continue
@@ -1144,24 +1124,19 @@ _dhcpd_search_routers() {
 }
 
 _dhcpd_write_subnet_range() {
+	assert [ $# -eq 4 ]
+
 	local proto=${1}
-	assert isset proto
-
-	local subnet_id=${2}
-	assert isset subnet_id
-
+	local subnet=${2}
 	local range_id=${3}
-	assert isset range_id
-
 	local file=${4}
-	assert isset file
 
 	local settings=$(dhcpd_subnet_range_settings ${proto})
 	assert isset settings
 
 	# Read the configuration settings.
 	local ${settings}
-	dhcpd_subnet_range_read ${proto} ${subnet_id} ${range_id}
+	dhcpd_subnet_range_read ${proto} ${subnet} ${range_id}
 
 	# Print the range line.
 	print "	# Range id ${range_id}." >> ${file}
@@ -1180,8 +1155,9 @@ _dhcpd_write_subnet_range() {
 }
 
 dhcpd_write_config() {
+	assert [ $# -eq 1 ]
+
 	local proto=${1}
-	assert isset proto
 
 	local file options_list
 	case "${proto}" in
@@ -1249,9 +1225,9 @@ dhcpd_write_config() {
 	_dhcpd_write_options ${proto} ${file} ${options_list}
 
 	# Add all subnet declarations.
-	local subnet_id
-	for subnet_id in $(dhcpd_subnet_list ${proto}); do
-		_dhcpd_write_subnet ${proto} ${subnet_id} ${file}
+	local subnet
+	for subnet in $(dhcpd_subnet_list ${proto}); do
+		_dhcpd_write_subnet ${proto} ${subnet} ${file}
 	done
 
 	return ${EXIT_OK}

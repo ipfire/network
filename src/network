@@ -1015,8 +1015,7 @@ cli_dhcpd_subnet_show() {
 	# Read in configuration settings.
 	dhcpd_subnet_read ${proto} ${subnet_id}
 
-	cli_headline $(( ${level} + 1 )) \
-		"DHCP${proto/ip/} subnet declaration #${subnet_id}"
+	cli_headline $(( ${level} + 1 )) "DHCP Subnet Declaration"
 	cli_print_fmt1 $(( ${level} + 1 )) \
 		"Subnet" "${ADDRESS}/${PREFIX}"
 	cli_space
