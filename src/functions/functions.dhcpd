@@ -773,18 +773,31 @@ dhcpd_subnet_range_new() {
 }
 
 dhcpd_subnet_range_remove() {
-	local path=$(dhcpd_subnet_range_path $@)
+	assert [ $# -eq 3 ]
+
+	local proto=${1}
+	local subnet=${2}
+	local range=${3}
+
+	if ! dhcpd_subnet_range_exists ${proto} ${subnet} ${range}; then
+		error "DHCP subnet range ${range} does not exist"
+		return ${EXIT_ERROR}
+	fi
+
+	local path=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range})
 	assert isset path
 
 	rm -f ${path}
+
+	log INFO "DHCP subnet range ${range} removed"
+	return ${EXIT_OK}
 }
 
 dhcpd_subnet_range_list() {
-	local proto=${1}
-	assert isset proto
+	assert [ $# -eq 2 ]
 
+	local proto=${1}
 	local subnet=${2}
-	assert isset subnet
 
 	local path=$(dhcpd_subnet_range_path ${proto} ${subnet})
 
@@ -808,6 +821,34 @@ dhcpd_subnet_range_read() {
 
 	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range})
 	settings_read ${file}
+}
+
+dhcpd_subnet_range_exists() {
+	assert [ $# -eq 3 ]
+
+	local proto=${1}
+	local subnet=${2}
+	local range=${3}
+
+	local start=${range%-*}
+	local end=${range#*-}
+
+	assert isset start
+	assert isset end
+
+	local settings=$(dhcpd_subnet_range_settings ${proto})
+
+	local r ${settings}
+	for r in $(dhcpd_subnet_range_list ${proto} ${subnet}); do
+		dhcpd_subnet_range_read ${proto} ${subnet} ${r}
+
+		# If start and end addresses equal we got a match
+		if ${proto}_addr_eq "${START}" "${start}" && ${proto}_addr_eq "${END}" "${end}"; then
+			return ${EXIT_TRUE}
+		fi
+	done
+
+	return ${EXIT_FALSE}
 }
 
 dhcpd_subnet_settings() {
