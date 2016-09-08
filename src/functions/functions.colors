@@ -49,8 +49,15 @@ CLR_PURPLE_BG='\e[45m'
 CLR_CYAN_BG='\e[46m'
 CLR_WHITE_BG='\e[47m'
 
-# Reset everything.
-CLR_RESET="\e[0m"
+# Font decoration
+FONT_RESET="\e[0m"
+FONT_BOLD="\e[1m"
+FONT_UNDERLINED="\e[4m"
+FONT_BLINKING="\e[5m"
+FONT_INVERTED="\e[7m"
+
+# Reset everything
+CLR_RESET="${FONT_RESET}"
 
 # Predefined messages
 MSG_HOOK_UP="${CLR_GREEN_BG}${CLR_WHITE_B}     UP     ${CLR_RESET}"

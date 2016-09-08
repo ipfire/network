@@ -250,7 +250,7 @@ cli_headline() {
 	local ident=$(cli_ident ${level})
 
 	local out
-	printf -v out "${ident}${CLR_WHITE_B}${format}${CLR_RESET}\n" "$@"
+	printf -v out "${ident}${FONT_BOLD}${format}${FONT_RESET}\n" "$@"
 	printf "${out}"
 }
 
