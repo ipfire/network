@@ -769,6 +769,8 @@ dhcpd_subnet_range_new() {
 
 	settings_write ${file} ${settings}
 
+	log INFO "DHCP subnet range ${START}-${END} created"
+
 	return ${EXIT_OK}
 }
 
