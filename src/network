@@ -985,12 +985,10 @@ cli_dhcpd_subnet_range() {
 
 	case "${action}" in
 		new)
-			dhcpd_subnet_range_new ${proto} ${subnet_id} $@
-			exit $?
+			dhcpd_subnet_range_new ${proto} ${subnet_id} $@ || exit ${EXIT_ERROR}
 			;;
 		remove)
-			dhcpd_subnet_range_remove ${proto} ${subnet_id} $@
-			exit $?
+			dhcpd_subnet_range_remove ${proto} ${subnet_id} $@ || exit ${EXIT_ERROR}
 			;;
 		*)
 			error "Unrecognized action: ${action}"
@@ -998,6 +996,9 @@ cli_dhcpd_subnet_range() {
 			exit ${EXIT_ERROR}
 			;;
 	esac
+
+	dhcpd_reload ${proto}
+	return ${EXIT_OK}
 }
 
 cli_dhcpd_subnet_show() {
