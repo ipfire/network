@@ -723,12 +723,12 @@ dhcpd_subnet_range_new() {
 			;;
 	esac
 	assert isset settings
-	local ${settings}
+	local range ${settings}
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			*-*)
-				local range=${1}
+				range=${1}
 
 				START="${range%-*}"
 				END="${range#*-}"
@@ -762,12 +762,12 @@ dhcpd_subnet_range_new() {
 	fi
 
 	# Write the configuration to file.
-	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} "${START}-${END}")
+	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range})
 	assert isset file
 
 	settings_write ${file} ${settings}
 
-	log INFO "DHCP subnet range ${START}-${END} created"
+	log INFO "DHCP subnet range ${range} created"
 
 	return ${EXIT_OK}
 }
