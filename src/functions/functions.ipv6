@@ -418,6 +418,18 @@ ipv6_addr_gt() {
 		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
+ipv6_addr_ge() {
+	ipv6_addr_eq $@ || ipv6_addr_gt $@
+}
+
+ipv6_addr_lt() {
+	! ipv6_addr_eq $@ && ! ipv6_addr_gt $@
+}
+
+ipv6_addr_le() {
+	ipv6_addr_eq $@ || ! ipv6_addr_gt $@
+}
+
 ipv6_hash() {
 	local address="${1}"
 	assert isset address

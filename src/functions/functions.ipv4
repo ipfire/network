@@ -290,6 +290,18 @@ ipv4_addr_gt() {
 		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
+ipv4_addr_ge() {
+	ipv4_addr_eq $@ || ipv4_addr_gt $@
+}
+
+ipv4_addr_lt() {
+	! ipv4_addr_eq $@ && ! ipv4_addr_gt $@
+}
+
+ipv4_addr_le() {
+	ipv4_addr_eq $@ || ! ipv4_addr_gt $@
+}
+
 ipv4_range() {
 	local range=${1}
 

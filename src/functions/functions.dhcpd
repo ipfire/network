@@ -761,6 +761,13 @@ dhcpd_subnet_range_new() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Search for any overlaps
+	local overlaps=$(dhcpd_subnet_range_overlaps ${proto} ${subnet} ${range})
+	if isset overlaps; then
+		error "DHCP subnet range ${range} overlaps with ${overlaps}"
+		return ${EXIT_ERROR}
+	fi
+
 	# Write the configuration to file.
 	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range})
 	assert isset file
@@ -844,6 +851,57 @@ dhcpd_subnet_range_exists() {
 
 		# If start and end addresses equal we got a match
 		if ${proto}_addr_eq "${START}" "${start}" && ${proto}_addr_eq "${END}" "${end}"; then
+			return ${EXIT_TRUE}
+		fi
+	done
+
+	return ${EXIT_FALSE}
+}
+
+dhcpd_subnet_range_overlaps() {
+	assert [ $# -eq 3 ]
+
+	local proto=${1}
+	local subnet=${2}
+	local range=${3}
+
+	local start=${range%-*}
+	local end=${range#*-}
+
+	assert isset start
+	assert isset end
+
+	local settings=$(dhcpd_subnet_range_settings ${proto})
+
+	local r ${settings}
+	for r in $(dhcpd_subnet_range_list ${proto} ${subnet}); do
+		dhcpd_subnet_range_read ${proto} ${subnet} ${r}
+
+		# Check if the new range is a sub-range of any existing range
+
+		# Check if the start address is somewhere in this range
+		if ${proto}_addr_ge ${START} ${start} && ${proto}_addr_le ${START} ${end}; then
+			print "${r}"
+			return ${EXIT_TRUE}
+		fi
+
+		# Check if the end address is somewhere in this range
+		if ${proto}_addr_ge ${END} ${start} && ${proto}_addr_le ${END} ${end}; then
+			print "${r}"
+			return ${EXIT_TRUE}
+		fi
+
+		# Check if any existing range is a sub-range of the new range
+
+		# Check if the start address is somewhere in this range
+		if ${proto}_addr_ge ${start} ${START} && ${proto}_addr_le ${start} ${END}; then
+			print "${r}"
+			return ${EXIT_TRUE}
+		fi
+
+		# Check if the end address is somewhere in this range
+		if ${proto}_addr_ge ${end} ${START} && ${proto}_addr_le ${end} ${END}; then
+			print "${r}"
 			return ${EXIT_TRUE}
 		fi
 	done
