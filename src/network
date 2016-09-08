@@ -1043,12 +1043,11 @@ cli_dhcpd_subnet_show() {
 
 	local ranges=$(dhcpd_subnet_range_list ${proto} ${subnet_id})
 	if isset ranges; then
-		local range_id $(dhcpd_subnet_range_settings ${proto})
-		for range_id in ${ranges}; do
-			dhcpd_subnet_range_read ${proto} ${subnet_id} ${range_id}
+		local range $(dhcpd_subnet_range_settings ${proto})
+		for range in ${ranges}; do
+			dhcpd_subnet_range_read ${proto} ${subnet_id} ${range}
 
-			cli_print $(( ${level} + 2 )) \
-				"#%d: %s - %s" ${range_id} ${START} ${END}
+			cli_print $(( ${level} + 2 )) "%s - %s" ${START} ${END}
 		done
 	else
 		cli_print $(( ${level} + 2 )) "No ranges have been defined."

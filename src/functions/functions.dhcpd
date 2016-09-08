@@ -671,13 +671,21 @@ dhcpd_subnet_read() {
 }
 
 dhcpd_subnet_range_path() {
-	assert [ $# -eq 3 ]
+	assert [ $# -ge 2 -a $# -le 3 ]
 
 	local proto=${1}
 	local subnet=${2}
-	local range_id=${3}
 
-	print "$(dhcpd_subnet_path ${proto} ${subnet})/${DHCPD_SUBNET_RANGE_PREFIX}${range_id}"
+	local range=${3}
+	if ! isset range; then
+		dhcpd_subnet_path ${proto} ${subnet}
+		return $?
+	fi
+
+	# Add prefix
+	range="${DHCPD_SUBNET_RANGE_PREFIX}${range}"
+
+	print "$(dhcpd_subnet_path ${proto} ${subnet})/${range}"
 	return ${EXIT_OK}
 }
 
@@ -696,27 +704,6 @@ dhcpd_subnet_range_settings() {
 	return ${EXIT_OK}
 }
 
-dhcpd_subnet_new_range_id() {
-	local proto=${1}
-	assert isset proto
-
-	local subnet=${2}
-	assert isset subnet
-
-	local id=1 path
-	while :; do
-		path=$(dhcpd_subnet_range_path ${proto} ${subnet} ${id})
-		if [ ! -f "${path}" ]; then
-			print "${id}"
-			return ${EXIT_OK}
-		fi
-
-		id=$(( ${id} + 1 ))
-	done
-
-	return ${EXIT_ERROR}
-}
-
 dhcpd_subnet_range_new() {
 	local proto=${1}
 	assert isset proto
@@ -726,51 +713,14 @@ dhcpd_subnet_range_new() {
 	assert isset subnet
 	shift
 
-	# Allocate a new range id.
-	local range_id=$(dhcpd_subnet_new_range_id ${proto} ${subnet})
-	assert isinteger range_id
-
-	local path=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range_id})
-	assert isset path
-
-	# Create file (as a placeholder).
-	touch ${path}
-
-	dhcpd_subnet_range_edit ${proto} ${subnet} ${range_id} $@
-	local ret=$?
-
-	if [ ${ret} -ne ${EXIT_OK} ]; then
-		dhcpd_subnet_range_remove ${proto} ${subnet} ${range_id}
-		return ${EXIT_ERROR}
-	fi
-
-	return ${EXIT_OK}
-}
-
-dhcpd_subnet_range_edit() {
-	local proto=${1}
-	assert isset proto
-	shift
-
-	local subnet=${1}
-	assert isset subnet
-	shift
-
-	local range_id=${1}
-	assert isset range_id
-	shift
-
-	local ip_encode ip_is_valid
 	local settings
 	case "${proto}" in
 		ipv6)
 			ip_encode="ipv6_encode"
-			ip_is_valid="ipv6_is_valid"
 			settings=${DHCPV6D_SUBNET_RANGE_SETTINGS}
 			;;
 		ipv4)
 			ip_encode="ipv4_encode"
-			ip_is_valid="ipv4_is_valid"
 			settings=${DHCPV4D_SUBNET_RANGE_SETTINGS}
 			;;
 	esac
@@ -779,11 +729,11 @@ dhcpd_subnet_range_edit() {
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--start=*)
-				START=$(cli_get_val ${1})
-				;;
-			--end=*)
-				END=$(cli_get_val ${1})
+			*-*)
+				local range=${1}
+
+				START="${range%-*}"
+				END="${range#*-}"
 				;;
 			*)
 				error "Unknown argument: ${1}"
@@ -793,20 +743,10 @@ dhcpd_subnet_range_edit() {
 		shift
 	done
 
-	if ! isset START; then
-		error "You need to set the start of the IP range with --start=..."
-		return ${EXIT_ERROR}
-	fi
-
-	if ! isset END; then
-		error "You need to set the end of the IP range with --end=..."
-		return ${EXIT_ERROR}
-	fi
-
 	local var
 	for var in START END; do
-		if ! ${ip_is_valid} ${!var}; then
-			error "'${!var}' is not a valid IP address."
+		if ! ${proto}_is_valid ${!var}; then
+			error "'${!var}' is not a valid IP address"
 			return ${EXIT_ERROR}
 		fi
 	done
@@ -824,10 +764,12 @@ dhcpd_subnet_range_edit() {
 	fi
 
 	# Write the configuration to file.
-	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range_id})
+	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} "${START}-${END}")
 	assert isset file
 
 	settings_write ${file} ${settings}
+
+	return ${EXIT_OK}
 }
 
 dhcpd_subnet_range_remove() {
@@ -844,8 +786,7 @@ dhcpd_subnet_range_list() {
 	local subnet=${2}
 	assert isset subnet
 
-	local path=$(dhcpd_subnet_range_path ${proto} ${subnet} 0)
-	path=$(dirname ${path})
+	local path=$(dhcpd_subnet_range_path ${proto} ${subnet})
 
 	local p
 	for p in ${path}/${DHCPD_SUBNET_RANGE_PREFIX}*; do
@@ -859,16 +800,13 @@ dhcpd_subnet_range_list() {
 }
 
 dhcpd_subnet_range_read() {
+	assert [ $# -eq 3 ]
+
 	local proto=${1}
-	assert isset proto
-
 	local subnet=${2}
-	assert isset subnet
+	local range=${3}
 
-	local range_id=${3}
-	assert isset range_id
-
-	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range_id})
+	local file=$(dhcpd_subnet_range_path ${proto} ${subnet} ${range})
 	settings_read ${file}
 }
 
@@ -1030,9 +968,9 @@ _dhcpd_write_subnet() {
 	fi
 
 	# Add the ranges.
-	local range_id
-	for range_id in $(dhcpd_subnet_range_list ${proto} ${subnet} ${range_id}); do
-		_dhcpd_write_subnet_range ${proto} ${subnet} ${range_id} ${file}
+	local range
+	for range in $(dhcpd_subnet_range_list ${proto} ${subnet} ${range}); do
+		_dhcpd_write_subnet_range ${proto} ${subnet} ${range} ${file}
 	done
 
 	# End this subnet block.
@@ -1128,7 +1066,7 @@ _dhcpd_write_subnet_range() {
 
 	local proto=${1}
 	local subnet=${2}
-	local range_id=${3}
+	local range=${3}
 	local file=${4}
 
 	local settings=$(dhcpd_subnet_range_settings ${proto})
@@ -1136,10 +1074,7 @@ _dhcpd_write_subnet_range() {
 
 	# Read the configuration settings.
 	local ${settings}
-	dhcpd_subnet_range_read ${proto} ${subnet} ${range_id}
-
-	# Print the range line.
-	print "	# Range id ${range_id}." >> ${file}
+	dhcpd_subnet_range_read ${proto} ${subnet} ${range}
 
 	case "${proto}" in
 		ipv6)
