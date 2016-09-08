@@ -867,7 +867,7 @@ cli_dhcpd_show() {
 
 	# Read the options.
 	local -A options
-	dhcpd_global_options_read ${proto} ${subnet_id}
+	dhcpd_global_options_read ${proto}
 
 	# Print the options if any.
 	if [ ${#options[*]} -gt 0 ]; then
@@ -887,14 +887,16 @@ cli_dhcpd_show() {
 	local subnets=$(dhcpd_subnet_list ${proto})
 	if [ -n "${subnets}" ]; then
 		cli_headline 2 "Subnets"
-		local subnet_id
-		for subnet_id in ${subnets}; do
-			cli_dhcpd_subnet_show ${proto} ${subnet_id} 2
+		local subnet
+		for subnet in ${subnets}; do
+			cli_dhcpd_subnet_show ${proto} ${subnet} 2
 		done
 	fi
 }
 
 cli_dhcpd_subnet() {
+	assert [ $# -ge 1 ]
+
 	local proto=${1}
 	shift
 
@@ -913,11 +915,11 @@ cli_dhcpd_subnet() {
 		remove)
 			dhcpd_subnet_remove ${proto} $@
 			;;
-		[0-9]*)
-			local subnet_id=${action}
+		*:*/*|*.*.*.*/*)
+			local subnet=${action}
 
-			if ! dhcpd_subnet_exists ${proto} ${subnet_id}; then
-				error "The given subnet with ID ${subnet_id} does not exist."
+			if ! dhcpd_subnet_exists ${proto} ${subnet}; then
+				error "Subnet ${subnet} does not exist"
 				return ${EXIT_ERROR}
 			fi
 
@@ -927,7 +929,7 @@ cli_dhcpd_subnet() {
 
 			case "${action}" in
 				edit)
-					dhcpd_subnet_edit ${proto} ${subnet_id} $@
+					dhcpd_subnet_edit ${proto} ${subnet} $@
 					local ret=$?
 
 					if [ ${ret} -eq ${EXIT_OK} ]; then
@@ -936,15 +938,15 @@ cli_dhcpd_subnet() {
 					exit ${ret}
 					;;
 				range)
-					cli_dhcpd_subnet_range ${proto} ${subnet_id} $@
+					cli_dhcpd_subnet_range ${proto} ${subnet} $@
 					exit $?
 					;;
 				show)
-					cli_dhcpd_subnet_show ${proto} ${subnet_id} $@
+					cli_dhcpd_subnet_show ${proto} ${subnet} $@
 					exit $?
 					;;
 				options)
-					cli_dhcpd_subnet_options ${proto} ${subnet_id} $@
+					cli_dhcpd_subnet_options ${proto} ${subnet} $@
 					exit $?
 					;;
 				*)
@@ -955,9 +957,9 @@ cli_dhcpd_subnet() {
 			esac
 			;;
 		show)
-			local subnet_id
-			for subnet_id in $(dhcpd_subnet_list ${proto}); do
-				cli_dhcpd_subnet_show ${proto} ${subnet_id}
+			local subnet
+			for subnet in $(dhcpd_subnet_list ${proto}); do
+				cli_dhcpd_subnet_show ${proto} ${subnet}
 			done
 			;;
 		*)
@@ -972,23 +974,19 @@ cli_dhcpd_subnet() {
 }
 
 cli_dhcpd_subnet_range() {
+	assert [ $# -ge 2 ]
+
 	local proto=${1}
-	assert isset proto
-	shift
-
-	local subnet_id=${1}
-	assert isset subnet_id
-	shift
-
-	local action=${1}
-	shift
+	local subnet=${2}
+	local action=${3}
+	shift 3
 
 	case "${action}" in
 		new)
-			dhcpd_subnet_range_new ${proto} ${subnet_id} $@ || exit ${EXIT_ERROR}
+			dhcpd_subnet_range_new ${proto} ${subnet} $@ || exit ${EXIT_ERROR}
 			;;
 		remove)
-			dhcpd_subnet_range_remove ${proto} ${subnet_id} $@ || exit ${EXIT_ERROR}
+			dhcpd_subnet_range_remove ${proto} ${subnet} $@ || exit ${EXIT_ERROR}
 			;;
 		*)
 			error "Unrecognized action: ${action}"
@@ -1002,11 +1000,10 @@ cli_dhcpd_subnet_range() {
 }
 
 cli_dhcpd_subnet_show() {
-	local proto=${1}
-	assert isset proto
+	assert [ $# -ge 2 -a $# -le 3 ]
 
-	local subnet_id=${2}
-	assert isset subnet_id
+	local proto=${1}
+	local subnet=${2}
 
 	local level=${3}
 	isset level || level=0
@@ -1014,7 +1011,7 @@ cli_dhcpd_subnet_show() {
 	local $(dhcpd_subnet_settings ${proto})
 
 	# Read in configuration settings.
-	dhcpd_subnet_read ${proto} ${subnet_id}
+	dhcpd_subnet_read ${proto} ${subnet}
 
 	cli_headline $(( ${level} + 1 )) "DHCP Subnet Declaration"
 	cli_print_fmt1 $(( ${level} + 1 )) \
@@ -1023,7 +1020,7 @@ cli_dhcpd_subnet_show() {
 
 	# Read the options.
 	local -A options
-	dhcpd_subnet_options_read "${proto}" "${subnet_id}"
+	dhcpd_subnet_options_read "${proto}" "${subnet}"
 
 	# Print the options if any.
 	if [ ${#options[*]} -gt 0 ]; then
@@ -1042,11 +1039,11 @@ cli_dhcpd_subnet_show() {
 	# Ranges.
 	cli_headline $(( ${level} + 2 )) "Ranges"
 
-	local ranges=$(dhcpd_subnet_range_list ${proto} ${subnet_id})
+	local ranges=$(dhcpd_subnet_range_list ${proto} ${subnet})
 	if isset ranges; then
 		local range $(dhcpd_subnet_range_settings ${proto})
 		for range in ${ranges}; do
-			dhcpd_subnet_range_read ${proto} ${subnet_id} ${range}
+			dhcpd_subnet_range_read ${proto} ${subnet} ${range}
 
 			cli_print $(( ${level} + 2 )) "%s - %s" ${START} ${END}
 		done
@@ -1058,13 +1055,10 @@ cli_dhcpd_subnet_show() {
 }
 
 cli_dhcpd_subnet_options() {
-	local proto=${1}
-	assert isset proto
-	shift
+	assert [ $# -eq 2 ]
 
-	local subnet_id=${1}
-	assert isset subnet_id
-	shift
+	local proto=${1}
+	local subnet=${2}
 
 	local key val
 	while [ $# -gt 0 ]; do
@@ -1073,7 +1067,7 @@ cli_dhcpd_subnet_options() {
 				key=$(cli_get_key ${1})
 				val=$(cli_get_val ${1})
 
-				dhcpd_subnet_option_set ${proto} ${subnet_id} ${key} ${val}
+				dhcpd_subnet_option_set ${proto} ${subnet} ${key} ${val}
 		esac
 	done
 }
