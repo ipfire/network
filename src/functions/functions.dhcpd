@@ -716,11 +716,9 @@ dhcpd_subnet_range_new() {
 	local settings
 	case "${proto}" in
 		ipv6)
-			ip_encode="ipv6_encode"
 			settings=${DHCPV6D_SUBNET_RANGE_SETTINGS}
 			;;
 		ipv4)
-			ip_encode="ipv4_encode"
 			settings=${DHCPV4D_SUBNET_RANGE_SETTINGS}
 			;;
 	esac
@@ -751,16 +749,10 @@ dhcpd_subnet_range_new() {
 		fi
 	done
 
-	# XXX currently, this check can only be performed for IPv4
-	if [ "${proto}" = "ipv4" ]; then
-		# Check if the end address is greater than the start address.
-		local start_encoded=$(${ip_encode} ${START})
-		local end_encoded=$(${ip_encode} ${END})
-
-		if [ ${start_encoded} -ge ${end_encoded} ]; then
-			error "The start address of the range must be greater than the end address."
-			return ${EXIT_ERROR}
-		fi
+	# Check if the end address is larger than the start address
+	if ! ${proto}_addr_gt "${END}" "${START}"; then
+		error "The end address of the range must be greater than the start address"
+		return ${EXIT_ERROR}
 	fi
 
 	# Write the configuration to file.
