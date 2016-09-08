@@ -281,18 +281,12 @@ ipv4_addr_eq() {
 }
 
 ipv4_addr_gt() {
-	local addr1=${1}
-	assert isset addr1
+	assert [ $# -eq 2 ]
 
-	local addr2=${2}
-	assert isset addr2
+	local addr1="${1}"
+	local addr2="${2}"
 
-	local addr
-	for addr in addr1 addr2; do
-		printf -v ${addr} "%s" "$(ip_encode ${!addr})"
-	done
-
-	[[ ${addr1} -gt ${addr2} ]] \
+	inetcalc -4 -g "${addr1}" "${addr2}" \
 		&& return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
