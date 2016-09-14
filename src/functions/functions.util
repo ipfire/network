@@ -133,6 +133,44 @@ format_time() {
 	echo ${ret}
 }
 
+parse_time() {
+	local ret=0
+
+	local arg
+	for arg in $@; do
+		local unit
+
+		case "${arg}" in
+			*h|*m|*s)
+				# Store unit
+				unit="${arg: -1}"
+
+				# Remove unit
+				arg="${arg:0:-1}"
+				;;
+		esac
+
+		if ! isinteger arg; then
+			return ${EXIT_ERROR}
+		fi
+
+		# Convert hours and minutes into seconds
+		case "${unit}" in
+			h)
+				arg=$(( ${arg} * 3600 ))
+				;;
+			m)
+				arg=$(( ${arg} * 60 ))
+				;;
+		esac
+
+		# Add up everything
+		ret=$(( ${ret} + ${arg} ))
+	done
+
+	print "${ret}"
+}
+
 assign() {
 	local key=${1}
 	assert isset key

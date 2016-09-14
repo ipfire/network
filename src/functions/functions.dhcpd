@@ -188,27 +188,30 @@ _dhcpd_edit_ipv4() {
 				fi
 				;;
 			--default-lease-time=*)
-				DEFAULT_LEASE_TIME=$(cli_get_val ${1})
+				local val=$(cli_get_val ${1})
+				DEFAULT_LEASE_TIME=$(parse_time ${val})
 
 				if ! isinteger DEFAULT_LEASE_TIME; then
-					error "Invalid value for --default-lease-time."
+					error "Invalid value for --default-lease-time: ${val}"
 					return ${EXIT_ERROR}
 				fi
 				;;
 			--max-lease-time=*)
-				MAX_LEASE_TIME=$(cli_get_val ${1})
+				local val=$(cli_get_val ${1})
+				MAX_LEASE_TIME=$(parse_time ${val})
 
 				if ! isinteger MAX_LEASE_TIME; then
-					error "Invalid value for --max-lease-time."
+					error "Invalid value for --max-lease-time: ${val}"
 					return ${EXIT_ERROR}
 				fi
 				;;
 			--min-lease-time=*)
-				MIN_LEASE_TIME=$(cli_get_val ${1})
+				local val=$(cli_get_val ${1})
+				MIN_LEASE_TIME=$(parse_time ${val})
 
 				if isset MIN_LEASE_TIME; then
 					if ! isinteger MIN_LEASE_TIME; then
-						error "Invalid value for --min-lease-time."
+						error "Invalid value for --min-lease-time: ${val}"
 						return ${EXIT_ERROR}
 					fi
 				fi
@@ -231,18 +234,20 @@ _dhcpd_edit_ipv6() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--preferred-lifetime=*)
-				PREFERRED_LIFETIME=$(cli_get_val ${1})
+				local val=$(cli_get_val ${1})
+				PREFERRED_LIFETIME=$(parse_time ${val})
 
 				if ! isinteger PREFERRED_LIFETIME; then
-					error "Invalid value for --preferred-lifetime."
+					error "Invalid value for --preferred-lifetime: ${val}"
 					return ${EXIT_ERROR}
 				fi
 				;;
 			--valid-lifetime=*)
-				VALID_LIFETIME=$(cli_get_val ${1})
+				local val=$(cli_get_val ${1})
+				VALID_LIFETIME=$(parse_time ${val})
 
 				if ! isinteger VALID_LIFETIME; then
-					error "Invalid value for --valid-lifetime."
+					error "Invalid value for --valid-lifetime: ${val}"
 					return ${EXIT_ERROR}
 				fi
 				;;
