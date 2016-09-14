@@ -113,6 +113,26 @@ format() {
 	printf -v "${key}" "${format}" "$@"
 }
 
+format_time() {
+	local s=${1}
+	local ret m
+
+	local units="s m h"
+
+	local unit
+	for unit in ${units}; do
+		m=$(( ${s} % 60 ))
+		s=$(( ${s} / 60 ))
+
+		if [ ${m} -gt 0 ]; then
+			ret="${m}${unit} ${ret}"
+		fi
+	done
+
+	# Remove whitespace
+	echo ${ret}
+}
+
 assign() {
 	local key=${1}
 	assert isset key

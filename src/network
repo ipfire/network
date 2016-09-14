@@ -840,11 +840,11 @@ cli_dhcpd_show() {
 		ipv6)
 			cli_headline 2 "Lease times"
 			if isinteger VALID_LIFETIME; then
-				cli_print_fmt1 2 "Valid lifetime" "${VALID_LIFETIME}s"
+				cli_print_fmt1 2 "Valid lifetime" "$(format_time ${VALID_LIFETIME})"
 			fi
 
 			if isinteger PREFERRED_LIFETIME; then
-				cli_print_fmt1 2 "Preferred lifetime" "${PREFERRED_LIFETIME}s"
+				cli_print_fmt1 2 "Preferred lifetime" "$(format_time ${PREFERRED_LIFETIME})"
 			fi
 
 			cli_space
@@ -854,11 +854,11 @@ cli_dhcpd_show() {
 			cli_space
 
 			cli_headline 2 "Lease times"
-			cli_print_fmt1 2 "Default lease time" "${DEFAULT_LEASE_TIME}s"
-			cli_print_fmt1 2 "Max. lease time" "${MAX_LEASE_TIME}s"
+			cli_print_fmt1 2 "Default lease time" "$(format_time ${DEFAULT_LEASE_TIME})"
+			cli_print_fmt1 2 "Max. lease time" "$(format_time ${MAX_LEASE_TIME})"
 
 			if isset MIN_LEASE_TIME; then
-				cli_print_fmt1 2 "Min. lease time" "${MIN_LEASE_TIME}s"
+				cli_print_fmt1 2 "Min. lease time" "$(format_time ${MIN_LEASE_TIME})"
 			fi
 
 			cli_space
