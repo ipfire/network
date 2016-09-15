@@ -586,9 +586,6 @@ cli_zone() {
 			destroy)
 				cli_zone_destroy $@
 				;;
-			list-hooks)
-				cli_list_hooks zone $@
-				;;
 			""|*)
 				if [ -n "${action}" ]; then
 					error "Unrecognized argument: '${action}'"
@@ -1192,26 +1189,36 @@ cli_reset() {
 # Optionally, there are two arguments taken, the type of hook
 # and which hook should be shown.
 cli_help() {
-	local type=${1}
-	local what=${2}
+	local cmd=${1}
+	shift
 
-	# Remove unknown types.
-	if ! listmatch ${type} zone port config; then
-		type=""
-	fi
+	case "${cmd}" in
+		zone|port|config)
+			local type=${cmd}
+			local hook=${1}
 
-	# If no arguments were given, we will show the default page.
-	if [ -z "${type}" ]; then
-		cli_show_man network
-		return ${EXIT_OK}
-	fi
+			# List all hooks if requested
+			if [ "${hook}" = "list-hooks" ]; then
+				cli_list_hooks ${type}
+				return ${EXIT_OK}
+			fi
 
-	if ! hook_exists ${type} ${what}; then
-		error "Hook of type '${type}' and name '${what}' could not be found."
-		exit "${EXIT_ERROR}"
-	fi
+			if ! hook_exists ${type} ${hook}; then
+				error "No hook with name '${hook}' could be found"
+				exit "${EXIT_ERROR}"
+			fi
 
-	hook_exec ${type} ${what} help
+			hook_exec ${type} ${hook} help
+			;;
+
+		# In all other cases show the default man page
+		*)
+			cli_show_man network
+			return ${EXIT_OK}
+			;;
+	esac
+
+	return ${EXIT_ERROR}
 }
 
 cli_dns_server() {

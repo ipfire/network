@@ -205,13 +205,18 @@
 
 			<varlistentry>
 				<term>
-					<command>help [<replaceable>TYPE</replaceable> <replaceable>HOOK</replaceable>]</command>
+					<command>help [<replaceable>TYPE</replaceable>
+						<replaceable>HOOK</replaceable>|<replaceable>TYPE</replaceable> list-hooks]</command>
 				</term>
 
 				<listitem>
 					<para>
 						Calling <command>network help</command> without any
 						arguments will show you this man page.
+					</para>
+					<para>
+						<command>network help <replaceable>TYPE</replaceable> list-hooks</command>
+						will print a list of all hooks of <replaceable>TYPE</replaceable>.
 					</para>
 					<para>
 						You may optionally pass two arguments, to view the help
