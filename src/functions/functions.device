@@ -572,10 +572,9 @@ device_set_up() {
 	# Do nothing if device is already up
 	device_is_up ${device} && return ${EXIT_OK}
 
+	log INFO "Bringing up ${device}"
+
 	device_set_parent_up ${device}
-
-	log DEBUG "Setting up device '${device}'"
-
 	if ! cmd ip link set ${device} up; then
 		return ${EXIT_ERROR}
 	fi
@@ -614,7 +613,7 @@ device_set_down() {
 	local ret=${EXIT_OK}
 
 	if device_is_up ${device}; then
-		log DEBUG "Tearing down device '${device}'"
+		log INFO "Bringing down ${device}"
 
 		cmd ip link set ${device} down
 		ret=$?
