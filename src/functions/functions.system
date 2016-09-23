@@ -19,13 +19,18 @@
 #                                                                             #
 ###############################################################################
 
-_getconf() {
-	getconf $@
-}
+SYSTEM_PROCESSORS=
 
 # Returns the number of online processors
 system_get_processors() {
-	_getconf _NPROCESSORS_ONLN
+	# Cache this since the function is called quite often
+	isset SYSTEM_PROCESSORS || SYSTEM_PROCESSORS=$(__system_get_processors)
+
+	echo ${SYSTEM_PROCESSORS}
+}
+
+__system_get_processors() {
+	getconf _NPROCESSORS_ONLN
 }
 
 system_get_next_processor() {
