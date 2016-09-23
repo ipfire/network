@@ -332,6 +332,7 @@ MANPAGES = \
 	man/firewall-settings.8 \
 	man/network.8 \
 	man/network-device.8 \
+	man/network-dhcp.8 \
 	man/network-dns-server.8 \
 	man/network-port.8 \
 	man/network-port-batman-adv.8 \

@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-dhcp">
+	<refentryinfo>
+		<title>network-dhcp</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-dhcp</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-dhcp</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network <arg choice="plain">[dhcpv6|dhcpv4]</arg> <arg choice="plain">command</arg> ...</command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			With help of the <command>dhcp</command> commands it is possible to
+			configure DHCP servers for IPv6 and IPv4.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Commands</title>
+
+		<para>
+			The following commands are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<command>start</command>
+				</term>
+
+				<listitem>
+					<para>
+						Starts the DHCP service.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command>stop</command>
+				</term>
+
+				<listitem>
+					<para>
+						Stops the DHCP service.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command>restart</command>
+				</term>
+
+				<listitem>
+					<para>
+						Restarts the DHCP service immediately.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command>reload</command>
+				</term>
+
+				<listitem>
+					<para>
+						Reload the DHCP service configuration.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command>show</command>
+				</term>
+
+				<listitem>
+					<para>
+						Shows the DHCP configuration.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<command>subnet ...</command>
+				</term>
+
+				<listitem>
+					<para>
+						Use this command to manage subnets.
+						See <citerefentry>
+							<refentrytitle>network-dhcp-subnet</refentrytitle>
+							<manvolnum>8</manvolnum>
+						</citerefentry> for details.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-dhcp-subnet</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>
