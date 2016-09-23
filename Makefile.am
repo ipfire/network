@@ -128,6 +128,7 @@ dist_network_SCRIPTS = \
 	src/functions/functions.hostapd \
 	src/functions/functions.hotplug \
 	src/functions/functions.http \
+	src/functions/functions.interrupts \
 	src/functions/functions.ip \
 	src/functions/functions.iptables \
 	src/functions/functions.ip-tunnel \
@@ -151,6 +152,7 @@ dist_network_SCRIPTS = \
 	src/functions/functions.settings \
 	src/functions/functions.stp \
 	src/functions/functions.sysctl \
+	src/functions/functions.system \
 	src/functions/functions.triggers \
 	src/functions/functions.usb \
 	src/functions/functions.util \
@@ -334,6 +336,7 @@ MANPAGES = \
 	man/network-device.8 \
 	man/network-dhcp.8 \
 	man/network-dns-server.8 \
+	man/network-performance-tuning.8 \
 	man/network-port.8 \
 	man/network-port-batman-adv.8 \
 	man/network-port-batman-adv-port.8 \

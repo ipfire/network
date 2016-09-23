@@ -1,0 +1,158 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2016  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+interrupts_list() {
+	local interrupt
+	for interrupt in /proc/irq/*; do
+		[ -d "${interrupt}" ] || continue
+
+		basename "${interrupt}"
+	done
+
+	return ${EXIT_OK}
+}
+
+interrupt_use_smp_affinity() {
+	local processors=$(system_get_processors)
+
+	# There is no point in this feature when there is only one processor
+	[ ${processors} -eq 1 ] && return ${EXIT_FALSE}
+
+	return ${EXIT_TRUE}
+}
+
+__interrupts_for() {
+	local path=${1}
+
+	local f
+	for f in ${path}; do
+		[ -d "${f}" ] || continue
+
+		local interrupt=$(dirname ${f})
+		basename ${interrupt}
+	done
+}
+
+interrupts_for_device() {
+	assert [ $# -eq 1 ]
+
+	local device=${1}
+
+	__interrupts_for "/proc/irq/*/${device}"
+}
+
+interrupts_for_device_queue() {
+	assert [ $# -eq 2 ]
+
+	local device="${1}"
+	local queue="${2}"
+
+	__interrupts_for "/proc/irq/*/${device}-[rt]x${queue}"
+}
+
+interrupt_get_smp_affinity() {
+	assert [ $# -eq 1 ]
+
+	local interrupt=${1}
+
+	local path="/proc/irq/${interrupt}/smp_affinity"
+	assert [ -r "${path}" ]
+
+	# Convert bitmap to list of processors
+	__bitmap_to_processor_id $(<${path})
+}
+
+__bitmap_to_processor_id() {
+	local bitmap=${1}
+
+	# This function shifts the bit map to the right
+	# and if the least significant bit equals one
+	# the index of that bit is returned.
+
+	local id=0
+	while [ $(( 0x${bitmap} )) -gt 0 ]; do
+		if [ $(( 0x${bitmap} & 0x1 )) -eq 1 ]; then
+			print "${id}"
+		fi
+
+		bitmap=$(( 0x${bitmap} >> 1 ))
+		((id++))
+	done
+}
+
+__processor_id_to_bitmap() {
+	hex $(( 1 << $@ ))
+}
+
+interrupt_set_smp_affinity() {
+	assert [ $# -eq 2 ]
+
+	local interrupt=${1}
+	local processor=${2}
+
+	# Processor ID must be greater or equal than zero
+	# and not larger than the highest processor index
+	local num_processors=$(system_get_processors)
+	if [ ${processor} -ge ${num_processors} ]; then
+		error "Invalid processor ID ${processor}"
+		return ${EXIT_ERROR}
+	fi
+
+	local path="/proc/irq/${interrupt}/smp_affinity"
+	assert [ -w "${path}" ]
+
+	log DEBUG "Setting SMP affinity for interrupt ${interrupt} to processor ${processor}"
+
+	# Write processor ID as hex value
+	__processor_id_to_bitmap ${processor} > ${path}
+}
+
+interrupt_choose_least_busy_processor() {
+	local processors=$(system_get_processors)
+	local -a interrupts
+
+	# Create an array with the number of interrupts
+	# already handled by each processor
+
+	local i
+	for i in $(range ${processors}); do
+		interrupts[${i}]=0
+	done
+
+	local processor interrupt
+	for interrupt in $(interrupts_list); do
+		for processor in $(interrupt_get_smp_affinity ${interrupt}); do
+			interrupts[${processor}]=$(( ${interrupts[${processor}]} + 1 ))
+		done
+	done
+
+	# Walk through that map and find the first processor with the
+	# smallest number of interrupts handled so far
+
+	local least_busy_index=0
+	for i in $(range ${processors}); do
+		if [ ${interrupts[${least_busy_index}]} -gt ${interrupts[${i}]} ]; then
+			least_busy_index=${i}
+		fi
+	done
+
+	print "${least_busy_index}"
+}

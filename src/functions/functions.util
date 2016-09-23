@@ -470,6 +470,20 @@ seq() {
 	fi
 }
 
+range() {
+	eval echo {0..$(( ${1} - 1 ))}
+}
+
+count() {
+	local i=0
+
+	while read; do
+		((i++))
+	done
+
+	echo ${i}
+}
+
 which() {
 	type -P $@
 }

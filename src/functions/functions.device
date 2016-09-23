@@ -578,6 +578,13 @@ device_set_up() {
 	log DEBUG "Setting up device '${device}'"
 
 	ip link set ${device} up
+
+	# Set SMP affinity
+	if interrupt_use_smp_affinity; then
+		device_auto_configure_smp_affinity "${port}"
+	fi
+
+	return ${EXIT_OK}
 }
 
 device_set_parent_up() {
@@ -883,4 +890,104 @@ device_get_link_string() {
 	fi
 
 	print "${s}"
+}
+
+device_auto_configure_smp_affinity() {
+	assert [ $# -eq 1 ]
+
+	local device=${1}
+
+	if lock_acquire "smp-affinity"; then
+		device_set_smp_affinity "${port}" auto
+
+		lock_release "smp-affinity"
+	fi
+}
+
+device_set_smp_affinity() {
+	assert [ $# -eq 2 ]
+
+	local device=${1}
+	local mode=${2}
+
+	# mode can be auto which will automatically try to find
+	# the least busy processor, or an integer for the desired
+	# processor that should handle this device
+
+	local num_processors=$(system_get_processors)
+
+	if [ "${mode}" = "auto" ]; then
+		local processor=$(interrupt_choose_least_busy_processor)
+	else
+		assert isinteger mode
+		local processor=${mode}
+
+		if [ ${processor} -gt ${num_processors} ]; then
+			log ERROR "Processor ${processor} does not exist"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	local interrupts=$(interrupts_for_device ${device})
+	if ! isset interrupts; then
+		log DEBUG "${device} has no interrupts. Not changing SMP affinity"
+		return ${EXIT_OK}
+	fi
+
+	# Set SMP affinity
+	local interrupt
+	for interrupt in ${interrupts}; do
+		interrupt_set_smp_affinity ${interrupt} ${processor}
+	done
+
+	# Find all queues and assign them to the next processor
+	local queue
+	for queue in $(device_get_queues ${device}); do
+		case "${queue}" in
+			# Only handle receive queues
+			rx-*)
+				for interrupt in $(interrupts_for_device_queue ${device} ${queue}); do
+					interrupt_set_smp_affinity ${interrupt} ${processor}
+				done
+
+				device_queue_set_smp_affinity ${device} ${queue} ${processor}
+				;;
+
+			# Ignore the rest
+			*)
+				continue
+				;;
+		esac
+
+		# Get the next available processor if in auto mode
+		[ "${mode}" = "auto" ] && processor=$(system_get_next_processor ${processor})
+	done
+
+	return ${EXIT_OK}
+}
+
+device_get_queues() {
+	assert [ $# -eq 1 ]
+
+	local device=${1}
+
+	local queue
+	for queue in ${SYS_CLASS_NET}/${device}/queues/*; do
+		basename "${queue}"
+	done
+}
+
+device_queue_set_smp_affinity() {
+	assert [ $# -eq 3 ]
+
+	local device=${1}
+	local queue=${2}
+	local processor=${3}
+
+	local path="${SYS_CLASS_NET}/${device}/queues/${queue}/rps_cpus"
+	assert [ -w "${path}" ]
+
+	log DEBUG "Setting SMP affinity of ${device} (${queue}) to processor ${processor}"
+
+	__processor_id_to_bitmap ${processor} > ${path}
 }
