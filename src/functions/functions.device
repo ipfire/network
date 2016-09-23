@@ -565,10 +565,9 @@ device_set_name() {
 
 # Set device up
 device_set_up() {
-	local device=${1}
+	assert [ $# -eq 1 ]
 
-	# Silently fail if device was not found
-	[ -z "${device}" ] && return ${EXIT_ERROR}
+	local device=${1}
 
 	# Do nothing if device is already up
 	device_is_up ${device} && return ${EXIT_OK}
@@ -577,7 +576,9 @@ device_set_up() {
 
 	log DEBUG "Setting up device '${device}'"
 
-	ip link set ${device} up
+	if ! cmd ip link set ${device} up; then
+		return ${EXIT_ERROR}
+	fi
 
 	# Set SMP affinity
 	if interrupt_use_smp_affinity; then
@@ -607,15 +608,15 @@ device_set_parent_up() {
 
 # Set device down
 device_set_down() {
-	local device=${1}
-	assert isset device
+	assert [ $# -eq 1 ]
 
+	local device=${1}
 	local ret=${EXIT_OK}
 
 	if device_is_up ${device}; then
 		log DEBUG "Tearing down device '${device}'"
 
-		ip link set ${device} down
+		cmd ip link set ${device} down
 		ret=$?
 	fi
 
