@@ -846,9 +846,15 @@ cli_dhcpd() {
 			;;
 		start)
 			dhcpd_start ${proto}
+
+			# Make this permanent
+			dhcpd_enable ${proto}
 			;;
 		stop)
 			dhcpd_stop ${proto}
+
+			# Make this permanent
+			dhcpd_disable ${proto}
 			;;
 		restart|reload)
 			dhcpd_reload ${proto}

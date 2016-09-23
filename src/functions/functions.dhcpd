@@ -150,6 +150,24 @@ dhcpd_reload() {
 	dhcpd_restart $@
 }
 
+dhcpd_enable() {
+	local services=$(dhcpd_service $@)
+
+	local service
+	for service in ${services}; do
+		service_enable ${service}
+	done
+}
+
+dhcpd_disable() {
+	local services=$(dhcpd_service $@)
+
+	local service
+	for service in ${services}; do
+		service_disable ${service}
+	done
+}
+
 dhcpd_edit() {
 	local proto=${1}
 	assert isset proto
