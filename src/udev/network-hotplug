@@ -92,7 +92,6 @@ case "${SUBSYSTEM}" in
 				# Create a default port for all ethernet devices
 				if ! port_exists "${INTERFACE}"; then
 					port_new "ethernet" "${INTERFACE}"
-					exit ${EXIT_OK}
 				fi
 				;;
 
