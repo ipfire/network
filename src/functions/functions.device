@@ -646,10 +646,8 @@ device_set_parent_down() {
 device_get_mtu() {
 	local device=${1}
 
-	if ! device_exists ${device}; then
-		error "Device '${device}' does not exist."
-		return ${EXIT_ERROR}
-	fi
+	# Return an error if the device does not exist
+	device_exists ${device} || return ${EXIT_ERROR}
 
 	echo $(<${SYS_CLASS_NET}/${device}/mtu)
 }
@@ -659,19 +657,9 @@ device_set_mtu() {
 	local device=${1}
 	local mtu=${2}
 
-	if ! device_exists ${device}; then
-		error "Device '${device}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-	
-	local oldmtu=$(device_get_mtu ${device})
+	assert device_exists ${device}
 
-	if [ "${oldmtu}" = "${mtu}" ]; then
-		# No need to set mtu.
-		return ${EXIT_OK}
-	fi
-
-	log INFO "Setting mtu of '${device}' to '${mtu}' - was ${oldmtu}."
+	log INFO "Setting MTU of ${device} to ${mtu}"
 
 	local up
 	if device_is_up ${device}; then
@@ -679,15 +667,15 @@ device_set_mtu() {
 		up=1
 	fi
 
-	ip link set ${device} mtu ${mtu}
-	local ret=$?
+	local ret=${EXIT_OK}
+	if ! cmd ip link set ${device} mtu ${mtu}; then
+		ret=${EXIT_ERROR}
+
+		log ERROR "Could not set MTU ${mtu} on ${device}"
+	fi
 
 	if [ "${up}" = "1" ]; then
 		device_set_up ${device}
-	fi
-
-	if [ "${ret}" != "0" ]; then
-		error_log "Could not set mtu '${mtu}' on device '${device}'."
 	fi
 
 	return ${ret}
