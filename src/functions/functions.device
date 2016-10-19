@@ -659,6 +659,14 @@ device_set_mtu() {
 
 	assert device_exists ${device}
 
+	# Handle bridges differently
+	if device_is_bridge ${device}; then
+		local port
+		for port in $(bridge_get_members ${device}); do
+			device_set_mtu ${port} ${mtu}
+		done
+	fi
+
 	log INFO "Setting MTU of ${device} to ${mtu}"
 
 	local up
