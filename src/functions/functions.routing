@@ -81,7 +81,9 @@ routing_default_update() {
 		routes=$(echo ${routes})
 
 		# Reload radvd configuration
-		[[ "${proto}" = "ipv6" ]] && radvd_update
+		if [[ "${proto}" = "ipv6" ]] && db_exists "${zone}/ipv6"; then
+			radvd_update
+		fi
 
 		# Remove all default routes.
 		if [ -z "${routes}" ]; then
