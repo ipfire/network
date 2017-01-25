@@ -147,7 +147,10 @@ hook_down() {
 		error "Zone '${zone}' doesn't exist."
 		exit ${EXIT_ERROR}
 	fi
-	
+
+	# Remove routing information from database.
+	db_delete "${zone}/ipv4"
+
 	zone_config_settings_read "${zone}" "${config}"
 
 	ip_address_del ${zone} ${ADDRESS}/${PREFIX}
