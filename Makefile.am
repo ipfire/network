@@ -48,6 +48,8 @@ hooks_zonesdir   = $(hooksdir)/zones
 
 triggersdir      = $(networkdir)/triggers
 
+logdir           = $(localestatedir)/log/network
+
 CLEANFILES =
 DISTCLEANFILES =
 EXTRA_DIST =
@@ -232,7 +234,8 @@ EXTRA_DIST += \
 	src/ppp/ip-updown.in
 
 INSTALL_DIRS += \
-	$(pppdir)
+	$(pppdir) \
+	$(logdir)
 
 ppp-install-hook:
 	ln -svf ip-updown $(DESTDIR)$(pppdir)/ip-pre-up
