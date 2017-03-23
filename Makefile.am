@@ -101,7 +101,6 @@ EXTRA_DIST += \
 	src/functions/functions.in
 
 dist_network_SCRIPTS = \
-	src/functions/functions.aiccu \
 	src/functions/functions.at \
 	src/functions/functions.auth \
 	src/functions/functions.batman-adv \
@@ -171,8 +170,6 @@ dist_network_SCRIPTS = \
 	src/ppp/pppoe-server
 
 dist_helpers_SCRIPTS = \
-	src/helpers/aiccu \
-	src/helpers/aiccu-config-helper \
 	src/helpers/bridge-stp \
 	src/helpers/dhcpd-config-helper \
 	src/helpers/firewall-kernel-init \
@@ -216,7 +213,6 @@ dist_hooks_ports_SCRIPTS = \
 dist_hooks_zones_SCRIPTS = \
 	src/hooks/zones/6rd \
 	src/hooks/zones/6to4-tunnel \
-	src/hooks/zones/aiccu \
 	src/hooks/zones/bridge \
 	src/hooks/zones/modem \
 	src/hooks/zones/pppoe \
@@ -349,7 +345,6 @@ MANPAGES = \
 	man/network-zone.8 \
 	man/network-zone-6rd.8 \
 	man/network-zone-6to4-tunnel.8 \
-	man/network-zone-aiccu.8 \
 	man/network-zone-bridge.8 \
 	man/network-zone-config-pppoe-server.8 \
 	man/network-zone-modem.8 \
