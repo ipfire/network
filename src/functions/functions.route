@@ -97,7 +97,10 @@ route_add() {
 		fi
 
 		local network_proto=$(ip_detect_protocol ${network})
+		assert isset network_proto
+
 		local gateway_proto=$(ip_detect_protocol ${gateway})
+		assert isset gateway_proto
 
 		if [ "${network_proto}" != "${gateway_proto}" ]; then
 			error "The IP protocol version of the given network and gateway did not match."
