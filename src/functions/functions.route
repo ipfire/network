@@ -150,40 +150,43 @@ route_add() {
 }
 
 route_remove() {
-	local _network=${1}
+	local _network
+	local error=${EXIT_OK}
 
-	# Validate input
-	if ! ip_is_network ${_network} && ! ip_is_valid ${_network}; then
-		error "Invalid IP address or network: ${_network}"
-		return ${EXIT_ERROR}
-	fi
-
-	local found="false"
-
-	local ${NETWORK_CONFIG_ROUTES_PARAMS}
-	local line
-	while read line; do
-		route_parse_line ${line}
-		[ $? -eq ${EXIT_OK} ] || continue
-
-		# Skip the rule, we want to delete.
-		if [ "${network}" = "${_network}" ]; then
-			found="true"
-			continue
+	for _network in $@; do
+		# Validate input
+		if ! ip_is_network ${_network} && ! ip_is_valid ${_network}; then
+			error "Invalid IP address or network: ${_network}"
+			error=${EXIT_ERROR}
 		fi
 
-		print "${line}"
-	done < ${NETWORK_CONFIG_ROUTES} > ${NETWORK_CONFIG_ROUTES}.tmp
-	mv ${NETWORK_CONFIG_ROUTES}{.tmp,}
+		local found="false"
 
-	if enabled found; then
-		log INFO "Route to network '${_network}' has been removed."
-	else
-		error "No route to network '${_network}' was found."
-		return ${EXIT_ERROR}
-	fi
+		local ${NETWORK_CONFIG_ROUTES_PARAMS}
+		local line
+		while read line; do
+			route_parse_line ${line}
+			[ $? -eq ${EXIT_OK} ] || continue
 
-	return ${EXIT_OK}
+			# Skip the rule, we want to delete.
+			if [ "${network}" = "${_network}" ]; then
+				found="true"
+				continue
+			fi
+
+			print "${line}"
+		done < ${NETWORK_CONFIG_ROUTES} > ${NETWORK_CONFIG_ROUTES}.tmp
+		mv ${NETWORK_CONFIG_ROUTES}{.tmp,}
+
+		if enabled found; then
+			log INFO "Route to network '${_network}' has been removed."
+		else
+			error "No route to network '${_network}' was found."
+			error=${EXIT_ERROR}
+		fi
+	done
+
+	return ${error}
 }
 
 route_list() {
