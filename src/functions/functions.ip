@@ -69,8 +69,14 @@ ip_is_valid() {
 	local address=${1}
 	assert isset address
 
-	local proto=$(ip_detect_protocol ${address})
-	isset proto && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+	local protocol
+	for protocol in ${IP_SUPPORTED_PROTOCOLS}; do
+		if ${protocol}_is_valid "${address}"; then
+			return ${EXIT_TRUE}
+		fi
+	done
+
+	return ${EXIT_FALSE}
 }
 
 ip_is_network() {
