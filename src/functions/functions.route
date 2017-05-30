@@ -158,6 +158,7 @@ route_remove() {
 		if ! ip_is_network ${_network} && ! ip_is_valid ${_network}; then
 			error "Invalid IP address or network: ${_network}"
 			error=${EXIT_ERROR}
+			continue
 		fi
 
 		local found="false"
