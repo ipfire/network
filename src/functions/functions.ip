@@ -41,8 +41,10 @@ ip_get_prefix() {
 
 ip_detect_protocol() {
 	local address="${1}"
-
 	assert isset address
+
+	# Remove prefix so that we can handle subnet, too
+	address=$(ip_split_prefix ${address})
 
 	local protocol
 	for protocol in ${IP_SUPPORTED_PROTOCOLS}; do
