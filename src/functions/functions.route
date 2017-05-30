@@ -151,7 +151,12 @@ route_add() {
 
 route_remove() {
 	local _network=${1}
-	assert isset _network
+
+	# Validate input
+	if ! ip_is_network ${_network} && ! ip_is_valid ${_network}; then
+		error "Invalid IP address or network: ${_network}"
+		return ${EXIT_ERROR}
+	fi
 
 	local found="false"
 
