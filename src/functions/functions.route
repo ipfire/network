@@ -50,7 +50,12 @@ route_add() {
 				mtu=$(cli_get_val ${1})
 				;;
 			*)
-				network=${1}
+				if isset network; then
+					error "Bad number of arguments. Network passed twice or more"
+					return ${EXIT_ERROR}
+				else
+					network=${1}
+				fi
 				;;
 		esac
 		shift
