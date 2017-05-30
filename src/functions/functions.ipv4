@@ -22,7 +22,21 @@
 IP_SUPPORTED_PROTOCOLS="${IP_SUPPORTED_PROTOCOLS} ipv4"
 
 ipv4_is_valid() {
-	inetcalc -4 -c $@ && return ${EXIT_OK} || return ${EXIT_ERROR}
+	local address=${1}
+
+	local prefix=$(ip_get_prefix ${address})
+	address=$(ip_split_prefix ${address})
+
+	# If prefix is set, we check if it is correct
+	if isset prefix; then
+		# Must be numeric
+		isinteger prefix || return ${EXIT_FALSE}
+
+		# Must be 32 if present
+		[ ${prefix} -eq 32 ] || return ${EXIT_FALSE}
+	fi
+
+	inetcalc -4 -c ${address} && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
 ipv4_prefix_is_valid() {
