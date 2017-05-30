@@ -58,7 +58,7 @@ route_add() {
 
 	assert isset network
 
-	if ! ip_is_valid ${network}; then
+	if ! ip_is_network ${network} && ! ip_is_valid ${network}; then
 		error "The given network is invalid: ${network}"
 		return ${EXIT_ERROR}
 	fi
@@ -279,8 +279,11 @@ route_parse_line() {
 	# network must be set.
 	isset network || return ${EXIT_ERROR}
 
-	# network must be a valid.
-	ip_is_network ${network} || return ${EXIT_ERROR}
+	# Is network or IP valid?
+	if ! ip_is_network ${network} && ! ip_is_valid ${network}; then
+		error "The given network is invalid: ${network}"
+		return ${EXIT_ERROR}
+	fi
 
 	# Check gateway settings.
 	if isset gateway; then
@@ -381,13 +384,21 @@ route_entry_add() {
 
 	# Validate input.
 	assert isoneof type unicast broadcast unreachable prohibit blackhole
-	assert ip_is_network ${network}
+
+	assert isset network
+
+	if ! ip_is_network ${network} && ! ip_is_valid ${network}; then
+		error "The given network is invalid: ${network}"
+		return ${EXIT_ERROR}
+	fi
+
 	if isset mtu; then
 		assert isinteger mtu
 	fi
 
 	# Detect the protocol of the given network.
 	local protocol=$(ip_detect_protocol ${network})
+
 	case "${protocol}" in
 		ipv6)
 			command="ip -6 route add"
