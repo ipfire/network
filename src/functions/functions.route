@@ -451,7 +451,7 @@ route_entry_add() {
 		list_append command "mtu ${mtu}"
 	fi
 
-	cmd_quiet "${command}"
+	cmd "${command}"
 }
 
 route_table_create() {
