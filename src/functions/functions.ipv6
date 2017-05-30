@@ -119,7 +119,9 @@ ipv6_net_is_valid() {
 
 ipv6_prefix_is_valid() {
 	local prefix=${1}
-	assert isset prefix
+
+	# Check if prefix is a number
+	isinteger prefix || return ${EXIT_FALSE}
 
 	[ ${prefix} -le   0 ] && return ${EXIT_FALSE}
 	[ ${prefix} -gt 128 ] && return ${EXIT_FALSE}

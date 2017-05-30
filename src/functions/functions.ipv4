@@ -28,7 +28,8 @@ ipv4_is_valid() {
 ipv4_prefix_is_valid() {
 	local prefix=${1}
 
-	isset prefix || return ${EXIT_FALSE}
+	# Check if prefix is a number
+	isinteger prefix || return ${EXIT_FALSE}
 
 	[ ${prefix} -le  0 ] && return ${EXIT_FALSE}
 	[ ${prefix} -gt 32 ] && return ${EXIT_FALSE}
