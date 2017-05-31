@@ -730,7 +730,9 @@ zone_port_attach() {
 	assert isset hook
 
 	# Make the port briefly flash if supported
-	port_identify "${port}" --background
+	if device_exists ${port}; then
+		port_identify "${port}" --background
+	fi
 
 	hook_zone_exec "${hook}" "port_attach" "${zone}" "${port}" "$@"
 	local ret="${?}"
