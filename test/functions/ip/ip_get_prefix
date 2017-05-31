@@ -1,0 +1,39 @@
+#!/bin/bash
+
+. ${networkdir}/functions
+
+. ${testdir}/constants.sh
+
+failed=0
+
+
+GET_PREFIX_TEST_VALID_ADRESSES=(
+	127.0.0.1/32
+	192.168.106.0/23
+	2001:470:1f09:1249::/64	
+	2001:470:6ef3::/48	
+	127.0.0.1
+)
+
+GET_PREFIX_TEST_VALID_PREFIXES=(
+	32
+	23
+	64
+	48
+	""
+)
+
+i=0
+
+for address in ${GET_PREFIX_TEST_VALID_ADRESSES[@]}; do
+	prefix=$(ip_get_prefix ${address})	
+	if [[ $? == 0 ]] && [[ "${prefix}" == "${GET_PREFIX_TEST_VALID_PREFIXES[$i]}" ]]; then
+		echo "OK: Get prefix of ip ${address} was successful [${prefix}]"
+	else
+		echo "ERROR: Get prefix of ip ${address} was not successful [${prefix}]"
+		failed=1
+	fi
+	i=$(( i+1 ))
+done
+
+exit ${failed}
