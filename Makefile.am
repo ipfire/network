@@ -437,7 +437,8 @@ TESTS_ENVIRONMENT = \
 	testdir=$(top_srcdir)/test
 
 dist_check_DATA = \
-	test/constants.sh
+	test/constants.sh \
+	test/test-functions
 
 dist_check_SCRIPTS = \
 	$(TESTS)
