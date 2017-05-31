@@ -431,13 +431,16 @@ uninstall-hook: $(UNINSTALL_EXEC_HOOKS)
 # - testsuite ------------------------------------------------------------------
 
 TESTS_ENVIRONMENT = \
-	PATH="$(top_builddir)/src:$(PATH)" \
-	topdir="$(shell pwd)" \
-	networkdir="$(top_srcdir)/src/functions" \
-	testdir="$(top_srcdir)/test"
+	PATH=$(top_builddir)/src:$(PATH) \
+	functions=$(abs_builddir)/src/functions/functions \
+	networkdir=$(abs_srcdir)/src/functions \
+	testdir=$(top_srcdir)/test
+
+dist_check_DATA = \
+	test/constants.sh
 
 dist_check_SCRIPTS = \
-	test/load-library
+	$(TESTS)
 
 TESTS = \
 	test/load-library \
