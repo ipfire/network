@@ -206,10 +206,8 @@ static int ip_address_gt(const ip_address_t* a1, const ip_address_t* a2) {
 	if (a1->family != a2->family || a1->prefix != a2->prefix)
 		return -1;
 
-	for (unsigned int i = 0; i < 16; i++) {
-		if (a1->addr.s6_addr[i] > a2->addr.s6_addr[i])
-			return 0;
-	}
+	if (memcmp(&a1->addr.s6_addr, &a2->addr.s6_addr, sizeof(a1->addr.s6_addr)) > 0)
+		return 0;
 
 	return 1;
 }
