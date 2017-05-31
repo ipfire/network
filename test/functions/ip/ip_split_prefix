@@ -1,0 +1,39 @@
+#!/bin/bash
+
+. ${networkdir}/functions
+
+. ${testdir}/constants.sh
+
+failed=0
+
+
+SPLIT_PREFIX_TEST_VALID_NETWORKS=(
+	127.0.0.1/32
+	192.168.106.0/23
+	2001:470:1f09:1249::/64	
+	2001:470:6ef3::/48	
+	127.0.0.1
+)
+
+SPLIT_PREFIX_TEST_VALID_ADRESSES=(
+	127.0.0.1
+	192.168.106.0
+	2001:470:1f09:1249::	
+	2001:470:6ef3::	
+	127.0.0.1
+)
+
+i=0
+
+for network in ${SPLIT_PREFIX_TEST_VALID_NETWORKS[@]}; do
+	address=$(ip_split_prefix ${network})	
+	if [[ $? == 0 ]] && [[ "${address}" == "${SPLIT_PREFIX_TEST_VALID_ADRESSES[$i]}" ]]; then
+		echo "OK: Split prefix of network ${network} was successful [${address}]"
+	else
+		echo "ERROR: Split prefix of network ${network} was not successful [${address}]"
+		failed=1
+	fi
+	i=$(( i+1 ))
+done
+
+exit ${failed}
