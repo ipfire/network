@@ -1,0 +1,27 @@
+#!/bin/bash
+
+. ${networkdir}/functions
+
+. ${testdir}/constants.sh
+
+failed=0
+
+for network in ${VALID_NETWORKS[@]}; do
+	if ip_is_network ${network}; then
+		echo "OK: network: ${network} is valid"
+	else
+		echo "ERROR: network ${network} is invalid"
+		failed=1
+	fi
+done
+
+for network in ${INVALID_NETWORKS[@]}; do
+	if ! ip_is_network ${network}; then
+		echo "OK: network: ${network} is invalid"
+	else
+		echo "ERROR: network: ${network} is valid"
+		failed=1
+	fi
+done
+
+exit ${failed}

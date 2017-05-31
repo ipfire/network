@@ -1,0 +1,27 @@
+#!/bin/bash
+
+. ${networkdir}/functions
+
+. ${testdir}/constants.sh
+
+failed=0
+
+for address in ${VALID_ADDRESSES[@]}; do
+	if ip_is_valid ${address}; then
+		echo "OK: IP address ${address} is valid"
+	else
+		echo "ERROR: IP address ${address} is invalid"
+		failed=1
+	fi
+done
+
+for address in ${INVALID_ADDRESSES[@]}; do
+	if ! ip_is_valid ${address}; then
+		echo "OK: IP address ${address} is invalid"
+	else
+		echo "ERROR: IP address ${address} is valid"
+		failed=1
+	fi
+done
+
+exit ${failed}

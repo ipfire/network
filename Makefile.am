@@ -432,10 +432,18 @@ uninstall-hook: $(UNINSTALL_EXEC_HOOKS)
 
 TESTS_ENVIRONMENT = \
 	topdir="$(shell pwd)" \
-	networkdir="$(top_srcdir)/src/functions"
+	networkdir="$(top_srcdir)/src/functions" \
+	testdir="$(top_srcdir)/test"
 
 dist_check_SCRIPTS = \
 	test/load-library
 
 TESTS = \
-	test/load-library
+	test/load-library \
+	test/functions/ip/ip_is_valid \
+	test/functions/ip/ip_is_network \
+	test/functions/ip/ip_detect_protocol \
+	test/functions/ip/ip_protocol_is_supported \
+	test/functions/ip/ip_get_prefix \
+	test/functions/ip/ip_split_prefix \
+	test/functions/ip/ip_prefix_is_valid
