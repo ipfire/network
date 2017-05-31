@@ -96,6 +96,12 @@ route_add() {
 			return ${EXIT_ERROR}
 		fi
 
+		# Check if the gateway is part of the statically routed network
+		if ip_network_is_subset_of ${gateway} ${network}; then
+			error "The gateway is in the routed network"
+			return ${EXIT_ERROR}
+		fi
+
 		local network_proto=$(ip_detect_protocol ${network})
 		assert isset network_proto
 
@@ -309,6 +315,11 @@ route_parse_line() {
 
 		# Must be a valid IP address.
 		ip_is_valid ${gateway} || return ${EXIT_ERROR}
+
+		# Check if the gateway is part of the statically routed network
+		if ip_network_is_subset_of ${gateway} ${network}; then
+			return ${EXIT_ERROR}
+		fi
 	else
 		# Check if exactly one of unreachable, prohibit or blackhole is set.
 		local counter=$(list_count true ${unreachable} ${prohibit} ${blackhole})
