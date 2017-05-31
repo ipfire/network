@@ -1,0 +1,27 @@
+#!/bin/bash
+
+. ${networkdir}/functions
+
+. ${testdir}/constants.sh
+
+failed=0
+
+for proto in ${IP_TEST_SUPPORTED_PROTOCOLS[@]}; do
+	if ip_protocol_is_supported ${proto}; then
+		echo "OK: IP protocol ${proto} is supported"
+	else
+		echo "ERROR: IP protocol ${proto} is not supported"
+		failed=1
+	fi
+done
+
+for proto in ${IP_TEST_UNSUPPORTED_PROTOCOLS[@]}; do
+	if ! ip_protocol_is_supported ${proto}; then
+		echo "OK: IP protocol ${proto} is not supported"
+	else
+		echo "ERROR: IP protocol ${proto} is  supported"
+		failed=1
+	fi
+done
+
+exit ${failed}
