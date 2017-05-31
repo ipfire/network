@@ -116,6 +116,19 @@ static int ip_address_parse_prefix(ip_address_t* ip, const int family, const cha
 	return r;
 }
 
+static int default_prefix(const int family) {
+	switch (family) {
+		case AF_INET6:
+			return 128;
+
+		case AF_INET:
+			return 32;
+
+		default:
+			return -1;
+	}
+}
+
 static int ip_address_parse_simple(ip_address_t* ip, const int family, const char* address) {
 	assert(family == AF_INET || family == AF_INET6);
 
@@ -152,7 +165,7 @@ static int ip_address_parse_simple(ip_address_t* ip, const int family, const cha
 	if (prefix)
 		r = ip_address_parse_prefix(ip, family, prefix);
 	else
-		ip->prefix = -1;
+		ip->prefix = default_prefix(family);
 
 	return r;
 }
@@ -201,6 +214,22 @@ static int ip_address_gt(const ip_address_t* a1, const ip_address_t* a2) {
 	return 1;
 }
 
+static int ip_address_ge(const ip_address_t* a1, const ip_address_t* a2) {
+	int r = ip_address_eq(a1, a2);
+	if (r <= 0)
+		return r;
+
+	return ip_address_gt(a1, a2);
+}
+
+static int ip_address_le(const ip_address_t* a1, const ip_address_t* a2) {
+	int r = ip_address_eq(a1, a2);
+	if (r <= 0)
+		return r;
+
+	return !ip_address_gt(a1, a2);
+}
+
 static int ip_address_format_string(char* buffer, size_t size, const ip_address_t* ip) {
 	assert(ip->family == AF_INET || ip->family == AF_INET6);
 
@@ -226,28 +255,69 @@ static void ip_address_print(const ip_address_t* ip) {
 	printf("%s\n", buffer);
 }
 
-static void ip_address_make_network(ip_address_t* net, const ip_address_t* ip) {
-	assert(ip->prefix >= 0);
+static void ip_address_get_first_address(ip_address_t* first, const ip_address_t* network) {
+	assert(network->prefix >= 0);
 
-	struct in6_addr mask = prefix_to_bitmask(ip->prefix);
+	struct in6_addr mask = prefix_to_bitmask(network->prefix);
 
-	net->family = ip->family;
-	net->prefix = ip->prefix;
+	first->family = network->family;
+	first->prefix = default_prefix(network->family);
 
 	for (int i = 0; i < 16; i++)
-		net->addr.s6_addr[i] = ip->addr.s6_addr[i] & mask.s6_addr[i];
+		first->addr.s6_addr[i] = network->addr.s6_addr[i] & mask.s6_addr[i];
 }
 
-static void ip_address_make_broadcast(ip_address_t* broadcast, const ip_address_t* ip) {
-	assert(ip->family == AF_INET && ip->prefix >= 0);
+static void ip_address_get_last_address(ip_address_t* last, const ip_address_t* network) {
+	assert(network->prefix >= 0);
 
-	struct in6_addr mask = prefix_to_bitmask(ip->prefix);
+	struct in6_addr mask = prefix_to_bitmask(network->prefix);
 
-	broadcast->family = ip->family;
-	broadcast->prefix = ip->prefix;
+	last->family = network->family;
+	last->prefix = default_prefix(network->family);
 
 	for (int i = 0; i < 16; i++)
-		broadcast->addr.s6_addr[i] = ip->addr.s6_addr[i] | ~mask.s6_addr[i];
+		last->addr.s6_addr[i] = network->addr.s6_addr[i] | ~mask.s6_addr[i];
+}
+
+static void ip_address_make_network(ip_address_t* net, const ip_address_t* network) {
+	ip_address_get_first_address(net, network);
+
+	// Copy the prefix
+	net->prefix = network->prefix;
+}
+
+static void ip_address_make_broadcast(ip_address_t* broadcast, const ip_address_t* network) {
+	assert(network->family == AF_INET);
+
+	ip_address_get_last_address(broadcast, network);
+
+	// Copy the prefix
+	broadcast->prefix = network->prefix;
+}
+
+static int ip_address_is_subset(const ip_address_t* network1, const ip_address_t* network2) {
+	ip_address_t first1;
+	ip_address_t first2;
+	ip_address_t last1;
+	ip_address_t last2;
+
+	// Get the first address of the networks
+	ip_address_get_first_address(&first1, network1);
+	ip_address_get_first_address(&first2, network2);
+
+	// Get the highest address in both networks
+	ip_address_get_last_address(&last1, network1);
+	ip_address_get_last_address(&last2, network2);
+
+	// The start address must be in the network
+	if (ip_address_ge(&first1, &first2) == 0 && ip_address_le(&first1, &last2) == 0) {
+		// The end address must be in the network, too
+		if (ip_address_ge(&last1, &first2) == 0 && ip_address_le(&last1, &last2) == 0) {
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 static int action_check(const int family, const char* address) {
@@ -257,8 +327,11 @@ static int action_check(const int family, const char* address) {
 	if (r)
 		return r;
 
-	// No prefix allowed
-	return (ip.prefix >= 0);
+	// If the prefix is the host prefix this is a host address
+	if (ip.prefix == default_prefix(family))
+		return 0;
+
+	return 1;
 }
 
 static int action_equal(const int family, const char* addr1, const char* addr2) {
@@ -372,6 +445,28 @@ static int action_prefix(const int family, const char* addr1, const char* addr2)
 	return 0;
 }
 
+static int action_subset(const int family, const char* address1, const char* address2) {
+	int r;
+	ip_address_t network1;
+	ip_address_t network2;
+
+	// Parse both networks and/or IP addresses
+	r = ip_address_parse(&network1, family, address1);
+	if (r)
+		return r;
+
+	r = ip_address_parse(&network2, family, address2);
+	if (r)
+		return r;
+
+	if (network1.family != network2.family) {
+		fprintf(stderr, "Address family of both arguments must match\n");
+		return -1;
+	}
+
+	return ip_address_is_subset(&network1, &network2);
+}
+
 enum actions {
 	AC_UNSPEC = 0,
 	AC_BROADCAST,
@@ -380,6 +475,7 @@ enum actions {
 	AC_FORMAT,
 	AC_GREATER,
 	AC_NETWORK,
+	AC_SUBSET,
 	AC_PREFIX,
 };
 
@@ -402,6 +498,7 @@ static struct option long_options[] = {
 	{"ipv6-only",         no_argument,       0, '6'},
 	{"network",           no_argument,       0, 'n'},
 	{"prefix",            no_argument,       0, 'p'},
+	{"subset",            no_argument,       0, 's'},
 	{"verbose",           no_argument,       0, 'v'},
 	{0, 0, 0, 0}
 };
@@ -415,7 +512,7 @@ int main(int argc, char** argv) {
 	int family = AF_UNSPEC;
 
 	while (1) {
-		int c = getopt_long(argc, argv, "46bcefgnpv", long_options, &option_index);
+		int c = getopt_long(argc, argv, "46bcefgnpsv", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -470,6 +567,11 @@ int main(int argc, char** argv) {
 
 			case 'p':
 				set_action(&action, AC_PREFIX);
+				required_arguments = 2;
+				break;
+
+			case 's':
+				set_action(&action, AC_SUBSET);
 				required_arguments = 2;
 				break;
 
@@ -558,6 +660,18 @@ int main(int argc, char** argv) {
 
 		case AC_NETWORK:
 			r = action_network(family, argv[0]);
+			break;
+
+		case AC_SUBSET:
+			r = action_subset(family, argv[0], argv[1]);
+
+			if (verbose) {
+				if (r == 0)
+					printf("%s is a subset of %s\n", argv[0], argv[1]);
+				else if (r > 0)
+					printf("%s is not a subset of %s\n", argv[0], argv[1]);
+			}
+
 			break;
 
 		case AC_PREFIX:
