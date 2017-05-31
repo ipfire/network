@@ -1,0 +1,78 @@
+#!/bin/bash
+
+. ${networkdir}/functions
+
+. ${testdir}/constants.sh
+
+failed=0
+
+
+# Testing valid prefix for ipv4
+
+i=1
+
+while [ ${i} -lt 33 ]; do
+	if ip_prefix_is_valid "ipv4" ${i} ; then
+		echo "OK: Prefix ${i} is valid for ipv4"
+	else
+		echo "ERROR: Prefix ${i} is invalid for ipv4"
+		failed=1
+	fi
+	i=$(( i + 1 ))
+done
+
+i=1
+
+while [ ${i} -lt 129 ]; do
+	if ip_prefix_is_valid "ipv6" ${i} ; then
+		echo "OK: Prefix ${i} is valid for ipv6"
+	else
+		echo "ERROR: Prefix ${i} is invalid for ipv6"
+		failed=1
+	fi
+	i=$(( i + 1 ))
+done
+
+INVALID_IPV4_PREFIXES=(
+	-23
+	-11	
+	-0
+	abc
+	hello
+	world
+	40
+	/34
+)
+
+for prefix in ${INVALID_IPV4_PREFIXES[@]}; do	
+	if ! ip_prefix_is_valid "ipv4" "${prefix}" ; then
+		echo "OK: Prefix ${prefix} is invalid for ipv4"
+	else
+		echo "ERROR: Prefix ${prefix} is valid for ipv4"
+		failed=1
+	fi
+done
+
+INVALID_IPV6_PREFIXES=(
+	-23
+	-1
+	-0
+	abc
+	hello
+	world
+	/34
+	256
+	512
+)
+
+for prefix in ${INVALID_IPV6_PREFIXES[@]}; do	
+	if ! ip_prefix_is_valid "ipv6" "${prefix}" ; then
+		echo "OK: Prefix ${prefix} is invalid for ipv6"
+	else
+		echo "ERROR: Prefix ${prefix} is valid for ipv6"
+		failed=1
+	fi
+done
+
+
+exit ${failed}
