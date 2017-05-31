@@ -1,0 +1,37 @@
+#!/bin/bash
+
+. ${networkdir}/functions
+
+. ${testdir}/constants.sh
+
+failed=0
+
+for address in ${VALID_IPv4_ADDRESSES[@]}; do
+	proto=$(ip_detect_protocol ${address})
+	if [[ $? == 0 ]] && [[ "${proto}" == "ipv4" ]]; then
+		echo "OK: Detection of ip protocol for ${address} was successful [${proto}]"
+	else
+		echo "ERROR: Detection of ip protocol for ${address} was not successful"
+		failed=1
+	fi
+done
+
+# Here we have to use a extra array because ::1 is an invalid IPv4 address but we can find a protocol for it [ipv6], so ip_detect_protocol is successful
+INVALID_IPv4_ADDRESSES=(
+	1.2.3.X/abc
+	a.b.c.d/24
+	a.b.c.d/e
+	1.2.3.500
+)
+
+for address in ${INVALID_IPv4_ADDRESSES[@]}; do
+	proto=$(ip_detect_protocol ${address})
+	if [[ $? == 1 ]] && [[ "${proto}" != "ipv4" ]]; then
+		echo "OK: Detection of ip protocol for ${address} was not successful"
+	else
+		echo "ERROR: Detection of ip protocol for ${address} was successful [${proto}]"
+		failed=1
+	fi
+done
+
+exit ${failed}
