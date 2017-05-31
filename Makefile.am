@@ -448,6 +448,7 @@ TESTS = \
 	test/functions/ip/ip_get_prefix \
 	test/functions/ip/ip_is_network \
 	test/functions/ip/ip_is_valid \
+	test/functions/ip/ip_network_is_subnet_of \
 	test/functions/ip/ip_prefix_is_valid \
 	test/functions/ip/ip_protocol_is_supported \
 	test/functions/ip/ip_split_prefix

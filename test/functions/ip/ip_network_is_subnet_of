@@ -1,0 +1,44 @@
+#!/bin/bash
+
+. ${functions}
+
+# Load test functions
+. ${testdir}/test-functions
+
+############################################################
+# Run a number of valid function calls                     #
+############################################################
+
+# IPv6
+test_expect_ok ip_network_is_subset_of 2001:db8:abcd::/32 2001:db8::/32
+test_expect_ok ip_network_is_subset_of 2001:db8:abcd::/33 2001:db8::/32
+test_expect_ok ip_network_is_subset_of 2001:db8:abcd::/36 2001:db8::/32
+test_expect_ok ip_network_is_subset_of 2001:db8:abcd::/48 2001:db8::/32
+test_expect_ok ip_network_is_subset_of 2001:db8:abcd::/52 2001:db8::/32
+test_expect_ok ip_network_is_subset_of 2001:db8:abcd::/64 2001:db8::/32
+
+# IPv4
+test_expect_ok ip_network_is_subset_of 1.1.1.1 1.0.0.0/8
+test_expect_ok ip_network_is_subset_of 2.2.2.2 2.0.0.0/8
+
+############################################################
+# Run a number of invalid function calls                   #
+############################################################
+
+# IPv6
+test_expect_error ip_network_is_subset_of 2001:db8::/31 2001:db8::/32
+test_expect_error ip_network_is_subset_of ::1/128 2001:db8::/32
+
+# IPv4
+test_expect_error ip_network_is_subset_of 1.1.1.1 1.0.0.0/16
+test_expect_error ip_network_is_subset_of 1.1.1.1 1.0.0.0/24
+
+# Protocols cannot be mixed
+test_expect_error ip_network_is_subset_of ::1 127.0.0.0/8
+test_expect_error ip_network_is_subset_of 127.0.0.0/8 ::1
+
+# Some garbage inputs
+test_expect_error ip_network_is_subset_of 127.0.0.0/8 a.b.c.d/e
+test_expect_error ip_network_is_subset_of a.b.c.d/e 127.0.0.0/8
+
+exit ${TEST_FAILED}
