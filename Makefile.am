@@ -431,6 +431,7 @@ uninstall-hook: $(UNINSTALL_EXEC_HOOKS)
 # - testsuite ------------------------------------------------------------------
 
 TESTS_ENVIRONMENT = \
+	PATH="$(top_builddir)/src:$(PATH)" \
 	topdir="$(shell pwd)" \
 	networkdir="$(top_srcdir)/src/functions" \
 	testdir="$(top_srcdir)/test"
