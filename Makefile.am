@@ -432,7 +432,8 @@ uninstall-hook: $(UNINSTALL_EXEC_HOOKS)
 
 TESTS_ENVIRONMENT = \
 	topdir="$(shell pwd)" \
-	networkdir="$(top_srcdir)/src/functions"
+	networkdir="$(top_srcdir)/src/functions" \
+	testdir="$(top_srcdir)/test"
 
 dist_check_SCRIPTS = \
 	test/load-library
