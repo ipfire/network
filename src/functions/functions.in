@@ -38,6 +38,16 @@ init_run() {
 VERSION="@PACKAGE_VERSION@"
 NETWORK_VERSION="${VERSION}"
 
-for file in @networkdir@/functions.*; do
-	. ${file}
+[ -z "${networkdir}" ] && networkdir="@networkdir@"
+
+# Load entire library
+for file in ${networkdir}/functions.*; do
+	case "${file}" in
+		*.in)
+			continue
+			;;
+		*)
+			. ${file}
+			;;
+	esac
 done
