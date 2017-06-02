@@ -56,7 +56,7 @@ route_add() {
 
 	assert isset network
 
-	if ! ip_is_network ${network} && ! ip_is_valid ${network}; then
+	if ! ip_net_is_valid ${network} && ! ip_is_valid ${network}; then
 		error "The given network is invalid: ${network}"
 		return ${EXIT_ERROR}
 	fi
@@ -154,7 +154,7 @@ route_remove() {
 
 	for _network in $@; do
 		# Validate input
-		if ! ip_is_network ${_network} && ! ip_is_valid ${_network}; then
+		if ! ip_net_is_valid ${_network} && ! ip_is_valid ${_network}; then
 			error "Invalid IP address or network: ${_network}"
 			error=${EXIT_ERROR}
 			continue
@@ -296,7 +296,7 @@ route_parse_line() {
 	isset network || return ${EXIT_ERROR}
 
 	# Is network or IP valid?
-	if ! ip_is_network ${network} && ! ip_is_valid ${network}; then
+	if ! ip_net_is_valid ${network} && ! ip_is_valid ${network}; then
 		error "The given network is invalid: ${network}"
 		return ${EXIT_ERROR}
 	fi
@@ -408,7 +408,7 @@ route_entry_add() {
 
 	assert isset network
 
-	if ! ip_is_network ${network} && ! ip_is_valid ${network}; then
+	if ! ip_net_is_valid ${network} && ! ip_is_valid ${network}; then
 		error "The given network is invalid: ${network}"
 		return ${EXIT_ERROR}
 	fi

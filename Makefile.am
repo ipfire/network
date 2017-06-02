@@ -445,7 +445,7 @@ TESTS = \
 	test/load-library \
 	test/functions/ip/ip_detect_protocol \
 	test/functions/ip/ip_get_prefix \
-	test/functions/ip/ip_is_network \
+	test/functions/ip/ip_net_is_valid \
 	test/functions/ip/ip_is_valid \
 	test/functions/ip/ip_network_is_subnet_of \
 	test/functions/ip/ip_prefix_is_valid \
