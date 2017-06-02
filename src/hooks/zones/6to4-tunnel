@@ -48,6 +48,8 @@ hook_check_settings() {
 	assert isset SERVER_ADDRESS
 	assert isset LOCAL_ADDRESS
 	assert isset LOCAL_ADDRESS6
+	# LOCAL_ADDRESS6 needs to have a prefix
+	assert ipv6_net_is_valid LOCAL_ADDRESS6
 
 	if enabled AUTO_UPDATE_ENDPOINT; then
 		assert isset TUNNEL_ID
