@@ -211,7 +211,6 @@ dist_hooks_ports_SCRIPTS = \
 	src/hooks/ports/wireless-ap
 
 dist_hooks_zones_SCRIPTS = \
-	src/hooks/zones/6rd \
 	src/hooks/zones/6to4-tunnel \
 	src/hooks/zones/bridge \
 	src/hooks/zones/modem \
@@ -343,7 +342,6 @@ MANPAGES = \
 	man/network-route.8 \
 	man/network-settings.8 \
 	man/network-zone.8 \
-	man/network-zone-6rd.8 \
 	man/network-zone-6to4-tunnel.8 \
 	man/network-zone-bridge.8 \
 	man/network-zone-config-pppoe-server.8 \

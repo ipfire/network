@@ -90,20 +90,3 @@ ip_tunnel_del() {
 	ip tunnel del ${device}
 	assert [ $? -eq 0 ]
 }
-
-ip_tunnel_6rd_set_prefix() {
-	local device="${1}"
-	assert isset device
-
-	local prefix="${2}"
-	assert isset prefix
-
-	# Validate the prefix.
-	assert ipv6_net_is_valid "${prefix}"
-
-	log INFO "Setting 6rd-prefix ${prefix} on ${device}"
-
-	# Set the prefix.
-	cmd ip tunnel 6rd dev "${device}" 6rd-prefix "${prefix}"
-	assert [ $? -eq 0 ]
-}
