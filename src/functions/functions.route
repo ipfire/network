@@ -22,13 +22,6 @@
 # Functions for static routing.
 #
 
-route_init() {
-	# Apply configured static routes.
-	route_apply
-}
-
-init_register route_init
-
 route_add() {
 	local ${NETWORK_CONFIG_ROUTES_PARAMS}
 
