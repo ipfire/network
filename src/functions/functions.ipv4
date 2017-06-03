@@ -51,6 +51,15 @@ ipv4_prefix_is_valid() {
 	return ${EXIT_TRUE}
 }
 
+ipv4_net_is_valid() {
+	local net="${1}"
+
+	local prefix="$(ip_get_prefix "${net}")"
+	local addr="$(ip_split_prefix "${net}")"
+
+	ipv4_prefix_is_valid "${prefix}" && ipv4_is_valid "${addr}"
+}
+
 ipv4_netmask_is_valid() {
 	local netmask="${1}"
 
