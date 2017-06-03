@@ -83,23 +83,14 @@ ip_net_is_valid() {
 	local network=${1}
 	assert isset network
 
-	# Get the address part.
-	local address=$(ip_split_prefix ${network})
-	isset address || return ${EXIT_FALSE}
+	local protocol
+	for protocol in ${IP_SUPPORTED_PROTOCOLS}; do
+		if ${protocol}_net_is_valid "${network}"; then
+			return ${EXIT_TRUE}
+		fi
+	done
 
-	# Get the prefix.
-	local prefix=$(ip_get_prefix ${network})
-	isset prefix || return ${EXIT_FALSE}
-
-	# Detect the protocol (if this fails, the
-	# address part is invalid)
-	local proto=$(ip_detect_protocol ${address})
-	isset proto || return ${EXIT_FALSE}
-
-	# Check if the prefix is correct.
-	ip_prefix_is_valid ${proto} ${prefix} || return ${EXIT_FALSE}
-
-	return ${EXIT_TRUE}
+	return ${EXIT_FALSE}
 }
 
 ip_prefix_is_valid() {
