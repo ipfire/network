@@ -765,6 +765,10 @@ cli_route() {
 			route_list $@
 			return ${EXIT_OK}
 			;;
+		# Reload all routes.
+		reload)
+			route_apply $@
+			;;
 		*)
 			error "Unrecognized action: ${action}"
 			cli_run_help network route
