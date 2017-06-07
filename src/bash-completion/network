@@ -318,11 +318,11 @@ _network_zone() {
 		return 0
 	fi
 
+
 	local args="${words[@]:1}"
 	case "${cmd}" in
 		new)
-			# TODO
-			return 0
+			_network_zone_new ${args}
 			;;
 		destroy)
 			_network_complete_zones
@@ -333,6 +333,24 @@ _network_zone() {
 			_network_zone_subcommand "${zone}" ${args}
 			;;
 	esac
+}
+
+_network_zone_new() {
+	local words=( $@ )
+	local cmd=${words[@]:0:1}
+
+	# Suggest useful zone names
+	if [[ -z "${cmd}" ]]; then
+		local commands="$(network raw list-next-free-zones)"
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+
+	# If a valid zone name was entered, we can move on
+	elif network raw zone-name-is-valid ${cmd}; then
+		local args="${words[@]:1}"
+		_network_complete_hooks zone ${args}
+	fi
+
+	return 0
 }
 
 _network_zone_subcommand() {

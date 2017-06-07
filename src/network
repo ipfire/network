@@ -1350,6 +1350,12 @@ cli_raw() {
 		list-zones)
 			zones_get_all
 			;;
+		list-next-free-zones)
+			zones_get_next_free
+			;;
+		zone-name-is-valid)
+			zone_name_is_valid $@
+			;;
 		*)
 			error "No such command: ${cmd}"
 			exit ${EXIT_ERROR}

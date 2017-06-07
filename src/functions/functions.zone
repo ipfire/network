@@ -629,6 +629,26 @@ zones_get_all() {
 	done
 }
 
+zones_get_next_free() {
+	# This function return the next free zones.
+	# Example net0 upl0 upl1 are configured so the next free zones are:
+	# net1 upl2
+	local i
+	local zone_name
+	for zone_name in ${VALID_ZONES}; do
+		i=0
+
+		while true; do
+			local zone="${zone_name}${i}"
+			if ! zone_exists ${zone}; then
+				echo "${zone}"
+				break
+			fi
+			i=$(( i + 1 ))
+		done
+	done
+}
+
 zones_get_local() {
 	local zone
 	for zone in $(zones_get_all); do
