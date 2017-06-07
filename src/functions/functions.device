@@ -581,7 +581,7 @@ device_set_up() {
 
 	# Set SMP affinity
 	if interrupt_use_smp_affinity; then
-		device_auto_configure_smp_affinity "${port}"
+		device_auto_configure_smp_affinity ${device}
 	fi
 
 	return ${EXIT_OK}
@@ -894,7 +894,7 @@ device_auto_configure_smp_affinity() {
 	local device=${1}
 
 	if lock_acquire "smp-affinity"; then
-		device_set_smp_affinity "${port}" auto
+		device_set_smp_affinity ${device} auto
 
 		lock_release "smp-affinity"
 	fi
