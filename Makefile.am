@@ -340,7 +340,7 @@ MANPAGES = \
 	man/network-port-batman-adv-port.8 \
 	man/network-quick-start.8 \
 	man/network-route.8 \
-	man/network-route-static.8
+	man/network-route-static.8 \
 	man/network-settings.8 \
 	man/network-zone.8 \
 	man/network-zone-6to4-tunnel.8 \
