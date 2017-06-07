@@ -860,7 +860,12 @@ device_get_tx_errors() {
 device_get_speed() {
 	local device=${1}
 
-	__device_get_file ${device} speed
+	local speed=$(__device_get_file ${device} speed)
+
+	# Don't return anything for negative values
+	[ ${speed} -lt 0 ] && return ${EXIT_ERROR}
+
+	print "${speed}"
 }
 
 device_get_duplex() {
