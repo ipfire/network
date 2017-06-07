@@ -989,6 +989,56 @@ device_get_queues() {
 	done
 }
 
+device_supports_multiqueue() {
+	local device=${1}
+
+	local num_queues=$(device_num_queues ${device})
+
+	if isset num_queues && [ ${num_queues} -gt 2 ]; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
+device_num_queues() {
+	local device=${1}
+	local type=${2}
+
+	assert isoneof type "" rx tx
+
+	local i=0
+
+	local q
+	for q in $(device_get_queues ${device}); do
+		case "${type},${q}" in
+			rx,rx-*)
+				(( i++ ))
+				;;
+			tx,tx-*)
+				(( i++ ))
+				;;
+			*,*)
+				(( i++ ))
+				;;
+		esac
+	done
+
+	print ${i}
+}
+
+device_queue_get_smp_affinity() {
+	assert [ $# -eq 2 ]
+
+	local device=${1}
+	local queue=${2}
+
+	local path="${SYS_CLASS_NET}/${device}/queues/${queue}/rps_cpus"
+	assert [ -r "${path}" ]
+
+	__bitmap_to_processor_ids $(<${path})
+}
+
 device_queue_set_smp_affinity() {
 	assert [ $# -eq 3 ]
 

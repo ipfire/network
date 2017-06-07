@@ -242,6 +242,33 @@ cli_device_bonding() {
 	cli_space
 }
 
+cli_device_show_queues() {
+	assert [ $# -eq 2 ]
+
+	local level=${1}
+	local device=${2}
+
+	cli_headline ${level} "Queues"
+	cli_print_fmt1 ${level} "Queue" "Processors"
+
+	local processors=$(system_get_processors)
+
+	local queue
+	for queue in $(device_get_queues ${device}); do
+		local smp_affinity=$(device_queue_get_smp_affinity ${device} ${queue})
+
+		local processor s=""
+		for (( processor = 0; processor < ${processors}; processor++ )); do
+			if ! isset smp_affinity || list_match ${processor} ${smp_affinity}; then
+				list_append s ${processor}
+			fi
+		done
+
+		cli_print_fmt1 ${level} "${queue}" "$(list_join s ", ")"
+	done
+	cli_space
+}
+
 cli_headline() {
 	local level=${1}
 	local format=${2}

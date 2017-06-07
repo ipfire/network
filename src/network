@@ -175,7 +175,14 @@ cli_device_status() {
 
 	device_is_promisc ${device} &>/dev/null
 	cli_print_fmt1 1 "Promisc"	"$(cli_print_bool $?)"
+
+	# Supports multiqueue?
+	if device_supports_multiqueue ${device}; then
+		cli_print_fmt 1 "Multiqueue" "Supported"
+	fi
 	cli_space
+
+	cli_device_show_queues 2 ${device}
 
 	# Print all vlan devices.
 	local vlans=$(device_get_vlans ${device})
