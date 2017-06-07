@@ -969,6 +969,8 @@ device_get_queues() {
 
 	local queue
 	for queue in ${SYS_CLASS_NET}/${device}/queues/*; do
+		[ -d "${queue}" ] || continue
+
 		basename "${queue}"
 	done
 }
