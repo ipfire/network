@@ -321,6 +321,24 @@ isipaddress() {
 	ip_is_valid ${addr}
 }
 
+mtu_is_valid() {
+	local proto=${1}
+	local mtu=${2}
+
+	case ${proto} in
+		ipv4)
+			[ ${mtu} -ge 576 ] && [ ${mtu} -le 9000 ]
+			;;
+		ipv6)
+			[ ${mtu} -ge 1280 ] && [ ${mtu} -le 9000 ]
+			;;
+		*)
+			error "${proto} is not a valid proto"
+			return ${EXIT_ERROR}
+			;;
+	esac
+}
+
 backtrace() {
 	local start=1
 
