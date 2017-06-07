@@ -77,10 +77,10 @@ interrupt_get_smp_affinity() {
 	assert [ -r "${path}" ]
 
 	# Convert bitmap to list of processors
-	__bitmap_to_processor_id $(<${path})
+	__bitmap_to_processor_ids $(<${path})
 }
 
-__bitmap_to_processor_id() {
+__bitmap_to_processor_ids() {
 	local bitmap=${1}
 
 	# This function shifts the bit map to the right
