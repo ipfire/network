@@ -37,7 +37,7 @@
 		<title>Description</title>
 
 		<para>
-			The <command>route</command> helps to manage static routes.
+			The <command>route</command> helps to manage routes.
 		</para>
 	</refsect1>
 
@@ -51,116 +51,34 @@
 		<variablelist>
 			<varlistentry>
 				<term>
-					<command>add <replaceable>NETWORK</replaceable> [<option>--gateway=GATEWAY</option>, <option>--unreachable</option>, <option>--prohibit</option>, <option>--blackhole</option>] [<option>--mtu=MTU</option>]</command>
+					<command>static</command>
 				</term>
 
 				<listitem>
 					<para>
-						A new route may be added by the <command>add</command> command.
-						It is always required to pass a valid network prefix
-						<replaceable>NETWORK</replaceable>, which can be either
-						IPv6 or IPv4.
-					</para>
-					<para>
-						For unicast routes, the <option>--gateway=GATEWAY</option>
-						option must be passed, where <varname>GATEWAY</varname>
-						is a valid IP address of the same protocol type as the
-						network prefix is.
-					</para>
-					<para>
-						Use <option>--unreachable</option>, <option>--prohibit</option>,
-						<option>--blackhole</option> can be used to create of that
-						type. See <emphasis>ROUTE TYPES</emphasis> below for more
-						information about these options.
-					</para>
-					<para>
-						The optional <option>--mtu=MTU</option> parameter defines the
-						MTU along the path to the destination and must be an integer
-						number. This will show you very detailed information about
-						the given device.
+						Static routes are managed by the <command>static</command> command
+						followed by the options for static routes which are described in:
+						<citerefentry>
+							<refentrytitle>network-route-static</refentrytitle>
+							<manvolnum>8</manvolnum>
+						</citerefentry>
 					</para>
 				</listitem>
 			</varlistentry>
-
-			<varlistentry>
-				<term>
-					<command>remove <replaceable>NETWORK</replaceable></command>
-				</term>
-
-				<listitem>
-					<para>
-						A route can be removed with the command.
-					</para>
-					<para>
-						<replaceable>NETWORK</replaceable> is the network prefix
-						of an existing route.
-					</para>
-				</listitem>
-			</varlistentry>
-
-			<varlistentry>
-				<term>
-					<command>list [<option>--protocol=ipv6|ipv4</option>]</command>
-				</term>
-
-				<listitem>
-					<para>
-						Shows a list of all configured routes.
-					</para>
-					<para>
-						Pass the protocol option to filter the output only for the
-						given protocol.
-					</para>
-				</listitem>
-			</varlistentry>
-		</variablelist>
+	</variablelist>
 	</refsect1>
 
 	<refsect1>
 		<title>Route Types</title>
 
 		<refsect2>
-			<title>unicast</title>
+			<title>static</title>
 
 			<para>
-				A unicast route is the most common route in routing tables.
-				It is a route to a destination network address, which describes
-				the path to the destination.
-				Use the <option>--gateway=GATEWAY</option> option to create such
-				a route.
+				A static route is a route which does not change when the network changes.
 			</para>
 		</refsect2>
-
-		<refsect2>
-			<title>unreachable</title>
-
-			<para>
-				When a route is determined and the routing decision process
-				returns a destination with an unreachable route type, an ICMP
-				unreachable message is generated and returned to the source
-				address.
-			</para>
-		</refsect2>
-
-		<refsect2>
-			<title>prohibit</title>
-
-			<para>
-				This works like an <emphasis>unreachable</emphasis> route, but
-				the returned ICMP message is an ICMP prohibited message.
-			</para>
-		</refsect2>
-
-		<refsect2>
-			<title>blackhole</title>
-
-			<para>
-				Packets matching this kind of route are silently discarded.
-				There will be no ICMP message sent to the source and no packet
-				be forwarded.
-			</para>
-		</refsect2>
-	</refsect1>
+</refsect1>
 
 	<refsect1>
 		<title>See Also</title>
@@ -171,7 +89,7 @@
 				<manvolnum>8</manvolnum>
 			</citerefentry>,
 			<citerefentry>
-				<refentrytitle>ip-route</refentrytitle>
+				<refentrytitle>network-route-static</refentrytitle>
 				<manvolnum>8</manvolnum>
 			</citerefentry>
 		</para>
