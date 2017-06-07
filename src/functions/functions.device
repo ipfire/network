@@ -871,7 +871,16 @@ device_get_speed() {
 device_get_duplex() {
 	local device=${1}
 
-	__device_get_file ${device} duplex
+	local duplex=$(__device_get_file ${device} duplex)
+
+	case "${duplex}" in
+		unknown)
+			return ${EXIT_ERROR}
+			;;
+		*)
+			print "${duplex}"
+			;;
+	esac
 }
 
 device_get_link_string() {
