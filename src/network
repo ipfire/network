@@ -752,6 +752,32 @@ cli_route() {
 	shift
 
 	case "${action}" in
+		static)
+			cli_route_static $@
+			;;
+		*)
+			error "Unrecognized action: ${action}"
+			cli_run_help network route
+
+			exit ${EXIT_ERROR}
+			;;
+	esac
+
+	exit ${EXIT_OK}
+
+
+}
+
+cli_route_static() {
+	if cli_help_requested $@; then
+		cli_show_man network-route-static
+		exit ${EXIT_OK}
+	fi
+
+	local action=${1}
+	shift
+
+	case "${action}" in
 		# Add a new route.
 		add)
 			route_add $@

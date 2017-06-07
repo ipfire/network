@@ -258,6 +258,25 @@ _network_port_subcommand() {
 _network_route() {
 	local words=( $@ )
 
+	local commands="static"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+	case "${cmd}" in
+		static)
+			local args="${words[@]}"
+			_network_route_static ${args}
+			;;
+	esac
+
+}
+
+_network_route_static() {
+	local words=( $@ )
+
 	local commands="add list remove reload"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
