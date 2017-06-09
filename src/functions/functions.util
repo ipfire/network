@@ -268,6 +268,16 @@ uuid() {
 	echo $(</proc/sys/kernel/random/uuid)
 }
 
+abs() {
+	local val=${1}
+
+	if [ ${val} -lt 0 ]; then
+		(( val *= -1 ))
+	fi
+
+	echo ${val}
+}
+
 rand() {
 	local uuid="$(uuid)"
 	echo "${uuid//-/}"
