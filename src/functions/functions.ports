@@ -256,7 +256,11 @@ port_cmd() {
 
 	local hook=$(port_get_hook ${port})
 
-	assert isset hook
+	# Abort if we could not find a hook
+	if ! isset hook; then
+		log CRITICAL "Port ${port} does not have a hook associated with it"
+		return ${EXIT_ERROR}
+	fi
 
 	hook_exec port ${hook} ${cmd} ${port} $@
 }
