@@ -54,17 +54,20 @@ case "${SUBSYSTEM}" in
 		# Don't do anything for zones
 		if zone_exists "${INTERFACE}"; then
 			exit ${EXIT_OK}
+
+		# Stop processing rules for the loopback device
+		elif device_is_loopback ${INTERFACE}; then
+			exit ${EXIT_OK}
+
+		# Stop processing rules for wireless monitoring devices
+		elif device_is_wireless_monitor ${INTERFACE}; then
+			exit ${EXIT_OK}
 		fi
 
 		# Get the internal type of the device for later processing
 		TYPE="$(device_get_type "${INTERFACE}")"
 
 		log DEBUG "  INTERFACE='${INTERFACE}', TYPE='${TYPE}'"
-
-		# Stop processing rules for wireless monitoring devices
-		if device_is_wireless_monitor "${INTERFACE}"; then
-			exit ${EXIT_OK}
-		fi
 
 		# Handle special cases like removing automatically created
 		# devices that we don't want
