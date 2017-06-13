@@ -862,6 +862,9 @@ device_get_speed() {
 
 	local speed=$(__device_get_file ${device} speed)
 
+	# Exit for no output (i.e. no link detected)
+	isset speed || return ${EXIT_ERROR}
+
 	# Don't return anything for negative values
 	[ ${speed} -lt 0 ] && return ${EXIT_ERROR}
 
