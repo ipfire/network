@@ -1008,7 +1008,7 @@ device_num_queues() {
 	local device=${1}
 	local type=${2}
 
-	assert isoneof type "" rx tx
+	isset type && assert isoneof type rx tx
 
 	local i=0
 
@@ -1036,7 +1036,16 @@ device_queue_get_smp_affinity() {
 	local device=${1}
 	local queue=${2}
 
-	local path="${SYS_CLASS_NET}/${device}/queues/${queue}/rps_cpus"
+	local path="${SYS_CLASS_NET}/${device}/queues/${queue}"
+
+	case "${queue}" in
+		rx-*)
+			path="${path}/rps_cpus"
+			;;
+		tx-*)
+			path="${path}/xps_cpus"
+			;;
+	esac
 	assert [ -r "${path}" ]
 
 	__bitmap_to_processor_ids $(<${path})
