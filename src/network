@@ -518,6 +518,9 @@ cli_port() {
 			edit|create|remove|up|down|status|identify)
 				port_${action} "${port}" $@
 				;;
+			color)
+				color_cli "port" "${port}" $@
+				;;
 			*)
 				error "Unrecognized argument: ${action}"
 				exit ${EXIT_ERROR}
@@ -575,6 +578,9 @@ cli_zone() {
 				;;
 			config|disable|down|edit|enable|identify|status|up)
 				zone_${action} ${zone} $@
+				;;
+			color)
+				color_cli "zone" "${zone}" $@
 				;;
 			*)
 				error "Unrecognized argument: ${action}"
