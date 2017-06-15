@@ -20,7 +20,8 @@
 ###############################################################################
 
 port_dir() {
-	echo "${NETWORK_CONFIG_DIR}/ports"
+	local port="${1}"
+	echo "${NETWORK_CONFIG_DIR}/ports/${port}"
 }
 
 port_list() {
@@ -113,13 +114,13 @@ port_file() {
 	local port="${1}"
 	assert isset port
 
-	echo "$(port_dir)/${port}"
+	echo "$(port_dir ${port})/settings"
 }
 
 port_exists() {
 	local port=${1}
 
-	[ -f "${NETWORK_CONFIG_DIR}/ports/${port}" ]
+	[ -d "${NETWORK_CONFIG_DIR}/ports/${port}" ]
 }
 
 port_get_hook() {
@@ -207,7 +208,7 @@ port_destroy() {
 
 	port_remove "${port}"
 
-	rm -f $(port_file ${port})
+	rm -rf $(port_dir ${port})
 }
 
 port_create() {
