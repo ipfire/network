@@ -112,6 +112,18 @@ cli_device_headline() {
 			;;
 	esac
 	cli_print_fmt1 1 "Status" "${status}"
+
+	# Print the color of the device.
+	case "${type}" in
+		port)
+			cli_print_fmt1 1 "Color" "$(cli_color_bar $(port_get_color ${device}))"
+			;;
+
+		zone)
+			cli_print_fmt1 1 "Color" "$(cli_color_bar $(zone_get_color ${device}))"
+			;;
+	esac
+
 	if enabled long; then
 		cli_print_fmt1 1 "Address" "$(device_get_address ${device})"
 	fi
@@ -422,4 +434,34 @@ cli_show_man() {
 	fi
 
 	man ${manpage}
+}
+
+cli_set_color() {
+	#Function to set the back and foreground color at once.
+	local fg=${1}
+	local bg=${2}
+
+	local i
+	for i in fg bg; do
+		# Skip if color is empty
+		[ -n "${!i}" ] || continue
+
+		# Skip for dash
+		[ "${!i}" = "-" ] && continue
+
+		color_set_shell ${i} ${!i}
+	done
+}
+
+cli_reset_color() {
+	#Reset the shell color.
+	printf "\e[0m"
+}
+
+cli_color_bar() {
+	# This function return some colored space
+	assert [ $# -eq 1 ]
+
+	local color=${1}
+	echo "$(cli_set_color - ${color})            ${CLR_RESET}"
 }
