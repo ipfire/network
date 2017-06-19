@@ -430,3 +430,10 @@ port_get_color() {
 	local name=${1}
 	color_read "port" ${name}
 }
+
+port_get_description_title() {
+	assert [ $# -eq 1 ]
+
+	local name=${1}
+	description_title_read $(description_format_filename "port" "${name}")
+}
