@@ -113,6 +113,17 @@ cli_device_headline() {
 	esac
 	cli_print_fmt1 1 "Status" "${status}"
 
+	# Print the description title of the device.
+	case "${type}" in
+		port)
+			cli_print_fmt1 1 "Description" "$(port_get_description_title ${device})"
+			;;
+
+		zone)
+			cli_print_fmt1 1 "Description" "$(zone_get_description_title ${device})"
+			;;
+	esac
+
 	# Print the color of the device.
 	case "${type}" in
 		port)
