@@ -73,3 +73,197 @@ MSG_STP_DISCARDING="${CLR_RED_BG}${CLR_WHITE_B} DISCARDING ${CLR_RESET}"
 MSG_STP_LEARNING="${CLR_YELLOW_BG}${CLR_WHITE_B}  LEARNING   ${CLR_RESET}"
 MSG_STP_LISTENING="${CLR_YELLOW_BG}${CLR_WHITE_B}  LISTENING  ${CLR_RESET}"
 MSG_STP_BLOCKING="${CLR_RED_BG}${CLR_WHITE_B}  BLOCKING   ${CLR_RESET}"
+
+color_cli() {
+	# Is the cli function to parse the options submitted by a user.
+	local type=${1}
+	local name=${2}
+	local action=${3}
+
+	case ${action} in
+		set)
+			local color=${4}
+			# Check if we get to many arguments
+			if [ $# -gt 4 ]; then
+				 # We want to print only the 5th and greater argument
+				shift 4
+				error "Too many arguments: $@"
+				return ${EXIT_ERROR}
+			fi
+			color_set ${type} ${name} ${color}
+			;;
+		reset)
+			# We set the color to white.
+			# Check if we get to many arguments
+			shift
+			if [ $# -gt 3 ]; then
+				# We want to print only the 4th and greater argument
+				shift 3
+				error "Too many arguments: $@"
+				return ${EXIT_ERROR}
+			fi
+			color_set ${type} ${name} "ffffff"
+			;;
+		*)
+			error "Invalid argument: ${action}"
+			;;
+	esac
+
+}
+
+color_set() {
+	# Write a given color into the color config file of a zone or port.
+	assert [ $# -eq 3 ]
+
+	local type=${1}
+	local name=${2}
+	local COLOR=${3}
+	# Check if we get to many arguments
+	# Check if the color code is valid
+	if ! color_hex_is_valid ${COLOR}; then
+		error "Hexadecimal color code '${COLOR}' is not valid"
+		return ${EXIT_ERROR}
+	fi
+
+	local file=$(color_format_filename ${type} ${name})
+	settings_write ${file} COLOR
+}
+
+color_read() {
+	# Read a color out of color config file of a zone or port.
+	# If this is unsuccessful we use white.
+	local type=${1}
+	local name=${2}
+
+	local file=$(color_format_filename ${type} ${name})
+
+	local COLOR
+
+	if ! settings_read ${file} COLOR; then
+		COLOR="ffffff"
+	fi
+
+	print "${COLOR}"
+}
+
+color_format_filename() {
+	# Formats the color config file name.
+	local type=${1}
+	local name=${2}
+	case ${type} in
+		zone)
+			echo "$(zone_dir ${name})/color"
+			;;
+		port)
+			echo "$(port_dir ${name})/color"
+			;;
+	esac
+}
+
+color_hex_is_valid() {
+	# Check if a color hex is valid.
+	[[ ${1} =~ ^[0-9a-fA-F]{6}$ ]]
+}
+
+color_hex2rgb() {
+	# Converts a color hex into rgb values.
+	local hex=${1}
+
+	assert [ ${#hex} -eq 6 ]
+
+	for (( i = 0; i < 6; i += 2 )); do
+		hex2dec ${hex:${i}:2}
+	done | tr '\n' ' '
+
+	print # newline
+}
+
+_find_nearest_rgb_value() {
+	# For the calculation of the xterm value the rgb values must be:
+	# 0; 95; 135; 175; 215; 255;
+	# this function find the closest value of these 6 numbers for a give rgb number
+	local rgb=${1}
+
+	local best_value
+	local best_value_index
+
+	local values=( 0 95 135 175 215 255 )
+	local result
+	local i=0
+
+	local value
+	for value in ${values[@]}; do
+		result=$(( ${value} - ${rgb} ))
+		result=$(abs ${result})
+
+		if [ -z ${best_value} ]; then
+			best_value=${result}
+			best_value_index=${i}
+
+		# In the first iteration best_value is empty and so set to ${result}
+		# two lines above. So if statement must use -le because in the first iteration
+		# is the best_value eqal to result
+		elif [ ${result} -le ${best_value} ]; then
+			best_value=${result}
+			best_value_index=${i}
+		fi
+
+		(( i++ ))
+	done
+
+	echo "${best_value_index}"
+}
+
+color_rgb2shell() {
+	# Converts a rgb value triple into an xterm color code.
+	assert [ $# -eq 3 ]
+
+	local red=${1}
+	local green=${2}
+	local blue=${3}
+
+	local color
+	for color in red green blue; do
+		printf -v "${color}" $(_find_nearest_rgb_value ${!color})
+	done
+
+	print $(( 16 + 36 * ${red} + 6 * ${green} + ${blue} ))
+}
+
+color_set_shell() {
+	# Set the shell color which unfourtunately does not work for putty.
+	local where=${1}
+	local color=${2}
+
+	local prefix
+	case "${where}" in
+		fg)
+			prefix="\e[38"
+			;;
+		bg)
+			prefix="\e[48"
+			;;
+	esac
+
+	# Convert color from hex to RGB
+	local red green blue
+	read red green blue <<< $(color_hex2rgb ${color})
+
+	# Set standard shell color
+	local shell_color=$(color_rgb2shell ${red} ${green} ${blue})
+	printf "${prefix};5;${shell_color}m"
+
+	# For shells that support it, we will try to set the RGB color code
+	case "${TERM}" in
+		putty*)
+			# PuTTY is a piece of garbage and does not know
+			# how to handle colors at all although it has nice
+			# checkboxes to enable them, but they actually make
+			# things even worse. So no colors for you Windows
+			# users.
+			;;
+		*)
+			printf "${prefix};2;${red};${green};${blue}m"
+			;;
+	esac
+}

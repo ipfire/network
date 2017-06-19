@@ -1200,3 +1200,11 @@ zone_port_settings_remove() {
 	local path="$(zone_dir "${zone}")/ports/${port}"
 	settings_remove "${path}"
 }
+
+zone_get_color() {
+	# This function return the color of a zone
+	assert [ $# -eq 1 ]
+
+	local name=${1}
+	color_read "zone" ${name}
+}

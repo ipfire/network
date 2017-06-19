@@ -422,3 +422,11 @@ ports_lowest_address() {
 port_identify() {
 	device_identify $@
 }
+
+port_get_color() {
+	# This function return the color of a port
+	assert [ $# -eq 1 ]
+
+	local name=${1}
+	color_read "port" ${name}
+}
