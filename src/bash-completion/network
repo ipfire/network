@@ -59,6 +59,16 @@ _network_color() {
 	fi
 }
 
+_network_description() {
+	local words=( $@ )
+
+	local commands="edit show"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+}
 _network_device() {
 	local words=( $@ )
 
@@ -258,7 +268,7 @@ _network_port() {
 _network_port_subcommand() {
 	local words=( $@ )
 
-	local commands="color create down edit identify remove status up"
+	local commands="color create description down edit identify remove status up"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
@@ -269,6 +279,9 @@ _network_port_subcommand() {
 	case "${cmd}" in
 		color)
 			_network_color ${args}
+			;;
+		description)
+			_network_description ${args}
 			;;
 	esac
 
@@ -378,7 +391,7 @@ _network_zone_subcommand() {
 
 	local words=( $@ )
 
-	local commands="color config disable down edit enable identify port rename status up"
+	local commands="color config description disable down edit enable identify port rename status up"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
@@ -395,6 +408,9 @@ _network_zone_subcommand() {
 			;;
 		color)
 			_network_color ${args}
+			;;
+		description)
+			_network_description ${args}
 			;;
 	esac
 }
