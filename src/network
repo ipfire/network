@@ -521,6 +521,9 @@ cli_port() {
 			color)
 				color_cli "port" "${port}" $@
 				;;
+			description)
+				description_cli "port" "${port}" $@
+				;;
 			*)
 				error "Unrecognized argument: ${action}"
 				exit ${EXIT_ERROR}
@@ -581,6 +584,9 @@ cli_zone() {
 				;;
 			color)
 				color_cli "zone" "${zone}" $@
+				;;
+			description)
+				description_cli "zone" ${zone} $@
 				;;
 			*)
 				error "Unrecognized argument: ${action}"
