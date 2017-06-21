@@ -114,6 +114,7 @@ dist_network_SCRIPTS = \
 	src/functions/functions.constants \
 	src/functions/functions.constants-firewall \
 	src/functions/functions.db \
+	src/functions/functions.description \
 	src/functions/functions.device \
 	src/functions/functions.dhclient \
 	src/functions/functions.dhcpd \

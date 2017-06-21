@@ -1,0 +1,185 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2017 IPFire Network Development Team                          #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+description_format_filename() {
+	# Format the filename of a description file for a given zone or port
+	local type=${1}
+	local name=${2}
+
+	case ${type} in
+		zone)
+			echo "$(zone_dir ${name})/description"
+			;;
+		port)
+			echo "$(port_dir ${name})/description"
+			;;
+	esac
+}
+
+description_touch_file() {
+	# If the description file does not exist
+	# and we have no directory with the given name this function creates the file
+	local type=${1}
+	local name=${2}
+
+	local file=$(description_format_filename ${type} ${name})
+
+	# We use the -e switch here because we want to touch
+	# when also no directory with this name exist
+	if ! [ -e ${file} ]; then
+		touch ${file}
+	fi
+
+}
+description_title_read() {
+	# This function reads the title out of a given description file
+	local file=${1}
+	assert isset file
+
+	[ -r "${file}" ] || return ${EXIT_ERROR}
+
+	local title
+	read -r title < ${file}
+	echo ${title}
+}
+
+description_edit() {
+	# This function provides a higher level interface special for description files of the editor function.
+	local type=${1}
+	local name=${2}
+
+	description_touch_file ${type} ${name}
+
+	local file=$(description_format_filename ${type} ${name})
+	editor ${file} "description_check"
+}
+
+description_print() {
+	# This function prints a given description file.
+	local type=${1}
+	local name=${2}
+
+	local file=$(description_format_filename ${type} ${name})
+
+	if [ ! -r "${file}" ] || [ ! -f "${file}" ]; then
+		warning "${file} is not readable"
+		return ${EXIT_ERROR}
+	fi
+
+	local title=$(description_title_read ${file})
+
+	cli_headline 1 "Description"
+	cli_space
+	cli_print 2 "${title}"
+	cli_space
+
+	# True if we are in the first line
+	local first_line=true
+
+	# True if we get from the second line on, only whitespace or empty lines
+	local front_white=true
+
+	# How many blank lines did we get
+	local white_counter=0
+
+	while read line; do
+		if ${first_line}; then
+			# We are in the first line and pass they so first_line is now false
+			first_line=false
+			continue
+		fi
+		# Check if the line is blank or contain only whitespace
+		if ${front_white} && [[ "${line}" =~ ^(|[[:space:]]+)$ ]]; then
+			# The we do not print them
+			continue
+		else
+			# we have found after the second line which is not blank or contain only white space so
+			# front_white is false. Now ew print empyt line but only if they are follewd by a non empty line.
+			front_white=false
+			if [[ "${line}" == "" ]] || [[ "${line}" =~ ^[[:space:]]$ ]]; then
+				# If the line is blank or contain only white space we increase the counter.
+				(( white_counter++ ))
+			else
+				# The line is not blank so we print all blank lines till now and print the current line after.
+				if [ ${white_counter} -gt 0 ]; then
+					for (( i = 1; i <=  ${white_counter}; i += 1 )); do
+						cli_space
+					done
+
+					# The counter is now zero, because the lines were printed.
+					white_counter=0
+				fi
+				cli_print 2 "${line}"
+			fi
+		fi
+	done < ${file}
+
+	cli_space
+}
+
+description_cli() {
+	# Function for the command line interface
+	local type=${1}
+	local name=${2}
+	local action=${3}
+	shift 3
+
+	case ${action} in
+		show)
+			description_print ${type} ${name} ${@}
+			;;
+		edit)
+			description_edit ${type} ${name} ${@}
+			;;
+		*)
+			error "Invalid argument: ${action}"
+			;;
+	esac
+
+}
+
+description_check_title() {
+	# Checks if the title is too long and if so prints a warning
+	assert [ $# -eq 1 ]
+
+	local title=${1}
+	local title_length=40
+
+	# Have to be shorter then ${title_length}
+	if [ ${#title} -gt ${title_length} ]; then
+		warning "Title '${title}' is to long. Only titles with ${title_length} or less chracters are allowed"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+description_check() {
+	# Check if a description file satisfy our needs
+	assert [ $# -eq 1 ]
+
+	local file=${1}
+	local title=$(description_title_read ${file})
+
+	description_check_title "${title}"
+
+	return ${EXIT_OK}
+}
