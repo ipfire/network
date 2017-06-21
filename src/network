@@ -554,7 +554,7 @@ cli_zone() {
 	local action
 	local zone
 
-	if zone_name_is_valid ${1}; then
+	if zone_exists ${1}; then
 		zone=${1}
 		action=${2}
 		shift 2
