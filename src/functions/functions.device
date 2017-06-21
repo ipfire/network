@@ -910,7 +910,7 @@ device_auto_configure_smp_affinity() {
 
 	local device=${1}
 
-	if lock_acquire "smp-affinity"; then
+	if lock_acquire "smp-affinity" 60; then
 		device_set_smp_affinity ${device} auto
 
 		lock_release "smp-affinity"

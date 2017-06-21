@@ -29,30 +29,47 @@ __lock_path() {
 	fi
 }
 
-lock_acquire() {
+lock_exists() {
 	local name=${1}
 	assert isset name
 
 	local lockfile=$(__lock_path ${name})
 
+	if [ -e "${lockfile}" ]; then
+		return ${EXIT_TRUE}
+	else
+		return ${EXIT_FALSE}
+	fi
+}
+
+lock_acquire() {
+	local name=${1}
+	assert isset name
+
 	# timeout value in seconds
-	local timeout=120
+	local timeout=${2}
+
+	if ! isset timeout; then
+		timeout=0
+	fi
+
+	local lockfile=$(__lock_path ${name})
+
 	timeout=$(( ${timeout} * 4 ))
 
 	log DEBUG "Acquiring lock '${name}'"
 
-	local free="false"
-	while [ ${timeout} -gt 0 ]; do
-		if [ ! -e "${lockfile}" ]; then
-			free="true"
-			break
-		fi
-
+	# Wait until lock is available
+	while [ ${timeout} -gt 0 ] && [ -e "${lockfile}" ]; do
 		timeout=$(( ${timeout} - 1 ))
 		sleep 0.25
 	done
 
-	assert ${free} "Could not acquire lock '${name}'"
+	# If another lock still exists, we return an error
+	if [ -e "${lockfile}" ]; then
+		error "Could not acquire lock '${name}'"
+		return ${EXIT_ERROR}
+	fi
 
 	# Write out pid to the lockfile and make sure that
 	# nobody else can access it.
