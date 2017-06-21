@@ -1,0 +1,149 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2017 IPFire Network Development Team                          #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+editor_cleanup() {
+	# Cleanup after a file was edited
+	assert [ $# -eq 2 ]
+
+	local file=${1}
+	local temp_file=${2}
+
+	lock_release "${file}.lock"
+	rm -f ${temp_file}
+}
+
+editor_find_best() {
+	# Open a file with the best available editor
+	assert [ $# -eq 1 ]
+
+	local file=${1}
+	local ret
+
+	for editor in ${EDITOR} vim vi; do
+		${editor} "${file}"
+		ret=${?}
+
+		case "${ret}" in
+			${EXIT_OK})
+				return ${EXIT_OK}
+				;;
+
+			${EXIT_COMMAND_NOT_FOUND})
+				continue
+				;;
+
+			*)
+				return ${ret}
+				;;
+		esac
+	done
+
+	error "Unable to find a working editor"
+
+	return ${EXIT_COMMAND_NOT_FOUND}
+}
+
+editor() {
+	# This function open a file for editing and take care of all preperation and postprocessing
+	assert [ $# -ge 1 ]
+
+	local file=${1}
+	if [ ! -f ${file} ] || [ ! -w ${file} ]; then
+		error "${file} is not valid file or is not writeable"
+		return ${EXIT_ERROR}
+	fi
+
+	local check_func=${2}
+
+	# check if the file is locked
+	if lock_exists "${file}.lock"; then
+		error "Cannot edit ${file} because it is locked"
+		return ${EXIT_ERROR}
+	fi
+
+	# lock the file
+	if ! lock_acquire "${file}.lock"; then
+		error "Cannot lock file ${file}"
+		return ${EXIT_ERROR}
+	fi
+
+	# create a temporary file
+	local temp_file=$(mktemp)
+
+	if ! [ -f "${temp_file}" ]; then
+		error "Cannot create temporary file"
+	fi
+
+	# copy the content into this temporary file
+	cp -f "${file}" "${temp_file}"
+
+	# edit the file
+	if ! editor_find_best "${temp_file}"; then
+		error "Could not edit ${file}"
+		# cleanup
+		editor_cleanup "${file}" "${temp_file}"
+	fi
+
+	# run the check if we have one
+	if isset check_func && ! editor_check "${check_func}" "${temp_file}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# copy the changes back
+	cp -f "${temp_file}" "${file}"
+
+	# cleanup
+	editor_cleanup "${file}" "${temp_file}"
+
+}
+
+editor_check() {
+	# Execute the check function to make sure that the changes does not break anything
+	local check_func="${1}"
+	shift
+
+	# Execute the check function
+	"${check_func}" $@
+	local ret="${?}"
+
+	case "${ret}" in
+		# OK
+		${EXIT_OK}|${EXIT_TRUE})
+			log DEBUG "Check succeeded"
+			return ${EXIT_TRUE}
+			;;
+
+		# Error
+		${EXIT_ERROR}|${EXIT_FALSE})
+			log CRITICAL "Check failed"
+			return ${EXIT_FALSE}
+			;;
+
+		# Command not found
+		${EXIT_COMMAND_NOT_FOUND})
+			log CRITICAL "Check function '${check_func}' was not found"
+			return ${EXIT_FALSE}
+			;;
+	esac
+
+	log CRITICAL "Unhandled exit code for '${check_func}': ${ret}"
+	return ${EXIT_ERROR}
+}

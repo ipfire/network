@@ -121,6 +121,7 @@ dist_network_SCRIPTS = \
 	src/functions/functions.distro \
 	src/functions/functions.dns \
 	src/functions/functions.dummy \
+	src/functions/functions.editor \
 	src/functions/functions.ethernet \
 	src/functions/functions.firewall \
 	src/functions/functions.firewall-policy \
