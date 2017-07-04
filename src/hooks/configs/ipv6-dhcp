@@ -27,6 +27,11 @@ hook_new() {
 	local zone="${1}"
 	shift
 
+	if zone_config_hook_is_configured ${zone} "ipv6-dhcp"; then
+		log ERROR "You can configure the ipv6-dhcp hook only once for a zone"
+		return ${EXIT_ERROR}
+	fi
+
 	zone_config_settings_write "${zone}" "${HOOK}"
 
 	exit ${EXIT_OK}
