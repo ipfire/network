@@ -34,6 +34,11 @@ hook_new() {
 	local zone="${1}"
 	shift
 
+	if zone_config_hook_is_configured ${zone} "ipv6-auto"; then
+		log ERROR "You can configure the ipv6-auto hook only once for a zone"
+		return ${EXIT_ERROR}
+	fi
+
 	while read arg; do
 		case "${arg}" in
 			--privacy-extensions=*)
