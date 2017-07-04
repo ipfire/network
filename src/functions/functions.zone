@@ -1008,6 +1008,28 @@ zone_config_get_hook() {
 	print "${HOOK}"
 }
 
+zone_config_hook_is_configured() {
+	# Checks if a zone has already at least one config with the given hook.
+	# Returns True when yes and False when no
+
+	assert [ $# -eq 2 ]
+	local zone=${1}
+	local hook=${2}
+
+	local config
+	for config in $(zone_configs_list "${zone}"); do
+		local config_hook="$(zone_config_get_hook "${zone}" "${config}")"
+		assert isset config_hook
+		if [[ ${hook} == ${config_hook} ]]; then
+			return ${EXIT_TRUE}
+		fi
+
+	done
+
+	# If we get here the zone has no config with the given hook
+	return ${EXIT_FALSE}
+}
+
 zone_has_ip() {
 	device_has_ip $@
 }
