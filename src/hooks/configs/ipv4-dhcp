@@ -35,6 +35,11 @@ hook_new() {
 	local zone="${1}"
 	shift
 
+	if zone_config_hook_is_configured ${zone} "ipv4-dhcp"; then
+		log ERROR "You can configure the ipv4-dhcp hook only once for a zone"
+		return ${EXIT_ERROR}
+	fi
+
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--delay=*)
