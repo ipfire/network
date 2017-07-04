@@ -245,7 +245,10 @@ static void ip_address_print(const ip_address_t* ip) {
 	if (r)
 		return;
 
-	if (ip->prefix >= 0) {
+	int address_prefix = default_prefix(ip->family);
+
+	// Only print prefix when it is not the default one
+	if (ip->prefix != address_prefix) {
 		size_t len = strlen(buffer);
 		snprintf(buffer + len, sizeof(buffer) - len, "/%d", ip->prefix);
 	}
