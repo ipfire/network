@@ -1048,6 +1048,19 @@ zone_config_hook_is_configured() {
 	return ${EXIT_FALSE}
 }
 
+zone_config_id_is_valid() {
+	# This function checks if a given id is valid for a zone
+	# Return True when yes and false when no
+
+	assert [ $# -eq 2 ]
+	local zone=${1}
+	local id=${2}
+
+	local zone_path=$(zone_dir ${zone})
+
+	[ -f ${zone_path}/configs/*.${id} ];
+}
+
 zone_has_ip() {
 	device_has_ip $@
 }
