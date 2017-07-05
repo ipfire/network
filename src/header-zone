@@ -206,7 +206,22 @@ hook_config_new() {
 }
 
 hook_config_destroy() {
-	hook_config_cmd "destroy" "$@"
+	assert [ $# -eq 2 ]
+	local zone=${1}
+	# The id must be the id and not the hid.
+	local id=${2}
+
+	shift 2
+
+	# Check if we get a valid id
+	if ! zone_config_id_is_valid ${zone} ${id}; then
+		log ERROR "ID: ${id} is not a valid id for zone ${zone}"
+	fi
+
+	local hook=$(zone_config_get_hook_from_id ${zone}  ${id})
+	assert isset hook
+
+	hook_config_cmd "destroy" "${zone}" "${hook}" "${hook}.${id}" "$@"
 }
 
 hook_config_edit() {
