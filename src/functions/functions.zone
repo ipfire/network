@@ -550,7 +550,12 @@ zone_config() {
 			zone_config_new "${zone}" "$@"
 			;;
 		destroy)
-			zone_config_destroy "${zone}" "$@"
+			local id=${1}
+			if zone_config_id_is_valid ${zone} ${id}; then
+				zone_config_destroy "${zone}" "$@"
+			else
+				log ERROR "${id} is not a valid id"
+			fi
 			;;
 		edit)
 			zone_config_edit "${zone}" "$@"
