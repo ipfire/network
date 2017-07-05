@@ -106,8 +106,7 @@ hook_new() {
 		warning "You did not configure a gateway for a non-local zone"
 	fi
 
-	# XXX maybe we can add some hashing to identify a configuration again
-	zone_config_settings_write "${zone}" "${HOOK}.$(uuid)"
+	zone_config_settings_write "${zone}" "${HOOK}"
 
 	exit ${EXIT_OK}
 }

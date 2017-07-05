@@ -59,7 +59,7 @@ hook_new() {
 		GATEWAY=$(ipv6_format "${GATEWAY}")
 	fi
 
-	zone_config_settings_write "${zone}" "${HOOK}.$(ipv6_hash ${ADDRESS}).${PREFIX}"
+	zone_config_settings_write "${zone}" "${HOOK}"
 
 	exit ${EXIT_OK}
 }

@@ -446,14 +446,6 @@ ipv6_addr_le() {
 	ipv6_addr_eq $@ || ! ipv6_addr_gt $@
 }
 
-ipv6_hash() {
-	local address="${1}"
-	assert isset address
-
-	address="$(ipv6_format "${address}")"
-	echo "${address//:/}"
-}
-
 ipv6_get_network() {
 	ip_get_network $@
 }
