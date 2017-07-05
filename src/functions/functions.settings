@@ -159,7 +159,7 @@ settings_write() {
 		return ${EXIT_ERROR}
 	fi
 
-	log DEBUG "Writing settings file ${settings_file}."
+	log DEBUG "Writing settings file '${settings_file}'"
 
 	mkdir -p $(dirname ${settings_file}) 2>/dev/null
 	> ${settings_file}
