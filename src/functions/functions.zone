@@ -556,9 +556,18 @@ zone_config() {
 			zone_config_edit "${zone}" "$@"
 			;;
 		*)
-			error "Unrecognized argument: ${cmd}"
-			cli_usage root-zone-config-subcommands
-			exit ${EXIT_ERROR}
+			# Check is we get a valid id
+			# TODO This could be also a valid hid
+			local id=${cmd}
+
+			if zone_config_id_is valid ${zone} ${id} && [[ ${1} == "edit" ]]; then
+				shift 1
+				zone_config_edit "${zone}" "${id}""$@"
+			else
+				error "Unrecognized argument: ${cmd}"
+				cli_usage root-zone-config-subcommands
+				exit ${EXIT_ERROR}
+			fi
 			;;
 	esac
 }
