@@ -992,6 +992,24 @@ zone_configs_list() {
 	done
 }
 
+zone_config_get_new_id() {
+	# This functions returns the next free id for a zone
+
+	assert [ $# -eq 1 ]
+	local zone=${1}
+
+	local zone_path=$(zone_dir ${zone})
+	local i=0
+
+	while true; do
+		if [ ! -f ${zone_path}/configs/*.${i} ]; then
+			echo "${i}"
+			return ${EXIT_OK}
+		fi
+		(( i++ ))
+	done
+}
+
 zone_config_get_hook() {
 	assert [ $# -eq 2 ]
 
