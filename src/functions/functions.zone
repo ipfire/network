@@ -1216,8 +1216,13 @@ zone_config_settings_write() {
 	assert [ $# -ge 2 ]
 
 	local zone="${1}"
-	local config="${2}"
-	shift 2
+	local hook="${2}"
+	local id=${3}
+
+	if ! isset id; then
+		id=$(zone_config_get_new_id ${zone})
+		log DEBUG "ID for the config is: ${id}"
+	fi
 
 	local args
 	if function_exists "hook_check_config_settings"; then
@@ -1225,7 +1230,7 @@ zone_config_settings_write() {
 	fi
 	list_append args ${HOOK_CONFIG_SETTINGS}
 
-	local path="$(zone_dir "${zone}")/configs/${config}"
+	local path="$(zone_dir "${zone}")/configs/${hook}.${id}"
 	settings_write "${path}" ${args}
 }
 
