@@ -1061,6 +1061,26 @@ zone_config_id_is_valid() {
 	[ -f ${zone_path}/configs/*.${id} ];
 }
 
+zone_config_get_hook_from_id() {
+	# Returns the hook for a given id
+	assert [ $# -eq 2 ]
+	local zone=${1}
+	local id=${2}
+
+	local config
+	for config in $(zone_configs_list "${zone}"); do
+		if [[ ${config} == *.${id} ]]; then
+			local config_hook="$(zone_config_get_hook "${zone}" "${config}")"
+			assert isset config_hook
+			print "${config_hook}"
+			return "${EXIT_OK}"
+		fi
+	done
+
+	# If we get here the zone has no config with the given id
+	return ${EXIT_ERROR}
+}
+
 zone_has_ip() {
 	device_has_ip $@
 }
