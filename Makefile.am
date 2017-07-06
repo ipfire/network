@@ -123,7 +123,6 @@ dist_network_SCRIPTS = \
 	src/functions/functions.dns \
 	src/functions/functions.dummy \
 	src/functions/functions.editor \
-	src/functions/functions.ethernet \
 	src/functions/functions.firewall \
 	src/functions/functions.firewall-policy \
 	src/functions/functions.firewall-zones \
@@ -148,7 +147,6 @@ dist_network_SCRIPTS = \
 	src/functions/functions.ppp \
 	src/functions/functions.pppoe-server \
 	src/functions/functions.radvd \
-	src/functions/functions.red \
 	src/functions/functions.route \
 	src/functions/functions.routing \
 	src/functions/functions.serial \
