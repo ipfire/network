@@ -310,7 +310,7 @@ isoneof() {
 isbool() {
 	local var=${1}
 
-	isoneof ${var} 0 1 no yes on off
+	isoneof ${var} 0 1 no yes on off true false
 }
 
 isinteger() {
