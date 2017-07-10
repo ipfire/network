@@ -333,6 +333,7 @@ MANPAGES = \
 	man/firewall-settings.8 \
 	man/network.8 \
 	man/network-color.8 \
+	man/network-description.8 \
 	man/network-device.8 \
 	man/network-dhcp.8 \
 	man/network-dns-server.8 \
