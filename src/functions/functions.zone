@@ -560,6 +560,9 @@ zone_config() {
 		edit)
 			zone_config_edit "${zone}" "$@"
 			;;
+		list)
+			zone_config_list "${zone}" "$@"
+			;;
 		*)
 			# Check is we get a valid id
 			# TODO This could be also a valid hid
@@ -611,6 +614,30 @@ zone_config_destroy() {
 
 zone_config_edit() {
 	zone_config_cmd "edit" "$@"
+}
+
+zone_config_list() {
+	# This function list in an nice way all configs of a zone
+	local zone=${1}
+	assert isset zone
+
+	# Print a nice header
+	local format="%-3s %-20s"
+	print "${format}" "ID" "HOOK"
+
+	local config
+	local hook
+	local id
+
+	# Print for all config:
+	# id and hook
+	# TODO: Add hids here
+	for config in $(zone_configs_list "${zone}"); do
+		id=${config##*.}
+		hook=$(zone_config_get_hook "${zone}" "${config}")
+		assert isset hook
+		print "${format}" "${id}" "${hook}"
+	done
 }
 
 zone_config_show() {
