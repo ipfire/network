@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-color">
+	<refentryinfo>
+		<title>networ-color</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Jonatan</firstname>
+				<surname>Schlag</surname>
+				<email>jonatan.schlag@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-color</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-color</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			The <command>color</command> helps to manage colors for zone and ports.
+			The color is shown in the webinterface and on the status page of  a port or zone.
+			and make it much easier to identify a port or a zone.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Commands</title>
+
+		<para>
+			The following commands are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<command>set <replaceable>hex-color-value</replaceable></command>
+				</term>
+
+				<listitem>
+					<para>
+						The color of a zone or port are set with the <command>set</command> command.
+						It is always required to pass a valid color hex value like 880400.
+					</para>
+				</listitem>
+			</varlistentry>
+			<varlistentry>
+				<term>
+					<command>reset</command>
+				</term>
+
+				<listitem>
+					<para>
+						This reset the color of a zone or port to white.
+					</para>
+				</listitem>
+			</varlistentry>
+	</variablelist>
+	</refsect1>
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-zone</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-port</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>
