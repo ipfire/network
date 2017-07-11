@@ -21,33 +21,68 @@
 
 . /usr/lib/network/header-config
 
-HOOK_CONFIG_SETTINGS="HOOK DELAY"
+HOOK_CONFIG_SETTINGS="HOOK DELAY ENABLE_IPV6 ENABLE_IPV4"
 
 # Default settings.
 DELAY=0
+ENABLE_IPV6="on"
+ENABLE_IPV4="on"
 
 hook_check_config_settings() {
 	assert isset DELAY
 	assert isinteger DELAY
+	assert isset ENABLE_IPV6
+	assert isbool ENABLE_IPV6
+	assert isset ENABLE_IPV4
+	assert isbool ENABLE_IPV4
+}
+
+hook_parse_cmdline() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--delay=*)
+				DELAY="$(cli_get_val "${1}")"
+				;;
+			--enable-ipv6)
+				ENABLE_IPV6="on"
+				;;
+			--disable-ipv6)
+				ENABLE_IPV6="off"
+				;;
+			--enable-ipv4)
+				ENABLE_IPV4="on"
+				;;
+			--disable-ipv4)
+				ENABLE_IPV4="off"
+				;;
+			*)
+				warning "Ignoring unknown option '${1}'"
+				;;
+		esac
+		shift
+	done
 }
 
 hook_new() {
 	local zone="${1}"
 	shift
 
-	if zone_config_hook_is_configured ${zone} "ipv4-dhcp"; then
-		log ERROR "You can configure the ipv4-dhcp hook only once for a zone"
+	if zone_config_hook_is_configured ${zone} "dhcp"; then
+		log ERROR "You can configure the dhcp hook only once for a zone"
 		return ${EXIT_ERROR}
 	fi
 
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--delay=*)
-				DELAY="$(cli_get_val "${1}")"
-				;;
-		esac
-		shift
-	done
+	if ! hook_parse_cmdline $@; then
+		# Return an error if the parsing of the cmd line fails
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if the user disabled ipv4 and ipv6
+
+	if ! enabled ENABLE_IPV6 && ! enabled ENABLE_IPV4; then
+		log ERROR "You disabled IPv6 and IPv4. At least one must be enabled"
+		return ${EXIT_ERROR}
+	fi
 
 	zone_config_settings_write "${zone}" "${HOOK}"
 
@@ -64,8 +99,17 @@ hook_up() {
 		exit ${EXIT_ERROR}
 	fi
 
-	# Start dhclient for IPv4 on this zone.
-	dhclient_start ${zone} ipv4
+	zone_config_settings_read "${zone}" "${config}"
+
+	# Start dhclient for IPv6 on this zone if enabled.
+	if enabled ENABLE_IPV6; then
+		dhclient_start ${zone} ipv6
+	fi
+
+	# Start dhclient for IPv4 on this zone if enabled.
+	if enabled ENABLE_IPV4; then
+		dhclient_start ${zone} ipv4
+	fi
 
 	exit ${EXIT_OK}
 }
@@ -79,6 +123,9 @@ hook_down() {
 		error "Zone '${zone}' doesn't exist."
 		exit ${EXIT_ERROR}
 	fi
+
+	# Stop dhclient for IPv6 on this zone.
+	dhclient_stop ${zone} ipv6
 
 	# Stop dhclient for IPv4 on this zone.
 	dhclient_stop ${zone} ipv4
@@ -99,24 +146,45 @@ hook_status() {
 	zone_config_settings_read "${zone}" "${config}"
 
 	local status
-	if dhclient_status ${zone} ipv4; then
+	if dhclient_status ${zone} ipv4 || dhclient_status ${zone} ipv6; then
 		status="${MSG_HOOK_UP}"
 	else
 		status="${MSG_HOOK_DOWN}"
 	fi
 	cli_statusline 3 "${HOOK}" "${status}"
 
-	cli_print_fmt1 3 "IPv4 address" "$(db_get "${zone}/ipv4/local-ip-address")"
-	local gateway="$(db_get "${zone}/ipv4/remote-ip-address")"
-	if isset gateway; then
-		cli_print_fmt1 3 "Gateway" "${gateway}"
+	cli_space
+
+	local proto
+	for proto in "IPv6" "IPv4"; do
+		local _proto=${proto,,}
+
+		cli_print_fmt1 3 "${proto}"
+
+		if enabled ENABLE_${proto^^}; then
+			cli_print_fmt1 4 "Status" "enabled"
+
+			local address="$(db_get "${zone}/${_proto}/local-ip-address")"
+			if isset address; then
+				cli_print_fmt1 4 "Address" "${address}"
+			fi
+
+			local gateway="$(db_get "${zone}/${_proto}/remote-ip-address")"
+			if isset gateway; then
+				cli_print_fmt1 4 "Gateway" "${gateway}"
+			fi
+
+			local dns_servers="$(db_get "${zone}/${_proto}/domain-name-servers")"
+			if isset dns_servers; then
+				cli_print_fmt1 4 "DNS Servers" "${dns_servers}"
+			fi
+		else
+			cli_print_fmt1 4 "Status" "disabled"
+		fi
+
 		cli_space
-	fi
-	local dns_servers="$(db_get "${zone}/ipv4/domain-name-servers")"
-	if isset dns_servers; then
-		cli_print_fmt1 3 "DNS-Servers" "${dns_servers}"
-		cli_space
-	fi
+
+	done
 
 	exit ${EXIT_OK}
 }
