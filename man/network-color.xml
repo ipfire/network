@@ -32,8 +32,8 @@
 
 		<para>
 			The <command>color</command> helps to manage colors for zone and ports.
-			The color is shown in the webinterface and on the status page of  a port or zone.
-			and make it much easier to identify a port or a zone.
+			The color is used to make identification of a zone or port easier on the
+			command line or web user interface.
 		</para>
 	</refsect1>
 
@@ -47,13 +47,13 @@
 		<variablelist>
 			<varlistentry>
 				<term>
-					<command>set <replaceable>hex-color-value</replaceable></command>
+					<command>set <replaceable>00AABB</replaceable></command>
 				</term>
 
 				<listitem>
 					<para>
-						The color of a zone or port are set with the <command>set</command> command.
-						It is always required to pass a valid color hex value like 880400.
+						The color of a zone or port is set with the <command>set</command> command.
+						It is always required to pass a valid color hex value (e.g. 880400).
 					</para>
 				</listitem>
 			</varlistentry>
@@ -64,7 +64,7 @@
 
 				<listitem>
 					<para>
-						This reset the color of a zone or port to white.
+						This command resets the color of a zone or port to blank.
 					</para>
 				</listitem>
 			</varlistentry>
