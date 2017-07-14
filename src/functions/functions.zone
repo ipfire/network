@@ -1287,6 +1287,24 @@ zone_config_settings_write() {
 	settings_write "${path}" ${args}
 }
 
+zone_config_settings_destroy() {
+	# This function deletes the config file for a given zone and config
+	assert [ $# -ge 2 ]
+	local zone="${1}"
+	local config="${2}"
+
+	local path="$(zone_dir "${zone}")/configs/${config}"
+
+	# Check if path is valid
+	if [ ! -f ${path} ]; then
+		log ERROR "Path: '${path}' is not valid"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Deleting config file ${path}"
+	rm -f "${path}"
+
+}
 zone_port_settings_read() {
 	assert [ $# -ge 2 ]
 
