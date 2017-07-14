@@ -168,14 +168,8 @@ case "${reason}" in
 			zone_up ${interface}
 		fi
 
-		# If the use configured a delay, we will honour that.
-		if [ -n "${DELAY}"  ]; then
-			assert isinteger DELAY
-			sleep ${DELAY}
-
-		# If he didn't, we will try to detect is STP has brought the
-		# bridge up.
-		elif device_is_bridge ${interface}; then
+		# We will try to detect is STP has brought the bridge up
+		if device_is_bridge ${interface}; then
 			counter=60
 
 			while [ ${counter} -gt 0 ]; do

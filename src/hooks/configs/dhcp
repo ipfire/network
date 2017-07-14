@@ -21,16 +21,13 @@
 
 . /usr/lib/network/header-config
 
-HOOK_CONFIG_SETTINGS="HOOK DELAY ENABLE_IPV6 ENABLE_IPV4"
+HOOK_CONFIG_SETTINGS="HOOK ENABLE_IPV6 ENABLE_IPV4"
 
 # Default settings.
-DELAY=0
 ENABLE_IPV6="on"
 ENABLE_IPV4="on"
 
 hook_check_config_settings() {
-	assert isset DELAY
-	assert isinteger DELAY
 	assert isset ENABLE_IPV6
 	assert isbool ENABLE_IPV6
 	assert isset ENABLE_IPV4
@@ -40,9 +37,6 @@ hook_check_config_settings() {
 hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--delay=*)
-				DELAY="$(cli_get_val "${1}")"
-				;;
 			--enable-ipv6)
 				ENABLE_IPV6="on"
 				;;
