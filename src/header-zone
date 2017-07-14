@@ -243,7 +243,21 @@ hook_config_destroy() {
 	local hook=$(zone_config_get_hook_from_id ${zone}  ${id})
 	assert isset hook
 
-	hook_config_cmd "destroy" "${zone}" "${hook}" "${hook}.${id}" "$@"
+	# First we bring the hook down
+	hook_config_cmd "down" "${zone}" "${hook}" "${hook}.${id}"
+
+	# If a hook_destroy function is implemented in the hook this function will be executed.
+	# If not a empty defined in header-config is executed.
+	if ! hook_config_cmd "destroy" "${zone}" "${hook}" "${hook}.${id}" "$@"; then
+
+		# A better error message should printed inside the hook.
+		# We will not bring the config up because we do not know if it is safe or if some parts are already destroyed.
+		log ERROR "Could not destroy config with the follwoing id: ${id}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Now we delete the config of the zone
+	zone_config_settings_destroy "${zone}" "${hook}.${id}"
 }
 
 hook_config_edit() {
