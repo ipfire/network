@@ -81,8 +81,8 @@ AM_V_XSLT_0 = @echo "  XSLT    " $@;
 # ------------------------------------------------------------------------------
 
 dist_doc_DATA = \
-	COPYING \
-	README
+	README \
+	docs/COPYING
 
 dist_sbin_SCRIPTS = \
 	src/dhclient-script \
