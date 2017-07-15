@@ -143,7 +143,7 @@ port_is_attached() {
 		assert isset zone
 		assert zone_exists ${zone}
 
-		if listmatch ${port} $(zone_get_ports ${zone}); then
+		if list_match ${port} $(zone_get_ports ${zone}); then
 			echo "${zone}"
 			return ${EXIT_OK}
 		fi
@@ -190,12 +190,12 @@ port_destroy() {
 	for other_port in $(ports_get); do
 		[ "${other_port}" = "${port}" ] && continue
 
-		if listmatch ${port} $(port_get_parents ${other_port}); then
+		if list_match ${port} $(port_get_parents ${other_port}); then
 			error_log "Cannot destroy port '${port}' which is a parent port to '${other_port}'."
 			ok=${EXIT_ERROR}
 		fi
 
-		if listmatch ${port} $(port_get_children ${other_port}); then
+		if list_match ${port} $(port_get_children ${other_port}); then
 			error_log "Cannot destroy port '${port}' which is child of port '${other_port}'."
 			ok=${EXIT_ERROR}
 		fi

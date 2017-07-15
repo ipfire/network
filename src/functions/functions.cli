@@ -25,7 +25,7 @@ cli_help_requested() {
 	local argument="${1}"
 
 	if [ -n "${argument}" ]; then
-		if listmatch ${argument} help -h --help; then
+		if list_match ${argument} help -h --help; then
 			return ${EXIT_TRUE}
 		fi
 	fi
@@ -391,11 +391,11 @@ cli_yesno() {
 		read yesno
 
 		# Check for "yes".
-		if listmatch ${yesno} y Y yes YES Yes; then
+		if list_match ${yesno} y Y yes YES Yes; then
 			return ${EXIT_TRUE}
 
 		# Check for "no".
-		elif listmatch ${yesno} n N no NO No; then
+		elif list_match ${yesno} n N no NO No; then
 			return ${EXIT_FALSE}
 		fi
 	done

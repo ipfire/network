@@ -104,7 +104,7 @@ bridge_attach_device() {
 	fi
 
 	# If device is already attached, exit silently.
-	if listmatch ${device} $(bridge_get_members ${bridge}); then
+	if list_match ${device} $(bridge_get_members ${bridge}); then
 		return ${EXIT_OK}
 	fi
 
@@ -145,7 +145,7 @@ bridge_detach_device() {
 	fi
 
 	# If device is not attched, exit silently.
-	if ! listmatch ${device} $(bridge_get_members ${bridge}); then
+	if ! list_match ${device} $(bridge_get_members ${bridge}); then
 		return ${EXIT_OK}
 	fi
 

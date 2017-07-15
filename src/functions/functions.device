@@ -775,7 +775,7 @@ device_has_ip() {
 			;;
 	esac
 
-	listmatch ${addr} $(device_get_addresses ${device})
+	list_match ${addr} $(device_get_addresses ${device})
 }
 
 device_get_addresses() {

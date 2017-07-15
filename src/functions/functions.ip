@@ -62,7 +62,7 @@ ip_protocol_is_supported() {
 
 	assert isset proto
 
-	listmatch ${proto} ${IP_SUPPORTED_PROTOCOLS}
+	list_match ${proto} ${IP_SUPPORTED_PROTOCOLS}
 }
 
 ip_is_valid() {

@@ -735,7 +735,7 @@ _firewall_parse_rule_line() {
 	while read -r arg; do
 		key=$(cli_get_key ${arg})
 
-		if ! listmatch "${key}" ${FIREWALL_RULES_CONFIG_PARAMS}; then
+		if ! list_match "${key}" ${FIREWALL_RULES_CONFIG_PARAMS}; then
 			log WARNING "Unrecognized argument: ${arg}"
 			return ${EXIT_ERROR}
 		fi

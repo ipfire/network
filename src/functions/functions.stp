@@ -100,7 +100,7 @@ stp_bridge_set_protocol() {
 	local mode=${2}
 	assert isset mode
 
-	if ! listmatch ${mode} ${STP_ALLOWED_MODES}; then
+	if ! list_match ${mode} ${STP_ALLOWED_MODES}; then
 		log WARNING "Unknown protocol version: ${mode}."
 		log WARNING "Using default mode."
 

@@ -56,7 +56,7 @@ list_remove() {
 
 	local _list k
 	for k in ${!list}; do
-		listmatch ${k} $@ && continue
+		list_match ${k} $@ && continue
 
 		_list="${_list} ${k}"
 	done
