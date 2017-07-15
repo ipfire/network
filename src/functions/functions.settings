@@ -165,7 +165,7 @@ settings_write() {
 	> ${settings_file}
 
 	local param
-	for param in $(listsort $@); do
+	for param in $(list_sort $@); do
 		echo "${param}=\"${!param}\"" >> ${settings_file}
 	done
 }
@@ -185,7 +185,7 @@ settings_remove() {
 settings_print() {
 	local param
 
-	for param in $(listsort $@); do
+	for param in $(list_sort $@); do
 		printf "%-32s = %s\n" "${param}" "${!param}"
 	done
 }
