@@ -1,0 +1,88 @@
+This document attempts to explain basic styles and guidelines for the IPFire
+network codebase. New code should conform to these standards. Of course every
+rules has an exception, but still this should be followed as closely as
+possible.
+
+# Naming & Formatting Code
+
+## Whitespace
+
+Tabs. No spaces at an end of a line.
+
+## Line Length
+
+Lines should not be longer than 80 characters. 120 is definitely the hard limit.
+
+## Indentation
+
+One tab.
+
+## Control Structures
+
+	if cmd ...; then
+		cmd ...
+	fi
+
+	while cmd ...; do
+		cmd ...
+	done
+
+	local i
+	for i in 1 2 3; do
+		cmd ...
+	done
+
+	case "${var}" in
+		1)
+			cmd ...
+			;;
+		2)
+			cmd ...
+			;;
+	esac
+
+## Variables
+
+Variables must be used with curly brackets: ${var}, NOT $var
+
+Global variables should be ${UPPERCASE}. Local variables should be ${lowercase}.
+
+## Function Declarations
+
+	# This explains what the function is doing and
+	# how it is supposed to be used...
+	foo() {
+		local arg1=${1}
+		local arg2=${2}
+
+		cmd ...
+		cmd ...
+	}
+
+Arguments must be parsed as early as possible to give them meaningful names
+instead of using ${1}, ${2}, ...
+
+## Functions Exit Codes
+
+Functions must always return a clean error code out of EXIT_OK, EXIT_ERROR,
+EXIT_TRUE, EXIT_FALSE or others so that things are easily readable.
+
+## Assertions
+
+assert() should be used to catch any errors at runtime as early as possible.
+
+They should not used to catch any issues that the user needs to be informed of.
+
+The developer cannot rely on the statement being executed since we might skip the
+executing of assertions when ever we need to.
+
+## Lists
+
+Lists of anything should be alphabetically ordered as long as there is no other
+(i.e. better) reason to sort them otherwise. IPv6 is always first.
+
+## Logging & Error Messages
+
+Error messages must be short and clear. No trailing full stops.
+
+They should always be passive sentences and present tense.

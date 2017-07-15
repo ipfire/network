@@ -82,6 +82,7 @@ AM_V_XSLT_0 = @echo "  XSLT    " $@;
 
 dist_doc_DATA = \
 	README \
+	docs/CODING_STYLE \
 	docs/COPYING
 
 dist_sbin_SCRIPTS = \
