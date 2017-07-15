@@ -82,11 +82,6 @@ warning_log() {
 	log WARNING "$@"
 }
 
-# Deprecated
-listlength() {
-	list_length $@
-}
-
 # Speedup function to avoid a call of the basename binary
 basename() {
 	echo "${1##*/}"
