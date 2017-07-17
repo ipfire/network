@@ -565,9 +565,9 @@ zone_config() {
 			# TODO This could be also a valid hid
 			local id=${cmd}
 
-			if zone_config_id_is valid ${zone} ${id} && [[ ${1} == "edit" ]]; then
+			if zone_config_id_is_valid ${zone} ${id} && [[ ${1} == "edit" ]]; then
 				shift 1
-				zone_config_edit "${zone}" "${id}""$@"
+				zone_config_edit "${zone}" "${id}" "$@"
 			else
 				error "Unrecognized argument: ${cmd}"
 				cli_usage root-zone-config-subcommands
