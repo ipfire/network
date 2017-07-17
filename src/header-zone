@@ -225,7 +225,7 @@ hook_config_destroy() {
 }
 
 hook_config_edit() {
-	assert [ $# -eq 2 ]
+	assert [ $# -ge 2 ]
 	local zone=${1}
 	# The id must be the id and not the hid.
 	local id=${2}
