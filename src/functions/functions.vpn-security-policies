@@ -1,0 +1,527 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2017  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+VPN_SECURITY_POLICIES_CONFIG_SETTINGS="CIPHER COMPRESSION GROUP_TYPE INTEGRITY KEY_EXCHANGE LIFETIME PFS"
+VPN_SECURITY_POLICIES_READONLY="system"
+
+VPN_SUPPORTED_CIPHERS="AES192 AES256 AES512"
+VPN_SUPPORTED_INTEGRITY="SHA512 SHA256 SHA128"
+VPN_SUPPORTED_GROUP_TYPES="MODP8192 MODP4096"
+
+vpn_security_policies_check_readonly() {
+	# This functions checks if a policy is readonly
+	# returns true when yes and false when no
+
+	if isoneof name ${VPN_SECURITY_POLICIES_READONLY}; then
+		return ${EXIT_TRUE}
+	else
+		return ${EXIT_FALSE}
+	fi
+}
+
+vpn_security_policies_write_config() {
+	# This function writes all values to a via ${name} specificated vpn security policy configuration file
+	assert [ $# -ge 1 ]
+
+	local name="${1}"
+
+	if ! vpn_security_policy_exists ${name}; then
+		log ERROR "No such vpn security policy: ${name}"
+		return ${EXIT_ERROR}
+	fi
+
+	if vpn_security_policies_check_readonly ${name}; then
+		log ERROR "The ${name} vpn security policy cannot be changed."
+		return ${EXIT_ERROR}
+	fi
+
+	local path="$(vpn_security_policies_path ${name})"
+	if [ ! -w ${path} ]; then
+		log ERROR "${path} is not writeable"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! settings_write "${path}" ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}; then
+		log ERROR "Could not write configuration settings for vpn security policy ${name}"
+		return ${EXIT_ERROR}
+	fi
+
+	# TODO everytime we successfully write a config we should call some trigger to take the changes into effect
+}
+
+vpn_security_policies_write_config_key() {
+	# This funtion writes the value for one key to a via ${name} specificated vpn security policy configuration file
+	assert [ $# -ge 3 ]
+	local name=${1}
+	local key=${2}
+	shift 2
+	local value="$@"
+
+	if ! vpn_security_policy_exists ${name}; then
+		log ERROR "No such vpn security policy: ${name}"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Set '${key}' to new value '${value}' in vpn security policy ${name}"
+
+	local ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}
+
+	# Read the config settings
+	if ! vpn_security_policies_read_config ${name}; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Set the key to a new value
+	assign "${key}" "${value}"
+
+	if ! vpn_security_policies_write_config ${name}; then
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_TRUE}
+
+}
+
+vpn_security_policies_read_config() {
+	# Reads one or more keys out of a settings file or all if no key is provided.
+	assert [ $# -ge 1 ]
+
+	local name="${1}"
+	shift 1
+
+	if ! vpn_security_policy_exists ${name}; then
+		log ERROR "No such vpn security policy: ${name}"
+		return ${EXIT_ERROR}
+	fi
+
+
+	local args
+	if [ $# -eq 0 ] && [ -n "${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}" ]; then
+		list_append args ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}
+	else
+		list_append args $@
+	fi
+
+	local path="$(vpn_security_policies_path ${name})"
+
+	if ! settings_read "${path}" ${args}; then
+		log ERROR "Could not read settings for vpn security policy ${name}"
+		return ${EXIT_ERROR}
+	fi
+}
+
+vpn_security_policies_path() {
+	# Returns the path to a the configuration fora given name
+	assert [ $# -eq 1 ]
+	local name=${1}
+
+	if vpn_security_policies_check_readonly ${name}; then
+		echo "${NETWORK_SHARE_DIR}/vpn/security-policies/${name}"
+	else
+		echo "${NETWORK_CONFIG_DIR}/vpn/security-policies/${name}"
+	fi
+}
+
+vpn_security_policies_show() {
+	# Print the content of a vpn security policy configuration file in a nice way
+	assert [ $# -eq 1 ]
+	local name=${1}
+
+	local ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}
+
+	# Break if read fails
+	if ! vpn_security_policies_read_config ${name}; then
+		return ${EXIT_ERROR}
+	fi
+
+	cli_print_fmt1 0 "Security Policy: ${name}"
+	cli_space
+
+	# This could be done in a loop but a loop is much more complicated
+	# because we print 'Group Types' but the variable is named 'GROUP_TYPES'
+	cli_print_fmt1 1 "Ciphers:"
+	cli_print_fmt1 2 "${CIPHER}"
+	cli_space
+	cli_print_fmt1 1 "Integrity:"
+	cli_print_fmt1 2 "${INTEGRITY}"
+	cli_space
+	cli_print_fmt1 1 "Group Types:"
+	cli_print_fmt1 2 "${GROUP_TYPE}"
+	cli_space
+
+	cli_print_fmt1 1 "Key Exchange:" "${KEY_EXCHANGE}"
+	# Check if lifetime is an integer
+	if isinteger LIFETIME && [ ${LIFETIME} -gt 0 ]; then
+		cli_print_fmt1 1 "Key Lifetime:" "$(format_time ${LIFETIME})"
+	else
+		log ERROR "The value for Key Lifetime is not a valid integer greater zero."
+	fi
+	if enabled PFS; then
+		cli_print_fmt1 1 "Perfect Forward Secrecy:" "enabled"
+	else
+		cli_print_fmt1 1 "Perfect Forward Secrecy:" "disabled"
+	fi
+	cli_space
+	if enabled COMPRESSION; then
+		cli_print_fmt1 1 "Compression:" "enabled"
+	else
+		cli_print_fmt1 1 "Compression:" "disabled"
+	fi
+	cli_space
+}
+
+vpn_security_policy_exists() {
+	# This function checks if a vpn security policy exists
+	# Returns True when yes and false when not
+	assert [ $# -eq 1 ]
+	local name=${1}
+
+	local path=$(vpn_security_policies_path ${name})
+	[ -f ${path} ]
+}
+
+
+vpn_security_policies_cipher(){
+	# This function parses the parameters for the 'cipher' command
+	local name=${1}
+	shift
+
+	if [ $# -eq 0 ]; then
+		log ERROR "You must pass at least one value after cipher"
+		return ${EXIT_ERROR}
+	fi
+
+	local CIPHER
+
+	if ! vpn_security_policies_read_config ${name} "CIPHER"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Remove duplicated entries to proceed the list safely
+	CIPHER="$(list_unique ${CIPHER})"
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			-*)
+				value=${1#-}
+				# Check if the cipher is in the list of ciphers and
+				# check if the list has after removing this cipher at least one valid value
+				if list_match ${value} ${CIPHER}; then
+					list_remove CIPHER ${value}
+				else
+					# We do not break here because this error does not break the processing of the next maybe valid values.
+					log ERROR "Can not remove ${value} from the list of Ciphers because ${value} is not in the list."
+				fi
+				;;
+			+*)
+				value=${1#+}
+				# Check if the Ciphers is in the list of supported ciphers.
+				if ! isoneof value ${VPN_SUPPORTED_CIPHERS}; then
+					# We do not break here because this error does not break the processing of the next maybe valid values.
+					log ERROR "${value} is not a supported cipher and can thats why not added to the list of ciphers."
+				else
+					if list_match ${value} ${CIPHER}; then
+						log WARNING "${value} is already in the list of ciphers of this policy."
+					else
+						list_append CIPHER ${value}
+					fi
+				fi
+				;;
+		esac
+		shift
+	done
+
+	# Check if the list contain at least one valid cipher
+	if [ $(list_length ${CIPHER}) -ge 1 ]; then
+		if ! vpn_security_policies_write_config_key ${name} "CIPHER" ${CIPHER}; then
+			log ERROR "The changes for the vpn security policy ${name} could not be written."
+		fi
+	else
+		log ERROR "After proceding all ciphers the list is empty and thats why no changes are written."
+		return ${EXIT_ERROR}
+	fi
+}
+
+vpn_security_policies_compression(){
+	# This function parses the parameters for the 'compression' command
+	local name=${1}
+	local value=${2}
+
+	# Check if we get only one argument after compression <name>
+	if [ ! $# -eq 2 ]; then
+		log ERROR "The number of arguments do not match. Only one argument after compression is allowed."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! isbool value; then
+		# We suggest only two values to avoid overburding the user.
+		log ERROR "Invalid Argument ${value}"
+		return ${EXIT_ERROR}
+	fi
+
+	vpn_security_policies_write_config_key "${name}" "COMPRESSION" "${value}"
+}
+
+vpn_security_policies_group_type(){
+	# This function parses the parameters for the 'group-type' command.
+	local name=${1}
+	shift
+
+	if [ $# -eq 0 ]; then
+		log ERROR "You must pass at least one value after group-type"
+		return ${EXIT_ERROR}
+	fi
+
+	local GROUP_TYPE
+
+	if ! vpn_security_policies_read_config ${name} "GROUP_TYPE"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Remove duplicated entries to proceed the list safely
+	GROUP_TYPE="$(list_unique ${GROUP_TYPE})"
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			-*)
+				value=${1#-}
+				# Check if the group type is in the list of group types and
+				# check if the list has after removing this group type at leatst one valid value
+				if list_match ${value} ${GROUP_TYPE}; then
+					list_remove GROUP_TYPE ${value}
+				else
+					# We do not break here because this error does not break the processing of the next maybe valid values.
+					log ERROR "Can not remove ${value} from the list of group types because ${value} is not in the list."
+				fi
+				;;
+			+*)
+				value=${1#+}
+				# Check if the group type is in the list of supported group types.
+				if ! isoneof value ${VPN_SUPPORTED_GROUP_TYPES}; then
+					# We do not break here because the processing of other maybe valid values are indepent from this error.
+					log ERROR "${value} is not a supported group type and can thats why not added to the list of group types."
+				else
+					if list_match ${value} ${GROUP_TYPE}; then
+						log WARNING "${value} is already in the list of group-types of this policy."
+					else
+						list_append GROUP_TYPE ${value}
+					fi
+				fi
+				;;
+		esac
+		shift
+	done
+
+	# Check if the list contain at least one valid group-type
+	if [ $(list_length ${GROUP_TYPE}) -ge 1 ]; then
+		if ! vpn_security_policies_write_config_key ${name} "GROUP_TYPE" ${GROUP_TYPE}; then
+			log ERROR "The changes for the vpn security policy ${name} could not be written."
+		fi
+	else
+		log ERROR "After proceding all group types the list is empty and thats why no changes are written."
+		return ${EXIT_ERROR}
+	fi
+}
+vpn_security_policies_integrity(){
+	# This function parses the parameters for the 'integrity' command
+	local name=${1}
+	shift
+
+	if [ $# -eq 0 ]; then
+		log ERROR "You must pass at least one value after integrity."
+		return ${EXIT_ERROR}
+	fi
+
+	local INTEGRITY
+
+	if ! vpn_security_policies_read_config ${name} "INTEGRITY"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Remove duplicated entries to proceed the list safely
+	INTEGRITY="$(list_unique ${INTEGRITY})"
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			-*)
+				value=${1#-}
+				# Check if the integrity hash is in the list of integrity hashes and
+				# check if the list has after removing this  integrity hash at least one valid value
+				if list_match ${value} ${INTEGRITY}; then
+					list_remove INTEGRITY ${value}
+				else
+					# We do not break here because the processing of other maybe valid values are indepent from this error.
+					log ERROR "Can not remove ${value} from the list of integrity hashes because ${value} is not in the list."
+				fi
+				;;
+			+*)
+				value=${1#+}
+				# Check if the Ciphers is in the list of supported integrity hashes.
+				if ! isoneof value ${VPN_SUPPORTED_INTEGRITY}; then
+					# We do not break here because the processing of other maybe valid values are indepent from this error.
+					log ERROR "${value} is not a supported integrity hash and can thats why not added to the list of integrity hashes."
+				else
+					if list_match ${value} ${INTEGRITY}; then
+						log WARNING "${value} is already in the list of integrety hashes of this policy."
+					else
+						list_append INTEGRITY ${value}
+					fi
+				fi
+				;;
+		esac
+		shift
+	done
+
+	# Check if the list contain at least one valid group-type
+	if [ $(list_length ${INTEGRITY}) -ge 1 ]; then
+		if ! vpn_security_policies_write_config_key ${name} "INTEGRITY" ${INTEGRITY}; then
+			log ERROR "The changes for the vpn security policy ${name} could not be written."
+		fi
+	else
+		log ERROR "After proceding all integrity hashes the list is empty and thats why no changes are written."
+		return ${EXIT_ERROR}
+	fi
+
+}
+
+vpn_security_policies_key_exchange() {
+	# This function parses the parameters for the 'key-exchange' command
+	local name=${1}
+	local value=${2}
+	# Check if we get only one argument after key-exchange <name>
+	if [ ! $# -eq 2 ]; then
+		log ERROR "The number of arguments do not match. Only argument after key-exchange is allowed."
+		return ${EXIT_ERROR}
+	fi
+
+
+	if ! isoneof value "ikev1" "ikev2" "IKEV1" "IKEV2"; then
+		log ERROR "Invalid Argument ${value}"
+		return ${EXIT_ERROR}
+	fi
+
+	vpn_security_policies_write_config_key "${name}" "KEY_EXCHANGE" "${value,,}"
+}
+
+vpn_security_policies_lifetime(){
+	# This function parses the parameters for the 'lifetime' command.
+	local name=${1}
+	shift
+	local value=$@
+
+	# Check if we get only one argument after lifetime <name>
+	if [ ! $# -ge 1 ]; then
+		log ERROR "The number of arguments do not match you must provide at least one integer value or a valid time with the format  <hours>h <minutes>m <seconds>s"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! isinteger value; then
+		value=$(parse_time $@)
+		if [ ! $? -eq 0 ]; then
+			log ERROR "Parsing the passed time was not sucessful please check the passed values."
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	if [ ${value} -le 0 ]; then
+		log ERROR "The passed time value must be in the sum greater zero seconds."
+		return ${EXIT_ERROR}
+	fi
+
+	vpn_security_policies_write_config_key "${name}" "LIFETIME" "${value}"
+}
+
+vpn_security_policies_pfs(){
+	# This function parses the parameters for the 'pfs' command
+	local name=${1}
+	local value=${2}
+
+	# Check if we get only one argument after pfs <name>
+	if [ ! $# -eq 2 ]; then
+		log ERROR "The number of arguments do not match. Only argument after pfs is allowed."
+		return ${EXIT_ERROR}
+	fi
+
+	if [ ! $# -eq 2 ] || ! isbool value; then
+		# We suggest only two values to avoid overburding the user.
+		log ERROR "Invalid Argument ${value}"
+		return ${EXIT_ERROR}
+	fi
+
+	vpn_security_policies_write_config_key "${name}" "PFS" "${value}"
+}
+
+vpn_security_policies_check_name() {
+	# This function checks if a vpn security policy name is valid
+	# Allowed are only A-Za-z0-9
+	assert [ $# -eq 1 ]
+	local name=${1}
+	[[ ${name} =~ [^[:alnum:]$] ]]
+}
+
+vpn_security_policies_new() {
+	# Function that creates based on the paramters one ore more new vpn security policies
+	local name
+	if [ -z $@ ]; then
+		log ERROR "No name provided."
+		return ${EXIT_ERROR}
+	fi
+
+	for name in $@; do
+		if vpn_security_policy_exists ${name}; then
+			log ERROR "The vpn security policy ${name} does already exist."
+			continue
+		fi
+
+		if  vpn_security_policies_check_name ${name}; then
+			log ERROR "'${name}' contains illegal characters. Allowed are only A-Za-z0-9"
+			continue
+		fi
+
+		if vpn_security_policies_check_readonly ${name}; then
+			log ERROR "The vpn security policy ${name} is readonly and can thats why not created."
+			continue
+		fi
+
+		log DEBUG "Creating vpn security policy ${name}"
+		copy "$(vpn_security_policies_path "system")" "$(vpn_security_policies_path ${name})"
+	done
+
+}
+
+vpn_security_policies_destroy() {
+	# Function that deletes based on the passed parameters one ore more vpn security policies
+	local name
+	for name in $@; do
+		if ! vpn_security_policy_exists ${name}; then
+			log ERROR "The vpn security policy ${name} does not exist."
+			continue
+		fi
+
+		if vpn_security_policies_check_readonly ${name}; then
+			log ERROR "The vpn security policy ${name} cannot be deleted."
+			continue
+		fi
+
+		log DEBUG "Deleting vpn security policy ${name}"
+		settings_remove $(vpn_security_policies_path ${name})
+	done
+}
