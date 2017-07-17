@@ -55,6 +55,12 @@ hook_parse_cmdline() {
 		esac
 		shift
 	done
+
+	# Check if the user disabled ipv6 and ipv4
+	if ! enabled ENABLE_IPV6 && ! enabled ENABLE_IPV4; then
+		log ERROR "You disabled IPv6 and IPv4. At least one must be enabled"
+		return ${EXIT_ERROR}
+	fi
 }
 
 hook_new() {
@@ -68,13 +74,6 @@ hook_new() {
 
 	if ! hook_parse_cmdline $@; then
 		# Return an error if the parsing of the cmd line fails
-		return ${EXIT_ERROR}
-	fi
-
-	# Check if the user disabled ipv4 and ipv6
-
-	if ! enabled ENABLE_IPV6 && ! enabled ENABLE_IPV4; then
-		log ERROR "You disabled IPv6 and IPv4. At least one must be enabled"
 		return ${EXIT_ERROR}
 	fi
 
