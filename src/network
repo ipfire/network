@@ -1200,7 +1200,6 @@ cli_reset() {
 	fi
 
 	warning_log "Will reset the whole network configuration!!!"
-
 	# Force mode is disabled by default
 	local force=0
 
@@ -1390,13 +1389,75 @@ cli_raw() {
 	exit ${EXIT_OK}
 }
 
+cli_vpn() {
+	local action=${1}
+	shift 1
+
+	case "${action}" in
+		security-policies)
+			cli_vpn_security_policies $@
+			;;
+		*)
+			error "Unrecognized argument: ${action}"
+			exit ${EXIT_ERROR}
+			;;
+	esac
+}
+
+cli_vpn_security_policies() {
+
+	local action
+	local security_policy
+
+	if vpn_security_policy_exists ${1}; then
+
+		security_policy=${1}
+		key=${2}
+		shift 2
+
+		case "${key}" in
+			cipher|compression|integrity|lifetime|pfs|show)
+				vpn_security_policies_${key} ${security_policy} $@
+				;;
+			group-type)
+				vpn_security_policies_group_type ${security_policy} $@
+				;;
+			key-exchange)
+				vpn_security_policies_key_exchange ${security_policy} $@
+				;;
+			*)
+				error "Unrecognized argument: ${key}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	else
+		action=${1}
+		shift
+
+		case "${action}" in
+			new)
+				vpn_security_policies_new $@
+				;;
+			destroy)
+				vpn_security_policies_destroy $@
+				;;
+			""|*)
+				if [ -n "${action}" ]; then
+					error "Unrecognized argument: '${action}'"
+				fi
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	fi
+}
+
 # Process the given action
 case "${action}" in
 	init)
 		init_run
 		;;
 
-	settings|hostname|port|device|zone|start|stop|restart|status|reset|route)
+	settings|hostname|port|device|zone|start|stop|restart|status|reset|route|vpn)
 		cli_${action} $@
 		;;
 
