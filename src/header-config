@@ -22,3 +22,57 @@
 hook_new() {
 	cmd_not_implemented
 }
+
+hook_edit() {
+	local zone=${1}
+	local config=${2}
+	shift 2
+
+	local hook=$(config_get_hook_from_config ${config})
+	local id=$(config_get_id_from_config ${config})
+
+	assert isset hook
+	assert isset id
+
+	if ! zone_exists ${zone}; then
+		error "Zone '${zone}' doesn't exist."
+		exit ${EXIT_ERROR}
+	fi
+
+	# Bring the config down
+	if device_exists ${zone}; then
+		if ! hook_config_cmd "down" "${zone}" "${hook}" "${hook}.${id}"; then
+			log ERROR "Could not bring config ${config} down for zone ${zone}"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	local ${HOOK_CONFIG_SETTINGS}
+
+	# If reading the config fails we cannot go on
+	if ! zone_config_settings_read "${zone}" "${config}"; then
+		log ERROR "Could read the config ${config} for zone ${zone}"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! hook_parse_cmdline $@; then
+		# Return an error if the parsing of the cmd line fails
+		return ${EXIT_ERROR}
+	fi
+
+	# Write the settings to the config file
+	if ! zone_config_settings_write "${zone}" "${hook}" ${id}; then
+		log ERROR "Could not write config settings file ${config} for ${zone}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Bring the config up
+	if device_exists ${zone}; then
+		if ! hook_config_cmd "up" "${zone}" "${hook}" "${hook}.${id}"; then
+			log ERROR "Could not bring config ${config} up for zone ${zone}"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	exit ${EXIT_OK}
+}
