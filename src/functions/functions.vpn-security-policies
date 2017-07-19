@@ -24,7 +24,12 @@ VPN_SECURITY_POLICIES_READONLY="system"
 
 VPN_DEFAULT_SECURITY_POLICY="system"
 
-VPN_SUPPORTED_CIPHERS="AES192 AES256 AES512"
+declare -A VPN_SUPPORTED_CIPHERS=(
+	[AES256-CBC]="256 bit AES-CBC"
+	[AES192-CBC]="192 bit AES-CBC"
+	[AES128-CBC]="128 bit AES-CBC"
+)
+
 VPN_SUPPORTED_INTEGRITY="SHA512 SHA256 SHA128"
 VPN_SUPPORTED_GROUP_TYPES="MODP8192 MODP4096"
 
@@ -244,7 +249,7 @@ vpn_security_policies_cipher(){
 			+*)
 				value=${1#+}
 				# Check if the Ciphers is in the list of supported ciphers.
-				if ! isoneof value ${VPN_SUPPORTED_CIPHERS}; then
+				if ! isoneof value ${!VPN_SUPPORTED_CIPHERS[@]}; then
 					# We do not break here because this error does not break the processing of the next maybe valid values.
 					log ERROR "${value} is not a supported cipher and can thats why not added to the list of ciphers."
 				else
