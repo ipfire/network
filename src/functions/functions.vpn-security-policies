@@ -228,7 +228,11 @@ vpn_security_policies_show() {
 	# This could be done in a loop but a loop is much more complicated
 	# because we print 'Group Types' but the variable is named 'GROUP_TYPES'
 	cli_print_fmt1 1 "Ciphers:"
-	cli_print_fmt1 2 "${CIPHER}"
+
+	local cipher
+	for cipher in ${CIPHER}; do
+		cli_print_fmt1 2 "${VPN_SUPPORTED_CIPHERS[${cipher}]-${cipher}}"
+	done
 	cli_space
 
 	cli_print_fmt1 1 "Integrity:"
