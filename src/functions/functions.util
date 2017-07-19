@@ -760,6 +760,12 @@ copy() {
 	local src=${1}
 	local dst=${2}
 
+	# Check if we can read from the source
+	if [ ! -r "${src}" ]; then
+		log ERROR "Cannot read ${src}"
+		return ${EXIT_ERROR}
+	fi
+
 	# Check if ${dst} is a directory
 	if [ -d "${dst}" ]; then
 		log ERROR "${dst} is a directory"
