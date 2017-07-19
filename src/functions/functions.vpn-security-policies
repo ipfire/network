@@ -284,7 +284,10 @@ vpn_security_policies_show() {
 	cli_space
 
 	cli_print_fmt1 1 "Group Types:"
-	cli_print_fmt1 2 "${GROUP_TYPE}"
+	local group_type
+	for group_type in ${GROUP_TYPE}; do
+		cli_print_fmt1 2 "${VPN_SUPPORTED_GROUP_TYPES[${group_type}]-${group_type}}"
+	done
 	cli_space
 
 	cli_print_fmt1 1 "Key Exchange:" "${KEY_EXCHANGE}"
