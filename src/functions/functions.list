@@ -25,6 +25,7 @@
 list_append() {
 	local list=${1}
 	assert isset list
+	assert [ ${list} != "list" ]
 	shift
 
 	local arg
@@ -40,6 +41,7 @@ list_append_one() {
 	shift
 
 	assert isset list
+	assert [ ${list} != "list" ]
 
 	if [ -n "${!list}" ]; then
 		printf -v ${list} -- "${!list} $@"
@@ -53,6 +55,7 @@ list_remove() {
 	shift
 
 	assert isset list
+	assert [ ${list} != "list" ]
 
 	local _list k
 	for k in ${!list}; do
@@ -126,6 +129,10 @@ list_count() {
 list_join() {
 	local list=${1}
 	local delim=${2}
+
+	assert isset list
+	assert isset delim
+	assert [ ${list} != "list" ]
 
 	local ret
 	printf -v ret "${delim}%s" ${!list}
