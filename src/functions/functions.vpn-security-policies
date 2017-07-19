@@ -22,6 +22,8 @@
 VPN_SECURITY_POLICIES_CONFIG_SETTINGS="CIPHER COMPRESSION GROUP_TYPE INTEGRITY KEY_EXCHANGE LIFETIME PFS"
 VPN_SECURITY_POLICIES_READONLY="system"
 
+VPN_DEFAULT_SECURITY_POLICY="system"
+
 VPN_SUPPORTED_CIPHERS="AES192 AES256 AES512"
 VPN_SUPPORTED_INTEGRITY="SHA512 SHA256 SHA128"
 VPN_SUPPORTED_GROUP_TYPES="MODP8192 MODP4096"
@@ -517,9 +519,15 @@ vpn_security_policies_new() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Check if our source policy exists
+	if ! vpn_security_policy_exists "${VPN_DEFAULT_SECURITY_POLICY}"; then
+		error "Default VPN Security Policy '${VPN_DEFAULT_SECURITY_POLICY}' does not exist"
+		return ${EXIT_ERROR}
+	fi
+
 	log DEBUG "Creating VPN Security Policy ${name}"
 
-	if copy "$(vpn_security_policies_path "system")" "$(vpn_security_policies_path ${name})"; then
+	if copy "$(vpn_security_policies_path "${VPN_DEFAULT_SECURITY_POLICY}")" "$(vpn_security_policies_path ${name})"; then
 		log INFO "VPN Security Policy ${name} successfully created"
 	else
 		log ERROR "Could not create VPN Security Policy ${name}"
