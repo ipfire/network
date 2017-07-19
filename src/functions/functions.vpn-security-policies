@@ -26,10 +26,9 @@ VPN_SUPPORTED_CIPHERS="AES192 AES256 AES512"
 VPN_SUPPORTED_INTEGRITY="SHA512 SHA256 SHA128"
 VPN_SUPPORTED_GROUP_TYPES="MODP8192 MODP4096"
 
+# This functions checks if a policy is readonly
+# returns true when yes and false when no
 vpn_security_policies_check_readonly() {
-	# This functions checks if a policy is readonly
-	# returns true when yes and false when no
-
 	if isoneof name ${VPN_SECURITY_POLICIES_READONLY}; then
 		return ${EXIT_TRUE}
 	else
@@ -37,23 +36,23 @@ vpn_security_policies_check_readonly() {
 	fi
 }
 
+# This function writes all values to a via ${name} specificated vpn security policy configuration file
 vpn_security_policies_write_config() {
-	# This function writes all values to a via ${name} specificated vpn security policy configuration file
 	assert [ $# -ge 1 ]
 
 	local name="${1}"
 
-	if ! vpn_security_policy_exists ${name}; then
+	if ! vpn_security_policy_exists "${name}"; then
 		log ERROR "No such vpn security policy: ${name}"
 		return ${EXIT_ERROR}
 	fi
 
-	if vpn_security_policies_check_readonly ${name}; then
+	if vpn_security_policies_check_readonly "${name}"; then
 		log ERROR "The ${name} vpn security policy cannot be changed."
 		return ${EXIT_ERROR}
 	fi
 
-	local path="$(vpn_security_policies_path ${name})"
+	local path="$(vpn_security_policies_path "${name}")"
 	if [ ! -w ${path} ]; then
 		log ERROR "${path} is not writeable"
 		return ${EXIT_ERROR}
@@ -67,15 +66,17 @@ vpn_security_policies_write_config() {
 	# TODO everytime we successfully write a config we should call some trigger to take the changes into effect
 }
 
+# This funtion writes the value for one key to a via ${name} specificated vpn security policy configuration file
 vpn_security_policies_write_config_key() {
-	# This funtion writes the value for one key to a via ${name} specificated vpn security policy configuration file
 	assert [ $# -ge 3 ]
+
 	local name=${1}
 	local key=${2}
 	shift 2
+
 	local value="$@"
 
-	if ! vpn_security_policy_exists ${name}; then
+	if ! vpn_security_policy_exists "${name}"; then
 		log ERROR "No such vpn security policy: ${name}"
 		return ${EXIT_ERROR}
 	fi
@@ -85,29 +86,28 @@ vpn_security_policies_write_config_key() {
 	local ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}
 
 	# Read the config settings
-	if ! vpn_security_policies_read_config ${name}; then
+	if ! vpn_security_policies_read_config "${name}"; then
 		return ${EXIT_ERROR}
 	fi
 
 	# Set the key to a new value
 	assign "${key}" "${value}"
 
-	if ! vpn_security_policies_write_config ${name}; then
+	if ! vpn_security_policies_write_config "${name}"; then
 		return ${EXIT_ERROR}
 	fi
 
 	return ${EXIT_TRUE}
-
 }
 
+# Reads one or more keys out of a settings file or all if no key is provided.
 vpn_security_policies_read_config() {
-	# Reads one or more keys out of a settings file or all if no key is provided.
 	assert [ $# -ge 1 ]
 
 	local name="${1}"
 	shift 1
 
-	if ! vpn_security_policy_exists ${name}; then
+	if ! vpn_security_policy_exists "${name}"; then
 		log ERROR "No such vpn security policy: ${name}"
 		return ${EXIT_ERROR}
 	fi
@@ -128,26 +128,26 @@ vpn_security_policies_read_config() {
 	fi
 }
 
+# Returns the path to a the configuration fora given name
 vpn_security_policies_path() {
-	# Returns the path to a the configuration fora given name
 	assert [ $# -eq 1 ]
+
 	local name=${1}
 
-	if vpn_security_policies_check_readonly ${name}; then
+	if vpn_security_policies_check_readonly "${name}"; then
 		echo "${NETWORK_SHARE_DIR}/vpn/security-policies/${name}"
 	else
 		echo "${NETWORK_CONFIG_DIR}/vpn/security-policies/${name}"
 	fi
 }
 
+# Print the content of a vpn security policy configuration file in a nice way
 vpn_security_policies_show() {
-	# Print the content of a vpn security policy configuration file in a nice way
 	assert [ $# -eq 1 ]
+
 	local name=${1}
 
 	local ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}
-
-	# Break if read fails
 	if ! vpn_security_policies_read_config ${name}; then
 		return ${EXIT_ERROR}
 	fi
@@ -160,26 +160,33 @@ vpn_security_policies_show() {
 	cli_print_fmt1 1 "Ciphers:"
 	cli_print_fmt1 2 "${CIPHER}"
 	cli_space
+
 	cli_print_fmt1 1 "Integrity:"
 	cli_print_fmt1 2 "${INTEGRITY}"
 	cli_space
+
 	cli_print_fmt1 1 "Group Types:"
 	cli_print_fmt1 2 "${GROUP_TYPE}"
 	cli_space
 
 	cli_print_fmt1 1 "Key Exchange:" "${KEY_EXCHANGE}"
-	# Check if lifetime is an integer
+
+	# Key Lifetime
 	if isinteger LIFETIME && [ ${LIFETIME} -gt 0 ]; then
 		cli_print_fmt1 1 "Key Lifetime:" "$(format_time ${LIFETIME})"
 	else
 		log ERROR "The value for Key Lifetime is not a valid integer greater zero."
 	fi
+
+	# PFS
 	if enabled PFS; then
 		cli_print_fmt1 1 "Perfect Forward Secrecy:" "enabled"
 	else
 		cli_print_fmt1 1 "Perfect Forward Secrecy:" "disabled"
 	fi
 	cli_space
+
+	# Compression
 	if enabled COMPRESSION; then
 		cli_print_fmt1 1 "Compression:" "enabled"
 	else
@@ -188,19 +195,21 @@ vpn_security_policies_show() {
 	cli_space
 }
 
+# This function checks if a vpn security policy exists
+# Returns True when yes and false when not
 vpn_security_policy_exists() {
-	# This function checks if a vpn security policy exists
-	# Returns True when yes and false when not
 	assert [ $# -eq 1 ]
+
 	local name=${1}
 
-	local path=$(vpn_security_policies_path ${name})
-	[ -f ${path} ]
+	local path=$(vpn_security_policies_path "${name}")
+
+	[ -f ${path} ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
 
+# This function parses the parameters for the 'cipher' command
 vpn_security_policies_cipher(){
-	# This function parses the parameters for the 'cipher' command
 	local name=${1}
 	shift
 
@@ -210,7 +219,6 @@ vpn_security_policies_cipher(){
 	fi
 
 	local CIPHER
-
 	if ! vpn_security_policies_read_config ${name} "CIPHER"; then
 		return ${EXIT_ERROR}
 	fi
@@ -260,8 +268,8 @@ vpn_security_policies_cipher(){
 	fi
 }
 
+# This function parses the parameters for the 'compression' command
 vpn_security_policies_compression(){
-	# This function parses the parameters for the 'compression' command
 	local name=${1}
 	local value=${2}
 
@@ -280,8 +288,8 @@ vpn_security_policies_compression(){
 	vpn_security_policies_write_config_key "${name}" "COMPRESSION" "${value}"
 }
 
+# This function parses the parameters for the 'group-type' command
 vpn_security_policies_group_type(){
-	# This function parses the parameters for the 'group-type' command.
 	local name=${1}
 	shift
 
@@ -291,7 +299,6 @@ vpn_security_policies_group_type(){
 	fi
 
 	local GROUP_TYPE
-
 	if ! vpn_security_policies_read_config ${name} "GROUP_TYPE"; then
 		return ${EXIT_ERROR}
 	fi
@@ -340,8 +347,9 @@ vpn_security_policies_group_type(){
 		return ${EXIT_ERROR}
 	fi
 }
+
+# This function parses the parameters for the 'integrity' command
 vpn_security_policies_integrity(){
-	# This function parses the parameters for the 'integrity' command
 	local name=${1}
 	shift
 
@@ -351,7 +359,6 @@ vpn_security_policies_integrity(){
 	fi
 
 	local INTEGRITY
-
 	if ! vpn_security_policies_read_config ${name} "INTEGRITY"; then
 		return ${EXIT_ERROR}
 	fi
@@ -399,19 +406,18 @@ vpn_security_policies_integrity(){
 		log ERROR "After proceding all integrity hashes the list is empty and thats why no changes are written."
 		return ${EXIT_ERROR}
 	fi
-
 }
 
+# This function parses the parameters for the 'key-exchange' command
 vpn_security_policies_key_exchange() {
-	# This function parses the parameters for the 'key-exchange' command
 	local name=${1}
 	local value=${2}
+
 	# Check if we get only one argument after key-exchange <name>
 	if [ ! $# -eq 2 ]; then
 		log ERROR "The number of arguments do not match. Only argument after key-exchange is allowed."
 		return ${EXIT_ERROR}
 	fi
-
 
 	if ! isoneof value "ikev1" "ikev2" "IKEV1" "IKEV2"; then
 		log ERROR "Invalid Argument ${value}"
@@ -421,10 +427,11 @@ vpn_security_policies_key_exchange() {
 	vpn_security_policies_write_config_key "${name}" "KEY_EXCHANGE" "${value,,}"
 }
 
+# This function parses the parameters for the 'lifetime' command.
 vpn_security_policies_lifetime(){
-	# This function parses the parameters for the 'lifetime' command.
 	local name=${1}
 	shift
+
 	local value=$@
 
 	# Check if we get only one argument after lifetime <name>
@@ -449,8 +456,8 @@ vpn_security_policies_lifetime(){
 	vpn_security_policies_write_config_key "${name}" "LIFETIME" "${value}"
 }
 
+# This function parses the parameters for the 'pfs' command
 vpn_security_policies_pfs(){
-	# This function parses the parameters for the 'pfs' command
 	local name=${1}
 	local value=${2}
 
@@ -469,22 +476,24 @@ vpn_security_policies_pfs(){
 	vpn_security_policies_write_config_key "${name}" "PFS" "${value}"
 }
 
+# This function checks if a vpn security policy name is valid
+# Allowed are only A-Za-z0-9
 vpn_security_policies_check_name() {
-	# This function checks if a vpn security policy name is valid
-	# Allowed are only A-Za-z0-9
 	assert [ $# -eq 1 ]
+
 	local name=${1}
+
 	[[ ${name} =~ [^[:alnum:]$] ]]
 }
 
+# Function that creates based on the paramters one ore more new vpn security policies
 vpn_security_policies_new() {
-	# Function that creates based on the paramters one ore more new vpn security policies
-	local name
 	if [ -z $@ ]; then
 		log ERROR "No name provided."
 		return ${EXIT_ERROR}
 	fi
 
+	local name
 	for name in $@; do
 		if vpn_security_policy_exists ${name}; then
 			log ERROR "The vpn security policy ${name} does already exist."
@@ -504,11 +513,10 @@ vpn_security_policies_new() {
 		log DEBUG "Creating vpn security policy ${name}"
 		copy "$(vpn_security_policies_path "system")" "$(vpn_security_policies_path ${name})"
 	done
-
 }
 
+# Function that deletes based on the passed parameters one ore more vpn security policies
 vpn_security_policies_destroy() {
-	# Function that deletes based on the passed parameters one ore more vpn security policies
 	local name
 	for name in $@; do
 		if ! vpn_security_policy_exists ${name}; then
