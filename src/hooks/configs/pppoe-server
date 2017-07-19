@@ -48,15 +48,7 @@ hook_check_config_settings() {
 	done
 }
 
-hook_new() {
-	local zone=${1}
-	shift
-
-	if zone_config_hook_is_configured ${zone} "pppoe-server"; then
-		log ERROR "You can configure the pppoe-server hook only once for a zone"
-		return ${EXIT_ERROR}
-	fi
-
+hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--dns-server=*)
@@ -102,6 +94,21 @@ hook_new() {
 		esac
 		shift
 	done
+}
+
+hook_new() {
+	local zone=${1}
+	shift
+
+	if zone_config_hook_is_configured ${zone} "pppoe-server"; then
+		log ERROR "You can configure the pppoe-server hook only once for a zone"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! hook_parse_cmdline $@; then
+		# Return an error if the parsing of the cmd line fails
+		return ${EXIT_ERROR}
+	fi
 
 	zone_config_settings_write "${zone}" "${HOOK}"
 
