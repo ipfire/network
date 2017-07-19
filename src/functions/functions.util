@@ -752,3 +752,22 @@ hex2dec() {
 dec2hex() {
 	printf "%02x\n" "${1}"
 }
+
+copy() {
+	# This function just copy config files
+	assert [ $# -eq 2 ]
+
+	local src=${1}
+	local dst=${2}
+
+	# Check if ${dst} is a directory
+	if [ -d ${dst} ]; then
+		log ERROR "${dst} is a directory."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! fread "${src}" > "${dst}"; then
+		log ERROR "Could not copy data from ${src} to ${dst}"
+		return ${EXIT_ERROR}
+	fi
+}
