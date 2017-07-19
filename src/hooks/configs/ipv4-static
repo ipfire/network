@@ -35,12 +35,9 @@ hook_check_config_settings() {
 	fi
 }
 
-hook_new() {
-	local zone="${1}"
-	assert zone_exists "${zone}"
-	shift
-
+hook_parse_cmdline() {
 	local arg
+
 	while read -r arg; do
 		local key="$(cli_get_key "${arg}")"
 		local val="$(cli_get_val "${arg}")"
@@ -104,6 +101,18 @@ hook_new() {
 
 	if ! isset GATEWAY && zone_is_nonlocal "${zone}"; then
 		warning "You did not configure a gateway for a non-local zone"
+	fi
+}
+
+hook_new() {
+	local zone="${1}"
+	shift
+
+	assert zone_exists "${zone}"
+
+	if ! hook_parse_cmdline $@; then
+		# Return an error if the parsing of the cmd line fails
+		return ${EXIT_ERROR}
 	fi
 
 	zone_config_settings_write "${zone}" "${HOOK}"
