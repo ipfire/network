@@ -243,7 +243,7 @@ zone_new() {
 
 	# Maybe the zone new hook did not exit correctly.
 	# If this is the case we remove the created zone immediately.
-	if [ "${ret}" = "${EXIT_ERROR}" ]; then
+	if [ "${ret}" != "${EXIT_OK}" ]; then
 		zone_destroy_now "${zone}"
 		return ${EXIT_ERROR}
 	fi
