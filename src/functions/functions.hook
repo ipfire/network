@@ -102,11 +102,11 @@ hook_exec() {
 		${EXIT_COMMAND_NOT_FOUND}|${EXIT_NOT_SUPPORTED})
 			log ERROR "Hook '${hook}' does not implement the method '${cmd}':"
 			log ERROR "  arguments: $@"
-			exit ${EXIT_COMMAND_NOT_FOUND}
+			return ${EXIT_COMMAND_NOT_FOUND}
 			;;
 		${EXIT_ERROR_ASSERT})
 			log ERROR "Hook exited with an assertion error."
-			exit ${EXIT_ERROR_ASSERT}
+			return ${EXIT_ERROR_ASSERT}
 			;;
 	esac
 
