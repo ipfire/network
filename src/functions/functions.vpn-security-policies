@@ -533,6 +533,9 @@ vpn_security_policies_new() {
 		log ERROR "Could not create VPN Security Policy ${name}"
 		return ${EXIT_ERROR}
 	fi
+
+	# Show the newly created policy
+	vpn_security_policies_show "${name}"
 }
 
 # Function that deletes based on the passed parameters one ore more vpn security policies
