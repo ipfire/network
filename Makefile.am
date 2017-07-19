@@ -32,6 +32,7 @@ bashcompletiondir= $(datadir)/bash-completion/completions
 libexecdir       = $(prefix)/lib
 pkgconfigdatadir = $(datadir)/pkgconfig
 pppdir           = $(sysconfdir)/ppp
+systemconfigdir  = $(datadir)/network
 sysctldir        = $(prefix)/lib/sysctl.d
 tmpfilesdir      = $(prefix)/lib/tmpfiles.d
 udevrulesdir     = $(udevdir)/rules.d
@@ -270,6 +271,15 @@ EXTRA_DIST += \
 	src/systemd/firewall-init.service.in \
 	src/systemd/network-init.service.in \
 	src/systemd/network@.service.in
+
+# ------------------------------------------------------------------------------
+
+systemconfig_vpndir = $(systemconfigdir)/vpn
+
+dist_systemconfig_vpn_security_policies_DATA = \
+	config/vpn/security-policies/system
+
+systemconfig_vpn_security_policiesdir = $(systemconfig_vpndir)/security-policies
 
 # ------------------------------------------------------------------------------
 
