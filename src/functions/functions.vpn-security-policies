@@ -488,31 +488,43 @@ vpn_security_policies_check_name() {
 
 # Function that creates based on the paramters one ore more new vpn security policies
 vpn_security_policies_new() {
-	if [ -z $@ ]; then
-		log ERROR "No name provided."
+	if [ $# -gt 1 ]; then
+		error "Too many arguments"
 		return ${EXIT_ERROR}
 	fi
 
-	local name
-	for name in $@; do
-		if vpn_security_policy_exists ${name}; then
-			log ERROR "The vpn security policy ${name} does already exist."
-			continue
-		fi
+	local name="${1}"
+	if ! isset name; then
+		error "Please provide a name"
+		return ${EXIT_ERROR}
+	fi
 
-		if  vpn_security_policies_check_name ${name}; then
-			log ERROR "'${name}' contains illegal characters. Allowed are only A-Za-z0-9"
-			continue
-		fi
+	# Check for duplicates
+	if vpn_security_policy_exists "${name}"; then
+		error "The VPN security policy with name ${name} already exists"
+		return ${EXIT_ERROR}
+	fi
 
-		if vpn_security_policies_check_readonly ${name}; then
-			log ERROR "The vpn security policy ${name} is readonly and can thats why not created."
-			continue
-		fi
+	# Check if name is valid
+	if  vpn_security_policies_check_name "${name}"; then
+		error "'${name}' contains illegal characters"
+		return ${EXIT_ERROR}
+	fi
 
-		log DEBUG "Creating vpn security policy ${name}"
-		copy "$(vpn_security_policies_path "system")" "$(vpn_security_policies_path ${name})"
-	done
+	# Check if we have a read-only policy with the same name
+	if vpn_security_policies_check_readonly "${name}"; then
+		error "The VPN security policy ${name} is read-only"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Creating VPN Security Policy ${name}"
+
+	if copy "$(vpn_security_policies_path "system")" "$(vpn_security_policies_path ${name})"; then
+		log INFO "VPN Security Policy ${name} successfully created"
+	else
+		log ERROR "Could not create VPN Security Policy ${name}"
+		return ${EXIT_ERROR}
+	fi
 }
 
 # Function that deletes based on the passed parameters one ore more vpn security policies
