@@ -110,7 +110,33 @@ declare -A VPN_SUPPORTED_INTEGRITY=(
 	[AES128-GMAC]="128 bit AES-GMAC"
 )
 
-VPN_SUPPORTED_GROUP_TYPES="MODP8192 MODP4096"
+declare -A VPN_SUPPORTED_GROUP_TYPES=(
+	# Regular Groups
+	[MODP768]="768 bit Modulo Prime Group"
+	[MODP1024]="1024 bit Modulo Prime Group"
+	[MODP1536]="1536 bit Modulo Prime Group"
+	[MODP2048]="2048 bit Modulo Prime Group"
+	[MODP3072]="3072 bit Modulo Prime Group"
+	[MODP4096]="4096 bit Modulo Prime Group"
+	[MODP6144]="6144 bit Modulo Prime Group"
+	[MODP8192]="8192 bit Modulo Prime Group"
+
+	# NIST Elliptic Curve Groups
+	[ECP192]="192 bit NIST Elliptic Curve Group"
+	[ECP224]="224 bit NIST Elliptic Curve Group"
+	[ECP256]="256 bit NIST Elliptic Curve Group"
+	[ECP384]="384 bit NIST Elliptic Curve Group"
+	[ECP521]="521 bit NIST Elliptic Curve Group"
+
+	# Brainpool Elliptic Curve Groups
+	[ECP224BP]="224 bit Brainpool Elliptic Curve Group"
+	[ECP256BP]="256 bit Brainpool Elliptic Curve Group"
+	[ECP384BP]="384 bit Brainpool Elliptic Curve Group"
+	[ECP512BP]="512 bit Brainpool Elliptic Curve Group"
+
+	# Curve25519
+	[CURVE25519]="256 bit Elliptic Curve 25519"
+)
 
 # This functions checks if a policy is readonly
 # returns true when yes and false when no
@@ -414,7 +440,7 @@ vpn_security_policies_group_type(){
 			+*)
 				value=${1#+}
 				# Check if the group type is in the list of supported group types.
-				if ! isoneof value ${VPN_SUPPORTED_GROUP_TYPES}; then
+				if ! isoneof value ${!VPN_SUPPORTED_GROUP_TYPES[@]}; then
 					# We do not break here because the processing of other maybe valid values are indepent from this error.
 					log ERROR "${value} is not a supported group type and can thats why not added to the list of group types."
 				else
