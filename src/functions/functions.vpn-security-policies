@@ -93,7 +93,23 @@ declare -A VPN_SUPPORTED_CIPHERS=(
 	[CAMELLIA128-CCM64]="128 bit CAMELLIA-CCM with 64 bit ICV"
 )
 
-VPN_SUPPORTED_INTEGRITY="SHA512 SHA256 SHA128"
+declare -A VPN_SUPPORTED_INTEGRITY=(
+	[MD5]="MD5-HMAC"
+
+	# SHA
+	[SHA1]="SHA1-HMAC"
+	[SHA512]="256 bit SHA2-HMAC"
+	[SHA384]="384 bit SHA2-HMAC"
+	[SHA256]="256 bit SHA2-HMAC"
+
+	# AES
+	[AES-XCBC]="AES-XCBC"
+	[AES-CMAC]="AES-CMAC"
+	[AES256-GMAC]="256 bit AES-GMAC"
+	[AES192-GMAC]="192 bit AES-GMAC"
+	[AES128-GMAC]="128 bit AES-GMAC"
+)
+
 VPN_SUPPORTED_GROUP_TYPES="MODP8192 MODP4096"
 
 # This functions checks if a policy is readonly
@@ -456,7 +472,7 @@ vpn_security_policies_integrity(){
 			+*)
 				value=${1#+}
 				# Check if the Ciphers is in the list of supported integrity hashes.
-				if ! isoneof value ${VPN_SUPPORTED_INTEGRITY}; then
+				if ! isoneof value ${!VPN_SUPPORTED_INTEGRITY[@]}; then
 					# We do not break here because the processing of other maybe valid values are indepent from this error.
 					log ERROR "${value} is not a supported integrity hash and can thats why not added to the list of integrity hashes."
 				else
