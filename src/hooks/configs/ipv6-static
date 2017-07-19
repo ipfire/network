@@ -33,10 +33,7 @@ hook_check_config_settings() {
 	fi
 }
 
-hook_new() {
-	local zone=${1}
-	shift
-
+hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
@@ -57,6 +54,16 @@ hook_new() {
 
 	if [ -n "${GATEWAY}" ]; then
 		GATEWAY=$(ipv6_format "${GATEWAY}")
+	fi
+}
+
+hook_new() {
+	local zone=${1}
+	shift
+
+	if ! hook_parse_cmdline $@; then
+		# Return an error if the parsing of the cmd line fails
+		return ${EXIT_ERROR}
 	fi
 
 	zone_config_settings_write "${zone}" "${HOOK}"
