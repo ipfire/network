@@ -93,6 +93,75 @@ declare -A VPN_SUPPORTED_CIPHERS=(
 	[CAMELLIA128-CCM64]="128 bit CAMELLIA-CCM with 64 bit ICV"
 )
 
+declare -A CIPHER_TO_STRONGSWAN=(
+	# 3DES-CBC
+	[3DES-CBC]="3des"
+
+	# AES-CBC
+	[AES256-CBC]="aes256"
+	[AES192-CBC]="aes192"
+	[AES128-CBC]="aes128"
+
+	# AES-CTR
+	[AES256-CTR]="aes256ctr"
+	[AES192-CTR]="aes192ctr"
+	[AES128-CTR]="aes128ctr"
+
+	# AES-GCM
+	[AES256-GCM128]="aes256gcm128"
+	[AES192-GCM128]="aes192gcm128"
+	[AES128-GCM128]="aes128gcm128"
+	[AES256-GCM96]="aes256gcm96"
+	[AES192-GCM96]="aes192gcm96"
+	[AES128-GCM96]="aes128gcm96"
+	[AES256-GCM64]="aes256gcm64"
+	[AES192-GCM64]="aes192gcm64"
+	[AES128-GCM64]="aes128gcm64"
+
+	# AES-CCM
+	[AES256-CCM128]="aes256ccm128"
+	[AES192-CCM128]="aes192ccm128"
+	[AES128-CCM128]="aes128ccm128"
+	[AES256-CCM96]="aes256ccm96"
+	[AES192-CCM96]="aes192ccm96"
+	[AES128-CCM96]="aes128ccm96"
+	[AES256-CCM64]="aes256ccm64"
+	[AES192-CCM64]="aes192ccm64"
+	[AES128-CCM64]="aes128ccm64"
+
+	# CAMELLIA-CBC
+	[CAMELLIA256-CBC]="camellia256"
+	[CAMELLIA192-CBC]="camellia192"
+	[CAMELLIA128-CBC]="camellia128"
+
+	# CAMELLIA-CTR
+	[CAMELLIA256-CTR]="camellia256ctr"
+	[CAMELLIA192-CTR]="camellia192ctr"
+	[CAMELLIA128-CTR]="camellia128ctr"
+
+	# CAMELLIA-GCM
+	[CAMELLIA256-GCM128]="camellia256gcm128"
+	[CAMELLIA192-GCM128]="camellia192gcm128"
+	[CAMELLIA128-GCM128]="camellia128gcm128"
+	[CAMELLIA256-GCM96]="camellia256gcm96"
+	[CAMELLIA192-GCM96]="camellia192gcm96"
+	[CAMELLIA128-GCM96]="camellia128gcm96"
+	[CAMELLIA256-GCM64]="camellia256gcm64"
+	[CAMELLIA192-GCM64]="camellia192gcm64"
+	[CAMELLIA128-GCM64]="camellia128gcm64"
+
+	# CAMELLIA-CCM
+	[CAMELLIA256-CCM128]="camellia256ccm128"
+	[CAMELLIA192-CCM128]="camellia192ccm128"
+	[CAMELLIA128-CCM128]="camellia128ccm128"
+	[CAMELLIA256-CCM96]="camellia256ccm96"
+	[CAMELLIA192-CCM96]="camellia192ccm96"
+	[CAMELLIA128-CCM96]="camellia128ccm96"
+	[CAMELLIA256-CCM64]="camellia256ccm64"
+	[CAMELLIA192-CCM64]="camellia192ccm64"
+	[CAMELLIA128-CCM64]="camellia128ccm64"
+)
+
 declare -A VPN_SUPPORTED_INTEGRITY=(
 	[MD5]="MD5-HMAC"
 
@@ -108,6 +177,23 @@ declare -A VPN_SUPPORTED_INTEGRITY=(
 	[AES256-GMAC]="256 bit AES-GMAC"
 	[AES192-GMAC]="192 bit AES-GMAC"
 	[AES128-GMAC]="128 bit AES-GMAC"
+)
+
+declare -A INTEGRITY_TO_STRONGSWAN=(
+	[MD5]="md5"
+
+	# SHA
+	[SHA1]="sha1"
+	[SHA512]="sha512"
+	[SHA384]="sha384"
+	[SHA256]="sha256"
+
+	# AES
+	[AES-XCBC]="aesxcbc"
+	[AES-CMAC]="aescmac"
+	[AES256-GMAC]="aes256gmac"
+	[AES192-GMAC]="aes192gmac"
+	[AES128-GMAC]="aes128gmac"
 )
 
 declare -A VPN_SUPPORTED_GROUP_TYPES=(
@@ -136,6 +222,34 @@ declare -A VPN_SUPPORTED_GROUP_TYPES=(
 
 	# Curve25519
 	[CURVE25519]="256 bit Elliptic Curve 25519"
+)
+
+declare -A GROUP_TYPE_TO_STRONGSWAN=(
+	# Regular Groups
+	[MODP768]="modp768"
+	[MODP1024]="modp1024"
+	[MODP1536]="modp1536"
+	[MODP2048]="modp2048"
+	[MODP3072]="modp3072"
+	[MODP4096]="modp4096"
+	[MODP6144]="modp6144"
+	[MODP8192]="modp8192"
+
+	# NIST Elliptic Curve Groups
+	[ECP192]="ecp192"
+	[ECP224]="ecp224"
+	[ECP256]="ecp256"
+	[ECP384]="ecp384"
+	[ECP521]="ecp521"
+
+	# Brainpool Elliptic Curve Groups
+	[ECP224BP]="ecp224bp"
+	[ECP256BP]="ecp256bp"
+	[ECP384BP]="ecp384bp"
+	[ECP512BP]="ecp512bp"
+
+	# Curve25519
+	[CURVE25519]="curve25519"
 )
 
 # This functions checks if a policy is readonly
@@ -675,4 +789,53 @@ vpn_security_policies_destroy() {
 		log DEBUG "Deleting vpn security policy ${name}"
 		settings_remove $(vpn_security_policies_path ${name})
 	done
+}
+
+vpn_security_policies_make_ah_proposal() {
+	local name=${1}
+
+	# Read the config settings
+	local ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}
+	if ! vpn_security_policies_read_config "${name}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	local proposals
+
+	local cipher
+	for cipher in ${CIPHER}; do
+		# Translate cipher
+		local _cipher=${CIPHER_TO_STRONGSWAN[${cipher}]}
+
+		if ! isset _cipher; then
+			log WARN "Unsupported cipher: ${cipher}"
+			continue
+		fi
+
+		local integrity
+		for integrity in ${INTEGRITY}; do
+			local _integrity=${INTEGRITY_TO_STRONGSWAN[${integrity}]}
+
+			if ! isset _integrity; then
+				log WARN "Unsupported integrity: ${integrity}"
+				continue
+			fi
+
+			local group_type
+			for group_type in ${GROUP_TYPE}; do
+				local _group_type=${GROUP_TYPE_TO_STRONGSWAN[${group_type}]}
+
+				if ! isset _group_type; then
+					log WARN "Unsupported group-type: ${group_type}"
+					continue
+				fi
+
+				# Put everything together
+				list_append proposals "${_cipher}-${_integrity}-${_group_type}"
+			done
+		done
+	done
+
+	# Returns as a comma-separated list
+	list_join proposals ,
 }
