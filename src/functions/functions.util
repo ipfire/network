@@ -638,6 +638,13 @@ contains_spaces() {
 	return ${EXIT_FALSE}
 }
 
+string_match() {
+	local match=${1}
+	local string=${2}
+
+	[[ ${string} =~ ${match} ]] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
 string_split() {
 	local string="$@"
 

@@ -791,6 +791,13 @@ vpn_security_policies_destroy() {
 	done
 }
 
+vpn_security_policies_cipher_is_aead() {
+	local cipher=${1}
+
+	# All CCM and GCM ciphers are AEAD
+	string_match "[CG]CM" "${cipher}"
+}
+
 vpn_security_policies_make_ah_proposal() {
 	local name=${1}
 
@@ -834,6 +841,70 @@ vpn_security_policies_make_ah_proposal() {
 				list_append proposals "${_cipher}-${_integrity}-${_group_type}"
 			done
 		done
+	done
+
+	# Returns as a comma-separated list
+	list_join proposals ,
+}
+
+vpn_security_policies_make_esp_proposal() {
+	local name=${1}
+
+	# Read the config settings
+	local ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}
+	if ! vpn_security_policies_read_config "${name}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	local proposals
+
+	local cipher
+	for cipher in ${CIPHER}; do
+		# Translate cipher
+		local _cipher=${CIPHER_TO_STRONGSWAN[${cipher}]}
+
+		if ! isset _cipher; then
+			log WARN "Unsupported cipher: ${cipher}"
+			continue
+		fi
+
+		if vpn_security_policies_cipher_is_aead ${cipher}; then
+			local group_type
+			for group_type in ${GROUP_TYPE}; do
+				local _group_type=${GROUP_TYPE_TO_STRONGSWAN[${group_type}]}
+
+				if ! isset _group_type; then
+					log WARN "Unsupported group-type: ${group_type}"
+					continue
+				fi
+
+				# Put everything together
+				list_append proposals "${_cipher}-${_group_type}"
+			done
+		else
+			local integrity
+			for integrity in ${INTEGRITY}; do
+				local _integrity=${INTEGRITY_TO_STRONGSWAN[${integrity}]}
+
+				if ! isset _integrity; then
+					log WARN "Unsupported integrity: ${integrity}"
+					continue
+				fi
+
+				local group_type
+				for group_type in ${GROUP_TYPE}; do
+					local _group_type=${GROUP_TYPE_TO_STRONGSWAN[${group_type}]}
+
+					if ! isset _group_type; then
+						log WARN "Unsupported group-type: ${group_type}"
+						continue
+					fi
+
+					# Put everything together
+					list_append proposals "${_cipher}-${_integrity}-${_group_type}"
+				done
+			done
+		fi
 	done
 
 	# Returns as a comma-separated list
