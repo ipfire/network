@@ -98,7 +98,7 @@ list_remove() {
 		_list="${_list} ${k}"
 	done
 
-	eval "${list}=\"${_list}\""
+	assign "${list}" "${_list}"
 
 	return ${ret}
 }
