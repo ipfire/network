@@ -294,6 +294,14 @@ device_is_wireless() {
 	[ -d "${SYS_CLASS_NET}/${device}/phy80211" ]
 }
 
+device_is_vti() {
+	local device=${1}
+
+	local type=$(__device_get_file ${device} type)
+
+	[ "${type}" = "768" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
+}
+
 device_get_phy() {
 	local device="${1}"
 
@@ -398,6 +406,9 @@ device_get_type() {
 
 	elif device_is_phy ${device}; then
 		echo "phy"
+
+	elif device_is_vti ${device}; then
+		echo "vti"
 
 	else
 		echo "unknown"

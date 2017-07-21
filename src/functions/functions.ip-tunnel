@@ -19,17 +19,20 @@
 #                                                                             #
 ###############################################################################
 
-IP_TUNNEL_MODES="sit"
+IP_TUNNEL_MODES="sit vti"
 
 ip_tunnel_add() {
 	local device=${1}
 	shift
 
-	local mode="sit"
+	local mode
 	local ttl
 
 	local remote_address
 	local local_address
+
+	local ikey
+	local okey
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
@@ -39,22 +42,45 @@ ip_tunnel_add() {
 			--ttl=*)
 				ttl="$(cli_get_val ${1})"
 				;;
-
 			--remote-address=*)
 				remote_address="$(cli_get_val ${1})"
 				;;
 			--local-address=*)
 				local_address="$(cli_get_val ${1})"
 				;;
+
+			# Keys for VTI
+			--ikey=*)
+				ikey="$(cli_get_val ${1})"
+				;;
+			--okey=*)
+				okey="$(cli_get_val ${1})"
+				;;
 		esac
 		shift
 	done
 
-	assert isset mode
-	assert isoneof mode ${IP_TUNNEL_MODES}
+	if ! isset mode; then
+		error "--mode= is not set. Must be one of ${IP_TUNNEL_MODES}"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! isoneof mode ${IP_TUNNEL_MODES}; then
+		error "Invalid mode: ${mode}"
+		return ${EXIT_ERROR}
+	fi
+
+	# ikey and okey must be set for VTI devices
+	if [ "${mode}" = "vti" ] && (! isset ikey || ! isset okey); then
+		error "--ikey= and --okey= must be set for VTI device"
+		return ${EXIT_ERROR}
+	fi
 
 	# If TTL is set, make sure it is an integer.
-	isset ttl && assert isinteger ttl
+	if isset ttl && ! isinteger ttl; then
+		error "TTL must be an integer: ${ttl}"
+		return ${EXIT_ERROR}
+	fi
 
 	assert isset local_address
 
@@ -70,12 +96,19 @@ ip_tunnel_add() {
 		cmd_args="${cmd_args} remote ${remote_address}"
 	fi
 
+	# Add ikey and okey for VTI devices
+	if [ "${mode}" = "vti" ]; then
+		cmd_args="${cmd_args} ikey ${ikey} okey ${okey}"
+	fi
+
 	log DEBUG "Creating tunnel device '${device}' (mode=${mode})..."
 
 	# Create the device.
-	cmd ip tunnel add ${device} mode ${mode} \
-		local ${local_address} ${cmd_args}
-	assert [ $? -eq 0 ]
+	if ! cmd ip tunnel add ${device} mode ${mode} \
+			local ${local_address} ${cmd_args}; then
+		error "Could not create tunnel device ${device}"
+		return ${EXIT_ERROR}
+	fi
 }
 
 ip_tunnel_del() {
