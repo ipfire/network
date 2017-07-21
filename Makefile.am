@@ -277,6 +277,7 @@ EXTRA_DIST += \
 systemconfig_vpndir = $(systemconfigdir)/vpn
 
 dist_systemconfig_vpn_security_policies_DATA = \
+	config/vpn/security-policies/performance \
 	config/vpn/security-policies/system
 
 systemconfig_vpn_security_policiesdir = $(systemconfig_vpndir)/security-policies
