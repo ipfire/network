@@ -461,46 +461,87 @@ vpn_security_policies_cipher(){
 	# Remove duplicated entries to proceed the list safely
 	CIPHER="$(list_unique ${CIPHER})"
 
+	local ciphers_added
+	local ciphers_removed
+	local ciphers_set
+
 	while [ $# -gt 0 ]; do
-		case "${1}" in
-			-*)
-				value=${1#-}
-				# Check if the cipher is in the list of ciphers and
-				# check if the list has after removing this cipher at least one valid value
-				if list_match ${value} ${CIPHER}; then
-					list_remove CIPHER ${value}
-				else
-					# We do not break here because this error does not break the processing of the next maybe valid values.
-					log ERROR "Can not remove ${value} from the list of Ciphers because ${value} is not in the list."
-				fi
-				;;
+		local arg="${1}"
+
+		case "${arg}" in
 			+*)
-				value=${1#+}
-				# Check if the Ciphers is in the list of supported ciphers.
-				if ! isoneof value ${!VPN_SUPPORTED_CIPHERS[@]}; then
-					# We do not break here because this error does not break the processing of the next maybe valid values.
-					log ERROR "${value} is not a supported cipher and can thats why not added to the list of ciphers."
-				else
-					if list_match ${value} ${CIPHER}; then
-						log WARNING "${value} is already in the list of ciphers of this policy."
-					else
-						list_append CIPHER ${value}
-					fi
-				fi
+				list_append ciphers_added "${arg:1}"
+				;;
+			-*)
+				list_append ciphers_removed "${arg:1}"
+				;;
+			[A-Z0-9]*)
+				list_append ciphers_set "${arg}"
+				;;
+			*)
+				error "Invalid argument: ${arg}"
+				return ${EXIT_ERROR}
 				;;
 		esac
 		shift
 	done
 
-	# Check if the list contain at least one valid cipher
-	if [ $(list_length ${CIPHER}) -ge 1 ]; then
-		if ! vpn_security_policies_write_config_key ${name} "CIPHER" ${CIPHER}; then
-			log ERROR "The changes for the vpn security policy ${name} could not be written."
-		fi
-	else
-		log ERROR "After proceding all ciphers the list is empty and thats why no changes are written."
+	# Check if the user is trying a mixed operation
+	if ! list_is_empty ciphers_set && (! list_is_empty ciphers_added || ! list_is_empty ciphers_removed); then
+		error "You cannot reset the cipher list and add or remove ciphers at the same time"
 		return ${EXIT_ERROR}
 	fi
+
+	# Set new cipher list
+	if ! list_is_empty ciphers_set; then
+		# Check if all ciphers are valid
+		local cipher
+		for cipher in ${ciphers_set}; do
+			if ! vpn_security_policies_cipher_supported ${cipher}; then
+				error "Unsupported cipher: ${cipher}"
+				return ${EXIT_ERROR}
+			fi
+		done
+
+		list_set CIPHER ${ciphers_set}
+
+	# Perform incremental updates
+	else
+		local cipher
+
+		# Perform all removals
+		for cipher in ${ciphers_removed}; do
+			if ! list_remove CIPHER ${cipher}; then
+				warning "${cipher} was not on the list and could not be removed"
+			fi
+		done
+
+		for cipher in ${ciphers_added}; do
+			if vpn_security_policies_cipher_supported ${cipher}; then
+				if ! list_append_unique CIPHER ${cipher}; then
+					warning "${cipher} is already on the cipher list"
+				fi
+			else
+				warning "${cipher} is unknown or unsupported and could not be added"
+			fi
+		done
+	fi
+
+	# Check if the list contain at least one valid cipher
+	if list_is_empty CIPHER; then
+		error "Cannot save an empty cipher list"
+		return ${EXIT_ERROR}
+	fi
+
+	# Save everything
+	if ! vpn_security_policies_write_config_key ${name} "CIPHER" ${CIPHER}; then
+		log ERROR "The changes for the vpn security policy ${name} could not be written."
+	fi
+
+	cli_headline 1 "Current cipher list for ${name}:"
+	for cipher in ${CIPHER}; do
+		cli_print_fmt1 1 "${cipher}" "${VPN_SUPPORTED_CIPHERS[${cipher}]}"
+	done
 }
 
 # This function parses the parameters for the 'compression' command
@@ -789,6 +830,12 @@ vpn_security_policies_destroy() {
 		log DEBUG "Deleting vpn security policy ${name}"
 		settings_remove $(vpn_security_policies_path ${name})
 	done
+}
+
+vpn_security_policies_cipher_supported() {
+	local cipher=${1}
+
+	list_match ${cipher} ${!VPN_SUPPORTED_CIPHERS[@]}
 }
 
 vpn_security_policies_cipher_is_aead() {

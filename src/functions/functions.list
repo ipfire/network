@@ -22,6 +22,13 @@
 # Functions for nice handling of lists.
 #
 
+list_set() {
+	local list=${1}
+	shift
+
+	assign "${list}" "$@"
+}
+
 list_append() {
 	local list=${1}
 	assert isset list
@@ -50,6 +57,28 @@ list_append_one() {
 	fi
 }
 
+# Appends one or more elements to the list only if they are not on the list, yet
+list_append_unique() {
+	local list=${1}
+	shift
+
+	assert isset list
+
+	local ret=${EXIT_ERROR}
+
+	local arg
+	for arg in $@; do
+		if ! list_match ${arg} ${!list}; then
+			list_append_one ${list} "${arg}"
+			ret=${EXIT_OK}
+		fi
+	done
+
+	return ${ret}
+}
+
+# Removes all matching items from the list
+# Returns OK if at least one match was found and ERROR when not
 list_remove() {
 	local list=${1}
 	shift
@@ -57,14 +86,21 @@ list_remove() {
 	assert isset list
 	assert [ ${list} != "list" ]
 
+	local ret=${EXIT_ERROR}
+
 	local _list k
 	for k in ${!list}; do
-		list_match ${k} $@ && continue
+		if list_match ${k} $@; then
+			ret=${EXIT_OK}
+			 continue
+		fi
 
 		_list="${_list} ${k}"
 	done
 
 	eval "${list}=\"${_list}\""
+
+	return ${ret}
 }
 
 list_sort() {
@@ -96,6 +132,12 @@ list_match() {
 	done
 
 	return ${EXIT_ERROR}
+}
+
+list_is_empty() {
+	local list="${1}"
+
+	[ ! -n "${!list}" ]
 }
 
 list_length() {
