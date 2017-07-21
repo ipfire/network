@@ -801,7 +801,7 @@ vpn_security_policies_new() {
 
 	log DEBUG "Creating VPN Security Policy ${name}"
 
-	if copy "$(vpn_security_policies_path "${VPN_DEFAULT_SECURITY_POLICY}")"
+	if copy "$(vpn_security_policies_path "${VPN_DEFAULT_SECURITY_POLICY}")" \
 			"$(vpn_security_policies_path ${name})"; then
 		log INFO "VPN Security Policy ${name} successfully created"
 	else
