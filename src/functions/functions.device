@@ -807,13 +807,7 @@ __device_get_file() {
 	local device=${1}
 	local file=${2}
 
-	assert isset device
-	assert isset file
-
-	local path="${SYS_CLASS_NET}/${device}/${file}"
-	[ -r "${path}" ] || return ${EXIT_ERROR}
-
-	echo "$(<${path})"
+	fread "${SYS_CLASS_NET}/${device}/${file}"
 }
 
 __device_set_file() {
@@ -823,13 +817,7 @@ __device_set_file() {
 	local file="${2}"
 	local value="${3}"
 
-	local path="${SYS_CLASS_NET}/${device}/${file}"
-	if [ ! -w "${path}" ]; then
-		log DEBUG "Cannot write to file '${file}' (${value})"
-		return ${EXIT_ERROR}
-	fi
-
-	echo "${value}" > "${path}"
+	fwrite "${SYS_CLASS_NET}/${device}/${file}" "${value}"
 }
 
 device_get_rx_bytes() {
