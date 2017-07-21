@@ -22,13 +22,6 @@
 # Functions for nice handling of lists.
 #
 
-list_set() {
-	local list=${1}
-	shift
-
-	assign "${list}" "$@"
-}
-
 list_append() {
 	local list=${1}
 	assert isset list
