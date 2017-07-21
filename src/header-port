@@ -55,7 +55,8 @@ hook_info() {
 	for key in PORT_PARENTS PORT_CHILDREN; do
 		val="${key}_VAR"
 		val=${!val}
-		eval "${key}=\"${!val}\""
+
+		assign "${key}" "${!val}"
 	done
 
 	for key in ${INFO_SETTINGS}; do
