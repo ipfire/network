@@ -58,21 +58,21 @@ batman_adv_attach() {
 	# Make sure, batman is running.
 	batman_adv_start
 
-	fwrite "${SYS_CLASS_NET}/${port}/batman_adv/mesh_iface" "${device}"
+	__device_set_file "${port}" "batman_adv/mesh_iface" "${device}"
 }
 
 batman_adv_detach() {
 	local port=${1}
 	assert isset port
 
-	fwrite "${SYS_CLASS_NET}/${port}/batman_adv/mesh_iface" "none"
+	__device_set_file "${port}" "batman_adv/mesh_iface" "none"
 }
 
 batman_adv_get_aggregated_ogms() {
 	local device=${1}
 	assert isset device
 
-	local value="$(fread ${SYS_CLASS_NET}/${device}/mesh/aggregated_ogms)"
+	local value="$(__device_get_file "${device}" "mesh/aggregated_ogms")"
 	case "${value}" in
 		enabled)
 			return ${EXIT_TRUE}
@@ -89,7 +89,7 @@ batman_adv_get_ap_isolation() {
 	local device=${1}
 	assert isset device
 
-	local value="$(fread ${SYS_CLASS_NET}/${device}/mesh/ap_isolation)"
+	local value="$(__device_get_file "${device}" "mesh/ap_isolation")"
 	case "${value}" in
 		enabled)
 			return ${EXIT_TRUE}
@@ -106,7 +106,7 @@ batman_adv_get_bonding_mode() {
 	local device=${1}
 	assert isset device
 
-	local value="$(fread ${SYS_CLASS_NET}/${device}/mesh/bonding)"
+	local value="$(__device_get_file "${device}" "mesh/bonding")"
 	case "${value}" in
 		enabled)
 			return ${EXIT_TRUE}
@@ -123,7 +123,7 @@ batman_adv_get_distributed_arp_table() {
 	local device=${1}
 	assert isset device
 
-	local value="$(fread ${SYS_CLASS_NET}/${device}/mesh/distributed_arp_table)"
+	local value="$(__device_get_file "${device}" "mesh/distributed_arp_table")"
 	case "${value}" in
 		enabled)
 			return ${EXIT_TRUE}
@@ -140,7 +140,7 @@ batman_adv_get_bridge_loop_avoidance() {
 	local device=${1}
 	assert isset device
 
-	local value="$(fread ${SYS_CLASS_NET}/${device}/mesh/bridge_loop_avoidance)"
+	local value="$(__device_get_file "${device}" "mesh/bridge_loop_avoidance")"
 	case "${value}" in
 		enabled)
 			return ${EXIT_TRUE}
@@ -157,7 +157,7 @@ batman_adv_get_fragmentation() {
 	local device=${1}
 	assert isset device
 
-	local value="$(fread ${SYS_CLASS_NET}/${device}/mesh/fragmentation)"
+	local value="$(__device_get_file "${device}" "mesh/fragmentation")"
 	case "${value}" in
 		enabled)
 			return ${EXIT_TRUE}
@@ -174,7 +174,7 @@ batman_adv_get_gateway_mode() {
 	local device=${1}
 	assert isset device
 
-	local value="$(fread ${SYS_CLASS_NET}/${device}/mesh/gw_mode)"
+	local value="$(__device_get_file "${device}" "mesh/gw_mode")"
 	case "${value}" in
 		on)
 			return ${EXIT_TRUE}
@@ -191,33 +191,33 @@ batman_adv_get_gateway_bandwidth() {
 	local device=${1}
 	assert isset device
 
-	fread "${SYS_CLASS_NET}/${device}/mesh/gw_bandwidth"
+	__device_get_file "${device}" "mesh/gw_bandwidth"
 }
 
 batman_adv_get_gateway_selection_class() {
 	local device=${1}
 	assert isset device
 
-	fread "${SYS_CLASS_NET}/${device}/mesh/gw_sel_class"
+	__device_get_file "${device}" "mesh/gw_sel_class"
 }
 
 batman_adv_get_hop_penalty() {
 	local device=${1}
 	assert isset device
 
-	fread "${SYS_CLASS_NET}/${device}/mesh/hop_penalty"
+	__device_get_file "${device}" "mesh/hop_penalty"
 }
 
 batman_adv_get_originator_interval() {
 	local device=${1}
 	assert isset device
 
-	fread "${SYS_CLASS_NET}/${device}/mesh/orig_interval"
+	__device_get_file "${device}" "mesh/orig_interval"
 }
 
 batman_adv_get_routing_algorithm() {
 	local device=${1}
 	assert isset device
 
-	fread "${SYS_CLASS_NET}/${device}/mesh/routing_algo"
+	__device_get_file "${device}" "mesh/routing_algo"
 }
