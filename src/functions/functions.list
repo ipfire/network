@@ -51,9 +51,9 @@ list_append_one() {
 	assert [ ${list} != "list" ]
 
 	if [ -n "${!list}" ]; then
-		printf -v ${list} -- "${!list} $@"
+		assign "${list}" "${!list} $@"
 	else
-		printf -v ${list} -- "$@"
+		assign "${list}" "$@"
 	fi
 }
 
