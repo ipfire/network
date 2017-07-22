@@ -23,7 +23,7 @@
 
 HOOK_MANPAGE="network-zone-bridge"
 
-HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE STP_MODE"
+HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE"
 HOOK_SETTINGS="${HOOK_SETTINGS} STP_PRIORITY MAC MTU"
 
 HOOK_PORT_SETTINGS="COST PRIORITY"
@@ -32,7 +32,6 @@ HOOK_PORT_SETTINGS="COST PRIORITY"
 MAC=""
 MTU=1500
 STP="on"
-STP_MODE="rstp"
 STP_FORWARD_DELAY=0
 STP_HELLO=2
 STP_MAXAGE=20
@@ -41,7 +40,6 @@ STP_PRIORITY=512
 hook_check_settings() {
 	assert ismac MAC
 	assert isbool STP
-	assert isoneof STP_MODE stp rstp
 	assert isinteger STP_HELLO
 	assert isinteger STP_FORWARD_DELAY
 	assert isinteger STP_PRIORITY
@@ -53,9 +51,6 @@ hook_parse_cmdline() {
 		case "${1}" in
 			--stp=*)
 				STP=${1#--stp=}
-				;;
-			--stp-mode=*)
-				STP_MODE=${1#--stp-mode=}
 				;;
 			--stp-hello=*)
 				STP_HELLO=${1#--stp-hello=}
@@ -203,9 +198,6 @@ hook_status() {
 
 	cli_headline 2 "Spanning Tree Protocol information"
 	if stp_is_enabled "${zone}"; then
-		local proto=$(stp_bridge_get_protocol ${zone})
-
-		cli_print_fmt1 2 "Version"	"$(stp_get_name ${proto})"
 		cli_print_fmt1 2 "ID"		"$(stp_bridge_get_id ${zone})"
 		cli_print_fmt1 2 "Priority"	"$(stp_bridge_get_priority ${zone})"
 

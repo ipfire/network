@@ -19,15 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-# The default mode.
-#   We default to RSTP, because it has the better user experience and
-#   faster convergence times. Despite of that, it completely downgradeable
-#   to plain STP.
-STP_DEFAULT_MODE="rstp"
-
-# Allowed modes of the spanning tree protocol.
-STP_ALLOWED_MODES="rstp stp"
-
 stp_enable() {
 	local bridge=${1}
 	assert isset bridge
@@ -60,92 +51,6 @@ stp_is_enabled() {
 	esac
 }
 
-stp_is_userspace() {
-	local bridge=${1}
-	assert isset bridge
-
-	local state=$(__device_get_file ${bridge} bridge/stp_state)
-	case "${state}" in
-		2)
-			return ${EXIT_TRUE}
-			;;
-		*)
-			return ${EXIT_FALSE}
-			;;
-	esac
-}
-
-stp_get_name() {
-	local proto=${1}
-
-	case "${proto}" in
-		stp)
-			echo "Spanning Tree Protocol"
-			;;
-		rstp)
-			echo "Rapid Spanning Tree Protocol"
-			;;
-		mstp)
-			echo "Multiple Spanning Tree Protocol"
-			;;
-	esac
-
-	return ${EXIT_OK}
-}
-
-stp_bridge_set_protocol() {
-	local bridge=${1}
-	assert isset bridge
-
-	local mode=${2}
-	assert isset mode
-
-	if ! list_match ${mode} ${STP_ALLOWED_MODES}; then
-		log WARNING "Unknown protocol version: ${mode}."
-		log WARNING "Using default mode."
-
-		mode="${STP_DEFAULT_MODE}"
-	fi
-
-	cmd mstpctl setforcevers ${bridge} ${mode}
-	assert [ $? -eq 0 ]
-}
-
-stp_bridge_get_protocol() {
-	local bridge=${1}
-
-	assert isset bridge
-
-	# Let's check what the kernel is telling us about it's STP state.
-	local state=$(__device_get_file ${bridge} "bridge/stp_state")
-
-	case "${state}" in
-		0)
-			# STP is disabled.
-			return ${EXIT_OK}
-			;;
-		1)
-			# Kernel mode STP is running.
-			echo "stp"
-			return ${EXIT_OK}
-			;;
-		2)
-			# User-space STP is running.
-			;;
-		*)
-			log ERROR "Kernel is running in an unknown STP state."
-			return ${EXIT_ERROR}
-			;;
-	esac
-
-	# We get here, when STP is running in user-space mode.
-
-	# Get the current protocol version.
-	mstpctl showbridge ${bridge} force-protocol-version 2>/dev/null
-
-	return ${EXIT_OK}
-}
-
 stp_bridge_get_id() {
 	local bridge=${1}
 	assert isset bridge
@@ -159,12 +64,8 @@ stp_bridge_get_forward_delay() {
 	local bridge=${1}
 	assert isset bridge
 
-	if stp_is_userspace ${bridge}; then
-		cmd mstpctl showbridge ${bridge} forward-delay
-	else
-		local output=$(__device_get_file ${bridge} bridge/forward_delay)
-		__stp_div_100 ${output}
-	fi
+	local output=$(__device_get_file ${bridge} bridge/forward_delay)
+	__stp_div_100 ${output}
 
 	return ${EXIT_OK}
 }
@@ -280,11 +181,7 @@ stp_bridge_get_designated_root() {
 
 	local output
 
-	if stp_is_userspace ${bridge}; then
-		output=$(cmd mstpctl showbridge ${bridge} designated-root)
-	else
-		output=$(__device_get_file ${bridge} bridge/root_id)
-	fi
+	output=$(__device_get_file ${bridge} bridge/root_id)
 	output=${output:6}
 
 	# Print output (lowercase).
@@ -301,33 +198,14 @@ stp_bridge_get_root_path_cost() {
 	local bridge=${1}
 	assert isset bridge
 
-	if stp_is_userspace ${bridge}; then
-		cmd mstpctl showbridge ${bridge} path-cost
-	else
-		__device_get_file ${bridge} bridge/root_path_cost
-	fi
-
-	return ${EXIT_OK}
+	__device_get_file ${bridge} bridge/root_path_cost
 }
 
 stp_bridge_get_root_port_id() {
 	local bridge=${1}
 	assert isset bridge
 
-	if stp_is_userspace ${bridge}; then
-		local root_port=$(cmd mstpctl showbridge ${bridge} root-port)
-
-		# Return error, when there is no root port.
-		if [ "${root_port}" = "none" ]; then
-			return ${EXIT_ERROR}
-		fi
-
-		print "${root_port}"
-	else
-		__device_get_file ${bridge} bridge/root_port_id
-	fi
-
-	return ${EXIT_OK}
+	__device_get_file ${bridge} bridge/root_port_id
 }
 
 stp_bridge_get_root_port() {
@@ -366,26 +244,14 @@ stp_bridge_get_topology_change_count() {
 	local bridge=${1}
 	assert isset bridge
 
-	if stp_is_userspace ${bridge}; then
-		cmd mstpctl showbridge ${bridge} topology-change-count
-	else
-		__device_get_file ${bridge} bridge/topology_change
-	fi
-
-	return ${EXIT_OK}
+	__device_get_file ${bridge} bridge/topology_change
 }
 
 stp_bridge_get_topology_change_timer() {
 	local bridge=${1}
 	assert isset bridge
 
-	if stp_is_userspace ${bridge}; then
-		cmd mstpctl showbridge ${bridge} time-since-topology-change
-	else
-		__device_get_file ${bridge} bridge/topology_change_timer
-	fi
-
-	return ${EXIT_OK}
+	__device_get_file ${bridge} bridge/topology_change_timer
 }
 
 stp_bridge_get_topology_change_detected() {
@@ -394,11 +260,7 @@ stp_bridge_get_topology_change_detected() {
 
 	local change
 
-	if stp_is_userspace ${bridge}; then
-		change=$(mstpctl showbridge ${bridge} topology-change)
-	else
-		change=$(__device_get_file ${bridge} bridge/topology_change_detected)
-	fi
+	change=$(__device_get_file ${bridge} bridge/topology_change_detected)
 
 	if enabled change; then
 		print "yes"
@@ -416,34 +278,28 @@ stp_port_get_state() {
 	local port=${2}
 	assert isset port
 
-	local space
-	if stp_is_userspace ${bridge}; then
-		state=$(mstpctl showportdetail ${bridge} ${port} state)
-		print "${state^^}"
-	else
-		state=$(__device_get_file ${bridge} brif/${port}/state)
+	local state=$(__device_get_file ${bridge} brif/${port}/state)
 
-		case "${state}" in
-			0)
-				print "DISABLED"
-				;;
-			1)
-				print "LISTENING"
-				;;
-			2)
-				print "LEARNING"
-				;;
-			3)
-				print "FORWARDING"
-				;;
-			4)
-				print "BLOCKING"
-				;;
-			*)
-				return ${EXIT_ERROR}
-				;;
-		esac
-	fi
+	case "${state}" in
+		0)
+			print "DISABLED"
+			;;
+		1)
+			print "LISTENING"
+			;;
+		2)
+			print "LEARNING"
+			;;
+		3)
+			print "FORWARDING"
+			;;
+		4)
+			print "BLOCKING"
+			;;
+		*)
+			return ${EXIT_ERROR}
+			;;
+	esac
 
 	return ${EXIT_OK}
 }
@@ -466,13 +322,7 @@ stp_port_get_cost() {
 	local port=${2}
 	assert isset port
 
-	if stp_is_userspace ${bridge}; then
-		cmd mstpctl showportdetail ${bridge} ${port} external-port-cost
-	else
-		__device_get_file ${bridge} brif/${port}/path_cost
-	fi
-
-	return ${EXIT_ERROR}
+	__device_get_file ${bridge} brif/${port}/path_cost
 }
 
 stp_port_set_cost() {
@@ -489,11 +339,7 @@ stp_port_set_cost() {
 
 	log DEBUG "Setting STP path costs of port '${port}' (bridge '${bridge}') to '${cost}'"
 
-	if stp_is_userspace "${bridge}"; then
-		cmd mstpctl setportpathcost "${bridge}" "${port}" "${cost}"
-	else
-		__device_set_file "${bridge}" "brif/${port}/path_cost" "${cost}"
-	fi
+	__device_set_file "${bridge}" "brif/${port}/path_cost" "${cost}"
 }
 
 stp_port_get_designated_root() {
@@ -503,18 +349,10 @@ stp_port_get_designated_root() {
 	local port=${2}
 	assert isset port
 
-	local output
-
-	if stp_is_userspace ${bridge}; then
-		output=$(cmd mstpctl showportdetail ${bridge} ${port} designated-root)
-		output=${output:6}
-	else
-		output=$(__device_get_file ${bridge} brif/${port}/designated_root)
-		output=${output:5}
-	fi
+	local output=$(__device_get_file ${bridge} brif/${port}/designated_root)
 
 	if isset output; then
-		mac_format ${output}
+		mac_format ${output:5}
 		return ${EXIT_OK}
 	fi
 

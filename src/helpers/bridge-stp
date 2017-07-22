@@ -19,9 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-EXIT_USERSPACE_STP=0
-EXIT_KERNEL_STP=1
-
 # Change LOG_FACILITY that we will find our messages in syslog.
 LOG_FACILITY=$(basename ${0})
 
@@ -43,60 +40,25 @@ if ! zone_exists ${zone}; then
 fi
 
 # Read zone settings
-zone_settings_read "${zone}" --ignore-superfluous-settings \
-	STP STP_MODE
+zone_settings_read "${zone}" --ignore-superfluous-settings STP
 
 # Make sure STP is enabled for this zone.
-assert enabled STP
+if ! enabled STP; then
+	log ERROR "The kernel tried to enable STP for zone ${zone}"
+	log ERROR "but our configuration disagrees"
+	exit ${EXIT_STP_ERROR}
+fi
 
-log DEBUG "Configured STP mode is '${STP_MODE}'"
-
-case "${STP_MODE}" in
-	rstp)
-		# Check if mstpd is running. If not, try to start it.
-		if ! service_is_active mstpd; then
-			service_start "mstpd.service"
-
-			if ! service_is_active "mstpd.service"; then
-				log ERROR "mstpd is not running. STP might not work."
-				exit 1
-			fi
-		fi
-
-		# Set the right protocol that should be used.
-		# Do this after the bridge has been added.
-		(
-			sleep 2
-			stp_bridge_set_protocol "${zone}" "${STP_MODE}"
-		) &
-
-		# Tell mstpd that STP has to be enabled/disabled.
-		case "${action}" in
-			start)
-				log DEBUG "Enabling userspace STP for zone '${zone}'"
-				exec mstpctl addbridge ${zone}
-				;;
-			stop)
-				log DEBUG "Disabling userspace STP for zone '${zone}'"
-				exec mstpctl delbridge ${zone}
-				;;
-		esac
-
-		log ERROR "Could not properly exec mstpctl."
+case "${action}" in
+	start)
+		log INFO "STP activated for ${zone}"
+		exit ${EXIT_STP_KERNEL}
 		;;
-	stp)
-		case "${action}" in
-			start)
-				log DEBUG "Enabling kernel STP for zone '${zone}'"
-				exit ${EXIT_KERNEL_STP}
-				;;
-			stop)
-				log DEBUG "Disabling kernel STP for zone '${zone}'"
-				exit ${EXIT_OK}
-				;;
-		esac
+	stop)
+		log INFO "STP deactivated for ${zone}"
+		exit ${EXIT_OK}
 		;;
+	*)
+		log ERROR "Unknown action: ${action}"
+		exit ${EXIT_STP_ERROR}
 esac
-
-# Fall back to kernel STP.
-exit ${EXIT_KERNEL_STP}
