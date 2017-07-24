@@ -641,6 +641,21 @@ zone_config_show() {
 	zone_config_cmd "show" "$@"
 }
 
+# Returns a list of all used ids for a zone
+zone_config_list_ids() {
+	assert [ $# -eq 1 ]
+
+	local zone=${1}
+	local config
+	local ids
+
+	for config in $(zone_configs_list ${zone}); do
+		list_append ids "$(config_get_id_from_config ${config})"
+	done
+
+	echo ${ids}
+}
+
 zone_show() {
 	local zone=${1}
 
