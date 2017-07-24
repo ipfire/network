@@ -421,18 +421,62 @@ _network_zone_subcommand_config() {
 
 	local words=( $@ )
 
-	local commands="new destroy"
+	local commands="destroy list new $(network raw list-zone-config-ids ${zone})"
+
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
 		return 0
 	fi
 
+	local args="${words[@]:1}"
 	case "${cmd}" in
 		new)
 			_network_complete_hooks "config"
 			;;
+		destroy)
+			_network_zone_subcommand_config_destroy ${zone} ${args}
+			;;
+		# We use no better globbing like [:digit:] here because hids would not match the glob
+		# Also bash is silly here and does not unterstand things like ^[[:digit:]]+$ here.
+		*)
+			# Check if we get a valid id
+			# TODO: We should also accept a valid hid
+			if network raw zone-config-id-is-valid ${zone} ${cmd}; then
+				_network_zone_subcommand_config_subcommand ${zone} ${args}
+			fi
+			;;
 	esac
+}
+
+_network_zone_subcommand_config_subcommand() {
+	local zone="${1}"
+	shift
+
+	local words=( $@ )
+
+	local commands="edit"
+
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+}
+
+_network_zone_subcommand_config_destroy() {
+	local zone="${1}"
+	shift
+
+	local words=( $@ )
+
+	local commands="$(network raw list-zone-config-ids ${zone})"
+
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
 }
 
 _network_zone_subcommand_port() {
