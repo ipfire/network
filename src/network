@@ -1377,6 +1377,9 @@ cli_raw() {
 		list-next-free-zones)
 			zones_get_next_free
 			;;
+		list-zone-config-ids)
+			zone_config_list_ids $@
+			;;
 		zone-name-is-valid)
 			zone_name_is_valid $@
 			;;
