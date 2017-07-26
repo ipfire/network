@@ -643,21 +643,22 @@ zone_config_list() {
 	assert isset zone
 
 	# Print a nice header
-	local format="%-3s %-20s"
-	print "${format}" "ID" "HOOK"
+	local format="%-3s %-20s %-20s"
+	print "${format}" "ID" "HOOK" "HID"
 
 	local config
 	local hook
 	local id
+	local hid
 
 	# Print for all config:
 	# id and hook
-	# TODO: Add hids here
 	for config in $(zone_configs_list "${zone}"); do
 		id=${config##*.}
 		hook=$(zone_config_get_hook "${zone}" "${config}")
+		hid=$(zone_config_get_hid "${zone}" "${config}")
 		assert isset hook
-		print "${format}" "${id}" "${hook}"
+		print "${format}" "${id}" "${hook}" "${hid}"
 	done
 }
 
