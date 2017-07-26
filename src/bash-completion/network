@@ -421,7 +421,7 @@ _network_zone_subcommand_config() {
 
 	local words=( $@ )
 
-	local commands="destroy list new $(network raw list-zone-config-ids ${zone})"
+	local commands="destroy list new $(network raw list-zone-config-hids ${zone})"
 
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
@@ -437,12 +437,8 @@ _network_zone_subcommand_config() {
 		destroy)
 			_network_zone_subcommand_config_destroy ${zone} ${args}
 			;;
-		# We use no better globbing like [:digit:] here because hids would not match the glob
-		# Also bash is silly here and does not unterstand things like ^[[:digit:]]+$ here.
 		*)
-			# Check if we get a valid id
-			# TODO: We should also accept a valid hid
-			if network raw zone-config-id-is-valid ${zone} ${cmd}; then
+			if network raw zone-config-id-is-valid ${zone} ${cmd} || network raw zone-config-hid-is-valid ${zone} ${cmd}; then
 				_network_zone_subcommand_config_subcommand ${zone} ${args}
 			fi
 			;;
