@@ -550,28 +550,52 @@ zone_config() {
 			zone_config_new "${zone}" "$@"
 			;;
 		destroy)
-			local id=${1}
-			if zone_config_id_is_valid ${zone} ${id}; then
-				zone_config_destroy "${zone}" "$@"
+			# usually ${1} is a valid hid
+			local hid=${1}
+			shift 1
+
+			# We convert the hid into an id
+			local id=$(zone_config_convert_hid_to_id ${zone} ${hid})
+
+			# If id isset the hid is valid and we can go on with the id
+			if isset id; then
+				 zone_config_destroy "${zone}" "${id}" "$@"
+
+			# If we can't get a valid hid we check if we got a valid id
 			else
-				log ERROR "${id} is not a valid id"
+				if zone_config_id_is_valid ${zone} ${hid}; then
+					zone_config_destroy "${zone}" ${hid} "$@"
+				else
+					log ERROR "${id} is not a valid id or hid"
+				fi
 			fi
 			;;
 		list)
 			zone_config_list "${zone}" "$@"
 			;;
 		*)
-			# Check is we get a valid id
-			# TODO This could be also a valid hid
-			local id=${cmd}
+			# usually ${1} is a valid hid
+			local hid=${cmd}
+			local cmd=${1}
+			shift 1
 
-			if zone_config_id_is_valid ${zone} ${id} && [[ ${1} == "edit" ]]; then
-				shift 1
-				zone_config_edit "${zone}" "${id}" "$@"
+			local id=$(zone_config_convert_hid_to_id ${zone} ${hid})
+
+			# If id isset the hid is valid and we can go on with the id
+			if isset id && [[ ${cmd} == "edit" ]]; then
+				 zone_config_edit "${zone}" "${id}" "$@"
+
+			# If we didn't get a valid hid we check if we got a valid id
 			else
-				error "Unrecognized argument: ${cmd}"
-				cli_usage root-zone-config-subcommands
-				exit ${EXIT_ERROR}
+				if zone_config_id_is_valid ${zone} ${id} && [[ ${cmd} == "edit" ]]; then
+					shift 1
+					zone_config_edit "${zone}" "${id}" "$@"
+				else
+					# in ${hid} is saved the command after network zone ${zone} config
+					error "Unrecognized argument: ${hid}"
+					cli_usage root-zone-config-subcommands
+					exit ${EXIT_ERROR}
+				fi
 			fi
 			;;
 	esac
