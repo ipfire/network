@@ -1389,6 +1389,9 @@ cli_raw() {
 		zone-config-id-is-valid)
 			zone_config_id_is_valid $@
 			;;
+		zone-config-hid-is-valid)
+			zone_config_hid_is_valid $@
+			;;
 		*)
 			error "No such command: ${cmd}"
 			exit ${EXIT_ERROR}
