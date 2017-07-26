@@ -204,7 +204,7 @@ hook_valid_command_config() {
 	local cmd="${1}"
 
 	case "${cmd}" in
-		new|destroy|edit|up|down|status)
+		new|destroy|edit|up|down|status|hid)
 			return ${EXIT_TRUE}
 			;;
 	esac
