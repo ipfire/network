@@ -80,3 +80,13 @@ hook_edit() {
 hook_destroy() {
 	return ${EXIT_OK}
 }
+
+
+# Returns the ID as a unique identifier
+# Should always be overwritten by a hook
+hook_hid() {
+	local zone=${1}
+	local config=${2}
+
+	config_get_id_from_config "${config}"
+}
