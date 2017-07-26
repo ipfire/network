@@ -656,6 +656,68 @@ zone_config_list_ids() {
 	echo ${ids}
 }
 
+# List all hids of a zone
+zone_config_list_hids() {
+	assert [ $# -eq 1 ]
+
+	local zone=${1}
+
+	local config
+	for config in $(zone_configs_list ${zone}); do
+		zone_config_get_hid "${zone}" "${config}"
+	done
+}
+
+# get the hid from a given config
+zone_config_get_hid() {
+	assert [ $# -eq 2 ]
+
+	local zone=${1}
+	local config=${2}
+
+	local hook="$(zone_config_get_hook "${zone}" "${config}")"
+
+	hook_exec "config" "${hook}" "hid" "${zone}" "${config}"
+}
+
+# Checks if a hid is valid for a given zone
+zone_config_hid_is_valid() {
+	assert [ $# -eq 2]
+
+	local zone=${1}
+	local hid=${2}
+
+	local _hid
+	for _hid in $(zone_config_list_hids "${zone}"); do
+		if [[ ${_hid} = ${hid} ]]; then
+			return ${EXIT_TRUE}
+		fi
+	done
+
+	return ${EXIT_FALSE}
+}
+
+# This function converts a hid to a id
+zone_config_convert_hid_to_id() {
+	assert [ $# -eq 2 ]
+
+	local zone=${1}
+	local hid=${2}
+
+	local config
+	for config in $(zone_configs_list ${zone}); do
+		# Get hook from config
+		local hook="$(zone_config_get_hook "${zone}" "${config}")"
+
+		if [[ "$(hook_exec "config" "${hook}" "hid" "${zone}" "${config}")" == "${hid}" ]]; then
+			config_get_id_from_config "${config}"
+			return ${EXIT_TRUE}
+		fi
+	done
+
+	return ${EXIT_FALSE}
+}
+
 zone_show() {
 	local zone=${1}
 
@@ -1112,6 +1174,23 @@ zone_config_id_is_valid() {
 	local zone_path=$(zone_dir ${zone})
 
 	[ -f ${zone_path}/configs/*.${id} ];
+}
+
+# This function checks if a given hid is valid for a zone
+# Return True when yes and false when no
+zone_config_hid_is_valid() {
+	assert [ $# -eq 2 ]
+	local zone=${1}
+	local hid=${2}
+
+	local _hid
+	for _hid in $(zone_config_list_hids ${zone}); do
+		if [[ ${_hid} == ${hid} ]]; then
+			return ${EXIT_TRUE}
+		fi
+	done
+
+	return ${EXIT_FALSE}
 }
 
 zone_config_get_hook_from_id() {
