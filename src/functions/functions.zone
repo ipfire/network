@@ -1150,6 +1150,39 @@ zone_config_get_new_id() {
 	done
 }
 
+zone_config_check_same_setting() {
+	# This functions checks if a config hook
+	# with the same setting is already configured for this zone.
+	# Returns True when yes and False when no.
+
+	assert [ $# -eq 4 ]
+
+	local zone=${1}
+	local hook=${2}
+	local key=${3}
+	local value=${4}
+
+	# The key should be local for this function
+	local ${key}
+	local config
+
+	for config in $(zone_configs_list ${zone}); do
+		# Check if the config is from the given hook, when not continue
+		if  [[ $(zone_config_get_hook "${zone}" "${config}") != ${hook} ]]; then
+			continue
+		fi
+		# Get the value of the key for a given function
+		zone_config_settings_read "${zone}" "${config}" \
+                --ignore-superfluous-settings "${key}"
+		# Check if the value of the config and the passed value are eqal
+		if [[ "${value}" == "${!key}" ]]; then
+			return ${EXIT_TRUE}
+		fi
+	done
+
+	return ${EXIT_FALSE}
+}
+
 zone_config_get_hook() {
 	assert [ $# -eq 2 ]
 

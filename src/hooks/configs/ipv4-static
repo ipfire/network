@@ -99,6 +99,11 @@ hook_parse_cmdline() {
 		exit ${EXIT_CONF_ERROR}
 	fi
 
+	if zone_config_check_same_setting "${zone}" "ipv4-static" "ADDRESS" "${ADDRESS}"; then
+		error "An ipv4-static config with the same IPv4 address is already configured"
+		exit ${EXIT_CONF_ERROR}
+	fi
+
 	if ! isset GATEWAY && zone_is_nonlocal "${zone}"; then
 		warning "You did not configure a gateway for a non-local zone"
 	fi

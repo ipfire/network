@@ -49,6 +49,11 @@ hook_parse_cmdline() {
 		shift
 	done
 
+	if zone_config_check_same_setting "${zone}" "ipv6-static" "ADDRESS" "${ADDRESS}"; then
+		error "An ipv6-static config with the same IPv6 address is already configured"
+		exit ${EXIT_CONF_ERROR}
+	fi
+
 	# Store IPv6 address in small format.
 	ADDRESS=$(ipv6_format "${ADDRESS}")
 
