@@ -1,0 +1,579 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2017  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+IPSEC_CONNECTION_CONFIG_SETTINGS="AUTH_MODE INACTIVITY_TIMEOUT LOCAL_ID LOCAL_PREFIX"
+IPSEC_CONNECTION_CONFIG_SETTINGS="${IPSEC_CONNECTION_CONFIG_SETTINGS} MODE PEER PSK"
+IPSEC_CONNECTION_CONFIG_SETTINGS="${IPSEC_CONNECTION_CONFIG_SETTINGS} REMOTE_ID REMOTE_PREFIX"
+IPSEC_CONNECTION_CONFIG_SETTINGS="${IPSEC_CONNECTION_CONFIG_SETTINGS} SECURITY_POLICY"
+
+# Default values
+IPSEC_DEFAULT_MODE="tunnel"
+IPSEC_DEFAULT_AUTH_MODE="psk"
+IPSEC_DEFAULT_INACTIVITY_TIMEOUT="0"
+IPSEC_DEFAULT_SECURITY_POLICY="system"
+
+IPSEC_VALID_MODES="gre-transport tunnel vti"
+IPSEC_VALID_AUTH_MODES="PSK psk"
+
+# This function writes all values to a via ${connection} specificated VPN IPsec configuration file
+ipsec_connection_write_config() {
+	assert [ $# -ge 1 ]
+
+	local connection="${1}"
+
+	if ! ipsec_connection_exists "${connection}"; then
+		log ERROR "No such VPN IPsec connection: ${connection}"
+		return ${EXIT_ERROR}
+	fi
+
+	local path="$(ipsec_connection_path "${connection}")/settings"
+
+	if ! settings_write "${path}" ${IPSEC_CONNECTION_CONFIG_SETTINGS}; then
+		log ERROR "Could not write configuration settings for VPN IPsec connection ${connection}"
+		return ${EXIT_ERROR}
+	fi
+
+	ipsec_reload ${connection}
+}
+
+# This funtion writes the value for one key to a via ${connection} specificated VPN IPsec connection configuration file
+ipsec_connection_write_config_key() {
+	assert [ $# -ge 3 ]
+
+	local connection=${1}
+	local key=${2}
+	shift 2
+
+	local value="$@"
+
+	if ! ipsec_connection_exists "${connection}"; then
+		log ERROR "No such VPN ipsec connection: ${connection}"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Set '${key}' to new value '${value}' in VPN ipsec connection '${connection}'"
+
+	local ${IPSEC_CONNECTION_CONFIG_SETTINGS}
+
+	# Read the config settings
+	if ! ipsec_connection_read_config "${connection}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Set the key to a new value
+	assign "${key}" "${value}"
+
+	if ! ipsec_connection_write_config "${connection}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_TRUE}
+}
+
+# Reads one or more keys out of a settings file or all if no key is provided.
+ipsec_connection_read_config() {
+	assert [ $# -ge 1 ]
+
+	local connection="${1}"
+	shift 1
+
+	if ! ipsec_connection_exists "${connection}"; then
+		log ERROR "No such VPN IPsec connection : ${connection}"
+		return ${EXIT_ERROR}
+	fi
+
+
+	local args
+	if [ $# -eq 0 ] && [ -n "${IPSEC_CONNECTION_CONFIG_SETTINGS}" ]; then
+		list_append args ${IPSEC_CONNECTION_CONFIG_SETTINGS}
+	else
+		list_append args $@
+	fi
+
+	local path="$(ipsec_connection_path "${connection}")/settings"
+
+	if ! settings_read "${path}" ${args}; then
+		log ERROR "Could not read settings for VPN IPsec connection ${connection}"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# Returns the path to a the directory for given connection
+ipsec_connection_path() {
+	assert [ $# -eq 1 ]
+
+	local connection=${1}
+
+	echo "${NETWORK_CONFIG_DIR}/vpn/ipsec/connection/${connection}"
+}
+
+# This function checks if a vpn ipsec connection exists
+# Returns True when yes and false when not
+ipsec_connection_exists() {
+	assert [ $# -eq 1 ]
+
+	local connection=${1}
+
+	local path=$(ipsec_connection_path "${connection}")
+
+	[ -d "${path}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
+# Reloads the connection after config changes
+ipsec_reload() {
+	return ${EXIT_TRUE}
+}
+
+# Handle the cli after authentification
+ipsec_connection_authentication() {
+	if [ ! $# -gt 1 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+
+	local connection=${1}
+	local cmd=${2}
+	shift 2
+
+	case ${cmd} in
+		mode)
+			ipsec_connection_authentication_mode "${connection}" $@
+			;;
+		pre-shared-key)
+			ipsec_connection_authentication_psk "${connection}" $@
+			;;
+		*)
+			log ERROR "Unrecognized argument: ${cmd}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+}
+
+# Set the authentification mode
+ipsec_connection_authentication_mode() {
+	if [ ! $# -eq 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	local mode=${2}
+
+	if ! isoneof mode ${IPSEC_VALID_AUTH_MODES}; then
+		log ERROR "Auth mode '${mode}' is invalid"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "AUTH_MODE" ${mode,,}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# Set the psk
+ipsec_connection_authentication_psk() {
+	if [ ! $# -eq 2]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	local psk=${2}
+
+	# TODO Check if psk is valid 
+
+	if ! ipsec_connection_write_config_key "${connection}" "PSK" ${psk}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+# Handle the cli after local
+ipsec_connection_local() {
+	if [ ! $# -ge 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+
+	local connection=${1}
+	local cmd=${2}
+	shift 2
+
+	case ${cmd} in
+		id)
+			ipsec_connection_id "${connection}" "LOCAL" $@
+			;;
+		prefix)
+			ipsec_connection_prefix "${connection}" "LOCAL" $@
+			;;
+		*)
+			log ERROR "Unrecognized argument: ${cmd}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+# Set the connection mode
+ipsec_connection_mode() {
+	if [ ! $# -eq 2]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	local mode=${2}
+
+	if ! isoneof mode ${IPSEC_VALID_MODES}; then
+		log ERROR "Mode '${mode}' is invalid"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "MODE" ${mode}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+# Set the peer to connect to
+ipsec_connection_peer() {
+	if [ ! $# -eq 2]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	local peer=${2}
+
+	if ! ipsec_connection_check_peer ${peer}; then
+		log ERROR "Peer '${peer}' is invalid"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "PEER" ${peer}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+#Set the local or remote id
+ipsec_connection_id() {
+	if [ ! $# -eq 3 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	local type=${2}
+	local id=${3}
+
+	if ! ipsec_connection_check_id ${id}; then
+		log ERROR "Id '${id}' is invalid"
+		return ${EXIT_ERROR}
+	fi
+	
+	if ! ipsec_connection_write_config_key "${connection}" "${type}_ID" ${id}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+	
+	return ${EXIT_OK}
+}
+
+# Set the local or remote prefix 
+ipsec_connection_prefix() {
+	if [ ! $# -ge 3 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	local type=${2}
+	shift 2
+	
+	local _prefix="${type}_PREFIX"
+	local "${_prefix}"
+	if ! ipsec_connection_read_config "${connection}" "${_prefix}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Remove duplicated entries to proceed the list safely
+	assign "${_prefix}" "$(list_unique ${!_prefix} )"
+
+	local prefixes_added
+	local prefixes_removed
+	local prefixes_set
+
+	while [ $# -gt 0 ]; do
+		local arg="${1}"
+
+		case "${arg}" in
+			+*)
+				list_append prefixes_added "${arg:1}"
+				;;
+			-*)
+				list_append prefixes_removed "${arg:1}"
+				;;
+			[A-Fa-f0-9]*)
+				list_append prefixes_set "${arg}"
+				;;
+			*)
+				error "Invalid argument: ${arg}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	# Check if the user is trying a mixed operation
+	if ! list_is_empty prefixes_set && (! list_is_empty prefixes_added || ! list_is_empty prefixes_removed); then
+		error "You cannot reset the prefix list and add or remove prefixes at the same time"
+		return ${EXIT_ERROR}
+	fi
+
+	# Set new prefix list
+	if ! list_is_empty prefixes_set; then
+		# Check if all prefixes are valid
+		local prefix
+		for prefix in ${prefixes_set}; do
+			if ! ip_net_is_valid ${prefix}; then
+				error "Unsupported prefix: ${prefix}"
+				return ${EXIT_ERROR}
+			fi
+		done
+
+		assign "${_prefix}" "${prefixes_set}"
+
+	# Perform incremental updates
+	else
+		local prefix
+
+		# Perform all removals
+		for prefix in ${prefixes_removed}; do
+			if ! list_remove "${_prefix}" ${prefix}; then
+				warning "${prefix} was not on the list and could not be removed"
+			fi
+		done
+
+
+		for prefix in ${prefixes_added}; do
+			if ip_net_is_valid ${prefix}; then
+				if ! list_append_unique "${_prefix}" ${prefix}; then
+					warning "${prefix} is already on the prefix list"
+				fi
+			else
+				warning "${prefix} is not a valiv IP net and could not be added"
+			fi
+		done
+	fi
+
+	# Check if the list contain at least one valid prefix
+	if list_is_empty ${_prefix}; then
+		error "Cannot save an empty prefix list"
+		return ${EXIT_ERROR}
+	fi
+
+	# Save everything
+	if ! ipsec_connection_write_config_key "${connection}" "${_prefix}" ${!_prefix}; then
+		log ERROR "Could not write configuration settings"
+	fi
+
+	return ${EXIT_OK}
+}
+
+# Handle the cli after remote
+ipsec_connection_remote() {
+	if [ ! $# -ge 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+
+	local connection=${1}
+	local cmd=${2}
+	shift 2
+
+	case ${cmd} in
+		id)
+			ipsec_connection_id "${connection}" "REMOTE" $@
+			;;
+
+		prefix)
+			ipsec_connection_prefix "${connection}" "REMOTE" $@
+			;;
+		*)
+			log ERROR "Unrecognized argument: ${cmd}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+# Set the inactivity timeout
+ipsec_connection_inactivity_timeout() {
+	if [ ! $# -ge 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+
+	local connection=${1}
+	shift 1
+	local value=$@
+
+	if ! isinteger value; then
+		value=$(parse_time $@)
+		if [ ! $? -eq 0 ]; then
+			log ERROR "Parsing the passed time was not sucessful please check the passed values."
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	if [ ${value} -le 0 ]; then
+		log ERROR "The passed time value must be in the sum greater zero seconds."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "INACTIVITY_TIMEOUT" ${value}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+
+# Set the security policy to use
+ipsec_connection_security_policy() {
+	if [ ! $# -eq 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	local security_policy=${2}
+
+	if ! vpn_security_policy_exists ${security_policy}; then
+		log ERROR "No such vpn security policy '${security_policy}'"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "SECURITY_POLICY" ${security_policy}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# Check if a id is valid
+ipsec_connection_check_id() {
+	assert [ $# -eq 1 ]
+	local id=${1}
+
+	if [[ ${id} =~ ^@[[:alnum:]]+$ ]] || ip_is_valid ${id}; then
+		return ${EXIT_TRUE}
+	else
+		return ${EXIT_FALSE}
+	fi
+}
+
+# Checks if a peer is valid
+ipsec_connection_check_peer() {
+	assert [ $# -eq 1 ]
+	local peer=${1}
+
+	# TODO Accept also FQDNs
+	if ip_is_valid ${peer}; then
+		return ${EXIT_TRUE}
+	else
+		return ${EXIT_FALSE}
+	fi
+}
+
+# This function checks if a VPN IPsec connection name is valid
+# Allowed are only A-Za-z0-9
+ipsec_connection_check_name() {
+	assert [ $# -eq 1 ]
+
+	local connection=${1}
+
+	[[ "${connection}" =~ [^[:alnum:]$] ]]
+}
+
+# Function that creates one VPN IPsec connection
+ipsec_connection_new() {
+	if [ $# -gt 1 ]; then
+		error "Too many arguments"
+		return ${EXIT_ERROR}
+	fi
+
+	local connection="${1}"
+	if ! isset connection; then
+		error "Please provide a connection name"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check for duplicates
+	if ipsec_connection_exists "${connection}"; then
+		error "The VPN IPsec connection ${connection} already exists"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if the name of the connection is valid
+	if  ipsec_connection_check_name "${connection}"; then
+		error "'${connection}' contains illegal characters"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Creating VPN IPsec connection ${connection}"
+
+	if ! mkdir -p $(ipsec_connection_path "${connection}"); then
+		log ERROR "Could not create config directory for ${connection}"
+		return ${EXIT_ERROR}
+	fi
+
+	local ${IPSEC_CONNECTION_CONFIG_SETTINGS}
+
+	MODE=${IPSEC_DEFAULT_MODE}
+	AUTH_MODE=${IPSEC_DEFAULT_AUTH_MODE}
+	INACTIVITY_TIMEOUT=${IPSEC_DEFAULT_INACTIVITY_TIMEOUT}
+	SECURITY_POLICY=${IPSEC_DEFAULT_SECURITY_POLICY}
+
+	if ! ipsec_connection_write_config "${connection}"; then
+		log ERROR "Could not write new config file"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# Function that deletes based on the passed parameters one ore more vpn security policies
+ipsec_connection_destroy() {
+	local connection
+	for connection in $@; do
+		if ! ipsec_connection_exists "${connection}"; then
+			log ERROR "The VPN IPsec connection ${connection} does not exist."
+			continue
+		fi
+
+		log DEBUG "Deleting VPN IPsec connection ${connection}"
+		if ! rm -rf $(ipsec_connection_path "${connection}"); then
+			log ERROR "Deleting the VPN IPsec connection ${connection} was not sucessful"
+			return ${EXIT_ERROR}
+		fi
+	done
+}
