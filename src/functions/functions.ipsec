@@ -59,6 +59,10 @@ cli_ipsec_connection() {
 			authentication|inactivity-timout|local|mode|peer|remote|security-policy)
 				ipsec_connection_${key} ${connection} $@
 				;;
+			show)
+				cli_ipsec_connection_show "${connection}"
+				exit $?
+				;;
 			*)
 				error "Unrecognized argument: ${key}"
 				exit ${EXIT_ERROR}
@@ -83,6 +87,100 @@ cli_ipsec_connection() {
 				;;
 		esac
 	fi
+}
+
+cli_ipsec_connection_show() {
+	local connection="${1}"
+
+	# Read the config settings
+	local ${IPSEC_CONNECTION_CONFIG_SETTINGS}
+	if ! ipsec_connection_read_config "${connection}"; then
+		error "Could not read the connection configuration"
+		return ${EXIT_ERROR}
+	fi
+
+	cli_headline 0 "IPsec VPN Connection: ${connection}"
+	cli_space
+
+	# Peer
+	if isset PEER; then
+		cli_print_fmt1 1 "Peer" "${PEER}"
+	fi
+
+	# Security Policy
+	cli_print_fmt1 1 "Security Policy" "${SECURITY_POLICY-${IPSEC_DEFAULT_SECURITY_POLICY}}"
+	cli_space
+
+	cli_headline 2 "Authentication"
+	case "${AUTH_MODE^^}" in
+		PSK)
+			cli_print_fmt1 2 "Mode" "Pre-Shared-Key"
+
+			if isset PSK; then
+				cli_print_fmt1 2 "Pre-Shared-Key" "****"
+			else
+				cli_print_fmt1 2 "Pre-Shared-Key" "- is not set -"
+			fi
+			;;
+		X509)
+			: # TODO
+			;;
+	esac
+	cli_space
+
+	local i
+	for i in LOCAL REMOTE; do
+		case "${i}" in
+			LOCAL)
+				cli_headline 2 "Local"
+				;;
+			REMOTE)
+				cli_headline 2 "Remote"
+				;;
+		esac
+
+		local id_var="${i}_ID"
+		if [ -n "${!id_var}" ]; then
+			cli_print_fmt1 2 "ID" "${!id_var}"
+		fi
+
+		local prefix_var="${i}_PREFIX"
+		if isset ${prefix_var}; then
+			cli_headline 3 "Prefix(es)"
+
+			local prefix
+			for prefix in ${!prefix_var}; do
+				cli_print_fmt1 3 "${prefix}"
+			done
+		fi
+
+		cli_space
+	done
+
+	cli_headline 2 "Misc."
+
+	case "${MODE}" in
+		gre-transport)
+			cli_print_fmt1 2 "Transport Mode" "GRE Transport"
+			;;
+		tunnel)
+			cli_print_fmt1 2 "Transport Mode" "Tunnel"
+			;;
+		vti)
+			cli_print_fmt1 2 "Transport Mode" "Virtual Tunnel Interface"
+			;;
+		*)
+			cli_print_fmt1 2 "Transport Mode" "- Unknown -"
+			;;
+	esac
+
+	# Inactivity timeout
+	if isset INACTIVITY_TIMEOUT && [ ${INACTIVITY_TIMEOUT} -gt 0 ]; then
+		cli_print_fmt1 2 "Inactivity Timeout" "$(format_time ${INACTIVITY_TIMEOUT})"
+	fi
+	cli_space
+
+	return ${EXIT_OK}
 }
 
 # This function writes all values to a via ${connection} specificated VPN IPsec configuration file
