@@ -300,7 +300,7 @@ ipsec_connection_mode() {
 
 # Set the peer to connect to
 ipsec_connection_peer() {
-	if [ ! $# -eq 2]; then
+	if [ ! $# -eq 2 ]; then
 		log ERROR "Not enough arguments"
 		return ${EXIT_ERROR}
 	fi
