@@ -96,7 +96,7 @@ ipsec_connection_write_config() {
 		return ${EXIT_ERROR}
 	fi
 
-	local path="$(ipsec_connection_path "${connection}")/settings"
+	local path="${NETWORK_IPSEC_CONNS_DIR}/${connection}/settings"
 
 	if ! settings_write "${path}" ${IPSEC_CONNECTION_CONFIG_SETTINGS}; then
 		log ERROR "Could not write configuration settings for VPN IPsec connection ${connection}"
@@ -160,21 +160,12 @@ ipsec_connection_read_config() {
 		list_append args $@
 	fi
 
-	local path="$(ipsec_connection_path "${connection}")/settings"
+	local path="${NETWORK_IPSEC_CONNS_DIR}/${connection}/settings"
 
 	if ! settings_read "${path}" ${args}; then
 		log ERROR "Could not read settings for VPN IPsec connection ${connection}"
 		return ${EXIT_ERROR}
 	fi
-}
-
-# Returns the path to a the directory for given connection
-ipsec_connection_path() {
-	assert [ $# -eq 1 ]
-
-	local connection=${1}
-
-	echo "${NETWORK_CONFIG_DIR}/vpn/ipsec/connection/${connection}"
 }
 
 # This function checks if a vpn ipsec connection exists
@@ -184,7 +175,7 @@ ipsec_connection_exists() {
 
 	local connection=${1}
 
-	local path=$(ipsec_connection_path "${connection}")
+	local path="${NETWORK_IPSEC_CONNS_DIR}/${connection}"
 
 	[ -d "${path}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
@@ -595,7 +586,7 @@ ipsec_connection_new() {
 
 	log DEBUG "Creating VPN IPsec connection ${connection}"
 
-	if ! mkdir -p $(ipsec_connection_path "${connection}"); then
+	if ! mkdir -p "${NETWORK_IPSEC_CONNS_DIR}/${connection}"; then
 		log ERROR "Could not create config directory for ${connection}"
 		return ${EXIT_ERROR}
 	fi
@@ -623,7 +614,7 @@ ipsec_connection_destroy() {
 		fi
 
 		log DEBUG "Deleting VPN IPsec connection ${connection}"
-		if ! rm -rf $(ipsec_connection_path "${connection}"); then
+		if ! rm -rf "${NETWORK_IPSEC_CONNS_DIR}/${connection}"; then
 			log ERROR "Deleting the VPN IPsec connection ${connection} was not sucessful"
 			return ${EXIT_ERROR}
 		fi
