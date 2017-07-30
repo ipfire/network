@@ -252,6 +252,51 @@ declare -A GROUP_TYPE_TO_STRONGSWAN=(
 	[CURVE25519]="curve25519"
 )
 
+cli_vpn_security_policies() {
+	local action
+	local security_policy
+
+	if vpn_security_policy_exists ${1}; then
+		security_policy=${1}
+		key=${2}
+		shift 2
+
+		case "${key}" in
+			cipher|compression|integrity|lifetime|pfs|show)
+				vpn_security_policies_${key} ${security_policy} $@
+				;;
+			group-type)
+				vpn_security_policies_group_type ${security_policy} $@
+				;;
+			key-exchange)
+				vpn_security_policies_key_exchange ${security_policy} $@
+				;;
+			*)
+				error "Unrecognized argument: ${key}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	else
+		action=${1}
+		shift
+
+		case "${action}" in
+			new)
+				vpn_security_policies_new $@
+				;;
+			destroy)
+				vpn_security_policies_destroy $@
+				;;
+			""|*)
+				if [ -n "${action}" ]; then
+					error "Unrecognized argument: '${action}'"
+				fi
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	fi
+}
+
 # This functions checks if a policy is readonly
 # returns true when yes and false when no
 vpn_security_policies_check_readonly() {

@@ -161,6 +161,7 @@ dist_network_SCRIPTS = \
 	src/functions/functions.util \
 	src/functions/functions.vlan \
 	src/functions/functions.ipsec \
+	src/functions/functions.vpn \
 	src/functions/functions.vpn-security-policies \
 	src/functions/functions.wireless \
 	src/functions/functions.wpa_supplicant \
