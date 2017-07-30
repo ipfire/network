@@ -330,7 +330,7 @@ ipsec_connection_authentication_mode() {
 
 # Set the psk
 ipsec_connection_authentication_psk() {
-	if [ ! $# -eq 2]; then
+	if [ ! $# -eq 2 ]; then
 		log ERROR "Not enough arguments"
 		return ${EXIT_ERROR}
 	fi
