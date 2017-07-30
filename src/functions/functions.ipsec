@@ -26,12 +26,12 @@ IPSEC_CONNECTION_CONFIG_SETTINGS="${IPSEC_CONNECTION_CONFIG_SETTINGS} SECURITY_P
 
 # Default values
 IPSEC_DEFAULT_MODE="tunnel"
-IPSEC_DEFAULT_AUTH_MODE="psk"
+IPSEC_DEFAULT_AUTH_MODE="PSK"
 IPSEC_DEFAULT_INACTIVITY_TIMEOUT="0"
 IPSEC_DEFAULT_SECURITY_POLICY="system"
 
 IPSEC_VALID_MODES="gre-transport tunnel vti"
-IPSEC_VALID_AUTH_MODES="PSK psk"
+IPSEC_VALID_AUTH_MODES="PSK"
 
 cli_ipsec() {
 	local action=${1}
@@ -322,7 +322,7 @@ ipsec_connection_authentication_mode() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! ipsec_connection_write_config_key "${connection}" "AUTH_MODE" ${mode,,}; then
+	if ! ipsec_connection_write_config_key "${connection}" "AUTH_MODE" ${mode^^}; then
 		log ERROR "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
