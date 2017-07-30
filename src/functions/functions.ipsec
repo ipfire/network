@@ -278,7 +278,7 @@ ipsec_connection_local() {
 
 # Set the connection mode
 ipsec_connection_mode() {
-	if [ ! $# -eq 2]; then
+	if [ ! $# -eq 2 ]; then
 		log ERROR "Not enough arguments"
 		return ${EXIT_ERROR}
 	fi
