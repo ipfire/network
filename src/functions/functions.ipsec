@@ -334,12 +334,23 @@ ipsec_connection_authentication_psk() {
 		log ERROR "Not enough arguments"
 		return ${EXIT_ERROR}
 	fi
+
 	local connection=${1}
 	local psk=${2}
 
-	# TODO Check if psk is valid 
+	local length=${#psk}
 
-	if ! ipsec_connection_write_config_key "${connection}" "PSK" ${psk}; then
+	if [ ${length} -lt 4 ]; then
+		error "The PSK must be longer than four characters"
+		return ${EXIT_ERROR}
+	fi
+
+	if [ ${length} -gt 128 ]; then
+		error "The PSK cannot be longer than 128 characters"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "PSK" "${psk}"; then
 		log ERROR "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
