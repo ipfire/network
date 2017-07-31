@@ -109,6 +109,13 @@ ip_tunnel_add() {
 		error "Could not create tunnel device ${device}"
 		return ${EXIT_ERROR}
 	fi
+
+	# Disable policy lookups for VTI devices
+	if [ "${mode}" = "vti" ]; then
+		sysctl_set "net.ipv4.conf.${device}.disable_policy" "1"
+	fi
+
+	return ${EXIT_OK}
 }
 
 ip_tunnel_del() {
