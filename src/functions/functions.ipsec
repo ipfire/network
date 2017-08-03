@@ -56,7 +56,7 @@ cli_ipsec_connection() {
 		shift 2
 
 		case "${key}" in
-			authentication|inactivity-timout|local|mode|peer|remote|security-policy)
+			authentication|inactivity_timeout|local|mode|peer|remote|security_policy)
 				ipsec_connection_${key} ${connection} $@
 				;;
 			show)
