@@ -810,7 +810,19 @@ _ipsec_connection_to_strongswan_connection() {
 	print_indent 2 "proposals = $(vpn_security_policies_make_ah_proposal ${SECURITY_POLICY})"
 	print
 
-	# XXX DPD Settings
+	# DPD Settings
+	if isset DPD_DELAY && isinteger DPD_DELAY && [ ${DPD_DELAY} -gt 0 ]; then
+		print_indent 2 "# Dead Peer Detection"
+
+		print_indent 2 "dpd_action = ${DPD_ACTION}"
+		print_indent 2 "dpd_delay = ${DPD_DELAY}"
+
+		if isset DPD_TIMEOUT; then
+			print_indent 2 "dpd_timeout = ${DPD_TIMEOUT}"
+		fi
+
+		print
+	fi
 
 	# Fragmentation
 	print_indent 2 "# Fragmentation"
