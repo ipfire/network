@@ -787,7 +787,14 @@ _ipsec_connection_to_strongswan_connection() {
 	esac
 	print # empty line
 
-	# XXX Local Address
+	# Local Address
+	print_indent 2 "# Local Address"
+	if isset LOCAL_ADDRESS; then
+		print_indent 2 "local_addrs = ${LOCAL_ADDRESS}"
+	else
+		print_indent 2 "local_addrs = %any"
+	fi
+	print
 
 	# Remote Address
 	print_indent 2 "# Remote Address"
