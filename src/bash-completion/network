@@ -340,6 +340,186 @@ _network_settings() {
 	COMPREPLY=( $(compgen -W "${keys}" -- "${cur}") )
 }
 
+_network_vpn() {
+	local words=( $@ )
+
+	local commands="ipsec"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+
+	local args="${words[@]:1}"
+	case "${cmd}" in
+		ipsec)
+			_network_vpn_ipsec ${args}
+			;;
+		esac
+}
+
+_network_vpn_ipsec() {
+	local words=( $@ )
+
+	local commands="connection"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+
+	local args="${words[@]:1}"
+	case "${cmd}" in
+		connection)
+			_network_vpn_ipsec_connection ${args}
+			;;
+		esac
+}
+
+_network_vpn_ipsec_connection() {
+	local words=( $@ )
+
+	local commands="destroy new $(network raw list-ipsec-connections)"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+
+	local args="${words[@]:1}"
+	case "${cmd}" in
+		destroy)
+			:
+			;;
+		new)
+			:
+			;;
+		*)
+			if network raw ipsec-connection-exists ${cmd}; then
+				_network_vpn_ipsec_connection_subcommands ${cmd} ${args}
+			fi
+			;;
+		esac
+}
+
+_network_vpn_ipsec_connection_subcommands() {
+	local connection=${1}
+	shift
+	local words=( $@ )
+
+	local commands="authentication inactivity-timout local mode peer remote security-policy show"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+
+	local args="${words[@]:1}"
+	case "${cmd}" in
+		authentication)
+			_network_vpn_ipsec_connection_subcommands_authentication ${connection} ${args}
+			;;
+		local)
+			_network_vpn_ipsec_connection_subcommands_local_remote ${connection} "local" ${args}
+			;;
+		mode)
+			_network_vpn_ipsec_connection_subcommands_mode ${args}
+			;;
+		remote)
+			_network-vpn_ipsec_connection_subcommands_local_remote ${connection} "remote" ${args}
+			;;
+		security-policy)
+			_network_vpn_ipsec_connection_subcommands_security_policy ${args}
+			;;
+		esac
+}
+
+_network_vpn_ipsec_connection_subcommands_authentication() {
+	local connection=${1}
+	shift
+	local words=( $@ )
+
+	local commands="psk mode"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+
+	local args="${words[@]:1}"
+	case "${cmd}" in
+		mode)
+			_network_vpn_ipsec_connection_subcommands_authentication_mode ${connection} ${args}
+			;;
+			esac
+}
+
+_network_vpn_ipsec_connection_subcommands_local_remote() {
+	local connection=${1}
+	local type=${2}
+	shift 2
+	local words=( $@ )
+
+	local commands="id prefix"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+
+
+	local args="${words[@]:1}"
+	case "${cmd}" in
+		prefix)
+			_network_vpn_ipsec_connection_subcommands_prefix "${connection}" "${type}" ${args}
+			;;
+			esac
+}
+
+_network_vpn_ipsec_connection_subcommands_prefix() {
+	:
+}
+
+_network_vpn_ipsec_connection_subcommands_authentication_mode() {
+	local connection=${1}
+	shift
+	local words=( $@ )
+
+	local commands="PSK"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+}
+
+_network_vpn_ipsec_connection_subcommands_mode() {
+	local words=( $@ )
+
+	local commands="gre-transport tunnel vti"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+}
+
+_network_vpn_ipsec_connection_subcommands_security_policy() {
+	local words=( $@ )
+
+	local commands="$(network raw list-vpn-security-policies-all)"
+	local cmd="$(_network_find_on_cmdline "${commands}")"
+	if [[ -z "${cmd}" ]]; then
+		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+		return 0
+	fi
+}
+
 _network_zone() {
 	local words=( $@ )
 
@@ -543,7 +723,7 @@ _network() {
 				;;
 			*)
 				COMPREPLY=( $(compgen -W "device dhcpv4 dhcpv6 dns-server \
-					help hostname port reset route settings status zone" \
+					help hostname port reset route settings status vpn zone" \
 					-- "${cur}") )
 				;;
 		esac
@@ -574,6 +754,9 @@ _network() {
 		start|stop|status)
 			# start, stop and status optionally take a zone
 			_network_complete_zones
+			;;
+		vpn)
+			_network_vpn ${args}
 			;;
 		zone)
 			_network_zone ${args}
