@@ -1002,3 +1002,17 @@ vpn_security_policies_make_esp_proposal() {
 	# Returns as a comma-separated list
 	list_join proposals ,
 }
+
+# List all security policies
+vpn_security_policies_list_all() {
+	local security_policy
+	for security_policy in ${NETWORK_SHARE_DIR}/vpn/security-policies/*; do
+		[ -f ${security_policy} ] || continue
+		basename ${security_policy}
+	done
+
+	for security_policy in ${NETWORK_CONFIG_DIR}/vpn/security-policies/*; do
+		[ -f ${security_policy} ] || continue
+		basename ${security_policy}
+	done
+}
