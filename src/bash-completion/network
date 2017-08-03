@@ -410,7 +410,7 @@ _network_vpn_ipsec_connection_subcommands() {
 	shift
 	local words=( $@ )
 
-	local commands="authentication inactivity-timout local mode peer remote security-policy show"
+	local commands="authentication inactivity-timeout local mode peer remote security-policy show"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
@@ -430,7 +430,7 @@ _network_vpn_ipsec_connection_subcommands() {
 			_network_vpn_ipsec_connection_subcommands_mode ${args}
 			;;
 		remote)
-			_network-vpn_ipsec_connection_subcommands_local_remote ${connection} "remote" ${args}
+			_network_vpn_ipsec_connection_subcommands_local_remote ${connection} "remote" ${args}
 			;;
 		security-policy)
 			_network_vpn_ipsec_connection_subcommands_security_policy ${args}
