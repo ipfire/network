@@ -159,7 +159,7 @@ wpa_supplicant_config_write() {
 		fi
 
 		if isset ssid; then
-			print "	ssid=${ssid}"
+			print "	ssid=\"${ssid}\""
 		fi
 
 		if isset key; then
