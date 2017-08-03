@@ -729,3 +729,12 @@ ipsec_connection_destroy() {
 		fi
 	done
 }
+
+# List all ipsec connections
+ipsec_list_connections() {
+	local connection
+	for connection in ${NETWORK_IPSEC_CONNS_DIR}/*; do
+		[ -d ${connection} ] || continue
+		basename ${connection}
+	done
+}
