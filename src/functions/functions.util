@@ -26,6 +26,17 @@ print() {
 	printf -- "${fmt}\n" "$@"
 }
 
+print_indent() {
+	local i=${1}
+	shift
+
+	while (( i-- )); do
+		printf "\t"
+	done
+
+	print "%s" "$@"
+}
+
 # The args() function takes a number of arguments like
 #   var1="abc d" var2="abc" var3="abcd e"
 # and splits them into several arguments, devided by newline

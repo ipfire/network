@@ -738,3 +738,212 @@ ipsec_list_connections() {
 		basename ${connection}
 	done
 }
+
+ipsec_connection_to_strongswan() {
+	local connection="${1}"
+
+	# Read the config settings
+	local ${IPSEC_CONNECTION_CONFIG_SETTINGS}
+	if ! ipsec_connection_read_config "${connection}"; then
+		error "Could not read the connection ${connection}"
+		return ${EXIT_ERROR}
+	fi
+
+	local path="${NETWORK_IPSEC_SWANCTL_CONNECTIONS_DIR}/${connection}.conf"
+
+	(
+		# Write the connection section
+		_ipsec_connection_to_strongswan_connection "${connection}"
+
+		# Write the secrets section
+		_ipsec_connection_to_strongswan_secrets "${connection}"
+
+	) > ${path}
+}
+
+_ipsec_connection_to_strongswan_connection() {
+	local connection="${1}"
+
+	# Read the security policy
+	local ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}
+	if ! vpn_security_policies_read_config "${SECURITY_POLICY}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	print_indent 0 "connections {"
+	print_indent 1 "${connection} {"
+
+	# IKE Version
+	print_indent 2 "# IKE Version"
+	case "${KEY_EXCHANGE^^}" in
+		IKEV1)
+			print_indent 2 "version = 1"
+			;;
+
+		# Fall back to IKEv2 for any random values
+		IKEV2|*)
+			print_indent 2 "version = 2"
+			;;
+	esac
+	print # empty line
+
+	# XXX Local Address
+
+	# Remote Address
+	print_indent 2 "# Remote Address"
+	if isset PEER; then
+		print_indent 2 "remote_addrs = ${PEER}"
+	else
+		print_indent 2 "remote_addrs = %any"
+	fi
+	print
+
+	# IKE Proposals
+	print_indent 2 "# IKE Proposals"
+	print_indent 2 "proposals = $(vpn_security_policies_make_ah_proposal ${SECURITY_POLICY})"
+	print
+
+	# XXX DPD Settings
+
+	# Fragmentation
+	print_indent 2 "# Fragmentation"
+	print_indent 2 "fragmentation = yes"
+	print
+
+	# Local
+	print_indent 2 "local {"
+
+	# Local ID
+	if isset LOCAL_ID; then
+		print_indent 3 "id = ${LOCAL_ID}"
+	fi
+
+	# Authentication
+	case "${AUTH_MODE}" in
+		PSK)
+			print_indent 3 "auth = psk"
+			;;
+	esac
+
+	print_indent 2 "}"
+	print
+
+	# Remote
+	print_indent 2 "remote {"
+
+	# Remote ID
+	if isset REMOTE_ID; then
+		print_indent 3 "id = ${REMOTE_ID}"
+	fi
+
+	# Authentication
+	case "${AUTH_MODE}" in
+		PSK)
+			print_indent 3 "auth = psk"
+			;;
+	esac
+
+	print_indent 2 "}"
+	print
+
+	# Children
+
+	print_indent 2 "children {"
+	print_indent 3 "${connection} {"
+
+	print_indent 4 "# ESP Proposals"
+	print_indent 4 "esp_proposals = $(vpn_security_policies_make_esp_proposal ${SECURITY_POLICY})"
+	print
+
+	# Traffic Selectors
+
+	# Local Prefixes
+	if isset LOCAL_PREFIX; then
+		print_indent 4 "local_ts = $(list_join LOCAL_PREFIX ,)"
+	else
+		print_indent 4 "local_ts = dynamic"
+	fi
+
+	# Remote Prefixes
+	if isset REMOTE_PREFIX; then
+		print_indent 4 "remote_ts = $(list_join REMOTE_PREFIX ,)"
+	else
+		print_indent 4 "remote_ts = dynamic"
+	fi
+	print
+
+	# Rekeying
+	if isset LIFETIME; then
+		print_indent 4 "# Rekey Time"
+		print_indent 4 "rekey_time = ${LIFETIME}"
+		print
+	fi
+
+	# Updown Script
+	print_indent 4 "updown = ${NETWORK_HELPERS_DIR}/ipsec-updown"
+	print
+
+	# Mode
+	print_indent 4 "# Mode"
+	case "${MODE}" in
+		gre-transport)
+			print_indent 4 "mode = transport"
+			;;
+		tunnel|vti|*)
+			print_indent 4 "mode = tunnel"
+			;;
+	esac
+	print
+
+	# Compression
+	print_indent 4 "# Compression"
+	if enabled COMPRESSION; then
+		print_indent 4 "ipcomp = yes"
+	else
+		print_indent 4 "ipcomp = no"
+	fi
+	print
+
+	# Inactivity Timeout
+	if isset INACTIVITY_TIMEOUT; then
+		print_indent 4 "# Inactivity Timeout"
+		print_indent 4 "inactivity = ${INACTIVITY_TIMEOUT}"
+		print
+	fi
+
+	# XXX Always-On
+	print_indent 4 "start_action = start"
+	print_indent 4 "close_action = start"
+
+	print_indent 3 "}"
+	print_indent 2 "}"
+	print
+
+	print_indent 1 "}"
+	print_indent 0 "}"
+	print
+}
+
+_ipsec_connection_to_strongswan_secrets() {
+	local connection="${1}"
+
+	print_indent 0 "secrets {"
+
+	case "${AUTH_MODE}" in
+		PSK)
+			print_indent 1 "ike {"
+
+			# Secret
+			print_indent 2 "secret = ${PSK}"
+
+			# ID
+			if isset REMOTE_ID; then
+				print_indent 2 "id = ${REMOTE_ID}"
+			fi
+
+			print_indent 1 "}"
+			;;
+	esac
+
+	print_indent 0 "}"
+}
