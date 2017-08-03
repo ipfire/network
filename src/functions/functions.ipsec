@@ -19,16 +19,21 @@
 #                                                                             #
 ###############################################################################
 
-IPSEC_CONNECTION_CONFIG_SETTINGS="AUTH_MODE INACTIVITY_TIMEOUT LOCAL_ID LOCAL_PREFIX"
+IPSEC_CONNECTION_CONFIG_SETTINGS="AUTH_MODE DPD_ACTION DPD_DELAY DPD_TIMEOUT"
+IPSEC_CONNECTION_CONFIG_SETTINGS="INACTIVITY_TIMEOUT LOCAL_ADDRESS LOCAL_ID LOCAL_PREFIX"
 IPSEC_CONNECTION_CONFIG_SETTINGS="${IPSEC_CONNECTION_CONFIG_SETTINGS} MODE PEER PSK"
 IPSEC_CONNECTION_CONFIG_SETTINGS="${IPSEC_CONNECTION_CONFIG_SETTINGS} REMOTE_ID REMOTE_PREFIX"
 IPSEC_CONNECTION_CONFIG_SETTINGS="${IPSEC_CONNECTION_CONFIG_SETTINGS} SECURITY_POLICY"
 
 # Default values
-IPSEC_DEFAULT_MODE="tunnel"
 IPSEC_DEFAULT_AUTH_MODE="PSK"
+IPSEC_DEFAULT_DPD_ACTION="restart"
+IPSEC_DEFAULT_DPD_DELAY="30"
+IPSEC_DEFAULT_DPD_TIMEOUT="120"
 IPSEC_DEFAULT_INACTIVITY_TIMEOUT="0"
+IPSEC_DEFAULT_MODE="tunnel"
 IPSEC_DEFAULT_SECURITY_POLICY="system"
+IPSEC_DEFAULT_START_ACTION="on-demand"
 
 IPSEC_VALID_MODES="gre-transport tunnel vti"
 IPSEC_VALID_AUTH_MODES="PSK"
@@ -56,7 +61,7 @@ cli_ipsec_connection() {
 		shift 2
 
 		case "${key}" in
-			authentication|inactivity_timeout|local|mode|peer|remote|security_policy)
+			authentication|dpd|inactivity_timeout|local|mode|peer|remote|security_policy|start_action)
 				ipsec_connection_${key} ${connection} $@
 				;;
 			show)
@@ -358,6 +363,119 @@ ipsec_connection_authentication_psk() {
 	return ${EXIT_OK}
 }
 
+
+# Handle the cli after authentification
+ipsec_connection_dpd() {
+	if [ ! $# -gt 1 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+
+	local connection=${1}
+	local cmd=${2}
+	shift 2
+
+	case ${cmd} in
+		action)
+			ipsec_connection_dpd_action "${connection}" $@
+			;;
+		delay)
+			ipsec_connection_dpd_delay "${connection}" $@
+			;;
+		timeout)
+			ipsec_connection_dpd_timeout "${connection}" $@
+			;;
+		*)
+			log ERROR "Unrecognized argument: ${cmd}"
+			return ${EXIT_ERROR}
+			;;
+	esac
+}
+
+# Set the default dpd action
+ipsec_connection_dpd_action() {
+	if [ ! $# -eq 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	local action=${2}
+
+	if ! isoneof action "restart" "clear"; then
+		log ERROR "dpd action '${action}' is invalid"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "DPD_ACTION" ${action}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# Set the dpd delay
+ipsec_connection_dpd_delay() {
+	if [ ! $# -ge 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+
+	local connection=${1}
+	shift 1
+	local value=$@
+
+	if ! isinteger value; then
+		value=$(parse_time $@)
+		if [ ! $? -eq 0 ]; then
+			log ERROR "Parsing the passed time was not sucessful please check the passed values."
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	if [ ${value} -lt 0 ]; then
+		log ERROR "The passed time value must be in the sum greater or equal zero seconds."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "DPD_DELAY" ${value}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+# Set the dpd timeout
+ipsec_connection_dpd_timeout() {
+	if [ ! $# -ge 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+
+	local connection=${1}
+	shift 1
+	local value=$@
+
+	if ! isinteger value; then
+		value=$(parse_time $@)
+		if [ ! $? -eq 0 ]; then
+			log ERROR "Parsing the passed time was not sucessful please check the passed values."
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	if [ ${value} -le 0 ]; then
+		log ERROR "The passed time value must be in the sum greater or equal zero seconds."
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "DPD_TIMEOUT" ${value}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
 # Handle the cli after local
 ipsec_connection_local() {
 	if [ ! $# -ge 2 ]; then
@@ -370,6 +488,9 @@ ipsec_connection_local() {
 	shift 2
 
 	case ${cmd} in
+		address)
+			ipsec_connection_local_address "${connection}" $@
+			;;
 		id)
 			ipsec_connection_id "${connection}" "LOCAL" $@
 			;;
@@ -400,6 +521,28 @@ ipsec_connection_mode() {
 	fi
 
 	if ! ipsec_connection_write_config_key "${connection}" "MODE" ${mode}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+# Set the local address
+ipsec_connection_local_address() {
+	if [ ! $# -eq 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	local local_address=${2}
+
+	if ! ipsec_connection_check_peer ${local_address}; then
+		log ERROR "Local address '${local_address}' is invalid"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "LOCAL_ADDRESS" ${local_address}; then
 		log ERROR "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
@@ -612,6 +755,25 @@ ipsec_connection_inactivity_timeout() {
 	return ${EXIT_OK}
 }
 
+# Set the default start action
+ipsec_connection_start_action() {
+	if [ ! $# -eq 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	local action=${2}
+
+	if ! isoneof action "on-demand" "always-on"; then
+		log ERROR "Start action '${action}' is invalid"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_connection_write_config_key "${connection}" "START_ACTION" ${action}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+}
 
 # Set the security policy to use
 ipsec_connection_security_policy() {
@@ -702,8 +864,13 @@ ipsec_connection_new() {
 
 	local ${IPSEC_CONNECTION_CONFIG_SETTINGS}
 
-	MODE=${IPSEC_DEFAULT_MODE}
 	AUTH_MODE=${IPSEC_DEFAULT_AUTH_MODE}
+	DPD_ACTION=${IPSEC_DEFAULT_DPD_ACTION}
+	DPD_DELAY=${IPSEC_DEFAULT_DPD_DELAY}
+	DPD_TIMEOUT=${IPSEC_DEFAULT_DPD_TIMEOUT}
+	MODE=${IPSEC_DEFAULT_MODE}
+	START_ACTION=${IPSEC_DEFAULT_START_ACTION}
+
 	INACTIVITY_TIMEOUT=${IPSEC_DEFAULT_INACTIVITY_TIMEOUT}
 	SECURITY_POLICY=${IPSEC_DEFAULT_SECURITY_POLICY}
 
