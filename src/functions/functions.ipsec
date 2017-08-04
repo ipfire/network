@@ -344,12 +344,24 @@ ipsec_strongswan_autostart() {
 	done
 
 	# Start strongswan when we need it and when it is not yet enabled
-	if ${autostart_needed} && ! service_is_enabled "strongswan"; then
-		service_enable "strongswan"
+	if ${autostart_needed}; then
+		if ! service_is_enabled "strongswan"; then
+			service_enable "strongswan"
+		fi
+
+		if ! service_is_active "strongswan"; then
+			service_start "strongswan"
+		fi
 
 	# Disable strongswan when we do not need it but it is enabled
-	elif ! ${autostart_needed} && service_is_enabled "strongswan"; then
-		service_disable "strongswan"
+	elif ! ${autostart_needed}; then
+		if service_is_enabled "strongswan"; then
+			service_disable "strongswan"
+		fi
+
+		if service_is_active "strongswan"; then
+			service_stop "strongswan"
+		fi
 	fi
 }
 
