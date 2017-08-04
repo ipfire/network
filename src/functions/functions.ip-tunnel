@@ -107,7 +107,7 @@ ip_tunnel_add() {
 	log DEBUG "Creating tunnel device '${device}' (mode=${mode})..."
 
 	# Create the device.
-	if ! cmd ip tunnel add ${device} mode ${mode} ${cmd_args}; then
+	if ! cmd ip link add name ${device} type ${mode} ${cmd_args}; then
 		error "Could not create tunnel device ${device}"
 		return ${EXIT_ERROR}
 	fi
@@ -129,7 +129,7 @@ ip_tunnel_del() {
 
 	log DEBUG "Removing tunnel device '${device}'..."
 
-	ip tunnel del ${device}
+	ip link del ${device}
 	assert [ $? -eq 0 ]
 }
 
