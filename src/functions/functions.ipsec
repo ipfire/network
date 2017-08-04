@@ -61,7 +61,7 @@ cli_ipsec_connection() {
 		shift 2
 
 		case "${key}" in
-			authentication|dpd|inactivity_timeout|local|mode|peer|remote|security_policy|start_action)
+			authentication|down|dpd|inactivity_timeout|local|mode|peer|remote|security_policy|start_action|up)
 				ipsec_connection_${key} ${connection} $@
 				;;
 			show)
@@ -363,6 +363,27 @@ ipsec_connection_authentication_psk() {
 	return ${EXIT_OK}
 }
 
+ipsec_connection_up() {
+	local connection="${1}"
+
+	if ! ipsec_connection_exists "${connection}"; then
+		error "No such VPN IPsec connection: ${connection}"
+		return ${EXIT_ERROR}
+	fi
+
+	cmd swanctl --initiate --child "${connection}"
+}
+
+ipsec_connection_down() {
+	local connection="${1}"
+
+	if ! ipsec_connection_exists "${connection}"; then
+		error "No such VPN IPsec connection: ${connection}"
+		return ${EXIT_ERROR}
+	fi
+
+	cmd swanctl --terminate --ike "${connection}"
+}
 
 # Handle the cli after authentification
 ipsec_connection_dpd() {
