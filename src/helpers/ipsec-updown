@@ -42,7 +42,7 @@ fi
 log DEBUG "${0} called for ${CONNECTION}: ${PLUTO_VERB}"
 
 case "${PLUTO_VERB}" in
-	up-client)
+	up-client|up-client-v6|up-host|up-host-v6)
 		case "${MODE}" in
 			gre-*)
 				if ! device_exists "${INTERFACE}"; then
@@ -76,7 +76,7 @@ case "${PLUTO_VERB}" in
 		esac
 		;;
 
-	down-client)
+	down-client|down-client-v6|down-host|down-host-v6)
 		case "${MODE}" in
 			vti)
 				if device_exists "${INTERFACE}"; then
