@@ -31,13 +31,17 @@ assert isset PLUTO_VERSION
 
 CONNECTION="${PLUTO_CONNECTION}"
 
-# Interface name for this IPsec connection
-INTERFACE="ipsec-${CONNECTION}"
-
 if ! ipsec_connection_read_config "${CONNECTION}"; then
 	log ERROR "Could not read configuration for ${CONNECTION}"
 	exit ${EXIT_ERROR}
 fi
+
+# Interface name for this IPsec connection
+case "${MODE}" in
+	gre-*|vti)
+		INTERFACE="ipsec-${CONNECTION}"
+		;;
+esac
 
 log DEBUG "${0} called for ${CONNECTION}: ${PLUTO_VERB}"
 
@@ -74,9 +78,22 @@ case "${PLUTO_VERB}" in
 				device_set_up "${INTERFACE}"
 				;;
 		esac
+
+		# Set routes
+		if isset INTERFACE; then
+			cmd ip route add "${PLUTO_PEER_CLIENT}" \
+				dev "${INTERFACE}"
+		else
+			cmd ip route add "${PLUTO_PEER_CLIENT}" \
+				via "${PLUTO_PEER}"
+		fi
 		;;
 
 	down-client|down-client-v6|down-host|down-host-v6)
+		# Remove routes
+		cmd ip route del "${PLUTO_PEER_CLIENT}"
+
+		# Remove interfaces
 		case "${MODE}" in
 			gre-*|vti)
 				if device_exists "${INTERFACE}"; then
