@@ -968,6 +968,12 @@ _ipsec_connection_to_strongswan_connection() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Is DPD enabled?
+	local dpd="false"
+	if isset DPD_DELAY && isinteger DPD_DELAY && [ ${DPD_DELAY} -gt 0 ]; then
+		dpd="true"
+	fi
+
 	print_indent 0 "connections {"
 	print_indent 1 "${connection} {"
 
@@ -1009,10 +1015,8 @@ _ipsec_connection_to_strongswan_connection() {
 	print
 
 	# DPD Settings
-	if isset DPD_DELAY && isinteger DPD_DELAY && [ ${DPD_DELAY} -gt 0 ]; then
+	if enabled dpd; then
 		print_indent 2 "# Dead Peer Detection"
-
-		print_indent 2 "dpd_action = ${DPD_ACTION}"
 		print_indent 2 "dpd_delay = ${DPD_DELAY}"
 
 		if isset DPD_TIMEOUT; then
@@ -1102,6 +1106,13 @@ _ipsec_connection_to_strongswan_connection() {
 	print_indent 4 "mark_in = %unique"
 	print_indent 4 "mark_out = %unique"
 	print
+
+	# Dead Peer Detection
+	if enabled dpd; then
+		print_indent 4 "# Dead Peer Detection"
+		print_indent 4 "dpd_action = ${DPD_ACTION}"
+		print
+	fi
 
 	# Rekeying
 	if isset LIFETIME; then
