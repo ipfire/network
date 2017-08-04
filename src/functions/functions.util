@@ -211,6 +211,12 @@ fappend() {
 	print "%s" "$@" >> ${file} 2>/dev/null
 }
 
+file_delete() {
+	local file=${1}
+
+	unlink "${file}" 2>/dev/null
+}
+
 file_exists() {
 	local file=${1}
 

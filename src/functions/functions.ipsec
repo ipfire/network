@@ -94,7 +94,7 @@ cli_ipsec_connection() {
 				ipsec_connection_new $@
 				;;
 			destroy)
-				ipsec_connection_destroy $@
+				cli_ipsec_connection_destroy $@
 				;;
 			""|*)
 				if [ -n "${action}" ]; then
@@ -104,6 +104,20 @@ cli_ipsec_connection() {
 				;;
 		esac
 	fi
+}
+
+cli_ipsec_connection_destroy() {
+	local connection="${1}"
+
+	if ! ipsec_connection_destroy "${connection}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Inform strongswan about the changes
+	ipsec_strongswan_load
+
+	# Configure strongswan autostart
+	ipsec_strongswan_autostart
 }
 
 cli_ipsec_connection_show() {
@@ -1022,14 +1036,16 @@ ipsec_connection_destroy() {
 		fi
 
 		log DEBUG "Deleting VPN IPsec connection ${connection}"
+
+		# Delete strongswan configuration file
+		file_delete "${NETWORK_IPSEC_SWANCTL_CONNECTIONS_DIR}/${connection}.conf"
+
 		if ! rm -rf "${NETWORK_IPSEC_CONNS_DIR}/${connection}"; then
 			log ERROR "Deleting the VPN IPsec connection ${connection} was not sucessful"
 			return ${EXIT_ERROR}
 		fi
-	done
 
-	# Configure strongswan autostart
-	ipsec_strongswan_autostart
+	done
 }
 
 # List all ipsec connections
