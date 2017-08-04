@@ -132,3 +132,50 @@ ip_tunnel_del() {
 	ip tunnel del ${device}
 	assert [ $? -eq 0 ]
 }
+
+ip_tunnel_change_keys() {
+	local device="${1}"
+	shift
+
+	if ! isset device; then
+		error "No device given"
+		return ${EXIT_ERROR}
+	fi
+
+	local ikey
+	local okey
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--ikey=*)
+				ikey="$(cli_get_val ${1})"
+				;;
+			--okey=*)
+				okey="$(cli_get_val ${1})"
+				;;
+			*)
+				error "Invalid argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	if ! isset ikey || ! isset okey; then
+		error "You need to set --ikey= and --okey="
+		return ${EXIT_ERROR}
+	fi
+
+	if ! device_exists "${device}"; then
+		error "No such device: ${device}"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! cmd ip link change dev "${device}" \
+		type vti ikey "${ikey}" okey "${okey}"; then
+		log ERROR "Could not change keys of device ${device}"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}

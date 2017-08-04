@@ -1079,6 +1079,12 @@ _ipsec_connection_to_strongswan_connection() {
 	fi
 	print
 
+	# Netfilter Marks
+	print_indent 4 "# Netfilter Marks"
+	print_indent 4 "mark_in = %unique"
+	print_indent 4 "mark_out = %unique"
+	print
+
 	# Rekeying
 	if isset LIFETIME; then
 		print_indent 4 "# Rekey Time"

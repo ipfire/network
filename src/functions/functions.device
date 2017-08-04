@@ -287,6 +287,12 @@ device_is_dummy() {
 	[[ ${device} =~ ^dummy[0-9]+$ ]]
 }
 
+device_is_ipsec() {
+	local device="${1}"
+
+	[[ ${device} =~ ^ipsec\- ]]
+}
+
 # Check if the device is a wireless device
 device_is_wireless() {
 	local device=${1}

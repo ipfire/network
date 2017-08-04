@@ -31,6 +31,9 @@ assert isset PLUTO_VERSION
 
 CONNECTION="${PLUTO_CONNECTION}"
 
+# Interface name for this IPsec connection
+INTERFACE="ipsec-${CONNECTION}"
+
 if ! ipsec_connection_read_config "${CONNECTION}"; then
 	log ERROR "Could not read configuration for ${CONNECTION}"
 	exit ${EXIT_ERROR}
@@ -40,9 +43,39 @@ log DEBUG "${0} called for ${CONNECTION}: ${PLUTO_VERB}"
 
 case "${PLUTO_VERB}" in
 	up-client)
+		case "${MODE}" in
+			vti)
+				if device_exists "${INTERFACE}"; then
+					ip_tunnel_change_keys "${INTERFACE}" \
+						--ikey="${PLUTO_MARK_IN%/*}" \
+						--okey="${PLUTO_MARK_OUT%/*}"
+
+				else
+					if ! ip_tunnel_add "${INTERFACE}" \
+						--mode="vti" \
+						--local-address="${PLUTO_ME}" \
+						--remote-address="${PLUTO_PEER}" \
+						--ikey="${PLUTO_MARK_IN%/*}" \
+						--okey="${PLUTO_MARK_OUT%/*}"; then
+						log ERROR "Could not create VTI device for ${CONNECTION}"
+					fi
+				fi
+
+				device_set_up "${INTERFACE}"
+				;;
+		esac
 		;;
 
 	down-client)
+		case "${MODE}" in
+			vti)
+				if device_exists "${INTERFACE}"; then
+					device_set_down "${INTERFACE}"
+
+					ip_tunnel_del "${INTERFACE}"
+				fi
+				;;
+		esac
 		;;
 esac
 

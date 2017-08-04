@@ -59,6 +59,10 @@ case "${SUBSYSTEM}" in
 		elif device_is_loopback ${INTERFACE}; then
 			exit ${EXIT_OK}
 
+		# Stop processing rules for IPsec devices
+		elif device_is_ipsec ${INTERFACE}; then
+			exit ${EXIT_OK}
+
 		# Stop processing rules for wireless monitoring devices
 		elif device_is_wireless_monitor ${INTERFACE}; then
 			exit ${EXIT_OK}
