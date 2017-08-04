@@ -82,13 +82,16 @@ ip_tunnel_add() {
 		return ${EXIT_ERROR}
 	fi
 
-	assert isset local_address
-
 	local cmd_args
 
 	# Apply TTL if a value has been set.
 	if isset ttl; then
 		cmd_args="${cmd_args} ttl ${ttl}"
+	fi
+
+	# Apply local address if a value has been set.
+	if isset local_address; then
+		cmd_args="${cmd_args} local ${local_address}"
 	fi
 
 	# Apply remote address if a value has been set.
@@ -104,8 +107,7 @@ ip_tunnel_add() {
 	log DEBUG "Creating tunnel device '${device}' (mode=${mode})..."
 
 	# Create the device.
-	if ! cmd ip tunnel add ${device} mode ${mode} \
-			local ${local_address} ${cmd_args}; then
+	if ! cmd ip tunnel add ${device} mode ${mode} ${cmd_args}; then
 		error "Could not create tunnel device ${device}"
 		return ${EXIT_ERROR}
 	fi
