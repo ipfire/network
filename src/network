@@ -1165,7 +1165,7 @@ cli_reset() {
 	# Destroy all user-defined security policies
 	local secpol
 	for secpol in $(vpn_security_policies_list_user); do
-		vpn_security_policy_destroy "${secpol}"
+		vpn_security_policies_destroy "${secpol}"
 	done
 
 	local zone
