@@ -190,6 +190,19 @@ fwrite() {
 	assert isset file
 	shift
 
+	if ! print "%s" "$@" > ${file} 2>/dev/null; then
+		error "Could not write to file: ${file}"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+fappend() {
+	local file=${1}
+	assert isset file
+	shift
+
 	if [ -e "${file}" ] && [ ! -w "${file}" ]; then
 		log ERROR "${file}: No such file"
 		return ${EXIT_ERROR}

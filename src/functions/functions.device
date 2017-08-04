@@ -823,7 +823,7 @@ __device_set_file() {
 	local file="${2}"
 	local value="${3}"
 
-	fwrite "${SYS_CLASS_NET}/${device}/${file}" "${value}"
+	fappend "${SYS_CLASS_NET}/${device}/${file}" "${value}"
 }
 
 device_get_rx_bytes() {

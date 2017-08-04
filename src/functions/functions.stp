@@ -88,7 +88,7 @@ stp_bridge_set_forward_delay() {
 
 	# Set the new value.
 	log DEBUG "Setting forward delay on bridge '${bridge}' from '${current_fdelay}' to '${fdelay}'"
-	fwrite "${SYS_CLASS_NET}/${bridge}/bridge/forward_delay" "$(( ${fdelay} * 100 ))"
+	fappend "${SYS_CLASS_NET}/${bridge}/bridge/forward_delay" "$(( ${fdelay} * 100 ))"
 
 	return ${EXIT_OK}
 }

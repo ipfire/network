@@ -54,7 +54,7 @@ sysctl_set() {
 
 	local value="${2}"
 
-	fwrite "$(sysctl_key_to_path "${key}")" "${value}" || return $?
+	fappend "$(sysctl_key_to_path "${key}")" "${value}" || return $?
 	return ${EXIT_OK}
 }
 
@@ -87,7 +87,7 @@ sysctl_set_recursively() {
 	for path in $(find "${basepath}" -type f); do
 		[[ ${path} =~ ${subpath}$ ]] || continue
 
-		fwrite "${path}" "${value}"
+		fappend "${path}" "${value}"
 	done
 
 	return ${EXIT_OK}

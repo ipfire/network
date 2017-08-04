@@ -127,8 +127,8 @@ dhclient_write_config() {
 		> "${config_file}"
 
 	# Global options.
-	fwrite "${config_file}" "send vendor-class-identifier \"${vendor}\";"
-	fwrite "${config_file}" # empty line
+	fappend "${config_file}" "send vendor-class-identifier \"${vendor}\";"
+	fappend "${config_file}" # empty line
 
 	# Interface options.
 	(
