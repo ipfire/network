@@ -1074,19 +1074,27 @@ _ipsec_connection_to_strongswan_connection() {
 
 	# Traffic Selectors
 
-	# Local Prefixes
-	if isset LOCAL_PREFIX; then
-		print_indent 4 "local_ts = $(list_join LOCAL_PREFIX ,)"
-	else
-		print_indent 4 "local_ts = dynamic"
-	fi
+	case "${MODE}" in
+		gre-*)
+			print_indent 4 "local_ts = dynamic[gre]"
+			print_indent 4 "remote_ts = dynamic[gre]"
+			;;
+		*)
+			# Local Prefixes
+			if isset LOCAL_PREFIX; then
+				print_indent 4 "local_ts = $(list_join LOCAL_PREFIX ,)"
+			else
+				print_indent 4 "local_ts = dynamic"
+			fi
 
-	# Remote Prefixes
-	if isset REMOTE_PREFIX; then
-		print_indent 4 "remote_ts = $(list_join REMOTE_PREFIX ,)"
-	else
-		print_indent 4 "remote_ts = dynamic"
-	fi
+			# Remote Prefixes
+			if isset REMOTE_PREFIX; then
+				print_indent 4 "remote_ts = $(list_join REMOTE_PREFIX ,)"
+			else
+				print_indent 4 "remote_ts = dynamic"
+			fi
+			;;
+	esac
 	print
 
 	# Netfilter Marks

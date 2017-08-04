@@ -44,6 +44,16 @@ log DEBUG "${0} called for ${CONNECTION}: ${PLUTO_VERB}"
 case "${PLUTO_VERB}" in
 	up-client)
 		case "${MODE}" in
+			gre-*)
+				if ! device_exists "${INTERFACE}"; then
+					ip_tunnel_add "${INTERFACE}" \
+						--mode="gre" \
+						--local-address="${TUNNEL_ADDRESS}" \
+						--remote-address="${TUNNEL_PEER}"
+
+					device_set_up "${INTERFACE}"
+				fi
+				;;
 			vti)
 				if device_exists "${INTERFACE}"; then
 					ip_tunnel_change_keys "${INTERFACE}" \
