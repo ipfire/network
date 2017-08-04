@@ -1153,6 +1153,15 @@ cli_reset() {
 		fi
 	fi
 
+	# Destroy all IPsec VPN connections
+	local connection
+	for connection in $(ipsec_list_connections); do
+		ipsec_connection_destroy "${connection}"
+	done
+
+	# Stop strongswan
+	ipsec_strongswan_autostart
+
 	local zone
 	for zone in $(zones_get --all); do
 		zone_destroy_now "${zone}"
