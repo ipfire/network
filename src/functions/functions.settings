@@ -173,7 +173,7 @@ settings_remove() {
 		return ${EXIT_ERROR}
 	fi
 
-	rm -f "${settings_file}"
+	file_delete "${settings_file}"
 }
 
 settings_print() {
