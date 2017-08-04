@@ -48,8 +48,8 @@ case "${PLUTO_VERB}" in
 				if ! device_exists "${INTERFACE}"; then
 					ip_tunnel_add "${INTERFACE}" \
 						--mode="gre" \
-						--local-address="${TUNNEL_ADDRESS}" \
-						--remote-address="${TUNNEL_PEER}"
+						--local-address="${PLUTO_ME}" \
+						--remote-address="${PLUTO_PEER}"
 
 					device_set_up "${INTERFACE}"
 				fi
@@ -78,7 +78,7 @@ case "${PLUTO_VERB}" in
 
 	down-client|down-client-v6|down-host|down-host-v6)
 		case "${MODE}" in
-			vti)
+			gre-*|vti)
 				if device_exists "${INTERFACE}"; then
 					device_set_down "${INTERFACE}"
 
