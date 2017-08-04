@@ -1093,8 +1093,15 @@ vpn_security_policies_list_all() {
 		basename ${security_policy}
 	done
 
+	# Add all user-defined policies
+	vpn_security_policies_list_user
+}
+
+vpn_security_policies_list_user() {
+	local security_policy
 	for security_policy in ${NETWORK_CONFIG_DIR}/vpn/security-policies/*; do
 		[ -f ${security_policy} ] || continue
+
 		basename ${security_policy}
 	done
 }

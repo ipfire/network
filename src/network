@@ -1162,6 +1162,12 @@ cli_reset() {
 	# Stop strongswan
 	ipsec_strongswan_autostart
 
+	# Destroy all user-defined security policies
+	local secpol
+	for secpol in $(vpn_security_policies_list_user); do
+		vpn_security_policy_destroy "${secpol}"
+	done
+
 	local zone
 	for zone in $(zones_get --all); do
 		zone_destroy_now "${zone}"
