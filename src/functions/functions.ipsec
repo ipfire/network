@@ -209,6 +209,9 @@ ipsec_connection_disable() {
 	fi
 
 	ipsec_reload ${connection}
+
+	# Configure strongswan autostart
+	ipsec_strongswan_autostart
 }
 
 ipsec_connection_enable() {
@@ -220,6 +223,9 @@ ipsec_connection_enable() {
 	fi
 
 	ipsec_reload "${connection}"
+
+	# Configure strongswan autostart
+	ipsec_strongswan_autostart
 }
 
 # This function writes all values to a via ${connection} specificated VPN IPsec configuration file
@@ -315,6 +321,36 @@ ipsec_connection_exists() {
 	local path="${NETWORK_IPSEC_CONNS_DIR}/${connection}"
 
 	[ -d "${path}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
+# Determines if strongswan should be automatically started
+# when the system boots up.
+ipsec_strongswan_autostart() {
+	local autostart_needed="false"
+
+	local connection
+	for connection in $(ipsec_list_connections); do
+		local ENABLED
+
+		if ! ipsec_connection_read_config "${connection}" "ENABLED"; then
+			log WARNING "Could not read configuation"
+			continue
+		fi
+
+		if enabled ENABLED; then
+			autostart_needed="true"
+			break
+		fi
+	done
+
+	# Start strongswan when we need it and when it is not yet enabled
+	if ${autostart_needed} && ! service_is_enabled "strongswan"; then
+		service_enable "strongswan"
+
+	# Disable strongswan when we do not need it but it is enabled
+	elif ! ${autostart_needed} && service_is_enabled "strongswan"; then
+		service_disable "strongswan"
+	fi
 }
 
 ipsec_strongswan_load() {
@@ -959,6 +995,9 @@ ipsec_connection_new() {
 		log ERROR "Could not write new config file"
 		return ${EXIT_ERROR}
 	fi
+
+	# Configure strongswan autostart
+	ipsec_strongswan_autostart
 }
 
 # Function that deletes based on the passed parameters one ore more vpn security policies
@@ -976,6 +1015,9 @@ ipsec_connection_destroy() {
 			return ${EXIT_ERROR}
 		fi
 	done
+
+	# Configure strongswan autostart
+	ipsec_strongswan_autostart
 }
 
 # List all ipsec connections
