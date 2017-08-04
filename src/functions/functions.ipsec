@@ -1066,6 +1066,9 @@ _ipsec_connection_to_strongswan_connection() {
 		dpd="true"
 	fi
 
+	# Write configuration header
+	config_header "strongSwan configuration for ${connection}"
+
 	print_indent 0 "connections {"
 	print_indent 1 "${connection} {"
 
