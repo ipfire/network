@@ -1041,6 +1041,11 @@ _ipsec_connection_to_strongswan_connection() {
 	esac
 	print # empty line
 
+	# Always only keep one connection open at a time
+	print_indent 2 "# Unique IDs"
+	print_indent 2 "unique = replace"
+	print
+
 	# Local Address
 	print_indent 2 "# Local Address"
 	if isset LOCAL_ADDRESS; then
