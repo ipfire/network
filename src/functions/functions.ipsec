@@ -293,6 +293,13 @@ ipsec_connection_exists() {
 	[ -d "${path}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
+ipsec_strongswan_load() {
+	if ! cmd swanctl --load-all; then
+		log ERROR "Could not reload strongswan config"
+		return ${EXIT_ERROR}
+	fi
+}
+
 # Reloads the connection after config changes
 ipsec_reload() {
 	local connection=${1}
@@ -302,10 +309,7 @@ ipsec_reload() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! cmd swanctl --load-all; then
-		log ERROR "Could not reload strongswan config"
-		return ${EXIT_ERROR}
-	fi
+	ipsec_strongswan_load
 }
 
 # Handle the cli after authentification

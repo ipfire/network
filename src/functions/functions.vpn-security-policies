@@ -334,7 +334,30 @@ vpn_security_policies_write_config() {
 		return ${EXIT_ERROR}
 	fi
 
-	# TODO everytime we successfully write a config we should call some trigger to take the changes into effect
+	if ! vpn_security_policies_reload ${name}; then
+		log WARNING "Could not reload the IPsec connection using this security policy"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# reload IPsec connections using a special policy
+vpn_security_policies_reload() {
+	local name=${1}
+
+	local connection
+	for connection in $(ipsec_list_connections); do
+		if ! ipsec_connection_read_config "${connection}" "SECURITY_POLICY"; then
+			continue
+		fi
+
+		if [[ "${SECURITY_POLICY}" = "${name}" ]]; then
+			if ! ipsec_connection_to_strongswan "${connection}"; then
+				log ERROR "Could not generate strongswan config for ${connnection}"
+			fi
+		fi
+	done
+
+	ipsec_strongswan_load
 }
 
 # This funtion writes the value for one key to a via ${name} specificated vpn security policy configuration file
