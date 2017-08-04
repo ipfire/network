@@ -874,6 +874,9 @@ vpn_security_policies_destroy() {
 
 		log DEBUG "Deleting vpn security policy ${name}"
 		settings_remove $(vpn_security_policies_path ${name})
+
+		# Delete cache
+		rm -rf "${NETWORK_CACHE_DIR}/vpn/security-policies/${name}"
 	done
 }
 
