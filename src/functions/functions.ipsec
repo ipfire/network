@@ -380,6 +380,11 @@ ipsec_strongswan_autostart() {
 }
 
 ipsec_strongswan_load() {
+	# Do nothing if strongswan is not running
+	if ! service_is_active "strongswan"; then
+		return ${EXIT_OK}
+	fi
+
 	if ! cmd swanctl --load-all; then
 		log ERROR "Could not reload strongswan config"
 		return ${EXIT_ERROR}
