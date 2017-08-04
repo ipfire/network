@@ -890,7 +890,7 @@ vpn_security_policies_cipher_is_aead() {
 	string_match "[CG]CM" "${cipher}"
 }
 
-vpn_security_policies_make_ah_proposal() {
+vpn_security_policies_make_ike_proposal() {
 	local name=${1}
 
 	if ! vpn_security_policy_exists ${name}; then
@@ -898,7 +898,7 @@ vpn_security_policies_make_ah_proposal() {
 	fi
 
 	local config_path="$(vpn_security_policies_path ${name})"
-	local cache_path="${NETWORK_CACHE_DIR}/vpn/security-policies/${name}/ah-proposal"
+	local cache_path="${NETWORK_CACHE_DIR}/vpn/security-policies/${name}/ike-proposal"
 
 	# Get data from cache if possible
 	if file_exists "${cache_path}" && ! file_is_newer_than "${config_path}" "${cache_path}"; then
@@ -907,7 +907,7 @@ vpn_security_policies_make_ah_proposal() {
 	fi
 
 	# No or invalid cache data found
-	local proposal=$(_vpn_security_policies_make_ah_proposal "${name}")
+	local proposal=$(_vpn_security_policies_make_ike_proposal "${name}")
 
 	# Write proposal to cache
 	if ! make_parent_dir "${cache_path}" || ! fwrite "${cache_path}" "${proposal}"; then
@@ -917,7 +917,7 @@ vpn_security_policies_make_ah_proposal() {
 	print "${proposal}"
 }
 
-_vpn_security_policies_make_ah_proposal() {
+_vpn_security_policies_make_ike_proposal() {
 	local name=${1}
 
 	# Read the config settings

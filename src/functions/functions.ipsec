@@ -1011,7 +1011,7 @@ _ipsec_connection_to_strongswan_connection() {
 
 	# IKE Proposals
 	print_indent 2 "# IKE Proposals"
-	print_indent 2 "proposals = $(vpn_security_policies_make_ah_proposal ${SECURITY_POLICY})"
+	print_indent 2 "proposals = $(vpn_security_policies_make_ike_proposal ${SECURITY_POLICY})"
 	print
 
 	# DPD Settings
