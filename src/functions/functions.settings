@@ -55,13 +55,7 @@ settings_read() {
 
 				# If valid keys is set, key must be in the list.
 				if [ -n "${valid_keys}" ]; then
-					if ! list_match ${key} ${valid_keys}; then
-						if ! enabled ignore_superfluous_settings; then
-							log DEBUG "Ignoring configuration setting: ${key}"
-						fi
-
-						continue
-					fi
+					list_match ${key} ${valid_keys} || continue
 				fi
 
 				val=$(cli_get_val ${line})
