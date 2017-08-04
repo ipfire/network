@@ -893,6 +893,33 @@ vpn_security_policies_cipher_is_aead() {
 vpn_security_policies_make_ah_proposal() {
 	local name=${1}
 
+	if ! vpn_security_policy_exists ${name}; then
+		return ${EXIT_ERROR}
+	fi
+
+	local config_path="$(vpn_security_policies_path ${name})"
+	local cache_path="${NETWORK_CACHE_DIR}/vpn/security-policies/${name}/ah-proposal"
+
+	# Get data from cache if possible
+	if file_exists "${cache_path}" && ! file_is_newer_than "${config_path}" "${cache_path}"; then
+		fread "${cache_path}"
+		return ${EXIT_OK}
+	fi
+
+	# No or invalid cache data found
+	local proposal=$(_vpn_security_policies_make_ah_proposal "${name}")
+
+	# Write proposal to cache
+	if ! make_parent_dir "${cache_path}" || ! fwrite "${cache_path}" "${proposal}"; then
+		log WARNING "Could not write to cache: ${cache_path}"
+	fi
+
+	print "${proposal}"
+}
+
+_vpn_security_policies_make_ah_proposal() {
+	local name=${1}
+
 	# Read the config settings
 	local ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}
 	if ! vpn_security_policies_read_config "${name}"; then
@@ -940,6 +967,33 @@ vpn_security_policies_make_ah_proposal() {
 }
 
 vpn_security_policies_make_esp_proposal() {
+	local name=${1}
+
+	if ! vpn_security_policy_exists ${name}; then
+		return ${EXIT_ERROR}
+	fi
+
+	local config_path="$(vpn_security_policies_path ${name})"
+	local cache_path="${NETWORK_CACHE_DIR}/vpn/security-policies/${name}/esp-proposal"
+
+	# Get data from cache if possible
+	if file_exists "${cache_path}" && ! file_is_newer_than "${config_path}" "${cache_path}"; then
+		fread "${cache_path}"
+		return ${EXIT_OK}
+	fi
+
+	# No or invalid cache data found
+	local proposal=$(_vpn_security_policies_make_esp_proposal "${name}")
+
+	# Write proposal to cache
+	if ! make_parent_dir "${cache_path}" || ! fwrite "${cache_path}" "${proposal}"; then
+		log WARNING "Could not write to cache: ${cache_path}"
+	fi
+
+	print "${proposal}"
+}
+
+_vpn_security_policies_make_esp_proposal() {
 	local name=${1}
 
 	# Read the config settings

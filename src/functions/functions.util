@@ -190,12 +190,43 @@ fwrite() {
 	assert isset file
 	shift
 
-	if [ ! -w "${file}" ]; then
+	if [ -e "${file}" ] && [ ! -w "${file}" ]; then
 		log ERROR "${file}: No such file"
 		return ${EXIT_ERROR}
 	fi
 
 	print "%s" "$@" >> ${file} 2>/dev/null
+}
+
+file_exists() {
+	local file=${1}
+
+	[ -e "${file}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
+file_is_newer_than() {
+	local file1="${1}"
+	local file2="${2}"
+
+	local age1=$(file_get_age "${file1}")
+	local age2=$(file_get_age "${file2}")
+
+	if [ ${age1} -gt ${age2} ]; then
+		return ${EXIT_TRUE}
+	else
+		return ${EXIT_FALSE}
+	fi
+}
+
+file_get_age() {
+	local file="${1}"
+
+	if [ -e "${file}" ]; then
+		stat --format="%Y" "${file}"
+		return $?
+	fi
+
+	return ${EXIT_ERROR}
 }
 
 make_parent_dir() {
