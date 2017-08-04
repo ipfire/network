@@ -33,13 +33,15 @@ IPSEC_CONNECTION_CONFIG_SETTINGS="\
 	PSK \
 	REMOTE_ID \
 	REMOTE_PREFIX \
-	SECURITY_POLICY"
+	SECURITY_POLICY \
+	ENABLED"
 
 # Default values
 IPSEC_DEFAULT_AUTH_MODE="PSK"
 IPSEC_DEFAULT_DPD_ACTION="restart"
 IPSEC_DEFAULT_DPD_DELAY="30"
 IPSEC_DEFAULT_DPD_TIMEOUT="120"
+IPSEC_DEFAULT_ENABLED="true"
 IPSEC_DEFAULT_INACTIVITY_TIMEOUT="0"
 IPSEC_DEFAULT_MODE="tunnel"
 IPSEC_DEFAULT_SECURITY_POLICY="system"
@@ -71,7 +73,7 @@ cli_ipsec_connection() {
 		shift 2
 
 		case "${key}" in
-			authentication|down|dpd|inactivity_timeout|local|mode|peer|remote|security_policy|start_action|up)
+			authentication|down|disable|dpd|enable|inactivity_timeout|local|mode|peer|remote|security_policy|start_action|up)
 				ipsec_connection_${key} ${connection} $@
 				;;
 			show)
@@ -198,6 +200,28 @@ cli_ipsec_connection_show() {
 	return ${EXIT_OK}
 }
 
+ipsec_connection_disable() {
+	local connection=${1}
+
+	if ! ipsec_connection_write_config_key "${connection}" "ENABLED" "false"; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	ipsec_reload ${connection}
+}
+
+ipsec_connection_enable() {
+	local connection=${1}
+
+	if ! ipsec_connection_write_config_key "${connection}" "ENABLED" "true"; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	ipsec_reload "${connection}"
+}
+
 # This function writes all values to a via ${connection} specificated VPN IPsec configuration file
 ipsec_connection_write_config() {
 	assert [ $# -ge 1 ]
@@ -304,9 +328,20 @@ ipsec_strongswan_load() {
 ipsec_reload() {
 	local connection=${1}
 
-	if ! ipsec_connection_to_strongswan ${connection}; then
-		log ERROR "Could not generate strongswan config for ${connnection}"
+	local ENABLED
+
+	if ! ipsec_connection_read_config "${connection}" "ENABLED"; then
+		log ERROR "Could not read configuration for IPsec connection ${connection}"
 		return ${EXIT_ERROR}
+	fi
+
+	if enabled ${ENABLED}; then
+		if ! ipsec_connection_to_strongswan ${connection}; then
+			log ERROR "Could not generate strongswan config for ${connnection}"
+			return ${EXIT_ERROR}
+		fi
+	else
+		unlink "${NETWORK_IPSEC_SWANCTL_CONNECTIONS_DIR}/${connection}.conf"
 	fi
 
 	ipsec_strongswan_load
@@ -913,6 +948,7 @@ ipsec_connection_new() {
 	DPD_ACTION=${IPSEC_DEFAULT_DPD_ACTION}
 	DPD_DELAY=${IPSEC_DEFAULT_DPD_DELAY}
 	DPD_TIMEOUT=${IPSEC_DEFAULT_DPD_TIMEOUT}
+	ENABLED=${IPSEC_DEFAULT_ENABLED}
 	MODE=${IPSEC_DEFAULT_MODE}
 	START_ACTION=${IPSEC_DEFAULT_START_ACTION}
 

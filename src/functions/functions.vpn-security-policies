@@ -346,11 +346,13 @@ vpn_security_policies_reload() {
 
 	local connection
 	for connection in $(ipsec_list_connections); do
+		local SECURITY_POLICY ENABLED
+
 		if ! ipsec_connection_read_config "${connection}" "SECURITY_POLICY"; then
 			continue
 		fi
 
-		if [[ "${SECURITY_POLICY}" = "${name}" ]]; then
+		if [[ "${SECURITY_POLICY}" = "${name}" ]] && enabled ENABLED; then
 			if ! ipsec_connection_to_strongswan "${connection}"; then
 				log ERROR "Could not generate strongswan config for ${connnection}"
 			fi
