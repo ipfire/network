@@ -1235,10 +1235,14 @@ _ipsec_connection_to_strongswan_connection() {
 	print
 
 	# Netfilter Marks
-	print_indent 4 "# Netfilter Marks"
-	print_indent 4 "mark_in = %unique"
-	print_indent 4 "mark_out = %unique"
-	print
+	case "${MODE}" in
+		vti)
+			print_indent 4 "# Netfilter Marks"
+			print_indent 4 "mark_in = %unique"
+			print_indent 4 "mark_out = %unique"
+			print
+			;;
+	esac
 
 	# Dead Peer Detection
 	if enabled dpd; then
