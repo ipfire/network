@@ -513,19 +513,6 @@ cmd_not_implemented() {
 	assert false "not implemented"
 }
 
-# Runs a command in a clean environment so that no confidential information
-# is leaked to any untrusted commands.
-cmd_clean_environment() {
-	local cmd=$@
-
-	log DEBUG "Running command in a clean environment: ${cmd}"
-	env -i -- ${cmd}
-	local ret=${?}
-
-	log DEBUG "Returned with code '${ret}'"
-	return ${ret}
-}
-
 # Executes the given command in background
 cmd_background() {
 	cmd_quiet $@ &

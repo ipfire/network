@@ -33,7 +33,7 @@ trigger_execute() {
 	fi
 
 	log DEBUG "Executing trigger ${trigger}..."
-	cmd_clean_environment ${environment} "${trigger}" &>/dev/null
+	cmd ${environment} "${trigger}" &>/dev/null
 	local ret=${?}
 
 	if [ ${ret} -ne ${EXIT_OK} ]; then
