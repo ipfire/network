@@ -476,14 +476,22 @@ cmd() {
 
 	log DEBUG "Running command: ${cmd}"
 
-	if ! ${cmd}; then
-		local ret=$?
+	env -i -- \
+		HOME="${HOME}" \
+		PATH="${PATH}" \
+		TERM="${TERM}" \
+		${cmd}
+	local ret=$?
 
-		log DEBUG "Returned with code '${ret}'"
-		return ${ret}
-	fi
-
-	return ${EXIT_OK}
+	case "${ret}" in
+		${EXIT_OK})
+			return ${EXIT_OK}
+			;;
+		*)
+			log DEBUG "Returned with code '${ret}'"
+			return ${ret}
+			;;
+	esac
 }
 
 cmd_quiet() {
