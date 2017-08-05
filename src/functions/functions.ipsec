@@ -404,6 +404,7 @@ ipsec_reload() {
 			return ${EXIT_ERROR}
 		fi
 	else
+		log DEBUG "Deleting strongswan config ${NETWORK_IPSEC_SWANCTL_CONNECTIONS_DIR}/${connection}.conf"
 		unlink "${NETWORK_IPSEC_SWANCTL_CONNECTIONS_DIR}/${connection}.conf"
 	fi
 
