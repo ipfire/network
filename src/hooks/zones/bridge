@@ -308,7 +308,7 @@ hook_port_up() {
 	# We will get here as soon as the port device has
 	# been created and will then connect it with the bridge.
 	if ! device_exists "${port}"; then
-		port_up "${port}"
+		port_create "${port}"
 
 		exit ${EXIT_OK}
 	fi
