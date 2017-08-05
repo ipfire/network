@@ -27,7 +27,7 @@ hook_check_settings() {
 	assert ismac ADDRESS
 }
 
-hook_new() {
+hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
@@ -40,9 +40,21 @@ hook_new() {
 		shift
 	done
 
-	# Generate a random MAC address if non was set.
-	if ! isset ADDRESS; then
+	if isset ADDRESS; then
+		if ! ismac ADDRESS; then
+			error "Invalid MAC address given: ${ADDRESS}"
+			return ${EXIT_ERROR}
+		fi
+
+	# Generate a random but static MAC address if none was set
+	else
 		ADDRESS=$(mac_generate)
+	fi
+}
+
+hook_new() {
+	if ! hook_parse_cmdline $@; then
+		return ${EXIT_ERROR}
 	fi
 
 	local port=$(port_find_free ${DUMMY_PORT_PATTERN})
@@ -53,30 +65,6 @@ hook_new() {
 	fi
 
 	exit ${EXIT_OK}
-}
-
-hook_edit() {
-	local port=${1}
-	assert isset port
-	shift
-
-	port_settings_read "${port}" ${HOOK_SETTINGS}
-
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--address=*)
-				ADDRESS=$(cli_get_val ${1})
-				;;
-			*)
-				warning "Unknown argument '${1}'"
-				;;
-		esac
-		shift
-	done
-
-	port_settings_write "${port}" ${HOOK_SETTINGS}
-
-	exit ${EXIT_OK}	
 }
 
 hook_create() {

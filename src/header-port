@@ -44,6 +44,22 @@ hook_add() {
 	cmd_not_implemented
 }
 
+hook_edit() {
+	local port=${1}
+	assert isset port
+	shift
+
+	port_settings_read "${port}" ${HOOK_SETTINGS}
+
+	if ! hook_parse_cmdline $@; then
+		return ${EXIT_ERROR}
+	fi
+
+	port_settings_write "${port}" ${HOOK_SETTINGS}
+
+	exit ${EXIT_OK}
+}
+
 hook_info() {
 	local port="${1}"
 	assert isset port
