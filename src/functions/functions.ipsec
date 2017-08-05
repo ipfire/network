@@ -222,8 +222,6 @@ ipsec_connection_disable() {
 		return ${EXIT_ERROR}
 	fi
 
-	ipsec_reload ${connection}
-
 	# Configure strongswan autostart
 	ipsec_strongswan_autostart
 }
@@ -235,8 +233,6 @@ ipsec_connection_enable() {
 		log ERROR "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
-
-	ipsec_reload "${connection}"
 
 	# Configure strongswan autostart
 	ipsec_strongswan_autostart
