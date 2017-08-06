@@ -24,10 +24,6 @@ BONDING_ALLOWED_MODES="balance-rr active-backup balance-xor broadcast 802.3ad \
 BONDING_MASTERS="/sys/class/net/bonding_masters"
 BONDING_PORT_PATTERN="bN"
 
-bonding_init() {
-	module_load "bonding"
-}
-
 bonding_create() {
 	local device=${1}
 	assert isset device
@@ -65,9 +61,8 @@ bonding_create() {
 		return ${EXIT_ERROR}
 	fi
 
-	# Initialize the bonding driver just
-	# when we need it.
-	bonding_init
+	# Load the kernel module
+	module_load "bonding"
 
 	# Create the bonding device
 	if cmd ip link add "${device}" address "${address}" \
