@@ -1040,7 +1040,7 @@ cli_dhcpd_subnet_show() {
 }
 
 cli_dhcpd_subnet_options() {
-	assert [ $# -eq 2 ]
+	assert [ $# -ge 2 ]
 
 	local proto=${1}
 	local subnet=${2}
@@ -1054,6 +1054,7 @@ cli_dhcpd_subnet_options() {
 
 				dhcpd_subnet_option_set ${proto} ${subnet} ${key} ${val}
 		esac
+		shift
 	done
 }
 
