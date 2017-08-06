@@ -53,7 +53,7 @@ hook_check_settings() {
 	fi
 }
 
-hook_new() {
+hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--broadcast-ssid=*)
@@ -90,6 +90,12 @@ hook_new() {
 	# Save address of phy do identify it again
 	PHY=$(phy_get ${PHY})
 	PHY=$(phy_get_address ${PHY})
+}
+
+hook_new() {
+	if ! hook_parse_cmdline $@; then
+		return ${EXIT_ERROR}
+	fi
 
 	local port=$(port_find_free ${PORT_PATTERN_ACCESSPOINT})
 	assert isset port
@@ -101,42 +107,14 @@ hook_new() {
 
 hook_edit() {
 	local port=${1}
-	shift
-
 	assert isset port
 
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+	if ! hook_default_edit $@; then
+		return ${EXIT_ERROR}
+	fi
 
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--broadcast-ssid=*)
-				BROADCAST_SSID=$(cli_get_val ${1})
-				;;
-			--channel=*)
-				CHANNEL=$(cli_get_val ${1})
-				;;
-			--encryption=*)
-				ENCRYPTION=$(cli_get_val ${1})
-				;;
-			--key=*)
-				KEY=$(cli_get_val ${1})
-				;;
-			--ssid=*)
-				SSID=$(cli_get_val ${1})
-				;;
-			--mode=*)
-				MODE=$(cli_get_val ${1})
-				;;
-			*)
-				warning "Unknown argument '${1}'"
-				;;
-		esac
-		shift
-	done
-
-	port_settings_write "${port}" ${HOOK_SETTINGS}
-
-	exit ${EXIT_OK}	
+	# To apply all changes, we need to restart the port
+	port_restart "${port}"
 }
 
 hook_create() {

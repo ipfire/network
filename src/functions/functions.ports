@@ -219,12 +219,27 @@ port_remove() {
 	local port="${1}"
 	assert isset port
 
+	if ! port_exists "${port}"; then
+		log ERROR "Port ${port} does not exist"
+		return ${EXIT_ERROR}
+	fi
+
 	# If the device is still up, we need to bring it down first.
 	if device_is_up "${port}"; then
 		port_down "${port}"
 	fi
 
 	port_cmd "remove" "${port}"
+}
+
+# Restarts the port by removing it and then re-creating it
+port_restart() {
+	local port="${1}"
+	assert isset port
+
+	port_remove "${port}"
+
+	port_create "${port}"
 }
 
 port_edit() {
