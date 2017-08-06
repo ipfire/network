@@ -113,7 +113,7 @@ bridge_attach_device() {
 	device_adjust_mtu "${device}" "${bridge}"
 
 	# Actually connect bridge and device.
-	cmd_quiet ip link set ${device} master ${bridge}
+	cmd ip link set ${device} master ${bridge}
 	local ret=$?
 
 	if [ ${ret} -eq ${EXIT_OK} ]; then
