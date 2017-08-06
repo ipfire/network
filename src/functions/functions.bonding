@@ -143,16 +143,12 @@ bonding_enslave_device() {
 	fi
 
 	# Add it
-	cmd ip link set "${slave}" master "${device}"
-	local ret=$?
-
-	if [ ${ret} -eq ${EXIT_OK} ]; then
-		log DEBUG "Successfully enslaved '${slave}' to '${device}'"
-	else
+	if ! device_set_master "${slave}" "${device}"; then
 		log ERROR "Could not enslave '${slave}' to '${device}'"
 		return ${EXIT_ERROR}
 	fi
 
+	log DEBUG "Successfully enslaved '${slave}' to '${device}'"
 	return ${EXIT_OK}
 }
 

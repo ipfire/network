@@ -580,6 +580,33 @@ device_set_name() {
 	fi
 }
 
+device_set_master() {
+	local device="${1}"
+	assert isset device
+
+	local master="${2}"
+	assert isset master
+
+	if ! cmd ip link set "${device}" master "${master}"; then
+		log ERROR "Could not set master ${master} for device ${device}"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+device_remove_master() {
+	local device="${1}"
+	assert isset device
+
+	if ! cmd ip link set "${device}" nomaster; then
+		log ERROR "Could not remove master for device ${device}"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
 # Set device up
 device_set_up() {
 	assert [ $# -eq 1 ]

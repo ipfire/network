@@ -113,16 +113,13 @@ bridge_attach_device() {
 	device_adjust_mtu "${device}" "${bridge}"
 
 	# Actually connect bridge and device.
-	cmd ip link set ${device} master ${bridge}
-	local ret=$?
-
-	if [ ${ret} -eq ${EXIT_OK} ]; then
-		log DEBUG "bridge: device '${device}' has been attached to bridge '${bridge}'"
-	else
-		log ERROR "bridge: could not attach device '${device}' to bridge '${bridge}': ${ret}"
+	if ! device_set_master "${device}" "${bridge}"; then
+		log ERROR "Could not attach ${device} to bridge ${bridge}"
+		return ${EXIT_ERROR}
 	fi
 
-	return ${ret}
+	log DEBUG "${device} has been attached to bridge ${bridge}"
+	return ${EXIT_OK}
 }
 
 bridge_detach_device() {

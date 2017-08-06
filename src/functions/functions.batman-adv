@@ -58,7 +58,7 @@ batman_adv_attach() {
 	# Make sure, batman is running.
 	batman_adv_start
 
-	__device_set_file "${port}" "batman_adv/mesh_iface" "${device}"
+	device_set_master "${port}" "${device}"
 }
 
 batman_adv_detach() {
