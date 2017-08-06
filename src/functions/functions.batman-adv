@@ -60,7 +60,7 @@ batman_adv_detach() {
 	local port=${1}
 	assert isset port
 
-	__device_set_file "${port}" "batman_adv/mesh_iface" "none"
+	device_remove_master "${port}"
 }
 
 batman_adv_get_aggregated_ogms() {
