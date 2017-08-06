@@ -19,14 +19,12 @@
 #                                                                             #
 ###############################################################################
 
-batman_adv_start() {
-	# Load the batman kernel module.
-	module_load "batman-adv"
-}
-
 batman_adv_add() {
 	local device="${1}"
 	assert isset device
+
+	# Make sure the kernel module is loaded
+	module_load "batman-adv"
 
 	local cmd="ip link add name ${device} type batadv"
 	cmd_quiet "${cmd}"
@@ -54,9 +52,6 @@ batman_adv_attach() {
 
 	local port=${2}
 	assert isset port
-
-	# Make sure, batman is running.
-	batman_adv_start
 
 	device_set_master "${port}" "${device}"
 }
