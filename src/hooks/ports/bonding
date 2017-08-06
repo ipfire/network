@@ -23,7 +23,6 @@
 
 HOOK_SETTINGS="HOOK ADDRESS MIIMON MODE SLAVES"
 
-ADDRESS=$(mac_generate)
 SLAVES=""
 MIIMON=100
 MODE="balance-rr"
@@ -36,15 +35,7 @@ hook_check_settings() {
 	assert isinteger MIIMON
 }
 
-hook_new() {
-	hook_edit $@
-}
-
-hook_edit() {
-	local port=${1}
-	assert isset port
-	shift
-
+hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
@@ -56,9 +47,24 @@ hook_edit() {
 			--mode=*)
 				MODE=$(cli_get_val ${1})
 				;;
-			--slave=*)
-				slave=$(cli_get_val ${1})
-				SLAVES="${SLAVES} ${slave}"
+			+*)
+				local slave=$(cli_get_val ${1:1})
+
+				if port_exists "${slave}"; then
+					if list_match "${slave}" ${SLAVES}; then
+						warning "Port ${slave} is already enslaved"
+					else
+						list_append SLAVES "${slave}"
+					fi
+				else
+					warning "Port ${slave} does not exist"
+				fi
+				;;
+			-*)
+				local slave=$(cli_get_val ${1:1})
+				if ! list_remove SLAVES "${slave}"; then
+					warning "Port ${slave} is not a slave of this bonding device"
+				fi
 				;;
 			*)
 				warning "Unknown argument '${1}'"
@@ -67,33 +73,69 @@ hook_edit() {
 		shift
 	done
 
-	DEVICE=${port}
-
-	# XXX think this must move to _check()
-	if ! isset DEVICE; then
-		error "You must set a device name."
-		exit ${EXIT_ERROR}
-	fi
-
-	if ! isset SLAVES; then
-		error "You need to specify at least one slave port (e.g. --slave=port0)."
-		exit ${EXIT_ERROR}
-	fi
-
-	local slave
-	for slave in $(unquote ${SLAVES}); do
-		if ! device_is_ethernet_compatible ${slave}; then
-			error "The slave device '${slave}' is not able to transport ethernet frames"
-			exit ${EXIT_ERROR}
+	if isset ADDRESS; then
+		if ! ismac ADDRESS; then
+			error "The given MAC address is invalid: ${ADDRESS}"
+			return ${EXIT_ERROR}
 		fi
-	done
+	else
+		ADDRESS=$(mac_generate)
+	fi
+}
 
-	# Remove any whitespace
-	SLAVES=$(echo ${SLAVES})
+hook_new() {
+	if ! hook_parse_cmdline $@; then
+		return ${EXIT_ERROR}
+	fi
 
-	port_settings_write "${port}" ${HOOK_SETTINGS}
+	# Find a new name
+	local port=$(port_find_free ${BONDING_PORT_PATTERN})
+	assert isset port
 
-	exit ${EXIT_OK}
+	# Save configuration
+	if port_settings_write "${port}" ${HOOK_SETTINGS}; then
+		log INFO "New port ${port} has been created"
+	else
+		error "Could not save configuration for ${port}"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+hook_edit() {
+	local port=${1}
+
+	if ! hook_default_edit $@; then
+		return ${EXIT_ERROR}
+	fi
+
+	# If the master device is up, make sure that all
+	# slaves are up, too
+	if device_exists "${port}"; then
+		# Setting the mode requires us to destroy the device
+		# and to recreate it again.
+		local mode=$(bonding_get_mode "${port}")
+		if [ "${mode}" != "${MODE}" ]; then
+			port_remove "${port}" && port_create "${port}"
+			return ${EXIT_OK}
+		fi
+
+		# Set address
+		device_set_address "${port}" "${ADDRESS}"
+
+		# Set miimon
+		bonding_set_miimon "${port}" "${MIIMON}"
+
+		local slave
+		for slave in ${SLAVES}; do
+			if device_exists "${slave}"; then
+				bonding_enslave_device "${port}" "${slave}"
+			else
+				port_create "${slave}"
+			fi
+		done
+	fi
 }
 
 hook_create() {

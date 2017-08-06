@@ -22,6 +22,7 @@
 BONDING_ALLOWED_MODES="balance-rr active-backup balance-xor broadcast 802.3ad \
 	balance-tlb balance-alb"
 BONDING_MASTERS="/sys/class/net/bonding_masters"
+BONDING_PORT_PATTERN="bN"
 
 bonding_init() {
 	module_load "bonding"
@@ -68,22 +69,13 @@ bonding_create() {
 	# when we need it.
 	bonding_init
 
-	# Create the bonding device.
-	fappend "${BONDING_MASTERS}" "+${device}"
-	local ret=$?
-
-	if [ ${ret} -eq ${EXIT_OK} ]; then
+	# Create the bonding device
+	if cmd ip link add "${device}" address "${address}" \
+			type bond mode "${mode}"; then
 		log DEBUG "Successfully created bonding device '${device}'"
 	else
 		log ERROR "Could not create bonding device '${device}'"
 		return ${EXIT_ERROR}
-	fi
-
-	# Set the mode of the bonding device.
-	bonding_set_mode "${device}" "${mode}"
-
-	if isset address; then
-		device_set_address "${device}" "${address}"
 	fi
 
 	return ${EXIT_OK}
@@ -93,18 +85,8 @@ bonding_remove() {
 	local device=${1}
 	assert isset device
 
-	if ! device_exists ${device}; then
-		return ${EXIT_ERROR}
-	fi
-
-	# Set device down if not already done.
-	device_set_down ${device}
-
 	# Remove the device.
-	fappend "${BONDING_MASTERS}" "-${device}"
-	local ret=$?
-
-	if [ ${ret} -eq ${EXIT_OK} ]; then
+	if device_delete "${device}"; then
 		log DEBUG "Successfully removed bonding device '${device}'"
 	else
 		log ERROR "Could not remove bonding device '${device}'"
@@ -148,16 +130,20 @@ bonding_enslave_device() {
 
 	shift 2
 
-	# Slave must be down to be enslaved.
-	device_set_down ${device}
+	local slaves="$(bonding_get_slaves "${device}")"
+	if list_match "${slave}" ${slaves}; then
+		log DEBUG "${slave} is already enslaved in ${device}"
+		return ${EXIT_OK}
+	fi
 
-	if device_is_up ${device}; then
+	# Slave must be down to be enslaved.
+	if ! device_set_down "${slave}"; then
 		log ERROR "Cannot enslave '${slave}' because it cannot be set down."
 		return ${EXIT_ERROR}
 	fi
 
-	# Add it.
-	fappend "${SYS_CLASS_NET}/${device}/bonding/slaves" "+${slave}"
+	# Add it
+	cmd ip link set "${slave}" master "${device}"
 	local ret=$?
 
 	if [ ${ret} -eq ${EXIT_OK} ]; then

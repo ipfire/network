@@ -44,7 +44,7 @@ hook_add() {
 	cmd_not_implemented
 }
 
-hook_edit() {
+hook_default_edit() {
 	local port=${1}
 	assert isset port
 	shift
@@ -57,7 +57,11 @@ hook_edit() {
 
 	port_settings_write "${port}" ${HOOK_SETTINGS}
 
-	exit ${EXIT_OK}
+	return ${EXIT_OK}
+}
+
+hook_edit() {
+	hook_default_edit $@
 }
 
 hook_info() {
