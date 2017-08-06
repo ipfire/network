@@ -37,6 +37,10 @@ IPSEC_CONNECTION_CONFIG_SETTINGS="\
 	START_ACTION \
 	ENABLED"
 
+IPSEC_POOL_CONFIG_SETTINGS="\
+	DNS_SERVERS \
+	NETWORKS"
+
 # Default values
 IPSEC_DEFAULT_AUTH_MODE="PSK"
 IPSEC_DEFAULT_DPD_ACTION="restart"
@@ -58,6 +62,9 @@ cli_ipsec() {
 	case "${action}" in
 		connection)
 			cli_ipsec_connection $@
+			;;
+		pool)
+			cli_ipsec_pool $@
 			;;
 		*)
 			error "Unrecognized argument: ${action}"
@@ -96,6 +103,47 @@ cli_ipsec_connection() {
 				;;
 			destroy)
 				cli_ipsec_connection_destroy $@
+				;;
+			""|*)
+				if [ -n "${action}" ]; then
+					error "Unrecognized argument: '${action}'"
+				fi
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	fi
+}
+
+cli_ipsec_pool() {
+	if ipsec_pool_exists ${1}; then
+		local pool=${1}
+		local key=${2}
+		key=${key//-/_}
+		shift 2
+
+		case "${key}" in
+			dns_server|network)
+				ipsec_pool_${key} ${pool} $@
+				;;
+			show)
+				cli_ipsec_pool_show "${pool}"
+				exit $?
+				;;
+			*)
+				error "Unrecognized argument: ${key}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	else
+		local action=${1}
+		shift
+
+		case "${action}" in
+			new)
+				ipsec_pool_new $@
+				;;
+			destroy)
+				ipsec_pool_destroy $@
 				;;
 			""|*)
 				if [ -n "${action}" ]; then
@@ -1337,4 +1385,360 @@ _ipsec_connection_to_strongswan_secrets() {
 	esac
 
 	print_indent 0 "}"
+}
+
+# This function writes all values to a via ${pool} specificated VPN IPsec pool configuration file
+ipsec_pool_write_config() {
+	assert [ $# -ge 1 ]
+
+	local pool="${1}"
+
+	if ! ipsec_pool_exists "${pool}"; then
+		log ERROR "No such VPN IPsec pool: ${pool}"
+		return ${EXIT_ERROR}
+	fi
+
+	local path="${NETWORK_IPSEC_POOLS_DIR}/${pool}/settings"
+
+	if ! settings_write "${path}" ${IPSEC_POOL_CONFIG_SETTINGS}; then
+		log ERROR "Could not write configuration settings for VPN IPsec pool ${pool}"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# This funtion writes the value for one key to a via ${connection} specificated
+# VPN IPsec pool configuration file
+ipsec_pool_write_config_key() {
+	assert [ $# -ge 3 ]
+
+	local pool=${1}
+	local key=${2}
+	shift 2
+
+	local value="$@"
+
+	if ! ipsec_pool_exists "${pool}"; then
+		log ERROR "No such VPN IPsec pool: ${pool}"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Set '${key}' to new value '${value}' in VPN IPsec pool '${pool}'"
+
+	local ${IPSEC_POOL_CONFIG_SETTINGS}
+
+	# Read the config settings
+	if ! ipsec_pool_read_config "${pool}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Set the key to a new value
+	assign "${key}" "${value}"
+
+	if ! ipsec_pool_write_config "${pool}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_TRUE}
+}
+
+# Reads one or more keys out of a settings file or all if no key is provided.
+ipsec_pool_read_config() {
+	assert [ $# -ge 1 ]
+
+	local pool="${1}"
+	shift 1
+
+	if ! ipsec_pool_exists "${pool}"; then
+		log ERROR "No such VPN IPsec pool : ${pool}"
+		return ${EXIT_ERROR}
+	fi
+
+	local args
+	if [ $# -eq 0 ] && [ -n "${IPSEC_POOL_CONFIG_SETTINGS}" ]; then
+		list_append args ${IPSEC_POOL_CONFIG_SETTINGS}
+	else
+		list_append args $@
+	fi
+
+	local path="${NETWORK_IPSEC_POOLS_DIR}/${pool}/settings"
+
+	if ! settings_read "${path}" ${args}; then
+		log ERROR "Could not read settings for VPN IPsec pool ${pool}"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# This function checks if a vpn IPsec pool exists
+# Returns True when yes and false when not
+ipsec_pool_exists() {
+	assert [ $# -eq 1 ]
+
+	local pool=${1}
+
+	local path="${NETWORK_IPSEC_POOLS_DIR}/${pool}"
+
+	[ -d "${path}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
+# This function checks if a VPN IPsec pool name is valid
+# Allowed are only A-Za-z0-9
+ipsec_pool_check_name() {
+	assert [ $# -eq 1 ]
+
+	local pool=${1}
+
+	# These are special words in strongswan
+	if isoneof pool dhcp radius; then
+		return ${EXIT_ERROR}
+	fi
+
+	[[ "${pool}" =~ [^[:alnum:]$] ]]
+}
+
+ipsec_pool_new() {
+	if [ $# -gt 1 ]; then
+		error "Too many arguments"
+		return ${EXIT_ERROR}
+	fi
+
+	local pool="${1}"
+	if ! isset pool; then
+		error "Please provide a pool name"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check for duplicates
+	if ipsec_pool_exists "${pool}"; then
+		error "The VPN IPsec pool ${pool} already exists"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if the name of the connection is valid
+	if  ipsec_pool_check_name "${pool}"; then
+		error "'${pool}' contains illegal characters"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Creating VPN IPsec pool ${pool}"
+
+	if ! mkdir -p "${NETWORK_IPSEC_POOLS_DIR}/${pool}"; then
+		log ERROR "Could not create config directory for ${pool}"
+		return ${EXIT_ERROR}
+	fi
+
+	local ${IPSEC_POOL_CONFIG_SETTINGS}
+
+	if ! ipsec_pool_write_config "${pool}"; then
+		log ERROR "Could not write new config file"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# Function that deletes based on the passed parameters
+# one ore more vpn ipsec pools
+ipsec_pool_destroy() {
+	local pool
+	for pool in $@; do
+		if ! ipsec_pool_exists "${pool}"; then
+			log ERROR "The VPN IPsec pool ${pool} does not exist."
+			continue
+		fi
+
+		log DEBUG "Deleting VPN IPsec pool ${pool}"
+
+		if ! rm -rf "${NETWORK_IPSEC_POOLS_DIR}/${pool}"; then
+			log ERROR "Deleting the VPN IPsec pool ${pool} was not sucessful"
+			return ${EXIT_ERROR}
+		fi
+	done
+}
+
+ipsec_pool_network() {
+	if [ ! $# -ge 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local pool=${1}
+	shift 1
+
+	local NETWORKS
+	if ! ipsec_pool_read_config "${pool}" "NETWORKS"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Remove duplicated entries to proceed the list safely
+	assign "NETWORKS" "$(list_unique ${NETWORKS})"
+
+	local networks_added
+	local networks_removed
+	local networks_set
+
+	while [ $# -gt 0 ]; do
+		local arg="${1}"
+
+		case "${arg}" in
+			+*)
+				list_append networks_added "${arg:1}"
+				;;
+			-*)
+				list_append networks_removed "${arg:1}"
+				;;
+			[A-Fa-f0-9]*)
+				list_append networks_set "${arg}"
+				;;
+			*)
+				error "Invalid argument: ${arg}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	# Check if the user is trying a mixed operation
+	if ! list_is_empty networks_set && (! list_is_empty networks_added || ! list_is_empty networks_removed); then
+		error "You cannot reset the networks list and add or remove networks at the same time"
+		return ${EXIT_ERROR}
+	fi
+
+	# Set new prefix list
+	if ! list_is_empty networks_set; then
+		# Check if all networks are valid
+		local network
+		for network in ${networks_set}; do
+			if ! ip_net_is_valid ${network}; then
+				error "Unsupported prefix: ${network}"
+				return ${EXIT_ERROR}
+			fi
+		done
+
+		assign "NETWORKS" "${networks_set}"
+
+	# Perform incremental updates
+	else
+		# Perform all removals
+		local network
+		for network in ${networks_removed}; do
+			if ! list_remove "NETWORKS" ${network}; then
+				warning "${network} was not on the list and could not be removed"
+			fi
+		done
+
+		for network in ${networks_added}; do
+			if ip_net_is_valid ${network}; then
+				if ! list_append_unique "NETWORKS" ${network}; then
+					warning "${network} is already on the network list"
+				fi
+			else
+				warning "${network} is not a valid IP network and could not be added"
+			fi
+		done
+	fi
+
+	# Check if the list contain at least one valid network
+	if list_is_empty "NETWORKS"; then
+		error "Cannot save an empty network list"
+		return ${EXIT_ERROR}
+	fi
+
+	# Save everything
+	if ! ipsec_pool_write_config_key "${pool}" "NETWORKS" "${NETWORKS}"; then
+		log ERROR "Could not write configuration settings"
+	fi
+
+	return ${EXIT_OK}
+}
+
+ipsec_pool_dns_server() {
+	if [ ! $# -ge 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local pool=${1}
+	shift 1
+
+	local NETWORK
+	if ! ipsec_pool_read_config "${pool}" "DNS_SERVERS"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Remove duplicated entries to proceed the list safely
+	assign "DNS_SERVERS" "$(list_unique ${DNS_SERVERS})"
+
+	local dns_servers_added
+	local dns_servers_removed
+	local dns_servers_set
+
+	while [ $# -gt 0 ]; do
+		local arg="${1}"
+
+		case "${arg}" in
+			+*)
+				list_append dns_servers_added "${arg:1}"
+				;;
+			-*)
+				list_append dns_servers_removed "${arg:1}"
+				;;
+			[A-Fa-f0-9]*)
+				list_append dns_servers_set "${arg}"
+				;;
+			*)
+				error "Invalid argument: ${arg}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	# Check if the user is trying a mixed operation
+	if ! list_is_empty dns_servers_set && (! list_is_empty dns_servers_added || ! list_is_empty dns_servers_removed); then
+		error "You cannot reset the DNS servers list and add or remove DNS servers at the same time"
+		return ${EXIT_ERROR}
+	fi
+
+	# Set new dns server list
+	if ! list_is_empty dns_servers_set; then
+		# Check if all dns servers are valid
+		local dns_server
+		for dns_server in ${dns_servers_set}; do
+			if ! ip_is_valid ${dns_server}; then
+				error "Invalid DNS server: ${dns_server}"
+				return ${EXIT_ERROR}
+			fi
+		done
+
+		assign "DNS_SERVERS" "${dns_servers_set}"
+
+	# Perform incremental updates
+	else
+		# Perform all removals
+		local dns_server
+		for dns_server in ${dns_servers_removed}; do
+			if ! list_remove "DNS_SERVERS" ${dns_server}; then
+				warning "${dns_server} was not on the list and could not be removed"
+			fi
+		done
+
+		for dns_server in ${dns_servers_added}; do
+			if ip_is_valid ${dns_server}; then
+				if ! list_append_unique "DNS_SERVERS" ${dns_server}; then
+					warning "${dns_server} is already on the DNS server list"
+				fi
+			else
+				warning "${dns_server} is not a valid DNS server and could not be added"
+			fi
+		done
+	fi
+
+	# Check if the list contain at least one valid prefix
+	if list_is_empty "DNS_SERVERS"; then
+		error "Cannot save an empty DNS server list"
+		return ${EXIT_ERROR}
+	fi
+
+	# Save everything
+	if ! ipsec_pool_write_config_key "${pool}" "DNS_SERVERS" "${DNS_SERVER}"; then
+		log ERROR "Could not write configuration settings"
+	fi
+
+	return ${EXIT_OK}
 }
