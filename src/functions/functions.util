@@ -607,10 +607,13 @@ beautify_bytes() {
 module_load() {
 	local module=${1}
 
-	if ! grep -q "^${module}" /proc/modules; then
-		log DEBUG "Loading module '${module}'."
-		modprobe ${module}
+	# Do nothing if the module is already loaded
+	if [ -d "/sys/module/${module//-/_}" ]; then
+		return ${EXIT_OK}
 	fi
+
+	log DEBUG "Loading kernel module ${module}"
+	modprobe "${module}"
 }
 
 binary_exists() {
