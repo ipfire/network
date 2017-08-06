@@ -117,7 +117,7 @@ hook_edit() {
 		# and to recreate it again.
 		local mode=$(bonding_get_mode "${port}")
 		if [ "${mode}" != "${MODE}" ]; then
-			port_remove "${port}" && port_create "${port}"
+			port_restart "${port}"
 			return ${EXIT_OK}
 		fi
 
