@@ -36,6 +36,7 @@ IPSEC_CONNECTION_CONFIG_SETTINGS="\
 	REMOTE_PREFIX \
 	SECURITY_POLICY \
 	START_ACTION \
+	TYPE \
 	ENABLED"
 
 IPSEC_POOL_CONFIG_SETTINGS="\
@@ -53,6 +54,7 @@ IPSEC_DEFAULT_INACTIVITY_TIMEOUT="0"
 IPSEC_DEFAULT_MODE="tunnel"
 IPSEC_DEFAULT_SECURITY_POLICY="system"
 IPSEC_DEFAULT_START_ACTION="on-demand"
+IPSEC_DEFAULT_TYPE="net-to-net"
 
 IPSEC_VALID_MODES="gre-transport tunnel vti"
 IPSEC_VALID_AUTH_MODES="PSK"
@@ -1125,12 +1127,14 @@ ipsec_connection_check_name() {
 
 # Function that creates one VPN IPsec connection
 ipsec_connection_new() {
-	if [ $# -gt 1 ]; then
+	if [ $# -gt 2 ]; then
 		error "Too many arguments"
 		return ${EXIT_ERROR}
 	fi
 
 	local connection="${1}"
+	local type="${2}"
+
 	if ! isset connection; then
 		error "Please provide a connection name"
 		return ${EXIT_ERROR}
@@ -1145,6 +1149,16 @@ ipsec_connection_new() {
 	# Check if the name of the connection is valid
 	if  ipsec_connection_check_name "${connection}"; then
 		error "'${connection}' contains illegal characters"
+		return ${EXIT_ERROR}
+	fi
+
+	# Set TYPE to default if not set by the user
+	if ! isset type; then
+		type="${IPSEC_DEFAULT_TYPE}"
+	fi
+
+	if ! isoneof "type" "net-to-net" "host-to-net"; then
+		error "Type is invalid"
 		return ${EXIT_ERROR}
 	fi
 
@@ -1164,6 +1178,7 @@ ipsec_connection_new() {
 	ENABLED=${IPSEC_DEFAULT_ENABLED}
 	MODE=${IPSEC_DEFAULT_MODE}
 	START_ACTION=${IPSEC_DEFAULT_START_ACTION}
+	TYPE="${type}"
 
 	INACTIVITY_TIMEOUT=${IPSEC_DEFAULT_INACTIVITY_TIMEOUT}
 	SECURITY_POLICY=${IPSEC_DEFAULT_SECURITY_POLICY}
