@@ -781,16 +781,16 @@ ipsec_connection_id() {
 		log ERROR "Id '${id}' is invalid"
 		return ${EXIT_ERROR}
 	fi
-	
+
 	if ! ipsec_connection_write_config_key "${connection}" "${type}_ID" ${id}; then
 		log ERROR "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
-	
+
 	return ${EXIT_OK}
 }
 
-# Set the local or remote prefix 
+# Set the local or remote prefix
 ipsec_connection_prefix() {
 	if [ ! $# -ge 3 ]; then
 		log ERROR "Not enough arguments"
@@ -799,7 +799,7 @@ ipsec_connection_prefix() {
 	local connection=${1}
 	local type=${2}
 	shift 2
-	
+
 	local _prefix="${type}_PREFIX"
 	local "${_prefix}"
 	if ! ipsec_connection_read_config "${connection}" "${_prefix}"; then
@@ -1210,7 +1210,7 @@ ipsec_list_connections() {
 
 ipsec_connection_to_strongswan() {
 	local connection="${1}"
-	log DEBUG "Generating IPsec configuration for ${connection}"	
+	log DEBUG "Generating IPsec configuration for ${connection}"
 
 	# Read the config settings
 	local ${IPSEC_CONNECTION_CONFIG_SETTINGS}
