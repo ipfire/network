@@ -300,7 +300,10 @@ wpa_cli_bss_get_quality() {
 	local bssid=${2}
 	assert isset bssid
 
-	wpa_cli_bss_get ${device} ${bssid} qual
+	local quality=$(wpa_cli_bss_get ${device} ${bssid} qual)
+
+	# Convert to percent
+	print $(( ${quality} * 100 / 70 ))
 }
 
 wpa_cli_bss_get_flags() {
