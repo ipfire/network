@@ -1326,12 +1326,18 @@ _ipsec_connection_to_strongswan_connection() {
 	print_indent 2 "fragmentation = yes"
 	print
 
-	# Pools
-	if isset POOLS; then
-		print_indent 2 "# Pools"
-		print_indent 2 "pools = $(list_join POOLS ", ")"
-		print
-	fi
+
+	# Host-to-Net specific settings
+	case "${TYPE}" in
+		host-to-net)
+			# Pools
+			if isset POOLS; then
+				print_indent 2 "# Pools"
+				print_indent 2 "pools = $(list_join POOLS ", ")"
+				print
+			fi
+			;;
+	esac
 
 	# Local
 	print_indent 2 "local {"
@@ -1459,23 +1465,28 @@ _ipsec_connection_to_strongswan_connection() {
 		print
 	fi
 
-	# Start Action
-	print_indent 4 "# Start Action"
-	case "${START_ACTION}" in
-		on-demand)
-			print_indent 4 "start_action = trap"
-			print_indent 4 "close_action = trap"
-			;;
-		wait)
-			print_indent 4 "start_action = none"
-			print_indent 4 "close_action = none"
-			;;
-		always-on|*)
-			print_indent 4 "start_action = start"
-			print_indent 4 "close_action = start"
+	# Net-to-Net specific settings
+	case "${TYPE}" in
+		net-to-net)
+			# Start Action
+			print_indent 4 "# Start Action"
+			case "${START_ACTION}" in
+				on-demand)
+					print_indent 4 "start_action = trap"
+					print_indent 4 "close_action = trap"
+					;;
+				wait)
+					print_indent 4 "start_action = none"
+					print_indent 4 "close_action = none"
+					;;
+				always-on|*)
+					print_indent 4 "start_action = start"
+					print_indent 4 "close_action = start"
+					;;
+			esac
+			print
 			;;
 	esac
-	print
 
 	print_indent 3 "}"
 	print_indent 2 "}"
