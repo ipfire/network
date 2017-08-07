@@ -1210,6 +1210,7 @@ ipsec_list_connections() {
 
 ipsec_connection_to_strongswan() {
 	local connection="${1}"
+	log DEBUG "Generating IPsec configuration for ${connection}"	
 
 	# Read the config settings
 	local ${IPSEC_CONNECTION_CONFIG_SETTINGS}
