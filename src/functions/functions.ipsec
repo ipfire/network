@@ -30,6 +30,7 @@ IPSEC_CONNECTION_CONFIG_SETTINGS="\
 	LOCAL_PREFIX \
 	MODE \
 	PEER \
+	POOLS \
 	PSK \
 	REMOTE_ID \
 	REMOTE_PREFIX \
@@ -82,7 +83,7 @@ cli_ipsec_connection() {
 		shift 2
 
 		case "${key}" in
-			authentication|down|disable|dpd|enable|inactivity_timeout|local|mode|peer|remote|security_policy|start_action|up)
+			authentication|down|disable|dpd|enable|inactivity_timeout|local|mode|peer|pool|remote|security_policy|start_action|up)
 				ipsec_connection_${key} ${connection} $@
 				;;
 			show)
@@ -889,6 +890,104 @@ ipsec_connection_prefix() {
 	return ${EXIT_OK}
 }
 
+# Set the pools to use
+ipsec_connection_pool() {
+	if [ ! $# -ge 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local connection=${1}
+	shift
+
+	local POOLS
+	if ! ipsec_connection_read_config "${connection}" "POOLS"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Remove duplicated entries to proceed the list safely
+	assign "POOLS" "$(list_unique ${POOLS})"
+
+	local pools_added
+	local pools_removed
+	local pools_set
+
+	while [ $# -gt 0 ]; do
+		local arg="${1}"
+
+		case "${arg}" in
+			+*)
+				list_append pools_added "${arg:1}"
+				;;
+			-*)
+				list_append pools_removed "${arg:1}"
+				;;
+			[A-Za-z0-9]*)
+				list_append pools_set "${arg}"
+				;;
+			*)
+				error "Invalid argument: ${arg}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	# Check if the user is trying a mixed operation
+	if ! list_is_empty pools_set && (! list_is_empty pools_added || ! list_is_empty pools_removed); then
+		error "You cannot reset the pools list and add or remove pools at the same time"
+		return ${EXIT_ERROR}
+	fi
+
+	# Set new pools list
+	if ! list_is_empty pools_set; then
+		# Check if all pools are valid
+		local pool
+		for pool in ${pools_set}; do
+			if ! ipsec_pool_exists ${pool} || ! ipsec_pool_check_config ${pool}; then
+				error "Pool ${pool} is not valid"
+				return ${EXIT_ERROR}
+			fi
+		done
+
+		assign "POOLS" "${pools_set}"
+
+	# Perform incremental updates
+	else
+		local pool
+
+		# Perform all removals
+		for pool in ${pools_removed}; do
+			if ! list_remove "POOLS" ${pool}; then
+				warning "${pool} was not on the list and could not be removed"
+			fi
+		done
+
+
+		for pool in ${pools_added}; do
+			if ! ipsec_pool_exists ${pool} && ! ipsec_pool_check_config ${pool}; then
+				if ! list_append_unique "POOLS" ${pool}; then
+					warning "${pool} is already on the prefix list"
+				fi
+			else
+				warning "${pool} is not a valid pool"
+			fi
+		done
+	fi
+
+	# Check if the list contain at least one valid pool
+	if list_is_empty POOLS; then
+		error "Cannot save an empty pool list"
+		return ${EXIT_ERROR}
+	fi
+
+	# Save everything
+	if ! ipsec_connection_write_config_key "${connection}" "POOLS" ${POOLS}; then
+		log ERROR "Could not write configuration settings"
+	fi
+
+	return ${EXIT_OK}
+}
+
 # Handle the cli after remote
 ipsec_connection_remote() {
 	if [ ! $# -ge 2 ]; then
@@ -1210,6 +1309,13 @@ _ipsec_connection_to_strongswan_connection() {
 	print_indent 2 "# Fragmentation"
 	print_indent 2 "fragmentation = yes"
 	print
+
+	# Pools
+	if isset POOLS; then
+		print_indent 2 "# Pools"
+		print_indent 2 "pools = $(list_join POOLS ", ")"
+		print
+	fi
 
 	# Local
 	print_indent 2 "local {"
