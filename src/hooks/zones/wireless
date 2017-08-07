@@ -137,9 +137,9 @@ hook_status() {
 	local bssid=$(wpa_cli_status_get ${zone} bssid)
 	assert isset bssid
 
+	local frequency=$(wpa_cli_bss_get_frequency "${zone}" "${bssid}")
+	cli_print_fmt1 3 "Channel" "$(wireless_frequency_to_channel ${frequency}) (${frequency} MHz)"
 	cli_print_fmt1 3 "BSSID" "${bssid}"
-	cli_print_fmt1 3 "Frequency" \
-		"$(wpa_cli_bss_get_frequency ${zone} ${bssid}) MHz"
 	cli_print_fmt1 3 "Noise" \
 		"$(wpa_cli_bss_get_noise ${zone} ${bssid})"
 	cli_print_fmt1 3 "Quality" \

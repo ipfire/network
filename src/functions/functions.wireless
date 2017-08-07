@@ -210,6 +210,45 @@ wireless_channel_to_frequency() {
 	return ${EXIT_ERROR}
 }
 
+wireless_frequency_to_channel() {
+	local frequency=${1}
+
+	assert isinteger frequency
+
+	# Everything that is too high
+	if [ ${frequency} -gt 5825 ]; then
+		return ${EXIT_ERROR}
+
+	# 5 GHz Band
+	elif [ ${frequency} -gt 5000 ]; then
+		(( frequency = frequency - 5000 ))
+
+		# Must be divisible by 5
+		[ "$(( frequency % 5 ))" -ne 0 ] && return ${EXIT_ERROR}
+
+		print "$(( frequency / 5 ))"
+
+	# 2.4 GHz Band - Channel 14
+	elif [ ${frequency} -eq 2484 ]; then
+		print "14"
+
+	# 2.4 GHz Band
+	elif [ ${frequency} -gt 2407 ]; then
+		(( frequency = frequency - 2407 ))
+
+		# Must be divisible by 5
+		[ "$(( frequency % 5 ))" -ne 0 ] && return ${EXIT_ERROR}
+
+		print "$(( frequency / 5 ))"
+
+	# Everything else
+	else
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
 wireless_set_channel() {
 	local device=${1}
 	assert isset device
