@@ -966,7 +966,7 @@ ipsec_connection_pool() {
 
 
 		for pool in ${pools_added}; do
-			if ! ipsec_pool_exists ${pool} && ! ipsec_pool_check_config ${pool}; then
+			if ipsec_pool_exists ${pool} && ipsec_pool_check_config ${pool}; then
 				if ! list_append_unique "POOLS" ${pool}; then
 					warning "${pool} is already on the prefix list"
 				fi
