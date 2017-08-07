@@ -143,7 +143,7 @@ hook_status() {
 	cli_print_fmt1 3 "Noise" \
 		"$(wpa_cli_bss_get_noise ${zone} ${bssid})"
 	cli_print_fmt1 3 "Quality" \
-		"$(wpa_cli_bss_get_quality ${zone} ${bssid})"
+		"$(wpa_cli_bss_get_quality ${zone} ${bssid})%%"
 	cli_print_fmt1 3 "Flags" \
 		"$(wpa_cli_bss_get_flags ${zone} ${bssid})"
 	cli_space
