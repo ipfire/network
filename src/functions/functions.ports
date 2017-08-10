@@ -335,7 +335,9 @@ port_get_parents() {
 port_get_children() {
 	local port=${1}
 
-	port_get_info ${port} PORT_CHILDREN
+	assert port_exists "${port}"
+
+	port_cmd "children" "${port}"
 }
 
 port_zone() {

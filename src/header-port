@@ -64,6 +64,18 @@ hook_edit() {
 	hook_default_edit $@
 }
 
+# Returns a list of all children of this port
+hook_children() {
+	local port="${1}"
+
+	if ! port_settings_read "${port}" ${HOOK_SETTINGS}; then
+		log ERROR "Could not read port settings: ${port}"
+		return ${EXIT_OK}
+	fi
+
+	print "${SLAVES}"
+}
+
 hook_info() {
 	local port="${1}"
 	assert isset port
