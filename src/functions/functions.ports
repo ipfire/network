@@ -174,9 +174,6 @@ port_destroy() {
 		return ${EXIT_ERROR}
 	fi
 
-	# Check if the port is attached to any zone and don't delete it.
-	local ok=${EXIT_OK}
-
 	local attached_zone=$(port_is_attached ${port})
 	if [ -n "${attached_zone}" ]; then
 		if ! zone_port_detach "${attached_zone}" "${port}"; then
@@ -191,21 +188,11 @@ port_destroy() {
 	for other_port in $(ports_get); do
 		[ "${other_port}" = "${port}" ] && continue
 
-		if list_match ${port} $(port_get_parents ${other_port}); then
-			error_log "Cannot destroy port '${port}' which is a parent port to '${other_port}'."
-			ok=${EXIT_ERROR}
-		fi
-
 		if list_match ${port} $(port_get_children ${other_port}); then
-			error_log "Cannot destroy port '${port}' which is child of port '${other_port}'."
-			ok=${EXIT_ERROR}
+			log ERROR "Cannot destroy port '${port}' which is child of port '${other_port}'."
+			return ${EXIT_ERROR}
 		fi
 	done
-
-	# If ok says we are not okay --> exit
-	if [ ${ok} -ne ${EXIT_OK} ]; then
-		return ${EXIT_ERROR}
-	fi
 
 	port_remove "${port}"
 
@@ -324,12 +311,6 @@ port_get_info() {
 		eval $(port_info ${port})
 		echo "${!key}"
 	)
-}
-
-port_get_parents() {
-	local port=${1}
-
-	port_get_info ${port} PORT_PARENTS
 }
 
 port_get_children() {
