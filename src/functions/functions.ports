@@ -139,10 +139,6 @@ port_is_attached() {
 
 	local zone
 	for zone in $(zones_get_all); do
-
-		assert isset zone
-		assert zone_exists ${zone}
-
 		if list_match ${port} $(zone_get_ports ${zone}); then
 			echo "${zone}"
 			return ${EXIT_OK}
