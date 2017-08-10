@@ -194,7 +194,10 @@ port_destroy() {
 		fi
 	done
 
-	port_remove "${port}"
+	# Shut down the port before destroying it
+	if ! port_remove "${port}"; then
+		return ${EXIT_ERROR}
+	fi
 
 	rm -rf $(port_dir ${port})
 }
