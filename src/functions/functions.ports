@@ -183,8 +183,10 @@ port_destroy() {
 
 	local attached_zone=$(port_is_attached ${port})
 	if [ -n "${attached_zone}" ]; then
-		error_log "Cannot destroy port '${port}' which is attached to zone '${attached_zone}'."
-		ok=${EXIT_ERROR}
+		if ! zone_port_detach "${attached_zone}" "${port}"; then
+			error "Could not remove port ${port} from zone ${zone}"
+			return ${EXIT_ERROR}
+		fi
 	fi
 
 	# Check if the port is linked to any other port and don't allow the user
