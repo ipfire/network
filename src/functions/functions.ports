@@ -170,10 +170,13 @@ port_new() {
 
 port_destroy() {
 	local port=${1}
-
 	assert isset port
 
-	port_exists ${port} || return ${EXIT_OK}
+	# Cannot delete a port that does not exist
+	if ! port_exists ${port}; then
+		error "No such port: ${port}"
+		return ${EXIT_ERROR}
+	fi
 
 	# Check if the port is attached to any zone and don't delete it.
 	local ok=${EXIT_OK}
