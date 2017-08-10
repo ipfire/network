@@ -246,10 +246,6 @@ port_status() {
 	port_cmd status $@
 }
 
-port_info() {
-	port_cmd info $@
-}
-
 port_cmd() {
 	local cmd=${1}
 	local port=${2}
@@ -297,20 +293,6 @@ port_find_free() {
 	done
 
 	return ${EXIT_ERROR}
-}
-
-port_get_info() {
-	local port=${1}
-	local key=${2}
-
-	assert isset port
-	assert port_exists ${port}
-	assert isset key
-
-	(
-		eval $(port_info ${port})
-		echo "${!key}"
-	)
 }
 
 port_get_children() {

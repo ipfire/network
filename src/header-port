@@ -76,28 +76,6 @@ hook_children() {
 	print "${SLAVES}"
 }
 
-hook_info() {
-	local port="${1}"
-	assert isset port
-	shift
-
-	settings_read "$(port_file ${port})"
-
-	local key val
-	for key in PORT_PARENTS PORT_CHILDREN; do
-		val="${key}_VAR"
-		val=${!val}
-
-		assign "${key}" "${!val}"
-	done
-
-	for key in ${INFO_SETTINGS}; do
-		echo "${key}=\"${!key}\""
-	done
-
-	exit ${ERROR_OK}
-}
-
 hook_status() {
 	local port="${1}"
 	assert isset port
