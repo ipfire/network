@@ -61,7 +61,19 @@ wireless_create() {
 		shift
 	done
 
-	assert isoneof type ibss managed monitor __ap
+	case "${type}" in
+		ibss|managed|monitor|__ap)
+			;;
+		mesh-point)
+			type="mp"
+			;;
+		*)
+			log ERROR "Unknown type: ${type}"
+			return ${EXIT_ERROR}
+			;;
+
+	esac
+
 	assert phy_exists ${phy}
 	isset address || address=$(mac_generate)
 
