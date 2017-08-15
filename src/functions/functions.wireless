@@ -199,14 +199,15 @@ wireless_list_reg_domains() {
 	done <<< "$(regdbdump ${WIRELESS_REGULATORY_DOMAIN_DATABASE})"
 }
 
+# http://en.wikipedia.org/wiki/List_of_WLAN_channels
 wireless_channel_to_frequency() {
-	# http://en.wikipedia.org/wiki/List_of_WLAN_channels
-
 	local channel=${1}
-	assert isset channel
 
-	# Channel number must be positive.
-	assert [ "${channel}" -gt 0 ]
+	# Works only for valid channel numbers
+	if ! wireless_channel_is_valid "${channel}"; then
+		log ERROR "Invalid wireless channel: ${channel}"
+		return ${EXIT_ERROR}
+	fi
 
 	# 2.4 GHz band
 	case "${channel}" in
@@ -270,17 +271,43 @@ wireless_frequency_to_channel() {
 	return ${EXIT_OK}
 }
 
+wireless_channel_is_valid() {
+	local channel=${1}
+
+	case "${channel}" in
+		# 2.4 GHz Band
+		[123456789]|1[0123]|14)
+			return ${EXIT_TRUE}
+			;;
+
+		# 5 GHz Band
+		3[68]|4[02468]|5[26]|6[04]|10[048]|11[26]|12[048]|13[26]|14[09]|15[37]|16[15])
+			return ${EXIT_TRUE}
+			;;
+	esac
+
+	# Invalid channel number given
+	return ${EXIT_FALSE}
+}
+
 wireless_set_channel() {
 	local device=${1}
-	assert isset device
-
 	local channel=${2}
-	assert isset channel
 
-	device_exists ${device} || return ${EXIT_ERROR}
+	# Check if the device exists
+	if ! device_exists "${device}"; then
+		log ERROR "No such device: ${device}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if the channel number is valid
+	if ! wireless_channel_is_valid "${channel}"; then
+		log ERROR "Invalid wireless channel: ${channel}"
+		return ${EXIT_ERROR}
+	fi
 
 	log DEBUG "Setting wireless channel on device '${device}' to channel '${channel}'"
-	cmd_quiet iw dev ${device} set channel ${channel}
+	cmd iw dev "${device}" set channel "${channel}"
 }
 
 wireless_ibss_join() {
