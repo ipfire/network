@@ -238,7 +238,17 @@ port_edit() {
 }
 
 port_up() {
-	port_cmd up $@
+	assert [ $# -eq 1 ]
+
+	local port="${1}"
+
+	# Check if the port exists
+	if ! device_exists "${port}"; then
+		log ERROR "Could not bring up port ${port} which has not been created"
+		return ${EXIT_ERROR}
+	fi
+
+	port_cmd up "${port}"
 }
 
 port_down() {
