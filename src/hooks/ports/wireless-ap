@@ -21,6 +21,8 @@
 
 . /usr/lib/network/header-port
 
+HOOK_PORT_PATTERN="${PORT_PATTERN_ACCESSPOINT}"
+
 HOOK_SETTINGS="HOOK ADDRESS BROADCAST_SSID CHANNEL MODE PHY SSID"
 HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION KEY"
 
@@ -90,19 +92,6 @@ hook_parse_cmdline() {
 	# Save address of phy do identify it again
 	PHY=$(phy_get ${PHY})
 	PHY=$(phy_get_address ${PHY})
-}
-
-hook_new() {
-	if ! hook_parse_cmdline $@; then
-		return ${EXIT_ERROR}
-	fi
-
-	local port=$(port_find_free ${PORT_PATTERN_ACCESSPOINT})
-	assert isset port
-
-	port_settings_write "${port}" ${HOOK_SETTINGS}
-
-	exit ${EXIT_OK}
 }
 
 hook_edit() {

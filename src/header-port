@@ -40,8 +40,23 @@ hook_hotplug_rename() {
 	exit ${EXIT_FALSE}
 }
 
-hook_add() {
-	cmd_not_implemented
+hook_default_new() {
+	if ! hook_parse_cmdline "$@"; then
+		return ${EXIT_ERROR}
+	fi
+
+	assert isset HOOK_PORT_PATTERN
+
+	local port=$(port_find_free ${HOOK_PORT_PATTERN})
+	assert isset port
+
+	port_settings_write "${port}" ${HOOK_SETTINGS}
+
+	exit ${EXIT_OK}
+}
+
+hook_new() {
+	hook_default_new "$@"
 }
 
 hook_default_edit() {
@@ -115,6 +130,7 @@ hook_default_up() {
 	done
 }
 
+# Depends on the port existing
 hook_up() {
 	hook_default_up $@
 }
