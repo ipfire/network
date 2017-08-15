@@ -213,7 +213,8 @@ dist_hooks_ports_SCRIPTS = \
 	src/hooks/ports/ethernet \
 	src/hooks/ports/vlan \
 	src/hooks/ports/wireless-adhoc \
-	src/hooks/ports/wireless-ap
+	src/hooks/ports/wireless-ap \
+	src/hooks/ports/wireless-mesh
 
 dist_hooks_zones_SCRIPTS = \
 	src/hooks/zones/6to4-tunnel \

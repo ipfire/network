@@ -1,0 +1,132 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2017 Michael Tremer                                           #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /usr/lib/network/header-port
+
+HOOK_PORT_PATTERN="${PORT_PATTERN_MESH}"
+
+HOOK_SETTINGS="HOOK ADDRESS MESH_ID CHANNEL PHY"
+
+hook_check_settings() {
+	assert ismac ADDRESS
+	assert isset MESH_ID
+	assert isset CHANNEL
+	assert isset PHY
+	assert ismac PHY
+}
+
+hook_parse_cmdline() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--address=*)
+				ADDRESS=$(cli_get_val "${1}")
+				;;
+			--channel=*)
+				CHANNEL=$(cli_get_val "${1}")
+				;;
+			--mesh-id=*)
+				MESH_ID=$(cli_get_val "${1}")
+				;;
+			--phy=*)
+				PHY=$(cli_get_val "${1}")
+				;;
+			*)
+				warning "Ignoring unknown argument '${1}'"
+				;;
+		esac
+		shift
+	done
+
+	if ! isset MESH_ID; then
+		error "Please pass a mesh ID"
+		return ${EXIT_ERROR}
+	fi
+
+	# Save address of phy do identify it again
+	PHY=$(phy_get ${PHY})
+	PHY=$(phy_get_address ${PHY})
+
+	# Generate a MAC address if none given
+	if ! isset ADDRESS; then
+		ADDRESS=$(mac_generate)
+	fi
+
+	# XXX check if wireless channel is valid
+}
+
+hook_create() {
+	local port="${1}"
+	assert isset port
+
+	# Read settings
+	port_settings_read "${port}" ${HOOK_SETTINGS}
+
+	# Check if the PHY is present.
+	local phy="$(phy_get "${PHY}")"
+	if ! isset phy; then
+		log DEBUG "phy '${PHY}' is not present"
+		return ${EXIT_ERROR}
+	fi
+
+	# Create the wireless device, if it does not exist, yet.
+	if ! device_exists "${port}"; then
+		wireless_create "${port}" \
+			--address="${ADDRESS}" \
+			--channel="${CHANNEL}" \
+			--phy="${phy}" \
+			--type="mesh-point" || return $?
+	fi
+
+	return ${EXIT_OK}
+}
+
+hook_remove() {
+	local port="${1}"
+	assert isset port
+
+	if device_exists "${port}"; then
+		wireless_remove "${port}"
+	fi
+
+	exit ${EXIT_OK}
+}
+
+hook_hotplug() {
+	local port="${1}"
+	assert isset port
+
+	port_settings_read "${port}" ${HOOK_SETTINGS}
+
+	case "$(hotplug_action)" in
+		add)
+			# Bring up the port when the phy is plugged in
+			if hotplug_event_port_uses_phy "${port}"; then
+				hook_create "${port}" || exit $?
+			fi
+			;;
+
+		*)
+			exit ${EXIT_NOT_HANDLED}
+			;;
+	esac
+
+	exit ${EXIT_OK}
+}
