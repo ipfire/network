@@ -244,7 +244,7 @@ zone_new() {
 	# Maybe the zone new hook did not exit correctly.
 	# If this is the case we remove the created zone immediately.
 	if [ "${ret}" != "${EXIT_OK}" ]; then
-		zone_destroy_now "${zone}"
+		zone_destroy "${zone}"
 		return ${EXIT_ERROR}
 	fi
 
@@ -261,12 +261,6 @@ zone_edit() {
 
 	if ! zone_exists ${zone}; then
 		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	# Check if the zone is tagged for removal.
-	if zone_has_destroy_tag ${zone}; then
-		error "You cannot edit a zone that is tagged for removal."
 		return ${EXIT_ERROR}
 	fi
 
@@ -291,7 +285,6 @@ zone_rename() {
 	local name="${2}"
 
 	assert zone_exists "${zone}"
-	assert not zone_has_destroy_tag "${zone}"
 	assert not zone_exists "${name}"
 
 	# The zone must be shut down before, is then renamed and
@@ -327,34 +320,19 @@ zone_rename() {
 
 zone_destroy() {
 	local zone="${1}"
-	assert zone_exists "${zone}"
 
-	# Make the zone for removal.
-	touch "$(zone_dir "${zone}")/.destroy"
+	# Cannot delete a zone that does not exist
+	if ! zone_exists "${zone}"; then
+		log ERROR "Zone ${zone} does not exist"
+		return ${EXIT_ERROR}
+	fi
 
-	log INFO "Zone '${zone}' has been tagged for removal."
-}
-
-zone_has_destroy_tag() {
-	local zone="${1}"
-	assert zone_exists "${zone}"
-
-	[ -e "$(zone_dir "${zone}")/.destroy" ]
-}
-
-# This function will remove the given zone
-# RIGHT NOW. Use zone_destroy to remove it
-# at the next status change.
-zone_destroy_now() {
-	local zone="${1}"
-	assert zone_exists "${zone}"
-
-	log INFO "Removing zone '${zone}' right now."
+	log INFO "Destroying zone ${zone}"
 
 	# Force the zone down.
 	zone_is_active "${zone}" && zone_stop "${zone}"
 
-	# Disable zone.
+	# Disable zone auto-start
 	zone_disable "${zone}"
 
 	rm -rf "$(zone_dir "${zone}")"
@@ -366,12 +344,6 @@ zone_up() {
 
 	if ! zone_exists ${zone}; then
 		error "Zone '${zone}' does not exist."
-		return ${EXIT_ERROR}
-	fi
-
-	# Check if a zone has got the remove tag.
-	if zone_has_destroy_tag ${zone}; then
-		error "Cannot bring up any zone which is to be removed."
 		return ${EXIT_ERROR}
 	fi
 
@@ -424,11 +396,6 @@ zone_down() {
 
 	# Execute all triggers after the zone went down
 	triggers_execute_all "down" ZONE="${zone}"
-
-	# Remove the zone, if it has got a remove tag.
-	if zone_has_destroy_tag "${zone}"; then
-		zone_destroy_now "${zone}"
-	fi
 }
 
 zone_status() {
@@ -453,11 +420,6 @@ zone_status() {
 	fi
 
 	hook_zone_exec "${hook}" "status" "${zone}" "$@"
-
-	# Show that the zone it to be removed soon.
-	if zone_has_destroy_tag ${zone}; then
-		warning "This zone is tagged for removal."
-	fi
 }
 
 zone_identify() {

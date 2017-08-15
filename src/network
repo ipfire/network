@@ -720,12 +720,6 @@ cli_zone_rename() {
 		exit ${EXIT_ERROR}
 	fi
 
-	# Destroyed zones cannot be renamed
-	if zone_has_destroy_tag "${zone}"; then
-		error "Zone ${zone} is about to be destroyed and cannot be renamed"
-		exit ${EXIT_ERROR}
-	fi
-
 	# Check if a zone with the new name already exists
 	if zone_exists "${name}"; then
 		error "Zone ${name} already exists"
