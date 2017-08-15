@@ -31,6 +31,7 @@ wireless_create() {
 	shift
 
 	local address
+	local channel
 	local phy
 	local type="managed"
 
@@ -38,6 +39,9 @@ wireless_create() {
 		case "${1}" in
 			--address=*)
 				address=$(cli_get_val ${1})
+				;;
+			--channel=*)
+				channel=$(cli_get_val "${1}")
 				;;
 			--phy=*)
 				phy=$(cli_get_val ${1})
@@ -72,6 +76,11 @@ wireless_create() {
 		fi
 	else
 		log ERROR "could not create wireless device '${device}' (${type}): ${ret}"
+	fi
+
+	# Set the channel
+	if isset channel; then
+		wireless_set_channel "${device}" "${channel}" || return $?
 	fi
 
 	return ${ret}
