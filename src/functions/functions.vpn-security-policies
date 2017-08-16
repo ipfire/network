@@ -658,46 +658,87 @@ vpn_security_policies_group_type(){
 	# Remove duplicated entries to proceed the list safely
 	GROUP_TYPE="$(list_unique ${GROUP_TYPE})"
 
+	local group_types_added
+	local group_types_removed
+	local group_types_set
+
 	while [ $# -gt 0 ]; do
-		case "${1}" in
-			-*)
-				value=${1#-}
-				# Check if the group type is in the list of group types and
-				# check if the list has after removing this group type at leatst one valid value
-				if list_match ${value} ${GROUP_TYPE}; then
-					list_remove GROUP_TYPE ${value}
-				else
-					# We do not break here because this error does not break the processing of the next maybe valid values.
-					log ERROR "Can not remove ${value} from the list of group types because ${value} is not in the list."
-				fi
-				;;
+		local arg="${1}"
+
+		case "${arg}" in
 			+*)
-				value=${1#+}
-				# Check if the group type is in the list of supported group types.
-				if ! isoneof value ${!VPN_SUPPORTED_GROUP_TYPES[@]}; then
-					# We do not break here because the processing of other maybe valid values are indepent from this error.
-					log ERROR "${value} is not a supported group type and can thats why not added to the list of group types."
-				else
-					if list_match ${value} ${GROUP_TYPE}; then
-						log WARNING "${value} is already in the list of group-types of this policy."
-					else
-						list_append GROUP_TYPE ${value}
-					fi
-				fi
+				list_append group_types_added "${arg:1}"
+				;;
+			-*)
+				list_append group_types_removed "${arg:1}"
+				;;
+			[A-Z0-9]*)
+				list_append group_types_set "${arg}"
+				;;
+			*)
+				error "Invalid argument: ${arg}"
+				return ${EXIT_ERROR}
 				;;
 		esac
 		shift
 	done
 
-	# Check if the list contain at least one valid group-type
-	if [ $(list_length ${GROUP_TYPE}) -ge 1 ]; then
-		if ! vpn_security_policies_write_config_key ${name} "GROUP_TYPE" ${GROUP_TYPE}; then
-			log ERROR "The changes for the vpn security policy ${name} could not be written."
-		fi
-	else
-		log ERROR "After proceding all group types the list is empty and thats why no changes are written."
+	# Check if the user is trying a mixed operation
+	if ! list_is_empty group_types_set && (! list_is_empty group_types_added || ! list_is_empty group_types_removed); then
+		error "You cannot reset the group type list and add or remove group types at the same time"
 		return ${EXIT_ERROR}
 	fi
+
+	# Set new group type list
+	if ! list_is_empty group_types_set; then
+		# Check if all group types are valid
+		local group_type
+		for group_type in ${group_types_set}; do
+			if ! vpn_security_policies_group_type_supported ${group_type}; then
+				error "Unsupported group type: ${group_type}"
+				return ${EXIT_ERROR}
+			fi
+		done
+
+		GROUP_TYPE="${group_types_set}"
+
+	# Perform incremental updates
+	else
+		local group_type
+
+		# Perform all removals
+		for group_type in ${group_types_removed}; do
+			if ! list_remove GROUP_TYPE ${group_type}; then
+				warning "${group_type} was not on the list and could not be removed"
+			fi
+		done
+
+		for group_type in ${group_types_added}; do
+			if vpn_security_policies_group_type_supported ${group_type}; then
+				if ! list_append_unique GROUP_TYPE ${group_type}; then
+					warning "${group_type} is already on the group type list"
+				fi
+			else
+				warning "${group_type} is unknown or unsupported and could not be added"
+			fi
+		done
+	fi
+
+	# Check if the list contain at least one valid group_type
+	if list_is_empty GROUP_TYPE; then
+		error "Cannot save an empty group type list"
+		return ${EXIT_ERROR}
+	fi
+
+	# Save everything
+	if ! vpn_security_policies_write_config_key ${name} "GROUP_TYPE" ${GROUP_TYPE}; then
+		log ERROR "The changes for the vpn security policy ${name} could not be written."
+	fi
+
+	cli_headline 1 "Current group type list for ${name}:"
+	for group_type in ${GROUP_TYPE}; do
+		cli_print_fmt1 1 "${group_type}" "${VPN_SUPPORTED_GROUP_TYPES[${group_type}]}"
+	done
 }
 
 # This function parses the parameters for the 'integrity' command
@@ -706,7 +747,7 @@ vpn_security_policies_integrity(){
 	shift
 
 	if [ $# -eq 0 ]; then
-		log ERROR "You must pass at least one value after integrity."
+		log ERROR "You must pass at least one value after integrity"
 		return ${EXIT_ERROR}
 	fi
 
@@ -718,46 +759,87 @@ vpn_security_policies_integrity(){
 	# Remove duplicated entries to proceed the list safely
 	INTEGRITY="$(list_unique ${INTEGRITY})"
 
+	local integritys_added
+	local integritys_removed
+	local integritys_set
+
 	while [ $# -gt 0 ]; do
-		case "${1}" in
-			-*)
-				value=${1#-}
-				# Check if the integrity hash is in the list of integrity hashes and
-				# check if the list has after removing this  integrity hash at least one valid value
-				if list_match ${value} ${INTEGRITY}; then
-					list_remove INTEGRITY ${value}
-				else
-					# We do not break here because the processing of other maybe valid values are indepent from this error.
-					log ERROR "Can not remove ${value} from the list of integrity hashes because ${value} is not in the list."
-				fi
-				;;
+		local arg="${1}"
+
+		case "${arg}" in
 			+*)
-				value=${1#+}
-				# Check if the Ciphers is in the list of supported integrity hashes.
-				if ! isoneof value ${!VPN_SUPPORTED_INTEGRITY[@]}; then
-					# We do not break here because the processing of other maybe valid values are indepent from this error.
-					log ERROR "${value} is not a supported integrity hash and can thats why not added to the list of integrity hashes."
-				else
-					if list_match ${value} ${INTEGRITY}; then
-						log WARNING "${value} is already in the list of integrety hashes of this policy."
-					else
-						list_append INTEGRITY ${value}
-					fi
-				fi
+				list_append integritys_added "${arg:1}"
+				;;
+			-*)
+				list_append integritys_removed "${arg:1}"
+				;;
+			[A-Z0-9]*)
+				list_append integritys_set "${arg}"
+				;;
+			*)
+				error "Invalid argument: ${arg}"
+				return ${EXIT_ERROR}
 				;;
 		esac
 		shift
 	done
 
-	# Check if the list contain at least one valid group-type
-	if [ $(list_length ${INTEGRITY}) -ge 1 ]; then
-		if ! vpn_security_policies_write_config_key ${name} "INTEGRITY" ${INTEGRITY}; then
-			log ERROR "The changes for the vpn security policy ${name} could not be written."
-		fi
-	else
-		log ERROR "After proceding all integrity hashes the list is empty and thats why no changes are written."
+	# Check if the user is trying a mixed operation
+	if ! list_is_empty integritys_set && (! list_is_empty integritys_added || ! list_is_empty integritys_removed); then
+		error "You cannot reset the integrity hashes list and add or remove integrity hashes at the same time"
 		return ${EXIT_ERROR}
 	fi
+
+	# Set new integrity list
+	if ! list_is_empty integritys_set; then
+		# Check if all integrity hashes are valid
+		local integrity
+		for integrity in ${integritys_set}; do
+			if ! vpn_security_policies_integrity_supported ${integrity}; then
+				error "Unsupported integrity hash: ${integrity}"
+				return ${EXIT_ERROR}
+			fi
+		done
+
+		INTEGRITY="${integritys_set}"
+
+	# Perform incremental updates
+	else
+		local integrity
+
+		# Perform all removals
+		for integrity in ${integritys_removed}; do
+			if ! list_remove INTEGRITY ${integrity}; then
+				warning "${integrity} was not on the list and could not be removed"
+			fi
+		done
+
+		for integrity in ${integritys_added}; do
+			if vpn_security_policies_integrity_supported ${integrity}; then
+				if ! list_append_unique INTEGRITY ${integrity}; then
+					warning "${integrity} is already on the integrity list"
+				fi
+			else
+				warning "${integrity} is unknown or unsupported and could not be added"
+			fi
+		done
+	fi
+
+	# Check if the list contain at least one valid integrity
+	if list_is_empty INTEGRITY; then
+		error "Cannot save an empty integrity hashes list"
+		return ${EXIT_ERROR}
+	fi
+
+	# Save everything
+	if ! vpn_security_policies_write_config_key ${name} "INTEGRITY" ${INTEGRITY}; then
+		log ERROR "The changes for the vpn security policy ${name} could not be written."
+	fi
+
+	cli_headline 1 "Current integrity hashes list for ${name}:"
+	for integrity in ${INTEGRITY}; do
+		cli_print_fmt1 1 "${integrity}" "${VPN_SUPPORTED_INTEGRITY[${integrity}]}"
+	done
 }
 
 # This function parses the parameters for the 'key-exchange' command
@@ -915,6 +997,19 @@ vpn_security_policies_cipher_supported() {
 	local cipher=${1}
 
 	list_match ${cipher} ${!VPN_SUPPORTED_CIPHERS[@]}
+}
+
+
+vpn_security_policies_group_type_supported() {
+	local group_type=${1}
+
+	list_match ${group_type} ${!VPN_SUPPORTED_GROUP_TYPES[@]}
+}
+
+vpn_security_policies_integrity_supported() {
+	local integrity=${1}
+
+	list_match ${integrity} ${!VPN_SUPPORTED_INTEGRITY[@]}
 }
 
 vpn_security_policies_cipher_is_aead() {
