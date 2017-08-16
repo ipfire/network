@@ -25,6 +25,9 @@ description_format_filename() {
 	local name=${2}
 
 	case ${type} in
+		ipsec-connection)
+			echo "${NETWORK_IPSEC_CONNS_DIR}/${name}/description"
+			;;
 		zone)
 			echo "$(zone_dir ${name})/description"
 			;;
