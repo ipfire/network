@@ -1154,6 +1154,11 @@ cli_reset() {
 		ipsec_connection_destroy "${connection}"
 	done
 
+	local pool
+	for pool in $(ipsec_list_pools); do
+		ipsec_pool_destroy "${pool}"
+	done
+
 	# Stop strongswan
 	ipsec_strongswan_autostart
 

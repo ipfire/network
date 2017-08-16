@@ -420,3 +420,12 @@ ipsec_pool_to_strongswan() {
 		fi
 	) > ${path}
 }
+
+# List all IPsec pools
+ipsec_list_pools() {
+	local pool
+	for pool in ${NETWORK_IPSEC_POOLS_DIR}/*; do
+		[ -d "${pool}" ] || continue
+		basename "${pool}"
+	done
+}
