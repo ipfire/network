@@ -229,6 +229,13 @@ ipsec_pool_destroy() {
 			continue
 		fi
 
+		if [ -f	"${NETWORK_IPSEC_SWANCTL_POOLS_DIR}/${pool}.conf" ]; then
+			if ! file_delete "${NETWORK_IPSEC_SWANCTL_POOLS_DIR}/${pool}.conf"; then
+				# We going on here to delete at least the configuration directory
+				log ERROR "Could not delete ${NETWORK_IPSEC_SWANCTL_POOLS_DIR}/${pool}.conf"
+			fi
+		fi
+
 		log DEBUG "Deleting VPN IPsec pool ${pool}"
 
 		if ! rm -rf "${NETWORK_IPSEC_POOLS_DIR}/${pool}"; then
