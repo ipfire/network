@@ -151,6 +151,9 @@ color_format_filename() {
 	local type=${1}
 	local name=${2}
 	case ${type} in
+		ipsec-connection)
+			echo "${NETWORK_IPSEC_CONNS_DIR}/${name}/color"
+			;;
 		zone)
 			echo "$(zone_dir ${name})/color"
 			;;

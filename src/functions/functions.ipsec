@@ -83,6 +83,9 @@ cli_ipsec_connection() {
 			authentication|down|disable|dpd|enable|inactivity_timeout|local|mode|peer|pool|remote|security_policy|start_action|up)
 				ipsec_connection_${key} ${connection} "$@"
 				;;
+			color)
+				color_cli "ipsec-connection" "${connection}" "$@"
+				;;
 			show)
 				cli_ipsec_connection_show "${connection}"
 				exit $?
@@ -127,6 +130,14 @@ cli_ipsec_connection_destroy() {
 	ipsec_strongswan_autostart
 }
 
+ipsec_connection_get_color() {
+	# This function return the color of a zone
+	assert [ $# -eq 1 ]
+
+	local name=${1}
+	color_read "ipsec-connection" ${name}
+}
+
 cli_ipsec_connection_show() {
 	local connection="${1}"
 
@@ -138,6 +149,9 @@ cli_ipsec_connection_show() {
 	fi
 
 	cli_headline 0 "IPsec VPN Connection: ${connection}"
+	cli_space
+
+	cli_print_fmt1 1 "Color" "$(cli_color_bar $(ipsec_connection_get_color ${connection}))"
 	cli_space
 
 	# Peer
