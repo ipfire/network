@@ -135,6 +135,7 @@ dist_network_SCRIPTS = \
 	src/functions/functions.interrupts \
 	src/functions/functions.ip \
 	src/functions/functions.ipsec \
+	src/functions/functions.ipsec-pool \
 	src/functions/functions.iptables \
 	src/functions/functions.ip-tunnel \
 	src/functions/functions.ipv4 \

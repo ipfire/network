@@ -1,0 +1,422 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2017  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+IPSEC_POOL_CONFIG_SETTINGS="\
+	DNS_SERVER \
+	NETWORK \
+	TYPE"
+
+cli_ipsec_pool() {
+	if ipsec_pool_exists ${1}; then
+		local pool=${1}
+		local key=${2}
+		key=${key//-/_}
+		shift 2
+
+		case "${key}" in
+			dns_server|network)
+				ipsec_pool_${key} ${pool} "$@"
+				;;
+			show)
+				cli_ipsec_pool_show "${pool}"
+				exit $?
+				;;
+			*)
+				error "Unrecognized argument: ${key}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	else
+		local action=${1}
+		shift
+
+		case "${action}" in
+			new)
+				ipsec_pool_new "$@"
+				;;
+			destroy)
+				ipsec_pool_destroy "$@"
+				;;
+			""|*)
+				if [ -n "${action}" ]; then
+					error "Unrecognized argument: '${action}'"
+				fi
+				exit ${EXIT_ERROR}
+				;;
+		esac
+	fi
+}
+
+# This function writes all values to a via ${pool} specificated VPN IPsec pool configuration file
+ipsec_pool_write_config() {
+	assert [ $# -ge 1 ]
+
+	local pool="${1}"
+
+	if ! ipsec_pool_exists "${pool}"; then
+		log ERROR "No such VPN IPsec pool: ${pool}"
+		return ${EXIT_ERROR}
+	fi
+
+	local path="${NETWORK_IPSEC_POOLS_DIR}/${pool}/settings"
+
+	if ! settings_write "${path}" ${IPSEC_POOL_CONFIG_SETTINGS}; then
+		log ERROR "Could not write configuration settings for VPN IPsec pool ${pool}"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipsec_pool_reload ${pool}; then
+		log WARNING "Could not reload IPsec pool ${pool}"
+	fi
+
+	# When we get here the writing of the config file was successful
+	return ${EXIT_OK}
+}
+
+# This funtion writes the value for one key to a via ${connection} specificated
+# VPN IPsec pool configuration file
+ipsec_pool_write_config_key() {
+	assert [ $# -ge 3 ]
+
+	local pool=${1}
+	local key=${2}
+	shift 2
+
+	local value="$@"
+
+	if ! ipsec_pool_exists "${pool}"; then
+		log ERROR "No such VPN IPsec pool: ${pool}"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Set '${key}' to new value '${value}' in VPN IPsec pool '${pool}'"
+
+	local ${IPSEC_POOL_CONFIG_SETTINGS}
+
+	# Read the config settings
+	if ! ipsec_pool_read_config "${pool}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Set the key to a new value
+	assign "${key}" "${value}"
+
+	if ! ipsec_pool_write_config "${pool}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_TRUE}
+}
+
+# Reads one or more keys out of a settings file or all if no key is provided.
+ipsec_pool_read_config() {
+	assert [ $# -ge 1 ]
+
+	local pool="${1}"
+	shift 1
+
+	if ! ipsec_pool_exists "${pool}"; then
+		log ERROR "No such VPN IPsec pool : ${pool}"
+		return ${EXIT_ERROR}
+	fi
+
+	local args
+	if [ $# -eq 0 ] && [ -n "${IPSEC_POOL_CONFIG_SETTINGS}" ]; then
+		list_append args ${IPSEC_POOL_CONFIG_SETTINGS}
+	else
+		list_append args $@
+	fi
+
+	local path="${NETWORK_IPSEC_POOLS_DIR}/${pool}/settings"
+
+	if ! settings_read "${path}" ${args}; then
+		log ERROR "Could not read settings for VPN IPsec pool ${pool}"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# This function checks if a vpn IPsec pool exists
+# Returns True when yes and false when not
+ipsec_pool_exists() {
+	assert [ $# -eq 1 ]
+
+	local pool=${1}
+
+	local path="${NETWORK_IPSEC_POOLS_DIR}/${pool}"
+
+	[ -d "${path}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+}
+
+# This function checks if a VPN IPsec pool name is valid
+# Allowed are only A-Za-z0-9
+ipsec_pool_check_name() {
+	assert [ $# -eq 1 ]
+
+	local pool=${1}
+
+	# These are special words in strongswan
+	if isoneof pool dhcp radius; then
+		return ${EXIT_ERROR}
+	fi
+
+	[[ "${pool}" =~ [^[:alnum:]$] ]]
+}
+
+ipsec_pool_new() {
+	if [ $# -gt 1 ]; then
+		error "Too many arguments"
+		return ${EXIT_ERROR}
+	fi
+
+	local pool="${1}"
+	if ! isset pool; then
+		error "Please provide a pool name"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check for duplicates
+	if ipsec_pool_exists "${pool}"; then
+		error "The VPN IPsec pool ${pool} already exists"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if the name of the connection is valid
+	if  ipsec_pool_check_name "${pool}"; then
+		error "'${pool}' contains illegal characters"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Creating VPN IPsec pool ${pool}"
+
+	if ! mkdir -p "${NETWORK_IPSEC_POOLS_DIR}/${pool}"; then
+		log ERROR "Could not create config directory for ${pool}"
+		return ${EXIT_ERROR}
+	fi
+
+	local ${IPSEC_POOL_CONFIG_SETTINGS}
+
+	if ! ipsec_pool_write_config "${pool}"; then
+		log ERROR "Could not write new config file"
+		return ${EXIT_ERROR}
+	fi
+}
+
+# Function that deletes based on the passed parameters
+# one ore more vpn ipsec pools
+ipsec_pool_destroy() {
+	local pool
+	for pool in $@; do
+		if ! ipsec_pool_exists "${pool}"; then
+			log ERROR "The VPN IPsec pool ${pool} does not exist."
+			continue
+		fi
+
+		log DEBUG "Deleting VPN IPsec pool ${pool}"
+
+		if ! rm -rf "${NETWORK_IPSEC_POOLS_DIR}/${pool}"; then
+			log ERROR "Deleting the VPN IPsec pool ${pool} was not sucessful"
+			return ${EXIT_ERROR}
+		fi
+	done
+}
+
+ipsec_pool_set_type() {
+	local pool=${1}
+	local ip=${2}
+	assert isset pool
+	assert isset ip
+
+	local type=$(ip_detect_protocol ${ip})
+
+	if ! isset type; then
+		error "Cannot detect IP protocol of ${ip}"
+		return ${EXIT_ERROR}
+	else
+		log DEBUG "IP protocol of ${ip} is ${type}"
+		if ! ipsec_pool_write_config_key "${pool}" "TYPE" ${type}; then
+			log ERROR "Could not write configuration settings"
+			return ${EXIT_ERROR}
+		fi
+	fi
+}
+
+ipsec_pool_network() {
+	if [ ! $# -eq 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local pool=${1}
+	local network=${2}
+
+	local TYPE
+	if ! ipsec_pool_read_config ${pool} "TYPE"; then
+		error "Failed to read configuration settings for pool '${pool}'"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! isset TYPE; then
+		if ! ip_net_is_valid ${network}; then
+			log ERROR "Network '${network}' is invalid"
+			return ${EXIT_ERROR}
+		fi
+
+		if ! ipsec_pool_set_type ${pool} ${network}; then
+			log ERROR "Could not set type for IPsec pool ${pool}"
+			return ${EXIT_ERROR}
+		fi
+	else
+		if ! ${TYPE}_net_is_valid ${network}; then
+			log ERROR "Network '${network}' is invalid"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	if ! ipsec_pool_write_config_key "${pool}" "NETWORK" ${network}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+}
+
+ipsec_pool_dns_server() {
+	if [ ! $# -eq 2 ]; then
+		log ERROR "Not enough arguments"
+		return ${EXIT_ERROR}
+	fi
+	local pool=${1}
+	local dns_server=${2}
+
+	local TYPE
+	if ! ipsec_pool_read_config ${pool} "TYPE"; then
+		error "Failed to read configuration settings for pool '${pool}'"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! isset TYPE; then
+		if ! ip_is_valid ${dns_server}; then
+			log ERROR "DNS server '${dns_server}' is invalid"
+			return ${EXIT_ERROR}
+		fi
+
+		if ! ipsec_pool_set_type ${pool} ${dns_server}; then
+			log ERROR "Could not set type for IPsec pool ${pool}"
+			return ${EXIT_ERROR}
+		fi
+	else
+		if ! ${TYPE}_is_valid ${dns_server}; then
+			log ERROR "DNS server '${dns_server}' is invalid"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	if ! ipsec_pool_write_config_key "${pool}" "DNS_SERVER" ${dns_server}; then
+		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+}
+
+ipsec_pool_check_config() {
+	local pool=${1}
+	assert isset pool
+
+	local ${IPSEC_POOL_CONFIG_SETTINGS}
+	if ! ipsec_pool_read_config "${pool}"; then
+		log ERROR "Could not read configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! isset NETWORK; then
+		log ERROR "Network for IPSec pool ${pool} is not set"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! isset TYPE; then
+		TYPE=$(ip_detect_protocol ${NETWORK})
+		log DEBUG "IP protocol of ${NETWORK} is ${TYPE}"
+		if ! isset TYPE; then
+			error "Cannot detect IP protocol of ${NETWORK}"
+			return ${EXIT_ERROR}
+		else
+			if ! ipsec_pool_write_config_key "${pool}" "TYPE" ${TYPE}; then
+				log ERROR "Could not write configuration settings"
+				return ${EXIT_ERROR}
+			fi
+		fi
+	else
+		if ! ${TYPE}_net_is_valid ${NETWORK}; then
+			log ERROR "NETWORK '${NETWORK}' is invalid"
+			return ${EXIT_ERROR}
+		fi
+
+		if isset DNS_SERVER && ! ${TYPE}_is_valid ${DNS_SERVER}; then
+			log ERROR "DNS server '${DNS_SERVER}' is invalid"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	return ${EXIT_OK}
+}
+
+ipsec_pool_reload() {
+	local pool=${1}
+
+	if ! ipsec_pool_to_strongswan ${pool}; then
+		log ERROR "Could not generate strongswan config for ${pool}"
+		return ${EXIT_ERROR}
+	fi
+
+	ipsec_strongswan_load
+}
+
+ipsec_pool_to_strongswan() {
+	local pool=${1}
+
+	log DEBUG "Generating IPsec pool config for ${pool}"
+
+	local ${IPSEC_POOL_CONFIG_SETTINGS}
+	if ! ipsec_pool_read_config "${pool}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	if isset NETWORK && ! ipsec_pool_check_config "${pool}"; then
+		log ERROR "Configuration of ${pool} seems to be invalid"
+		return ${EXIT_ERROR}
+	fi
+
+	local path="${NETWORK_IPSEC_SWANCTL_POOLS_DIR}/${pool}.conf"
+
+	(
+		config_header "strongSwan pool configuration"
+
+		if isset NETWORK; then
+			print_indent 0 "pools {"
+
+			print_indent 1 "${pool} {"
+			print_indent 2 "addrs = ${NETWORK}"
+
+			if isset DNS_SERVER; then
+				print_indent 2 "dns = ${DNS_SERVER}"
+			fi
+
+			print_indent 1 "}"
+			print_indent 0 "}"
+		fi
+	) > ${path}
+}
