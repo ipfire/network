@@ -176,7 +176,6 @@ dist_network_SCRIPTS = \
 	src/ppp/pppoe-server
 
 dist_helpers_SCRIPTS = \
-	src/helpers/bridge-stp \
 	src/helpers/dhcpd-config-helper \
 	src/helpers/firewall-kernel-init \
 	src/helpers/hostapd-config-helper \
@@ -190,15 +189,6 @@ bin_PROGRAMS = \
 
 src_inetcalc_SOURCES = \
 	src/inetcalc.c
-
-bridge-stp-install-hook: bridge-stp-uninstall-hook
-	ln -svf --relative $(DESTDIR)$(helpersdir)/bridge-stp $(DESTDIR)$(sbindir)/
-
-bridge-stp-uninstall-hook:
-	rm -f $(DESTDIR)$(sbindir)/bridge-stp
-
-INSTALL_EXEC_HOOKS += bridge-stp-install-hook
-UNINSTALL_EXEC_HOOKS += bridge-stp-uninstall-hook
 
 dist_hooks_configs_SCRIPTS = \
 	src/hooks/configs/dhcp \
