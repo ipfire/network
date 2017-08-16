@@ -29,7 +29,7 @@ list_append() {
 	shift
 
 	local arg
-	for arg in $@; do
+	for arg in "$@"; do
 		list_append_one "${list}" "${arg}"
 	done
 }
@@ -60,7 +60,7 @@ list_append_unique() {
 	local ret=${EXIT_ERROR}
 
 	local arg
-	for arg in $@; do
+	for arg in "$@"; do
 		if ! list_match ${arg} ${!list}; then
 			list_append_one ${list} "${arg}"
 			ret=${EXIT_OK}
@@ -83,7 +83,7 @@ list_remove() {
 
 	local _list k
 	for k in ${!list}; do
-		if list_match ${k} $@; then
+		if list_match ${k} "$@"; then
 			ret=${EXIT_OK}
 			 continue
 		fi
@@ -98,7 +98,7 @@ list_remove() {
 
 list_sort() {
 	local i
-	for i in $@; do
+	for i in "$@"; do
 		print "${i}"
 	done | sort | tr '\n' ' '
 	print
@@ -106,7 +106,7 @@ list_sort() {
 
 list_unique() {
 	local items item
-	for item in $@; do
+	for item in "$@"; do
 		# Check if the item has already been processed.
 		list_match "${item}" ${items} && continue
 
@@ -120,7 +120,7 @@ list_match() {
 	shift
 
 	local i
-	for i in $@; do
+	for i in "$@"; do
 		[ "${match}" = "${i}" ] && return ${EXIT_OK}
 	done
 
@@ -137,7 +137,7 @@ list_length() {
 	local length=0
 
 	local i
-	for i in $@; do
+	for i in "$@"; do
 		length=$(( ${length} + 1 ))
 	done
 
@@ -152,7 +152,7 @@ list_count() {
 	local counter=0
 
 	local arg
-	for arg in $@; do
+	for arg in "$@"; do
 		if [ "${arg}" = "${what}" ]; then
 			counter=$(( ${counter} + 1 ))
 		fi
@@ -177,7 +177,7 @@ list_join() {
 
 list_reverse() {
 	local reversed arg
-	for arg in $@; do
+	for arg in "$@"; do
 		reversed="${arg} ${reversed}"
 	done
 
@@ -187,7 +187,7 @@ list_reverse() {
 
 list_head() {
 	local arg
-	for arg in $@; do
+	for arg in "$@"; do
 		print "${arg}"
 		return ${EXIT_OK}
 	done

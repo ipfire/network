@@ -70,30 +70,30 @@ pppoe_server_options() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--auth=*)
-				auth=$(cli_get_val ${1})
+				auth=$(cli_get_val "${1}")
 				;;
 			--default-asyncmap=*)
-				default_asyncmap=$(cli_get_val ${1})
+				default_asyncmap=$(cli_get_val "${1}")
 				;;
 			--disable-ipv6)
 				ipv6="false"
 				;;
 			--dns-servers=*)
-				dns_servers="$(cli_get_val ${1})"
+				dns_servers="$(cli_get_val "${1}")"
 				;;
 			--lcp-echo-failure=*)
-				lcp_echo_failure=$(cli_get_val ${1})
+				lcp_echo_failure=$(cli_get_val "${1}")
 				assert isinteger ${lcp_echo_failure}
 				;;
 			--lcp-echo-interval=*)
-				lcp_echo_interval=$(cli_get_val ${1})
+				lcp_echo_interval=$(cli_get_val "${1}")
 				assert isinteger ${lcp_echo_interval}
 				;;
 			--proxyarp=*)
-				proxyarp=$(cli_get_val ${1})
+				proxyarp=$(cli_get_val "${1}")
 				;;
 			--require-auth=*)
-				required_auths="${required_auths} $(cli_get_val ${1})"
+				required_auths="${required_auths} $(cli_get_val "${1}")"
 				;;
 		esac
 		shift

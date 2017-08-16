@@ -118,7 +118,7 @@ dhcpd_service() {
 }
 
 dhcpd_start() {
-	local services=$(dhcpd_service $@)
+	local services=$(dhcpd_service "$@")
 
 	local service
 	for service in ${services}; do
@@ -127,7 +127,7 @@ dhcpd_start() {
 }
 
 dhcpd_stop() {
-	local services=$(dhcpd_service $@)
+	local services=$(dhcpd_service "$@")
 
 	local service
 	for service in ${services}; do
@@ -138,7 +138,7 @@ dhcpd_stop() {
 dhcpd_restart() {
 	# DHCP does not support a reload, so
 	# we retsart it.
-	local services=$(dhcpd_service $@)
+	local services=$(dhcpd_service "$@")
 
 	local service
 	for service in ${services}; do
@@ -147,11 +147,11 @@ dhcpd_restart() {
 }
 
 dhcpd_reload() {
-	dhcpd_restart $@
+	dhcpd_restart "$@"
 }
 
 dhcpd_enable() {
-	local services=$(dhcpd_service $@)
+	local services=$(dhcpd_service "$@")
 
 	local service
 	for service in ${services}; do
@@ -160,7 +160,7 @@ dhcpd_enable() {
 }
 
 dhcpd_disable() {
-	local services=$(dhcpd_service $@)
+	local services=$(dhcpd_service "$@")
 
 	local service
 	for service in ${services}; do
@@ -181,10 +181,10 @@ dhcpd_edit() {
 
 	case "${proto}" in
 		ipv6)
-			_dhcpd_edit_ipv6 $@ || return $?
+			_dhcpd_edit_ipv6 "$@" || return $?
 			;;
 		ipv4)
-			_dhcpd_edit_ipv4 $@ || return $?
+			_dhcpd_edit_ipv4 "$@" || return $?
 			;;
 	esac
 
@@ -197,7 +197,7 @@ _dhcpd_edit_ipv4() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--authoritative=*)
-				val=$(cli_get_val ${1})
+				val=$(cli_get_val "${1}")
 
 				if enabled val; then
 					AUTHORITATIVE="true"
@@ -206,7 +206,7 @@ _dhcpd_edit_ipv4() {
 				fi
 				;;
 			--default-lease-time=*)
-				local val=$(cli_get_val ${1})
+				local val=$(cli_get_val "${1}")
 				DEFAULT_LEASE_TIME=$(parse_time ${val})
 
 				if ! isinteger DEFAULT_LEASE_TIME; then
@@ -215,7 +215,7 @@ _dhcpd_edit_ipv4() {
 				fi
 				;;
 			--max-lease-time=*)
-				local val=$(cli_get_val ${1})
+				local val=$(cli_get_val "${1}")
 				MAX_LEASE_TIME=$(parse_time ${val})
 
 				if ! isinteger MAX_LEASE_TIME; then
@@ -224,7 +224,7 @@ _dhcpd_edit_ipv4() {
 				fi
 				;;
 			--min-lease-time=*)
-				local val=$(cli_get_val ${1})
+				local val=$(cli_get_val "${1}")
 				MIN_LEASE_TIME=$(parse_time ${val})
 
 				if isset MIN_LEASE_TIME; then
@@ -252,7 +252,7 @@ _dhcpd_edit_ipv6() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--preferred-lifetime=*)
-				local val=$(cli_get_val ${1})
+				local val=$(cli_get_val "${1}")
 				PREFERRED_LIFETIME=$(parse_time ${val})
 
 				if ! isinteger PREFERRED_LIFETIME; then
@@ -261,7 +261,7 @@ _dhcpd_edit_ipv6() {
 				fi
 				;;
 			--valid-lifetime=*)
-				local val=$(cli_get_val ${1})
+				local val=$(cli_get_val "${1}")
 				VALID_LIFETIME=$(parse_time ${val})
 
 				if ! isinteger VALID_LIFETIME; then
@@ -512,7 +512,7 @@ dhcpd_subnet_match() {
 }
 
 dhcpd_subnet_exists() {
-	dhcpd_subnet_match $@
+	dhcpd_subnet_match "$@"
 }
 
 dhcpd_subnet_new() {
@@ -520,7 +520,7 @@ dhcpd_subnet_new() {
 	assert isset proto
 	shift
 
-	dhcpd_subnet_edit ${proto} "new" $@
+	dhcpd_subnet_edit ${proto} "new" "$@"
 }
 
 dhcpd_subnet_edit() {
@@ -557,7 +557,7 @@ dhcpd_subnet_edit() {
 		case "${proto},${mode},${1}" in
 			# Common options
 			ipv6,new,*:*/*|ipv4,new,*.*.*.*/*)
-				local subnet="$(cli_get_val ${1})"
+				local subnet="$(cli_get_val "${1}")"
 
 				ADDRESS="$(ip_split_prefix ${subnet})"
 				PREFIX="$(ip_get_prefix ${subnet})"
@@ -617,7 +617,7 @@ dhcpd_subnet_edit() {
 			# IPv4 options
 
 			ipv4,*,--routers=*)
-				ROUTERS=$(cli_get_val ${1})
+				ROUTERS=$(cli_get_val "${1}")
 				;;
 
 			*)
@@ -948,7 +948,7 @@ dhcpd_subnet_settings() {
 }
 
 dhcpd_subnet_options_file() {
-	local path=$(dhcpd_subnet_path $@)
+	local path=$(dhcpd_subnet_path "$@")
 	assert isset path
 
 	print "${path}/options"

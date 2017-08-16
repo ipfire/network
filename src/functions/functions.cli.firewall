@@ -58,7 +58,7 @@ firewall_cli() {
 			;;
 
 		zone)
-			firewall_cli_zone $@
+			firewall_cli_zone "$@"
 			;;
 
 		""|help|--help|-h)
@@ -81,7 +81,7 @@ firewall_cli_panic() {
 	assert isset protocol
 	shift
 
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man firewall-panic
 		exit ${EXIT_OK}
 	fi
@@ -104,7 +104,7 @@ firewall_cli_panic() {
 }
 
 firewall_cli_settings() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man firewall-settings
 		exit ${EXIT_OK}
 	fi
@@ -122,7 +122,7 @@ firewall_cli_zone() {
 	assert isset protocol
 	shift 
 
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man firewall-zone
 		exit ${EXIT_OK}
 	fi
@@ -143,15 +143,15 @@ firewall_cli_zone() {
 		# Process the given action.
 		case "${action}" in
 			edit)
-				firewall_cli_zone_edit ${zone} $@
+				firewall_cli_zone_edit ${zone} "$@"
 				;;
 			status|"")
-				firewall_cli_zone_status ${zone} $@
+				firewall_cli_zone_status ${zone} "$@"
 				;;
 
 			# Print the raw configuration settings.
 			show)
-				firewall_zone_print ${zone} $@
+				firewall_zone_print ${zone} "$@"
 
 				exit ${EXIT_ERROR}
 				;;
@@ -168,7 +168,7 @@ firewall_cli_zone() {
 
 		case "${action}" in
 			reset)
-				firewall_zone_reset $@
+				firewall_zone_reset "$@"
 				exit $?
 				;;
 

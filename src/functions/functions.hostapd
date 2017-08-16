@@ -44,13 +44,13 @@ hostapd_config_write() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--broadcast-ssid=*)
-				broadcast_ssid=$(cli_get_val ${1})
+				broadcast_ssid=$(cli_get_val "${1}")
 				;;
 			--channel=*)
-				channel=$(cli_get_val ${1})
+				channel=$(cli_get_val "${1}")
 				;;
 			--encryption=*)
-				encryption=$(cli_get_val ${1})
+				encryption=$(cli_get_val "${1}")
 				;;
 			--ieee80211d=*)
 				local val="$(cli_get_val "${1}")"
@@ -61,13 +61,13 @@ hostapd_config_write() {
 				fi
 				;;
 			--key=*)
-				key=$(cli_get_val ${1})
+				key=$(cli_get_val "${1}")
 				;;
 			--mode=*)
-				mode=$(cli_get_val ${1})
+				mode=$(cli_get_val "${1}")
 				;;
 			--ssid=*)
-				ssid=$(cli_get_val ${1})
+				ssid=$(cli_get_val "${1}")
 				;;
 			--wmm=*)
 				local val="$(cli_get_val "${1}")"

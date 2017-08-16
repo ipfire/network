@@ -116,7 +116,7 @@ iptables_chain_create() {
 				shift
 				;;
 			--policy=*)
-				policy="$(cli_get_val ${1})"
+				policy="$(cli_get_val "${1}")"
 				;;
 			-*)
 				log WARNING "Unrecognized argument: ${1}"
@@ -369,7 +369,7 @@ iptables_dump() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--log-facility=*)
-				log_facility="$(cli_get_val ${1})"
+				log_facility="$(cli_get_val "${1}")"
 				;;
 			*)
 				log WARNING "Unrecognized argument: ${1}"
@@ -441,11 +441,11 @@ IPTABLES_MULTIPORT=1
 IPTABLES_PORTRANGE=2
 
 _iptables_port_range() {
-	grep -q ":" <<< $@
+	grep -q ":" <<< "$@"
 }
 
 _iptables_port_multiport() {
-	grep -q "," <<< $@
+	grep -q "," <<< "$@"
 }
 
 _iptables_port() {
@@ -461,7 +461,7 @@ _iptables_port() {
 iptables_source_port() {
 	[ -z "$@" ] && return
 	local type
-	type=$(_iptables_port $@)
+	type=$(_iptables_port "$@")
 	if [ "$type" = "$IPTABLES_MULTIPORT" ]; then
 		echo "-m multiport --source-ports $@"
 	else
@@ -472,7 +472,7 @@ iptables_source_port() {
 iptables_destination_port() {
 	[ -z "$@" ] && return
 	local type
-	type=$(_iptables_port $@)
+	type=$(_iptables_port "$@")
 	if [ "$type" = "$IPTABLES_MULTIPORT" ]; then
 		echo "-m multiport --destination-ports $@"
 	else

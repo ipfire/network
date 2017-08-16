@@ -66,7 +66,7 @@ hook_new() {
 	local zone=${1}
 	shift
 
-	if ! hook_parse_cmdline $@; then
+	if ! hook_parse_cmdline "$@"; then
 		# Return an error if the parsing of the cmd line fails
 		return ${EXIT_ERROR}
 	fi

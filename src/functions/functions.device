@@ -320,11 +320,11 @@ device_get_phy() {
 }
 
 device_is_phy() {
-	phy_exists $@
+	phy_exists "$@"
 }
 
 device_is_serial() {
-	serial_exists $@
+	serial_exists "$@"
 }
 
 # Returns true if a device is a tun device
@@ -540,7 +540,7 @@ device_set_promisc() {
 
 # Check if the device is free
 device_is_free() {
-	! device_is_used $@
+	! device_is_used "$@"
 }
 
 # Check if the device is used
@@ -775,7 +775,7 @@ device_identify() {
 				seconds="$(cli_get_val "${arg}")"
 				;;
 		esac
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	assert isinteger seconds
 

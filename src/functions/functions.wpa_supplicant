@@ -36,19 +36,19 @@ wpa_supplicant_config_write() {
 	for arg in "$@"; do
 		case "${arg}" in
 			--ap-scan=*)
-				ap_scan=$(cli_get_val ${arg})
+				ap_scan=$(cli_get_val "${arg}")
 				;;
 			--mode=*)
-				mode=$(cli_get_val ${arg})
+				mode=$(cli_get_val "${arg}")
 
 				# Empty signals no encryption.
 				isset mode || mode="NONE"
 				;;
 			--ssid=*)
-				ssid=$(cli_get_val ${arg})
+				ssid=$(cli_get_val "${arg}")
 				;;
 			--key=*)
-				key=$(cli_get_val ${arg})
+				key=$(cli_get_val "${arg}")
 				;;
 			*)
 				error "Unrecognized argument: ${arg}"

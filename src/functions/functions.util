@@ -134,7 +134,7 @@ parse_time() {
 	local ret=0
 
 	local arg
-	for arg in $@; do
+	for arg in "$@"; do
 		local unit
 
 		case "${arg}" in
@@ -495,7 +495,7 @@ cmd() {
 }
 
 cmd_quiet() {
-	cmd $@ &>/dev/null
+	cmd "$@" &>/dev/null
 }
 
 cmd_exec() {
@@ -515,7 +515,7 @@ cmd_not_implemented() {
 
 # Executes the given command in background
 cmd_background() {
-	cmd_quiet $@ &
+	cmd_quiet "$@" &
 }
 
 # Prints the PID of the process that was started last
@@ -531,7 +531,7 @@ cmd_background_result() {
 
 # Increase security of the read command
 read() {
-	builtin read -r $@
+	builtin read -r "$@"
 }
 
 seq() {
@@ -557,7 +557,7 @@ count() {
 }
 
 which() {
-	type -P $@
+	type -P "$@"
 }
 
 # Prints the number of seconds since epoch.

@@ -34,10 +34,10 @@ http_GET() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--username=*)
-				username="$(cli_get_val ${1})"
+				username="$(cli_get_val "${1}")"
 				;;
 			--password=*)
-				password="$(cli_get_val ${1})"
+				password="$(cli_get_val "${1}")"
 				;;
 			*)
 				break
@@ -46,7 +46,7 @@ http_GET() {
 		shift
 	done
 
-	local url="$(cli_get_val ${1})"
+	local url="$(cli_get_val "${1}")"
 	shift
 
 	# Add credentials to the URL.

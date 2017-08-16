@@ -37,24 +37,24 @@ ip_tunnel_add() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--mode=*)
-				mode="$(cli_get_val ${1})"
+				mode="$(cli_get_val "${1}")"
 				;;
 			--ttl=*)
-				ttl="$(cli_get_val ${1})"
+				ttl="$(cli_get_val "${1}")"
 				;;
 			--remote-address=*)
-				remote_address="$(cli_get_val ${1})"
+				remote_address="$(cli_get_val "${1}")"
 				;;
 			--local-address=*)
-				local_address="$(cli_get_val ${1})"
+				local_address="$(cli_get_val "${1}")"
 				;;
 
 			# Keys for VTI
 			--ikey=*)
-				ikey="$(cli_get_val ${1})"
+				ikey="$(cli_get_val "${1}")"
 				;;
 			--okey=*)
-				okey="$(cli_get_val ${1})"
+				okey="$(cli_get_val "${1}")"
 				;;
 		esac
 		shift

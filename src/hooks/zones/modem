@@ -94,39 +94,39 @@ hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--apn=*)
-				APN=$(cli_get_val ${1})
+				APN=$(cli_get_val "${1}")
 				;;
 			--auth=*)
-				AUTH=$(cli_get_val ${1})
+				AUTH=$(cli_get_val "${1}")
 				;;
 			--baudrate=*)
-				BAUDRATE=$(cli_get_val ${1})
+				BAUDRATE=$(cli_get_val "${1}")
 				assert isoneif "${BAUDRATE}" ${SERIAL_BAUDRATES}
 				;;
 			--device=*)
-				DEVICE=$(cli_get_val ${1})
+				DEVICE=$(cli_get_val "${1}")
 				;;
 			--imsi=*)
 				IMSI="$(cli_get_val "${1}")"
 				;;
 			--monitor-device=*)
-				MONITOR_DEVICE=$(cli_get_val ${1})
+				MONITOR_DEVICE=$(cli_get_val "${1}")
 				;;
 			--mtu=*)
-				MTU=$(cli_get_val ${1})
+				MTU=$(cli_get_val "${1}")
 				assert isinteger ${MTU}
 				;;
 			--password=*)
-				PASSWORD=$(cli_get_val ${1})
+				PASSWORD=$(cli_get_val "${1}")
 				;;
 			--phone-number=*)
-				PHONE_NUMBER=$(cli_get_val ${1})
+				PHONE_NUMBER=$(cli_get_val "${1}")
 				;;
 			--pin=*)
-				PIN=$(cli_get_val ${1})
+				PIN=$(cli_get_val "${1}")
 				;;
 			--username=*)
-				USERNAME=$(cli_get_val ${1})
+				USERNAME=$(cli_get_val "${1}")
 				;;
 			*)
 				echo "Unknown argument: ${1}" >&2

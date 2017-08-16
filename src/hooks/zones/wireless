@@ -48,19 +48,19 @@ hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--phy=*|--parent-device=*)
-				PHY=$(cli_get_val ${1})
+				PHY=$(cli_get_val "${1}")
 				;;
 			--encryption-mode=*)
-				ENCRYPTION_MODE=$(cli_get_val ${1})
+				ENCRYPTION_MODE=$(cli_get_val "${1}")
 				;;
 			--address=*)
-				ADDRESS=$(cli_get_val ${1})
+				ADDRESS=$(cli_get_val "${1}")
 				;;
 			--ssid=*)
-				SSID=$(cli_get_val ${1})
+				SSID=$(cli_get_val "${1}")
 				;;
 			--key=*)
-				KEY=$(cli_get_val ${1})
+				KEY=$(cli_get_val "${1}")
 				;;
 			*)
 				warning "Unrecognized option: ${1}"

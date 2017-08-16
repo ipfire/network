@@ -34,7 +34,7 @@ hook_new() {
 	assert isset zone
 	shift
 
-	if ! hook_parse_cmdline $@; then
+	if ! hook_parse_cmdline "$@"; then
 		return ${EXIT_ERROR}
 	fi
 
@@ -56,7 +56,7 @@ hook_edit() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_parse_cmdline $@; then
+	if ! hook_parse_cmdline "$@"; then
 		return ${EXIT_ERROR}
 	fi
 
@@ -112,7 +112,7 @@ hook_port() {
 	local ret
 	case "${action}" in
 		add|create|edit|rem|show)
-			hook_port_${action} "${zone}" $@
+			hook_port_${action} "${zone}" "$@"
 			ret=$?
 			;;
 		*)
@@ -150,7 +150,7 @@ hook_default_port_create() {
 }
 
 hook_port_create() {
-	hook_default_port_create $@
+	hook_default_port_create "$@"
 }
 
 hook_default_port_remove() {
@@ -163,7 +163,7 @@ hook_default_port_remove() {
 }
 
 hook_port_remove() {
-	hook_default_port_remove $@
+	hook_default_port_remove "$@"
 }
 
 hook_port_up() {

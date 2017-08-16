@@ -35,10 +35,10 @@ bonding_create() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
-				address=$(cli_get_val ${1})
+				address=$(cli_get_val "${1}")
 				;;
 			--mode=*)
-				mode=$(cli_get_val ${1})
+				mode=$(cli_get_val "${1}")
 				;;
 			*)
 				error "Unrecognized argument: ${1}"

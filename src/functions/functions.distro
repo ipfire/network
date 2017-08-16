@@ -26,8 +26,8 @@ __os_release() {
 
 	local line k v
 	while read line; do
-		k=$(cli_get_key ${line})
-		v=$(cli_get_val ${line})
+		k=$(cli_get_key "${line}")
+		v=$(cli_get_val "${line}")
 
 		if [ "${what}" = "${k}" ]; then
 			echo "${v//\"/}"

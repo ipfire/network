@@ -45,22 +45,22 @@ hook_new() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
-				ADDRESS=$(cli_get_val ${1})
+				ADDRESS=$(cli_get_val "${1}")
 				;;
 			--bssid=*)
-				BSSID=$(cli_get_val ${1})
+				BSSID=$(cli_get_val "${1}")
 				;;
 			--channel=*)
-				CHANNEL=$(cli_get_val ${1})
+				CHANNEL=$(cli_get_val "${1}")
 				;;
 			--mtu=*)
 				MTU="$(cli_get_val "${1}")"
 				;;
 			--phy=*)
-				PHY=$(cli_get_val ${1})
+				PHY=$(cli_get_val "${1}")
 				;;
 			--ssid=*)
-				SSID=$(cli_get_val ${1})
+				SSID=$(cli_get_val "${1}")
 				;;
 			*)
 				warning "Ignoring unknown argument '${1}'"
@@ -91,16 +91,16 @@ hook_edit() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--bssid=*)
-				BSSID=$(cli_get_val ${1})
+				BSSID=$(cli_get_val "${1}")
 				;;
 			--channel=*)
-				CHANNEL=$(cli_get_val ${1})
+				CHANNEL=$(cli_get_val "${1}")
 				;;
 			--mtu=*)
 				MTU="$(cli_get_val "${1}")"
 				;;
 			--ssid=*)
-				SSID=$(cli_get_val ${1})
+				SSID=$(cli_get_val "${1}")
 				;;
 			*)
 				warning "Unknown argument '${1}'"

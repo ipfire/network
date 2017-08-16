@@ -34,10 +34,10 @@ modem_chat() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--timeout=*)
-				timeout=$(cli_get_val ${1})
+				timeout=$(cli_get_val "${1}")
 				;;
 			--answer=*)
-				answer=$(cli_get_val ${1})
+				answer=$(cli_get_val "${1}")
 				;;
 			--quiet)
 				quiet="true"
@@ -204,7 +204,7 @@ modem_sim_unlocked() {
 }
 
 modem_sim_locked() {
-	modem_sim_unlocked $@ && return ${EXIT_FALSE} || return ${EXIT_TRUE}
+	modem_sim_unlocked "$@" && return ${EXIT_FALSE} || return ${EXIT_TRUE}
 }
 
 modem_sim_unlock() {

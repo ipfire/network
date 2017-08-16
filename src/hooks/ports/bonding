@@ -39,16 +39,16 @@ hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
-				ADDRESS=$(cli_get_val ${1})
+				ADDRESS=$(cli_get_val "${1}")
 				;;
 			--miimon=*)
-				MIIMON=$(cli_get_val ${1})
+				MIIMON=$(cli_get_val "${1}")
 				;;
 			--mode=*)
-				MODE=$(cli_get_val ${1})
+				MODE=$(cli_get_val "${1}")
 				;;
 			+*)
-				local slave=$(cli_get_val ${1:1})
+				local slave=$(cli_get_val "${1:1}")
 
 				if port_exists "${slave}"; then
 					if list_match "${slave}" ${SLAVES}; then
@@ -61,7 +61,7 @@ hook_parse_cmdline() {
 				fi
 				;;
 			-*)
-				local slave=$(cli_get_val ${1:1})
+				local slave=$(cli_get_val "${1:1}")
 				if ! list_remove SLAVES "${slave}"; then
 					warning "Port ${slave} is not a slave of this bonding device"
 				fi
@@ -84,7 +84,7 @@ hook_parse_cmdline() {
 }
 
 hook_new() {
-	if ! hook_parse_cmdline $@; then
+	if ! hook_parse_cmdline "$@"; then
 		return ${EXIT_ERROR}
 	fi
 
@@ -106,7 +106,7 @@ hook_new() {
 hook_edit() {
 	local port=${1}
 
-	if ! hook_default_edit $@; then
+	if ! hook_default_edit "$@"; then
 		return ${EXIT_ERROR}
 	fi
 

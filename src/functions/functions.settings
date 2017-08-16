@@ -37,7 +37,7 @@ settings_read() {
 				list_append valid_keys "${arg}"
 				;;
 		esac
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	if [ -d "${file}" ]; then
 		error "Not a configuration file: '${file}'"
@@ -58,7 +58,7 @@ settings_read() {
 					list_match ${key} ${valid_keys} || continue
 				fi
 
-				val=$(cli_get_val ${line})
+				val=$(cli_get_val "${line}")
 				val=$(settings_strip ${val})
 
 				# Assign variable.
@@ -99,7 +99,7 @@ settings_read_array() {
 					fi
 				fi
 
-				val=$(cli_get_val ${line})
+				val=$(cli_get_val "${line}")
 				val=$(settings_strip ${val})
 
 				# Assign variable.
@@ -146,7 +146,7 @@ settings_write() {
 				;;
 		esac
 		shift
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	# Check if all values to be written are sane
 	if isset check_func && ! settings_check "${check_func}"; then
@@ -159,7 +159,7 @@ settings_write() {
 	> ${settings_file}
 
 	local param
-	for param in $(list_sort $@); do
+	for param in $(list_sort "$@"); do
 		echo "${param}=\"${!param}\"" >> ${settings_file}
 	done
 }
@@ -179,7 +179,7 @@ settings_remove() {
 settings_print() {
 	local param
 
-	for param in $(list_sort $@); do
+	for param in $(list_sort "$@"); do
 		printf "%-32s = %s\n" "${param}" "${!param}"
 	done
 }
@@ -219,8 +219,8 @@ settings_set() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			*=*)
-				local key=$(cli_get_key ${1})
-				local val=$(cli_get_val ${1})
+				local key=$(cli_get_key "${1}")
+				local val=$(cli_get_val "${1}")
 
 				log INFO "Setting configuration option '${key}=${val}'".
 
@@ -258,8 +258,8 @@ network_settings_set() {
 
 		case "${arg}" in
 			*=*)
-				local key=$(cli_get_key ${arg})
-				local val=$(cli_get_val ${arg})
+				local key=$(cli_get_key "${arg}")
+				local val=$(cli_get_val "${arg}")
 
 				case "${key}" in
 					DNS_RANDOMIZE|DNS_SEARCH_DOMAIN|DNS_USE_LOCAL_RESOLVER)

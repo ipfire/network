@@ -149,7 +149,7 @@ port_is_attached() {
 }
 
 port_is_up() {
-	device_is_up $@
+	device_is_up "$@"
 }
 
 port_new() {
@@ -161,7 +161,7 @@ port_new() {
 		return ${EXIT_ERROR}
 	fi
 
-	hook_exec port "${hook}" new $@
+	hook_exec port "${hook}" new "$@"
 }
 
 port_destroy() {
@@ -203,7 +203,7 @@ port_destroy() {
 }
 
 port_create() {
-	port_cmd "create" $@
+	port_cmd "create" "$@"
 }
 
 port_remove() {
@@ -234,7 +234,7 @@ port_restart() {
 }
 
 port_edit() {
-	port_cmd edit $@
+	port_cmd edit "$@"
 }
 
 port_up() {
@@ -252,11 +252,11 @@ port_up() {
 }
 
 port_down() {
-	port_cmd down $@
+	port_cmd down "$@"
 }
 
 port_status() {
-	port_cmd status $@
+	port_cmd status "$@"
 }
 
 port_cmd() {
@@ -275,7 +275,7 @@ port_cmd() {
 		return ${EXIT_ERROR}
 	fi
 
-	hook_exec port ${hook} ${cmd} ${port} $@
+	hook_exec port ${hook} ${cmd} ${port} "$@"
 }
 
 ports_get() {
@@ -414,7 +414,7 @@ ports_lowest_address() {
 }
 
 port_identify() {
-	device_identify $@
+	device_identify "$@"
 }
 
 port_get_color() {

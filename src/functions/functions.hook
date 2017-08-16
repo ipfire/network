@@ -155,11 +155,11 @@ config_get_hook() {
 }
 
 hook_zone_exists() {
-	hook_exists zone $@
+	hook_exists zone "$@"
 }
 
 hook_zone_exec() {
-	hook_exec zone $@
+	hook_exec zone "$@"
 }
 
 hook_zone_get_all() {
@@ -167,11 +167,11 @@ hook_zone_get_all() {
 }
 
 hook_config_exists() {
-	hook_exists config $@
+	hook_exists config "$@"
 }
 
 hook_config_exec() {
-	hook_exec config $@
+	hook_exec config "$@"
 }
 
 hook_config_get_all() {

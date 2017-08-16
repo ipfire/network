@@ -51,13 +51,13 @@ hook_new() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--parent-device=*)
-				PARENT_DEVICE=$(cli_get_val ${1})
+				PARENT_DEVICE=$(cli_get_val "${1}")
 				;;
 			--address=*)
-				ADDRESS=$(cli_get_val ${1})
+				ADDRESS=$(cli_get_val "${1}")
 				;;
 			--tag=*)
-				TAG=$(cli_get_val ${1})
+				TAG=$(cli_get_val "${1}")
 				;;
 			*)
 				warning "Unknown argument '${1}'"
@@ -83,7 +83,7 @@ hook_edit() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
-				ADDRESS=$(cli_get_val ${1})
+				ADDRESS=$(cli_get_val "${1}")
 				;;
 			*)
 				warning "Unknown argument '${1}'"

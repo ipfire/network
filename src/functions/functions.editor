@@ -121,7 +121,7 @@ editor_check() {
 	shift
 
 	# Execute the check function
-	"${check_func}" $@
+	"${check_func}" "$@"
 	local ret="${?}"
 
 	case "${ret}" in

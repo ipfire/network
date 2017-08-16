@@ -269,13 +269,13 @@ cli_vpn_security_policies() {
 
 		case "${key}" in
 			cipher|compression|integrity|lifetime|pfs|show)
-				vpn_security_policies_${key} ${security_policy} $@
+				vpn_security_policies_${key} ${security_policy} "$@"
 				;;
 			group-type)
-				vpn_security_policies_group_type ${security_policy} $@
+				vpn_security_policies_group_type ${security_policy} "$@"
 				;;
 			key-exchange)
-				vpn_security_policies_key_exchange ${security_policy} $@
+				vpn_security_policies_key_exchange ${security_policy} "$@"
 				;;
 			*)
 				error "Unrecognized argument: ${key}"
@@ -288,10 +288,10 @@ cli_vpn_security_policies() {
 
 		case "${action}" in
 			new)
-				vpn_security_policies_new $@
+				vpn_security_policies_new "$@"
 				;;
 			destroy)
-				vpn_security_policies_destroy $@
+				vpn_security_policies_destroy "$@"
 				;;
 			""|*)
 				if [ -n "${action}" ]; then
@@ -419,7 +419,7 @@ vpn_security_policies_read_config() {
 	if [ $# -eq 0 ] && [ -n "${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}" ]; then
 		list_append args ${VPN_SECURITY_POLICIES_CONFIG_SETTINGS}
 	else
-		list_append args $@
+		list_append args "$@"
 	fi
 
 	local path="$(vpn_security_policies_path ${name})"
@@ -875,7 +875,7 @@ vpn_security_policies_lifetime(){
 	fi
 
 	if ! isinteger value; then
-		value=$(parse_time $@)
+		value=$(parse_time "$@")
 		if [ ! $? -eq 0 ]; then
 			log ERROR "Parsing the passed time was not sucessful please check the passed values."
 			return ${EXIT_ERROR}
@@ -974,7 +974,7 @@ vpn_security_policies_new() {
 # Function that deletes based on the passed parameters one ore more vpn security policies
 vpn_security_policies_destroy() {
 	local name
-	for name in $@; do
+	for name in "$@"; do
 		if ! vpn_security_policy_exists ${name}; then
 			log ERROR "The vpn security policy ${name} does not exist."
 			continue

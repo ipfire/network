@@ -64,16 +64,16 @@ hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--server-address=*)
-				SERVER_ADDRESS=$(cli_get_val ${1})
+				SERVER_ADDRESS=$(cli_get_val "${1}")
 				;;
 			--local-ipv4-address=*)
-				LOCAL_ADDRESS=$(cli_get_val ${1})
+				LOCAL_ADDRESS=$(cli_get_val "${1}")
 				;;
 			--local-ipv6-address=*)
-				LOCAL_ADDRESS6=$(cli_get_val ${1})
+				LOCAL_ADDRESS6=$(cli_get_val "${1}")
 				;;
 			--auto-update-endpoint=*)
-				local val="$(cli_get_val ${1})"
+				local val="$(cli_get_val "${1}")"
 
 				if enabled val; then
 					AUTO_UPDATE_ENDPOINT="true"
@@ -82,13 +82,13 @@ hook_parse_cmdline() {
 				fi
 				;;
 			--tunnel-id=*)
-				TUNNEL_ID="$(cli_get_val ${1})"
+				TUNNEL_ID="$(cli_get_val "${1}")"
 				;;
 			--username=*)
-				USERNAME="$(cli_get_val ${1})"
+				USERNAME="$(cli_get_val "${1}")"
 				;;
 			--password=*)
-				PASSWORD="$(cli_get_val ${1})"
+				PASSWORD="$(cli_get_val "${1}")"
 				;;
 			*)
 				echo "Unknown option: ${1}" >&2

@@ -66,7 +66,7 @@ hook_default_edit() {
 
 	port_settings_read "${port}" ${HOOK_SETTINGS}
 
-	if ! hook_parse_cmdline $@; then
+	if ! hook_parse_cmdline "$@"; then
 		return ${EXIT_ERROR}
 	fi
 
@@ -76,7 +76,7 @@ hook_default_edit() {
 }
 
 hook_edit() {
-	hook_default_edit $@
+	hook_default_edit "$@"
 }
 
 # Returns a list of all children of this port
@@ -132,7 +132,7 @@ hook_default_up() {
 
 # Depends on the port existing
 hook_up() {
-	hook_default_up $@
+	hook_default_up "$@"
 }
 
 hook_default_down() {
@@ -151,5 +151,5 @@ hook_default_down() {
 }
 
 hook_down() {
-	hook_default_down $@
+	hook_default_down "$@"
 }

@@ -87,7 +87,7 @@ hook_parse_cmdline() {
 				exit ${EXIT_CONF_ERROR}
 				;;
 		esac
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	if ! isset ADDRESS; then
 		error "You need to provide an IPv4 address"
@@ -115,7 +115,7 @@ hook_new() {
 
 	assert zone_exists "${zone}"
 
-	if ! hook_parse_cmdline $@; then
+	if ! hook_parse_cmdline "$@"; then
 		# Return an error if the parsing of the cmd line fails
 		return ${EXIT_ERROR}
 	fi

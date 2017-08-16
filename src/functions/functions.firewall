@@ -740,9 +740,9 @@ _firewall_parse_rule_line() {
 			return ${EXIT_ERROR}
 		fi
 
-		val=$(cli_get_val ${arg})
+		val=$(cli_get_val "${arg}")
 		assign "${key}" "${val}"
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	# action must always be set.
 	if ! isset action; then

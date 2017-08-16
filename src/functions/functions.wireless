@@ -38,17 +38,17 @@ wireless_create() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
-				address=$(cli_get_val ${1})
+				address=$(cli_get_val "${1}")
 				;;
 			--channel=*)
 				channel=$(cli_get_val "${1}")
 				;;
 			--phy=*)
-				phy=$(cli_get_val ${1})
+				phy=$(cli_get_val "${1}")
 				phy=$(phy_get ${phy})
 				;;
 			--type=*)
-				type=$(cli_get_val ${1})
+				type=$(cli_get_val "${1}")
 
 				# ap --> __ap
 				[ "${type}" = "ap" ] && type="__ap"
@@ -322,13 +322,13 @@ wireless_ibss_join() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--bssid=*)
-				bssid="$(cli_get_val ${1})"
+				bssid="$(cli_get_val "${1}")"
 				;;
 			--essid=*)
-				essid="$(cli_get_val ${1})"
+				essid="$(cli_get_val "${1}")"
 				;;
 			--channel=*)
-				local channel="$(cli_get_val ${1})"
+				local channel="$(cli_get_val "${1}")"
 
 				# Save the frequency of the channel instead
 				# of the channel itself.

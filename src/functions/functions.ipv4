@@ -260,11 +260,11 @@ ipv4_netmask2prefix() {
 }
 
 ipv4_get_network() {
-	ip_get_network $@
+	ip_get_network "$@"
 }
 
 ipv4_get_broadcast() {
-	inetcalc -4 -b $@ && return ${EXIT_OK} || return ${EXIT_ERROR}
+	inetcalc -4 -b "$@" && return ${EXIT_OK} || return ${EXIT_ERROR}
 }
 
 ipv4_encode() {
@@ -315,15 +315,15 @@ ipv4_addr_gt() {
 }
 
 ipv4_addr_ge() {
-	ipv4_addr_eq $@ || ipv4_addr_gt $@
+	ipv4_addr_eq "$@" || ipv4_addr_gt "$@"
 }
 
 ipv4_addr_lt() {
-	! ipv4_addr_eq $@ && ! ipv4_addr_gt $@
+	! ipv4_addr_eq "$@" && ! ipv4_addr_gt "$@"
 }
 
 ipv4_addr_le() {
-	ipv4_addr_eq $@ || ! ipv4_addr_gt $@
+	ipv4_addr_eq "$@" || ! ipv4_addr_gt "$@"
 }
 
 ipv4_range() {

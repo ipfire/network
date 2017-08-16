@@ -399,18 +399,18 @@ pppd_write_config() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--auth=*)
-				auth=$(cli_get_val ${1})
+				auth=$(cli_get_val "${1}")
 				;;
 			--baudrate=*)
-				baudrate=$(cli_get_val ${1})
+				baudrate=$(cli_get_val "${1}")
 				assert isoneof baudrate ${SERIAL_BAUDRATES}
 				;;
 			--connect-command=*)
-				connect_cmd=$(cli_get_val ${1})
+				connect_cmd=$(cli_get_val "${1}")
 				;;
 			# Enable or disable the use of the default asyncmap.
 			--default-asyncmap=*)
-				value=$(cli_get_val ${1})
+				value=$(cli_get_val "${1}")
 				if enabled value; then
 					default_asyncmap="true"
 				else
@@ -419,15 +419,15 @@ pppd_write_config() {
 				;;
 			# The name of the created ppp interface.
 			--interface=*)
-				interface=$(cli_get_val ${1})
+				interface=$(cli_get_val "${1}")
 				;;
 			# IPv6
 			--ipv6=*)
-				ipv6="$(cli_get_val ${1})"
+				ipv6="$(cli_get_val "${1}")"
 				;;
 			# LCP echo failure.
 			--lcr-echo-failure=*)
-				lcr_echo_failure=$(cli_get_val ${1})
+				lcr_echo_failure=$(cli_get_val "${1}")
 
 				if ! isinteger ${lcr_echo_failure}; then
 					error "--lcr-echo-failure= requires a number"
@@ -436,7 +436,7 @@ pppd_write_config() {
 				;;
 			# LCP echo interval.
 			--lcr-echo-interval=*)
-				lcr_echo_interval=$(cli_get_val ${1})
+				lcr_echo_interval=$(cli_get_val "${1}")
 
 				if ! isinteger ${lcr_echo_failure}; then
 					error "--lcr-echo-interval= requires a number"
@@ -445,23 +445,23 @@ pppd_write_config() {
 				;;
 			# Maximum Transmission Unit
 			--mtu=*)
-				mtu=$(cli_get_val ${1})
+				mtu=$(cli_get_val "${1}")
 				;;
 			# Maximum Receive Unit
 			--mru=*)
-				mru=$(cli_get_val ${1})
+				mru=$(cli_get_val "${1}")
 				;;
 			--password=*)
-				password=$(cli_get_val ${1})
+				password=$(cli_get_val "${1}")
 				;;
 			--plugin=*)
-				plugin=$(cli_get_val ${1})
+				plugin=$(cli_get_val "${1}")
 				;;
 			--plugin-options=*)
-				plugin_options=$(cli_get_val ${1})
+				plugin_options=$(cli_get_val "${1}")
 				;;
 			--pty=*)
-				pty=$(cli_get_val ${1})
+				pty=$(cli_get_val "${1}")
 				;;
 			# Refused authentication methods
 			--refuse=*)
@@ -470,13 +470,13 @@ pppd_write_config() {
 				;;
 			# Sets if the modem is a serial device.
 			--serial=*)
-				serial=$(cli_get_val ${1})
+				serial=$(cli_get_val "${1}")
 				;;
 			--serial-device=*)
-				serial_device=$(cli_get_val ${1})
+				serial_device=$(cli_get_val "${1}")
 				;;
 			--username=*)
-				username=$(cli_get_val ${1})
+				username=$(cli_get_val "${1}")
 				;;
 			*)
 				log WARNING "Unhandled argument: ${1}"

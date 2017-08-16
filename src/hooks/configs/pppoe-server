@@ -65,24 +65,24 @@ hook_parse_cmdline() {
 				done
 				;;
 			--max-sessions=*)
-				MAX_SESSIONS=$(cli_get_val ${1})
+				MAX_SESSIONS=$(cli_get_val "${1}")
 				if ! isinteger ${MAX_SESSIONS} || ! [ ${MAX_SESSIONS} -ge 0 ]; then
 					error "Invalid value for '--max-session'. This value must be an integer greate or eqal zero."
 					exit ${EXIT_ERROR}
 				fi
 				;;
 			--mtu=*)
-				MTU=$(cli_get_val ${1})
+				MTU=$(cli_get_val "${1}")
 				if ! mtu_is_valid "ipv4" ${MTU}; then
 					error "Invalid value for '--mtu'. Cannot be larger then 9000 or smaller than 576"
 					exit ${EXIT_ERROR}
 				fi
 				;;
 			--service-name=*)
-				SERVICE_NAME=$(cli_get_val ${1})
+				SERVICE_NAME=$(cli_get_val "${1}")
 				;;
 			--subnet=*)
-				SUBNET=$(cli_get_val ${1})
+				SUBNET=$(cli_get_val "${1}")
 				if ! ipv4_net_is_valid "${SUBNET}"; then
 					error "Invalid IPv4 Subnet ${SUBNET}."
 					exit ${EXIT_ERROR}
@@ -105,7 +105,7 @@ hook_new() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_parse_cmdline $@; then
+	if ! hook_parse_cmdline "$@"; then
 		# Return an error if the parsing of the cmd line fails
 		return ${EXIT_ERROR}
 	fi

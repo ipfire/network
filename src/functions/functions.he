@@ -27,13 +27,13 @@ he_tunnelbroker_endpoint_update() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--username=*)
-				username="$(cli_get_val ${1})"
+				username="$(cli_get_val "${1}")"
 				;;
 			--password=*)
-				password="$(cli_get_val ${1})"
+				password="$(cli_get_val "${1}")"
 				;;
 			--tunnel-id=*)
-				tunnel_id="$(cli_get_val ${1})"
+				tunnel_id="$(cli_get_val "${1}")"
 				;;
 		esac
 		shift

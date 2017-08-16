@@ -39,13 +39,13 @@ done
 network_settings_read
 
 cli_settings() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-settings
 		exit ${EXIT_OK}
 	fi
 
 	if [ -n "${1}" ]; then
-		network_settings_set $@
+		network_settings_set "$@"
 		network_settings_write
 	else
 		network_settings_print
@@ -53,7 +53,7 @@ cli_settings() {
 }
 
 cli_device() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-device
 		exit ${EXIT_OK}
 	fi
@@ -63,7 +63,7 @@ cli_device() {
 
 	case "${action}" in
 		list)
-			cli_device_list $@
+			cli_device_list "$@"
 			;;
 		*)
 			local device="${action}"
@@ -79,22 +79,22 @@ cli_device() {
 
 			case "${action}" in
 				discover)
-					cli_device_discover ${device} $@
+					cli_device_discover ${device} "$@"
 					;;
 				identify)
-					device_identify "${device}" $@
+					device_identify "${device}" "$@"
 					;;
 				monitor)
-					cli_device_monitor "${device}" $@
+					cli_device_monitor "${device}" "$@"
 					;;
 				status)
 					cli_device_status ${device}
 					;;
 				unlock)
-					cli_device_serial_unlock ${device} $@
+					cli_device_serial_unlock ${device} "$@"
 					;;
 				ussd)
-					cli_device_send_ussd_command "${device}" $@
+					cli_device_send_ussd_command "${device}" "$@"
 					;;
 				*)
 					cli_show_man network-device
@@ -339,7 +339,7 @@ cli_device_discover() {
 }
 
 cli_device_serial_unlock() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-device
 		exit ${EXIT_OK}
 	fi
@@ -482,7 +482,7 @@ cli_device_list() {
 }
 
 cli_hostname() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network
 		exit ${EXIT_OK}
 	fi
@@ -501,7 +501,7 @@ cli_hostname() {
 }
 
 cli_port() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-port
 		exit ${EXIT_OK}
 	fi
@@ -516,13 +516,13 @@ cli_port() {
 
 		case "${action}" in
 			edit|create|remove|up|down|status|identify)
-				port_${action} "${port}" $@
+				port_${action} "${port}" "$@"
 				;;
 			color)
-				color_cli "port" "${port}" $@
+				color_cli "port" "${port}" "$@"
 				;;
 			description)
-				description_cli "port" "${port}" $@
+				description_cli "port" "${port}" "$@"
 				;;
 			*)
 				error "Unrecognized argument: ${action}"
@@ -535,7 +535,7 @@ cli_port() {
 
 		case "${action}" in
 			new|destroy)
-				port_${action} $@
+				port_${action} "$@"
 				;;
 			*)
 				error "Unrecognized argument: ${action}"
@@ -546,7 +546,7 @@ cli_port() {
 }
 
 cli_zone() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-zone
 		exit ${EXIT_OK}
 	fi
@@ -574,19 +574,19 @@ cli_zone() {
 
 		case "${action}" in
 			port)
-				cli_zone_port "${zone}" $@
+				cli_zone_port "${zone}" "$@"
 				;;
 			rename)
-				cli_zone_rename "${zone}" $@
+				cli_zone_rename "${zone}" "$@"
 				;;
 			config|disable|down|edit|enable|identify|status|up)
-				zone_${action} ${zone} $@
+				zone_${action} ${zone} "$@"
 				;;
 			color)
-				color_cli "zone" "${zone}" $@
+				color_cli "zone" "${zone}" "$@"
 				;;
 			description)
-				description_cli "zone" ${zone} $@
+				description_cli "zone" ${zone} "$@"
 				;;
 			*)
 				error "Unrecognized argument: ${action}"
@@ -600,10 +600,10 @@ cli_zone() {
 
 		case "${action}" in
 			new)
-				cli_zone_new $@
+				cli_zone_new "$@"
 				;;
 			destroy)
-				cli_zone_destroy $@
+				cli_zone_destroy "$@"
 				;;
 			""|*)
 				if [ -n "${action}" ]; then
@@ -619,19 +619,19 @@ cli_zone() {
 }
 
 cli_zone_new() {
-	if cli_help_requested $@ || [ $# -lt 2 ]; then
+	if cli_help_requested "$@" || [ $# -lt 2 ]; then
 		cli_show_man network-zone-new
 		exit ${EXIT_OK}
 	fi
 
-	zone_new $@
+	zone_new "$@"
 }
 
 # Removes a zone either immediately, if it is currently down,
 # or adds a tag that the removal will be done when the zone
 # is brought down the next time.
 cli_zone_destroy() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-zone
 		exit ${EXIT_OK}
 	fi
@@ -651,7 +651,7 @@ cli_zone_destroy() {
 }
 
 cli_zone_port() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-zone-port
 		exit ${EXIT_OK}
 	fi
@@ -666,7 +666,7 @@ cli_zone_port() {
 
 		case "${action}" in
 			edit)
-				zone_port_edit "${zone}" "${port}" $@
+				zone_port_edit "${zone}" "${port}" "$@"
 				;;
 			*)
 				error "Unrecognised argument: ${action}"
@@ -679,10 +679,10 @@ cli_zone_port() {
 
 		case "${action}" in
 			attach)
-				zone_port_attach "${zone}" $@
+				zone_port_attach "${zone}" "$@"
 				;;
 			detach)
-				zone_port_detach "${zone}" $@
+				zone_port_detach "${zone}" "$@"
 				;;
 			*)
 				error "Unrecognised argument: ${action}"
@@ -695,7 +695,7 @@ cli_zone_port() {
 }
 
 cli_zone_rename() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-zone
 		exit ${EXIT_OK}
 	fi
@@ -739,7 +739,7 @@ cli_list_hooks() {
 	local type=${1}
 	shift
 
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-zone
 		exit ${EXIT_OK}
 	fi
@@ -759,7 +759,7 @@ cli_dhcpd() {
 	local proto=${1}
 	shift
 
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-dhcp
 		exit ${EXIT_OK}
 	fi
@@ -769,7 +769,7 @@ cli_dhcpd() {
 
 	case "${action}" in
 		edit)
-			dhcpd_edit ${proto} $@
+			dhcpd_edit ${proto} "$@"
 			;;
 		start)
 			dhcpd_start ${proto}
@@ -787,10 +787,10 @@ cli_dhcpd() {
 			dhcpd_reload ${proto}
 			;;
 		subnet)
-			cli_dhcpd_subnet ${proto} $@
+			cli_dhcpd_subnet ${proto} "$@"
 			;;
 		show|"")
-			cli_dhcpd_show ${proto} $@
+			cli_dhcpd_show ${proto} "$@"
 			;;
 		*)
 			error "Unrecognized action: ${action}"
@@ -879,7 +879,7 @@ cli_dhcpd_subnet() {
 	local proto=${1}
 	shift
 
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-dhcp-subnet
 		exit ${EXIT_OK}
 	fi
@@ -889,10 +889,10 @@ cli_dhcpd_subnet() {
 
 	case "${action}" in
 		new)
-			dhcpd_subnet_new ${proto} $@
+			dhcpd_subnet_new ${proto} "$@"
 			;;
 		remove)
-			dhcpd_subnet_remove ${proto} $@
+			dhcpd_subnet_remove ${proto} "$@"
 			;;
 		*:*/*|*.*.*.*/*)
 			local subnet=${action}
@@ -908,7 +908,7 @@ cli_dhcpd_subnet() {
 
 			case "${action}" in
 				edit)
-					dhcpd_subnet_edit ${proto} ${subnet} $@
+					dhcpd_subnet_edit ${proto} ${subnet} "$@"
 					local ret=$?
 
 					if [ ${ret} -eq ${EXIT_OK} ]; then
@@ -917,15 +917,15 @@ cli_dhcpd_subnet() {
 					exit ${ret}
 					;;
 				range)
-					cli_dhcpd_subnet_range ${proto} ${subnet} $@
+					cli_dhcpd_subnet_range ${proto} ${subnet} "$@"
 					exit $?
 					;;
 				show)
-					cli_dhcpd_subnet_show ${proto} ${subnet} $@
+					cli_dhcpd_subnet_show ${proto} ${subnet} "$@"
 					exit $?
 					;;
 				options)
-					cli_dhcpd_subnet_options ${proto} ${subnet} $@
+					cli_dhcpd_subnet_options ${proto} ${subnet} "$@"
 					exit $?
 					;;
 				*)
@@ -962,10 +962,10 @@ cli_dhcpd_subnet_range() {
 
 	case "${action}" in
 		new)
-			dhcpd_subnet_range_new ${proto} ${subnet} $@ || exit ${EXIT_ERROR}
+			dhcpd_subnet_range_new ${proto} ${subnet} "$@" || exit ${EXIT_ERROR}
 			;;
 		remove)
-			dhcpd_subnet_range_remove ${proto} ${subnet} $@ || exit ${EXIT_ERROR}
+			dhcpd_subnet_range_remove ${proto} ${subnet} "$@" || exit ${EXIT_ERROR}
 			;;
 		*)
 			error "Unrecognized action: ${action}"
@@ -1044,7 +1044,7 @@ cli_dhcpd_subnet_options() {
 		case "${1}" in
 			*=*)
 				key=$(cli_get_key ${1})
-				val=$(cli_get_val ${1})
+				val=$(cli_get_val "${1}")
 
 				dhcpd_subnet_option_set ${proto} ${subnet} ${key} ${val}
 		esac
@@ -1053,12 +1053,12 @@ cli_dhcpd_subnet_options() {
 }
 
 cli_start() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network
 		exit ${EXIT_OK}
 	fi
 
-	local zones=$(zones_get $@)
+	local zones=$(zones_get "$@")
 
 	local zone
 	for zone in ${zones}; do
@@ -1069,12 +1069,12 @@ cli_start() {
 }
 
 cli_stop() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network
 		exit ${EXIT_OK}
 	fi
 
-	local zones=$(zones_get $@)
+	local zones=$(zones_get "$@")
 
 	local zone
 	for zone in ${zones}; do
@@ -1085,21 +1085,21 @@ cli_stop() {
 }
 
 cli_restart() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network
 		exit ${EXIT_OK}
 	fi
 
-	cli_stop $@
+	cli_stop "$@"
 
 	# Give the system some time to calm down
 	sleep ${TIMEOUT_RESTART}
 
-	cli_start $@
+	cli_start "$@"
 }
 
 cli_status() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network
 		exit ${EXIT_OK}
 	fi
@@ -1110,7 +1110,7 @@ cli_status() {
 	local log_disable_stdout=${LOG_DISABLE_STDOUT}
 	LOG_DISABLE_STDOUT="true"
 
-	local zones=$(zones_get $@)
+	local zones=$(zones_get "$@")
 
 	local zone
 	for zone in ${zones}; do
@@ -1122,7 +1122,7 @@ cli_status() {
 }
 
 cli_reset() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network
 		exit ${EXIT_OK}
 	fi
@@ -1219,7 +1219,7 @@ cli_help() {
 }
 
 cli_dns_server() {
-	if cli_help_requested $@; then
+	if cli_help_requested "$@"; then
 		cli_show_man network-dns-server
 		exit ${EXIT_OK}
 	fi
@@ -1282,22 +1282,22 @@ cli_raw() {
 			db_dump
 			;;
 		ipsec-connection-exists)
-			ipsec_connection_exists $@
+			ipsec_connection_exists "$@"
 			;;
 		list-devices)
 			device_list
 			;;
 		list-dhcpd-ranges-of-subnet)
-			dhcpd_subnet_range_list $@
+			dhcpd_subnet_range_list "$@"
 			;;
 		list-dhcpd-settings)
-			dhcpd_global_settings_list $@
+			dhcpd_global_settings_list "$@"
 			;;
 		list-dhcpd-subnets)
-			dhcpd_subnet_list $@
+			dhcpd_subnet_list "$@"
 			;;
 		list-dhcpd-subnet-options)
-			dhcpd_subnet_options_list $@
+			dhcpd_subnet_options_list "$@"
 			;;
 		list-dns-servers)
 			dns_server_list
@@ -1306,7 +1306,7 @@ cli_raw() {
 			port_list_free
 			;;
 		list-hooks)
-			hook_list $@
+			hook_list "$@"
 			;;
 		list-ipsec-connections)
 			ipsec_list_connections
@@ -1315,7 +1315,7 @@ cli_raw() {
 			port_list
 			;;
 		list-ports-of-zone)
-			zone_get_ports $@
+			zone_get_ports "$@"
 			;;
 		list-vpn-security-policies-all)
 			vpn_security_policies_list_all
@@ -1330,22 +1330,22 @@ cli_raw() {
 			zones_get_next_free
 			;;
 		list-zone-config-ids)
-			zone_config_list_ids $@
+			zone_config_list_ids "$@"
 			;;
 		list-zone-config-hids)
-			zone_config_list_hids $@
+			zone_config_list_hids "$@"
 			;;
 		vpn-security-policy-exists)
-			vpn_security_policy_exists $@
+			vpn_security_policy_exists "$@"
 			;;
 		zone-name-is-valid)
-			zone_name_is_valid $@
+			zone_name_is_valid "$@"
 			;;
 		zone-config-id-is-valid)
-			zone_config_id_is_valid $@
+			zone_config_id_is_valid "$@"
 			;;
 		zone-config-hid-is-valid)
-			zone_config_hid_is_valid $@
+			zone_config_hid_is_valid "$@"
 			;;
 		*)
 			error "No such command: ${cmd}"
@@ -1363,25 +1363,25 @@ case "${action}" in
 		;;
 
 	settings|hostname|port|device|zone|start|stop|restart|status|reset|route|vpn)
-		cli_${action} $@
+		cli_${action} "$@"
 		;;
 
 	# DHCP server configuration (automatically detects which protocol to use).
 	dhcpv6|dhcpv4)
-		cli_dhcpd ${action/dhcp/ip} $@
+		cli_dhcpd ${action/dhcp/ip} "$@"
 		;;
 
 	# DNS server configuration.
 	dns-server)
-		cli_dns_server $@
+		cli_dns_server "$@"
 		;;
 
 	""|help|--help|-h)
-		cli_help $@
+		cli_help "$@"
 		;;
 
 	raw)
-		cli_raw $@
+		cli_raw "$@"
 		;;
 
 	*)

@@ -64,10 +64,10 @@ hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--access-concentrator=*)
-				ACCESS_CONCENTRATOR=$(cli_get_val ${1})
+				ACCESS_CONCENTRATOR=$(cli_get_val "${1}")
 				;;
 			--auth=*)
-				AUTH=$(cli_get_val ${1})
+				AUTH=$(cli_get_val "${1}")
 				;;
 			--ipv6=*)
 				local value="$(cli_get_val "${1}")"
@@ -78,19 +78,19 @@ hook_parse_cmdline() {
 				fi
 				;;
 			--mtu=*)
-				MTU=$(cli_get_val ${1})
+				MTU=$(cli_get_val "${1}")
 				;;
 			--password=*)
-				PASSWORD=$(cli_get_val ${1})
+				PASSWORD=$(cli_get_val "${1}")
 				;;
 			--prefix-delegation=*)
 				PREFIX_DELEGATION="$(cli_get_bool "${1}")"
 				;;
 			--service-name=*)
-				SERVICE_NAME=$(cli_get_val ${1})
+				SERVICE_NAME=$(cli_get_val "${1}")
 				;;
 			--username=*)
-				USERNAME=$(cli_get_val ${1})
+				USERNAME=$(cli_get_val "${1}")
 				;;
 			*)
 				warning "Unknown argument: ${1}" >&2

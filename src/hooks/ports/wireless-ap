@@ -59,28 +59,28 @@ hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--broadcast-ssid=*)
-				BROADCAST_SSID=$(cli_get_val ${1})
+				BROADCAST_SSID=$(cli_get_val "${1}")
 				;;
 			--channel=*)
-				CHANNEL=$(cli_get_val ${1})
+				CHANNEL=$(cli_get_val "${1}")
 				;;
 			--encryption=*)
-				ENCRYPTION=$(cli_get_val ${1})
+				ENCRYPTION=$(cli_get_val "${1}")
 				;;
 			--key=*)
-				KEY=$(cli_get_val ${1})
+				KEY=$(cli_get_val "${1}")
 				;;
 			--mac=*)
-				ADDRESS=$(cli_get_val ${1})
+				ADDRESS=$(cli_get_val "${1}")
 				;;
 			--mode=*)
-				MODE=$(cli_get_val ${1})
+				MODE=$(cli_get_val "${1}")
 				;;
 			--phy=*)
-				PHY=$(cli_get_val ${1})
+				PHY=$(cli_get_val "${1}")
 				;;
 			--ssid=*)
-				SSID=$(cli_get_val ${1})
+				SSID=$(cli_get_val "${1}")
 				;;
 			*)
 				warning "Ignoring unknown argument '${1}'"
@@ -98,7 +98,7 @@ hook_edit() {
 	local port=${1}
 	assert isset port
 
-	if ! hook_default_edit $@; then
+	if ! hook_default_edit "$@"; then
 		return ${EXIT_ERROR}
 	fi
 

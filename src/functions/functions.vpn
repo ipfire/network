@@ -25,10 +25,10 @@ cli_vpn() {
 
 	case "${action}" in
 		ipsec)
-			cli_ipsec $@
+			cli_ipsec "$@"
 			;;
 		security-policies)
-			cli_vpn_security_policies $@
+			cli_vpn_security_policies "$@"
 			;;
 		*)
 			error "Unrecognized argument: ${action}"

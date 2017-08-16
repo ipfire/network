@@ -65,10 +65,10 @@ cli_ipsec() {
 
 	case "${action}" in
 		connection)
-			cli_ipsec_connection $@
+			cli_ipsec_connection "$@"
 			;;
 		pool)
-			cli_ipsec_pool $@
+			cli_ipsec_pool "$@"
 			;;
 		*)
 			error "Unrecognized argument: ${action}"
@@ -86,7 +86,7 @@ cli_ipsec_connection() {
 
 		case "${key}" in
 			authentication|down|disable|dpd|enable|inactivity_timeout|local|mode|peer|pool|remote|security_policy|start_action|up)
-				ipsec_connection_${key} ${connection} $@
+				ipsec_connection_${key} ${connection} "$@"
 				;;
 			show)
 				cli_ipsec_connection_show "${connection}"
@@ -103,10 +103,10 @@ cli_ipsec_connection() {
 
 		case "${action}" in
 			new)
-				ipsec_connection_new $@
+				ipsec_connection_new "$@"
 				;;
 			destroy)
-				cli_ipsec_connection_destroy $@
+				cli_ipsec_connection_destroy "$@"
 				;;
 			""|*)
 				if [ -n "${action}" ]; then
@@ -127,7 +127,7 @@ cli_ipsec_pool() {
 
 		case "${key}" in
 			dns_server|network)
-				ipsec_pool_${key} ${pool} $@
+				ipsec_pool_${key} ${pool} "$@"
 				;;
 			show)
 				cli_ipsec_pool_show "${pool}"
@@ -144,10 +144,10 @@ cli_ipsec_pool() {
 
 		case "${action}" in
 			new)
-				ipsec_pool_new $@
+				ipsec_pool_new "$@"
 				;;
 			destroy)
-				ipsec_pool_destroy $@
+				ipsec_pool_destroy "$@"
 				;;
 			""|*)
 				if [ -n "${action}" ]; then
@@ -363,7 +363,7 @@ ipsec_connection_read_config() {
 	if [ $# -eq 0 ] && [ -n "${IPSEC_CONNECTION_CONFIG_SETTINGS}" ]; then
 		list_append args ${IPSEC_CONNECTION_CONFIG_SETTINGS}
 	else
-		list_append args $@
+		list_append args "$@"
 	fi
 
 	local path="${NETWORK_IPSEC_CONNS_DIR}/${connection}/settings"
@@ -477,10 +477,10 @@ ipsec_connection_authentication() {
 
 	case ${cmd} in
 		mode)
-			ipsec_connection_authentication_mode "${connection}" $@
+			ipsec_connection_authentication_mode "${connection}" "$@"
 			;;
 		pre-shared-key)
-			ipsec_connection_authentication_psk "${connection}" $@
+			ipsec_connection_authentication_psk "${connection}" "$@"
 			;;
 		*)
 			log ERROR "Unrecognized argument: ${cmd}"
@@ -574,13 +574,13 @@ ipsec_connection_dpd() {
 
 	case ${cmd} in
 		action)
-			ipsec_connection_dpd_action "${connection}" $@
+			ipsec_connection_dpd_action "${connection}" "$@"
 			;;
 		delay)
-			ipsec_connection_dpd_delay "${connection}" $@
+			ipsec_connection_dpd_delay "${connection}" "$@"
 			;;
 		timeout)
-			ipsec_connection_dpd_timeout "${connection}" $@
+			ipsec_connection_dpd_timeout "${connection}" "$@"
 			;;
 		*)
 			log ERROR "Unrecognized argument: ${cmd}"
@@ -621,7 +621,7 @@ ipsec_connection_dpd_delay() {
 	local value=$@
 
 	if ! isinteger value; then
-		value=$(parse_time $@)
+		value=$(parse_time "$@")
 		if [ ! $? -eq 0 ]; then
 			log ERROR "Parsing the passed time was not sucessful please check the passed values."
 			return ${EXIT_ERROR}
@@ -653,7 +653,7 @@ ipsec_connection_dpd_timeout() {
 	local value=$@
 
 	if ! isinteger value; then
-		value=$(parse_time $@)
+		value=$(parse_time "$@")
 		if [ ! $? -eq 0 ]; then
 			log ERROR "Parsing the passed time was not sucessful please check the passed values."
 			return ${EXIT_ERROR}
@@ -686,13 +686,13 @@ ipsec_connection_local() {
 
 	case ${cmd} in
 		address)
-			ipsec_connection_local_address "${connection}" $@
+			ipsec_connection_local_address "${connection}" "$@"
 			;;
 		id)
-			ipsec_connection_id "${connection}" "LOCAL" $@
+			ipsec_connection_id "${connection}" "LOCAL" "$@"
 			;;
 		prefix)
-			ipsec_connection_prefix "${connection}" "LOCAL" $@
+			ipsec_connection_prefix "${connection}" "LOCAL" "$@"
 			;;
 		*)
 			log ERROR "Unrecognized argument: ${cmd}"
@@ -1003,11 +1003,11 @@ ipsec_connection_remote() {
 
 	case ${cmd} in
 		id)
-			ipsec_connection_id "${connection}" "REMOTE" $@
+			ipsec_connection_id "${connection}" "REMOTE" "$@"
 			;;
 
 		prefix)
-			ipsec_connection_prefix "${connection}" "REMOTE" $@
+			ipsec_connection_prefix "${connection}" "REMOTE" "$@"
 			;;
 		*)
 			log ERROR "Unrecognized argument: ${cmd}"
@@ -1030,7 +1030,7 @@ ipsec_connection_inactivity_timeout() {
 	local value=$@
 
 	if ! isinteger value; then
-		value=$(parse_time $@)
+		value=$(parse_time "$@")
 		if [ ! $? -eq 0 ]; then
 			log ERROR "Parsing the passed time was not sucessful please check the passed values."
 			return ${EXIT_ERROR}
@@ -1195,7 +1195,7 @@ ipsec_connection_new() {
 # Function that deletes based on the passed parameters one ore more vpn security policies
 ipsec_connection_destroy() {
 	local connection
-	for connection in $@; do
+	for connection in "$@"; do
 		if ! ipsec_connection_exists "${connection}"; then
 			log ERROR "The VPN IPsec connection ${connection} does not exist."
 			continue
@@ -1598,7 +1598,7 @@ ipsec_pool_read_config() {
 	if [ $# -eq 0 ] && [ -n "${IPSEC_POOL_CONFIG_SETTINGS}" ]; then
 		list_append args ${IPSEC_POOL_CONFIG_SETTINGS}
 	else
-		list_append args $@
+		list_append args "$@"
 	fi
 
 	local path="${NETWORK_IPSEC_POOLS_DIR}/${pool}/settings"
@@ -1679,7 +1679,7 @@ ipsec_pool_new() {
 # one ore more vpn ipsec pools
 ipsec_pool_destroy() {
 	local pool
-	for pool in $@; do
+	for pool in "$@"; do
 		if ! ipsec_pool_exists "${pool}"; then
 			log ERROR "The VPN IPsec pool ${pool} does not exist."
 			continue

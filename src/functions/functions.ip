@@ -114,13 +114,13 @@ ip_prefix_is_valid() {
 }
 
 ip_get_network() {
-	inetcalc -n $@ && return ${EXIT_OK} || return ${EXIT_ERROR}
+	inetcalc -n "$@" && return ${EXIT_OK} || return ${EXIT_ERROR}
 }
 
 ip_network_is_subset_of() {
 	assert [ $# -eq 2 ]
 
-	inetcalc -s $@ && return ${EXIT_TRUE} || return ${EXIT_FALSE}
+	inetcalc -s "$@" && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
 
 ip_address_add() {

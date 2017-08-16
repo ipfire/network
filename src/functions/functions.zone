@@ -210,7 +210,7 @@ zone_cmd() {
 	local hook="$(zone_get_hook ${zone})"
 	assert isset hook
 
-	hook_exec zone "${hook}" "${cmd}" "${zone}" $@
+	hook_exec zone "${hook}" "${cmd}" "${zone}" "$@"
 }
 
 zone_new() {
@@ -238,7 +238,7 @@ zone_new() {
 	# Create directories for configs and ports
 	mkdir -p $(zone_dir ${zone})/{configs,ports}
 
-	hook_zone_exec "${hook}" "new" "${zone}" $@
+	hook_zone_exec "${hook}" "new" "${zone}" "$@"
 	local ret=$?
 
 	# Maybe the zone new hook did not exit correctly.
@@ -275,7 +275,7 @@ zone_edit() {
 		return ${EXIT_ERROR}
 	fi
 
-	hook_zone_exec ${hook} edit ${zone} $@
+	hook_zone_exec ${hook} edit ${zone} "$@"
 }
 
 zone_rename() {
@@ -360,7 +360,7 @@ zone_up() {
 
 	zone_db ${zone} starting
 
-	hook_zone_exec ${hook} up ${zone} $@
+	hook_zone_exec ${hook} up ${zone} "$@"
 
 	zone_db ${zone} started
 
@@ -390,7 +390,7 @@ zone_down() {
 
 	zone_db ${zone} stopping
 
-	hook_zone_exec ${hook} down ${zone} $@
+	hook_zone_exec ${hook} down ${zone} "$@"
 
 	zone_db ${zone} stopped
 
@@ -437,7 +437,7 @@ zone_identify() {
 	local port
 	for port in $(zone_get_ports "${zone}"); do
 		# Identify all the ports
-		port_identify "${port}" --background $@
+		port_identify "${port}" --background "$@"
 
 		# Save the PIDs of the subprocesses
 		list_append pids "$(cmd_background_get_pid)"
@@ -716,7 +716,7 @@ zone_show() {
 zones_show() {
 	local zone
 
-	for zone in $(zones_get $@); do
+	for zone in $(zones_get "$@"); do
 		zone_show ${zone}
 	done
 }
@@ -956,23 +956,23 @@ zone_port_cmd() {
 	assert isset hook
 
 	# Dispatch command to hook
-	hook_zone_exec "${hook}" "${cmd}" "${zone}" "${port}" $@
+	hook_zone_exec "${hook}" "${cmd}" "${zone}" "${port}" "$@"
 }
 
 zone_port_create() {
-	zone_port_cmd "port_create" $@
+	zone_port_cmd "port_create" "$@"
 }
 
 zone_port_remove() {
-	zone_port_cmd "port_remove" $@
+	zone_port_cmd "port_remove" "$@"
 }
 
 zone_port_up() {
-	zone_port_cmd "port_up" $@
+	zone_port_cmd "port_up" "$@"
 }
 
 zone_port_down() {
-	zone_port_cmd "port_down" $@
+	zone_port_cmd "port_down" "$@"
 }
 
 # The next two functions automagically bring up and down
@@ -1013,7 +1013,7 @@ zone_port_stop() {
 }
 
 zone_port_status() {
-	zone_port_cmd "port_status" $@
+	zone_port_cmd "port_status" "$@"
 }
 
 zone_ports_cmd() {
@@ -1029,28 +1029,28 @@ zone_ports_cmd() {
 
 	local port
 	for port in $(zone_get_ports ${zone}); do
-		hook_zone_exec "${hook}" "${cmd}" "${zone}" "${port}" $@
+		hook_zone_exec "${hook}" "${cmd}" "${zone}" "${port}" "$@"
 	done
 }
 
 zone_ports_create() {
-	zone_ports_cmd "port_create" $@
+	zone_ports_cmd "port_create" "$@"
 }
 
 zone_ports_remove() {
-	zone_ports_cmd "port_remove" $@
+	zone_ports_cmd "port_remove" "$@"
 }
 
 zone_ports_up() {
-	zone_ports_cmd "port_up" $@
+	zone_ports_cmd "port_up" "$@"
 }
 
 zone_ports_down() {
-	zone_ports_cmd "port_down" $@
+	zone_ports_cmd "port_down" "$@"
 }
 
 zone_ports_status() {
-	zone_ports_cmd "port_status" $@
+	zone_ports_cmd "port_status" "$@"
 }
 
 zone_configs_cmd() {
@@ -1067,20 +1067,20 @@ zone_configs_cmd() {
 		local config_hook="$(zone_config_get_hook "${zone}" "${config}")"
 		assert isset config_hook
 
-		hook_config_exec "${config_hook}" "${cmd}" "${zone}" "${config}" $@
+		hook_config_exec "${config_hook}" "${cmd}" "${zone}" "${config}" "$@"
 	done
 }
 
 zone_configs_up() {
-	zone_configs_cmd "up" $@
+	zone_configs_cmd "up" "$@"
 }
 
 zone_configs_down() {
-	zone_configs_cmd "down" $@
+	zone_configs_cmd "down" "$@"
 }
 
 zone_configs_status() {
-	zone_configs_cmd "status" $@
+	zone_configs_cmd "status" "$@"
 }
 
 zone_configs_list() {
@@ -1234,7 +1234,7 @@ zone_config_get_hook_from_id() {
 }
 
 zone_has_ip() {
-	device_has_ip $@
+	device_has_ip "$@"
 }
 
 zone_db() {
@@ -1256,7 +1256,7 @@ zone_is_up() {
 }
 
 zone_is_down() {
-	! zone_is_up $@
+	! zone_is_up "$@"
 }
 
 zone_get_supported_port_hooks() {
@@ -1288,7 +1288,7 @@ zone_settings_read() {
 	if [ $# -eq 0 ] && [ -n "${HOOK_SETTINGS}" ]; then
 		list_append args ${HOOK_SETTINGS}
 	else
-		list_append args $@
+		list_append args "$@"
 	fi
 
 	# Save the HOOK variable.
@@ -1357,7 +1357,7 @@ zone_config_settings_read() {
 	if [ $# -eq 0 ] && [ -n "${HOOK_CONFIG_SETTINGS}" ]; then
 		list_append args ${HOOK_CONFIG_SETTINGS}
 	else
-		list_append args $@
+		list_append args "$@"
 	fi
 
 	local path="$(zone_dir "${zone}")/configs/${config}"
@@ -1415,7 +1415,7 @@ zone_port_settings_read() {
 	if [ $# -eq 0 ] && [ -n "${HOOK_PORT_SETTINGS}" ]; then
 		list_append args ${HOOK_PORT_SETTINGS}
 	else
-		list_append args $@
+		list_append args "$@"
 	fi
 
 	local path="$(zone_dir "${zone}")/ports/${port}"

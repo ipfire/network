@@ -30,10 +30,10 @@ bridge_create() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
-				address=$(cli_get_val ${1})
+				address=$(cli_get_val "${1}")
 				;;
 			--mtu=*)
-				mtu=$(cli_get_val ${1})
+				mtu=$(cli_get_val "${1}")
 				;;
 			*)
 				error "Unrecognized argument: ${1}"

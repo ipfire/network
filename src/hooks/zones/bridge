@@ -268,7 +268,7 @@ hook_port_attach() {
 				PRIORITY="$(cli_get_val "${arg}")"
 				;;
 		esac
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	if ! zone_port_settings_write "${zone}" "${port}"; then
 		exit ${EXIT_ERROR}
@@ -294,7 +294,7 @@ hook_port_detach() {
 }
 
 hook_port_edit() {
-	hook_port_attach $@
+	hook_port_attach "$@"
 }
 
 hook_port_up() {

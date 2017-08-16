@@ -44,7 +44,7 @@ firewall_zone_config() {
 }
 
 firewall_zone_exists() {
-	local file=$(firewall_zone_config $@)
+	local file=$(firewall_zone_config "$@")
 
 	[ -r "${file}" ] && return ${EXIT_TRUE} || return ${EXIT_FALSE}
 }
@@ -106,10 +106,10 @@ firewall_zone_edit() {
 		while [ $# -gt 0 ]; do
 			case "${1}" in
 				--masquerade4=*)
-					MASQUERADE4=$(cli_get_val ${1})
+					MASQUERADE4=$(cli_get_val "${1}")
 					;;
 				--policy=*)
-					POLICY=$(cli_get_val ${1})
+					POLICY=$(cli_get_val "${1}")
 					;;
 				*)
 					warning "Unknown option: ${1}"

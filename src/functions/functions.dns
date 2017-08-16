@@ -199,13 +199,13 @@ dns_server_parse_line() {
 	while read -r arg; do
 		case "${arg}" in
 			server=*)
-				server=$(cli_get_val ${arg})
+				server=$(cli_get_val "${arg}")
 				;;
 			priority=*)
-				priority=$(cli_get_val ${arg})
+				priority=$(cli_get_val "${arg}")
 				;;
 		esac
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	# The server address must be set.
 	isset server || return ${EXIT_ERROR}

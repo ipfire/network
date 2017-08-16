@@ -99,7 +99,7 @@ __bitmap_to_processor_ids() {
 }
 
 __processor_id_to_bitmap() {
-	hex $(( 1 << $@ ))
+	hex $(( 1 << "$@" ))
 }
 
 interrupt_set_smp_affinity() {

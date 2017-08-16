@@ -64,7 +64,7 @@ ipv6_device_forwarding_enable() {
 				accept_ra=2
 				;;
 		esac
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	sysctl_set "net.ipv6.conf.${device}.forwarding" 1
 
@@ -191,7 +191,7 @@ ipv6_address_add() {
 				wait_for_dad="false"
 				;;
 		esac
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	local cmd="ip addr add ${address} dev ${device} scope ${scope}"
 
@@ -280,7 +280,7 @@ ipv6_address_change_lifetime() {
 				valid_lft="$(cli_get_val "${arg}")"
 				;;
 		esac
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	local cmd="ip -6 addr change ${address} dev ${device} scope global"
 
@@ -385,7 +385,7 @@ ipv6_device_get_addresses() {
 				scope="$(cli_get_val "${arg}")"
 				;;
 		esac
-	done <<< "$(args $@)"
+	done <<< "$(args "$@")"
 
 	local cmd="ip -o addr show dev ${device}"
 	if isset scope; then
@@ -411,7 +411,7 @@ ipv6_device_get_addresses() {
 }
 
 ipv6_format() {
-	inetcalc -6 -f $@
+	inetcalc -6 -f "$@"
 }
 
 ipv6_addr_eq() {
@@ -435,17 +435,17 @@ ipv6_addr_gt() {
 }
 
 ipv6_addr_ge() {
-	ipv6_addr_eq $@ || ipv6_addr_gt $@
+	ipv6_addr_eq "$@" || ipv6_addr_gt "$@"
 }
 
 ipv6_addr_lt() {
-	! ipv6_addr_eq $@ && ! ipv6_addr_gt $@
+	! ipv6_addr_eq "$@" && ! ipv6_addr_gt "$@"
 }
 
 ipv6_addr_le() {
-	ipv6_addr_eq $@ || ! ipv6_addr_gt $@
+	ipv6_addr_eq "$@" || ! ipv6_addr_gt "$@"
 }
 
 ipv6_get_network() {
-	ip_get_network $@
+	ip_get_network "$@"
 }
