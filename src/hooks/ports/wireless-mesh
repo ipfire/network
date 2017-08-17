@@ -23,7 +23,7 @@
 
 HOOK_PORT_PATTERN="${PORT_PATTERN_MESH}"
 
-HOOK_SETTINGS="HOOK ADDRESS MESH_ID CHANNEL PHY"
+HOOK_SETTINGS="HOOK ADDRESS MESH_ID CHANNEL PHY PSK"
 
 hook_check_settings() {
 	assert ismac ADDRESS
@@ -47,6 +47,9 @@ hook_parse_cmdline() {
 				;;
 			--phy=*)
 				PHY=$(cli_get_val "${1}")
+				;;
+			--pre-shared-key=*)
+				PSK=$(cli_get_val "${1}")
 				;;
 			*)
 				warning "Ignoring unknown argument '${1}'"
