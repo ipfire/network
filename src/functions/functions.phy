@@ -35,13 +35,7 @@ phy_exists() {
 }
 
 phy_list() {
-	local phy
-
-	for phy in $(phy_dir)/*; do
-		[ -d "${phy}" ] || continue
-
-		basename ${phy}
-	done
+	list_directory "$(phy_dir)"
 }
 
 phy_get() {

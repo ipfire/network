@@ -1188,21 +1188,12 @@ _vpn_security_policies_make_esp_proposal() {
 
 # List all security policies
 vpn_security_policies_list_all() {
-	local security_policy
-	for security_policy in ${NETWORK_SHARE_DIR}/vpn/security-policies/*; do
-		[ -f ${security_policy} ] || continue
-		basename ${security_policy}
-	done
+	list_directory "${NETWORK_SHARE_DIR}/vpn/security-policies"
 
 	# Add all user-defined policies
 	vpn_security_policies_list_user
 }
 
 vpn_security_policies_list_user() {
-	local security_policy
-	for security_policy in ${NETWORK_CONFIG_DIR}/vpn/security-policies/*; do
-		[ -f ${security_policy} ] || continue
-
-		basename ${security_policy}
-	done
+	list_directory "${NETWORK_CONFIG_DIR}/vpn/security-policies"
 }

@@ -25,13 +25,7 @@ port_dir() {
 }
 
 port_list() {
-	local port
-	for port in $(port_dir)/*; do
-		port="$(basename "${port}")"
-		if port_exists "${port}"; then
-			print "${port}"
-		fi
-	done
+	list_directory "$(port_dir)"
 }
 
 port_list_in_use() {
@@ -280,8 +274,7 @@ port_cmd() {
 
 ports_get() {
 	local port
-	for port in $(port_dir)/*; do
-		port=$(basename ${port})
+	for port in $(list_directory "$(port_dir)"); do
 		if port_exists ${port}; then
 			echo "${port}"
 		fi

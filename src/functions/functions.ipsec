@@ -1195,11 +1195,7 @@ ipsec_connection_destroy() {
 
 # List all ipsec connections
 ipsec_list_connections() {
-	local connection
-	for connection in ${NETWORK_IPSEC_CONNS_DIR}/*; do
-		[ -d ${connection} ] || continue
-		basename ${connection}
-	done
+	list_directory "${NETWORK_IPSEC_CONNS_DIR}"
 }
 
 ipsec_connection_to_strongswan() {

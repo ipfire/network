@@ -457,10 +457,8 @@ zone_get_ports() {
 	assert isset zone
 
 	local port
-	for port in $(zone_dir ${zone})/ports/*; do
-		port=$(basename ${port})
-
-		if port_exists ${port}; then
+	for port in $(list_directory "$(zone_dir ${zone})/ports"); do
+		if port_exists "${port}"; then
 			echo "${port}"
 		fi
 	done
@@ -472,9 +470,7 @@ zone_get_ports_num() {
 
 	local counter=0
 	local port
-	for port in $(zone_dir "${zone}")/ports/*; do
-		port="$(basename "${port}")"
-
+	for port in $(list_directory "$(zone_dir "${zone}")/ports"); do
 		if port_exists "${port}"; then
 			counter=$(( ${counter} + 1 ))
 		fi
@@ -723,11 +719,10 @@ zones_show() {
 
 zones_get_all() {
 	local zone
-	for zone in $(zone_dir)/*; do
-		zone=$(basename ${zone})
-		zone_exists ${zone} || continue
-
-		echo "${zone}"
+	for zone in $(list_directory "$(zone_dir)"); do
+		if zone_exists ${zone}; then
+			echo "${zone}"
+		fi
 	done
 }
 
@@ -816,12 +811,7 @@ zones_get() {
 zone_ports_list() {
 	local zone=${1}
 
-	local port
-	for port in $(zone_dir ${zone})/ports/*; do
-		[ -e "${port}" ] || continue
-
-		echo $(basename ${port})
-	done
+	list_directory "$(zone_dir ${zone})/ports"
 }
 
 zone_port_attach() {
@@ -1086,12 +1076,7 @@ zone_configs_status() {
 zone_configs_list() {
 	local zone=${1}
 
-	local config
-	for config in $(zone_dir ${zone})/configs/*; do
-		[ -e "${config}" ] || continue
-
-		basename ${config}
-	done
+	list_directory "$(zone_dir ${zone})/configs"
 }
 
 zone_config_get_new_id() {

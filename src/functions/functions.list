@@ -194,3 +194,21 @@ list_head() {
 
 	return ${EXIT_ERROR}
 }
+
+list_directory() {
+	local dir="${1}"
+
+	# Only works for directories
+	if [ ! -d "${dir}" ]; then
+		return ${EXIT_ERROR}
+	fi
+
+	local path
+	for path in ${dir}/*; do
+		if [ -e "${path}" ]; then
+			basename "${path}"
+		fi
+	done
+
+	return ${EXIT_OK}
+}

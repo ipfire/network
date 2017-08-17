@@ -113,10 +113,7 @@ device_ifindex_to_name() {
 	assert isset idx
 
 	local device device_idx
-	for device in ${SYS_CLASS_NET}/*; do
-		device=$(basename ${device})
-		device_exists ${device} || continue
-
+	for device in $(list_directory "${SYS_CLASS_NET}"); do
 		device_idx=$(device_get_ifindex ${device})
 
 		if [ "${device_idx}" = "${idx}" ]; then
@@ -493,18 +490,13 @@ device_set_address() {
 
 device_get() {
 	local device
-	local devices
-
-	for device in ${SYS_CLASS_NET}/*; do
-		device=$(basename ${device})
-
+	for device in $(list_directory "${SYS_CLASS_NET}"); do
 		# bonding_masters is no device
 		[ "${device}" = "bonding_masters" ] && continue
 
-		devices="${devices} ${device}"
+		echo "${device}"
 	done
 
-	echo ${devices}
 	return ${EXIT_OK}
 }
 
@@ -1016,12 +1008,7 @@ device_get_queues() {
 
 	local device=${1}
 
-	local queue
-	for queue in ${SYS_CLASS_NET}/${device}/queues/*; do
-		[ -d "${queue}" ] || continue
-
-		basename "${queue}"
-	done
+	list_directory "${SYS_CLASS_NET}/${device}/queues"
 }
 
 device_supports_multiqueue() {

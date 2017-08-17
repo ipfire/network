@@ -20,14 +20,7 @@
 ###############################################################################
 
 interrupts_list() {
-	local interrupt
-	for interrupt in /proc/irq/*; do
-		[ -d "${interrupt}" ] || continue
-
-		basename "${interrupt}"
-	done
-
-	return ${EXIT_OK}
+	list_directory "/proc/irq"
 }
 
 interrupt_use_smp_affinity() {
