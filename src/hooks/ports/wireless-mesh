@@ -72,7 +72,6 @@ hook_parse_cmdline() {
 		ADDRESS=$(mac_generate)
 	fi
 
-	# XXX check if wireless channel is valid
 	# Check if channel is valid
 	if ! wireless_channel_is_valid "${CHANNEL}"; then
 		log ERROR "Channel is invalid: ${CHANNEL}"
