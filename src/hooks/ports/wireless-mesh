@@ -102,6 +102,17 @@ hook_create() {
 			--type="mesh-point" || return $?
 	fi
 
+	# Write WPA supplicant configuration
+	local config_file="$(wpa_supplicant_config_dir "${port}")/wpa_supplicant.conf"
+
+	wpa_supplicant_config_write \
+		"${port}" \
+		"${config_file}" \
+		--channel="${CHANNEL}" \
+		--key="${PSK}" \
+		--mode="802.11s" \
+		--ssid="${MESH_ID}" || return $?
+
 	return ${EXIT_OK}
 }
 
@@ -114,6 +125,19 @@ hook_remove() {
 	fi
 
 	exit ${EXIT_OK}
+}
+
+hook_up() {
+	local port="${1}"
+
+	# Start WPA supplicant
+	wpa_supplicant_start "${port}"
+}
+
+hook_down() {
+	local port="${1}"
+
+	wpa_supplicant_stop "${port}"
 }
 
 hook_hotplug() {
