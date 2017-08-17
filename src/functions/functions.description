@@ -32,7 +32,7 @@ description_format_filename() {
 			echo "$(zone_dir ${name})/description"
 			;;
 		port)
-			echo "$(port_dir ${name})/description"
+			echo "${NETWORK_PORTS_DIR}/${name}/description"
 			;;
 	esac
 }

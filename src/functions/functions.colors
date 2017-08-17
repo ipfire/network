@@ -158,7 +158,7 @@ color_format_filename() {
 			echo "$(zone_dir ${name})/color"
 			;;
 		port)
-			echo "$(port_dir ${name})/color"
+			echo "${NETWORK_PORTS_DIR}/${name}/color"
 			;;
 	esac
 }

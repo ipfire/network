@@ -19,13 +19,8 @@
 #                                                                             #
 ###############################################################################
 
-port_dir() {
-	local port="${1}"
-	echo "${NETWORK_CONFIG_DIR}/ports/${port}"
-}
-
 port_list() {
-	list_directory "$(port_dir)"
+	list_directory "${NETWORK_PORTS_DIR}"
 }
 
 port_list_in_use() {
@@ -108,7 +103,7 @@ port_file() {
 	local port="${1}"
 	assert isset port
 
-	echo "$(port_dir ${port})/settings"
+	echo "${NETWORK_PORTS_DIR}/${port}/settings"
 }
 
 port_exists() {
@@ -193,7 +188,7 @@ port_destroy() {
 		return ${EXIT_ERROR}
 	fi
 
-	rm -rf $(port_dir ${port})
+	rm -rf "${NETWORK_PORTS_DIR}/${port}"
 }
 
 port_create() {
@@ -274,7 +269,7 @@ port_cmd() {
 
 ports_get() {
 	local port
-	for port in $(list_directory "$(port_dir)"); do
+	for port in $(list_directory "${NETWORK_PORTS_DIR}"); do
 		if port_exists ${port}; then
 			echo "${port}"
 		fi
