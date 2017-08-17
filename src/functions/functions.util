@@ -248,11 +248,16 @@ file_get_age() {
 	return ${EXIT_ERROR}
 }
 
+make_directory() {
+	local path="${1}"
+
+	mkdir -p "${path}"
+}
+
 make_parent_dir() {
 	local path="${1}"
 
-	local dirname="$(dirname "${path}")"
-	mkdir -p "${dirname}"
+	make_directory "$(dirname "${path}")"
 }
 
 enabled() {

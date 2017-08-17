@@ -29,7 +29,7 @@ description_format_filename() {
 			echo "${NETWORK_IPSEC_CONNS_DIR}/${name}/description"
 			;;
 		zone)
-			echo "$(zone_dir ${name})/description"
+			echo "${NETWORK_ZONES_DIR}/${name}/description"
 			;;
 		port)
 			echo "${NETWORK_PORTS_DIR}/${name}/description"

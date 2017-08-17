@@ -19,17 +19,11 @@
 #                                                                             #
 ###############################################################################
 
-zone_dir() {
-	local zone=${1}
-
-	echo "${NETWORK_ZONE_DIR}/zones/${zone}"
-}
-
 zone_exists() {
 	local zone=${1}
 	assert isset zone
 
-	[ -d "$(zone_dir ${zone})" ]
+	[ -d "${NETWORK_ZONES_DIR}/${zone}" ]
 }
 
 zone_match() {
@@ -68,7 +62,7 @@ zone_get_hook() {
 	local zone=${1}
 	assert isset zone
 
-	config_get_hook $(zone_dir ${zone})/settings
+	config_get_hook "${NETWORK_ZONES_DIR}/${zone}/settings"
 }
 
 zone_start() {
@@ -233,10 +227,11 @@ zone_new() {
 		return ${EXIT_ERROR}
 	fi
 
-	mkdir -p $(zone_dir ${zone})
-
 	# Create directories for configs and ports
-	mkdir -p $(zone_dir ${zone})/{configs,ports}
+	local what
+	for what in configs ports; do
+		make_directory "${NETWORK_ZONES_DIR}/${zone}/${what}"
+	done
 
 	hook_zone_exec "${hook}" "new" "${zone}" "$@"
 	local ret=$?
@@ -305,7 +300,7 @@ zone_rename() {
 	zone_disable "${zone}"
 
 	# Rename the configuration files
-	mv -f "$(zone_dir "${zone}")" "$(zone_dir "${name}")"
+	mv -f "${NETWORK_ZONES_DIR}/${zone}" "${NETWORK_ZONES_DIR}/${name}"
 
 	# Enable the zone if it was enabled before
 	[ ${zone_was_enabled} -eq ${EXIT_TRUE} ] && zone_enable "${name}"
@@ -335,7 +330,7 @@ zone_destroy() {
 	# Disable zone auto-start
 	zone_disable "${zone}"
 
-	rm -rf "$(zone_dir "${zone}")"
+	rm -rf "${NETWORK_ZONES_DIR}/${zone}"
 }
 
 zone_up() {
@@ -457,7 +452,7 @@ zone_get_ports() {
 	assert isset zone
 
 	local port
-	for port in $(list_directory "$(zone_dir ${zone})/ports"); do
+	for port in $(list_directory "${NETWORK_ZONES_DIR}/${zone}/ports"); do
 		if port_exists "${port}"; then
 			echo "${port}"
 		fi
@@ -470,7 +465,7 @@ zone_get_ports_num() {
 
 	local counter=0
 	local port
-	for port in $(list_directory "$(zone_dir "${zone}")/ports"); do
+	for port in $(list_directory "${NETWORK_ZONES_DIR}/${zone}/ports"); do
 		if port_exists "${port}"; then
 			counter=$(( ${counter} + 1 ))
 		fi
@@ -491,7 +486,7 @@ zone_has_port() {
 	assert isset zone
 	assert isset port
 
-	[ -e "$(zone_dir ${zone})/ports/${port}" ]
+	[ -e "${NETWORK_ZONES_DIR}/${zone}/ports/${port}" ]
 }
 
 zone_config() {
@@ -719,7 +714,7 @@ zones_show() {
 
 zones_get_all() {
 	local zone
-	for zone in $(list_directory "$(zone_dir)"); do
+	for zone in $(list_directory "${NETWORK_ZONES_DIR}"); do
 		if zone_exists ${zone}; then
 			echo "${zone}"
 		fi
@@ -811,7 +806,7 @@ zones_get() {
 zone_ports_list() {
 	local zone=${1}
 
-	list_directory "$(zone_dir ${zone})/ports"
+	list_directory "${NETWORK_ZONES_DIR}/${zone}/ports"
 }
 
 zone_port_attach() {
@@ -1076,7 +1071,7 @@ zone_configs_status() {
 zone_configs_list() {
 	local zone=${1}
 
-	list_directory "$(zone_dir ${zone})/configs"
+	list_directory "${NETWORK_ZONES_DIR}/${zone}/configs"
 }
 
 zone_config_get_new_id() {
@@ -1085,7 +1080,7 @@ zone_config_get_new_id() {
 	assert [ $# -eq 1 ]
 	local zone=${1}
 
-	local zone_path=$(zone_dir ${zone})
+	local zone_path="${NETWORK_ZONES_DIR}/${zone}"
 	local i=0
 
 	while true; do
@@ -1176,7 +1171,7 @@ zone_config_id_is_valid() {
 	local zone=${1}
 	local id=${2}
 
-	local zone_path=$(zone_dir ${zone})
+	local zone_path="${NETWORK_ZONES_DIR}/${zone}"
 
 	[ -f ${zone_path}/configs/*.${id} ];
 }
@@ -1256,14 +1251,6 @@ zone_get_supported_config_hooks() {
 	hook_config_get_all
 }
 
-zone_file() {
-	local zone=${1}
-
-	assert isset zone
-
-	echo "$(zone_dir ${zone})/settings"
-}
-
 zone_settings_read() {
 	local zone=${1}
 	assert isset zone
@@ -1279,7 +1266,7 @@ zone_settings_read() {
 	# Save the HOOK variable.
 	local hook="${HOOK}"
 
-	settings_read "$(zone_file "${zone}")" ${args}
+	settings_read "${NETWORK_ZONES_DIR}/${zone}/settings" ${args}
 
 	# Restore hook.
 	HOOK="${hook}"
@@ -1295,7 +1282,7 @@ zone_settings_write() {
 	fi
 	list_append args ${HOOK_SETTINGS}
 
-	settings_write "$(zone_file ${zone})" ${args}
+	settings_write "${NETWORK_ZONES_DIR}/${zone}/settings" ${args}
 }
 
 zone_settings_set() {
@@ -1345,7 +1332,7 @@ zone_config_settings_read() {
 		list_append args "$@"
 	fi
 
-	local path="$(zone_dir "${zone}")/configs/${config}"
+	local path="${NETWORK_ZONES_DIR}/${zone}/configs/${config}"
 	settings_read "${path}" ${args}
 }
 
@@ -1367,7 +1354,7 @@ zone_config_settings_write() {
 	fi
 	list_append args ${HOOK_CONFIG_SETTINGS}
 
-	local path="$(zone_dir "${zone}")/configs/${hook}.${id}"
+	local path="${NETWORK_ZONES_DIR}/${zone}/configs/${hook}.${id}"
 	settings_write "${path}" ${args}
 }
 
@@ -1377,7 +1364,7 @@ zone_config_settings_destroy() {
 	local zone="${1}"
 	local config="${2}"
 
-	local path="$(zone_dir "${zone}")/configs/${config}"
+	local path="${NETWORK_ZONES_DIR}/${zone}/configs/${config}"
 
 	# Check if path is valid
 	if [ ! -f ${path} ]; then
@@ -1403,7 +1390,7 @@ zone_port_settings_read() {
 		list_append args "$@"
 	fi
 
-	local path="$(zone_dir "${zone}")/ports/${port}"
+	local path="${NETWORK_ZONES_DIR}/${zone}/ports/${port}"
 	settings_read "${path}" ${args}
 }
 
@@ -1420,7 +1407,7 @@ zone_port_settings_write() {
 	fi
 	list_append args ${HOOK_PORT_SETTINGS}
 
-	local path="$(zone_dir "${zone}")/ports/${port}"
+	local path="${NETWORK_ZONES_DIR}/${zone}/ports/${port}"
 	settings_write "${path}" ${args}
 }
 
@@ -1430,7 +1417,7 @@ zone_port_settings_remove() {
 	local zone="${1}"
 	local port="${2}"
 
-	local path="$(zone_dir "${zone}")/ports/${port}"
+	local path="${NETWORK_ZONES_DIR}/${zone}/ports/${port}"
 	settings_remove "${path}"
 }
 

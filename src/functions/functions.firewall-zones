@@ -39,7 +39,7 @@ firewall_zone_config() {
 	local zone=${1}
 	assert isset zone
 
-	print "$(zone_dir ${zone})/fwsettings"
+	print "${NETWORK_ZONES_DIR}/${zone}/fwsettings"
 	return ${EXIT_OK}
 }
 
