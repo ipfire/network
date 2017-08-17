@@ -23,7 +23,10 @@ device_list() {
 	local devices
 
 	# Add all interfaces
-	list_append devices $(devices_get_all)
+	local device
+	for device in $(list_directory ${SYS_CLASS_NET}); do
+		list_append_one devices "${device}"
+	done
 
 	# Add all PHYs
 	list_append devices $(phy_list)
@@ -498,10 +501,6 @@ device_get() {
 	done
 
 	return ${EXIT_OK}
-}
-
-devices_get_all() {
-	device_get
 }
 
 # Check if a device has a cable plugged in

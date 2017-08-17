@@ -90,7 +90,7 @@ phy_get_devices() {
 	assert isset phy
 
 	local device
-	for device in $(devices_get_all); do
+	for device in $(device_list); do
 		local p="$(device_get_phy "${device}")"
 
 		if [ "${phy}" = "${p}" ]; then
