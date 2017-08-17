@@ -90,6 +90,12 @@ hook_up() {
 		|| exit $?
 	fi
 
+	# Write WPA supplicant configuration
+	wpa_supplicant_config_write "${zone}" \
+		--mode="${ENCRYPTION_MODE}" \
+		--ssid="${SSID}" \
+		--key="${KEY}" || return $?
+
 	# Start the WPA supplicant daemon.
 	wpa_supplicant_start ${zone}
 
@@ -110,6 +116,9 @@ hook_down() {
 	zone_configs_down ${zone}
 
 	wpa_supplicant_stop ${zone}
+
+	# Remove WPA supplicant configuration
+	wpa_supplicant_config_destroy "${zone}"
 
 	wireless_remove ${zone}
 

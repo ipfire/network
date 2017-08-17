@@ -103,11 +103,7 @@ hook_create() {
 	fi
 
 	# Write WPA supplicant configuration
-	local config_file="$(wpa_supplicant_config_dir "${port}")/wpa_supplicant.conf"
-
-	wpa_supplicant_config_write \
-		"${port}" \
-		"${config_file}" \
+	wpa_supplicant_config_write "${port}" \
 		--channel="${CHANNEL}" \
 		--key="${PSK}" \
 		--mode="802.11s" \
@@ -119,6 +115,9 @@ hook_create() {
 hook_remove() {
 	local port="${1}"
 	assert isset port
+
+	# Remove WPA supplicant configuration
+	wpa_supplicant_config_destroy "${port}"
 
 	if device_exists "${port}"; then
 		wireless_remove "${port}"

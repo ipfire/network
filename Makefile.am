@@ -181,8 +181,7 @@ dist_helpers_SCRIPTS = \
 	src/helpers/hostapd-config-helper \
 	src/helpers/ipsec-updown \
 	src/helpers/pppd-angel \
-	src/helpers/wpa_supplicant \
-	src/helpers/wpa_supplicant-config-helper
+	src/helpers/wpa_supplicant
 
 bin_PROGRAMS = \
 	src/inetcalc

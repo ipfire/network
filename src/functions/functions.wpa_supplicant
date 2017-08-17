@@ -22,13 +22,12 @@
 WPA_SUPPLICANT_SOCKET_DIR="${RUN_DIR}/wpa_supplicant/ctrl"
 
 wpa_supplicant_config_write() {
-	local device=${1}
+	local device="${1}"
+	shift
+
 	assert isset device
 
-	local file=${2}
-	assert isset file
-
-	shift 2
+	local file="$(wpa_supplicant_config_dir "${device}")/wpa_supplicant.conf"
 
 	local ap_scan=1 mode key ssid
 	local channel
@@ -210,6 +209,15 @@ wpa_supplicant_config_write() {
 	) >> ${file}
 
 	return ${EXIT_OK}
+}
+
+wpa_supplicant_config_destroy() {
+	local device="${1}"
+	assert isset device
+
+	local file="$(wpa_supplicant_config_dir "${device}")/wpa_supplicant.conf"
+
+	file_delete "${file}"
 }
 
 wpa_supplicant_config_dir() {
