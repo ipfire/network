@@ -31,12 +31,16 @@ wpa_supplicant_config_write() {
 	shift 2
 
 	local ap_scan=1 mode key ssid
+	local channel
 
 	local arg
 	for arg in "$@"; do
 		case "${arg}" in
 			--ap-scan=*)
 				ap_scan=$(cli_get_val "${arg}")
+				;;
+			--channel=*)
+				channel=$(cli_get_val "${arg}")
 				;;
 			--mode=*)
 				mode=$(cli_get_val "${arg}")
@@ -61,6 +65,7 @@ wpa_supplicant_config_write() {
 	assert isset mode
 
 	local auth_alg key_mgmt proto ssid psk wep_key0 wep_tx_keyidx
+	local operation_mode
 	local country_code="$(wireless_get_reg_domain)"
 
 	case "${mode}" in
@@ -115,6 +120,18 @@ wpa_supplicant_config_write() {
 			key_mgmt="IEEE8021X"
 			;;
 
+		# IEEE 802.11s without authentication
+		802.11s)
+			operation_mode="mesh"
+
+			# Use SAE when we got a PSK
+			if isset psk; then
+				key_mgmt="SAE"
+			else
+				key_mgmt="NONE"
+			fi
+			;;
+
 		# No encryption. DANGEROUS!
 		NONE)
 			auth_alg="OPEN"
@@ -164,6 +181,21 @@ wpa_supplicant_config_write() {
 
 		if isset key; then
 			print "	psk=\"${key}\""
+		fi
+
+		# Operation Mode
+		case "${operation_mode}" in
+			ibss)
+				print "	mode=1"
+				;;
+			mesh)
+				print "	mode=5"
+				;;
+		esac
+
+		# Frequency
+		if isset channel; then
+			print "	frequency=$(wireless_channel_to_frequency "${channel}")"
 		fi
 
 		if isset wep_key0; then
