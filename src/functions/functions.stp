@@ -342,6 +342,34 @@ stp_port_set_cost() {
 	__device_set_file "${bridge}" "brif/${port}/path_cost" "${cost}"
 }
 
+stp_port_get_priority() {
+	local bridge=${1}
+	assert isset bridge
+
+	local port=${2}
+	assert isset port
+
+	__device_get_file "${bridge}" "brif/${port}/priority"
+}
+
+stp_port_set_priority() {
+	assert [ $# -eq 3 ]
+
+	local bridge="${1}"
+	local port="${2}"
+	local priority="${3}"
+
+	# Nothing to do if the priority already matches
+	local old_priority="$(stp_port_get_priority "${bridge}" "${port}")"
+	if [ ${priority} -eq ${old_priority} ]; then
+		return ${EXIT_OK}
+	fi
+
+	log DEBUG "Setting STP priority to ${priority} on ${port}"
+
+	__device_set_file "${bridge}" "brif/${port}/priority" "${priority}"
+}
+
 stp_port_get_designated_root() {
 	local bridge=${1}
 	assert isset bridge

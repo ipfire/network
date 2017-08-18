@@ -324,7 +324,9 @@ hook_port_up() {
 		stp_port_set_cost "${zone}" "${port}" "${COST}"
 	fi
 
-	# TODO Apply priority (#10609)
+	if isset PRIORITY; then
+		stp_port_set_priority "${zone}" "${port}" "${PRIORITY}"
+	fi
 
 	# Make sure that the port is up
 	port_up "${port}"
