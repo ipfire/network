@@ -124,7 +124,7 @@ wpa_supplicant_config_write() {
 			operation_mode="mesh"
 
 			# Use SAE when we got a PSK
-			if isset psk; then
+			if isset key; then
 				key_mgmt="SAE"
 			else
 				key_mgmt="NONE"
