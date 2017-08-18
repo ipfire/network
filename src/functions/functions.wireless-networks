@@ -24,44 +24,38 @@ WIRELESS_NETWORK_CONFIG_SETTINGS="ENCRYPTION_MODE KEY PRIORITY SSID"
 WIRELESS_NETWORKS_VALID_ENCRYPTION_MODES="WPA2-PSK"
 
 cli_wireless_network() {
-	if wireless_network_exists "${1}"; then
-		local ssid="${1}"
-		local key="${2}"
-		key=${key//-/_}
-		shift 2
+	case "${1}" in
+		new)
+			wireless_network_new "${@:2}"
+			;;
+		destroy)
+			wireless_network_destroy "${@:2}"
+			;;
+		*)
+			local ssid="${1}"
+			local key="${2//-/_}"
+			shift
 
-		case "${key}" in
-			encryption_mode|key|priority)
-				wireless_network_${key} "${ssid}" "$@"
-				;;
-			show)
-				wireless_network_show "${ssid}"
-				exit $?
-				;;
-			*)
-				error "Unrecognized argument: ${key}"
-				exit ${EXIT_ERROR}
-				;;
-		esac
-	else
-		local action=${1}
-		shift
+			if ! wireless_network_exists "${ssid}"; then
+				error "No such wireless network: ${ssid}"
+				return ${EXIT_ERROR}
+			fi
 
-		case "${action}" in
-			new)
-				wireless_network_new "$@"
-				;;
-			destroy)
-				wireless_network_destroy "$@"
-				;;
-			""|*)
-				if [ -n "${action}" ]; then
-					error "Unrecognized argument: '${action}'"
-				fi
-				exit ${EXIT_ERROR}
-				;;
-		esac
-	fi
+			case "${key}" in
+				encryption_mode|key|priority)
+					wireless_network_${key} "${ssid}" "$@"
+					;;
+				show)
+					wireless_network_show "${ssid}"
+					exit $?
+					;;
+				*)
+					error "Unrecognized argument: ${key}"
+					exit ${EXIT_ERROR}
+					;;
+			esac
+			;;
+	esac
 }
 
 # This function writes all values to a via ${ssid} specificated wireless network configuration file
