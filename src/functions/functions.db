@@ -58,7 +58,7 @@ db_set() {
 		log DEBUG "Adding '${key}' = '${value}'"
 	fi
 
-	make_parent_dir "${path}"
+	make_parent_directory "${path}"
 	print "${value}" > "${path}"
 }
 

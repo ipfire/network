@@ -1039,7 +1039,7 @@ vpn_security_policies_make_ike_proposal() {
 	local proposal=$(_vpn_security_policies_make_ike_proposal "${name}")
 
 	# Write proposal to cache
-	if ! make_parent_dir "${cache_path}" || ! fwrite "${cache_path}" "${proposal}"; then
+	if ! make_parent_directory "${cache_path}" || ! fwrite "${cache_path}" "${proposal}"; then
 		log WARNING "Could not write to cache: ${cache_path}"
 	fi
 
@@ -1115,7 +1115,7 @@ vpn_security_policies_make_esp_proposal() {
 	local proposal=$(_vpn_security_policies_make_esp_proposal "${name}")
 
 	# Write proposal to cache
-	if ! make_parent_dir "${cache_path}" || ! fwrite "${cache_path}" "${proposal}"; then
+	if ! make_parent_directory "${cache_path}" || ! fwrite "${cache_path}" "${proposal}"; then
 		log WARNING "Could not write to cache: ${cache_path}"
 	fi
 

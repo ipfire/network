@@ -143,7 +143,7 @@ wpa_supplicant_config_write() {
 	esac
 
 	# Ensure we can write the file
-	make_parent_dir "${file}"
+	make_parent_directory "${file}"
 
 	config_header "WPA supplicant configuration file" > ${file}
 

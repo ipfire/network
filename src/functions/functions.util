@@ -254,7 +254,7 @@ make_directory() {
 	mkdir -p "${path}"
 }
 
-make_parent_dir() {
+make_parent_directory() {
 	local path="${1}"
 
 	make_directory "$(dirname "${path}")"
