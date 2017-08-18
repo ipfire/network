@@ -236,26 +236,25 @@ wireless_network_new() {
 	fi
 }
 
-# Function that deletes based on the passed parameters
-# one ore more wireless networks
+# Deletes a wireless network
 wireless_network_destroy() {
-	local ssid
-	for ssid in "$@"; do
-		local ssid_hash="$(wireless_network_hash "${ssid}")"
-		assert isset ssid_hash
+	local ssid="${1}"
 
-		if ! wireless_network_exists "${ssid}"; then
-			log ERROR "The wireless network ${ssid} does not exist."
-			continue
-		fi
+	if ! wireless_network_exists "${ssid}"; then
+		error "No such wireless network: ${ssid}"
+		return ${EXIT_ERROR}
+	fi
 
-		log DEBUG "Deleting wireless network ${ssid}"
+	local ssid_hash="$(wireless_network_hash "${ssid}")"
+	assert isset ssid_hash
 
-		if ! rm -rf "${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}"; then
-			log ERROR "Deleting the wireless network ${ssid} was not sucessful"
-			return ${EXIT_ERROR}
-		fi
-	done
+	if ! rm -rf "${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}"; then
+		error "Could not delete the wireless network"
+		return ${EXIT_ERROR}
+	fi
+
+	log INFO "Successfully destroyed wireless network ${ssid}"
+	return ${EXIT_OK}
 }
 
 wireless_network_encryption_mode() {
