@@ -850,3 +850,9 @@ copy() {
 		return ${EXIT_ERROR}
 	fi
 }
+
+normalize() {
+	local string="$@"
+
+	tr -sc [:alnum:] "-" < <(printf "%s" "${string,,}")
+}
