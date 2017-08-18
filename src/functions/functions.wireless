@@ -355,6 +355,12 @@ wireless_pre_shared_key_is_valid() {
 	return ${EXIT_ERROR}
 }
 
+wireless_client_is_connected() {
+	local device="${1}"
+
+	device_has_carrier "${device}"
+}
+
 wireless_ibss_join() {
 	local device=${1}
 	assert isset device

@@ -118,33 +118,35 @@ hook_status() {
 		exit ${EXIT_ERROR}
 	fi
 
-	cli_headline 2 "Wireless network information"
-	cli_print_fmt1 2 "SSID" "$(wpa_cli_status_get ${zone} ssid)"
-	cli_space
+	if wireless_client_is_connected "${zone}"; then
+		cli_headline 2 "Wireless network information"
+		cli_print_fmt1 2 "SSID" "$(wpa_cli_status_get ${zone} ssid)"
+		cli_space
 
-	cli_headline 3 "Access Point"
-	local bssid=$(wpa_cli_status_get ${zone} bssid)
-	assert isset bssid
+		cli_headline 3 "Access Point"
+		local bssid=$(wpa_cli_status_get ${zone} bssid)
+		assert isset bssid
 
-	local frequency=$(wpa_cli_bss_get_frequency "${zone}" "${bssid}")
-	cli_print_fmt1 3 "Channel" "$(wireless_frequency_to_channel ${frequency}) (${frequency} MHz)"
-	cli_print_fmt1 3 "BSSID" "${bssid}"
-	cli_print_fmt1 3 "Noise" \
-		"$(wpa_cli_bss_get_noise ${zone} ${bssid})"
-	cli_print_fmt1 3 "Quality" \
-		"$(wpa_cli_bss_get_quality ${zone} ${bssid})%%"
-	cli_print_fmt1 3 "Flags" \
-		"$(wpa_cli_bss_get_flags ${zone} ${bssid})"
-	cli_space
+		local frequency=$(wpa_cli_bss_get_frequency "${zone}" "${bssid}")
+		cli_print_fmt1 3 "Channel" "$(wireless_frequency_to_channel ${frequency}) (${frequency} MHz)"
+		cli_print_fmt1 3 "BSSID" "${bssid}"
+		cli_print_fmt1 3 "Noise" \
+			"$(wpa_cli_bss_get_noise ${zone} ${bssid})"
+		cli_print_fmt1 3 "Quality" \
+			"$(wpa_cli_bss_get_quality ${zone} ${bssid})%%"
+		cli_print_fmt1 3 "Flags" \
+			"$(wpa_cli_bss_get_flags ${zone} ${bssid})"
+		cli_space
 
-	cli_headline 3 "Encryption"
-	cli_print_fmt1 3 "Mode" \
-		"$(wpa_cli_status_get ${zone} key_mgmt)"
-	cli_print_fmt1 3 "Pairwise cipher" \
-		"$(wpa_cli_status_get ${zone} pairwise_cipher)"
-	cli_print_fmt1 3 "Group cipher" \
-		"$(wpa_cli_status_get ${zone} group_cipher)"
-	cli_space
+		cli_headline 3 "Encryption"
+		cli_print_fmt1 3 "Mode" \
+			"$(wpa_cli_status_get ${zone} key_mgmt)"
+		cli_print_fmt1 3 "Pairwise cipher" \
+			"$(wpa_cli_status_get ${zone} pairwise_cipher)"
+		cli_print_fmt1 3 "Group cipher" \
+			"$(wpa_cli_status_get ${zone} group_cipher)"
+		cli_space
+	fi
 
 	cli_headline 2 "Configurations"
 	zone_configs_cmd status ${zone}
