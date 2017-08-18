@@ -216,8 +216,6 @@ case "${reason}" in
 
 					# Set the new ip address.
 					ip_address_add "${interface}" "${new_ip_address}/${new_prefix}"
-					device_set_up "${interface}"
-
 
 					# A MTU of 576 is used for X.25 and dialup connections. Some broken DHCP
 					# servers send out an MTU of 576 bytes, which will be ignored.
