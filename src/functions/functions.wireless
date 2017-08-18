@@ -478,7 +478,7 @@ wireless_network_write_config() {
 		return ${EXIT_ERROR}
 	fi
 
-	local path="${NETWORK_WIRELESS_NETWORK_DIR}/${ssid_hash}/settings"
+	local path="${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}/settings"
 
 	if ! settings_write "${path}" ${WIRELESS_NETWORK_CONFIG_SETTINGS}; then
 		log ERROR "Could not write configuration settings for wireless network ${ssid}"
@@ -546,7 +546,7 @@ wireless_network_read_config() {
 		list_append args "$@"
 	fi
 
-	local path="${NETWORK_WIRELESS_NETWORK_DIR}/${ssid_hash}/settings"
+	local path="${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}/settings"
 
 	if ! settings_read "${path}" ${args}; then
 		log ERROR "Could not read settings for wireless network ${ssid}"
@@ -563,12 +563,12 @@ wireless_network_exists() {
 	local ssid_hash="$(wireless_network_hash "${ssid}")"
 	assert isset ssid_hash
 
-	local path="${NETWORK_WIRELESS_NETWORK_DIR}/${ssid_hash}"
+	local path="${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}"
 
 	# We cannot use wireless_network_read_config here beacuse we would end in a loop
 	local SSID
 
-	local path_settings="${NETWORK_WIRELESS_NETWORK_DIR}/${ssid_hash}/settings"
+	local path_settings="${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}/settings"
 
 	if ! settings_read "${path_settings}" SSID; then
 		return ${EXIT_FALSE}
@@ -591,7 +591,7 @@ wireless_network_hash() {
 	local hash=$(echo -n "${string}" | md5sum )
 	hash=${hash%%  -}
 
-	local path="${NETWORK_WIRELESS_NETWORK_DIR}/*${hash}"
+	local path="${NETWORK_WIRELESS_NETWORKS_DIR}/*${hash}"
 
 	if [ -d "${path}" ]; then
 		basename "${path}"
@@ -625,13 +625,13 @@ wireless_network_new() {
 
 	log DEBUG "Creating wireless network '${ssid}'"
 
-	if ! mkdir -p "${NETWORK_WIRELESS_NETWORK_DIR}/${ssid_hash}"; then
+	if ! mkdir -p "${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}"; then
 		log ERROR "Could not create config directory for wireless network ${ssid}"
 		return ${EXIT_ERROR}
 	fi
 
 	# When the ssid is not set in the settings file we cannot write it because wireless_network_exists fails
-	echo "SSID=\"${ssid}\"" >>"${NETWORK_WIRELESS_NETWORK_DIR}/${ssid_hash}/settings"
+	echo "SSID=\"${ssid}\"" >>"${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}/settings"
 
 	local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
 	SSID="${ssid}"
@@ -658,7 +658,7 @@ wireless_network_destroy() {
 
 		log DEBUG "Deleting wireless network ${ssid}"
 
-		if ! rm -rf "${NETWORK_WIRELESS_NETWORK_DIR}/${ssid_hash}"; then
+		if ! rm -rf "${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}"; then
 			log ERROR "Deleting the wireless network ${ssid} was not sucessful"
 			return ${EXIT_ERROR}
 		fi
