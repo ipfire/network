@@ -20,7 +20,18 @@
 ###############################################################################
 
 interrupts_list() {
-	list_directory "/proc/irq"
+	local interrupt
+	for interrupt in list_directory "/proc/irq"; do
+		if interrupt_exists "${interrupt}"; then
+			print "${interrupt}"
+		fi
+	done
+}
+
+interrupt_exists() {
+	local interrupt="${1}"
+
+	[ -d "/proc/irq/${interrupt}" ]
 }
 
 interrupt_use_smp_affinity() {
