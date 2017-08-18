@@ -21,46 +21,21 @@
 
 . /usr/lib/network/header-zone
 
-HOOK_SETTINGS="HOOK PHY MAC SSID KEY ENCRYPTION_MODE"
-
-# Default values
-ADDRESS=$(mac_generate)
-PHY=
-SSID=
-KEY=
-ENCRYPTION_MODE=
+HOOK_SETTINGS="HOOK ADDRESS PHY"
 
 hook_check_settings() {
-	assert isset SSID
-
-	if isset ADDRESS; then
-		assert ismac ADDRESS
-	fi
-
+	assert ismac ADDRESS
 	assert ismac PHY
-
-	if [ -n "${ENCRYPTION_MODE}" ]; then
-		assert isset KEY
-	fi
 }
 
 hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--phy=*|--parent-device=*)
-				PHY=$(cli_get_val "${1}")
-				;;
-			--encryption-mode=*)
-				ENCRYPTION_MODE=$(cli_get_val "${1}")
-				;;
 			--address=*)
 				ADDRESS=$(cli_get_val "${1}")
 				;;
-			--ssid=*)
-				SSID=$(cli_get_val "${1}")
-				;;
-			--key=*)
-				KEY=$(cli_get_val "${1}")
+			--phy=*)
+				PHY=$(cli_get_val "${1}")
 				;;
 			*)
 				warning "Unrecognized option: ${1}"
@@ -72,6 +47,11 @@ hook_parse_cmdline() {
 	# Just save the MAC address of the phy.
 	PHY=$(phy_get ${PHY})
 	PHY=$(phy_get_address ${PHY})
+
+	# Generate a random MAC address if none given
+	if ! isset ADDRESS; then
+		ADDRESS="$(mac_generate)"
+	fi
 }
 
 hook_up() {
@@ -81,27 +61,27 @@ hook_up() {
 	# Read zone configuration.
 	zone_settings_read "${zone}"
 
-	if ! device_exists ${zone}; then
-		#  Create the wireless interface.
-		wireless_create ${zone} \
+	#  Create the wireless interface
+	if ! device_exists "${zone}"; then
+		wireless_create "${zone}" \
 			--phy=${PHY} \
 			--type="managed" \
 			--address="${ADDRESS}" \
-		|| exit $?
+		|| return $?
 	fi
 
 	# Write WPA supplicant configuration
-	wpa_supplicant_config_write "${zone}" \
-		--mode="${ENCRYPTION_MODE}" \
-		--ssid="${SSID}" \
-		--key="${KEY}" || return $?
+	if ! wireless_networks_write_wpa_supplicant_configuration "${zone}"; then
+		log ERROR "Could not write WPA supplicant configuration for ${zone}"
+		return ${EXIT_ERROR}
+	fi
 
 	# Start the WPA supplicant daemon.
 	wpa_supplicant_start ${zone}
 
 	zone_configs_up ${zone}
 
-	exit ${EXIT_OK}
+	return ${EXIT_OK}
 }
 
 hook_down() {
