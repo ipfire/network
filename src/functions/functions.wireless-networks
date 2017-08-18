@@ -39,12 +39,15 @@ cli_wireless_network() {
 				return ${EXIT_ERROR}
 			fi
 
+			# Convert SSID into usable format
+			local handle="$(wireless_network_hash "${ssid}")"
+
 			case "${key}" in
 				encryption_mode|pre_shared_key|priority)
-					wireless_network_${key} "${ssid}" "$@"
+					wireless_network_${key} "${handle}" "$@"
 					;;
 				show)
-					wireless_network_show "${ssid}"
+					wireless_network_show "${handle}"
 					exit $?
 					;;
 				*)
@@ -64,7 +67,7 @@ wireless_network_list_ssids() {
 	local handle
 	for handle in $(wireless_network_list); do
 		local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
-		if ! wireless_network_read_config_by_handle "${handle}"; then
+		if ! wireless_network_read_config "${handle}"; then
 			continue
 		fi
 
@@ -76,20 +79,12 @@ wireless_network_list_ssids() {
 wireless_network_write_config() {
 	assert [ $# -ge 1 ]
 
-	local ssid="${1}"
+	local handle="${1}"
 
-	local ssid_hash="$(wireless_network_hash "${ssid}")"
-	assert isset ssid_hash
-
-	if ! wireless_network_exists "${ssid}"; then
-		log ERROR "No such wireless network: '${ssid}'"
-		return ${EXIT_ERROR}
-	fi
-
-	local path="${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}/settings"
+	local path="${NETWORK_WIRELESS_NETWORKS_DIR}/${handle}/settings"
 
 	if ! settings_write "${path}" ${WIRELESS_NETWORK_CONFIG_SETTINGS}; then
-		log ERROR "Could not write configuration settings for wireless network ${ssid}"
+		log ERROR "Could not write configuration"
 		return ${EXIT_ERROR}
 	fi
 
@@ -102,50 +97,33 @@ wireless_network_write_config() {
 wireless_network_write_config_key() {
 	assert [ $# -ge 3 ]
 
-	local ssid="${1}"
+	local handle="${1}"
 	local key="${2}"
 	shift 2
 
 	local value="$@"
 
-	if ! wireless_network_exists "${ssid}"; then
-		log ERROR "No such wireless network: ${ssid}"
-		return ${EXIT_ERROR}
-	fi
-
-	log DEBUG "Set '${key}' to new value '${value}' in wireless network '${ssid}'"
-
 	local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
 
 	# Read the config settings
-	if ! wireless_network_read_config "${ssid}"; then
+	if ! wireless_network_read_config "${handle}"; then
 		return ${EXIT_ERROR}
 	fi
+
+	log DEBUG "Set '${key}' to new value '${value}' in wireless network '${SSID}'"
 
 	# Set the key to a new value
 	assign "${key}" "${value}"
 
-	if ! wireless_network_write_config "${ssid}"; then
+	if ! wireless_network_write_config "${handle}"; then
 		return ${EXIT_ERROR}
 	fi
 
 	return ${EXIT_OK}
 }
 
-wireless_network_read_config() {
-	local ssid="${1}"
-
-	if ! wireless_network_exists "${ssid}"; then
-		log ERROR "No such wireless network : ${ssid}"
-		return ${EXIT_ERROR}
-	fi
-
-	local handle="$(wireless_network_hash "${ssid}")"
-	wireless_network_read_config_by_handle "${handle}"
-}
-
 # Reads one or more keys out of a settings file or all if no key is provided.
-wireless_network_read_config_by_handle() {
+wireless_network_read_config() {
 	assert [ $# -ge 1 ]
 
 	local handle="${1}"
@@ -169,26 +147,18 @@ wireless_network_read_config_by_handle() {
 # This function checks if a wireless network exists
 # Returns True when yes and false when not
 wireless_network_exists() {
-	assert [ $# -eq 1 ]
-
 	local ssid="${1}"
-	local ssid_hash="$(wireless_network_hash "${ssid}")"
-	assert isset ssid_hash
 
-	local path="${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}"
+	local handle="$(wireless_network_hash "${ssid}")"
+	assert isset handle
 
 	# We cannot use wireless_network_read_config here beacuse we would end in a loop
 	local SSID
-
-	local path_settings="${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}/settings"
-
-	if ! settings_read "${path_settings}" SSID; then
+	if ! settings_read "${NETWORK_WIRELESS_NETWORKS_DIR}/${handle}/settings" SSID; then
 		return ${EXIT_FALSE}
 	fi
 
-	assert isset SSID
-
-	if [ -d "${path}" ] && [[ "${ssid}" = "${SSID}" ]]; then
+	if [ "${SSID}" = "${ssid}" ]; then
 		return ${EXIT_TRUE}
 	else
 		return ${EXIT_FALSE}
@@ -221,13 +191,11 @@ wireless_network_new() {
 	fi
 
 	local ssid="${1}"
+
 	if ! isset ssid; then
 		error "Please provide a SSID"
 		return ${EXIT_ERROR}
 	fi
-
-	local ssid_hash="$(wireless_network_hash "${ssid}")"
-	assert isset ssid_hash
 
 	# Check for duplicates
 	if wireless_network_exists "${ssid}"; then
@@ -235,22 +203,22 @@ wireless_network_new() {
 		return ${EXIT_ERROR}
 	fi
 
+	local handle="$(wireless_network_hash "${ssid}")"
+	assert isset handle
+
 	log DEBUG "Creating wireless network '${ssid}'"
 
-	if ! mkdir -p "${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}"; then
+	if ! mkdir -p "${NETWORK_WIRELESS_NETWORKS_DIR}/${handle}"; then
 		log ERROR "Could not create config directory for wireless network ${ssid}"
 		return ${EXIT_ERROR}
 	fi
-
-	# When the ssid is not set in the settings file we cannot write it because wireless_network_exists fails
-	echo "SSID=\"${ssid}\"" >>"${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}/settings"
 
 	local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
 	ENCRYPTION_MODE="${WIRELESS_DEFAULT_ENCRYPTION_MODE}"
 	SSID="${ssid}"
 	PRIORITY=500
 
-	if ! wireless_network_write_config "${ssid}"; then
+	if ! wireless_network_write_config "${handle}"; then
 		log ERROR "Could not write new config file"
 		return ${EXIT_ERROR}
 	fi
@@ -265,10 +233,10 @@ wireless_network_destroy() {
 		return ${EXIT_ERROR}
 	fi
 
-	local ssid_hash="$(wireless_network_hash "${ssid}")"
-	assert isset ssid_hash
+	local handle="$(wireless_network_hash "${ssid}")"
+	assert isset handle
 
-	if ! rm -rf "${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}"; then
+	if ! rm -rf "${NETWORK_WIRELESS_NETWORKS_DIR}/${handle}"; then
 		error "Could not delete the wireless network"
 		return ${EXIT_ERROR}
 	fi
@@ -282,7 +250,7 @@ wireless_network_encryption_mode() {
 		log ERROR "Not enough arguments"
 		return ${EXIT_ERROR}
 	fi
-	local ssid="${1}"
+	local handle="${1}"
 	local mode="${2}"
 
 	if ! isoneof mode ${WIRELESS_VALID_ENCRYPTION_MODES}; then
@@ -291,8 +259,8 @@ wireless_network_encryption_mode() {
 	fi
 
 	local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
-	if ! wireless_network_read_config "${ssid}"; then
-		error "Could not read configuration for ${ssid}"
+	if ! wireless_network_read_config "${handle}"; then
+		error "Could not read configuration"
 		return ${EXIT_ERROR}
 	fi
 
@@ -306,7 +274,7 @@ wireless_network_encryption_mode() {
 	# Save new encryption mode
 	ENCRYPTION_MODE="${mode}"
 
-	if ! wireless_network_write_config "${ssid}"; then
+	if ! wireless_network_write_config "${handle}"; then
 		log ERROR "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
@@ -317,12 +285,13 @@ wireless_network_pre_shared_key() {
 		log ERROR "Not enough arguments"
 		return ${EXIT_ERROR}
 	fi
-	local ssid="${1}"
+
+	local handle="${1}"
 	local psk="${2}"
 
 	local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
-	if ! wireless_network_read_config "${ssid}"; then
-		error "Could not read configuration for ${ssid}"
+	if ! wireless_network_read_config "${handle}"; then
+		error "Could not read configuration"
 		return ${EXIT_ERROR}
 	fi
 
@@ -334,7 +303,7 @@ wireless_network_pre_shared_key() {
 		fi
 	fi
 
-	if ! wireless_network_write_config_key "${ssid}" "PSK" "${psk}"; then
+	if ! wireless_network_write_config_key "${handle}" "PSK" "${psk}"; then
 		log ERROR "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
@@ -345,7 +314,8 @@ wireless_network_priority() {
 		log ERROR "Not enough arguments"
 		return ${EXIT_ERROR}
 	fi
-	local ssid="${1}"
+
+	local handle="${1}"
 	local priority=${2}
 
 	if ! isinteger priority && [ ! ${priority} -ge 0 ]; then
@@ -353,25 +323,25 @@ wireless_network_priority() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! wireless_network_write_config_key "${ssid}" "PRIORITY" "${priority}"; then
+	if ! wireless_network_write_config_key "${handle}" "PRIORITY" "${priority}"; then
 		log ERROR "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
 }
 
 wireless_networks_to_wpa_supplicant() {
-	local ssid
-	for ssid in "$(wireless_network_list_ssids)"; do
-		wireless_network_to_wpa_supplicant "${ssid}"
+	local handle
+	for handle in $(wireless_network_list); do
+		wireless_network_to_wpa_supplicant "${handle}"
 	done
 }
 
 wireless_network_to_wpa_supplicant() {
-	local ssid="${1}"
+	local handle="${1}"
 
 	local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
-	if ! wireless_network_read_config "${ssid}"; then
-		error "Could not read configuration for ${ssid}"
+	if ! wireless_network_read_config "${handle}"; then
+		error "Could not read configuration for ${handle}"
 		return ${EXIT_ERROR}
 	fi
 
@@ -437,7 +407,7 @@ wireless_network_to_wpa_supplicant() {
 
 	print_indent 0 "# ${SSID}"
 	print_indent 0 "network = {"
-	print_indent 1 "ssid=\"${ssid}\""
+	print_indent 1 "ssid=\"${SSID}\""
 	print
 
 	# Authentication
