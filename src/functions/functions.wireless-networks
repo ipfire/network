@@ -21,8 +21,6 @@
 
 WIRELESS_NETWORK_CONFIG_SETTINGS="ENCRYPTION_MODE PRIORITY PSK SSID"
 
-WIRELESS_NETWORKS_VALID_ENCRYPTION_MODES="WPA2-PSK"
-
 cli_wireless_network() {
 	case "${1}" in
 		new)
@@ -228,6 +226,7 @@ wireless_network_new() {
 	echo "SSID=\"${ssid}\"" >>"${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}/settings"
 
 	local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
+	ENCRYPTION_MODE="${WIRELESS_DEFAULT_ENCRYPTION_MODE}"
 	SSID="${ssid}"
 	PRIORITY=500
 
@@ -267,7 +266,7 @@ wireless_network_encryption_mode() {
 	local ssid="${1}"
 	local mode="${2}"
 
-	if ! isoneof mode ${WIRELESS_NETWORKS_VALID_ENCRYPTION_MODES}; then
+	if ! isoneof mode ${WIRELESS_VALID_ENCRYPTION_MODES}; then
 		log ERROR "Encryption mode '${mode}' is invalid"
 		return ${EXIT_ERROR}
 	fi
