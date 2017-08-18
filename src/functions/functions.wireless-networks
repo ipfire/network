@@ -19,7 +19,11 @@
 #                                                                             #
 ###############################################################################
 
-WIRELESS_NETWORK_CONFIG_SETTINGS="EAP_MODES ENCRYPTION_MODE PRIORITY PSK SSID"
+WIRELESS_NETWORK_SUPPORTED_PSK_MODES="WPA2-PSK-SHA256 WPA2-PSK WPA-PSK-SHA256 WPA-PSK"
+
+WIRELESS_NETWORK_SUPPORTED_MODES="${WIRELESS_NETWORK_SUPPORTED_PSK_MODES} NONE"
+
+WIRELESS_NETWORK_CONFIG_SETTINGS="EAP_MODES ENCRYPTION_MODES PRIORITY PSK SSID"
 
 cli_wireless_network() {
 	case "${1}" in
@@ -351,49 +355,58 @@ wireless_network_to_wpa_supplicant() {
 	local pairwise
 	local proto
 
-	case "${ENCRYPTION_MODE}" in
-		# Normal WPA
-		WPA-PSK)
-			auth_alg="OPEN"
-			key_mgmt="WPA-PSK"
-			proto="WPA"
-			pairwise="CCMP TKIP"
-			group="CCMP TKIP WEP104 WEP40"
-			;;
+	local mode
+	for mode in ${WIRELESS_NETWORK_SUPPORTED_MODES}; do
+		# Skip any disabled modes
+		if isset ENCRYPTION_MODES && ! list_match "${mode}" ${ENCRYPTION_MODES}; then
+			continue
+		fi
 
-		# WPA with stronger algorithms
-		WPA-PSK-SHA256)
-			auth_alg="OPEN"
-			key_mgmt="WPA-PSK-SHA256"
-			proto="WPA"
-			pairwise="CCMP TKIP"
-			group="CCMP TKIP WEP104 WEP40"
-			;;
+		case "${mode}" in
+			# WPA2 (802.11i)
+			WPA2-PSK|WPA2-PSK-SHA256)
+				list_append_unique auth_alg	"OPEN"
+				list_append_unique key_mgmt	"${mode/WPA2/WPA}"
+				list_append_unique proto	"RSN"
 
-		# Normal WPA2 (802.11i)
-		WPA2-PSK)
-			auth_alg="OPEN"
-			key_mgmt="WPA-PSK"
-			proto="RSN"
-			pairwise="CCMP TKIP"
-			group="CCMP TKIP WEP104 WEP40"
-			;;
+				local p
+				for p in CCMP TKIP; do
+					list_append_unique pairwise "${p}"
+				done
 
-		# WPA2 with stronger algorithms
-		WPA2-PSK-SHA256)
-			auth_alg="OPEN"
-			key_mgmt="WPA-PSK-SHA256"
-			proto="RSN"
-			pairwise="CCMP TKIP"
-			group="CCMP TKIP WEP104 WEP40"
-			;;
+				local g
+				for g in CCMP TKIP WEP104 WEP40; do
+					list_append_unique group "${g}"
+				done
+				;;
 
-		# No encryption. DANGEROUS!
-		NONE)
-			auth_alg="OPEN"
-			key_mgmt="NONE"
-			;;
-	esac
+			# WPA
+			WPA-PSK|WPA-PSK-SHA256)
+				list_append_unique auth_alg	"OPEN"
+				list_append_unique key_mgmt	"${mode}"
+				list_append_unique proto	"WPA"
+
+				local p
+				for p in CCMP TKIP; do
+					list_append_unique pairwise "${p}"
+				done
+
+				local g
+				for g in CCMP TKIP WEP104 WEP40; do
+					list_append_unique group "${g}"
+				done
+				;;
+
+			# No encryption. DANGEROUS!
+			NONE)
+				list_append_unique auth_alg "OPEN"
+				list_append_unique key_mgmt "NONE"
+				;;
+		esac
+	done
+
+	assert isset auth_alg
+	assert isset key_mgmt
 
 	print_indent 0 "# ${SSID}"
 	print_indent 0 "network = {"
@@ -405,19 +418,17 @@ wireless_network_to_wpa_supplicant() {
 	print_indent 1 "auth_alg=${auth_alg}"
 	print_indent 1 "key_mgmt=${key_mgmt}"
 
-	case "${ENCRYPTION_MODE}" in
-		WPA*)
-			print_indent 1 "proto=${proto}"
-			print_indent 1 "pairwise=${pairwise}"
-			;;
-	esac
+	local i
+	for i in proto pairwise group; do
+		print_indent 1 "${i}=${!i}"
+	done
+	print
 
-	# PSKs
-	case "${ENCRYPTION_MODE}" in
-		WPA*PSK)
-			print_indent 1 "psk=\"${PSK}\""
-			;;
-	esac
+	# PSK
+	if isset PSK; then
+		print_indent 1 "# Pre Shared Key"
+		print_indent 1 "psk=\"${PSK}\""
+	fi
 
 	if isset EAP_MODES; then
 		print_indent 1 "# EAP"
