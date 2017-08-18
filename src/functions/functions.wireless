@@ -329,6 +329,32 @@ wireless_set_channel() {
 	cmd iw dev "${device}" set channel "${channel}"
 }
 
+wireless_pre_shared_key_is_valid() {
+	local encryption_mode="${1}"
+	local psk="${2}"
+
+	# Length of the PSK
+	local l="${#psk}"
+
+	case "${encryption_mode}" in
+		# For WPA*, the key must be between 8 and 63 chars
+		WPA2-PSK|WPA2-PSK-SHA256|WPA-PSK|WPA-PSK-SHA256)
+			if [ ${l} -ge 8 ] && [ ${l} -le 63 ]; then
+				return ${EXIT_TRUE}
+			fi
+
+			return ${EXIT_FALSE}
+			;;
+
+		WEP)
+			# XXX need to check if the key is entered in
+			# hex or ascii and then count the bytes
+			;;
+	esac
+
+	return ${EXIT_ERROR}
+}
+
 wireless_ibss_join() {
 	local device=${1}
 	assert isset device
