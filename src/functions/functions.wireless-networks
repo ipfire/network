@@ -346,6 +346,9 @@ wireless_networks_write_wpa_supplicant_configuration() {
 	(
 		config_header "WPA supplicant configuration file"
 
+		# Set control socket directory.
+		print "ctrl_interface=${WPA_SUPPLICANT_SOCKET_DIR}"
+
 		# Honour country
 		if isset country; then
 			print "country=${country}"
