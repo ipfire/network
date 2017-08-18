@@ -218,24 +218,3 @@ hook_hotplug() {
 
 	exit ${EXIT_OK}
 }
-
-hook_find_parent() {
-	local port=${1}
-	assert isset port
-
-	local p child hook
-	for p in $(ports_get); do
-		hook=$(port_get_hook "${p}")
-
-		if [ "${hook}" = "batman-adv" ]; then
-			for child in $(port_get_children "${p}"); do
-				[ "${child}" = "${port}" ] || continue
-
-				print "${p}"
-				return ${EXIT_OK}
-			done
-		fi
-	done
-
-	return ${EXIT_ERROR}
-}

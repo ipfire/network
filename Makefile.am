@@ -105,7 +105,6 @@ EXTRA_DIST += \
 dist_network_SCRIPTS = \
 	src/functions/functions.at \
 	src/functions/functions.auth \
-	src/functions/functions.batman-adv \
 	src/functions/functions.bonding \
 	src/functions/functions.bridge \
 	src/functions/functions.cli \
@@ -197,7 +196,6 @@ dist_hooks_configs_SCRIPTS = \
 	src/hooks/configs/pppoe-server
 
 dist_hooks_ports_SCRIPTS = \
-	src/hooks/ports/batman-adv \
 	src/hooks/ports/bonding \
 	src/hooks/ports/dummy \
 	src/hooks/ports/ethernet \
@@ -344,8 +342,6 @@ MANPAGES = \
 	man/network-dns-server.8 \
 	man/network-performance-tuning.8 \
 	man/network-port.8 \
-	man/network-port-batman-adv.8 \
-	man/network-port-batman-adv-port.8 \
 	man/network-quick-start.8 \
 	man/network-route.8 \
 	man/network-route-static.8 \

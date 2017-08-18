@@ -140,31 +140,6 @@ device_get_ifindex() {
 	print "$(<${path})"
 }
 
-# Check if the device is a batman-adv bridge
-device_is_batman_adv() {
-	[ -d "${SYS_CLASS_NET}/${1}/mesh" ]
-}
-
-# Check if the device is a batman-adv slave port
-device_is_batman_adv_slave() {
-	local device="${1}"
-
-	if [ -d "${SYS_CLASS_NET}/${device}/batman_adv" ]; then
-		local status="$(<${SYS_CLASS_NET}/${device}/batman_adv/iface_status)"
-
-		case "${status}" in
-			"active")
-				return ${EXIT_TRUE}
-				;;
-			*)
-				return ${EXIT_FALSE}
-				;;
-		esac
-	fi
-
-	return ${EXIT_FALSE}
-}
-
 # Check if the device is a bonding device
 device_is_bonding() {
 	[ -d "/sys/class/net/${1}/bonding" ]
@@ -385,9 +360,6 @@ device_get_type() {
 
 	elif device_is_ppp ${device}; then
 		echo "ppp"
-
-	elif device_is_batman_adv ${device}; then
-		echo "batman-adv"
 
 	elif device_is_loopback ${device}; then
 		echo "loopback"
