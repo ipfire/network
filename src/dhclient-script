@@ -202,7 +202,7 @@ case "${reason}" in
 		fi
 
 		case "${reason}" in
-			BOUND|REBOOT)
+			BOUND|REBIND|REBOOT)
 				if [ ! "${old_ip_address}" = "${new_ip_address}" ] || \
 					[ ! "${old_subnet_mask}" = "${new_subnet_mask}" ] || \
 					[ ! "${old_network_number}" = "${new_network_number}" ] || \
