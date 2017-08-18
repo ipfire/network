@@ -30,9 +30,7 @@ assert isset device
 # Create socket dir.
 mkdir -p ${WPA_SUPPLICANT_SOCKET_DIR} 2>/dev/null
 
-config_file="$(wpa_supplicant_config_dir ${device})/wpa_supplicant.conf"
-
-cmd="wpa_supplicant -i ${device} -c ${config_file}"
+cmd="wpa_supplicant -i ${device} -c ${WPA_SUPPLICANT_CONF_DIR}/${device}.conf"
 
 if device_is_wireless ${device}; then
 	cmd="${cmd} -Dwext"

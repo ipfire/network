@@ -27,7 +27,7 @@ wpa_supplicant_config_write() {
 
 	assert isset device
 
-	local file="$(wpa_supplicant_config_dir "${device}")/wpa_supplicant.conf"
+	local file="${WPA_SUPPLICANT_CONF_DIR}/${device}.conf"
 
 	local ap_scan=1 mode key ssid
 	local channel
@@ -142,8 +142,8 @@ wpa_supplicant_config_write() {
 			;;
 	esac
 
-	local config_dir=$(dirname ${file})
-	mkdir -p ${config_dir} 2>/dev/null
+	# Ensure we can write the file
+	make_parent_dir "${file}"
 
 	config_header "WPA supplicant configuration file" > ${file}
 
@@ -215,16 +215,7 @@ wpa_supplicant_config_destroy() {
 	local device="${1}"
 	assert isset device
 
-	local file="$(wpa_supplicant_config_dir "${device}")/wpa_supplicant.conf"
-
-	file_delete "${file}"
-}
-
-wpa_supplicant_config_dir() {
-	local device=${1}
-	assert isset device
-
-	echo "${RUN_DIR}/wpa_supplicant/${device}"
+	file_delete "${WPA_SUPPLICANT_CONF_DIR}/${device}.conf"
 }
 
 wpa_supplicant_start() {
