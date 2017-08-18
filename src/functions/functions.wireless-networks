@@ -411,6 +411,11 @@ wireless_network_to_wpa_supplicant() {
 	print_indent 0 "# ${SSID}"
 	print_indent 0 "network = {"
 	print_indent 1 "ssid=\"${SSID}\""
+
+	# Priority
+	if isinteger PRIORITY; then
+		print_indent 1 "priority=${PRIORITY}"
+	fi
 	print
 
 	# Authentication
