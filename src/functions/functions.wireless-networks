@@ -56,6 +56,22 @@ cli_wireless_network() {
 	esac
 }
 
+wireless_network_list() {
+	list_directory "${NETWORK_WIRELESS_NETWORKS_DIR}"
+}
+
+wireless_network_list_ssids() {
+	local handle
+	for handle in $(wireless_network_list); do
+		local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
+		if ! wireless_network_read_config_by_handle "${handle}"; then
+			continue
+		fi
+
+		print "${SSID}"
+	done
+}
+
 # This function writes all values to a via ${ssid} specificated wireless network configuration file
 wireless_network_write_config() {
 	assert [ $# -ge 1 ]
@@ -116,20 +132,24 @@ wireless_network_write_config_key() {
 	return ${EXIT_OK}
 }
 
-# Reads one or more keys out of a settings file or all if no key is provided.
 wireless_network_read_config() {
-	assert [ $# -ge 1 ]
-
 	local ssid="${1}"
-	shift 1
-
-	local ssid_hash="$(wireless_network_hash "${ssid}")"
-	assert isset ssid_hash
 
 	if ! wireless_network_exists "${ssid}"; then
 		log ERROR "No such wireless network : ${ssid}"
 		return ${EXIT_ERROR}
 	fi
+
+	local handle="$(wireless_network_hash "${ssid}")"
+	wireless_network_read_config_by_handle "${handle}"
+}
+
+# Reads one or more keys out of a settings file or all if no key is provided.
+wireless_network_read_config_by_handle() {
+	assert [ $# -ge 1 ]
+
+	local handle="${1}"
+	shift
 
 	local args
 	if [ $# -eq 0 ] && [ -n "${WIRELESS_NETWORK_CONFIG_SETTINGS}" ]; then
@@ -138,10 +158,10 @@ wireless_network_read_config() {
 		list_append args "$@"
 	fi
 
-	local path="${NETWORK_WIRELESS_NETWORKS_DIR}/${ssid_hash}/settings"
+	local path="${NETWORK_WIRELESS_NETWORKS_DIR}/${handle}/settings"
 
 	if ! settings_read "${path}" ${args}; then
-		log ERROR "Could not read settings for wireless network ${ssid}"
+		log ERROR "Could not read settings for wireless network ${handle}"
 		return ${EXIT_ERROR}
 	fi
 }
@@ -337,4 +357,112 @@ wireless_network_priority() {
 		log ERROR "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
+}
+
+wireless_networks_to_wpa_supplicant() {
+	local ssid
+	for ssid in "$(wireless_network_list_ssids)"; do
+		wireless_network_to_wpa_supplicant "${ssid}"
+	done
+}
+
+wireless_network_to_wpa_supplicant() {
+	local ssid="${1}"
+
+	local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
+	if ! wireless_network_read_config "${ssid}"; then
+		error "Could not read configuration for ${ssid}"
+		return ${EXIT_ERROR}
+	fi
+
+	local auth_alg
+	local group
+	local key_mgmt
+	local pairwise
+	local proto
+
+	case "${ENCRYPTION_MODE}" in
+		# Normal WPA
+		WPA-PSK)
+			auth_alg="OPEN"
+			key_mgmt="WPA-PSK"
+			proto="WPA"
+			pairwise="CCMP TKIP"
+			group="CCMP TKIP WEP104 WEP40"
+			;;
+
+		# WPA with stronger algorithms
+		WPA-PSK-SHA256)
+			auth_alg="OPEN"
+			key_mgmt="WPA-PSK-SHA256"
+			proto="WPA"
+			pairwise="CCMP TKIP"
+			group="CCMP TKIP WEP104 WEP40"
+			;;
+
+		# Normal WPA2 (802.11i)
+		WPA2-PSK)
+			auth_alg="OPEN"
+			key_mgmt="WPA-PSK"
+			proto="RSN"
+			pairwise="CCMP TKIP"
+			group="CCMP TKIP WEP104 WEP40"
+			;;
+
+		# WPA2 with stronger algorithms
+		WPA2-PSK-SHA256)
+			auth_alg="OPEN"
+			key_mgmt="WPA-PSK-SHA256"
+			proto="RSN"
+			pairwise="CCMP TKIP"
+			group="CCMP TKIP WEP104 WEP40"
+			;;
+
+		# WEP
+		WEP)
+			auth_alg="SHARED"
+			wep_key0="${key}"
+			wep_tx_keyidx="0"
+
+			# Reset PSK.
+			psk=""
+			;;
+
+		# No encryption. DANGEROUS!
+		NONE)
+			auth_alg="OPEN"
+			key_mgmt="NONE"
+			;;
+	esac
+
+	print_indent 0 "# ${SSID}"
+	print_indent 0 "network = {"
+	print_indent 1 "ssid=\"${ssid}\""
+	print
+
+	# Authentication
+	print_indent 1 "# Authentication"
+	print_indent 1 "auth_alg=${auth_alg}"
+	print_indent 1 "key_mgmt=${key_mgmt}"
+
+	case "${ENCRYPTION_MODE}" in
+		WPA*)
+			print_indent 1 "proto=${proto}"
+			print_indent 1 "pairwise=${pairwise}"
+			;;
+	esac
+
+	# PSKs
+	case "${ENCRYPTION_MODE}" in
+		WPA*PSK)
+			print_indent 1 "psk=\"${PSK}\""
+			;;
+		WEP)
+			print_indent 1 "wep_key0=\"${PSK}\""
+			print_indent 1 "wep_tx_keyidx=0"
+			;;
+	esac
+
+	print_indent 0 "}"
+	print
 }
