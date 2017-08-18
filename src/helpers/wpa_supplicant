@@ -33,7 +33,7 @@ mkdir -p ${WPA_SUPPLICANT_SOCKET_DIR} 2>/dev/null
 cmd="wpa_supplicant -i ${device} -c ${WPA_SUPPLICANT_CONF_DIR}/${device}.conf"
 
 if device_is_wireless ${device}; then
-	cmd="${cmd} -Dwext"
+	cmd="${cmd} -Dnl80211"
 else
 	cmd="${cmd} -Dwired"
 fi
