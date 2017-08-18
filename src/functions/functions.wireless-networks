@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-WIRELESS_NETWORK_CONFIG_SETTINGS="ENCRYPTION_MODE KEY PRIORITY SSID"
+WIRELESS_NETWORK_CONFIG_SETTINGS="ENCRYPTION_MODE PRIORITY PSK SSID"
 
 WIRELESS_NETWORKS_VALID_ENCRYPTION_MODES="WPA2-PSK"
 
@@ -42,7 +42,7 @@ cli_wireless_network() {
 			fi
 
 			case "${key}" in
-				encryption_mode|key|priority)
+				encryption_mode|pre_shared_key|priority)
 					wireless_network_${key} "${ssid}" "$@"
 					;;
 				show)
@@ -278,15 +278,15 @@ wireless_network_encryption_mode() {
 	fi
 }
 
-wireless_network_key() {
+wireless_network_pre_shared_key() {
 	if [ ! $# -eq 2 ]; then
 		log ERROR "Not enough arguments"
 		return ${EXIT_ERROR}
 	fi
 	local ssid="${1}"
-	local key="${2}"
+	local psk="${2}"
 
-	if ! wireless_network_write_config_key "${ssid}" "KEY" "${key}"; then
+	if ! wireless_network_write_config_key "${ssid}" "PSK" "${psk}"; then
 		log ERROR "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
