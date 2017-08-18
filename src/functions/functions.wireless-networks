@@ -388,16 +388,6 @@ wireless_network_to_wpa_supplicant() {
 			group="CCMP TKIP WEP104 WEP40"
 			;;
 
-		# WEP
-		WEP)
-			auth_alg="SHARED"
-			wep_key0="${key}"
-			wep_tx_keyidx="0"
-
-			# Reset PSK.
-			psk=""
-			;;
-
 		# No encryption. DANGEROUS!
 		NONE)
 			auth_alg="OPEN"
@@ -426,10 +416,6 @@ wireless_network_to_wpa_supplicant() {
 	case "${ENCRYPTION_MODE}" in
 		WPA*PSK)
 			print_indent 1 "psk=\"${PSK}\""
-			;;
-		WEP)
-			print_indent 1 "wep_key0=\"${PSK}\""
-			print_indent 1 "wep_tx_keyidx=0"
 			;;
 	esac
 
