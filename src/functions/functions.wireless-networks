@@ -23,7 +23,8 @@ WIRELESS_NETWORK_SUPPORTED_PSK_MODES="WPA2-PSK-SHA256 WPA2-PSK WPA-PSK-SHA256 WP
 
 WIRELESS_NETWORK_SUPPORTED_MODES="${WIRELESS_NETWORK_SUPPORTED_PSK_MODES} 802.1X NONE"
 
-WIRELESS_NETWORK_CONFIG_SETTINGS="EAP_MODES MODES PRIORITY PSK SSID"
+WIRELESS_NETWORK_CONFIG_SETTINGS="ANONYMOUS_IDENTITY EAP_MODES IDENTITY \
+	MODES PASSWORD PRIORITY PSK SSID"
 
 cli_wireless_network() {
 	case "${1}" in
@@ -459,6 +460,20 @@ wireless_network_to_wpa_supplicant() {
 	if isset EAP_MODES; then
 		print_indent 1 "# EAP"
 		print_indent 1 "eap=${EAP_MODES}"
+		print
+	fi
+
+	if isset IDENTITY; then
+		print_indent 1 "# Credentials"
+		print_indent 1 "identity=\"${IDENTITY}\""
+
+		if isset PASSWORD; then
+			print_indent 1 "password=\"${PASSWORD}\""
+		fi
+
+		if isset ANONYMOUS_IDENTITY; then
+			print_indent 1 "anonymous_identity=\"${ANONYMOUS_IDENTITY}\""
+		fi
 		print
 	fi
 
