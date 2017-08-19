@@ -222,7 +222,7 @@ wireless_network_new() {
 	local ${WIRELESS_NETWORK_CONFIG_SETTINGS}
 	ENCRYPTION_MODE="${WIRELESS_DEFAULT_ENCRYPTION_MODE}"
 	SSID="${ssid}"
-	PRIORITY=500
+	PRIORITY=0
 
 	if ! wireless_network_write_config "${handle}"; then
 		log ERROR "Could not write new config file"
