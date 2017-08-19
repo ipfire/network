@@ -430,6 +430,9 @@ wireless_network_to_wpa_supplicant() {
 	assert isset auth_alg
 	assert isset key_mgmt
 
+	# Read CA certificate
+	local ca_cert_path="${NETWORK_WIRELESS_NETWORKS_DIR}/${handle}/ca.pem"
+
 	print_indent 0 "# ${SSID}"
 	print_indent 0 "network={"
 	print_indent 1 "ssid=\"${SSID}\""
@@ -478,8 +481,11 @@ wireless_network_to_wpa_supplicant() {
 	fi
 
 	# Validate server certificates
-	if isset CA_BUNDLE; then
-		print_indent 1 "ca_cert=${CA_BUNDLE}"
+	if file_exists "${ca_cert_path}"; then
+		print_indent 1 "ca_cert=\"${ca_cert_path}\""
+
+	elif isset CA_BUNDLE; then
+		print_indent 1 "ca_cert=\"${CA_BUNDLE}\""
 	fi
 
 	print_indent 0 "}"
