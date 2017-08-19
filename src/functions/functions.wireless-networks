@@ -341,8 +341,6 @@ wireless_networks_write_wpa_supplicant_configuration() {
 	# Ensure we can write the file
 	make_parent_directory "${file}"
 
-	local country="$(wireless_get_reg_domain)"
-
 	(
 		# Write a config header
 		wpa_supplicant_config_header

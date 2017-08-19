@@ -28,6 +28,7 @@ wpa_supplicant_config_header() {
 	print "ctrl_interface=${WPA_SUPPLICANT_SOCKET_DIR}"
 
 	# Honour country
+	local country="$(wireless_get_reg_domain)"
 	if isset country; then
 		print "country=${country}"
 	fi
