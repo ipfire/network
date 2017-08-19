@@ -164,6 +164,7 @@ dist_network_SCRIPTS = \
 	src/functions/functions.vpn \
 	src/functions/functions.vpn-security-policies \
 	src/functions/functions.wireless \
+	src/functions/functions.wireless-mesh \
 	src/functions/functions.wireless-networks \
 	src/functions/functions.wpa_supplicant \
 	src/functions/functions.zone \

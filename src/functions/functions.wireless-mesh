@@ -1,0 +1,94 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2017  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+wireless_mesh_to_wpa_supplicant() {
+	local device="${1}"
+	shift
+
+	local file="${WPA_SUPPLICANT_CONF_DIR}/${device}.conf"
+
+	local channel
+	local mesh_id
+	local psk
+
+	local arg
+	for arg in "$@"; do
+		case "${arg}" in
+			--channel=*)
+				channel=$(cli_get_val "${arg}")
+				;;
+			--mesh-id=*)
+				mesh_id=$(cli_get_val "${arg}")
+				;;
+			--pre-shared-key=*)
+				psk=$(cli_get_val "${arg}")
+				;;
+			*)
+				error "Unrecognized argument: ${arg}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+	done
+
+	if ! isset mesh_id; then
+		error "Mesh ID is not set"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! wireless_channel_is_valid "${channel}"; then
+		error "Invalid wireless channel given: ${channel}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Ensure we can write the file
+	make_parent_directory "${file}"
+
+	(
+		# Write a config header
+		wpa_supplicant_config_header
+
+		print_indent 0 "# ${MESH_ID}"
+		print_indent 0 "network={"
+		print_indent 1 "ssid=\"${MESH_ID}\""
+		print
+
+		print_indent 1 "# Launch in 802.11s mesh mode"
+		print_indent 1 "mode=5"
+		print
+
+		# Authentication
+		print_indent 1 "# Authentication"
+		if isset psk; then
+			print_indent 1 "key_mgmt=SAE"
+			print_indent 1 "psk=\"${psk}\""
+		else
+			print_indent 1 "key_mgmt=NONE"
+		fi
+		print
+
+		# Frequency
+		if isset channel; then
+			print "	frequency=$(wireless_channel_to_frequency "${channel}")"
+		fi
+
+		print "}"
+	) > ${file}
+}

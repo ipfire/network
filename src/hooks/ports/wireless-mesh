@@ -103,11 +103,11 @@ hook_create() {
 	fi
 
 	# Write WPA supplicant configuration
-	wpa_supplicant_config_write "${port}" \
-		--channel="${CHANNEL}" \
-		--key="${PSK}" \
-		--mode="802.11s" \
-		--ssid="${MESH_ID}" || return $?
+	if ! wireless_mesh_to_wpa_supplicant "${port}" --mesh-id="${MESH_ID}" \
+			--channel="${CHANNEL}" --pre-shared-key="${PSK}"; then
+		log ERROR "Could not generate WPA supplicant configuration"
+		return ${EXIT_ERROR}
+	fi
 
 	return ${EXIT_OK}
 }
