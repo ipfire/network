@@ -32,6 +32,13 @@ wpa_supplicant_config_header() {
 	if isset country; then
 		print "country=${country}"
 	fi
+	print
+
+	print "# Privacy"
+
+	# Use a random MAC address for any pre-association
+	# operations like scanning or ANQP
+	print "preassoc_mac_addr=1"
 
 	print # end of header
 }
