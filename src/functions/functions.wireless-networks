@@ -431,8 +431,10 @@ wireless_network_to_wpa_supplicant() {
 	assert isset auth_alg
 	assert isset key_mgmt
 
-	# Read CA certificate
+	# Certificate Paths
 	local ca_cert_path="${NETWORK_WIRELESS_NETWORKS_DIR}/${handle}/ca.pem"
+	local client_cert_path="${NETWORK_WIRELESS_NETWORKS_DIR}/${handle}/client.pem"
+	local client_key_path="${NETWORK_WIRELESS_NETWORKS_DIR}/${handle}/client.key"
 
 	print_indent 0 "# ${SSID}"
 	print_indent 0 "network={"
@@ -478,6 +480,14 @@ wireless_network_to_wpa_supplicant() {
 		if isset ANONYMOUS_IDENTITY; then
 			print_indent 1 "anonymous_identity=\"${ANONYMOUS_IDENTITY}\""
 		fi
+		print
+	fi
+
+	# Client Certificate
+	if file_exists "${client_cert_path}" && file_exists "${client_key_path}"; then
+		print_indent 1 "# Client Certificate"
+		print_indent 1 "client_cert=\"${client_cert_path}\""
+		print_indent 1 "private_key=\"${client_key_path}\""
 		print
 	fi
 
