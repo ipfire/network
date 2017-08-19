@@ -23,7 +23,7 @@ WIRELESS_NETWORK_SUPPORTED_PSK_MODES="WPA2-PSK-SHA256 WPA2-PSK WPA-PSK-SHA256 WP
 
 WIRELESS_NETWORK_SUPPORTED_MODES="${WIRELESS_NETWORK_SUPPORTED_PSK_MODES} 802.1X NONE"
 
-WIRELESS_NETWORK_CONFIG_SETTINGS="EAP_MODES ENCRYPTION_MODES PRIORITY PSK SSID"
+WIRELESS_NETWORK_CONFIG_SETTINGS="EAP_MODES MODES PRIORITY PSK SSID"
 
 cli_wireless_network() {
 	case "${1}" in
@@ -374,7 +374,7 @@ wireless_network_to_wpa_supplicant() {
 	local mode
 	for mode in ${WIRELESS_NETWORK_SUPPORTED_MODES}; do
 		# Skip any disabled modes
-		if isset ENCRYPTION_MODES && ! list_match "${mode}" ${ENCRYPTION_MODES}; then
+		if isset MODES && ! list_match "${mode}" ${MODES}; then
 			continue
 		fi
 
