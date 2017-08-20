@@ -345,11 +345,6 @@ wireless_pre_shared_key_is_valid() {
 
 			return ${EXIT_FALSE}
 			;;
-
-		WEP)
-			# XXX need to check if the key is entered in
-			# hex or ascii and then count the bytes
-			;;
 	esac
 
 	return ${EXIT_ERROR}
