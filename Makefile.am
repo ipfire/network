@@ -347,6 +347,8 @@ MANPAGES = \
 	man/network-route.8 \
 	man/network-route-static.8 \
 	man/network-settings.8 \
+	man/network-vpn.8 \
+	man/network-vpn-security-policies.8 \
 	man/network-zone.8 \
 	man/network-zone-6to4-tunnel.8 \
 	man/network-zone-bridge.8 \
