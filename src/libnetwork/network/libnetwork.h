@@ -1,7 +1,7 @@
-###############################################################################
+/*#############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2013 IPFire Network Development Team                          #
+# Copyright (C) 2017 IPFire Network Development Team                          #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -16,18 +16,11 @@
 # You should have received a copy of the GNU General Public License           #
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #                                                                             #
-###############################################################################
+#############################################################################*/
 
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-includedir=@includedir@
-libdir=@libdir@
-networkdir=@networkdir@
+#ifndef LIBNETWORK_H
+#define LIBNETWORK_H
 
-Name: network
-Description: Network configuration tools for IPFire
-URL: @PACKAGE_URL@
-Version: @PACKAGE_VERSION@
-Libs: -L${libdir} -lnetwork
-Libs.private:
-Cflags: -I${includedir}
+const char* network_version();
+
+#endif

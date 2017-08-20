@@ -30,7 +30,7 @@ AUTOMAKE_OPTIONS = color-tests
 
 bashcompletiondir= $(datadir)/bash-completion/completions
 libexecdir       = $(prefix)/lib
-pkgconfigdatadir = $(datadir)/pkgconfig
+pkgconfigdir     = $(libdir)/pkgconfig
 pppdir           = $(sysconfdir)/ppp
 systemconfigdir  = $(datadir)/network
 sysctldir        = $(prefix)/lib/sysctl.d
@@ -59,9 +59,21 @@ INSTALL_EXEC_HOOKS =
 UNINSTALL_EXEC_HOOKS =
 noinst_DATA =
 
-AM_CFLAGS       = $(OUR_CFLAGS)
-AM_CPPFLAGS     = $(OUR_CPPFLAGS)
-AM_LDFLAGS      = $(OUR_LDFLAGS)
+AM_CPPFLAGS = \
+	$(OUR_CPPFLAGS) \
+	-include $(top_builddir)/config.h \
+	-I${top_srcdir}/src/libnetwork
+
+AM_CFLAGS = \
+	$(OUR_CFLAGS) \
+	-fvisibility=hidden \
+	-ffunction-sections \
+	-fdata-sections
+
+AM_LDFLAGS = \
+	$(OUR_LDFLAGS) \
+	-Wl,--gc-sections \
+	-Wl,--as-needed
 
 DISTCHECK_CONFIGURE_FLAGS = \
 	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) \
@@ -190,6 +202,9 @@ bin_PROGRAMS = \
 src_inetcalc_SOURCES = \
 	src/inetcalc.c
 
+src_inetcalc_LDADD = \
+	src/libnetwork.la
+
 dist_hooks_configs_SCRIPTS = \
 	src/hooks/configs/dhcp \
 	src/hooks/configs/ipv4-static \
@@ -211,6 +226,33 @@ dist_hooks_zones_SCRIPTS = \
 	src/hooks/zones/modem \
 	src/hooks/zones/pppoe \
 	src/hooks/zones/wireless
+
+# ------------------------------------------------------------------------------
+
+LIBNETWORK_CURRENT=0
+LIBNETWORK_REVISION=0
+LIBNETWORK_AGE=0
+
+pkginclude_HEADERS = \
+	src/libnetwork/network/libnetwork.h
+
+lib_LTLIBRARIES = \
+	src/libnetwork.la
+
+src_libnetwork_la_SOURCES = \
+	src/libnetwork/libnetwork-private.h \
+	src/libnetwork/libnetwork.c
+
+src_libnetwork_la_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	-version-info $(LIBNETWORK_CURRENT):$(LIBNETWORK_REVISION):$(LIBNETWORK_AGE) \
+	-Wl,--version-script=$(top_srcdir)/src/libnetwork/libnetwork.sym
+
+src_libnetwork_la_DEPENDENCIES = \
+	src/libnetwork/libnetwork.sym
+
+EXTRA_DIST += \
+	src/libnetwork/libnetwork.sym
 
 # ------------------------------------------------------------------------------
 
@@ -309,11 +351,11 @@ endif
 
 # ------------------------------------------------------------------------------
 
-pkgconfigdata_DATA = \
+pkgconfig_DATA = \
 	src/network.pc
 
 CLEANFILES += \
-	$(pkgconfigdata_DATA)
+	$(pkgconfig_DATA)
 
 EXTRA_DIST += \
 	src/network.pc.in

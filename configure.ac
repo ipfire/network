@@ -41,6 +41,11 @@ AM_INIT_AUTOMAKE([
 ])
 AM_SILENT_RULES([yes])
 
+LT_INIT([
+	disable-static
+	pic-only
+])
+
 AC_PROG_LN_S
 AC_PROG_MKDIR_P
 AC_PROG_SED
@@ -103,6 +108,7 @@ AC_SUBST([udevdir], [$with_udevdir])
 AM_CONDITIONAL(HAVE_UDEV, [test -n "$with_udevdir"])
 
 # ------------------------------------------------------------------------------
+AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
 	Makefile
 ])

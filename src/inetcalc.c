@@ -28,6 +28,8 @@
 #include <string.h>
 #include <sys/socket.h>
 
+#include <network/libnetwork.h>
+
 typedef struct ip_address {
 	int family;
 	struct in6_addr addr;
@@ -513,7 +515,7 @@ int main(int argc, char** argv) {
 	int family = AF_UNSPEC;
 
 	while (1) {
-		int c = getopt_long(argc, argv, "46bcefgnpsv", long_options, &option_index);
+		int c = getopt_long(argc, argv, "46bcefgnpsviV", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -578,6 +580,11 @@ int main(int argc, char** argv) {
 
 			case 'v':
 				verbose = 1;
+				break;
+
+			case 'V':
+				printf("%s\n", network_version());
+				exit(0);
 				break;
 
 			case '?':
