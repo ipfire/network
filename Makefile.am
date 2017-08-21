@@ -490,6 +490,7 @@ uninstall-hook: $(UNINSTALL_EXEC_HOOKS)
 # - testsuite ------------------------------------------------------------------
 
 TESTS_ENVIRONMENT = \
+	LD_LIBRARY_PATH=$(top_builddir)/src/.libs:$(LD_LIBRARY_PATH) \
 	PATH=$(top_builddir)/src:$(PATH) \
 	functions=$(abs_builddir)/src/functions/functions \
 	networkdir=$(abs_srcdir)/src/functions \
