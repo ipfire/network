@@ -28,6 +28,7 @@ AUTOMAKE_OPTIONS = color-tests
 # keep itermediate files
 .SECONDARY:
 
+configdir        = $(sysconfdir)/network
 bashcompletiondir= $(datadir)/bash-completion/completions
 libexecdir       = $(prefix)/lib
 pkgconfigdir     = $(libdir)/pkgconfig
@@ -226,6 +227,16 @@ dist_hooks_zones_SCRIPTS = \
 	src/hooks/zones/modem \
 	src/hooks/zones/pppoe \
 	src/hooks/zones/wireless
+
+INSTALL_DIRS += \
+	$(configdir) \
+	$(configdir)/ports \
+	$(configdir)/vpn \
+	$(configdir)/vpn/ipsec/connections \
+	$(configdir)/vpn/security-policies \
+	$(configdir)/wireless \
+	$(configdir)/wireless/networks \
+	$(configdir)/zones
 
 # ------------------------------------------------------------------------------
 
