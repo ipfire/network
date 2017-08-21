@@ -316,6 +316,17 @@ mac_is_valid() {
 	[[ ${mac} =~ ^([0-9a-f]{2}\:){5}[0-9a-f]{2}$ ]]
 }
 
+# Converts the given string to lowercase and returns true if it is a valid FQDN
+fqdn_is_valid() {
+	local fqdn="${1}"
+
+	if grep -qP "^(?!:\/\/)(?=.{1,255}$)((.{1,63}\.){1,127}(?![0-9]*$)[a-z0-9-]+\.?)$" <<< "${fqdn,,}"; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
 uuid() {
 	echo $(</proc/sys/kernel/random/uuid)
 }

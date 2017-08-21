@@ -1086,12 +1086,18 @@ ipsec_connection_check_peer() {
 	assert [ $# -eq 1 ]
 	local peer=${1}
 
-	# TODO Accept also FQDNs
+	# IP addresses are accepted
 	if ip_is_valid ${peer}; then
 		return ${EXIT_TRUE}
-	else
-		return ${EXIT_FALSE}
 	fi
+
+	# FQDNs are okay, too
+	if fqdn_is_valid "${peer}"; then
+		return ${EXIT_TRUE}
+	fi
+
+	# We cannot use anything else
+	return ${EXIT_FALSE}
 }
 
 # This function checks if a VPN IPsec connection name is valid
