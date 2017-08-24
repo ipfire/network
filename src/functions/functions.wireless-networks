@@ -49,7 +49,7 @@ cli_wireless_network() {
 			local handle="$(wireless_network_hash "${ssid}")"
 
 			case "${key}" in
-				encryption_mode|pre_shared_key|priority)
+				modes|pre_shared_key|priority)
 					wireless_network_${key} "${handle}" "$@"
 					;;
 				show)
@@ -251,16 +251,29 @@ wireless_network_destroy() {
 	return ${EXIT_OK}
 }
 
-wireless_network_encryption_mode() {
-	if [ ! $# -eq 2 ]; then
+wireless_networks_mode_is_valid() {
+	assert [ $# -eq 1 ]
+	local mode=${1}
+
+	if isoneof mode ${WIRELESS_NETWORK_SUPPORTED_MODES}; then
+		return ${EXIT_TRUE}
+	else
+		return ${EXIT_FALSE}
+	fi
+
+}
+
+# WIRELESS_NETWORK_SUPPORTED_MODES
+wireless_network_modes() {
+	if [ ! $# -ge 2 ]; then
 		log ERROR "Not enough arguments"
 		return ${EXIT_ERROR}
 	fi
 	local handle="${1}"
-	local mode="${2}"
+	shift
 
-	if ! isoneof mode ${WIRELESS_VALID_ENCRYPTION_MODES}; then
-		log ERROR "Encryption mode '${mode}' is invalid"
+	if [ $# -eq 0 ]; then
+		log ERROR "You must pass at least one value after mode"
 		return ${EXIT_ERROR}
 	fi
 
@@ -270,15 +283,80 @@ wireless_network_encryption_mode() {
 		return ${EXIT_ERROR}
 	fi
 
-	# Validate the PSK when changing mode and reset if needed
-	if isset PSK && [ "${mode}" != "NONE" ] && \
-			! wireless_pre_shared_key_is_valid "${mode}" "${PSK}"; then
-		log WARNING "The configured pre-shared-key is incompatible with this encryption mode and has been reset"
-		PSK=""
+	# Remove duplicated entries to proceed the list safely
+	MODES="$(list_unique ${MODES})"
+
+	local modes_added
+	local modes_removed
+	local modes_set
+
+	while [ $# -gt 0 ]; do
+		local arg="${1}"
+
+		case "${arg}" in
+			+*)
+				list_append modes_added "${arg:1}"
+				;;
+			-*)
+				list_append modes_removed "${arg:1}"
+				;;
+			[A-Z0-9]*)
+				list_append modes_set "${arg}"
+				;;
+			*)
+				error "Invalid argument: ${arg}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	# Check if the user is trying a mixed operation
+	if ! list_is_empty modes_set && (! list_is_empty modes_added || ! list_is_empty modes_removed); then
+		error "You cannot reset the modes list and add or remove modes at the same time"
+		return ${EXIT_ERROR}
 	fi
 
-	# Save new encryption mode
-	ENCRYPTION_MODE="${mode}"
+	# Set new modes list
+	if ! list_is_empty modes_set; then
+		# Check if all modes are valid
+		local mode
+		for mode in ${modes_set}; do
+			if ! wireless_networks_mode_is_valid ${mode}; then
+				error "Unsupported mode: ${mode}"
+				return ${EXIT_ERROR}
+			fi
+		done
+
+		MODES="${modes_set}"
+
+	# Perform incremental updates
+	else
+		local modes
+
+		# Perform all removals
+		for mode in ${modes_removed}; do
+			if ! list_remove MODES ${mode}; then
+				warning "${mode} was not on the list and could not be removed"
+			fi
+		done
+
+		for mode in ${modes_added}; do
+			if wireless_networks_mode_is_valid ${mode}; then
+				if ! list_append_unique MODES ${mode}; then
+					warning "${mode} is already on the modes list"
+				fi
+			else
+				warning "${mode} is unknown or unsupported and could not be added"
+			fi
+		done
+	fi
+
+	# Check if the list contain at least one valid mode
+	if list_is_empty MODES; then
+		error "Cannot save an empty mode list"
+		return ${EXIT_ERROR}
+	fi
 
 	if ! wireless_network_write_config "${handle}"; then
 		log ERROR "Could not write configuration settings"
