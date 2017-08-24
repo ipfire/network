@@ -393,6 +393,18 @@ wireless_network_pre_shared_key() {
 	fi
 }
 
+wireless_networks_priority_is_valid() {
+	assert [ $# -eq 1 ]
+
+	local priority=${1}
+
+	if ! isinteger priority || [ ! ${priority} -ge 0 ] || [ ! ${priority} -le 999 ]; then
+		return ${EXIT_FALSE}
+	fi
+
+	return ${EXIT_TRUE}
+}
+
 wireless_network_priority() {
 	if [ ! $# -eq 2 ]; then
 		log ERROR "Not enough arguments"
@@ -402,8 +414,8 @@ wireless_network_priority() {
 	local handle="${1}"
 	local priority=${2}
 
-	if ! isinteger priority && [ ! ${priority} -ge 0 ]; then
-		log ERROR "The priority must be an integer greater or eqal zero"
+	if ! wireless_networks_priority_is_valid ${priority}; then
+		error "The priority must be an integer greater or eqal zero and and less then 1000"
 		return ${EXIT_ERROR}
 	fi
 
