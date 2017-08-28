@@ -197,7 +197,8 @@ case "${reason}" in
 
 	BOUND|RENEW|REBIND|REBOOT)
 		# Check if the IP address has changed. If so, delete all routes and stuff.
-		if [ -n "${old_ip_address}" -a "${old_ip_address}" != "${new_ip_address}" ]; then
+		if [ -n "${old_ip_address}" -a "${old_ip_address}" != "${new_ip_address}" ] || \
+			[ "${reason}" = "BOUND" ]; then
 			ipv4_flush_device ${interface}
 		fi
 
@@ -208,7 +209,8 @@ case "${reason}" in
 					[ ! "${old_network_number}" = "${new_network_number}" ] || \
 					[ ! "${old_broadcast_address}" = "${new_broadcast_address}" ] || \
 					[ ! "${old_routers}" = "${new_routers}" ] || \
-					[ ! "${old_interface_mtu}" = "${new_interface_mtu}" ]; then
+					[ ! "${old_interface_mtu}" = "${new_interface_mtu}" ] || \
+					[ "${reason}" = "BOUND" ]; then
 
 
 					# Calc the prefix from the subnet mask
