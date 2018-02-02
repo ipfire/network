@@ -121,16 +121,7 @@ ip_tunnel_add() {
 }
 
 ip_tunnel_del() {
-	local device=${1}
-	assert device_exists ${device}
-
-	# Make sure the device has been shut down.
-	device_set_down ${device}
-
-	log DEBUG "Removing tunnel device '${device}'..."
-
-	ip link del ${device}
-	assert [ $? -eq 0 ]
+	device_delete "$@"
 }
 
 ip_tunnel_change_keys() {
