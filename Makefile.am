@@ -245,7 +245,8 @@ LIBNETWORK_REVISION=0
 LIBNETWORK_AGE=0
 
 pkginclude_HEADERS = \
-	src/libnetwork/network/libnetwork.h
+	src/libnetwork/network/libnetwork.h \
+	src/libnetwork/network/logging.h
 
 lib_LTLIBRARIES = \
 	src/libnetwork.la
@@ -253,6 +254,11 @@ lib_LTLIBRARIES = \
 src_libnetwork_la_SOURCES = \
 	src/libnetwork/libnetwork-private.h \
 	src/libnetwork/libnetwork.c
+
+src_libnetwork_la_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-D_GNU_SOURCE \
+	-DNETWORK_PRIVATE
 
 src_libnetwork_la_LDFLAGS = \
 	$(AM_LDFLAGS) \

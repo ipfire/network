@@ -96,8 +96,18 @@ AC_SUBST([OUR_LDFLAGS], $with_ldflags)
 # ------------------------------------------------------------------------------
 
 AC_CHECK_HEADERS_ONCE([
+	ctype.h
 	errno.h
+	stdarg.h
+	stdio.h
 	stdlib.h
+	string.h
+	syslog.h
+])
+
+AC_CHECK_FUNCS([ \
+	__secure_getenv \
+	secure_getenv \
 ])
 
 # ------------------------------------------------------------------------------

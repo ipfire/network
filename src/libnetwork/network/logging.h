@@ -1,7 +1,7 @@
 /*#############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2017 IPFire Network Development Team                          #
+# Copyright (C) 2018 IPFire Network Development Team                          #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -18,24 +18,40 @@
 #                                                                             #
 #############################################################################*/
 
-#ifndef LIBNETWORK_H
-#define LIBNETWORK_H
+#ifndef NETWORK_LOGGING_H
+#define NETWORK_LOGGING_H
 
-#include <stdarg.h>
+#ifdef NETWORK_PRIVATE
 
-// Central context for all network operations
-struct network_ctx;
+#include <stdlib.h>
+#include <syslog.h>
 
-int network_new(struct network_ctx** ctx);
-struct network_ctx* network_ref(struct network_ctx* ctx);
-struct network_ctx* network_unref(struct network_ctx* ctx);
+static inline void __attribute__((always_inline, format(printf, 2, 3)))
+    network_log_null(struct network_ctx* ctx, const char* format, ...) {}
 
-void network_set_log_fn(struct network_ctx* ctx,
-	void (*log_fn)(struct network_ctx* ctx, int priority, const char* file,
-	int line, const char* fn, const char* format, va_list args));
-int network_get_log_priority(struct network_ctx* ctx);
-void network_set_log_priority(struct network_ctx* ctx, int priority);
+#define network_log_cond(ctx, prio, arg...) \
+    do { \
+        if (network_get_log_priority(ctx) >= prio) \
+            network_log(ctx, prio, __FILE__, __LINE__, __FUNCTION__, ## arg); \
+    } while (0)
 
-const char* network_version();
+#ifdef ENABLE_DEBUG
+#  define DEBUG(ctx, arg...) network_log_cond(ctx, LOG_DEBUG, ## arg)
+#else
+#  define DEBUG(ctx, arg...) network_log_null(ctx, ## arg)
+#endif
+
+#define INFO(ctx, arg...) network_log_cond(ctx, LOG_INFO, ## arg)
+#define ERROR(ctx, arg...) network_log_cond(ctx, LOG_ERR, ## arg)
+
+#ifndef HAVE_SECURE_GETENV
+#  ifdef HAVE___SECURE_GETENV
+#    define secure_getenv __secure_getenv
+#  else
+#    error neither secure_getenv nor __secure_getenv is available
+#  endif
+#endif
 
 #endif
+
+#endif /* NETWORK_LOGGING_H */
