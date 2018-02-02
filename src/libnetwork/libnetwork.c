@@ -110,6 +110,8 @@ NETWORK_EXPORT struct network_ctx* network_ref(struct network_ctx* ctx) {
 
 static void network_free(struct network_ctx* ctx) {
 	DEBUG(ctx, "network ctx %p released\n", ctx);
+
+	free(ctx);
 }
 
 NETWORK_EXPORT struct network_ctx* network_unref(struct network_ctx* ctx) {
