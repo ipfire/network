@@ -18,8 +18,50 @@
 #                                                                             #
 #############################################################################*/
 
+#include <errno.h>
+#include <stdlib.h>
+
 #include <network/libnetwork.h>
 #include "libnetwork-private.h"
+
+struct network_ctx {
+	int refcount;
+};
+
+NETWORK_EXPORT int network_new(struct network_ctx** ctx) {
+	struct network_ctx* c = calloc(1, sizeof(*c));
+	if (!c)
+		return -ENOMEM;
+
+	// Initialise basic variables
+	c->refcount = 1;
+
+	*ctx = c;
+	return 0;
+}
+
+NETWORK_EXPORT struct network_ctx* network_ref(struct network_ctx* ctx) {
+	if (!ctx)
+		return NULL;
+
+	ctx->refcount++;
+	return ctx;
+}
+
+static void network_free(struct network_ctx* ctx) {
+	// Nothing to do, yet
+}
+
+NETWORK_EXPORT struct network_ctx* network_unref(struct network_ctx* ctx) {
+	if (!ctx)
+		return NULL;
+
+	if (--ctx->refcount > 0)
+		return ctx;
+
+	network_free(ctx);
+	return NULL;
+}
 
 NETWORK_EXPORT const char* network_version() {
 	return "network " VERSION;

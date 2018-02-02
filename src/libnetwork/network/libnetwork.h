@@ -21,6 +21,13 @@
 #ifndef LIBNETWORK_H
 #define LIBNETWORK_H
 
+// Central context for all network operations
+struct network_ctx;
+
+int network_new(struct network_ctx** ctx);
+struct network_ctx* network_ref(struct network_ctx* ctx);
+struct network_ctx* network_unref(struct network_ctx* ctx);
+
 const char* network_version();
 
 #endif

@@ -94,6 +94,13 @@ CC_CHECK_FLAGS_APPEND([with_ldflags], [LDFLAGS], [\
 AC_SUBST([OUR_LDFLAGS], $with_ldflags)
 
 # ------------------------------------------------------------------------------
+
+AC_CHECK_HEADERS_ONCE([
+	errno.h
+	stdlib.h
+])
+
+# ------------------------------------------------------------------------------
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
 	[], [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
