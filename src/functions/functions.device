@@ -77,6 +77,9 @@ device_delete() {
 	# Nothing to do, it device does not exist.
 	device_exists ${device} || return ${EXIT_OK}
 
+	# Shut down device before we delete it
+	device_set_down "${device}"
+
 	# Delete the device.
 	cmd_quiet ip link delete ${device}
 	local ret=$?
