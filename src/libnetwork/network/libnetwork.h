@@ -38,4 +38,12 @@ void network_set_log_priority(struct network_ctx* ctx, int priority);
 
 const char* network_version();
 
+#ifdef NETWORK_PRIVATE
+
+void network_log(struct network_ctx* ctx,
+	int priority, const char* file, int line, const char* fn,
+	const char* format, ...);
+
+#endif
+
 #endif

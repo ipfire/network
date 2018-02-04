@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <syslog.h>
 
+#include <network/libnetwork.h>
+
 static inline void __attribute__((always_inline, format(printf, 2, 3)))
     network_log_null(struct network_ctx* ctx, const char* format, ...) {}
 
