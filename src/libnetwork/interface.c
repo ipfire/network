@@ -19,6 +19,7 @@
 #############################################################################*/
 
 #include <errno.h>
+#include <net/if.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -31,6 +32,7 @@ struct network_interface {
 	struct network_ctx* ctx;
 	int refcount;
 
+	unsigned int index;
 	char* name;
 };
 
@@ -39,6 +41,12 @@ NETWORK_EXPORT int network_interface_new(struct network_ctx* ctx,
 	if (!name)
 		return -EINVAL;
 
+	unsigned int index = if_nametoindex(name);
+	if (!index) {
+		ERROR(ctx, "Could not find interface %s\n", name);
+		return -ENODEV;
+	}
+
 	struct network_interface* i = calloc(1, sizeof(*i));
 	if (!i)
 		return -ENOMEM;
@@ -46,6 +54,7 @@ NETWORK_EXPORT int network_interface_new(struct network_ctx* ctx,
 	// Initialise object
 	i->ctx = network_ref(ctx);
 	i->refcount = 1;
+	i->index = index;
 	i->name = strdup(name);
 
 	DEBUG(i->ctx, "Allocated network interface at %p\n", i);

@@ -98,6 +98,7 @@ AC_SUBST([OUR_LDFLAGS], $with_ldflags)
 AC_CHECK_HEADERS_ONCE([
 	ctype.h
 	errno.h
+	net/if.h
 	stdarg.h
 	stdio.h
 	stdlib.h
