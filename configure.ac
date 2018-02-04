@@ -126,6 +126,11 @@ AC_SUBST([udevdir], [$with_udevdir])
 AM_CONDITIONAL(HAVE_UDEV, [test -n "$with_udevdir"])
 
 # ------------------------------------------------------------------------------
+
+PKG_CHECK_MODULES([LIBNL], [libnl-3.0 libnl-genl-3.0])
+
+# ------------------------------------------------------------------------------
+
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
 	Makefile

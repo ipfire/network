@@ -257,10 +257,18 @@ src_libnetwork_la_SOURCES = \
 	src/libnetwork/libnetwork-private.h \
 	src/libnetwork/libnetwork.c
 
+src_libnetwork_la_LIBADD = \
+	$(LIBNL_LIBS)
+
 src_libnetwork_la_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
+	$(LIBNL_CPPFLAGS) \
 	-D_GNU_SOURCE \
 	-DNETWORK_PRIVATE
+
+src_libnetwork_la_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(LIBNL_CFLAGS)
 
 src_libnetwork_la_LDFLAGS = \
 	$(AM_LDFLAGS) \
