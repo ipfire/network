@@ -20,6 +20,9 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <netlink/genl/ctrl.h>
+#include <netlink/genl/genl.h>
+#include <netlink/netlink.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +41,10 @@ struct network_ctx {
 		int priority, const char *file, int line, const char *fn,
 		const char *format, va_list args);
 	int log_priority;
+
+	// Netlink
+	struct nl_sock* nl_socket;
+	int nl80211_id;
 };
 
 void network_log(struct network_ctx* ctx,
@@ -77,6 +84,43 @@ static int log_priority(const char* priority) {
 	return 0;
 }
 
+static int init_netlink(struct network_ctx* ctx) {
+	// Allocate netlink socket
+	ctx->nl_socket = nl_socket_alloc();
+	if (!ctx->nl_socket) {
+		ERROR(ctx, "Failed to allocate netlink socket\n");
+		return -ENOMEM;
+	}
+
+	// Connect the socket
+	if (genl_connect(ctx->nl_socket)) {
+		ERROR(ctx, "Failed to connect to generic netlink");
+		return -ENOLINK;
+	}
+
+	// Set buffer size
+	nl_socket_set_buffer_size(ctx->nl_socket, 8192, 8192);
+
+	// Get nl80211 id
+	ctx->nl80211_id = genl_ctrl_resolve(ctx->nl_socket, "nl80211");
+	if (ctx->nl80211_id < 0) {
+		ERROR(ctx, "Could not find nl80211\n");
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+static void network_free(struct network_ctx* ctx) {
+	DEBUG(ctx, "network ctx %p released\n", ctx);
+
+	// Free netlink socket
+	if (ctx->nl_socket)
+		nl_socket_free(ctx->nl_socket);
+
+	free(ctx);
+}
+
 NETWORK_EXPORT int network_new(struct network_ctx** ctx) {
 	struct network_ctx* c = calloc(1, sizeof(*c));
 	if (!c)
@@ -93,6 +137,13 @@ NETWORK_EXPORT int network_new(struct network_ctx** ctx) {
 	if (env)
 		network_set_log_priority(c, log_priority(env));
 
+	// Initiate netlink connection
+	int r = init_netlink(c);
+	if (r) {
+		network_free(c);
+		return r;
+	}
+
 	INFO(c, "network ctx %p created\n", c);
 	DEBUG(c, "log_priority=%d\n", c->log_priority);
 
@@ -106,12 +157,6 @@ NETWORK_EXPORT struct network_ctx* network_ref(struct network_ctx* ctx) {
 
 	ctx->refcount++;
 	return ctx;
-}
-
-static void network_free(struct network_ctx* ctx) {
-	DEBUG(ctx, "network ctx %p released\n", ctx);
-
-	free(ctx);
 }
 
 NETWORK_EXPORT struct network_ctx* network_unref(struct network_ctx* ctx) {
