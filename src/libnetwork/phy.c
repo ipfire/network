@@ -181,7 +181,15 @@ static int phy_get_info(struct network_phy* phy) {
 	if (!msg)
 		return -1;
 
-	return network_send_netlink_message(phy->ctx, msg, phy_parse_info, phy);
+	int r = network_send_netlink_message(phy->ctx, msg, phy_parse_info, phy);
+
+	// This is fine since some devices are not supported by NL80211
+	if (r == -ENODEV) {
+		DEBUG(phy->ctx, "Could not fetch information from kernel\n");
+		return 0;
+	}
+
+	return r;
 }
 
 static void network_phy_free(struct network_phy* phy) {
