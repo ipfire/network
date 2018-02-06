@@ -491,7 +491,8 @@ substitutions = \
 	'|exec_prefix=$(exec_prefix)|' \
 	'|sbindir=$(sbindir)|' \
 	'|networkdir=$(networkdir)|' \
-	'|helpersdir=$(helpersdir)|'
+	'|helpersdir=$(helpersdir)|' \
+	'|utildir=$(utildir)|'
 
 SED_PROCESS = \
 	$(AM_V_GEN)$(MKDIR_P) $(dir $@) && \
