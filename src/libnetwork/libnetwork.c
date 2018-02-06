@@ -20,6 +20,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <linux/netlink.h>
 #include <linux/nl80211.h>
 #include <netlink/genl/ctrl.h>
 #include <netlink/genl/genl.h>
@@ -214,30 +215,74 @@ struct nl_msg* network_make_netlink_message(struct network_ctx* ctx,
 	return msg;
 }
 
+struct network_netlink_message_status {
+	struct network_ctx* ctx;
+	int r;
+};
+
 static int __nl_ack_handler(struct nl_msg* msg, void* data) {
-	int* r = data;
-	*r = 0;
+	struct network_netlink_message_status* status = data;
+	status->r = 0;
 
 	return NL_STOP;
 }
 
 static int __nl_finish_handler(struct nl_msg* msg, void* data) {
-	int* r = data;
-	*r = 0;
+	struct network_netlink_message_status* status = data;
+	status->r = 0;
 
 	return NL_SKIP;
+}
+
+static int __nl_error_handler(struct sockaddr_nl* nla, struct nlmsgerr* err, void* data) {
+	struct network_netlink_message_status* status = data;
+	status->r = 0;
+
+	struct nlattr *attrs;
+	struct nlattr *tb[NLMSGERR_ATTR_MAX + 1];
+	struct nlmsghdr* nlh = (struct nlmsghdr*)err - 1;
+
+	size_t len = nlh->nlmsg_len;
+	size_t ack_len = sizeof(*nlh) + sizeof(int) + sizeof(*nlh);
+
+	status->r = err->error;
+	if (!(nlh->nlmsg_flags & NLM_F_ACK_TLVS))
+		return NL_STOP;
+
+	if (!(nlh->nlmsg_flags & NLM_F_CAPPED))
+		ack_len += err->msg.nlmsg_len - sizeof(*nlh);
+
+	if (len <= ack_len)
+		return NL_STOP;
+
+	attrs = (void *)((unsigned char *)nlh + ack_len);
+	len -= ack_len;
+
+	nla_parse(tb, NLMSGERR_ATTR_MAX, attrs, len, NULL);
+	if (tb[NLMSGERR_ATTR_MSG]) {
+		len = strnlen((char *)nla_data(tb[NLMSGERR_ATTR_MSG]),
+			      nla_len(tb[NLMSGERR_ATTR_MSG]));
+
+		ERROR(status->ctx, "Kernel reports: %*s\n", len,
+			(const char *)nla_data(tb[NLMSGERR_ATTR_MSG]));
+	}
+
+	return NL_STOP;
 }
 
 // Sends a netlink message and calls the handler to handle the result
 int network_send_netlink_message(struct network_ctx* ctx, struct nl_msg* msg,
 		int(*handler)(struct nl_msg* msg, void* data), void* data) {
+	struct network_netlink_message_status status;
+	status.ctx = ctx;
+
 	DEBUG(ctx, "Sending netlink message %p\n", msg);
 
 	// Sending the message
-	int r = nl_send_auto(ctx->nl_socket, msg);
-	if (r < 0) {
-		ERROR(ctx, "Error sending netlink message: %d\n", r);
-		return r;
+	status.r = nl_send_auto(ctx->nl_socket, msg);
+	if (status.r < 0) {
+		ERROR(ctx, "Error sending netlink message: %d\n", status.r);
+		return status.r;
 	}
 
 	// Register callback
@@ -249,16 +294,17 @@ int network_send_netlink_message(struct network_ctx* ctx, struct nl_msg* msg,
 		return -1;
 	}
 
-	r = 1;
+	status.r = 1;
 
 	nl_cb_set(callback, NL_CB_VALID, NL_CB_CUSTOM, handler, data);
-	nl_cb_set(callback, NL_CB_ACK, NL_CB_CUSTOM, __nl_ack_handler, &r);
-	nl_cb_set(callback, NL_CB_FINISH, NL_CB_CUSTOM, __nl_finish_handler, &r);
+	nl_cb_set(callback, NL_CB_ACK, NL_CB_CUSTOM, __nl_ack_handler, &status);
+	nl_cb_set(callback, NL_CB_FINISH, NL_CB_CUSTOM, __nl_finish_handler, &status);
+	nl_cb_err(callback, NL_CB_CUSTOM, __nl_error_handler, &status);
 
-	while (r > 0)
+	while (status.r > 0)
 		nl_recvmsgs(ctx->nl_socket, callback);
 
-	DEBUG(ctx, "Netlink message returned with status %d\n", r);
+	DEBUG(ctx, "Netlink message returned with status %d\n", status.r);
 
-	return r;
+	return status.r;
 }
