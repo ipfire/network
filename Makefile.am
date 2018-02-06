@@ -107,7 +107,7 @@ dist_sbin_SCRIPTS = \
 	src/firewall6 \
 	src/network
 
-network_SCRIPTS = \
+network_DATA = \
 	src/functions/functions
 
 CLEANFILES += \
@@ -116,7 +116,7 @@ CLEANFILES += \
 EXTRA_DIST += \
 	src/functions/functions.in
 
-dist_network_SCRIPTS = \
+dist_network_DATA = \
 	src/functions/functions.at \
 	src/functions/functions.auth \
 	src/functions/functions.bonding \
