@@ -112,6 +112,15 @@ AC_CHECK_FUNCS([ \
 ])
 
 # ------------------------------------------------------------------------------
+
+AC_ARG_ENABLE([debug],
+	AS_HELP_STRING([--enable-debug], [enable debug messages @<:@default=disabled@:>@]),
+	[], [enable_debug=no])
+AS_IF([test "x$enable_debug" = "xyes"], [
+	AC_DEFINE(ENABLE_DEBUG, [1], [Debug messages.])
+])
+
+# ------------------------------------------------------------------------------
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
 	[], [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])

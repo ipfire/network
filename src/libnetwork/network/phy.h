@@ -30,4 +30,39 @@ int network_phy_new(struct network_ctx*, struct network_phy** phy, const char* n
 struct network_phy* network_phy_ref(struct network_phy* phy);
 struct network_phy* network_phy_unref(struct network_phy* phy);
 
+enum network_phy_ht_caps {
+	NETWORK_PHY_HT_CAP_RX_LDCP         = (1 <<  0),
+	NETWORK_PHY_HT_CAP_HT40            = (1 <<  1),
+	NETWORK_PHY_HT_CAP_SMPS_STATIC     = (1 <<  2),
+	NETWORK_PHY_HT_CAP_SMPS_DYNAMIC    = (1 <<  3),
+	NETWORK_PHY_HT_CAP_RX_GF           = (1 <<  4),
+	NETWORK_PHY_HT_CAP_RX_HT20_SGI     = (1 <<  5),
+	NETWORK_PHY_HT_CAP_RX_HT40_SGI     = (1 <<  6),
+	NETWORK_PHY_HT_CAP_TX_STBC         = (1 <<  7),
+	NETWORK_PHY_HT_CAP_RX_STBC1        = (1 <<  8),
+	NETWORK_PHY_HT_CAP_RX_STBC2        = (1 <<  9),
+	NETWORK_PHY_HT_CAP_RX_STBC3        = (1 << 10),
+	NETWORK_PHY_HT_CAP_DELAYED_BA      = (1 << 11),
+	NETWORK_PHY_HT_CAP_MAX_AMSDU_7935  = (1 << 12),
+	NETWORK_PHY_HT_CAP_DSSS_CCK_HT40   = (1 << 13),
+	NETWORK_PHY_HT_CAP_HT40_INTOLERANT = (1 << 14),
+	NETWORK_PHY_HT_CAP_LSIG_TXOP_PROT  = (1 << 15),
+};
+
+int network_phy_has_ht_capability(struct network_phy* phy, const enum network_phy_ht_caps cap);
+char* network_phy_list_ht_capabilities(struct network_phy* phy);
+
+#ifdef NETWORK_PRIVATE
+
+#include <linux/nl80211.h>
+#include <netlink/msg.h>
+
+struct nl_msg* network_phy_make_netlink_message(struct network_phy* phy,
+	enum nl80211_commands cmd, int flags);
+
+#define foreach_ht_cap(cap) \
+	for(int cap = NETWORK_PHY_HT_CAP_RX_LDCP; cap != NETWORK_PHY_HT_CAP_LSIG_TXOP_PROT; cap <<= 1)
+
+#endif
+
 #endif /* NETWORK_PHY_H */

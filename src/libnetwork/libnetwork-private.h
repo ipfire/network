@@ -23,4 +23,6 @@
 
 #define NETWORK_EXPORT __attribute__ ((visibility("default")))
 
+#define BIT(x) (1ULL << (x))
+
 #endif

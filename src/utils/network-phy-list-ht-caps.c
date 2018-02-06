@@ -1,7 +1,7 @@
 /*#############################################################################
 #                                                                             #
 # IPFire.org - A linux based firewall                                         #
-# Copyright (C) 2017 IPFire Network Development Team                          #
+# Copyright (C) 2018 IPFire Network Development Team                          #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
@@ -18,40 +18,44 @@
 #                                                                             #
 #############################################################################*/
 
-#ifndef LIBNETWORK_H
-#define LIBNETWORK_H
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <stdarg.h>
+#include <network/libnetwork.h>
+#include <network/logging.h>
+#include <network/phy.h>
 
-// Central context for all network operations
-struct network_ctx;
+int main(int argc, char** argv) {
+    struct network_ctx* ctx = NULL;
+    int r;
 
-int network_new(struct network_ctx** ctx);
-struct network_ctx* network_ref(struct network_ctx* ctx);
-struct network_ctx* network_unref(struct network_ctx* ctx);
+    if (argc < 2) {
+        fprintf(stderr, "No enough arguments\n");
+        r = 2;
+        goto END;
+    }
 
-void network_set_log_fn(struct network_ctx* ctx,
-	void (*log_fn)(struct network_ctx* ctx, int priority, const char* file,
-	int line, const char* fn, const char* format, va_list args));
-int network_get_log_priority(struct network_ctx* ctx);
-void network_set_log_priority(struct network_ctx* ctx, int priority);
+    // Initialise context
+    r = network_new(&ctx);
+    if (r)
+        return r;
 
-const char* network_version();
+    struct network_phy* phy;
+    r = network_phy_new(ctx, &phy, argv[1]);
+    if (r) {
+        fprintf(stderr, "Could not find %s\n", argv[1]);
+        goto END;
+    }
 
-#ifdef NETWORK_PRIVATE
+    // Print all supported HT capabilities
+    char* ht_caps = network_phy_list_ht_capabilities(phy);
+    if (ht_caps) {
+        printf("%s\n", ht_caps);
+        free(ht_caps);
+    }
 
-#include <linux/nl80211.h>
-#include <netlink/msg.h>
-
-void network_log(struct network_ctx* ctx,
-	int priority, const char* file, int line, const char* fn,
-	const char* format, ...);
-
-struct nl_msg* network_make_netlink_message(struct network_ctx* ctx,
-		enum nl80211_commands cmd, int flags);
-int network_send_netlink_message(struct network_ctx* ctx, struct nl_msg* msg,
-		int(*handler)(struct nl_msg* msg, void* data), void* data);
-
-#endif
-
-#endif
+END:
+    network_phy_unref(phy);
+    network_unref(ctx);
+    return r;
+}

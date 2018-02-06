@@ -20,6 +20,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <linux/nl80211.h>
 #include <netlink/genl/ctrl.h>
 #include <netlink/genl/genl.h>
 #include <netlink/netlink.h>
@@ -100,6 +101,15 @@ static int init_netlink(struct network_ctx* ctx) {
 
 	// Set buffer size
 	nl_socket_set_buffer_size(ctx->nl_socket, 8192, 8192);
+
+	// Register socket callback
+	struct nl_cb* callback = nl_cb_alloc(NL_CB_DEFAULT);
+	if (!callback) {
+		ERROR(ctx, "Could not allocate socket callback\n");
+		return -ENOMEM;
+	}
+
+	nl_socket_set_cb(ctx->nl_socket, callback);
 
 	// Get nl80211 id
 	ctx->nl80211_id = genl_ctrl_resolve(ctx->nl_socket, "nl80211");
@@ -187,4 +197,68 @@ NETWORK_EXPORT void network_set_log_priority(struct network_ctx* ctx, int priori
 
 NETWORK_EXPORT const char* network_version() {
 	return "network " VERSION;
+}
+
+// Creates a netlink message that can be sent with network_send_netlink_message
+struct nl_msg* network_make_netlink_message(struct network_ctx* ctx,
+		enum nl80211_commands cmd, int flags) {
+	// Allocate message
+	struct nl_msg* msg = nlmsg_alloc();
+	if (!msg)
+		return NULL;
+
+	genlmsg_put(msg, 0, 0, ctx->nl80211_id, 0, flags, cmd, 0);
+
+	DEBUG(ctx, "Created new netlink message %p\n", msg);
+
+	return msg;
+}
+
+static int __nl_ack_handler(struct nl_msg* msg, void* data) {
+	int* r = data;
+	*r = 0;
+
+	return NL_STOP;
+}
+
+static int __nl_finish_handler(struct nl_msg* msg, void* data) {
+	int* r = data;
+	*r = 0;
+
+	return NL_SKIP;
+}
+
+// Sends a netlink message and calls the handler to handle the result
+int network_send_netlink_message(struct network_ctx* ctx, struct nl_msg* msg,
+		int(*handler)(struct nl_msg* msg, void* data), void* data) {
+	DEBUG(ctx, "Sending netlink message %p\n", msg);
+
+	// Sending the message
+	int r = nl_send_auto(ctx->nl_socket, msg);
+	if (r < 0) {
+		ERROR(ctx, "Error sending netlink message: %d\n", r);
+		return r;
+	}
+
+	// Register callback
+	struct nl_cb* callback = nl_cb_alloc(NL_CB_DEFAULT);
+	if (!callback) {
+		ERROR(ctx, "Could not allocate callback\n");
+		nlmsg_free(msg);
+
+		return -1;
+	}
+
+	r = 1;
+
+	nl_cb_set(callback, NL_CB_VALID, NL_CB_CUSTOM, handler, data);
+	nl_cb_set(callback, NL_CB_ACK, NL_CB_CUSTOM, __nl_ack_handler, &r);
+	nl_cb_set(callback, NL_CB_FINISH, NL_CB_CUSTOM, __nl_finish_handler, &r);
+
+	while (r > 0)
+		nl_recvmsgs(ctx->nl_socket, callback);
+
+	DEBUG(ctx, "Netlink message returned with status %d\n", r);
+
+	return r;
 }

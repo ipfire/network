@@ -51,6 +51,7 @@ hooks_zonesdir   = $(hooksdir)/zones
 triggersdir      = $(networkdir)/triggers
 
 logdir           = $(localestatedir)/log/network
+utildir          = $(networkdir)
 
 CLEANFILES =
 DISTCLEANFILES =
@@ -282,6 +283,17 @@ src_libnetwork_la_DEPENDENCIES = \
 
 EXTRA_DIST += \
 	src/libnetwork/libnetwork.sym
+
+# ------------------------------------------------------------------------------
+
+util_PROGRAMS = \
+	src/utils/network-phy-list-ht-caps
+
+src_utils_network_phy_list_ht_caps_SOURCES = \
+	src/utils/network-phy-list-ht-caps.c
+
+src_utils_network_phy_list_ht_caps_LDADD = \
+	src/libnetwork.la
 
 # ------------------------------------------------------------------------------
 
