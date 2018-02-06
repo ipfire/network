@@ -36,18 +36,40 @@ hook_check_config_settings() {
 hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--address=*)
-				ADDRESS=${1#--address=}
-				;;
-			--prefix=*)
-				PREFIX=${1#--prefix=}
-				;;
 			--gateway=*)
 				GATEWAY=${1#--gateway=}
+				;;
+			*:*/*)
+				ADDRESS=$(ip_split_prefix "${1}")
+				PREFIX=$(ip_get_prefix "${1}")
+				;;
+			*)
+				error "Invalid argument: ${1}"
+				return ${EXIT_ERROR}
 				;;
 		esac
 		shift
 	done
+
+	if ! isset ADDRESS; then
+		error "You need to pass an address"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! isset PREFIX; then
+		error "You need to pass a prefix"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipv6_is_valid "${ADDRESS}"; then
+		error "${ADDRESS} is not a valid IPv6 address"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ipv6_prefix_is_valid "${PREFIX}"; then
+		error "${PREFIX} is not a valid IPv6 prefix"
+		return ${EXIT_ERROR}
+	fi
 
 	if zone_config_check_same_setting "${zone}" "ipv6-static" "ADDRESS" "${ADDRESS}"; then
 		error "An ipv6-static config with the same IPv6 address is already configured"
