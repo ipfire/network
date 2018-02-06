@@ -27,6 +27,7 @@
 
 int main(int argc, char** argv) {
     struct network_ctx* ctx = NULL;
+    struct network_phy* phy = NULL;
     int r;
 
     if (argc < 2) {
@@ -40,7 +41,6 @@ int main(int argc, char** argv) {
     if (r)
         return r;
 
-    struct network_phy* phy;
     r = network_phy_new(ctx, &phy, argv[1]);
     if (r) {
         fprintf(stderr, "Could not find %s\n", argv[1]);
