@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 
     // Print all supported HT capabilities
     char* ht_caps = network_phy_list_ht_capabilities(phy);
-    if (ht_caps) {
+    if (ht_caps && *ht_caps) {
         printf("%s\n", ht_caps);
         free(ht_caps);
     }
