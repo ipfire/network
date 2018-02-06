@@ -209,10 +209,9 @@ src_inetcalc_LDADD = \
 
 dist_hooks_configs_SCRIPTS = \
 	src/hooks/configs/dhcp \
-	src/hooks/configs/ipv4-static \
 	src/hooks/configs/ipv6-auto \
-	src/hooks/configs/ipv6-static \
-	src/hooks/configs/pppoe-server
+	src/hooks/configs/pppoe-server \
+	src/hooks/configs/static
 
 dist_hooks_ports_SCRIPTS = \
 	src/hooks/ports/bonding \

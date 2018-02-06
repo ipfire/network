@@ -1,0 +1,257 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /usr/lib/network/header-config
+
+HOOK_CONFIG_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
+
+hook_check_config_settings() {
+	local protocol="$(ip_detect_protocol "${ADDRESS}")"
+
+	case "${protocol}" in
+		ipv6)
+			assert ipv6_is_valid "${ADDRESS}"
+			assert ipv6_prefix_is_valid "${PREFIX}"
+
+			isset GATEWAY && assert ipv6_is_valid "${GATEWAY}"
+			;;
+
+		ipv4)
+			assert ipv4_is_valid "${ADDRESS}"
+			assert ipv4_prefix_is_valid "${PREFIX}"
+
+			isset GATEWAY && assert ipv4_is_valid "${GATEWAY}"
+			;;
+
+		*)
+			error "Could not determine protocol: ${protocol}"
+			return ${EXIT_CONF_ERROR}
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+hook_parse_cmdline() {
+	local protocol
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			# IPv6
+			*:*/*)
+				protocol="ipv6"
+
+				ADDRESS="$(ip_split_prefix "${1}")"
+				PREFIX="$(ip_get_prefix "${1}")"
+
+				# Validate address
+				if ! ipv6_is_valid "${ADDRESS}"; then
+					error "Invalid IP address: ${ADDRESS}"
+					return ${EXIT_CONF_ERROR}
+				fi
+
+				# Validate prefix
+				if ! ipv6_prefix_is_valid "${PREFIX}"; then
+					error "Invalid prefix: ${PREFIX}"
+					return ${EXIT_CONF_ERROR}
+				fi
+
+				# Store the IPv6 address in its shortest format
+				ADDRESS="$(ipv6_format "${ADDRESS}")"
+				;;
+
+			# IPv4
+			*.*.*.*/*)
+				protocol="ipv4"
+
+				ADDRESS="$(ip_split_prefix "${1}")"
+				PREFIX="$(ip_get_prefix "${1}")"
+
+				# Validate address
+				if ! ipv4_is_valid "${ADDRESS}"; then
+					error "Invalid IP address: ${ADDRESS}"
+					return ${EXIT_CONF_ERROR}
+				fi
+
+				# Validate prefix
+				if ! ipv4_prefix_is_valid "${PREFIX}"; then
+					# This might be a netmask instead
+					local prefix_from_netmask="$(ipv4_netmask2prefix "${PREFIX}")"
+
+					if ! ipv4_prefix_is_valid "${prefix_from_netmask}"; then
+						PREFIX="${prefix_from_netmask}"
+					else
+						error "Invalid prefix or netmask: ${PREFIX}"
+						return ${EXIT_CONF_ERROR}
+					fi
+				fi
+				;;
+
+			# Gateway
+			--gateway=*)
+				GATEWAY="$(cli_get_val "${1}")"
+
+				# Validate input
+				if isset GATEWAY && ! ip_is_valid "${GATEWAY}"; then
+					error "Invalid gateway IP address: ${GATEWAY}"
+					return ${EXIT_CONF_ERROR}
+				fi
+				;;
+
+			*)
+				error "Invalid argument: ${1}"
+				return ${EXIT_CONF_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	# Check if an address has been set
+	if ! isset ADDRESS; then
+		error "No IP address provided"
+		return ${EXIT_CONF_ERROR}
+	fi
+
+	# Check if a prefix has been set
+	if ! isset PREFIX; then
+		error "No prefix provided"
+		return ${EXIT_CONF_ERROR}
+	fi
+
+	# More gateway validation
+	if isset GATEWAY; then
+		local gateway_protocol="$(ip_detect_protocol "${GATEWAY}")"
+
+		# Make sure that the prefix is of the same protocol version
+		if [ "${gateway_protocol}" != "${protocol}" ]; then
+			error "The gateway is of a wrong protocol: ${GATEWAY}"
+			return ${EXIT_CONF_ERROR}
+		fi
+
+		# Make IP address as short as possible
+		if [ "${gateway_protocol}" = "ipv6" ]; then
+			GATEWAY="$(ipv6_format "${GATEWAY}")"
+		fi
+	fi
+
+	# Check any conflicts
+	if zone_config_check_same_setting "${zone}" "static" "ADDRESS" "${ADDRESS}"; then
+		error "A static configuration with the same address is already configured"
+		return ${EXIT_CONF_ERROR}
+	fi
+}
+
+hook_up() {
+	local zone="${1}"
+	local config="${2}"
+	shift 2
+
+	# Check if the device exists
+	if ! device_exists ${zone}; then
+		error "Zone ${zone} doesn't exist"
+		return ${EXIT_ERROR}
+	fi
+
+	# Read configuration
+	if ! zone_config_settings_read "${zone}" "${config}"; then
+		error "Could not read configuration for ${zone} ${config}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Add IP address to the interface
+	if ! ip_address_add "${zone}" "${ADDRESS}/${PREFIX}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	local protocol="$(ip_detect_protocol "${ADDRESS}")"
+	assert isset protocol
+
+	db_set "${zone}/${protocol}/type" "${HOOK}"
+	db_set "${zone}/${protocol}/local-ip-address" "${ADDRESS}/${PREFIX}"
+	db_set "${zone}/${protocol}/remote-ip-address" "${GATEWAY}"
+	db_set "${zone}/${protocol}/active" 1
+
+	# Update routing tables
+	routing_update "${zone}" "${protocol}"
+	routing_default_update
+
+	exit ${EXIT_OK}
+}
+
+hook_down() {
+	local zone=${1}
+	local config=${2}
+	shift 2
+
+	if ! device_exists ${zone}; then
+		error "Zone ${zone} doesn't exist"
+		exit ${EXIT_ERROR}
+	fi
+
+	# Read configuration
+	if ! zone_config_settings_read "${zone}" "${config}"; then
+		return ${EXIT_ERRO}
+	fi
+
+	# Remove routing information from database
+	local protocol="$(ip_detect_protocol "${ADDRESS}")"
+	assert isset protocol
+	db_delete "${zone}/${protocol}"
+
+	# Remove the IP address
+	ip_address_del "${zone}" "${ADDRESS}/${PREFIX}"
+
+	# Update routing tables
+	routing_update "${zone}" "${protocol}"
+	routing_default_update
+
+	return ${EXIT_OK}
+}
+
+hook_status() {
+	local zone=${1}
+	local config=${2}
+	shift 2
+
+	if ! device_exists ${zone}; then
+		error "Zone ${zone} doesn't exist"
+		exit ${EXIT_ERROR}
+	fi
+
+	# Read configuration
+	if ! zone_config_settings_read "${zone}" "${config}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	local status=${MSG_HOOK_UP}
+	if ! zone_has_ip "${zone}" "${ADDRESS}/${PREFIX}"; then
+		status=${MSG_HOOK_DOWN}
+	fi
+	cli_statusline 3 "${HOOK}" "${status}"
+
+	cli_print_fmt1 3 "IP Address" "${ADDRESS}/${PREFIX}"
+	if [ -n "${GATEWAY}" ]; then
+		cli_print_fmt1 3 "Gateway" "${GATEWAY}"
+	fi
+	cli_space
+
+	return ${EXIT_OK}
+}

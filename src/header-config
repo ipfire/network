@@ -20,7 +20,20 @@
 ###############################################################################
 
 hook_new() {
-	cmd_not_implemented
+	local zone="${1}"
+	shift
+
+	# Parse command line arguments
+	if ! hook_parse_cmdline "$@"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Write configuration to disk
+	if ! zone_config_settings_write "${zone}" "${HOOK}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
 }
 
 hook_edit() {
