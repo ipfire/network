@@ -23,8 +23,12 @@ hook_new() {
 	local zone="${1}"
 	shift
 
+	local id=$(zone_config_get_new_id ${zone})
+	log DEBUG "ID for the config is: ${id}"
+
 	# Parse command line arguments
-	if ! hook_parse_cmdline "$@"; then
+	if ! hook_parse_cmdline "${id}" "$@"; then
+		# Return an error if the parsing of the cmd line fails
 		return ${EXIT_ERROR}
 	fi
 
@@ -68,7 +72,7 @@ hook_edit() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_parse_cmdline "$@"; then
+	if ! hook_parse_cmdline "${id}" "$@"; then
 		# Return an error if the parsing of the cmd line fails
 		return ${EXIT_ERROR}
 	fi

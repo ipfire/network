@@ -1097,22 +1097,29 @@ zone_config_check_same_setting() {
 	# with the same setting is already configured for this zone.
 	# Returns True when yes and False when no.
 
-	assert [ $# -eq 4 ]
+	assert [ $# -eq 5 ]
 
 	local zone=${1}
 	local hook=${2}
-	local key=${3}
-	local value=${4}
+	local id=${3}
+	local key=${4}
+	local value=${5}
 
 	# The key should be local for this function
 	local ${key}
 	local config
 
 	for config in $(zone_configs_list ${zone}); do
+		# Check if the config is eqal with the config we want to edit, when continue
+		if [[ "${config}" = "${hook}.${id}" ]]; then
+			continue
+		fi
+
 		# Check if the config is from the given hook, when not continue
 		if  [[ $(zone_config_get_hook "${zone}" "${config}") != ${hook} ]]; then
 			continue
 		fi
+
 		# Get the value of the key for a given function
 		zone_config_settings_read "${zone}" "${config}" \
                 --ignore-superfluous-settings "${key}"
@@ -1343,10 +1350,7 @@ zone_config_settings_write() {
 	local hook="${2}"
 	local id=${3}
 
-	if ! isset id; then
-		id=$(zone_config_get_new_id ${zone})
-		log DEBUG "ID for the config is: ${id}"
-	fi
+	assert isset id
 
 	local args
 	if function_exists "hook_check_config_settings"; then

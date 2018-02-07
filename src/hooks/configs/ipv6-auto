@@ -31,6 +31,9 @@ hook_check_config_settings() {
 }
 
 hook_parse_cmdline() {
+	local id="${1}"
+	shift
+
 	local arg
 
 	while read arg; do
@@ -57,12 +60,15 @@ hook_new() {
 		return ${EXIT_ERROR}
 	fi
 
-	if ! hook_parse_cmdline "$@"; then
+	local id=$(zone_config_get_new_id ${zone})
+	log DEBUG "ID for the config is: ${id}"
+
+	if ! hook_parse_cmdline "${id}" "$@"; then
 		# Return an error if the parsing of the cmd line fails
 		return ${EXIT_ERROR}
 	fi
 
-	zone_config_settings_write "${zone}" "${HOOK}"
+	zone_config_settings_write "${zone}" "${HOOK}" "${id}"
 
 	exit ${EXIT_OK}
 }
