@@ -23,16 +23,16 @@ RADVD_CONFIGFILE="/etc/radvd.conf"
 
 radvd_update() {
 	# (Re-)write the configuration file
-	radvd_write_config
+	if radvd_write_config; then
+		# Reload the radvd service if it is already running
+		if service_is_active radvd; then
+			service_reload radvd
+			return ${EXIT_OK}
+		fi
 
-	# Reload the radvd service if it is already running
-	if service_is_active radvd; then
-		service_reload radvd
-		return ${EXIT_OK}
+		# Start the radvd service
+		service_start radvd
 	fi
-
-	# Start the radvd service
-	service_start radvd
 }
 
 radvd_clear_config() {
@@ -48,14 +48,21 @@ radvd_write_config() {
 
 	# Write the configuration for all zones.
 	local zone
-	for zone in $(zones_get_local); do
-		__radvd_config_interface ${zone}
 
+	# The return value determine if radvd is started or not
+	local return_value=${EXIT_FALSE}
+
+	for zone in $(zones_get_local); do
+		if __radvd_config_interface ${zone}; then
+			# We return TRUE when __radvd_config_interface returns True
+			return_value=${EXIT_TRUE}
+		fi
 	done >> ${RADVD_CONFIGFILE}
 
-	return ${EXIT_OK}
+	return ${return_value}
 }
 
+# This function return ${EXIT_FALSE} if no radvd config was written and ${EXIT_TRUE} in all other cases
 __radvd_config_interface() {
 	local zone=${1}
 	assert isset zone
@@ -65,17 +72,17 @@ __radvd_config_interface() {
 	# If the interface does not provide any routing information,
 	# we can skip this whole stuff.
 	if ! db_exists "${zone}/ipv6"; then
-		return ${EXIT_OK}
+		return ${EXIT_FALSE}
 	fi
 
 	# Skip if zone is not active.
 	local active="$(db_get "${zone}/ipv6/active")"
-	[ "${active}" = "0" ] && return ${EXIT_OK}
+	[ "${active}" = "0" ] && return ${EXIT_FALSE}
 
 	# Skip if there is no prefix or prefix is link-local.
 	local addr="$(db_get "${zone}/ipv6/local-ip-address")"
 	if [ -z "${addr}" ] || [ "${addr:0:5}" = "fe80:" ]; then
-		return ${EXIT_OK}
+		return ${EXIT_FALSE}
 	fi
 
 	# Check if the subnet is configured by the DHCP server.
@@ -116,6 +123,8 @@ __radvd_config_interface() {
 
 	print "};"
 	print
+
+	return ${EXIT_TRUE}
 }
 
 __radvd_config_dns() {
