@@ -29,6 +29,13 @@ network_settings_read
 # Make sure we are called by strongSwan
 assert isset PLUTO_VERSION
 
+if enabled DEBUG; then
+	while read line; do
+		[[ ${line} =~ ^PLUTO_ ]] || continue
+		log DEBUG "  ${line}"
+	done <<< "$(printenv | sort)"
+fi
+
 CONNECTION="${PLUTO_CONNECTION}"
 
 if ! ipsec_connection_read_config "${CONNECTION}"; then
