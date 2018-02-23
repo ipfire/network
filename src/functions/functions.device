@@ -1058,3 +1058,30 @@ device_queue_set_smp_affinity() {
 
 	__processor_id_to_bitmap ${processor} > ${path}
 }
+
+# Tries to find a device which has the given IP address assigned
+device_get_by_assigned_ip_address() {
+	local ip=${1}
+
+	assert isset ip
+
+	local device
+
+	# Read the first line of ip addr show to
+	read -r device <<< $(ip addr show to "${ip}")
+
+	# If we did not found a device we return with ${EXIT_ERROR}
+	if ! isset device; then
+		return ${EXIT_ERROR}
+	fi
+
+	# We get something like:
+	# 3: upl0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+	# and we want upl0 so we take the second word and removing the :
+	device=(${device})
+	device=${device[1]}
+	device=${device%:}
+
+	print "${device}"
+	return ${EXIT_OK}
+}
