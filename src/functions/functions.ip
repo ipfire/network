@@ -205,3 +205,31 @@ ip_address_del() {
 
 	return ${EXIT_OK}
 }
+
+# Get all currently assigned addresse for a given network
+ip_get_assigned_addresses_from_net() {
+	local net=${1}
+	shift
+	local args="$@"
+
+	if ! ip_net_is_valid ${net}; then
+		log ERROR "IP net ${net} is invalid"
+		return ${EXIT_ERROR}
+	fi
+
+	local line
+	local addresses
+
+	# We read the output of $(ip addr show to ${net} ${args})
+	while read -r line; do
+		# We are only interested in lines which start with inet or inet6
+		[[ "${line}" =~ ^(inet6 |inet ) ]] || continue
+
+		# We need the second word the line
+		line=(${line})
+		list_append "addresses" "$(ip_split_prefix "${line[1]}")"
+	done <<< "$(ip addr show to "${net}" ${args})"
+
+	# We sort the list to get the lowest IP as first item
+	list_sort ${addresses}
+}
