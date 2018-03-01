@@ -120,6 +120,7 @@ firewall_kernel_init() {
 	if enabled FIREWALL_USE_ECN; then
 		log INFO "Enabling ECN (Explicit Congestion Notification)"
 		sysctl_set "net.ipv4.tcp_ecn" 1
+		sysctl_set "net.ipv4.tcp_ecn_fallback" 1
 	else
 		log INFO "Disabling ECN (Explicit Congestion Notification)"
 		sysctl_set "net.ipv4.tcp_ecn" 2
