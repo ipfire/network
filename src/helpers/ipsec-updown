@@ -108,7 +108,7 @@ case "${PLUTO_VERB}" in
 				fi
 			else
 				# Get the device which we use to peer with the other site.
-				ME_DEVICE = "$(device_get_by_ip_address "${PLUTO_ME}")"
+				ME_DEVICE="$(device_get_by_assigned_ip_address "${PLUTO_ME}")"
 
 				# We can only go on if we found a device.
 				if isset ME_DEVICE; then
