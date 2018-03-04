@@ -286,6 +286,14 @@ device_is_vti() {
 	[ "${type}" = "768" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
 }
 
+device_is_vti6() {
+	local device=${1}
+
+	local type=$(__device_get_file ${device} type)
+
+	[ "${type}" = "769" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
+}
+
 device_get_phy() {
 	local device="${1}"
 
