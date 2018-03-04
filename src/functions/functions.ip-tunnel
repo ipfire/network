@@ -21,6 +21,34 @@
 
 IP_TUNNEL_MODES="gre sit vti"
 
+# This function converts our modes into the type
+# the iproute2 tool uses
+ip_tunnel_convert_mode_to_iproute2_mode() {
+	local mode=${1}
+	local protocol=${2}
+
+	if ! isset mode || ! isset protocol; then
+		log ERROR "Did not get mode and/or protocol"
+		return ${EXIT_ERROR}
+	fi
+
+	if [[ "${protocol}" = "ipv4" ]]; then
+		# When we use IPv4 we can use our modes
+		echo "${mode}"
+	fi
+
+	if [[ "${protocol}" = "ipv6" ]]; then
+		# When we use IPv6 we have to convert
+		case "${mode}" in
+			"vti")
+				echo "vti6"
+				;;
+			"gre")
+				echo "ip6gre"
+		esac
+	fi
+}
+
 ip_tunnel_add() {
 	local device=${1}
 	shift
