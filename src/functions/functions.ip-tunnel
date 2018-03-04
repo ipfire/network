@@ -150,6 +150,9 @@ ip_tunnel_add() {
 		cmd_args="${cmd_args} ikey ${ikey} okey ${okey}"
 	fi
 
+	# Determine the mode based on the IP protocol
+	mode=$(ip_tunnel_convert_mode_to_iproute2_mode "${mode}" "${remote_address_protocol}")
+
 	log DEBUG "Creating tunnel device '${device}' (mode=${mode})..."
 
 	# Create the device.
@@ -208,8 +211,16 @@ ip_tunnel_change_keys() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Determine the device type
+	local type="$(device_tunnel_get_type ${device})"
+
+	if ! isoneof "type" vti vti6; then
+		log ERROR "Device type '${type}' is invalid"
+		return ${EXIT_ERROR}
+	fi
+
 	if ! cmd ip link change dev "${device}" \
-		type vti ikey "${ikey}" okey "${okey}"; then
+		type "${type}" ikey "${ikey}" okey "${okey}"; then
 		log ERROR "Could not change keys of device ${device}"
 		return ${EXIT_ERROR}
 	fi
