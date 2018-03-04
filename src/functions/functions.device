@@ -396,8 +396,26 @@ device_get_type() {
 	elif device_is_phy ${device}; then
 		echo "phy"
 
+	else
+		echo "$(device_tunnel_get_type "${device}")"
+	fi
+}
+
+# This function just checks the types a ip-tunnel device usually have
+# so when we know that the device is an ip-tunnel device we save time
+device_tunnel_get_type() {
+	local device=${1}
+
+	# If the device does not exist (happens on udev remove events),
+	# we do not bother to run all checks.
+	if ! device_exists "${device}"; then
+		echo "unknown"
+
 	elif device_is_vti ${device}; then
 		echo "vti"
+
+	elif device_is_vti6 ${device}; then
+		echo "vti6"
 
 	else
 		echo "unknown"
