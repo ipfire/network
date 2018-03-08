@@ -526,6 +526,12 @@ ipsec_connection_up() {
 		return ${EXIT_ERROR}
 	fi
 
+	if ! [ -f "${NETWORK_IPSEC_SWANCTL_CONNECTIONS_DIR}/${connection}.conf" ]; then
+		log DEBUG "Could not find a swanctl config, generating swanctl config"
+		ipsec_connection_to_strongswan "${connection}"
+		ipsec_strongswan_load
+	fi
+
 	cmd swanctl --initiate --child "${connection}"
 }
 
