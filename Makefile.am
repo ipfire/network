@@ -502,16 +502,7 @@ SED_PROCESS = \
 	$(SED) $(subst '|,-e 's|@,$(subst =,\@|,$(subst |',|g',$(substitutions)))) \
 		< $< > $@
 
-src/functions/functions: src/functions/functions.in Makefile
-	$(SED_PROCESS)
-
-src/ppp/ip-updown: src/ppp/ip-updown.in Makefile
-	$(SED_PROCESS)
-
-src/systemd/%: src/systemd/%.in Makefile
-	$(SED_PROCESS)
-
-src/%.pc: src/%.pc.in Makefile
+%: %.in Makefile
 	$(SED_PROCESS)
 
 INSTALL_DIRS += \
