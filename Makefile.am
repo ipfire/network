@@ -89,6 +89,10 @@ INSTALL_EXEC_HOOKS += \
 
 # ------------------------------------------------------------------------------
 
+AM_V_NITSI   = $(AM_V_NITSI_$(V))
+AM_V_NITSI_  = $(AM_V_NITSI_$(AM_DEFAULT_VERBOSITY))
+AM_V_NITSI_0 = @echo "  NITSI   " $@;
+
 AM_V_XSLT   = $(AM_V_XSLT_$(V))
 AM_V_XSLT_  = $(AM_V_XSLT_$(AM_DEFAULT_VERBOSITY))
 AM_V_XSLT_0 = @echo "  XSLT    " $@;
@@ -543,3 +547,21 @@ TESTS = \
 	test/functions/ip/ip_prefix_is_valid \
 	test/functions/ip/ip_protocol_is_supported \
 	test/functions/ip/ip_split_prefix
+
+# - NITSI tests ----------------------------------------------------------------
+
+NITSI_TESTS = \
+	test/nitsi/test/hello-world
+
+EXTRA_DIST += \
+	test/nitsi/test/hello-world/recipe \
+	test/nitsi/test/hello-world/settings
+
+NITSI_ENVIRONMENT =
+
+.PHONY: $(NITSI_TESTS)
+$(NITSI_TESTS):
+	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level error -d $@
+
+.PHONY: nitsi
+nitsi: $(NITSI_TESTS)
