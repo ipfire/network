@@ -542,6 +542,19 @@ TESTS = \
 
 # - NITSI tests ----------------------------------------------------------------
 
+# Files for the virtual environment
+EXTRA_DIST += \
+	test/nitsi/virtual-environment/basic/machines/alice/machine.xml \
+	test/nitsi/virtual-environment/basic/machines/alice/snapshot.xml \
+	test/nitsi/virtual-environment/basic/machines/bob/machine.xml \
+	test/nitsi/virtual-environment/basic/machines/bob/snapshot.xml \
+	test/nitsi/virtual-environment/basic/network/network1/network.xml \
+	test/nitsi/virtual-environment/basic/network/network2/network.xml \
+	test/nitsi/virtual-environment/basic/network/network3/network.xml \
+	test/nitsi/virtual-environment/basic/network/network4/network.xml \
+	test/nitsi/virtual-environment/basic/README \
+	test/nitsi/virtual-environment/basic/settings
+
 NITSI_TESTS = \
 	test/nitsi/test/hello-world \
 	test/nitsi/test/make-check
