@@ -1,0 +1,12 @@
+[DEFAULT]
+Name = make check
+Description = This test runs make install in the virtual environment
+	to determine if the source tarball is complete and module test
+	can be executed in the virtual environment
+
+Copy_from = ../../../../@PACKAGE_NAME@-@PACKAGE_VERSION@.tar.gz
+Copy_to = /root/
+
+[VIRTUAL_ENVIRONMENT]
+Name = basic
+path = ../../virtual-environment/basic
