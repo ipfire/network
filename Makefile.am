@@ -560,7 +560,7 @@ EXTRA_DIST += \
 NITSI_ENVIRONMENT =
 
 .PHONY: $(NITSI_TESTS)
-$(NITSI_TESTS):
+$(NITSI_TESTS): dist
 	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level error -d $@
 
 .PHONY: nitsi
