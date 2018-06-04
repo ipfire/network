@@ -51,6 +51,7 @@ AC_PROG_MKDIR_P
 AC_PROG_SED
 
 AC_PATH_PROG([NITSI], [nitsi])
+AC_PATH_PROG([WGET], [wget])
 AC_PATH_PROG([XSLTPROC], [xsltproc])
 
 # pkg-config

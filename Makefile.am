@@ -89,6 +89,10 @@ INSTALL_EXEC_HOOKS += \
 
 # ------------------------------------------------------------------------------
 
+AM_V_DOWNLOAD   = $(AM_V_DOWNLOAD_$(V))
+AM_V_DOWNLOAD_  = $(AM_V_DOWNLOAD_$(AM_DEFAULT_VERBOSITY))
+AM_V_DOWNLOAD_0 = @echo "  LOAD    " $@;
+
 AM_V_NITSI   = $(AM_V_NITSI_$(V))
 AM_V_NITSI_  = $(AM_V_NITSI_$(AM_DEFAULT_VERBOSITY))
 AM_V_NITSI_0 = @echo "  NITSI   " $@;
@@ -496,7 +500,8 @@ substitutions = \
 	'|sbindir=$(sbindir)|' \
 	'|networkdir=$(networkdir)|' \
 	'|helpersdir=$(helpersdir)|' \
-	'|utildir=$(utildir)|'
+	'|utildir=$(utildir)|' \
+	'|VIRTUAL_ENVIRONMENT_IMAGES_DIR=$(VIRTUAL_ENVIRONMENT_IMAGES_DIR)|'
 
 SED_PROCESS = \
 	$(AM_V_GEN)$(MKDIR_P) $(dir $@) && \
@@ -543,7 +548,7 @@ TESTS = \
 # - NITSI tests ----------------------------------------------------------------
 
 # Files for the virtual environment
-EXTRA_DIST += \
+VIRTUAL_ENVIRONMENT_FILES = \
 	test/nitsi/virtual-environment/basic/machines/alice/machine.xml \
 	test/nitsi/virtual-environment/basic/machines/alice/snapshot.xml \
 	test/nitsi/virtual-environment/basic/machines/bob/machine.xml \
@@ -554,6 +559,30 @@ EXTRA_DIST += \
 	test/nitsi/virtual-environment/basic/network/network4/network.xml \
 	test/nitsi/virtual-environment/basic/README \
 	test/nitsi/virtual-environment/basic/settings
+
+EXTRA_DIST += \
+	test/nitsi/virtual-environment/basic/machines/alice/machine.xml.in \
+	test/nitsi/virtual-environment/basic/machines/alice/snapshot.xml.in \
+	test/nitsi/virtual-environment/basic/machines/bob/machine.xml.in \
+	test/nitsi/virtual-environment/basic/machines/bob/snapshot.xml.in
+
+CLEANFILES += \
+	test/nitsi/virtual-environment/basic/machines/alice/machine.xml \
+	test/nitsi/virtual-environment/basic/machines/alice/snapshot.xml \
+	test/nitsi/virtual-environment/basic/machines/bob/machine.xml \
+	test/nitsi/virtual-environment/basic/machines/bob/snapshot.xml
+
+# Virtual Machine Images
+VIRTUAL_ENVIRONMENT_IMAGES = \
+	$(VIRTUAL_ENVIRONMENT_IMAGES_DIR)/ipfire-alice-2.qcow2 \
+	$(VIRTUAL_ENVIRONMENT_IMAGES_DIR)/ipfire-bob.qcow2
+
+DISTCLEANFILES += \
+	$(VIRTUAL_ENVIRONMENT_IMAGES)
+
+VIRTUAL_ENVIRONMENT_IMAGES_DIR = $(abs_builddir)/test/nitsi/virtual-environment/.images
+VIRTUAL_ENVIRONMENT_IMAGES_DOWNLOAD_URL = \
+	https://people.ipfire.org/~jschlag/nitsi-ipfire/virtual-environment/basic/
 
 NITSI_TESTS = \
 	test/nitsi/test/hello-world \
@@ -572,8 +601,13 @@ CLEANFILES += \
 NITSI_ENVIRONMENT =
 
 .PHONY: $(NITSI_TESTS)
-$(NITSI_TESTS): % : %/recipe %/settings
+$(NITSI_TESTS): % : %/recipe %/settings $(VIRTUAL_ENVIRONMENT_FILES) $(VIRTUAL_ENVIRONMENT_IMAGES)
 	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level error -d $@
 
 .PHONY: nitsi
 nitsi: dist $(NITSI_TESTS)
+
+# Downloads a virtual image file and extracts it
+$(VIRTUAL_ENVIRONMENT_IMAGES):
+	$(AM_V_DOWNLOAD)$(MKDIR_P) $(dir $@) && \
+	$(WGET) -qO - $(VIRTUAL_ENVIRONMENT_IMAGES_DOWNLOAD_URL)/$(notdir $@).xz | xz -qd > $@
