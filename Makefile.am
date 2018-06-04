@@ -557,7 +557,6 @@ VIRTUAL_ENVIRONMENT_FILES = \
 	test/nitsi/virtual-environment/basic/network/network2/network.xml \
 	test/nitsi/virtual-environment/basic/network/network3/network.xml \
 	test/nitsi/virtual-environment/basic/network/network4/network.xml \
-	test/nitsi/virtual-environment/basic/README \
 	test/nitsi/virtual-environment/basic/settings
 
 EXTRA_DIST += \
