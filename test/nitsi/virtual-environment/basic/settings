@@ -1,0 +1,34 @@
+[DEFAULT]
+name = ipfire
+machines = alice, bob
+networks = network1, network2, network3, network4
+uri = qemu:///system
+
+[alice]
+xml_file = machines/alice/machine.xml
+snapshot_xml_file = machines/alice/snapshot.xml
+image = /var/lib/libvirt/images/ipfire-alice.qcow2
+root_uid = 1efb5389-0949-46bb-b688-5246acba9f6d
+username = root
+password = root
+
+[bob]
+xml_file = machines/bob/machine.xml
+snapshot_xml_file = machines/bob/snapshot.xml
+image = /var/lib/libvirt/images/ipfire-bob.qcow2
+root_uid = 1efb5389-0949-46bb-b688-5246acba9f6d
+username = root
+password = root
+
+[network1]
+xml_file = network/network1/network.xml
+
+[network2]
+xml_file = network/network2/network.xml
+
+
+[network3]
+xml_file = network/network3/network.xml
+
+[network4]
+xml_file = network/network4/network.xml
