@@ -601,7 +601,7 @@ NITSI_ENVIRONMENT =
 
 .PHONY: $(NITSI_TESTS)
 $(NITSI_TESTS): % : %/recipe %/settings $(VIRTUAL_ENVIRONMENT_FILES) $(VIRTUAL_ENVIRONMENT_IMAGES)
-	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level error -d $@
+	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level error run-test -d $@
 
 .PHONY: nitsi
 nitsi: dist $(NITSI_TESTS)
