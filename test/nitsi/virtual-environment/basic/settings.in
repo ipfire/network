@@ -7,7 +7,7 @@ uri = qemu:///system
 [alice]
 xml_file = machines/alice/machine.xml
 snapshot_xml_file = machines/alice/snapshot.xml
-image = /var/lib/libvirt/images/ipfire-alice.qcow2
+image = @VIRTUAL_ENVIRONMENT_IMAGES_DIR@/ipfire-alice-2.qcow2
 root_uid = 1efb5389-0949-46bb-b688-5246acba9f6d
 username = root
 password = root
@@ -15,7 +15,7 @@ password = root
 [bob]
 xml_file = machines/bob/machine.xml
 snapshot_xml_file = machines/bob/snapshot.xml
-image = /var/lib/libvirt/images/ipfire-bob.qcow2
+image = @VIRTUAL_ENVIRONMENT_IMAGES_DIR@/ipfire-bob.qcow2
 root_uid = 1efb5389-0949-46bb-b688-5246acba9f6d
 username = root
 password = root

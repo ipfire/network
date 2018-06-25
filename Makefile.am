@@ -563,13 +563,15 @@ EXTRA_DIST += \
 	test/nitsi/virtual-environment/basic/machines/alice/machine.xml.in \
 	test/nitsi/virtual-environment/basic/machines/alice/snapshot.xml.in \
 	test/nitsi/virtual-environment/basic/machines/bob/machine.xml.in \
-	test/nitsi/virtual-environment/basic/machines/bob/snapshot.xml.in
+	test/nitsi/virtual-environment/basic/machines/bob/snapshot.xml.in \
+	test/nitsi/virtual-environment/basic/settings.in
 
 CLEANFILES += \
 	test/nitsi/virtual-environment/basic/machines/alice/machine.xml \
 	test/nitsi/virtual-environment/basic/machines/alice/snapshot.xml \
 	test/nitsi/virtual-environment/basic/machines/bob/machine.xml \
-	test/nitsi/virtual-environment/basic/machines/bob/snapshot.xml
+	test/nitsi/virtual-environment/basic/machines/bob/snapshot.xml \
+	test/nitsi/virtual-environment/basic/settings
 
 # Virtual Machine Images
 VIRTUAL_ENVIRONMENT_IMAGES = \
