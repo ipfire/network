@@ -1170,7 +1170,7 @@ cli_reset() {
 
 	local zone
 	for zone in $(zones_get --all); do
-		zone_destroy_now "${zone}"
+		zone_destroy "${zone}"
 	done
 
 	local port
