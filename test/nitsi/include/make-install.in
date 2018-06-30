@@ -1,0 +1,4 @@
+all: tar xvfa @PACKAGE_NAME@-@PACKAGE_VERSION@.tar.gz && cd @PACKAGE_NAME@-@PACKAGE_VERSION@
+all: ./configure --prefix=/usr && make -j2
+all: make
+all: make install

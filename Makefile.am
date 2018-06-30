@@ -585,6 +585,15 @@ VIRTUAL_ENVIRONMENT_IMAGES_DIR = $(abs_builddir)/test/nitsi/virtual-environment/
 VIRTUAL_ENVIRONMENT_IMAGES_DOWNLOAD_URL = \
 	https://people.ipfire.org/~jschlag/nitsi-ipfire/virtual-environment/basic/
 
+NITSI_INCLUDE_RECIPES = \
+	test/nitsi/include/make-install
+
+EXTRA_DIST += \
+	test/nitsi/include/make-install.in
+
+CLEANFILES += \
+	test/nitsi/include/make-install
+
 NITSI_TESTS = \
 	test/nitsi/test/hello-world \
 	test/nitsi/test/make-check
@@ -602,7 +611,7 @@ CLEANFILES += \
 NITSI_ENVIRONMENT =
 
 .PHONY: $(NITSI_TESTS)
-$(NITSI_TESTS): % : %/recipe %/settings $(VIRTUAL_ENVIRONMENT_FILES) $(VIRTUAL_ENVIRONMENT_IMAGES)
+$(NITSI_TESTS): % : %/recipe %/settings $(VIRTUAL_ENVIRONMENT_FILES) $(VIRTUAL_ENVIRONMENT_IMAGES) $(NITSI_INCLUDE_RECIPES)
 	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level error run-test -d $@
 
 .PHONY: nitsi
