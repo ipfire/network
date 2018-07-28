@@ -587,11 +587,13 @@ VIRTUAL_ENVIRONMENT_IMAGES_DOWNLOAD_URL = \
 
 NITSI_INCLUDE_RECIPES = \
 	test/nitsi/include/make-install \
-	test/nitsi/include/network-reset
+	test/nitsi/include/network-reset \
+	test/nitsi/include/network-settings
 
 EXTRA_DIST += \
 	test/nitsi/include/make-install.in
-	test/nitsi/include/network-reset
+	test/nitsi/include/network-reset \
+	test/nitsi/include/network-settings
 
 CLEANFILES += \
 	test/nitsi/include/make-install
