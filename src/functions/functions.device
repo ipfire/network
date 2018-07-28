@@ -1111,3 +1111,21 @@ device_get_by_assigned_ip_address() {
 	print "${device}"
 	return ${EXIT_OK}
 }
+
+device_get_by_mac_address() {
+	local mac=${1}
+
+	assert isset mac
+
+	local device
+
+	for device in $(device_list); do
+		if [ "${mac}" = "$(device_get_address ${device})" ]; then
+			print "${device}"
+			return ${EXIT_OK}
+		fi
+	done
+
+	# We could not found a port to the given mac address so we return exit error
+	return ${EXIT_ERROR}
+}

@@ -1286,6 +1286,9 @@ cli_raw() {
 		db-dump)
 			db_dump
 			;;
+		device-get-by-mac-address)
+			device_get_by_mac_address "$@"
+			;;
 		ipsec-connection-exists)
 			ipsec_connection_exists "$@"
 			;;
