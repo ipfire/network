@@ -52,6 +52,8 @@ hook_check_config_settings() {
 
 hook_parse_cmdline() {
 	local protocol
+	local id="${1}"
+	shift
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
@@ -153,10 +155,27 @@ hook_parse_cmdline() {
 	fi
 
 	# Check any conflicts
-	if zone_config_check_same_setting "${zone}" "static" "ADDRESS" "${ADDRESS}"; then
+	if zone_config_check_same_setting "${zone}" "static" "${id}" "ADDRESS" "${ADDRESS}"; then
 		error "A static configuration with the same address is already configured"
 		return ${EXIT_CONF_ERROR}
 	fi
+}
+
+hook_new() {
+	local zone="${1}"
+	shift
+
+	local id=$(zone_config_get_new_id ${zone})
+	log DEBUG "ID for the config is: ${id}"
+
+	if ! hook_parse_cmdline "${id}" "$@"; then
+		# Return an error if the parsing of the cmd line fails
+		return ${EXIT_ERROR}
+	fi
+
+	zone_config_settings_write "${zone}" "${HOOK}" "${id}"
+
+	exit ${EXIT_OK}
 }
 
 hook_up() {
