@@ -1,0 +1,9 @@
+include: ../../include/make-install
+include: ../../include/network-settings
+include: ../../include/network-reset
+alice: network zone new upl0 bridge
+# Create a dummy port we can attach to upl0
+alice: network port new dummy
+alice: network zone upl0 port attach d0
+# Check if the port is really attached
+alice: ls /sys/class/net/upl0/brif/d0

@@ -602,7 +602,8 @@ NITSI_TESTS = \
 	test/nitsi/test/hello-world \
 	test/nitsi/test/make-check \
 	test/nitsi/test/raw-device-get-by-mac \
-	test/nitsi/test/zone-new-bridge
+	test/nitsi/test/zone-new-bridge \
+	test/nitsi/test/zone-port-attach-bridge
 
 EXTRA_DIST += \
 	test/nitsi/test/hello-world/recipe \
@@ -612,13 +613,16 @@ EXTRA_DIST += \
 	test/nitsi/test/raw-device-get-by-mac/recipe \
 	test/nitsi/test/raw-device-get-by-mac/settings.in \
 	test/nitsi/test/zone-new-bridge/recipe \
-	test/nitsi/test/zone-new-bridge/settings.in
+	test/nitsi/test/zone-new-bridge/settings.in \
+	test/nitsi/test/zone-port-attach-bridge/recipe \
+	test/nitsi/test/zone-port-attach-bridge/settings.in
 
 CLEANFILES += \
 	test/nitsi/test/make-check/recipe \
 	test/nitsi/test/make-check/settings \
 	test/nitsi/test/raw-device-get-by-mac/settings \
-	test/nitsi/test/zone-new-bridge/settings
+	test/nitsi/test/zone-new-bridge/settings \
+	test/nitsi/test/zone-port-attach-bridge/settings
 
 NITSI_ENVIRONMENT =
 
