@@ -238,9 +238,6 @@ dns_server_update() {
 	radvd_update
 }
 
-# Update resolv.conf(5) when initializing the network.
-init_register dns_generate_resolvconf
-
 dns_generate_resolvconf() {
 	local file=${RESOLV_CONF}
 

@@ -1181,9 +1181,6 @@ cli_reset() {
 	# Flush all DNS servers.
 	dns_server_flush
 
-	# Re-run the initialization functions
-	init_run
-
 	exit ${EXIT_OK}
 }
 
@@ -1367,7 +1364,11 @@ cli_raw() {
 # Process the given action
 case "${action}" in
 	init)
-		init_run
+		# Update resolv.conf(5) when initializing the network
+		dns_generate_resolvconf
+
+		# Also execute all triggers
+		triggers_execute_all "init"
 		;;
 
 	settings|hostname|port|device|zone|start|stop|restart|status|reset|route|vpn|wireless)

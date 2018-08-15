@@ -23,22 +23,6 @@
 # PATH variable.
 export PATH="@utildir@:/usr/local/sbin:/usr/sbin:/sbin:/usr/bin:/bin:${PATH}"
 
-INIT_FUNCTIONS=""
-
-init_register() {
-	INIT_FUNCTIONS="${INIT_FUNCTIONS} $@"
-}
-
-init_run() {
-	local init
-	for init in ${INIT_FUNCTIONS}; do
-		${init}
-	done
-
-	# Also execute all triggers
-	triggers_execute_all "init"
-}
-
 VERSION="@PACKAGE_VERSION@"
 NETWORK_VERSION="${VERSION}"
 
