@@ -187,6 +187,9 @@ dns_server_remove() {
 
 dns_server_flush() {
 	: > ${DNS_SERVER_CONFIG_FILE}
+
+	# Re-generate resolv.conf
+	dns_generate_resolvconf
 }
 
 dns_server_parse_line() {
