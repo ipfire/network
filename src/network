@@ -1181,6 +1181,9 @@ cli_reset() {
 	# Flush all DNS servers.
 	dns_server_flush
 
+	# Trigger udev to re-add all physical network devices
+	cmd_quiet udevadm trigger --action=add --subsystem-match=net
+
 	exit ${EXIT_OK}
 }
 
