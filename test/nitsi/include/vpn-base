@@ -21,13 +21,13 @@ all: network zone net1 up
 all: network status
 # IP config
 alice: network zone upl0 config new static 192.168.122.2/24
-alice: network zone upl1 config new static 2001:470:6ef3:1::1/64
+alice: network zone upl1 config new static fdd1:9e02:338f::1:1/64
 alice: network zone net0 config new static 192.168.200.1/24
-alice: network zone net1 config new static 2001:470:6ef3::1/64
+alice: network zone net1 config new static fdd1:9e02:338f::2:1/64
 bob: network zone upl0 config new static 192.168.122.3/24
-bob: network zone upl1 config new static 2001:470:6ef3:1::2/64
+bob: network zone upl1 config new static fdd1:9e02:338f::1:2/64
 bob: network zone net0 config new static 192.168.201.1/24
-bob: network zone net1 config new static 2001:470:6ef3:2::1/64
+bob: network zone net1 config new static fdd1:9e02:338f::3:1/64
 # Simple ping test
 alice: ping -c 5 192.168.122.3
 alice: ping6 -c 5 2001:470:6ef3:1::1
