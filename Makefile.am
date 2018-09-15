@@ -614,10 +614,7 @@ EXTRA_DIST += \
 	test/nitsi/test/zone-new-bridge/recipe \
 	test/nitsi/test/zone-new-bridge/settings.in \
 	test/nitsi/test/zone-port-attach-bridge/recipe \
-	test/nitsi/test/zone-port-attach-bridge/settings.in \
-	test/nitsi/test/zone-up_down/recipe \
-	test/nitsi/test/zone-up_down/settings.in \
-	test/nitsi/test/vpn-ipsec-ipv64-ipv4-vti/recipe
+	test/nitsi/test/zone-port-attach-bridge/settings.in
 
 CLEANFILES += \
 	test/nitsi/test/settings \
@@ -625,8 +622,7 @@ CLEANFILES += \
 	test/nitsi/test/make-check/settings \
 	test/nitsi/test/raw-device-get-by-mac/settings \
 	test/nitsi/test/zone-new-bridge/settings \
-	test/nitsi/test/zone-port-attach-bridge/settings \
-	test/nitsi/test/zone-up_down/settings
+	test/nitsi/test/zone-port-attach-bridge/settings
 
 NITSI_ENVIRONMENT =
 
