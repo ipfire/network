@@ -1,0 +1,5 @@
+# This recipe tests if the vpn connection is working by pinging the remote subnet
+alice: ping -c 5 192.168.201.1
+bob: ping -c 5 192.168.200.1
+alice: ping6 -c 5 2001:470:6ef3:2::1
+bob: ping6 -c 5 2001:470:6ef3::1
