@@ -92,6 +92,9 @@ declare -A VPN_SUPPORTED_CIPHERS=(
 	[CAMELLIA192-CCM64]="192 bit CAMELLIA-CCM with 64 bit ICV"
 	[CAMELLIA128-CCM64]="128 bit CAMELLIA-CCM with 64 bit ICV"
 
+	# DJB
+	[CHACHA20-POLY1305]="256 bit ChaCha20/Poly1305 with 128 bit ICV"
+
 	# No Encryption
 	[NULL]="No Encryption"
 )
@@ -163,6 +166,9 @@ declare -A CIPHER_TO_STRONGSWAN=(
 	[CAMELLIA256-CCM64]="camellia256ccm64"
 	[CAMELLIA192-CCM64]="camellia192ccm64"
 	[CAMELLIA128-CCM64]="camellia128ccm64"
+
+	# DJB
+	[CHACHA20-POLY1305]="chacha20poly1305"
 
 	# No Encryption
 	[NULL]="null"
