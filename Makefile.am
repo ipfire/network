@@ -601,27 +601,41 @@ CLEANFILES += \
 NITSI_TESTS = \
 	test/nitsi/test/hello-world \
 	test/nitsi/test/make-check \
-	test/nitsi/test/raw-device-get-by-mac
+	test/nitsi/test/raw-device-get-by-mac \
+	test/nitsi/test/zone-new-bridge \
+	test/nitsi/test/zone-port-attach-bridge
 
 EXTRA_DIST += \
+	test/nitsi/test/settings.in \
 	test/nitsi/test/hello-world/recipe \
 	test/nitsi/test/hello-world/settings \
 	test/nitsi/test/make-check/recipe.in \
-	test/nitsi/test/make-check/settings.in
-	test/nitsi/test/raw-device-get-by-mac/recipe\
-	test/nitsi/test/raw-device-get-by-mac/settings.in
-
+	test/nitsi/test/make-check/settings.in \
+	test/nitsi/test/raw-device-get-by-mac/recipe \
+	test/nitsi/test/raw-device-get-by-mac/settings.in \
+	test/nitsi/test/zone-new-bridge/recipe \
+	test/nitsi/test/zone-new-bridge/settings.in \
+	test/nitsi/test/zone-port-attach-bridge/recipe \
+	test/nitsi/test/zone-port-attach-bridge/settings.in \
+	test/nitsi/test/zone-up_down/recipe \
+	test/nitsi/test/zone-up_down/settings.in \
+	test/nitsi/test/vpn-ipsec-ipv64-ipv4-vti/recipe
 
 CLEANFILES += \
+	test/nitsi/test/settings \
 	test/nitsi/test/make-check/recipe \
 	test/nitsi/test/make-check/settings \
-	test/nitsi/test/raw-device-get-by-mac/settings
+	test/nitsi/test/raw-device-get-by-mac/settings \
+	test/nitsi/test/zone-new-bridge/settings \
+	test/nitsi/test/zone-port-attach-bridge/settings \
+	test/nitsi/test/zone-up_down/settings
 
 NITSI_ENVIRONMENT =
 
 .PHONY: $(NITSI_TESTS)
-$(NITSI_TESTS): % : %/recipe %/settings $(VIRTUAL_ENVIRONMENT_FILES) $(VIRTUAL_ENVIRONMENT_IMAGES) $(NITSI_INCLUDE_RECIPES)
-	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level error run-test -d $@
+$(NITSI_TESTS): % : %/recipe %/settings test/nitsi/test/settings $(VIRTUAL_ENVIRONMENT_FILES) $(VIRTUAL_ENVIRONMENT_IMAGES) $(NITSI_INCLUDE_RECIPES)
+	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level error run-test -d $@ \
+		--default-settings $(abs_builddir)/test/nitsi/test/settings
 
 .PHONY: nitsi
 nitsi: dist $(NITSI_TESTS)

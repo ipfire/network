@@ -1,0 +1,6 @@
+# These command store the name of each port in a variable
+#which is named like the virtual network
+bob: p_net1="$(network raw device-get-by-mac-address "52:54:00:36:ba:7d")"
+bob: p_net2="$(network raw device-get-by-mac-address "52:54:00:e3:cb:28")"
+bob: p_net3="$(network raw device-get-by-mac-address "52:54:00:b6:95:a5")"
+bob: p_net4="$(network raw device-get-by-mac-address "52:54:00:f8:ce:4b")"

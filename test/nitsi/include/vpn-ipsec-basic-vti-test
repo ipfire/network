@@ -1,0 +1,3 @@
+# Check that the package are routed through the vti device
+all: [[ 0 != $(cat /sys/class/net/ipsec-basic/statistics/tx_packets) ]]
+all: [[ 0 != $(cat /sys/class/net/ipsec-basic/statistics/rx_packets) ]]
