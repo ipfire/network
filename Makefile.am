@@ -191,12 +191,14 @@ dist_network_DATA = \
 	src/functions/functions.wpa_supplicant \
 	src/functions/functions.zone \
 	src/network-radvd-config \
-	src/dhclient-helper \
 	src/header-config \
 	src/header-port \
 	src/header-zone \
 	src/ppp/dialer \
 	src/ppp/pppoe-server
+
+dist_network_SCRIPTS = \
+	src/dhclient-helper
 
 dist_helpers_SCRIPTS = \
 	src/helpers/dhcpd-config-helper \
