@@ -1,0 +1,6 @@
+# These command store the name of each port in a variable
+#which is named like the virtual network
+alice: p_net1="$(network raw device-get-by-mac-address "52:54:00:8a:b8:b5")"
+alice: p_net2="$(network raw device-get-by-mac-address "52:54:00:ea:62:65")"
+alice: p_net3="$(network raw device-get-by-mac-address "52:54:00:49:0f:04")"
+alice: p_net4="$(network raw device-get-by-mac-address "52:54:00:33:67:4a")"
