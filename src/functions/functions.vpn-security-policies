@@ -1022,7 +1022,16 @@ vpn_security_policies_cipher_is_aead() {
 	local cipher=${1}
 
 	# All CCM and GCM ciphers are AEAD
-	string_match "[CG]CM" "${cipher}"
+	if string_match "[CG]CM" "${cipher}"; then
+		return ${EXIT_TRUE}
+	fi
+
+	# Poly1305 is AEAD
+	if string_match "POLY1305" "${cipher}"; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
 }
 
 vpn_security_policies_make_ike_proposal() {
