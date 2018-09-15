@@ -191,12 +191,14 @@ dist_network_DATA = \
 	src/functions/functions.wpa_supplicant \
 	src/functions/functions.zone \
 	src/network-radvd-config \
-	src/dhclient-helper \
 	src/header-config \
 	src/header-port \
 	src/header-zone \
 	src/ppp/dialer \
 	src/ppp/pppoe-server
+
+dist_network_SCRIPTS = \
+	src/dhclient-helper
 
 dist_helpers_SCRIPTS = \
 	src/helpers/dhcpd-config-helper \
@@ -595,16 +597,14 @@ CLEANFILES += \
 	test/nitsi/include/setup
 
 NITSI_TESTS = \
-	test/nitsi/test/hello-world \
 	test/nitsi/test/make-check \
+	test/nitsi/test/phase1 \
 	test/nitsi/test/raw-device-get-by-mac \
 	test/nitsi/test/zone-new-bridge \
 	test/nitsi/test/zone-port-attach-bridge
 
 EXTRA_DIST += \
 	test/nitsi/test/settings.in \
-	test/nitsi/test/hello-world/recipe \
-	test/nitsi/test/hello-world/settings \
 	test/nitsi/test/make-check/recipe.in \
 	test/nitsi/test/make-check/settings.in \
 	test/nitsi/test/raw-device-get-by-mac/recipe \
@@ -612,10 +612,7 @@ EXTRA_DIST += \
 	test/nitsi/test/zone-new-bridge/recipe \
 	test/nitsi/test/zone-new-bridge/settings.in \
 	test/nitsi/test/zone-port-attach-bridge/recipe \
-	test/nitsi/test/zone-port-attach-bridge/settings.in \
-	test/nitsi/test/zone-up_down/recipe \
-	test/nitsi/test/zone-up_down/settings.in \
-	test/nitsi/test/vpn-ipsec-ipv64-ipv4-vti/recipe
+	test/nitsi/test/zone-port-attach-bridge/settings.in
 
 CLEANFILES += \
 	test/nitsi/test/settings \
@@ -623,8 +620,7 @@ CLEANFILES += \
 	test/nitsi/test/make-check/settings \
 	test/nitsi/test/raw-device-get-by-mac/settings \
 	test/nitsi/test/zone-new-bridge/settings \
-	test/nitsi/test/zone-port-attach-bridge/settings \
-	test/nitsi/test/zone-up_down/settings
+	test/nitsi/test/zone-port-attach-bridge/settings
 
 NITSI_ENVIRONMENT =
 
