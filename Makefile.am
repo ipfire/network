@@ -586,14 +586,10 @@ VIRTUAL_ENVIRONMENT_IMAGES_DOWNLOAD_URL = \
 	https://people.ipfire.org/~jschlag/nitsi-ipfire/virtual-environment/basic/
 
 NITSI_INCLUDE_RECIPES = \
-	test/nitsi/include/make-install \
-	test/nitsi/include/network-reset \
-	test/nitsi/include/network-settings
+	test/nitsi/include/make-install
 
 EXTRA_DIST += \
 	test/nitsi/include/make-install.in
-	test/nitsi/include/network-reset \
-	test/nitsi/include/network-settings
 
 CLEANFILES += \
 	test/nitsi/include/make-install

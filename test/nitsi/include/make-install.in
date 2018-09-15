@@ -2,3 +2,9 @@ all: tar xvfa @PACKAGE_NAME@-@PACKAGE_VERSION@.tar.gz && cd @PACKAGE_NAME@-@PACK
 all: ./configure --prefix=/usr --sysconfdir=/etc && make -j2
 all: make
 all: make install
+
+# Drop all previous settings
+all: network reset --force
+
+# Enable debug mode
+all: network settings DEBUG=1
