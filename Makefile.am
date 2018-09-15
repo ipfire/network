@@ -597,7 +597,6 @@ CLEANFILES += \
 	test/nitsi/include/setup
 
 NITSI_TESTS = \
-	test/nitsi/test/hello-world \
 	test/nitsi/test/make-check \
 	test/nitsi/test/phase1 \
 	test/nitsi/test/raw-device-get-by-mac \
@@ -606,8 +605,6 @@ NITSI_TESTS = \
 
 EXTRA_DIST += \
 	test/nitsi/test/settings.in \
-	test/nitsi/test/hello-world/recipe \
-	test/nitsi/test/hello-world/settings \
 	test/nitsi/test/make-check/recipe.in \
 	test/nitsi/test/make-check/settings.in \
 	test/nitsi/test/raw-device-get-by-mac/recipe \
