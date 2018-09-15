@@ -1,0 +1,32 @@
+# The file contains some basic setup that creates two zones
+# and a couple of ports
+
+# This contains the basic network configuration for all vpn-tests
+include: ../include/alice-port-vars
+include: ../include/bob-port-vars
+
+# Create an uplink zone
+all: network zone new upl0 bridge
+all: network zone upl0 port attach ${p_net1}
+
+# Create a local zone
+all: network zone new net0 bridge
+
+# Attach a dummy port to net0
+all: network port new dummy
+all: network zone net0 port attach d0
+
+# Add IP addresses for Alice
+alice: network zone upl0 config new static 192.168.100.101/24
+alice: network zone upl0 config new static 2001:db8:100::101/64
+alice: network zone net0 config new static 192.168.200.1/24
+alice: network zone net0 config new static 2001:db8:200::1/64
+
+# Add IP addresses for Bob
+bob: network zone upl0 config new static 192.168.100.102/24
+bob: network zone upl0 config new static 2001:db8:100::102/64
+bob: network zone net0 config new static 192.168.201.1/24
+bob: network zone net0 config new static 2001:db8:201::1/64
+
+# Print what has been brought up
+all: network status

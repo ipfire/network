@@ -599,6 +599,7 @@ CLEANFILES += \
 NITSI_TESTS = \
 	test/nitsi/test/hello-world \
 	test/nitsi/test/make-check \
+	test/nitsi/test/phase1 \
 	test/nitsi/test/raw-device-get-by-mac \
 	test/nitsi/test/zone-new-bridge \
 	test/nitsi/test/zone-port-attach-bridge

@@ -1,0 +1,6 @@
+include: ../../include/setup
+include: ../../include/phase1
+
+# Let Alice ping Bob
+alice: ping -c 5 192.168.100.102
+alice: ping6 -c 5 2001:db8:100::102
