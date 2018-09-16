@@ -608,7 +608,8 @@ NITSI_TESTS = \
 	test/nitsi/test/vpn-ipsec-ipv64-via-ipv4-vti \
 	test/nitsi/test/vpn-ipsec-ipv64-via-ipv6-vti \
 	test/nitsi/test/vpn-ipsec-ipv6-via-ipv4-vti \
-	test/nitsi/test/vpn-ipsec-ipv6-via-ipv6-vti
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv6-vti \
+	test/nitsi/test/port-vlan
 
 EXTRA_DIST += \
 	test/nitsi/test/settings.in \
@@ -631,7 +632,9 @@ EXTRA_DIST += \
 	test/nitsi/test/vpn-ipsec-ipv64-via-ipv4-vti/settings \
 	test/nitsi/test/vpn-ipsec-ipv64-via-ipv6-vti/settings \
 	test/nitsi/test/vpn-ipsec-ipv6-via-ipv4-vti/settings \
-	test/nitsi/test/vpn-ipsec-ipv6-via-ipv6-vti/settings
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv6-vti/settings \
+	test/nitsi/test/port-vlan/settings \
+	test/nitsi/test/port-vlan/recipe
 
 CLEANFILES += \
 	test/nitsi/test/settings \
