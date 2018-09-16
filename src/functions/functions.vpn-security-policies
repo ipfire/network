@@ -20,7 +20,7 @@
 ###############################################################################
 
 VPN_SECURITY_POLICIES_CONFIG_SETTINGS="CIPHER COMPRESSION GROUP_TYPE \
-	INTEGRITY PSEUDO_RANDOM_FUNCTION KEY_EXCHANGE LIFETIME PFS"
+	INTEGRITY PSEUDO_RANDOM_FUNCTIONS KEY_EXCHANGE LIFETIME PFS"
 VPN_SECURITY_POLICIES_READONLY="system performance"
 
 VPN_DEFAULT_SECURITY_POLICY="system"
@@ -175,7 +175,7 @@ declare -A CIPHER_TO_STRONGSWAN=(
 	[NULL]="null"
 )
 
-declare -A VPN_SUPPORTED_PSEUDO_RANDOM_FUNCTION=(
+declare -A VPN_SUPPORTED_PSEUDO_RANDOM_FUNCTIONS=(
 	[MD5]="MD5"
 
 	# SHA
@@ -890,13 +890,13 @@ vpn_security_policies_pseudo_random_functions() {
 		return ${EXIT_ERROR}
 	fi
 
-	local PSEUDO_RANDOM_FUNCTION
-	if ! vpn_security_policies_read_config ${name} "PSEUDO_RANDOM_FUNCTION"; then
+	local PSEUDO_RANDOM_FUNCTIONS
+	if ! vpn_security_policies_read_config ${name} "PSEUDO_RANDOM_FUNCTIONS"; then
 		return ${EXIT_ERROR}
 	fi
 
 	# Remove duplicated entries to proceed the list safely
-	PSEUDO_RANDOM_FUNCTION="$(list_unique ${PSEUDO_RANDOM_FUNCTION})"
+	PSEUDO_RANDOM_FUNCTIONS="$(list_unique ${PSEUDO_RANDOM_FUNCTIONS})"
 
 	local prfs_added
 	local prfs_removed
@@ -940,7 +940,7 @@ vpn_security_policies_pseudo_random_functions() {
 			fi
 		done
 
-		PSEUDO_RANDOM_FUNCTION="${prfs_set}"
+		PSEUDO_RANDOM_FUNCTIONS="${prfs_set}"
 
 	# Perform incremental updates
 	else
@@ -948,14 +948,14 @@ vpn_security_policies_pseudo_random_functions() {
 
 		# Perform all removals
 		for prf in ${prfs_removed}; do
-			if ! list_remove PSEUDO_RANDOM_FUNCTION "${prf}"; then
+			if ! list_remove PSEUDO_RANDOM_FUNCTIONS "${prf}"; then
 				warning "${prf} was not on the list and could not be removed"
 			fi
 		done
 
 		for prf in ${prfs_added}; do
 			if vpn_security_policies_pseudo_random_function_supported "${prf}"; then
-				if ! list_append_unique PSEUDO_RANDOM_FUNCTION "${prf}"; then
+				if ! list_append_unique PSEUDO_RANDOM_FUNCTIONS "${prf}"; then
 					warning "${prf} is already on the list"
 				fi
 			else
@@ -965,19 +965,19 @@ vpn_security_policies_pseudo_random_functions() {
 	fi
 
 	# Check if the list contain at least one valid value
-	if list_is_empty PSEUDO_RANDOM_FUNCTION; then
+	if list_is_empty PSEUDO_RANDOM_FUNCTIONS; then
 		error "Cannot save an empty list of pseudo random functions"
 		return ${EXIT_ERROR}
 	fi
 
 	# Save everything
-	if ! vpn_security_policies_write_config_key "${name}" "PSEUDO_RANDOM_FUNCTION" "${PSEUDO_RANDOM_FUNCTION}"; then
+	if ! vpn_security_policies_write_config_key "${name}" "PSEUDO_RANDOM_FUNCTIONS" "${PSEUDO_RANDOM_FUNCTIONS}"; then
 		log ERROR "The changes for the VPN security policy ${name} could not be written"
 	fi
 
 	cli_headline 1 "Current pseudo random function list for ${name}:"
-	for prf in ${PSEUDO_RANDOM_FUNCTION}; do
-		cli_print_fmt1 1 "${prf}" "${VPN_SUPPORTED_PSEUDO_RANDOM_FUNCTION[${prf}]}"
+	for prf in ${PSEUDO_RANDOM_FUNCTIONS}; do
+		cli_print_fmt1 1 "${prf}" "${VPN_SUPPORTED_PSEUDO_RANDOM_FUNCTIONS[${prf}]}"
 	done
 }
 
@@ -1154,7 +1154,7 @@ vpn_security_policies_integrity_supported() {
 vpn_security_policies_pseudo_random_function_supported() {
 	local prf="${1}"
 
-	list_match "${prf}" ${!VPN_SUPPORTED_PSEUDO_RANDOM_FUNCTION[@]}
+	list_match "${prf}" ${!VPN_SUPPORTED_PSEUDO_RANDOM_FUNCTIONS[@]}
 }
 
 vpn_security_policies_cipher_is_aead() {
@@ -1223,7 +1223,7 @@ _vpn_security_policies_make_ike_proposal() {
 
 		if vpn_security_policies_cipher_is_aead "${cipher}"; then
 			local prf
-			for prf in ${PSEUDO_RANDOM_FUNCTION}; do
+			for prf in ${PSEUDO_RANDOM_FUNCTIONS}; do
 				local _prf="${PSEUDO_RANDOM_FUNCTION_TO_STRONGSWAN[${prf}]}"
 
 				if ! isset _prf; then
