@@ -627,7 +627,7 @@ NITSI_ENVIRONMENT =
 .PHONY: $(NITSI_TESTS)
 $(NITSI_TESTS): % : %/recipe %/settings test/nitsi/test/settings $(VIRTUAL_ENVIRONMENT_FILES) $(VIRTUAL_ENVIRONMENT_IMAGES) $(NITSI_INCLUDE_RECIPES)
 	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level error run-test -d $@ \
-		--default-settings $(abs_builddir)/test/nitsi/test/settings
+		--default-settings $(abs_builddir)/test/nitsi/test/settings --interactive-error-handling
 
 .PHONY: nitsi
 nitsi: dist $(NITSI_TESTS)
