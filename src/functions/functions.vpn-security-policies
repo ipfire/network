@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-VPN_SECURITY_POLICIES_CONFIG_SETTINGS="CIPHERS COMPRESSION GROUP_TYPE \
+VPN_SECURITY_POLICIES_CONFIG_SETTINGS="CIPHERS COMPRESSION GROUP_TYPES \
 	INTEGRITY PSEUDO_RANDOM_FUNCTIONS KEY_EXCHANGE LIFETIME PFS"
 VPN_SECURITY_POLICIES_READONLY="system performance"
 
@@ -309,8 +309,8 @@ cli_vpn_security_policies() {
 			pseudo-random-functions)
 				vpn_security_policies_pseudo_random_functions "${security_policy}" "$@"
 				;;
-			group-type)
-				vpn_security_policies_group_type ${security_policy} "$@"
+			group-types)
+				vpn_security_policies_group_types ${security_policy} "$@"
 				;;
 			key-exchange)
 				vpn_security_policies_key_exchange ${security_policy} "$@"
@@ -520,7 +520,7 @@ vpn_security_policies_show() {
 
 	cli_print_fmt1 1 "Group Types:"
 	local group_type
-	for group_type in ${GROUP_TYPE}; do
+	for group_type in ${GROUP_TYPES}; do
 		cli_print_fmt1 2 "${VPN_SUPPORTED_GROUP_TYPES[${group_type}]-${group_type}}"
 	done
 	cli_space
@@ -686,7 +686,7 @@ vpn_security_policies_compression(){
 }
 
 # This function parses the parameters for the 'group-type' command
-vpn_security_policies_group_type(){
+vpn_security_policies_group_types() {
 	local name=${1}
 	shift
 
@@ -695,13 +695,13 @@ vpn_security_policies_group_type(){
 		return ${EXIT_ERROR}
 	fi
 
-	local GROUP_TYPE
-	if ! vpn_security_policies_read_config ${name} "GROUP_TYPE"; then
+	local GROUP_TYPES
+	if ! vpn_security_policies_read_config ${name} "GROUP_TYPES"; then
 		return ${EXIT_ERROR}
 	fi
 
 	# Remove duplicated entries to proceed the list safely
-	GROUP_TYPE="$(list_unique ${GROUP_TYPE})"
+	GROUP_TYPES="$(list_unique ${GROUP_TYPES})"
 
 	local group_types_added
 	local group_types_removed
@@ -745,7 +745,7 @@ vpn_security_policies_group_type(){
 			fi
 		done
 
-		GROUP_TYPE="${group_types_set}"
+		GROUP_TYPES="${group_types_set}"
 
 	# Perform incremental updates
 	else
@@ -753,14 +753,14 @@ vpn_security_policies_group_type(){
 
 		# Perform all removals
 		for group_type in ${group_types_removed}; do
-			if ! list_remove GROUP_TYPE ${group_type}; then
+			if ! list_remove GROUP_TYPES ${group_type}; then
 				warning "${group_type} was not on the list and could not be removed"
 			fi
 		done
 
 		for group_type in ${group_types_added}; do
 			if vpn_security_policies_group_type_supported ${group_type}; then
-				if ! list_append_unique GROUP_TYPE ${group_type}; then
+				if ! list_append_unique GROUP_TYPES ${group_type}; then
 					warning "${group_type} is already on the group type list"
 				fi
 			else
@@ -770,18 +770,18 @@ vpn_security_policies_group_type(){
 	fi
 
 	# Check if the list contain at least one valid group_type
-	if list_is_empty GROUP_TYPE; then
+	if list_is_empty GROUP_TYPES; then
 		error "Cannot save an empty group type list"
 		return ${EXIT_ERROR}
 	fi
 
 	# Save everything
-	if ! vpn_security_policies_write_config_key ${name} "GROUP_TYPE" ${GROUP_TYPE}; then
+	if ! vpn_security_policies_write_config_key ${name} "GROUP_TYPES" ${GROUP_TYPES}; then
 		log ERROR "The changes for the vpn security policy ${name} could not be written."
 	fi
 
 	cli_headline 1 "Current group type list for ${name}:"
-	for group_type in ${GROUP_TYPE}; do
+	for group_type in ${GROUP_TYPES}; do
 		cli_print_fmt1 1 "${group_type}" "${VPN_SUPPORTED_GROUP_TYPES[${group_type}]}"
 	done
 }
