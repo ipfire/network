@@ -561,7 +561,7 @@ _network_vpn_security_policies_subcommands() {
 	shift
 	local words=( $@ )
 
-	local commands="cipher compression group-type integrity key-exchange lifetime pfs show"
+	local commands="cipher compression group-type integrity key-exchange lifetime pfs pseudo-random-functions show"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
@@ -582,6 +582,9 @@ _network_vpn_security_policies_subcommands() {
 			;;
 		integrity)
 			_network_vpn_security_policies_subcommands_integrity ${policy} ${args}
+			;;
+		pseudo-random-functions)
+			_network_vpn_security_policies_subcommands_pseudo_random_functions "${policy}" "${args}"
 			;;
 		key-exchange)
 			_network_vpn_security_policies_subcommands_key_exchange ${policy} ${args}
@@ -605,6 +608,10 @@ _network_vpn_security_policies_subcommands_group_type() {
 }
 
 _network_vpn_security_policies_subcommands_integrity() {
+	:
+}
+
+_network_vpn_security_policies_subcommands_pseudo_random_functions() {
 	:
 }
 

@@ -306,6 +306,9 @@ cli_vpn_security_policies() {
 			cipher|compression|integrity|lifetime|pfs|show)
 				vpn_security_policies_${key} ${security_policy} "$@"
 				;;
+			pseudo-random-functions)
+				vpn_security_policies_pseudo_random_functions "${security_policy}" "$@"
+				;;
 			group-type)
 				vpn_security_policies_group_type ${security_policy} "$@"
 				;;
@@ -877,6 +880,107 @@ vpn_security_policies_integrity(){
 	done
 }
 
+# This function parses the parameters for the 'pseudo-random-functions' command
+vpn_security_policies_pseudo_random_functions() {
+	local name=${1}
+	shift
+
+	if [ $# -eq 0 ]; then
+		log ERROR "You must pass at least one value"
+		return ${EXIT_ERROR}
+	fi
+
+	local PSEUDO_RANDOM_FUNCTION
+	if ! vpn_security_policies_read_config ${name} "PSEUDO_RANDOM_FUNCTION"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Remove duplicated entries to proceed the list safely
+	PSEUDO_RANDOM_FUNCTION="$(list_unique ${PSEUDO_RANDOM_FUNCTION})"
+
+	local prfs_added
+	local prfs_removed
+	local prfs_set
+
+	while [ $# -gt 0 ]; do
+		local arg="${1}"
+
+		case "${arg}" in
+			+*)
+				list_append prfs_added "${arg:1}"
+				;;
+			-*)
+				list_append prfs_removed "${arg:1}"
+				;;
+			[A-Z0-9]*)
+				list_append prfs_set "${arg}"
+				;;
+			*)
+				error "Invalid argument: ${arg}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	# Check if the user is trying a mixed operation
+	if ! list_is_empty prfs_set && (! list_is_empty prfs_added || ! list_is_empty prfs_removed); then
+		error "You cannot reset the pseudo random function list and add or remove functions at the same time"
+		return ${EXIT_ERROR}
+	fi
+
+	# Set new psudo random function list
+	if ! list_is_empty prfs_set; then
+		# Check if all PRFs are valid
+		local prf
+		for prf in ${prfs_set}; do
+			if ! vpn_security_policies_pseudo_random_function_supported "${prf}"; then
+				error "Unsupported pseudo random function: ${prf}"
+				return ${EXIT_ERROR}
+			fi
+		done
+
+		PSEUDO_RANDOM_FUNCTION="${prfs_set}"
+
+	# Perform incremental updates
+	else
+		local prf
+
+		# Perform all removals
+		for prf in ${prfs_removed}; do
+			if ! list_remove PSEUDO_RANDOM_FUNCTION "${prf}"; then
+				warning "${prf} was not on the list and could not be removed"
+			fi
+		done
+
+		for prf in ${prfs_added}; do
+			if vpn_security_policies_pseudo_random_function_supported "${prf}"; then
+				if ! list_append_unique PSEUDO_RANDOM_FUNCTION "${prf}"; then
+					warning "${prf} is already on the list"
+				fi
+			else
+				warning "${prf} is unknown or unsupported and could not be added"
+			fi
+		done
+	fi
+
+	# Check if the list contain at least one valid value
+	if list_is_empty PSEUDO_RANDOM_FUNCTION; then
+		error "Cannot save an empty list of pseudo random functions"
+		return ${EXIT_ERROR}
+	fi
+
+	# Save everything
+	if ! vpn_security_policies_write_config_key "${name}" "PSEUDO_RANDOM_FUNCTION" "${PSEUDO_RANDOM_FUNCTION}"; then
+		log ERROR "The changes for the VPN security policy ${name} could not be written"
+	fi
+
+	cli_headline 1 "Current pseudo random function list for ${name}:"
+	for prf in ${PSEUDO_RANDOM_FUNCTION}; do
+		cli_print_fmt1 1 "${prf}" "${VPN_SUPPORTED_PSEUDO_RANDOM_FUNCTION[${prf}]}"
+	done
+}
+
 # This function parses the parameters for the 'key-exchange' command
 vpn_security_policies_key_exchange() {
 	local name=${1}
@@ -1045,6 +1149,12 @@ vpn_security_policies_integrity_supported() {
 	local integrity=${1}
 
 	list_match ${integrity} ${!VPN_SUPPORTED_INTEGRITY[@]}
+}
+
+vpn_security_policies_pseudo_random_function_supported() {
+	local prf="${1}"
+
+	list_match "${prf}" ${!VPN_SUPPORTED_PSEUDO_RANDOM_FUNCTION[@]}
 }
 
 vpn_security_policies_cipher_is_aead() {
