@@ -1,12 +1,12 @@
-include: ../../include/vpn-ipsec-basic-connection
-include: ../../include/vpn-ipsec-basic-peer-ipv4
-include: ../../include/vpn-ipsec-basic-ts-ipv64
+include: vpn-ipsec-basic-connection
+include: vpn-ipsec-basic-peer-ipv6
+include: vpn-ipsec-basic-ts-ipv64
 all: mv -f /root/strongswan.conf /etc/strongswan.conf
 all: systemctl restart strongswan
 all:network vpn  ipsec connection basic mode vti
 alice: network vpn ipsec connection basic up
-include: ../../include/vpn-ipsec-basic-ping-test-ipv64
-include: ../../include/vpn-ipsec-basic-vti-test
+include: vpn-ipsec-basic-ping-test-ipv64
+include: vpn-ipsec-basic-vti-test
 all: swanctl --list-sas
 all: ip route show
 all: ip route show table 220
