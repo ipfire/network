@@ -1,4 +1,6 @@
 # A basic vpn connection with some common config values set
+include: ./setup
+include: ./phase1
 all: network vpn ipsec connection new basic
 all: network vpn ipsec connection basic authentication mode PSK
 all: network vpn ipsec connection basic authentication pre-shared-key "12345678"

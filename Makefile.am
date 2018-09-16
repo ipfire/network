@@ -602,7 +602,13 @@ NITSI_TESTS = \
 	test/nitsi/test/pppoe \
 	test/nitsi/test/raw-device-get-by-mac \
 	test/nitsi/test/zone-new-bridge \
-	test/nitsi/test/zone-port-attach-bridge
+	test/nitsi/test/zone-port-attach-bridge \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv4-vti \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv6-vti \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv4-vti \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv6-vti \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv4-vti \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv6-vti
 
 EXTRA_DIST += \
 	test/nitsi/test/settings.in \
@@ -613,7 +619,19 @@ EXTRA_DIST += \
 	test/nitsi/test/zone-new-bridge/recipe \
 	test/nitsi/test/zone-new-bridge/settings.in \
 	test/nitsi/test/zone-port-attach-bridge/recipe \
-	test/nitsi/test/zone-port-attach-bridge/settings.in
+	test/nitsi/test/zone-port-attach-bridge/settings.in \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv4-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv6-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv4-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv6-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv4-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv6-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv4-vti/settings \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv6-vti/settings \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv4-vti/settings \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv6-vti/settings \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv4-vti/settings \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv6-vti/settings
 
 CLEANFILES += \
 	test/nitsi/test/settings \
