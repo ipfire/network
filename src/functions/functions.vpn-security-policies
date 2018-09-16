@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-VPN_SECURITY_POLICIES_CONFIG_SETTINGS="CIPHER COMPRESSION GROUP_TYPE \
+VPN_SECURITY_POLICIES_CONFIG_SETTINGS="CIPHERS COMPRESSION GROUP_TYPE \
 	INTEGRITY PSEUDO_RANDOM_FUNCTIONS KEY_EXCHANGE LIFETIME PFS"
 VPN_SECURITY_POLICIES_READONLY="system performance"
 
@@ -303,7 +303,7 @@ cli_vpn_security_policies() {
 		shift 2
 
 		case "${key}" in
-			cipher|compression|integrity|lifetime|pfs|show)
+			ciphers|compression|integrity|lifetime|pfs|show)
 				vpn_security_policies_${key} ${security_policy} "$@"
 				;;
 			pseudo-random-functions)
@@ -499,7 +499,7 @@ vpn_security_policies_show() {
 	# because we print 'Group Types' but the variable is named 'GROUP_TYPES'
 	cli_print_fmt1 1 "Ciphers:"
 	local cipher
-	for cipher in ${CIPHER}; do
+	for cipher in ${CIPHERS}; do
 		cli_print_fmt1 2 "${VPN_SUPPORTED_CIPHERS[${cipher}]-${cipher}}"
 	done
 	cli_space
@@ -558,7 +558,7 @@ vpn_security_policy_exists() {
 
 
 # This function parses the parameters for the 'cipher' command
-vpn_security_policies_cipher(){
+vpn_security_policies_ciphers() {
 	local name=${1}
 	shift
 
@@ -567,13 +567,13 @@ vpn_security_policies_cipher(){
 		return ${EXIT_ERROR}
 	fi
 
-	local CIPHER
-	if ! vpn_security_policies_read_config ${name} "CIPHER"; then
+	local CIPHERS
+	if ! vpn_security_policies_read_config ${name} "CIPHERS"; then
 		return ${EXIT_ERROR}
 	fi
 
 	# Remove duplicated entries to proceed the list safely
-	CIPHER="$(list_unique ${CIPHER})"
+	CIPHERS="$(list_unique ${CIPHERS})"
 
 	local ciphers_added
 	local ciphers_removed
@@ -617,7 +617,7 @@ vpn_security_policies_cipher(){
 			fi
 		done
 
-		CIPHER="${ciphers_set}"
+		CIPHERS="${ciphers_set}"
 
 	# Perform incremental updates
 	else
@@ -625,14 +625,14 @@ vpn_security_policies_cipher(){
 
 		# Perform all removals
 		for cipher in ${ciphers_removed}; do
-			if ! list_remove CIPHER ${cipher}; then
+			if ! list_remove CIPHERS ${cipher}; then
 				warning "${cipher} was not on the list and could not be removed"
 			fi
 		done
 
 		for cipher in ${ciphers_added}; do
 			if vpn_security_policies_cipher_supported ${cipher}; then
-				if ! list_append_unique CIPHER ${cipher}; then
+				if ! list_append_unique CIPHERS ${cipher}; then
 					warning "${cipher} is already on the cipher list"
 				fi
 			else
@@ -642,18 +642,18 @@ vpn_security_policies_cipher(){
 	fi
 
 	# Check if the list contain at least one valid cipher
-	if list_is_empty CIPHER; then
+	if list_is_empty CIPHERS; then
 		error "Cannot save an empty cipher list"
 		return ${EXIT_ERROR}
 	fi
 
 	# Save everything
-	if ! vpn_security_policies_write_config_key ${name} "CIPHER" ${CIPHER}; then
+	if ! vpn_security_policies_write_config_key ${name} "CIPHERS" ${CIPHERS}; then
 		log ERROR "The changes for the vpn security policy ${name} could not be written."
 	fi
 
 	cli_headline 1 "Current cipher list for ${name}:"
-	for cipher in ${CIPHER}; do
+	for cipher in ${CIPHERS}; do
 		cli_print_fmt1 1 "${cipher}" "${VPN_SUPPORTED_CIPHERS[${cipher}]}"
 	done
 }
