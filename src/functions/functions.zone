@@ -1380,6 +1380,39 @@ zone_config_settings_destroy() {
 	rm -f "${path}"
 
 }
+
+zone_config_find_by_hook() {
+	local zone="${1}"
+	assert isset zone
+
+	local hook="${2}"
+	assert isset hook
+
+	local config
+	for config in $(zone_configs_list "${zone}"); do
+		local h="$(zone_config_get_hook "${zone}" "${config}")"
+
+		[[ "${hook}" = "${h}" ]] && echo "${config}"
+	done
+
+	return ${EXIT_OK}
+}
+
+zone_config_settings_read_by_hook() {
+	local zone="${1}"
+	assert isset zone
+
+	local hook="${2}"
+	assert isset hook
+
+	local config
+	for config in $(zone_config_find_by_hook "${zone}" "${hook}"); do
+		zone_config_settings_read "${zone}" "${config}"
+	done
+
+	return ${EXIT_OK}
+}
+
 zone_port_settings_read() {
 	assert [ $# -ge 2 ]
 

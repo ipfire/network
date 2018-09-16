@@ -34,7 +34,7 @@ assert zone_exists ${zone}
 action=${2}
 
 # Read the configuration file of this hook.
-zone_config_settings_read "${zone}" "pppoe-server"
+zone_config_settings_read_by_hook "${zone}" "pppoe-server"
 assert isset SUBNET
 
 pppd_options="${RUN_DIR}/${zone}/pppoe-server-options"
