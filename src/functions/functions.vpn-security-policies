@@ -511,6 +511,13 @@ vpn_security_policies_show() {
 	done
 	cli_space
 
+	cli_print_fmt1 1 "Pseudo Random Functions:"
+	local prf
+	for prf in ${PSEUDO_RANDOM_FUNCTIONS}; do
+		cli_print_fmt1 2 "${VPN_SUPPORTED_PSEUDO_RANDOM_FUNCTIONS[${prf}]-${prf}}"
+	done
+	cli_space
+
 	cli_print_fmt1 1 "Group Types:"
 	local group_type
 	for group_type in ${GROUP_TYPE}; do
