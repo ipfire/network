@@ -1,0 +1,19 @@
+include: ../../include/setup
+
+# Get port names for Alice and Bob
+include: ../../include/alice-port-vars
+include: ../../include/bob-port-vars
+
+# Start a PPPoE server on Alice
+alice: network zone new upl0 bridge
+alice: network zone upl0 port attach ${p_net1}
+alice: network zone upl0 config new pppoe-server --subnet=192.168.123.0/24
+
+# Start a PPPoE client on Bob
+bob: network zone new upl0 pppoe --username=USER --password=PASSWORD
+bob: network zone upl0 port attach ${p_net1}
+
+# Show status
+all: network status
+
+# TODO need to check if the connection has come up
