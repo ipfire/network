@@ -19,7 +19,8 @@
 #                                                                             #
 ###############################################################################
 
-VPN_SECURITY_POLICIES_CONFIG_SETTINGS="CIPHER COMPRESSION GROUP_TYPE INTEGRITY KEY_EXCHANGE LIFETIME PFS"
+VPN_SECURITY_POLICIES_CONFIG_SETTINGS="CIPHER COMPRESSION GROUP_TYPE \
+	INTEGRITY PSEUDO_RANDOM_FUNCTION KEY_EXCHANGE LIFETIME PFS"
 VPN_SECURITY_POLICIES_READONLY="system performance"
 
 VPN_DEFAULT_SECURITY_POLICY="system"
@@ -172,6 +173,34 @@ declare -A CIPHER_TO_STRONGSWAN=(
 
 	# No Encryption
 	[NULL]="null"
+)
+
+declare -A VPN_SUPPORTED_PSEUDO_RANDOM_FUNCTION=(
+	[MD5]="MD5"
+
+	# SHA
+	[SHA1]="SHA1"
+	[SHA256]="SHA256"
+	[SHA384]="SHA384"
+	[SHA512]="SHA512"
+
+	# AES
+	[AES-XCBC]="AES-XCBC"
+	[AES-CMAC]="AES-CMAC"
+)
+
+declare -A PSEUDO_RANDOM_FUNCTION_TO_STRONGSWAN=(
+	[MD5]="prfmd5"
+
+	# SHA
+	[SHA1]="prfsha1"
+	[SHA256]="prfsha256"
+	[SHA384]="prfsha384"
+	[SHA512]="prfsha512"
+
+	# AES
+	[AES-XCBC]="prfaesxcbc"
+	[AES-CMAC]="prfaescmac"
 )
 
 declare -A VPN_SUPPORTED_INTEGRITY=(
@@ -1082,28 +1111,53 @@ _vpn_security_policies_make_ike_proposal() {
 			continue
 		fi
 
-		local integrity
-		for integrity in ${INTEGRITY}; do
-			local _integrity=${INTEGRITY_TO_STRONGSWAN[${integrity}]}
+		if vpn_security_policies_cipher_is_aead "${cipher}"; then
+			local prf
+			for prf in ${PSEUDO_RANDOM_FUNCTION}; do
+				local _prf="${PSEUDO_RANDOM_FUNCTION_TO_STRONGSWAN[${prf}]}"
 
-			if ! isset _integrity; then
-				log WARN "Unsupported integrity: ${integrity}"
-				continue
-			fi
-
-			local group_type
-			for group_type in ${GROUP_TYPE}; do
-				local _group_type=${GROUP_TYPE_TO_STRONGSWAN[${group_type}]}
-
-				if ! isset _group_type; then
-					log WARN "Unsupported group-type: ${group_type}"
+				if ! isset _prf; then
+					log WARN "Unsupported pseudo random function: ${prf}"
 					continue
 				fi
 
-				# Put everything together
-				list_append proposals "${_cipher}-${_integrity}-${_group_type}"
+				local group_type
+				for group_type in ${GROUP_TYPE}; do
+					local _group_type=${GROUP_TYPE_TO_STRONGSWAN[${group_type}]}
+
+					if ! isset _group_type; then
+						log WARN "Unsupported group-type: ${group_type}"
+						continue
+					fi
+
+					# Put everything together
+					list_append proposals "${_cipher}-${_prf}-${_group_type}"
+				done
 			done
-		done
+		else
+			local integrity
+			for integrity in ${INTEGRITY}; do
+				local _integrity=${INTEGRITY_TO_STRONGSWAN[${integrity}]}
+
+				if ! isset _integrity; then
+					log WARN "Unsupported integrity: ${integrity}"
+					continue
+				fi
+
+				local group_type
+				for group_type in ${GROUP_TYPE}; do
+					local _group_type=${GROUP_TYPE_TO_STRONGSWAN[${group_type}]}
+
+					if ! isset _group_type; then
+						log WARN "Unsupported group-type: ${group_type}"
+						continue
+					fi
+
+					# Put everything together
+					list_append proposals "${_cipher}-${_integrity}-${_group_type}"
+				done
+			done
+		fi
 	done
 
 	# Returns as a comma-separated list
