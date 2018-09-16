@@ -1,8 +1,8 @@
-include: ../../include/setup
+include: setup
 
 # This contains the basic network configuration for all vpn-tests
-include: ../../include/alice-port-vars
-include: ../../include/bob-port-vars
+include: alice-port-vars
+include: bob-port-vars
 
 # Create an uplink zone
 all: network zone new upl0 bridge --stp=off
