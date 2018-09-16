@@ -601,7 +601,13 @@ NITSI_TESTS = \
 	test/nitsi/test/phase1 \
 	test/nitsi/test/raw-device-get-by-mac \
 	test/nitsi/test/zone-new-bridge \
-	test/nitsi/test/zone-port-attach-bridge
+	test/nitsi/test/zone-port-attach-bridge \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv4-vti \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv6-vti \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv4-vti \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv6-vti \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv4-vti \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv6-vti
 
 EXTRA_DIST += \
 	test/nitsi/test/settings.in \
@@ -612,7 +618,19 @@ EXTRA_DIST += \
 	test/nitsi/test/zone-new-bridge/recipe \
 	test/nitsi/test/zone-new-bridge/settings.in \
 	test/nitsi/test/zone-port-attach-bridge/recipe \
-	test/nitsi/test/zone-port-attach-bridge/settings.in
+	test/nitsi/test/zone-port-attach-bridge/settings.in \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv4-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv6-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv4-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv6-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv4-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv6-vti/recipe \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv4-vti/settings \
+	test/nitsi/test/vpn-ipsec-ipv4-via-ipv6-vti/settings \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv4-vti/settings \
+	test/nitsi/test/vpn-ipsec-ipv64-via-ipv6-vti/settings \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv4-vti/settings \
+	test/nitsi/test/vpn-ipsec-ipv6-via-ipv6-vti/settings
 
 CLEANFILES += \
 	test/nitsi/test/settings \
@@ -626,7 +644,7 @@ NITSI_ENVIRONMENT =
 
 .PHONY: $(NITSI_TESTS)
 $(NITSI_TESTS): % : %/recipe %/settings test/nitsi/test/settings $(VIRTUAL_ENVIRONMENT_FILES) $(VIRTUAL_ENVIRONMENT_IMAGES) $(NITSI_INCLUDE_RECIPES)
-	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level error run-test -d $@ \
+	$(AM_V_NITSI) $(NITSI_ENVIRONMENT) $(NITSI) --log-level debug run-test -d $@ --interactive-error-handling \
 		--default-settings $(abs_builddir)/test/nitsi/test/settings
 
 .PHONY: nitsi
