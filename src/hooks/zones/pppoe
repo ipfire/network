@@ -363,6 +363,36 @@ hook_port_detach() {
 	exit ${EXIT_OK}
 }
 
+hook_port_up() {
+	assert [ $# -eq 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+
+	# Try bringing up the port if it has not been brought up before
+	if ! device_exists "${port}"; then
+		port_create "${port}"
+	fi
+
+	# Make sure that the port is up
+	port_up "${port}"
+
+	exit ${EXIT_OK}
+}
+
+hook_port_down() {
+	assert [ $# -eq 2 ]
+
+	local zone="${1}"
+	local port="${2}"
+
+	if device_exists "${port}"; then
+		port_down "${port}"
+	fi
+
+	exit ${EXIT_OK}
+}
+
 hook_ppp_ipv6_up() {
 	local zone="${1}"
 
