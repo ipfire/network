@@ -193,12 +193,12 @@ dist_network_DATA = \
 	src/network-radvd-config \
 	src/header-config \
 	src/header-port \
-	src/header-zone \
-	src/ppp/dialer \
-	src/ppp/pppoe-server
+	src/header-zone
 
 dist_network_SCRIPTS = \
-	src/dhclient-helper
+	src/dhclient-helper \
+	src/ppp/dialer \
+	src/ppp/pppoe-server
 
 dist_helpers_SCRIPTS = \
 	src/helpers/dhcpd-config-helper \
