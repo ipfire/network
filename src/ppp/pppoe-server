@@ -91,7 +91,7 @@ case "${action}" in
 		log DEBUG "pppoe-server options: ${pppoe_cmdline}"
 
 		# Now exec the actual pppoe-server binary.
-		exec pppoe-server ${pppoe_cmdline}
+		exec /usr/sbin/pppoe-server ${pppoe_cmdline}
 
 		error "Could not execute pppoe-server. Exiting."
 		exit ${EXIT_ERROR}
