@@ -22,3 +22,6 @@ all: network zone upl0 port attach "${p_net1}v42"
 
 # Test if the vlan works by pinging bob
 alice: ping -c 5 192.168.100.102
+
+# Test that we can detach the vlan port
+all: network zone upl0 port detach "${p_net1}v42"
