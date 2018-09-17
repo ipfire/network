@@ -443,9 +443,9 @@ MANPAGES = \
 	man/network-vpn.8 \
 	man/network-vpn-security-policies.8 \
 	man/network-zone.8 \
-	man/network-zone-6to4-tunnel.8 \
 	man/network-zone-bridge.8 \
 	man/network-zone-config-pppoe-server.8 \
+	man/network-zone-ip-tunnel.8 \
 	man/network-zone-modem.8 \
 	man/network-zone-pppoe.8 \
 	man/network-zone-wireless.8

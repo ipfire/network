@@ -1,0 +1,116 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS/DTD DocBook XML V4.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<refentry id="network-zone-ip-tunnel">
+	<refentryinfo>
+		<title>network-zone-ip-tunnel</title>
+		<productname>network</productname>
+
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Michael</firstname>
+				<surname>Tremer</surname>
+				<email>michael.tremer@ipfire.org</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>network-zone-ip-tunnel</refentrytitle>
+		<manvolnum>8</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>network-zone-ip-tunnel</refname>
+		<refpurpose>Network Configuration Control Program</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>network zone new <replaceable>ZONE</replaceable> ip-tunnel ...</command>
+		</cmdsynopsis>
+
+		<cmdsynopsis>
+			<command>network zone <replaceable>ZONE</replaceable> edit ...</command>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+
+		<para>
+			The ip-tunnel hook is used to create IP tunnels that use protocols
+			like GRE to encapsulate IP packets.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<para>
+			The following options are understood:
+		</para>
+
+		<variablelist>
+			<varlistentry>
+				<term>
+					<option>--mode=<replaceable>MODE</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						Sets the protocol that is being used to encapsulate
+						IP packets.
+						Currently only <replaceable>gre</replaceable> is supported.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--peer=<replaceable>PEER</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The address of the peer that terminates the remote
+						end of this tunnel.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term>
+					<option>--local-address=<replaceable>LOCAL-ADDRESS</replaceable></option>
+				</term>
+
+				<listitem>
+					<para>
+						The local IP address the tunnel originates from.
+					</para>
+
+					<para>
+						This is optional and if unset a useful default will be used.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+
+		<para>
+			<citerefentry>
+				<refentrytitle>network</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>,
+			<citerefentry>
+				<refentrytitle>network-zone</refentrytitle>
+				<manvolnum>8</manvolnum>
+			</citerefentry>
+		</para>
+	</refsect1>
+</refentry>
