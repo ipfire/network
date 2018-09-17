@@ -65,6 +65,26 @@ ip_protocol_is_supported() {
 	list_match ${proto} ${IP_SUPPORTED_PROTOCOLS}
 }
 
+# Returns true if all IP addresses are of the same protocol
+ip_protocol_match() {
+	local address="${1}"
+	shift
+
+	# Get protocol of the first address
+	local protocol="$(ip_detect_protocol "${address}")"
+
+	# Check if all other addresses match the protocol
+	for address in $@; do
+		local p="$(ip_detect_protocol "${address}")"
+
+		if [ "${p}" != "${protocol}" ]; then
+			return ${EXIT_FALSE}
+		fi
+	done
+
+	return ${EXIT_TRUE}
+}
+
 ip_is_valid() {
 	local address=${1}
 	assert isset address

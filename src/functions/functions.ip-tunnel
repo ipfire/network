@@ -98,21 +98,9 @@ ip_tunnel_add() {
 		return ${EXIT_ERROR}
 	fi
 
-	# Detect the IP protocol, which is important to decide which mode we have to use
-	local remote_address_protocol="$(ip_detect_protocol "${remote_address}")"
-
-	# If we could not detect the IP protocol something with
-	# ${remote_address} is wrong
-	if ! isset remote_address_protocol; then
-		log ERROR "Could not determine remote address IP protocol"
-		return ${EXIT_ERROR}
-	fi
-
 	# We cannot mix IPv6 and IPv4
-	if isset local_address && \
-			[[ "${remote_address_protocol}" != "$(ip_detect_protocol "${local_address}")" ]] ; then
-		log ERROR "Local and remote address\
-			are not from the same IP protocol"
+	if isset local_address && ! ip_protocol_match "${remote_address}" "${local_address}"; then
+		log ERROR "Local and remote address are not of the same IP protocol"
 		return ${EXIT_ERROR}
 	fi
 
@@ -151,6 +139,7 @@ ip_tunnel_add() {
 	fi
 
 	# Determine the mode based on the IP protocol
+	local remote_address_protocol="$(ip_detect_protocol "${remote_address}")"
 	mode=$(ip_tunnel_convert_mode_to_iproute2_mode "${mode}" "${remote_address_protocol}")
 
 	log DEBUG "Creating tunnel device '${device}' (mode=${mode})..."
