@@ -232,7 +232,6 @@ dist_hooks_ports_SCRIPTS = \
 	src/hooks/ports/wireless-mesh
 
 dist_hooks_zones_SCRIPTS = \
-	src/hooks/zones/6to4-tunnel \
 	src/hooks/zones/bridge \
 	src/hooks/zones/ip-tunnel \
 	src/hooks/zones/modem \
