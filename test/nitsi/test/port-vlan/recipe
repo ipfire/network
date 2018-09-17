@@ -1,0 +1,27 @@
+include: setup
+
+# This contains the basic network configuration for all vpn-tests
+include: alice-port-vars
+include: bob-port-vars
+
+# Create an uplink zone
+all: network zone new upl0 bridge --stp=off
+
+# Add IP addresses for Alice
+alice: network zone upl0 config new static 192.168.100.101/24
+
+# Add IP addresses for Bob
+bob: network zone upl0 config new static 192.168.100.102/24
+
+# Print what has been brought up
+all: network status
+
+# Create a vlan device with parent port attached to net1
+all: network port new vlan --parent-device=${p_net1} --tag=42
+all: network zone upl0 port attach "${p_net1}v42"
+
+# Test if the vlan works by pinging bob
+alice: ping -c 5 192.168.100.102
+
+# Test that we can detach the vlan port
+all: network zone upl0 port detach "${p_net1}v42"
