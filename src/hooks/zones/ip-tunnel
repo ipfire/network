@@ -1,0 +1,172 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2010  Michael Tremer & Christian Schmidt                      #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /usr/lib/network/header-zone
+
+SUPPORTED_IP_TUNNEL_MODES="gre"
+
+HOOK_SETTINGS="HOOK MODE PEER LOCAL_ADDRESS"
+
+# Default mode of the tunnel
+MODE="gre"
+
+# The IP address of the tunnel endpoint where to connect to
+PEER=
+
+# The local IP address of the tunnel endpoint
+LOCAL_ADDRESS=
+
+hook_check_settings() {
+	assert isset MODE && assert isoneof MODE ${SUPPORTED_IP_TUNNEL_MODES}
+
+	assert isset PEER && assert ip_is_valid "${PEER}"
+
+	# LOCAL_ADDRESS must be valid and match the protocol of PEER
+	if isset LOCAL_ADDRESS; then
+		assert ip_is_valid "${LOCAL_ADDRESS}"
+		assert ip_protocol_match "${PEER}" "${LOCAL_ADDRESS}"
+	fi
+}
+
+hook_parse_cmdline() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--local-address=*)
+				LOCAL_ADDRESS="$(cli_get_val "${1}")"
+				;;
+
+			--mode=*)
+				MODE="$(cli_get_val "${1}")"
+
+				# MODE must be on the list of supported protocols
+				if ! isoneof MODE ${SUPPORTED_IP_TUNNEL_MODES}; then
+					error "Unsupported mode: ${mode}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
+			--peer=*)
+				PEER="$(cli_get_val "${1}")"
+				;;
+
+			*)
+				error "Unknown option: ${1}"
+				exit ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	# PEER must be set
+	if ! isset PEER; then
+		error "Peer is not set"
+		return ${EXIT_ERROR}
+	fi
+
+	# PEER must be a valid IP address
+	if ! ip_is_valid "${PEER}"; then
+		error "Peer ${PEER} is not a valid IP address"
+		return ${EXIT_ERROR}
+	fi
+
+	# If LOCAL_ADDRESS is set, it must be a valid IP address
+	# of the same protocol than PEER is
+	if isset LOCAL_ADDRESS; then
+		if ! ip_is_valid "${LOCAL_ADDRESS}"; then
+			error "Local address ${LOCAL_ADDRESS} is not a valid IP address"
+			return ${EXIT_ERROR}
+		fi
+
+		if ! ip_protocol_match "${PEER}" "${LOCAL_ADDRESS}"; then
+			error "Peer and local address are of different IP protocols"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	return ${EXIT_OK}
+}
+
+hook_up() {
+	local zone=${1}
+	assert isset zone
+
+	# Read configuration
+	if ! zone_settings_read "${zone}"; then
+		log ERROR "Could not read settings from ${zone}"
+		exit ${EXIT_ERROR}
+	fi
+
+	# Create device if it doesn't exist, yet
+	if ! device_exists "${zone}"; then
+		ip_tunnel_add "${zone}" \
+			--mode="${MODE}" \
+			--remote-address="${PEER}" \
+			--local-address="${LOCAL_ADDRESS}"
+	fi
+
+	# Bring up the device
+	device_set_up "${zone}"
+
+	# Bring up all configurations
+	zone_configs_up "${zone}"
+
+	exit ${EXIT_OK}
+}
+
+hook_down() {
+	local zone="${1}"
+	assert isset zone
+
+	# Stop all the configs.
+	zone_configs_down "${zone}"
+
+	# Remove the tunnel device
+	ip_tunnel_del "${zone}" || exit $?
+
+	exit ${EXIT_OK}
+}
+
+hook_status() {
+	local zone=${1}
+	assert isset zone
+
+	cli_device_headline "${zone}"
+
+	# Read configuration
+	if ! zone_settings_read "${zone}"; then
+		error "Could not read settings from ${zone}"
+		exit ${EXIT_ERROR}
+	fi
+
+	cli_headline 2 "Configuration"
+	cli_print_fmt1 2 "Mode" "$(ip_tunnel_protocol_to_name "${MODE}")"
+	cli_print_fmt1 2 "Peer" "${PEER}"
+	if isset LOCAL_ADDRESS; then
+		cli_print_fmt1 2 "Local Address" "${LOCAL_ADDRESS}"
+	fi
+	cli_space
+
+	cli_headline 2 "Configurations"
+	zone_configs_cmd status "${zone}"
+	cli_space
+
+	exit ${EXIT_OK}
+}

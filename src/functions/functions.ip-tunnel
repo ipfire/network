@@ -21,6 +21,25 @@
 
 IP_TUNNEL_MODES="gre sit vti"
 
+ip_tunnel_protocol_to_name() {
+	local protocol="${1}"
+
+	case "${protocol}" in
+		gre)
+			print "Generic Routing Encapsulation"
+			;;
+		sit)
+			print "Simple Internet Transition"
+			;;
+		vti)
+			print "Virtual Tunnel Interface"
+			;;
+		*)
+			print "${protocol}"
+			;;
+	esac
+}
+
 # This function converts our modes into the type
 # the iproute2 tool uses
 ip_tunnel_convert_mode_to_iproute2_mode() {
