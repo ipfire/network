@@ -109,8 +109,8 @@ ip_tunnel_add() {
 	fi
 
 	# We cannot mix IPv6 and IPv4
-	if [[ "${remote_address_protocol}" != \
-		"$(ip_detect_protocol "${local_address}")" ]] ; then
+	if isset local_address && \
+			[[ "${remote_address_protocol}" != "$(ip_detect_protocol "${local_address}")" ]] ; then
 		log ERROR "Local and remote address\
 			are not from the same IP protocol"
 		return ${EXIT_ERROR}
