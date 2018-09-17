@@ -1,0 +1,18 @@
+include: setup
+include: phase1
+
+# This test creates a GRE tunnel which connects Alice and Bob with each other
+
+# Alice
+alice: network zone new upl1 ip-tunnel --mode=gre --peer=192.168.100.102
+alice: network zone upl1 config new static 169.254.0.1/30
+
+# Bob
+bob: network zone new upl1 ip-tunnel --mode=gre --peer=192.168.100.101
+bob: network zone upl1 config new static 169.254.0.2/30
+
+all: network status
+
+# Ping the remote sites
+alice: ping -c5 169.254.0.2
+bob: ping -c5 169.254.0.1
