@@ -637,17 +637,15 @@ cli_zone_destroy() {
 	fi
 
 	local zone="${1}"
-	assert zone_exists "${zone}"
 
-	if zone_is_up ${zone}; then
-		echo "Zone '${zone}' is up and will be removed when it goes down the next time."
-		zone_destroy "${zone}"
-	else
-		echo "Removing zone '${zone}' now..."
-		zone_destroy_now "${zone}"
+	# Check if the zone exists
+	if ! zone_exists "${zone}"; then
+		error "Zone '${zone}' does not exist"
+		return ${EXIT_ERROR}
 	fi
 
-	exit ${EXIT_OK}
+	echo "Removing zone '${zone}'..."
+	zone_destroy "${zone}" || exit $?
 }
 
 cli_zone_port() {
