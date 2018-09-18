@@ -1219,7 +1219,7 @@ _vpn_security_policies_make_ike_proposal() {
 	local proposals
 
 	local cipher
-	for cipher in ${CIPHER}; do
+	for cipher in ${CIPHERS}; do
 		# Translate cipher
 		local _cipher=${CIPHER_TO_STRONGSWAN[${cipher}]}
 
@@ -1239,7 +1239,7 @@ _vpn_security_policies_make_ike_proposal() {
 				fi
 
 				local group_type
-				for group_type in ${GROUP_TYPE}; do
+				for group_type in ${GROUP_TYPES}; do
 					local _group_type=${GROUP_TYPE_TO_STRONGSWAN[${group_type}]}
 
 					if ! isset _group_type; then
@@ -1262,7 +1262,7 @@ _vpn_security_policies_make_ike_proposal() {
 				fi
 
 				local group_type
-				for group_type in ${GROUP_TYPE}; do
+				for group_type in ${GROUP_TYPES}; do
 					local _group_type=${GROUP_TYPE_TO_STRONGSWAN[${group_type}]}
 
 					if ! isset _group_type; then
@@ -1320,7 +1320,7 @@ _vpn_security_policies_make_esp_proposal() {
 	local proposals
 
 	local cipher
-	for cipher in ${CIPHER}; do
+	for cipher in ${CIPHERS}; do
 		# Translate cipher
 		local _cipher=${CIPHER_TO_STRONGSWAN[${cipher}]}
 
@@ -1331,7 +1331,7 @@ _vpn_security_policies_make_esp_proposal() {
 
 		if vpn_security_policies_cipher_is_aead ${cipher}; then
 			local group_type
-			for group_type in ${GROUP_TYPE}; do
+			for group_type in ${GROUP_TYPES}; do
 				local _group_type=${GROUP_TYPE_TO_STRONGSWAN[${group_type}]}
 
 				if ! isset _group_type; then
@@ -1353,7 +1353,7 @@ _vpn_security_policies_make_esp_proposal() {
 				fi
 
 				local group_type
-				for group_type in ${GROUP_TYPE}; do
+				for group_type in ${GROUP_TYPES}; do
 					local _group_type=${GROUP_TYPE_TO_STRONGSWAN[${group_type}]}
 
 					if ! isset _group_type; then
