@@ -52,7 +52,7 @@ IPSEC_DEFAULT_SECURITY_POLICY="system"
 IPSEC_DEFAULT_START_ACTION="on-demand"
 IPSEC_DEFAULT_TYPE="net-to-net"
 
-IPSEC_VALID_MODES="gre-transport tunnel vti"
+IPSEC_VALID_MODES="transport tunnel"
 IPSEC_VALID_AUTH_MODES="PSK"
 
 cli_ipsec() {
@@ -224,14 +224,11 @@ cli_ipsec_connection_show() {
 	cli_headline 2 "Misc."
 
 	case "${MODE}" in
-		gre-transport)
-			cli_print_fmt1 2 "Transport Mode" "GRE Transport"
+		transport)
+			cli_print_fmt1 2 "Transport Mode" "Transport"
 			;;
 		tunnel)
 			cli_print_fmt1 2 "Transport Mode" "Tunnel"
-			;;
-		vti)
-			cli_print_fmt1 2 "Transport Mode" "Virtual Tunnel Interface"
 			;;
 		*)
 			cli_print_fmt1 2 "Transport Mode" "- Unknown -"
@@ -1492,11 +1489,14 @@ _ipsec_connection_to_strongswan_connection() {
 	# Mode
 	print_indent 4 "# Mode"
 	case "${MODE}" in
-		gre-transport)
+		transport)
 			print_indent 4 "mode = transport"
 			;;
-		tunnel|vti|*)
+		tunnel)
 			print_indent 4 "mode = tunnel"
+			;;
+		*)
+			log WARNING "Unsupported IPsec mode: ${mode}"
 			;;
 	esac
 	print

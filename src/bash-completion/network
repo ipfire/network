@@ -513,7 +513,7 @@ _network_vpn_ipsec_connection_subcommands_authentication_mode() {
 _network_vpn_ipsec_connection_subcommands_mode() {
 	local words=( $@ )
 
-	local commands="gre-transport tunnel vti"
+	local commands="transport tunnel"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
