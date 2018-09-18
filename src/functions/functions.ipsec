@@ -171,6 +171,11 @@ cli_ipsec_connection_show() {
 		cli_print_fmt1 1 "Peer" "${PEER}"
 	fi
 
+	# Zone
+	if isset ZONE; then
+		cli_print_fmt1 1 "Zone" "${ZONE}"
+	fi
+
 	# Security Policy
 	cli_print_fmt1 1 "Security Policy" "${SECURITY_POLICY-${IPSEC_DEFAULT_SECURITY_POLICY}}"
 	cli_space
