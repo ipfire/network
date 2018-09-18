@@ -37,7 +37,8 @@ IPSEC_CONNECTION_CONFIG_SETTINGS="\
 	SECURITY_POLICY \
 	START_ACTION \
 	TYPE \
-	ENABLED"
+	ENABLED \
+	ZONE"
 
 # Default values
 IPSEC_DEFAULT_AUTH_MODE="PSK"
@@ -80,7 +81,7 @@ cli_ipsec_connection() {
 		shift 2
 
 		case "${key}" in
-			authentication|down|disable|dpd|enable|inactivity_timeout|local|mode|peer|pool|remote|security_policy|start_action|up)
+			authentication|down|disable|dpd|enable|inactivity_timeout|local|mode|peer|pool|remote|security_policy|start_action|up|zone)
 				ipsec_connection_${key} ${connection} "$@"
 				;;
 			color)
@@ -704,6 +705,70 @@ ipsec_connection_mode() {
 
 	if ! ipsec_connection_write_config_key "${connection}" "MODE" ${mode}; then
 		log ERROR "Could not write configuration settings"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
+ipsec_connection_zone() {
+	local connection="${1}"
+	local zone="${2}"
+	shift 2
+
+	# Check if we got an argument
+	if ! isset zone; then
+		error "Zone is not set"
+		return ${EXIT_ERROR}
+	fi
+
+	local ZONE
+	case "${zone}" in
+		-)
+			if ! ipsec_connection_read_config "${connection}" "ZONE"; then
+				log ERROR "Could not read configuration for IPsec connection ${connection}"
+				return ${EXIT_ERROR}
+			fi
+
+			# Removes zone setting
+			zone=""
+
+			if isset ZONE; then
+				log INFO "Removing zone ${ZONE} from IPsec connection '${connection}'"
+			fi
+			;;
+
+		*)
+			# Check if the zone exists
+			if ! zone_exists "${zone}"; then
+				error "Zone ${zone} does not exist"
+				return ${EXIT_ERROR}
+			fi
+
+			# Zone must be of type tunnel
+			local hook="$(zone_get_hook "${zone}")"
+
+			case "${hook}" in
+				ip-tunnel)
+					# We support ip-tunnels
+					;;
+
+				*)
+					error "Zones of type ${hook} are not supported"
+					return ${EXIT_ERROR}
+					;;
+			esac
+
+			# Check if this zone is alreadz attached to another IPsec connection
+			# XXX
+
+			log INFO "Adding zone ${zone} to IPsec connection '${connection}'"
+			;;
+	esac
+
+	# Save settings
+	if ! ipsec_connection_write_config_key "${connection}" "ZONE" "${zone}"; then
+		error "Could not write configuration settings"
 		return ${EXIT_ERROR}
 	fi
 

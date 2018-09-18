@@ -413,7 +413,7 @@ _network_vpn_ipsec_connection_subcommands() {
 	shift
 	local words=( $@ )
 
-	local commands="authentication color description down inactivity-timeout local mode peer remote security-policy show up"
+	local commands="authentication color description down inactivity-timeout local mode peer remote security-policy show up zone"
 	local cmd="$(_network_find_on_cmdline "${commands}")"
 	if [[ -z "${cmd}" ]]; then
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
@@ -444,7 +444,10 @@ _network_vpn_ipsec_connection_subcommands() {
 		security-policy)
 			_network_vpn_ipsec_connection_subcommands_security_policy ${args}
 			;;
-		esac
+		zone)
+			_network_vpn_ipsec_connection_subcommands_zone "${connection}" ${args}
+			;;
+	esac
 }
 
 _network_vpn_ipsec_connection_subcommands_authentication() {
@@ -527,6 +530,15 @@ _network_vpn_ipsec_connection_subcommands_security_policy() {
 		COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
 		return 0
 	fi
+}
+
+_network_vpn_ipsec_connection_subcommands_zone() {
+	local connection="${1}"
+	shift
+
+	local words=( $@ )
+
+	# XXX TODO find zones that can be attached here
 }
 
 _network_vpn_security_policies() {
