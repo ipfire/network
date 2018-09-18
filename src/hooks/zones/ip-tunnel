@@ -21,9 +21,9 @@
 
 . /usr/lib/network/header-zone
 
-SUPPORTED_IP_TUNNEL_MODES="gre"
+SUPPORTED_IP_TUNNEL_MODES="gre vti"
 
-HOOK_SETTINGS="HOOK MODE PEER LOCAL_ADDRESS"
+HOOK_SETTINGS="HOOK MARK MODE PEER LOCAL_ADDRESS"
 
 # Default mode of the tunnel
 MODE="gre"
@@ -43,6 +43,11 @@ hook_check_settings() {
 	if isset LOCAL_ADDRESS; then
 		assert ip_is_valid "${LOCAL_ADDRESS}"
 		assert ip_protocol_match "${PEER}" "${LOCAL_ADDRESS}"
+	fi
+
+	# Generate a random mark
+	if ! isset MARK; then
+		MARK="$(( ${RANDOM} & 0xffffffff ))"
 	fi
 }
 
@@ -119,7 +124,9 @@ hook_up() {
 		ip_tunnel_add "${zone}" \
 			--mode="${MODE}" \
 			--remote-address="${PEER}" \
-			--local-address="${LOCAL_ADDRESS}"
+			--local-address="${LOCAL_ADDRESS}" \
+			--ikey="${MARK}" \
+			--okey="${MARK}"
 	fi
 
 	# Bring up the device
