@@ -84,7 +84,7 @@ struct nl_msg* network_phy_make_netlink_message(struct network_phy* phy,
 	for(int cap = NETWORK_PHY_VHT_CAP_VHT160; cap <= NETWORK_PHY_VHT_CAP_TX_ANTENNA_PATTERN; cap <<= 1)
 
 #define foreach_ht_cap(cap) \
-	for(int cap = NETWORK_PHY_HT_CAP_RX_LDCP; cap != NETWORK_PHY_HT_CAP_LSIG_TXOP_PROT; cap <<= 1)
+	for(int cap = NETWORK_PHY_HT_CAP_RX_LDCP; cap <= NETWORK_PHY_HT_CAP_LSIG_TXOP_PROT; cap <<= 1)
 
 #endif
 
