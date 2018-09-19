@@ -21,6 +21,8 @@
 
 HOSTAPD_CONTROL_INTERFACE_DIR="/run/hostapd/ctrl"
 
+HOSTAPD_SUPPORTED_MODES="802.11a 802.11a/n 802.11ac 802.11g 802.11g/n"
+
 hostapd_config_write() {
 	local device=${1}
 	assert isset device
@@ -56,6 +58,11 @@ hostapd_config_write() {
 				;;
 			--mode=*)
 				mode=$(cli_get_val "${1}")
+
+				if ! isoneof mode ${HOSTAPD_SUPPORTED_MODES}; then
+					error "Unsupported mode: ${mode}"
+					return ${EXIT_ERROR}
+				fi
 				;;
 			--ssid=*)
 				ssid=$(cli_get_val "${1}")
@@ -75,6 +82,12 @@ hostapd_config_write() {
 		shift
 	done
 
+	# Check if mode is set
+	if ! isset mode; then
+		error "Mode is not set"
+		return ${EXIT_ERROR}
+	fi
+
 	assert isset broadcast_ssid
 	assert isbool broadcast_ssid
 
@@ -90,11 +103,50 @@ hostapd_config_write() {
 		assert isset key
 	fi
 
-	# Get VHT caps
-	local vht_caps="$(wireless_get_vht_caps "${device}")"
+	# 802.11ac/n flags
+	local ieee80211ac
+	local ieee80211n
+	local vht_caps
+	local ht_caps
 
-	# Get HT caps
-	local ht_caps="$(wireless_get_ht_caps "${device}")"
+	local hw_mode
+	case "${mode}" in
+		802.11a)
+			hw_mode="a"
+			;;
+
+		802.11a/n)
+			hw_mode="a"
+			ieee80211n="1"
+
+			# Fetch HT caps
+			ht_caps="$(wireless_get_ht_caps "${device}")"
+			;;
+
+		802.11g)
+			hw_mode="g"
+			;;
+
+		802.11g/n)
+			hw_mode="g"
+			ieee80211n="1"
+
+			# Fetch HT caps
+			ht_caps="$(wireless_get_ht_caps "${device}")"
+			;;
+
+		802.11ac)
+			hw_mode="a"
+			ieee80211ac="1"
+			ieee80211n="1"
+
+			# Fetch VHT caps
+			vht_caps="$(wireless_get_vht_caps "${device}")"
+
+			# Fetch HT caps
+			ht_caps="$(wireless_get_ht_caps "${device}")"
+			;;
+	esac
 
 	# Create configuration directory.
 	local config_dir=$(dirname ${file})
@@ -118,29 +170,30 @@ hostapd_config_write() {
 		ignore_broadcast_ssid="1"
 	fi
 
-	local hw_mode ieee80211n="0"
-	if [ "${mode}" = "n" ]; then
-		if [ ${channel} -le 15 ]; then
-			hw_mode="g"
-		else
-			hw_mode="a"
-		fi
-		ieee80211n="1"
-	else
-		hw_mode="${mode}"
-	fi
-
 	(
 		print "# Default settings"
 
 		# Advertise country code and maximum transmission power
 		print "ieee80211d=1"
 
+		# Enable Radar Detection
+		print "ieee80211h=1"
+
+		print # empty line
+
 		print "# Wireless configuration"
+		print "hw_mode=${hw_mode}"
+
+		if isset ieee80211ac; then
+			print "ieee80211ac=${ieee80211ac}"
+		fi
+
+		if isset ieee80211n; then
+			print "ieee80211n=${ieee80211n}"
+		fi
+
 		print "channel=${channel}"
 		print "country_code=${country_code}"
-		print "hw_mode=${hw_mode}"
-		print "ieee80211n=${ieee80211n}"
 		print "ignore_broadcast_ssid=${ignore_broadcast_ssid}"
 
 		if contains_spaces "${ssid}"; then

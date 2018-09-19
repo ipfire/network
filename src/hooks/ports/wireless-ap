@@ -31,7 +31,6 @@ BROADCAST_SSID=on
 CHANNEL=1
 ENCRYPTION=""
 KEY=""
-MODE="g"
 SSID=
 
 hook_check_settings() {
@@ -41,7 +40,7 @@ hook_check_settings() {
 	assert isbool BROADCAST_SSID
 	assert isset CHANNEL
 	assert isset MODE
-	assert isoneof MODE a b g n
+	assert isoneof MODE ${HOSTAPD_SUPPORTED_MODES}
 	assert isset PHY
 	assert ismac PHY
 	assert isset SSID
@@ -75,6 +74,12 @@ hook_parse_cmdline() {
 				;;
 			--mode=*)
 				MODE=$(cli_get_val "${1}")
+
+				if ! isoneof MODE ${HOSTAPD_SUPPORTED_MODES}; then
+					error "Unsupported mode: ${MODE}"
+					error "Mode must be one of ${HOSTAPD_SUPPORTED_MODES}"
+					return ${EXIT_ERROR}
+				fi
 				;;
 			--phy=*)
 				PHY=$(cli_get_val "${1}")
@@ -88,6 +93,12 @@ hook_parse_cmdline() {
 		esac
 		shift
 	done
+
+	# MODE must be set
+	if ! isset MODE; then
+		error "--mode is not set"
+		return ${EXIT_ERROR}
+	fi
 
 	# Save address of phy do identify it again
 	PHY=$(phy_get ${PHY})
