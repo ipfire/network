@@ -31,7 +31,7 @@ struct network_phy* network_phy_ref(struct network_phy* phy);
 struct network_phy* network_phy_unref(struct network_phy* phy);
 
 enum network_phy_ht_caps {
-	NETWORK_PHY_HT_CAP_RX_LDCP         = (1 <<  0),
+	NETWORK_PHY_HT_CAP_RX_LDPC         = (1 <<  0),
 	NETWORK_PHY_HT_CAP_HT40            = (1 <<  1),
 	NETWORK_PHY_HT_CAP_SMPS_STATIC     = (1 <<  2),
 	NETWORK_PHY_HT_CAP_SMPS_DYNAMIC    = (1 <<  3),
@@ -84,7 +84,7 @@ struct nl_msg* network_phy_make_netlink_message(struct network_phy* phy,
 	for(int cap = NETWORK_PHY_VHT_CAP_VHT160; cap <= NETWORK_PHY_VHT_CAP_TX_ANTENNA_PATTERN; cap <<= 1)
 
 #define foreach_ht_cap(cap) \
-	for(int cap = NETWORK_PHY_HT_CAP_RX_LDCP; cap <= NETWORK_PHY_HT_CAP_LSIG_TXOP_PROT; cap <<= 1)
+	for(int cap = NETWORK_PHY_HT_CAP_RX_LDPC; cap <= NETWORK_PHY_HT_CAP_LSIG_TXOP_PROT; cap <<= 1)
 
 #endif
 

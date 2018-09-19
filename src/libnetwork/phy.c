@@ -153,9 +153,9 @@ static void phy_parse_vht_capabilities(struct network_phy* phy, __u32 caps) {
 }
 
 static void phy_parse_ht_capabilities(struct network_phy* phy, __u16 caps) {
-	// RX LDCP
+	// RX LDPC
 	if (caps & BIT(0))
-		phy->ht_caps |= NETWORK_PHY_HT_CAP_RX_LDCP;
+		phy->ht_caps |= NETWORK_PHY_HT_CAP_RX_LDPC;
 
 	// HT40
 	if (caps & BIT(1))
@@ -423,7 +423,7 @@ static const char* network_phy_get_vht_capability_string(const enum network_phy_
 
 static const char* network_phy_get_ht_capability_string(const enum network_phy_ht_caps cap) {
 	switch (cap) {
-		case NETWORK_PHY_HT_CAP_RX_LDCP:
+		case NETWORK_PHY_HT_CAP_RX_LDPC:
 			return "[LDPC]";
 
 		case NETWORK_PHY_HT_CAP_HT40:
