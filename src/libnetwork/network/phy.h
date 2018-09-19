@@ -49,6 +49,26 @@ enum network_phy_ht_caps {
 	NETWORK_PHY_HT_CAP_LSIG_TXOP_PROT  = (1 << 15),
 };
 
+enum network_phy_vht_caps {
+	NETWORK_PHY_VHT_CAP_VHT160             = (1 <<  0),
+	NETWORK_PHY_VHT_CAP_VHT80PLUS80        = (1 <<  1),
+	NETWORK_PHY_VHT_CAP_RX_LDPC            = (1 <<  2),
+	NETWORK_PHY_VHT_CAP_RX_SHORT_GI_80     = (1 <<  3),
+	NETWORK_PHY_VHT_CAP_RX_SHORT_GI_160    = (1 <<  4),
+	NETWORK_PHY_VHT_CAP_TX_STBC            = (1 <<  5),
+	NETWORK_PHY_VHT_CAP_SU_BEAMFORMER      = (1 <<  6),
+	NETWORK_PHY_VHT_CAP_SU_BEAMFORMEE      = (1 <<  7),
+	NETWORK_PHY_VHT_CAP_MU_BEAMFORMER      = (1 <<  8),
+	NETWORK_PHY_VHT_CAP_MU_BEAMFORMEE      = (1 <<  9),
+	NETWORK_PHY_VHT_CAP_TXOP_PS            = (1 << 10),
+	NETWORK_PHY_VHT_CAP_HTC_VHT            = (1 << 11),
+	NETWORK_PHY_VHT_CAP_RX_ANTENNA_PATTERN = (1 << 12),
+	NETWORK_PHY_VHT_CAP_TX_ANTENNA_PATTERN = (1 << 13),
+};
+
+
+int network_phy_has_vht_capability(struct network_phy* phy, const enum network_phy_vht_caps cap);
+char* network_phy_list_vht_capabilities(struct network_phy* phy);
 int network_phy_has_ht_capability(struct network_phy* phy, const enum network_phy_ht_caps cap);
 char* network_phy_list_ht_capabilities(struct network_phy* phy);
 
@@ -59,6 +79,9 @@ char* network_phy_list_ht_capabilities(struct network_phy* phy);
 
 struct nl_msg* network_phy_make_netlink_message(struct network_phy* phy,
 	enum nl80211_commands cmd, int flags);
+
+#define foreach_vht_cap(cap) \
+	for(int cap = NETWORK_PHY_VHT_CAP_VHT160; cap <= NETWORK_PHY_VHT_CAP_TX_ANTENNA_PATTERN; cap <<= 1)
 
 #define foreach_ht_cap(cap) \
 	for(int cap = NETWORK_PHY_HT_CAP_RX_LDCP; cap != NETWORK_PHY_HT_CAP_LSIG_TXOP_PROT; cap <<= 1)

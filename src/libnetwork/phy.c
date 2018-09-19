@@ -39,6 +39,8 @@ struct network_phy {
 	int index;
 	char* name;
 
+	ssize_t max_mpdu_length;
+	unsigned int vht_caps;
 	unsigned int ht_caps;
 };
 
@@ -63,6 +65,91 @@ static int phy_get_index(const char* name) {
 	fclose(f);
 
 	return atoi(index);
+}
+
+static void phy_parse_vht_capabilities(struct network_phy* phy, __u32 caps) {
+	// Max MPDU length
+	switch (caps & 0x3) {
+		case 0:
+			phy->max_mpdu_length = 3895;
+			break;
+
+		case 1:
+			phy->max_mpdu_length = 7991;
+			break;
+
+		case 2:
+			phy->max_mpdu_length = 11454;
+			break;
+
+		case 3:
+			phy->max_mpdu_length = -1;
+	}
+
+	// Supported channel widths
+	switch ((caps >> 2) & 0x3) {
+		case 0:
+			break;
+
+		// Supports 160 MHz
+		case 1:
+			phy->vht_caps |= NETWORK_PHY_VHT_CAP_VHT160;
+			break;
+
+		// Supports 160 MHz and 80+80 MHz
+		case 2:
+			phy->vht_caps |= NETWORK_PHY_VHT_CAP_VHT160;
+			phy->vht_caps |= NETWORK_PHY_VHT_CAP_VHT80PLUS80;
+			break;
+	}
+
+	// RX LDPC
+	if (caps & BIT(4))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_RX_LDPC;
+
+	// RX Short GI 80 MHz
+	if (caps & BIT(5))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_RX_SHORT_GI_80;
+
+	// RX Short GI 160 MHz and 80+80 MHz
+	if (caps & BIT(6))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_RX_SHORT_GI_160;
+
+	// TX STBC
+	if (caps & BIT(7))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_TX_STBC;
+
+	// Single User Beamformer
+	if (caps & BIT(11))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_SU_BEAMFORMER;
+
+	// Single User Beamformee
+	if (caps & BIT(12))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_SU_BEAMFORMEE;
+
+	// Multi User Beamformer
+	if (caps & BIT(19))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_MU_BEAMFORMER;
+
+	// Multi User Beamformee
+	if (caps & BIT(20))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_MU_BEAMFORMEE;
+
+	// TX-OP-PS
+	if (caps & BIT(21))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_TXOP_PS;
+
+	// HTC-VHT
+	if (caps & BIT(22))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_HTC_VHT;
+
+	// RX Antenna Pattern Consistency
+	if (caps & BIT(28))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_RX_ANTENNA_PATTERN;
+
+	// TX Antenna Pattern Consistency
+	if (caps & BIT(29))
+		phy->vht_caps |= NETWORK_PHY_VHT_CAP_TX_ANTENNA_PATTERN;
 }
 
 static void phy_parse_ht_capabilities(struct network_phy* phy, __u16 caps) {
@@ -165,8 +252,15 @@ static int phy_parse_info(struct nl_msg* msg, void* data) {
 
 			// HT Capabilities
 			if (band_attrs[NL80211_BAND_ATTR_HT_CAPA]) {
-				__u16 caps = nla_get_u16(band_attrs[NL80211_BAND_ATTR_HT_CAPA]);
-				phy_parse_ht_capabilities(phy, caps);
+				__u16 ht_caps = nla_get_u16(band_attrs[NL80211_BAND_ATTR_HT_CAPA]);
+				phy_parse_ht_capabilities(phy, ht_caps);
+			}
+
+			// VHT Capabilities
+			if (band_attrs[NL80211_BAND_ATTR_VHT_CAPA]) {
+				__u32 vht_caps = nla_get_u32(band_attrs[NL80211_BAND_ATTR_VHT_CAPA]);
+
+				phy_parse_vht_capabilities(phy, vht_caps);
 			}
 		}
 	}
@@ -271,8 +365,60 @@ nla_put_failure:
 	return NULL;
 }
 
+NETWORK_EXPORT int network_phy_has_vht_capability(struct network_phy* phy, const enum network_phy_vht_caps cap) {
+	return phy->vht_caps & cap;
+}
+
 NETWORK_EXPORT int network_phy_has_ht_capability(struct network_phy* phy, const enum network_phy_ht_caps cap) {
 	return phy->ht_caps & cap;
+}
+
+static const char* network_phy_get_vht_capability_string(const enum network_phy_vht_caps cap) {
+	switch (cap) {
+		case NETWORK_PHY_VHT_CAP_VHT160:
+			return "[VHT-160]";
+
+		case NETWORK_PHY_VHT_CAP_VHT80PLUS80:
+			return "[VHT-160-80PLUS80]";
+
+		case NETWORK_PHY_VHT_CAP_RX_LDPC:
+			return "[RXLDPC]";
+
+		case NETWORK_PHY_VHT_CAP_RX_SHORT_GI_80:
+			return "[SHORT-GI-80]";
+
+		case NETWORK_PHY_VHT_CAP_RX_SHORT_GI_160:
+			return "[SHORT-GI-160]";
+
+		case NETWORK_PHY_VHT_CAP_TX_STBC:
+			return "[TX-STBC-2BY1]";
+
+		case NETWORK_PHY_VHT_CAP_SU_BEAMFORMER:
+			return "[SU-BEAMFORMER]";
+
+		case NETWORK_PHY_VHT_CAP_SU_BEAMFORMEE:
+			return "[SU-BEAMFORMEE]";
+
+		case NETWORK_PHY_VHT_CAP_MU_BEAMFORMER:
+			return "[MU-BEAMFORMER]";
+
+		case NETWORK_PHY_VHT_CAP_MU_BEAMFORMEE:
+			return "[MU-BEAMFORMEE]";
+
+		case NETWORK_PHY_VHT_CAP_TXOP_PS:
+			return "[VHT-TXOP-PS]";
+
+		case NETWORK_PHY_VHT_CAP_HTC_VHT:
+			return "[HTC-VHT]";
+
+		case NETWORK_PHY_VHT_CAP_RX_ANTENNA_PATTERN:
+			return "[RX-ANTENNA-PATTERN]";
+
+		case NETWORK_PHY_VHT_CAP_TX_ANTENNA_PATTERN:
+			return "[TX-ANTENNA-PATTERN]";
+	}
+
+	return NULL;
 }
 
 static const char* network_phy_get_ht_capability_string(const enum network_phy_ht_caps cap) {
@@ -327,6 +473,33 @@ static const char* network_phy_get_ht_capability_string(const enum network_phy_h
 	}
 
 	return NULL;
+}
+
+NETWORK_EXPORT char* network_phy_list_vht_capabilities(struct network_phy* phy) {
+	char* buffer = malloc(1024);
+	*buffer = '\0';
+
+	char* p = buffer;
+
+	switch (phy->max_mpdu_length) {
+		case 7991:
+		case 11454:
+			snprintf(p, 1024 - 1, "[MAX-MPDU-%zu]", phy->max_mpdu_length);
+			break;
+
+	}
+
+	foreach_vht_cap(cap) {
+		printf("%d\n", cap);
+		if (network_phy_has_vht_capability(phy, cap)) {
+			const char* cap_str = network_phy_get_vht_capability_string(cap);
+
+			if (cap_str)
+				p = strncat(p, cap_str, 1024 - 1);
+		}
+	}
+
+	return buffer;
 }
 
 NETWORK_EXPORT char* network_phy_list_ht_capabilities(struct network_phy* phy) {
