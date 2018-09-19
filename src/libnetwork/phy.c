@@ -314,6 +314,7 @@ NETWORK_EXPORT int network_phy_new(struct network_ctx* ctx, struct network_phy**
 	p->refcount = 1;
 
 	p->name = strdup(name);
+	p->index = index;
 
 	// Load information from kernel
 	int r = phy_get_info(p);
@@ -324,7 +325,7 @@ NETWORK_EXPORT int network_phy_new(struct network_ctx* ctx, struct network_phy**
 		return r;
 	}
 
-	DEBUG(p->ctx, "Allocated phy at %p\n", p);
+	DEBUG(p->ctx, "Allocated phy at %p (index = %d)\n", p, p->index);
 	*phy = p;
 	return 0;
 }
