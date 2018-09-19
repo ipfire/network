@@ -99,6 +99,9 @@ hostapd_config_write() {
 		assert isset key
 	fi
 
+	# Get VHT caps
+	local vht_caps="$(wireless_get_vht_caps "${device}")"
+
 	# Get HT caps
 	local ht_caps="$(wireless_get_ht_caps "${device}")"
 
@@ -153,6 +156,11 @@ hostapd_config_write() {
 
 		# WMM
 		print "wmm_enabled=${wmm}"
+
+		# Enable VHT caps
+		if isset vht_caps; then
+			print "vht_capab=${vht_caps}"
+		fi
 
 		# Enable HT caps
 		print "ht_capab=${ht_caps}"

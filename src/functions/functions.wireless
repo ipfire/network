@@ -458,3 +458,16 @@ wireless_get_ht_caps() {
 
 	network-phy-list-ht-caps "${phy}"
 }
+
+wireless_get_vht_caps() {
+	local device="${1}"
+	assert isset device
+
+	local phy="$(device_get_phy "${device}")"
+	if ! isset phy; then
+		log ERROR "Could not determine PHY for ${device}"
+		return ${EXIT_ERROR}
+	fi
+
+	network-phy-list-vht-caps "${phy}"
+}
