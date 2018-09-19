@@ -99,6 +99,9 @@ hostapd_config_write() {
 		assert isset key
 	fi
 
+	# Get HT caps
+	local ht_caps="$(wireless_get_ht_caps "${device}")"
+
 	# Create configuration directory.
 	local config_dir=$(dirname ${file})
 	mkdir -p ${HOSTAPD_CONTROL_INTERFACE_DIR} ${config_dir} 2>/dev/null
@@ -150,6 +153,9 @@ hostapd_config_write() {
 
 		# WMM
 		print "wmm_enabled=${wmm}"
+
+		# Enable HT caps
+		print "ht_capab=${ht_caps}"
 
 		print
 	) >> ${file}
