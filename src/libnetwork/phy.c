@@ -490,7 +490,6 @@ NETWORK_EXPORT char* network_phy_list_vht_capabilities(struct network_phy* phy) 
 	}
 
 	foreach_vht_cap(cap) {
-		printf("%d\n", cap);
 		if (network_phy_has_vht_capability(phy, cap)) {
 			const char* cap_str = network_phy_get_vht_capability_string(cap);
 
