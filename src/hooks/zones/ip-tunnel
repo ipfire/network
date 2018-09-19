@@ -80,14 +80,8 @@ hook_parse_cmdline() {
 		shift
 	done
 
-	# PEER must be set
-	if ! isset PEER; then
-		error "Peer is not set"
-		return ${EXIT_ERROR}
-	fi
-
-	# PEER must be a valid IP address
-	if ! ip_is_valid "${PEER}"; then
+	# If PEER is set, it must be a valid IP address
+	if isset PEER && ! ip_is_valid "${PEER}"; then
 		error "Peer ${PEER} is not a valid IP address"
 		return ${EXIT_ERROR}
 	fi
@@ -163,11 +157,16 @@ hook_status() {
 		exit ${EXIT_ERROR}
 	fi
 
-	cli_headline 2 "Configuration"
-	cli_print_fmt1 2 "Mode" "$(ip_tunnel_protocol_to_name "${MODE}")"
-	cli_print_fmt1 2 "Peer" "${PEER}"
-	if isset LOCAL_ADDRESS; then
-		cli_print_fmt1 2 "Local Address" "${LOCAL_ADDRESS}"
+	cli_print_fmt1 1 "Mode" "$(ip_tunnel_protocol_to_name "${MODE}")"
+
+	if isset PEER || isset LOCAL_ADDRESS; then
+		if isset PEER; then
+			cli_print_fmt1 1 "Peer" "${PEER}"
+		fi
+
+		if isset LOCAL_ADDRESS; then
+			cli_print_fmt1 1 "Local Address" "${LOCAL_ADDRESS}"
+		fi
 	fi
 	cli_space
 
