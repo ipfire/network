@@ -529,10 +529,22 @@ ipsec_connection_up() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Read configuration options
+	local ZONE
+	if ! ipsec_connection_read_config "${connection}" "ZONE"; then
+		log ERROR "Could not read configuration for IPsec connection ${connection}"
+		return ${EXIT_ERROR}
+	fi
+
 	if ! [ -f "${NETWORK_IPSEC_SWANCTL_CONNECTIONS_DIR}/${connection}.conf" ]; then
 		log DEBUG "Could not find a swanctl config, generating swanctl config"
 		ipsec_connection_to_strongswan "${connection}"
 		ipsec_strongswan_load
+	fi
+
+	# Bring up the zone
+	if isset ZONE; then
+		zone_up "${ZONE}"
 	fi
 
 	cmd swanctl --initiate --child "${connection}"
@@ -546,7 +558,20 @@ ipsec_connection_down() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Read configuration options
+	local ZONE
+	if ! ipsec_connection_read_config "${connection}" "ZONE"; then
+		log ERROR "Could not read configuration for IPsec connection ${connection}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Tell strongswan to bring down any tunnels
 	cmd swanctl --terminate --ike "${connection}"
+
+	# Bring up the zone
+	if isset ZONE; then
+		zone_down "${ZONE}"
+	fi
 }
 
 # Handle the cli after authentification
@@ -1315,6 +1340,22 @@ _ipsec_connection_to_strongswan_connection() {
 		dpd="true"
 	fi
 
+	local zone_mode
+
+	# Are we connected to a zone?
+	if isset ZONE; then
+		# Store MODE
+		local mode="${MODE}"
+
+		if ! zone_settings_read "${ZONE}" MARK MODE; then
+			log ERROR "Could not read zone settings from ${zone}"
+			return ${EXIT_ERROR}
+		fi
+
+		local zone_mode="${MODE}"
+		MODE="${mode}"
+	fi
+
 	# Write configuration header
 	config_header "strongSwan configuration for ${connection}"
 
@@ -1439,9 +1480,8 @@ _ipsec_connection_to_strongswan_connection() {
 	print
 
 	# Traffic Selectors
-
-	case "${MODE}" in
-		gre-*)
+	case "${MODE},${zone_mode}" in
+		*,gre)
 			print_indent 4 "local_ts = dynamic[gre]"
 			print_indent 4 "remote_ts = dynamic[gre]"
 			;;
@@ -1464,11 +1504,13 @@ _ipsec_connection_to_strongswan_connection() {
 	print
 
 	# Netfilter Marks
-	case "${MODE}" in
+	case "${zone_mode}" in
 		vti)
+			assert isset MARK
+
 			print_indent 4 "# Netfilter Marks"
-			print_indent 4 "mark_in = %unique"
-			print_indent 4 "mark_out = %unique"
+			print_indent 4 "mark_in = ${MARK}"
+			print_indent 4 "mark_out = ${MARK}"
 			print
 			;;
 	esac

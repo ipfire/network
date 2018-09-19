@@ -54,37 +54,24 @@ log DEBUG "${0} called for ${CONNECTION}: ${PLUTO_VERB}"
 
 case "${PLUTO_VERB}" in
 	up-client|up-client-v6|up-host|up-host-v6)
-		case "${MODE}" in
-			gre-*)
-				if ! device_exists "${INTERFACE}"; then
-					ip_tunnel_add "${INTERFACE}" \
-						--mode="gre" \
-						--local-address="${PLUTO_ME}" \
-						--remote-address="${PLUTO_PEER}"
+		if isset ZONE && zone_exists "${ZONE}"; then
+			# Bring up the zone if not done, yet
+			if ! zone_is_up "${ZONE}"; then
+				zone_up "${ZONE}"
+			fi
 
-					device_set_up "${INTERFACE}"
-				fi
-				;;
-			vti)
-				if device_exists "${INTERFACE}"; then
-					ip_tunnel_change_keys "${INTERFACE}" \
-						--ikey="${PLUTO_MARK_IN%/*}" \
-						--okey="${PLUTO_MARK_OUT%/*}"
+			# Update peer and local address
+			if ! ip_tunnel_change "${ZONE}" --remote="${PLUTO_PEER}" --local="${PLUTO_ME}"; then
+				return ${EXIT_ERROR}
+			fi
 
-				else
-					if ! ip_tunnel_add "${INTERFACE}" \
-						--mode="vti" \
-						--local-address="${PLUTO_ME}" \
-						--remote-address="${PLUTO_PEER}" \
-						--ikey="${PLUTO_MARK_IN%/*}" \
-						--okey="${PLUTO_MARK_OUT%/*}"; then
-						log ERROR "Could not create VTI device for ${CONNECTION}"
-					fi
-				fi
-
-				device_set_up "${INTERFACE}"
-				;;
-		esac
+			# Set keys for VTI devices
+			if device_is_vti6 "${ZONE}" || device_is_vti "${ZONE}"; then
+				ip_tunnel_change_keys "${ZONE}" \
+					--ikey="${PLUTO_MARK_IN%/*}" \
+					--okey="${PLUTO_MARK_OUT%/*}"
+			fi
+		fi
 
 		#Get sources IP for routes
 		SRC_IP=($(ip_get_assigned_addresses_from_net \
@@ -131,17 +118,6 @@ case "${PLUTO_VERB}" in
 	down-client|down-client-v6|down-host|down-host-v6)
 		# Remove routes
 		cmd ip route del "${PLUTO_PEER_CLIENT}"
-
-		# Remove interfaces
-		case "${MODE}" in
-			gre-*|vti)
-				if device_exists "${INTERFACE}"; then
-					device_set_down "${INTERFACE}"
-
-					ip_tunnel_del "${INTERFACE}"
-				fi
-				;;
-		esac
 		;;
 esac
 

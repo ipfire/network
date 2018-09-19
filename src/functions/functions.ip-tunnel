@@ -181,6 +181,76 @@ ip_tunnel_del() {
 	device_delete "$@"
 }
 
+ip_tunnel_change() {
+	local device="${1}"
+	shift
+
+	if ! device_exists "${device}"; then
+		log ERROR "No such device: ${device}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Determine the device type
+	local type="$(device_tunnel_get_type ${device})"
+
+	local local
+	local remote
+
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--local=*)
+				local="$(cli_get_val "${1}")"
+
+				if ! ip_is_valid "${local}"; then
+					error "Invalid IP address for --local: ${local}"
+					return ${EXIT_ERROR}
+				fi
+
+				if ! isoneof "type" gre gre6 vti vti6; then
+					log ERROR "Cannot change --local for devices of type ${type}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+			--remote=*)
+				remote="$(cli_get_val "${1}")"
+
+				if ! ip_is_valid "${remote}"; then
+					error "Invalid IP address for --remote: ${remote}"
+					return ${EXIT_ERROR}
+				fi
+
+				if ! isoneof "type" gre gre6 vti vti6; then
+					log ERROR "Cannot change --remote for devices of type ${type}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+		esac
+		shift
+	done
+
+	# XXX If a device is of an IP protocol and the protocol of remote and local
+	# have changed, we will need to destroy the interface and recreate it with
+	# the correct type
+
+	local cmd_args
+
+	if isset local; then
+		cmd_args="${cmd_args} local ${local}"
+	fi
+
+	if isset remote; then
+		cmd_args="${cmd_args} remote ${remote}"
+	fi
+
+	# Exit if there is nothing to do
+	if ! isset cmd_args; then
+		return ${EXIT_OK}
+	fi
+
+	# Run ip command
+	cmd ip link change dev "${device}" type "${type}" ${cmd_args}
+}
+
 ip_tunnel_change_keys() {
 	local device="${1}"
 	shift
