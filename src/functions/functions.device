@@ -895,6 +895,23 @@ device_get_speed() {
 	print "${speed}"
 }
 
+device_set_speed() {
+	local device="${1}"
+	assert isset device
+
+	local speed="${2}"
+	assert isinteger speed
+
+	if ! cmd_quiet ethtool --change "${device}" speed "${speed}"; then
+		log ERROR "Could not set speed of ${device} to ${speed} MBit/s"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Set speed of ${device} to ${speed} MBit/s"
+
+	return ${EXIT_OK}
+}
+
 device_get_duplex() {
 	local device=${1}
 

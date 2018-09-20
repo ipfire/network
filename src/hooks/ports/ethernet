@@ -24,10 +24,13 @@
 # Default MTU
 DEFAULT_MTU=1500
 
+# Selectable speeds in MBit/s
+VALID_SPEEDS="10000 1000 100 10"
+
 # DEVICE equals the actual MAC address of the device.
 # If ADDRESS is set, the device will get ADDRESS set for its MAC address.
 
-HOOK_SETTINGS="HOOK ADDRESS DEVICE MTU"
+HOOK_SETTINGS="HOOK ADDRESS DEVICE MTU SPEED"
 
 hook_check_settings() {
 	assert ismac DEVICE
@@ -38,6 +41,10 @@ hook_check_settings() {
 
 	if isset MTU; then
 		assert mtu_is_valid "ethernet" "${MTU}"
+	fi
+
+	if isset SPEED; then
+		assert isoneof SPEED ${VALID_SPEEDS}
 	fi
 }
 
@@ -61,6 +68,16 @@ hook_parse_cmdline() {
 					return ${EXIT_ERROR}
 				fi
 				;;
+
+			--speed=*)
+				SPEED="$(cli_get_val "${1}")"
+
+				if ! isoneof SPEED ${VALID_SPEEDS}; then
+					error "Invalid speed: ${SPEED}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
 			*)
 				error "Unknown argument: ${1}"
 				return ${EXIT_ERROR}
@@ -93,6 +110,11 @@ hook_up() {
 		device_set_mtu "${port}" "${MTU}"
 	else
 		device_set_mtu "${port}" "${DEFAULT_MTU}"
+	fi
+
+	# Set speed
+	if isset SPEED; then
+		device_set_speed "${port}" "${SPEED}"
 	fi
 
 	# Bring up the device
