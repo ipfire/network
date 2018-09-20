@@ -41,6 +41,7 @@ hook_hotplug_rename() {
 }
 
 hook_default_new() {
+	local ${HOOK_SETTINGS}
 	if ! hook_parse_cmdline "$@"; then
 		return ${EXIT_ERROR}
 	fi
