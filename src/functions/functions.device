@@ -19,6 +19,16 @@
 #                                                                             #
 ###############################################################################
 
+declare -A DEVICE_LINK_SPEEDS=(
+	[10BaseT-Half]=0x1
+	[10BaseT-Full]=0x2
+	[100BaseT-Half]=0x4
+	[100BaseT-Full]=0x8
+	[1000BaseT-Half]=0x10
+	[1000BaseT-Full]=0x20
+	[10000BaseT-Full]=0x1000
+)
+
 device_list() {
 	local devices
 
@@ -881,6 +891,41 @@ device_get_tx_errors() {
 	__device_get_file ${device} statistics/tx_errors
 }
 
+device_advertise_link_speeds() {
+	local device="${1}"
+	shift
+
+	assert isset device
+
+	# Advertised modes in hex
+	local advertise=0
+
+	local mode
+	for mode in $@; do
+		local m="${DEVICE_LINK_SPEEDS[${mode}]}"
+		if isset m; then
+			advertise="$(( advertise | m ))"
+		fi
+	done
+
+	# If nothing was selected, we reset and enable everything
+	if [ ${advertise} -eq 0 ]; then
+		advertise=0xffffff
+	fi
+
+	# Enable auto-negotiation
+	cmd_quiet ethtool --change "${device}" autoneg on
+
+	# Set advertised link speeds
+	if ! cmd_quiet ethtool --change "${device}" advertise "0x$(hex "${advertise}")"; then
+		log ERROR "Could not set link modes of ${device}: $@"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Set device link modes of ${device} to $@"
+	return ${EXIT_ERROR}
+}
+
 device_get_speed() {
 	local device=${1}
 
@@ -893,23 +938,6 @@ device_get_speed() {
 	[ ${speed} -lt 0 ] && return ${EXIT_ERROR}
 
 	print "${speed}"
-}
-
-device_set_speed() {
-	local device="${1}"
-	assert isset device
-
-	local speed="${2}"
-	assert isinteger speed
-
-	if ! cmd_quiet ethtool --change "${device}" speed "${speed}"; then
-		log ERROR "Could not set speed of ${device} to ${speed} MBit/s"
-		return ${EXIT_ERROR}
-	fi
-
-	log DEBUG "Set speed of ${device} to ${speed} MBit/s"
-
-	return ${EXIT_OK}
 }
 
 device_get_duplex() {
@@ -925,22 +953,6 @@ device_get_duplex() {
 			print "${duplex}"
 			;;
 	esac
-}
-
-device_set_duplex() {
-	local device="${1}"
-	assert isset device
-
-	local duplex="${2}"
-	assert isset duplex
-
-	if ! cmd_quiet ethtool --change "${device}" duplex "${duplex}"; then
-		log ERROR "Could not set ${device} to ${duplex}-duplex mode"
-		return ${EXIT_ERROR}
-	fi
-
-	log DEBUG "Set ${device} to ${duplex}-duplex mode"
-	return ${EXIT_OK}
 }
 
 device_get_link_string() {

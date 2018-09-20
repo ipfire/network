@@ -24,16 +24,10 @@
 # Default MTU
 DEFAULT_MTU=1500
 
-# Selectable speeds in MBit/s
-VALID_SPEEDS="10000 1000 100 10"
-
-# We can run in full or half duplex
-VALID_DUPLEXES="full half"
-
 # DEVICE equals the actual MAC address of the device.
 # If ADDRESS is set, the device will get ADDRESS set for its MAC address.
 
-HOOK_SETTINGS="HOOK ADDRESS DEVICE DUPLEX MTU SPEED"
+HOOK_SETTINGS="HOOK ADDRESS ADVERTISED_LINK_SPEEDS DEVICE MTU"
 
 hook_check_settings() {
 	assert ismac DEVICE
@@ -46,12 +40,11 @@ hook_check_settings() {
 		assert mtu_is_valid "ethernet" "${MTU}"
 	fi
 
-	if isset DUPLEX; then
-		assert isoneof DUPLEX ${VALID_DUPLEXES}
-	fi
-
-	if isset SPEED; then
-		assert isoneof SPEED ${VALID_SPEEDS}
+	if isset MODES; then
+		local mode
+		for mode in ${MODES}; do
+			assert [ -n "${DEVICE_LINK_SPEEDS[${mode}]}" ]
+		done
 	fi
 }
 
@@ -67,13 +60,16 @@ hook_parse_cmdline() {
 				fi
 				;;
 
-			--duplex=*)
-				DUPLEX="$(cli_get_val "${1}")"
+			--advertised-link-speeds=*)
+				ADVERTISED_LINK_SPEEDS="$(cli_get_val "${1}")"
 
-				if ! isoneof DUPLEX ${VALID_DUPLEXES}; then
-					error "Invalid duplex mode: ${DUPLEX}"
-					return ${EXIT_ERROR}
-				fi
+				local speed
+				for speed in ${ADVERTISED_LINK_SPEEDS}; do
+					if [ -z "${DEVICE_LINK_SPEEDS[${speed}]}" ]; then
+						error "Unsupported link speed: ${speed}"
+						return ${EXIT_ERROR}
+					fi
+				done
 				;;
 
 			--mtu=*)
@@ -81,15 +77,6 @@ hook_parse_cmdline() {
 
 				if ! mtu_is_valid "ethernet" "${MTU}"; then
 					error "Invalid MTU: ${MTU}"
-					return ${EXIT_ERROR}
-				fi
-				;;
-
-			--speed=*)
-				SPEED="$(cli_get_val "${1}")"
-
-				if ! isoneof SPEED ${VALID_SPEEDS}; then
-					error "Invalid speed: ${SPEED}"
 					return ${EXIT_ERROR}
 				fi
 				;;
@@ -128,14 +115,9 @@ hook_up() {
 		device_set_mtu "${port}" "${DEFAULT_MTU}"
 	fi
 
-	# Set duplex mode
-	if isset DUPLEX; then
-		device_set_duplex "${port}" "${DUPLEX}"
-	fi
-
-	# Set speed
-	if isset SPEED; then
-		device_set_speed "${port}" "${SPEED}"
+	# Set link speeds
+	if isset ADVERTISED_LINK_SPEEDS; then
+		device_advertise_link_speeds "${port}" ${ADVERTISED_LINK_SPEEDS}
 	fi
 
 	# Bring up the device
