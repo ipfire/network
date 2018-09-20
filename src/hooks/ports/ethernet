@@ -21,16 +21,23 @@
 
 . /usr/lib/network/header-port
 
+# Default MTU
+DEFAULT_MTU=1500
+
 # DEVICE equals the actual MAC address of the device.
 # If ADDRESS is set, the device will get ADDRESS set for its MAC address.
 
-HOOK_SETTINGS="HOOK ADDRESS DEVICE"
+HOOK_SETTINGS="HOOK ADDRESS DEVICE MTU"
 
 hook_check_settings() {
 	assert ismac DEVICE
 
 	if isset ADDRESS; then
 		assert ismac ADDRESS
+	fi
+
+	if isset MTU; then
+		assert mtu_is_valid "ethernet" "${MTU}"
 	fi
 }
 
@@ -42,6 +49,15 @@ hook_parse_cmdline() {
 
 				if ! mac_is_valid "${ADDRESS}"; then
 					error "Invalid MAC address: ${ADDRESS}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
+			--mtu=*)
+				MTU="$(cli_get_val "${1}")"
+
+				if ! mtu_is_valid "ethernet" "${MTU}"; then
+					error "Invalid MTU: ${MTU}"
 					return ${EXIT_ERROR}
 				fi
 				;;
@@ -67,13 +83,29 @@ hook_new() {
 	exit ${EXIT_OK}
 }
 
-hook_create() {
+hook_up() {
 	local port="${1}"
+
+	local ${HOOK_SETTINGS}
+	if ! port_settings_read "${port}" ${HOOK_SETTINGS}; then
+		log ERROR "Could not read settings for port ${port}"
+		return ${EXIT_ERROR}
+	fi
 
 	# Set MAC address, if needed
 	if isset ADDRESS; then
 		device_set_address "${port}" "${ADDRESS}"
 	fi
+
+	# Set MTU
+	if isset MTU; then
+		device_set_mtu "${port}" "${MTU}"
+	else
+		device_set_mtu "${port}" "${DEFAULT_MTU}"
+	fi
+
+	# Bring up the device
+	device_set_up "${port}"
 
 	exit ${EXIT_OK}
 }

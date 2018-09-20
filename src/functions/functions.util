@@ -399,7 +399,7 @@ mtu_is_valid() {
 	local mtu=${2}
 
 	case ${proto} in
-		ipv4)
+		ethernet|ipv4)
 			[ ${mtu} -ge 576 ] && [ ${mtu} -le 9000 ]
 			;;
 		ipv6)
