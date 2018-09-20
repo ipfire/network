@@ -68,8 +68,13 @@ hook_new() {
 }
 
 hook_create() {
-	# Nothing to do here. Real ethernet devices cannot
-	# be created. They are just there.
+	local port="${1}"
+
+	# Set MAC address, if needed
+	if isset ADDRESS; then
+		device_set_address "${port}" "${ADDRESS}"
+	fi
+
 	exit ${EXIT_OK}
 }
 
@@ -95,13 +100,7 @@ hook_hotplug_rename() {
 	if list_match "${address}" ${DEVICE} ${ADDRESS}; then
 		log DEBUG "Device '${device}' equals port '${port}'."
 
-		# Change the MAC address, if needed.
-		if isset ADDRESS; then
-			device_set_address "${device}" "${ADDRESS}"
-		fi
-
-		# Everything is done.
-		exit ${EXIT_OK}
+		hook_create "${device}"
 	fi
 
 	log DEBUG "Device '${device}' does not equal port '${port}'."

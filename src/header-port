@@ -81,6 +81,9 @@ hook_default_edit() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Apply settings
+	port_restart "${port}"
+
 	return ${EXIT_OK}
 }
 
