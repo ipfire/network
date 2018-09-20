@@ -118,8 +118,7 @@ hook_hotplug_rename() {
 	# Check if the address matches with the configuration.
 	if list_match "${address}" ${DEVICE} ${ADDRESS}; then
 		log DEBUG "Device '${device}' equals port '${port}'."
-
-		hook_create "${device}"
+		exit ${EXIT_OK}
 	fi
 
 	log DEBUG "Device '${device}' does not equal port '${port}'."
