@@ -44,6 +44,9 @@ case "${SUBSYSTEM}" in
 			PHY=""
 		fi
 
+		# Configure LEDs
+		[ "${ACTION}" = "add" ] && phy_leds_autoconf "${PHY}"
+
 		# Propagate the hotplug event to all configured port hooks
 		hotplug_propagate_all_ports || exit ${EXIT_ERROR}
 		;;

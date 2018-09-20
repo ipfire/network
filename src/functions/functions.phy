@@ -98,3 +98,50 @@ phy_get_devices() {
 		fi
 	done
 }
+
+phy_list_leds() {
+	local phy="${1}"
+
+	# Check if the PHY exists
+	assert phy_exists "${phy}"
+
+	local led
+	for led in $(list_directory /sys/class/leds); do
+		# Get basename of the LED
+		led=${led%*/}
+
+		if [[ ${led} =~ ${phy}(:.*)?$ ]]; then
+			print "${led}"
+		fi
+	done
+}
+
+# This function tries to automatically configure LEDs to
+# something useful
+phy_leds_autoconf() {
+	local phy="${1}"
+	assert isset phy
+
+	local led
+	for led in $(phy_list_leds "${phy}"); do
+		# Skip some types of LEDs
+		case "${led}" in
+			# Pretty much everything we tested from Ralink
+			# locked up the kernel after a couple of seconds
+			rt*)
+				continue
+				;;
+		esac
+
+		# We try to set the LED into tpt mode (flashing on activity),
+		# but will fallback to tx mode if that isn't supported
+		local trigger
+		for trigger in "${phy}tpt" "${phy}tx"; do
+			if led_set_trigger "${led}" "${trigger}"; then
+				break
+			fi
+		done
+	done
+
+	return ${EXIT_OK}
+}

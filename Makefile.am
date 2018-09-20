@@ -161,6 +161,7 @@ dist_network_DATA = \
 	src/functions/functions.ip-tunnel \
 	src/functions/functions.ipv4 \
 	src/functions/functions.ipv6 \
+	src/functions/functions.leds \
 	src/functions/functions.list \
 	src/functions/functions.lock \
 	src/functions/functions.logging \
