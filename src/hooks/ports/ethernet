@@ -70,6 +70,10 @@ hook_parse_cmdline() {
 	done
 }
 
+hook_create() {
+	return ${EXIT_OK}
+}
+
 hook_up() {
 	local port="${1}"
 
