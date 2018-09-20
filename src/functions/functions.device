@@ -927,6 +927,22 @@ device_get_duplex() {
 	esac
 }
 
+device_set_duplex() {
+	local device="${1}"
+	assert isset device
+
+	local duplex="${2}"
+	assert isset duplex
+
+	if ! cmd_quiet ethtool --change "${device}" duplex "${duplex}"; then
+		log ERROR "Could not set ${device} to ${duplex}-duplex mode"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Set ${device} to ${duplex}-duplex mode"
+	return ${EXIT_OK}
+}
+
 device_get_link_string() {
 	local device="${1}"
 	assert isset device

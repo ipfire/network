@@ -27,10 +27,13 @@ DEFAULT_MTU=1500
 # Selectable speeds in MBit/s
 VALID_SPEEDS="10000 1000 100 10"
 
+# We can run in full or half duplex
+VALID_DUPLEXES="full half"
+
 # DEVICE equals the actual MAC address of the device.
 # If ADDRESS is set, the device will get ADDRESS set for its MAC address.
 
-HOOK_SETTINGS="HOOK ADDRESS DEVICE MTU SPEED"
+HOOK_SETTINGS="HOOK ADDRESS DEVICE DUPLEX MTU SPEED"
 
 hook_check_settings() {
 	assert ismac DEVICE
@@ -41,6 +44,10 @@ hook_check_settings() {
 
 	if isset MTU; then
 		assert mtu_is_valid "ethernet" "${MTU}"
+	fi
+
+	if isset DUPLEX; then
+		assert isoneof DUPLEX ${VALID_DUPLEXES}
 	fi
 
 	if isset SPEED; then
@@ -56,6 +63,15 @@ hook_parse_cmdline() {
 
 				if ! mac_is_valid "${ADDRESS}"; then
 					error "Invalid MAC address: ${ADDRESS}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
+			--duplex=*)
+				DUPLEX="$(cli_get_val "${1}")"
+
+				if ! isoneof DUPLEX ${VALID_DUPLEXES}; then
+					error "Invalid duplex mode: ${DUPLEX}"
 					return ${EXIT_ERROR}
 				fi
 				;;
@@ -110,6 +126,11 @@ hook_up() {
 		device_set_mtu "${port}" "${MTU}"
 	else
 		device_set_mtu "${port}" "${DEFAULT_MTU}"
+	fi
+
+	# Set duplex mode
+	if isset DUPLEX; then
+		device_set_duplex "${port}" "${DUPLEX}"
 	fi
 
 	# Set speed
