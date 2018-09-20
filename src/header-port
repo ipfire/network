@@ -64,13 +64,22 @@ hook_default_edit() {
 	assert isset port
 	shift
 
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+	# Read settings
+	if ! port_settings_read "${port}" ${HOOK_SETTINGS}; then
+		error "Could not read settings for port ${port}"
+		return ${EXIT_ERROR}
+	fi
 
+	# Parse command line arguments
 	if ! hook_parse_cmdline "$@"; then
 		return ${EXIT_ERROR}
 	fi
 
-	port_settings_write "${port}" ${HOOK_SETTINGS}
+	# Save settings
+	if ! port_settings_write "${port}" ${HOOK_SETTINGS}; then
+		error "Could not write settings for port ${port}"
+		return ${EXIT_ERROR}
+	fi
 
 	return ${EXIT_OK}
 }
