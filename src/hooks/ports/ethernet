@@ -70,19 +70,6 @@ hook_parse_cmdline() {
 	done
 }
 
-hook_new() {
-	local port=${1}
-	assert isset port
-	shift
-
-	ADDRESS=""
-	DEVICE=$(device_get_address ${port})
-
-	port_settings_write "${port}" ${HOOK_SETTINGS}
-
-	exit ${EXIT_OK}
-}
-
 hook_up() {
 	local port="${1}"
 
