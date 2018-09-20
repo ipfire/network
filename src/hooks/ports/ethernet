@@ -34,6 +34,26 @@ hook_check_settings() {
 	fi
 }
 
+hook_parse_cmdline() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--address=*)
+				ADDRESS="$(cli_get_val "${1}")"
+
+				if ! mac_is_valid "${ADDRESS}"; then
+					error "Invalid MAC address: ${ADDRESS}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+			*)
+				error "Unknown argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+}
+
 hook_new() {
 	local port=${1}
 	assert isset port
