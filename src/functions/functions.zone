@@ -696,22 +696,6 @@ zone_config_convert_hid_to_id() {
 	return ${EXIT_FALSE}
 }
 
-zone_show() {
-	local zone=${1}
-
-	echo "${zone}"
-	echo "  Type: $(zone_get_hook ${zone})"
-	echo
-}
-
-zones_show() {
-	local zone
-
-	for zone in $(zones_get "$@"); do
-		zone_show ${zone}
-	done
-}
-
 zones_get_all() {
 	local zone
 	for zone in $(list_directory "${NETWORK_ZONES_DIR}"); do
