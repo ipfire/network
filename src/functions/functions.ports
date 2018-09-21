@@ -90,7 +90,7 @@ port_settings_write() {
 	if function_exists "hook_check_settings"; then
 		list_append args "--check=\"hook_check_settings\""
 	fi
-	list_append args ${HOOK_SETTINGS}
+	list_append args HOOK ${HOOK_SETTINGS}
 
 	settings_write "$(port_file "${port}")" ${args}
 }

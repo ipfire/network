@@ -23,7 +23,7 @@
 
 HOOK_PORT_PATTERN="${PORT_PATTERN_ACCESSPOINT}"
 
-HOOK_SETTINGS="HOOK ADDRESS BROADCAST_SSID CHANNEL MODE PHY SSID"
+HOOK_SETTINGS="ADDRESS BROADCAST_SSID CHANNEL MODE PHY SSID"
 HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION KEY"
 
 ADDRESS=$(mac_generate)
@@ -93,6 +93,11 @@ hook_parse_cmdline() {
 		esac
 		shift
 	done
+
+	# Generate a random MAC address if none is set
+	if ! isset ADDRESS; then
+		ADDRESS="$(mac_generate)"
+	fi
 
 	# MODE must be set
 	if ! isset MODE; then
