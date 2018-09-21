@@ -43,13 +43,6 @@ if ! ipsec_connection_read_config "${CONNECTION}"; then
 	exit ${EXIT_ERROR}
 fi
 
-# Interface name for this IPsec connection
-case "${MODE}" in
-	gre-*|vti)
-		INTERFACE="ipsec-${CONNECTION}"
-		;;
-esac
-
 log DEBUG "${0} called for ${CONNECTION}: ${PLUTO_VERB}"
 
 case "${PLUTO_VERB}" in
@@ -67,44 +60,22 @@ case "${PLUTO_VERB}" in
 			fi
 		fi
 
-		#Get sources IP for routes
+		# Get source IP for routes
 		SRC_IP=($(ip_get_assigned_addresses_from_net \
 			"${PLUTO_MY_CLIENT}" "permanent"))
 
-		# Set routes if we have a source IP.
-		# If not the machine does not has a leg on the net
-		# and we can go on without routes.
-		if isset SRC_IP; then
-			# We take the lowest source IP we found,
-			# which is ugly because the value is unpredictable.
-			SRC_IP=${SRC_IP[0]}
+		# We take the lowest source IP we found,
+		# which is ugly because the value is unpredictable.
+		SRC_IP=${SRC_IP[0]}
 
-			if isset INTERFACE; then
-				if ! cmd ip route add \
-					"${PLUTO_PEER_CLIENT}" \
-					dev "${INTERFACE}" \
-					src "${SRC_IP}"; then
-						log ERROR \
-							"Could not set routes for ${PLUTO_PEER_CLIENT}"
-				fi
-			else
-				# Get the device which we use to peer with the other site.
-				ME_DEVICE="$(device_get_by_assigned_ip_address "${PLUTO_ME}")"
-
-				# We can only go on if we found a device.
-				if isset ME_DEVICE; then
-					if ! cmd ip route add \
-						"${PLUTO_PEER_CLIENT}" \
-						dev "${ME_DEVICE}" \
-						proto static \
-						src "${SRC_IP}" \
-						table 220; then
-							log ERROR \
-								"Could not set routes for ${PLUTO_PEER_CLIENT}"
-					fi
-				else
-					log ERROR "Could not get device for ${PLUTO_ME}"
-				fi
+		# Add routes to reach the remote subnet(s)
+		if isset ZONE; then
+			if ! cmd ip route add "${PLUTO_PEER_CLIENT}" proto static dev "${ZONE}" src "${SRC_IP}"; then
+				log ERROR "Could not create route for ${PLUTO_PEER_CLIENT}"
+			fi
+		else
+			if ! cmd ip route add "${PLUTO_PEER_CLIENT}" proto static via "${PLUTO_PEER}" src "${SRC_IP}"; then
+				log ERROR "Could not create route for ${PLUTO_PEER_CLIENT} via ${PLUTO_PEER}"
 			fi
 		fi
 		;;
