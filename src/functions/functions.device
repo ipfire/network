@@ -30,8 +30,6 @@ declare -A DEVICE_LINK_SPEEDS=(
 )
 
 device_list() {
-	local devices
-
 	# Add all interfaces
 	local device
 	for device in $(list_directory ${SYS_CLASS_NET}); do
@@ -40,14 +38,11 @@ device_list() {
 		fi
 	done
 
-	# Add all PHYs
-	list_append devices $(phy_list)
+	# List all PHYs
+	phy_list
 
-	# Add all serial devices
-	list_append devices $(serial_list)
-
-	# Return a sorted result
-	list_sort ${devices}
+	# List all serial devices
+	serial_list
 }
 
 # Check if the device exists
