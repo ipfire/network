@@ -167,6 +167,7 @@ dist_network_DATA = \
 	src/functions/functions.logging \
 	src/functions/functions.macros \
 	src/functions/functions.modem \
+	src/functions/functions.offloading \
 	src/functions/functions.phy \
 	src/functions/functions.ports \
 	src/functions/functions.ppp \

@@ -1,0 +1,85 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2018 IPFire Network Development Team                          #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+# A list of supported device offloading mechanisms
+# that are being mapped to the ethtool command
+declare -A SUPPORTED_OFFLOADINGS=(
+	[generic-receive-offload]="gro"
+	[generic-segmentation-offload]="gso"
+	[large-receive-offload]="lro"
+	[rx-checksumming]="rx"
+	[scatter-gather]="sg"
+	[tcp-segmentation-offload]="tso"
+	[tx-checksumming]="tx"
+	[udp-fragmentation-offload]="ufo"
+)
+
+# These offloadings will automatically be enabled (if supported)
+AUTO_OFFLOADINGS=(
+	generic-receive-offload
+	generic-segmentation-offload
+	rx-checksumming
+	scatter-gather
+	tcp-segmentation-offload
+	tx-checksumming
+	udp-fragmentation-offload
+)
+
+offloading_auto() {
+	local device="${1}"
+	assert isset device
+
+	# Enable all offloadings that we consider a good default
+	local offloading
+	for offloading in ${AUTO_OFFLOADINGS[@]}; do
+		offloading_set "${device}" "${offloading}" "on"
+	done
+
+	return ${EXIT_OK}
+}
+
+offloading_set() {
+	local device="${1}"
+	assert isset device
+
+	local offloading="${2}"
+	assert isoneof offloading ${!SUPPORTED_OFFLOADINGS[@]}
+
+	local value="${3}"
+	assert isoneof value on off
+
+	# Translate to ethool option
+	local mode="${SUPPORTED_OFFLOADINGS[${offloading}]}"
+	if ! isset mode; then
+		error "Unsupported offloading mode: ${offloading}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Run ethtool
+	if ! cmd_quiet ethtool --offload "${device}" "${mode}" "${value}"; then
+		log DEBUG "Could not set ${offloading} on ${device} to ${value}"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Set ${offloading} on ${device} to ${value}"
+
+	return ${EXIT_OK}
+}

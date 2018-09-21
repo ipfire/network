@@ -175,8 +175,8 @@ hook_up() {
 
 	port_settings_read "${port}" ${HOOK_SETTINGS}
 
-	# Enable hardware offloading
-	device_auto_offloading "${port}"
+	# Auto-enable hardware offloading
+	offloading_auto "${port}"
 
 	# Execute the default action
 	hook_default_up "${port}"

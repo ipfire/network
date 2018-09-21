@@ -117,8 +117,8 @@ hook_up() {
 		device_advertise_link_speeds "${port}" ${ADVERTISED_LINK_SPEEDS}
 	fi
 
-	# Enable hardware offloading
-	device_auto_offloading "${port}"
+	# Auto-enable hardware offloading
+	offloading_auto "${port}"
 
 	# Bring up the device
 	device_set_up "${port}"

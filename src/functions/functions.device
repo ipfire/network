@@ -974,47 +974,6 @@ device_get_link_string() {
 	print "${s}"
 }
 
-device_auto_offloading() {
-	local device="${1}"
-	assert isset device
-
-	# Enable all offloadings that we consider a good default
-	local offloading
-	for offloading in ${DEVICE_AUTO_OFFLOADINGS[@]}; do
-		device_set_offloading "${device}" "${offloading}" "on"
-	done
-
-	return ${EXIT_OK}
-}
-
-device_set_offloading() {
-	local device="${1}"
-	assert isset device
-
-	local offloading="${2}"
-	assert isoneof offloading ${!DEVICE_SUPPORTED_OFFLOADINGS[@]}
-
-	local value="${3}"
-	assert isoneof value on off
-
-	# Translate to ethool option
-	local mode="${DEVICE_SUPPORTED_OFFLOADINGS[${offloading}]}"
-	if ! isset mode; then
-		error "Unsupported offloading mode: ${offloading}"
-		return ${EXIT_ERROR}
-	fi
-
-	# Run ethtool
-	if ! cmd_quiet ethtool --offload "${device}" "${mode}" "${value}"; then
-		log DEBUG "Could not set ${offloading} on ${device} to ${value}"
-		return ${EXIT_ERROR}
-	fi
-
-	log DEBUG "Set ${offloading} on ${device} to ${value}"
-
-	return ${EXIT_OK}
-}
-
 device_auto_configure_smp_affinity() {
 	assert [ $# -eq 1 ]
 
