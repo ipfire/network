@@ -29,7 +29,7 @@ LOG_FACILITY="network-hotplug"
 # Read network settings
 network_settings_read
 
-log DEBUG "Called with SUBSYSTEM='${SUBSYSTEM}', ACTION='${ACTION}'"
+log DEBUG "Called with SUBSYSTEM='${SUBSYSTEM}', ACTION='${ACTION}', INTERFACE='${INTERFACE}', DEVPATH='${DEVPATH}'"
 
 # Check if the udev environment variables are properly set.
 assert isset ACTION
@@ -37,18 +37,27 @@ assert isset ACTION
 case "${SUBSYSTEM}" in
 	ieee80211)
 		PHY="$(basename "${DEVPATH}")"
-		if phy_exists "${PHY}"; then
-			PHY_ADDRESS="$(phy_get_address "${PHY}")"
-			log DEBUG "  PHY='${PHY}', PHY_ADDRESS='${PHY_ADDRESS}'"
-		else
-			PHY=""
+
+		# Check if the PHY exists
+		if ! phy_exists "${PHY}"; then
+			exit ${EXIT_OK}
 		fi
 
-		# Configure LEDs
-		[ "${ACTION}" = "add" ] && phy_leds_autoconf "${PHY}"
+		case "${ACTION}" in
+			add)
+				# Load regulatory domain for wireless devices
+				wireless_init_reg_domain
+
+				# Configure LEDs
+				phy_leds_autoconf "${PHY}"
+				;;
+		esac
 
 		# Propagate the hotplug event to all configured port hooks
 		hotplug_propagate_all_ports || exit ${EXIT_ERROR}
+
+		# Everything went fine
+		exit ${EXIT_OK}
 		;;
 
 	net)
@@ -67,63 +76,43 @@ case "${SUBSYSTEM}" in
 			exit ${EXIT_OK}
 		fi
 
-		# Get the internal type of the device for later processing
-		TYPE="$(device_get_type "${INTERFACE}")"
-
-		log DEBUG "  INTERFACE='${INTERFACE}', TYPE='${TYPE}'"
-
-		# Handle special cases like removing automatically created
-		# devices that we don't want
-		case "${ACTION},${TYPE}" in
-			# Bonding
-			add,bonding)
-				# Remove bonding devices without configuration
-				if ! port_exists "${INTERFACE}"; then
-					bonding_remove "${INTERFACE}"
-					exit ${EXIT_OK}
-				fi
-				;;
-
-			# dummy
-			add,dummy)
-				# Remove the by default created dummy device
-				if [ "${INTERFACE}" = "dummy0" ]; then
-					dummy_remove "${INTERFACE}"
-					exit ${EXIT_OK}
-				fi
-				;;
-
-			# Ethernet
-			add,ethernet)
-				# Create a default port for all ethernet devices
-				if ! port_exists "${INTERFACE}"; then
-					port_new "ethernet" "${INTERFACE}"
-				fi
-				;;
-
-			# Wireless devices
-			add,wireless)
-				# Remove wireless devices without configuration
-				if ! port_exists "${INTERFACE}"; then
-					wireless_remove "${INTERFACE}"
-					exit ${EXIT_OK}
-				fi
-
-				# Load regulatory domain for wireless devices
-				wireless_init_reg_domain
-				;;
-
-			# Don't propagate removal events for ports that don't exist
-			remove,*)
-				if ! port_exists "${INTERFACE}"; then
-					exit ${EXIT_OK}
-				fi
-				;;
-		esac
-
+		# Did we get called for a non-existing interface?
 		if ! port_exists "${INTERFACE}"; then
-			log ERROR "Got to hotplug event for a port which does not exist: ${INTERFACE}"
-			exit ${EXIT_ERROR}
+			case "${ACTION}" in
+				add)
+					TYPE="$(device_get_type "${INTERFACE}")"
+
+					# If this is an Ethernet device, we will automatically create a new port
+					if [ "${TYPE}" = "ethernet" ]; then
+						port_new "ethernet" "${INTERFACE}"
+						exit $?
+					fi
+
+					log WARNING "Got to hotplug event for a port which does not exist: ${INTERFACE}"
+
+					# Try to remove the device again
+					case "${TYPE}" in
+						bonding)
+							bonding_remove "${INTERFACE}"
+							;;
+						dummy)
+							dummy_remove "${INTERFACE}"
+							;;
+						wireless)
+							wireless_remove "${INTERFACE}"
+							;;
+						*)
+							device_delete "${INTERFACE}"
+					esac
+
+					exit ${EXIT_OK}
+					;;
+
+				remove)
+					# Don't propagate removal events for ports that don't exist
+					exit ${EXIT_OK}
+					;;
+			esac
 		fi
 
 		# Propagate the hotplug event to all configured port hooks
