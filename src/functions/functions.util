@@ -251,7 +251,13 @@ file_get_age() {
 make_directory() {
 	local path="${1}"
 
-	mkdir -p "${path}"
+	if ! mkdir -p "${path}"; then
+		log ERROR "Could not create directory ${path}"
+		return ${EXIT_ERROR}
+	fi
+
+	log DEBUG "Created directory ${path}"
+	return ${EXIT_OK}
 }
 
 make_parent_directory() {

@@ -153,15 +153,16 @@ settings_write() {
 		return ${EXIT_ERROR}
 	fi
 
-	log DEBUG "Writing settings file '${settings_file}'"
+	if ! make_parent_directory "${settings_file}"; then
+		return ${EXIT_ERROR}
+	fi
 
-	mkdir -p $(dirname ${settings_file}) 2>/dev/null
-	> ${settings_file}
+	log DEBUG "Writing settings file '${settings_file}'"
 
 	local param
 	for param in $(list_sort "$@"); do
-		echo "${param}=\"${!param}\"" >> ${settings_file}
-	done
+		echo "${param}=\"${!param}\""
+	done > ${settings_file}
 }
 
 settings_remove() {

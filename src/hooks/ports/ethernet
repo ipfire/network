@@ -100,6 +100,22 @@ hook_parse_cmdline() {
 	done
 }
 
+# This function is only called automatically by hotplug to create
+# a new ethernet port.
+hook_new() {
+	local port="${1}"
+	assert isset port
+
+	local DEVICE="$(device_get_address "${port}")"
+
+	if ! port_settings_write "${port}" ${HOOK_SETTINGS}; then
+		log ERROR "Could not write settings for port ${port}"
+		return ${EXIT_ERROR}
+	fi
+
+	return ${EXIT_OK}
+}
+
 hook_create() {
 	return ${EXIT_OK}
 }
