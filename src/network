@@ -1108,11 +1108,40 @@ cli_status() {
 	local log_disable_stdout=${LOG_DISABLE_STDOUT}
 	LOG_DISABLE_STDOUT="true"
 
-	local zones=$(zones_get "$@")
+	local arguments=( $@ )
 
-	local zone
-	for zone in ${zones}; do
-		zone_status ${zone}
+	# Show all zones when no arguments are given
+	if ! isset arguments; then
+		local zone
+		for zone in $(zones_get_all); do
+			zone_status "${zone}"
+		done
+
+		return ${EXIT_OK}
+	fi
+
+	local arg
+	for arg in ${arguments[@]}; do
+		# Is this a zone?
+		if zone_exists "${arg}"; then
+			zone_status "${arg}"
+
+		# Is this a port?
+		elif port_exists "${arg}"; then
+			port_status "${arg}"
+
+		# Is this a PHY?
+		elif phy_exists "${arg}"; then
+			cli_device_status "${arg}"
+
+		# Is this a device?
+		elif device_exists "${arg}"; then
+			cli_device_status "${arg}"
+
+		# Unknown argument
+		else
+			error "Unknown argument: ${arg}"
+		fi
 	done
 
 	# Reset logging.
