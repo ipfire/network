@@ -94,6 +94,30 @@ DISCOVER_NOT_SUPPORTED=2
 # Default MTU
 DEFAULT_MTU=1500
 
+# A list of supported device offloading mechanisms
+# that are being mapped to the ethtool command
+declare -A DEVICE_SUPPORTED_OFFLOADINGS=(
+	[generic-receive-offload]="gro"
+	[generic-segmentation-offload]="gso"
+	[large-receive-offload]="lro"
+	[rx-checksumming]="rx"
+	[scatter-gather]="sg"
+	[tcp-segmentation-offload]="tso"
+	[tx-checksumming]="tx"
+	[udp-fragmentation-offload]="ufo"
+)
+
+# These offloadings will automatically be enabled (if supported)
+DEVICE_AUTO_OFFLOADINGS=(
+	generic-receive-offload
+	generic-segmentation-offload
+	rx-checksumming
+	scatter-gather
+	tcp-segmentation-offload
+	tx-checksumming
+	udp-fragmentation-offload
+)
+
 # The user is able to create zones that begin
 # with these names followed by a number.
 ZONE_LOCAL="net"
