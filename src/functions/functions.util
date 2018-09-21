@@ -266,6 +266,12 @@ enabled() {
 	list_match "${!param}" yes on true 1
 }
 
+disabled() {
+	local param="${1}"
+
+	list_match "${!param}" no off false 0
+}
+
 mac_generate() {
 	local b="$(random 12)"
 

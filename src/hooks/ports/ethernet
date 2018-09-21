@@ -83,8 +83,11 @@ hook_parse_cmdline() {
 
 				if enabled OFFLOADING; then
 					OFFLOADING="on"
-				else
+				elif disabled OFFLOADING; then
 					OFFLOADING="off"
+				else
+					error "Invalid value for offloading: ${OFFLOADING}"
+					return ${EXIT_ERROR}
 				fi
 				;;
 
