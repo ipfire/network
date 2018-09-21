@@ -35,7 +35,9 @@ device_list() {
 	# Add all interfaces
 	local device
 	for device in $(list_directory ${SYS_CLASS_NET}); do
-		list_append_one devices "${device}"
+		if device_exists "${device}"; then
+			print "${device}"
+		fi
 	done
 
 	# Add all PHYs
