@@ -29,6 +29,38 @@ __lock_path() {
 	fi
 }
 
+lock() {
+	local lock="${1}"
+	shift
+
+	local timeout="60"
+
+	# Make partent directory
+	make_parent_directory "${lock}"
+
+	(
+		log DEBUG "Trying to acquire lock ${lock}"
+
+		# Try to acquire lock on fd 9
+		if ! flock -w "${timeout}" 9; then
+			log ERROR "Failed to acquire lock ${lock} after ${timeout} seconds"
+			exit ${EXIT_ERROR}
+		fi
+
+		log DEBUG "Acquired lock ${lock}"
+
+		# Remember return code
+		ret=${EXIT_OK}
+
+		# Run command
+		"$@" || ret=$?
+
+		log DEBUG "Released lock ${lock}"
+
+		exit ${ret}
+	) 9>${lock} || exit $?
+}
+
 lock_exists() {
 	local name=${1}
 	assert isset name

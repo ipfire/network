@@ -28,57 +28,55 @@ LOG_DISABLE_STDOUT="true"
 # Read network settings
 network_settings_read
 
-# Setup the locking.
-LOCKFILE="${RUN_DIR}/.rename_lock"
-cleanup() {
-	lock_release ${LOCKFILE}
-}
-trap cleanup EXIT TERM KILL
+# Setup the locking
+LOCKFILE="${LOCK_DIR}/.network-rename-lock"
 
 # Check if the INTERFACE variable is properly set.
 assert isset INTERFACE
 
 # Log what we are doing here.
-log DEBUG "Called for interface '${INTERFACE}'."
-
-# Just check if the device has already vanished.
-device_exists ${INTERFACE} || exit ${EXIT_ERROR}
-
-# Acquiring lock for this operation.
-lock_acquire ${LOCKFILE} 120
+log DEBUG "Called for INTERFACE='${INTERFACE}'"
 
 # Check if the device is already in use and
 # prevent the script to touch it in any way.
 if ! device_is_free ${INTERFACE}; then
-	log ERROR "The device '${INTERFACE}' is in use."
+	log ERROR "The device '${INTERFACE}' is in use"
 	exit ${EXIT_ERROR}
 fi
 
-# Determine the type of the device and then see what
-# we need to do with it.
-type=$(device_get_type ${INTERFACE})
-log DEBUG "Interface '${INTERFACE}' is of type '${type}'."
+# Everything is wrapped into a function so that we can use locking on it
+main() {
+	# Determine the type of the device and then see what
+	# we need to do with it.
+	local type="$(device_get_type "${INTERFACE}")"
 
-case "${type}" in
-	ethernet)
-		# Search within all the port configurations
-		# if this port has already been configured.
-		for port in $(ports_get_all); do
-			port_cmd hotplug_rename ${port} ${INTERFACE} &>/dev/null
-			if [ $? -eq ${EXIT_TRUE} ]; then
-				echo "${port}"
-				exit ${EXIT_OK}
-			fi
-		done
+	log DEBUG "Interface '${INTERFACE}' is of type '${type}'"
 
-		# If no port configuration could be found,
-		# we search for the next unused name and return that.
-		port=$(port_find_free ${PORT_PATTERN})
-		echo "${port}"
+	case "${type}" in
+		ethernet)
+			# Search within all the port configurations
+			# if this port has already been configured.
+			local port
+			for port in $(ports_get_all); do
+				port_cmd hotplug_rename "${port}" "${INTERFACE}" &>/dev/null
+				if [ $? -eq ${EXIT_TRUE} ]; then
+					echo "${port}"
+					exit ${EXIT_OK}
+				fi
+			done
 
-		log DEBUG "Could not find an existing port configuration for '${INTERFACE}'"
-		log DEBUG "Renaming interface '${INTERFACE}' to '${port}'"
-		;;
-esac
+			# If no port configuration could be found,
+			# we search for the next unused name and return that.
+			port=$(port_find_free ${PORT_PATTERN})
+			echo "${port}"
 
-exit ${EXIT_OK}
+			log DEBUG "Could not find an existing port configuration for '${INTERFACE}'"
+			log DEBUG "Renaming interface '${INTERFACE}' to '${port}'"
+			;;
+	esac
+
+	return ${EXIT_OK}
+}
+
+# Run perform rename function exclusively
+lock "${RUN_DIR}/.network-rename-lock" main || exit $?
