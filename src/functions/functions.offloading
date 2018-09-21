@@ -83,3 +83,15 @@ offloading_set() {
 
 	return ${EXIT_OK}
 }
+
+offloading_disable_all() {
+	local device="${1}"
+	assert isset device
+
+	local offloading
+	for offloading in ${!SUPPORTED_OFFLOADINGS[@]}; do
+		offloading_set "${device}" "${offloading}" "off"
+	done
+
+	return ${EXIT_OK}
+}

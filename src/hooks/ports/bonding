@@ -21,7 +21,7 @@
 
 . /usr/lib/network/header-port
 
-HOOK_SETTINGS="HOOK ADDRESS MIIMON MODE SLAVES"
+HOOK_SETTINGS="HOOK ADDRESS MIIMON MODE OFFLOADING SLAVES"
 
 SLAVES=""
 MIIMON=100
@@ -46,6 +46,15 @@ hook_parse_cmdline() {
 				;;
 			--mode=*)
 				MODE=$(cli_get_val "${1}")
+				;;
+			--offloading=*)
+				OFFLOADING="$(cli_get_val "${1}")"
+
+				if enabled OFFLOADING; then
+					OFFLOADING="on"
+				else
+					OFFLOADING="off"
+				fi
 				;;
 			+*)
 				local slave=$(cli_get_val "${1:1}")
@@ -175,8 +184,12 @@ hook_up() {
 
 	port_settings_read "${port}" ${HOOK_SETTINGS}
 
-	# Auto-enable hardware offloading
-	offloading_auto "${port}"
+	# Auto-enable or disable hardware offloading
+	if ! isset OFFLOADING || enabled OFFLOADING; then
+		offloading_auto "${port}"
+	else
+		offloading_disable_all "${port}"
+	fi
 
 	# Execute the default action
 	hook_default_up "${port}"

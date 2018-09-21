@@ -24,7 +24,7 @@
 # DEVICE equals the actual MAC address of the device.
 # If ADDRESS is set, the device will get ADDRESS set for its MAC address.
 
-HOOK_SETTINGS="HOOK ADDRESS ADVERTISED_LINK_SPEEDS DEVICE MTU"
+HOOK_SETTINGS="HOOK ADDRESS ADVERTISED_LINK_SPEEDS DEVICE OFFLOADING MTU"
 
 hook_check_settings() {
 	assert ismac DEVICE
@@ -78,6 +78,16 @@ hook_parse_cmdline() {
 				fi
 				;;
 
+			--offloading=*)
+				OFFLOADING="$(cli_get_val "${1}")"
+
+				if enabled OFFLOADING; then
+					OFFLOADING="on"
+				else
+					OFFLOADING="off"
+				fi
+				;;
+
 			*)
 				error "Unknown argument: ${1}"
 				return ${EXIT_ERROR}
@@ -117,8 +127,12 @@ hook_up() {
 		device_advertise_link_speeds "${port}" ${ADVERTISED_LINK_SPEEDS}
 	fi
 
-	# Auto-enable hardware offloading
-	offloading_auto "${port}"
+	# Auto-enable or disable hardware offloading
+	if ! isset OFFLOADING || enabled OFFLOADING; then
+		offloading_auto "${port}"
+	else
+		offloading_disable_all "${port}"
+	fi
 
 	# Bring up the device
 	device_set_up "${port}"
