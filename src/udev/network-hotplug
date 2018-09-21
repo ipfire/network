@@ -80,17 +80,10 @@ case "${SUBSYSTEM}" in
 		if ! port_exists "${INTERFACE}"; then
 			case "${ACTION}" in
 				add)
-					TYPE="$(device_get_type "${INTERFACE}")"
-
-					# If this is an Ethernet device, we will automatically create a new port
-					if [ "${TYPE}" = "ethernet" ]; then
-						port_new "ethernet" "${INTERFACE}"
-						exit $?
-					fi
-
 					log WARNING "Got to hotplug event for a port which does not exist: ${INTERFACE}"
 
 					# Try to remove the device again
+					TYPE="$(device_get_type "${INTERFACE}")"
 					case "${TYPE}" in
 						bonding)
 							bonding_remove "${INTERFACE}"

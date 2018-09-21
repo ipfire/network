@@ -60,18 +60,22 @@ main() {
 			for port in $(ports_get_all); do
 				port_cmd hotplug_rename "${port}" "${INTERFACE}" &>/dev/null
 				if [ $? -eq ${EXIT_TRUE} ]; then
-					echo "${port}"
+					print "${port}"
 					exit ${EXIT_OK}
 				fi
 			done
 
-			# If no port configuration could be found,
-			# we search for the next unused name and return that.
-			port=$(port_find_free ${PORT_PATTERN})
-			echo "${port}"
+			# Could not find a valid port configuration, creating a new one
+			port="$(port_find_free "${PORT_PATTERN}")"
+			assert isset port
 
-			log DEBUG "Could not find an existing port configuration for '${INTERFACE}'"
-			log DEBUG "Renaming interface '${INTERFACE}' to '${port}'"
+			# Create a new port configuration with the new name
+			if ! port_new "ethernet" "${port}" "${INTERFACE}"; then
+				log ERROR "Could not create new port configuration for ${INTERFACE}"
+				return ${EXIT_ERROR}
+			fi
+
+			print "${port}"
 			;;
 	esac
 

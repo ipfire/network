@@ -106,7 +106,10 @@ hook_new() {
 	local port="${1}"
 	assert isset port
 
-	local DEVICE="$(device_get_address "${port}")"
+	local device="${2}"
+	assert isset device
+
+	local DEVICE="$(device_get_address "${device}")"
 
 	if ! port_settings_write "${port}" ${HOOK_SETTINGS}; then
 		log ERROR "Could not write settings for port ${port}"
