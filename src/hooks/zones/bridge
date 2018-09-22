@@ -120,10 +120,6 @@ hook_up() {
 	# set our bridges to promisc mode.
 	device_set_promisc "${zone}" on
 
-	# Bring up all ports
-	zone_ports_create "${zone}"
-	zone_ports_up "${zone}"
-
 	# Bring up all configurations
 	zone_configs_up "${zone}"
 
@@ -136,8 +132,18 @@ hook_hotplug() {
 
 	case "$(hotplug_action)" in
 		add)
+			# Attach all ports when zone is coming up
+			if hotplug_event_interface_is_zone "${zone}"; then
+				# Bring up all ports
+				local port
+				for port in $(zone_get_ports "${zone}"); do
+					log DEBUG "Trying to attach port ${port} to ${zone}"
+
+					hook_port_up "${zone}" "${port}"
+				done
+
 			# Handle ports of this zone that have just been added
-			if hotplug_event_interface_is_port_of_zone "${zone}"; then
+			elif hotplug_event_interface_is_port_of_zone "${zone}"; then
 				# Attach the device if the parent bridge is up
 				if zone_is_active "${zone}"; then
 					hook_port_up "${zone}" "${INTERFACE}"
@@ -145,8 +151,17 @@ hook_hotplug() {
 			fi
 			;;
 		remove)
+			if hotplug_event_interface_is_zone "${zone}"; then
+				# Bring down/destroy all ports
+				local port
+				for port in $(zone_get_ports "${zone}"); do
+					log DEBUG "Trying to detach port ${port} from ${zone}"
+
+					hook_port_down "${zone}" "${port}"
+				done
+
 			# Handle ports of this zone that have just been removed
-			if hotplug_event_interface_is_port_of_zone "${zone}"; then
+			elif hotplug_event_interface_is_port_of_zone "${zone}"; then
 				hook_port_down "${zone}" "${INTERFACE}"
 			fi
 			;;
@@ -308,7 +323,7 @@ hook_port_up() {
 	if ! device_exists "${port}"; then
 		port_create "${port}"
 
-		exit ${EXIT_OK}
+		return ${EXIT_OK}
 	fi
 
 	# Read configuration values
@@ -329,7 +344,7 @@ hook_port_up() {
 	# Make sure that the port is up
 	port_up "${port}"
 
-	exit ${EXIT_OK}
+	return ${EXIT_OK}
 }
 
 hook_port_down() {
@@ -344,7 +359,7 @@ hook_port_down() {
 		port_down "${port}"
 	fi
 
-	exit ${EXIT_OK}
+	return ${EXIT_OK}
 }
 
 hook_port_status() {

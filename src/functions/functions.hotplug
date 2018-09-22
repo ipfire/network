@@ -70,6 +70,17 @@ hotplug_propagate_all_zones() {
 	done
 }
 
+hotplug_event_interface_is_zone() {
+	hotplug_assert_in_hotplug_event
+
+	local zone="${1}"
+	assert isset zone
+
+	log DEBUG "${zone}= ${INTERFACE}?"
+
+	[ "${zone}" = "${INTERFACE}" ]
+}
+
 hotplug_event_port_is_interface() {
 	hotplug_assert_in_hotplug_event
 
