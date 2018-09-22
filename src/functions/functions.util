@@ -251,6 +251,11 @@ file_get_age() {
 make_directory() {
 	local path="${1}"
 
+	# Exit silently when directory already exists
+	if [ -d "${path}" ]; then
+		return ${EXIT_OK}
+	fi
+
 	if ! mkdir -p "${path}"; then
 		log ERROR "Could not create directory ${path}"
 		return ${EXIT_ERROR}
