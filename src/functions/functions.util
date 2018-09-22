@@ -884,3 +884,18 @@ normalize() {
 
 	tr -sc [:alnum:] "-" < <(printf "%s" "${string,,}")
 }
+
+get_driver_from_path() {
+	local path="${1}"
+
+	if file_exists "${path}"; then
+		# Resolve symlink
+		local driver="$(readlink "${path}")"
+
+		# Print module name
+		basename "${driver}"
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
+}

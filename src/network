@@ -148,6 +148,12 @@ cli_device_status() {
 	cli_print_fmt1 1 "Status"	"${status}"
 	cli_print_fmt1 1 "Type"		"${type}"
 
+	# Print the driver name
+	local driver="$(device_get_driver "${device}")"
+	if isset driver; then
+		cli_print_fmt1 1 "Driver" "${driver}"
+	fi
+
 	# Ethernet-compatible?
 	device_is_ethernet_compatible "${device}" &>/dev/null
 	cli_print_fmt1 1 "Ethernet-compatible" "$(cli_print_bool $?)"
@@ -251,6 +257,13 @@ cli_device_status_phy() {
 
 	local address="$(phy_get_address "${phy}")"
 	cli_print_fmt1 1 "Address" "${address}"
+
+	# Show kernel module
+	local driver="$(phy_get_driver "${phy}")"
+	if isset driver; then
+		cli_print_fmt1 1 "Driver" "${driver}"
+	fi
+
 	cli_space
 
 	local devices="$(phy_get_devices "${phy}")"

@@ -150,6 +150,13 @@ device_get_ifindex() {
 	print "$(<${path})"
 }
 
+device_get_driver() {
+	local device="${1}"
+	assert isset device
+
+	get_driver_from_path "${SYS_CLASS_NET}/${device}/device/driver/module"
+}
+
 # Check if the device is a bonding device
 device_is_bonding() {
 	[ -d "/sys/class/net/${1}/bonding" ]

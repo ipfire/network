@@ -85,6 +85,13 @@ phy_get_address() {
 	print "$(<${path})"
 }
 
+phy_get_driver() {
+	local phy="${1}"
+	assert isset phy
+
+	get_driver_from_path "$(phy_dir "${phy}")/device/driver/module"
+}
+
 phy_get_devices() {
 	local phy="${1}"
 	assert isset phy
