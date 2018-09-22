@@ -138,12 +138,10 @@ hook_hotplug() {
 		add)
 			# Handle ports of this zone that have just been added
 			if hotplug_event_interface_is_port_of_zone "${zone}"; then
-				# Bring up the zone if it is enabled but not active, yet.
-				if zone_is_enabled "${zone}" && ! zone_is_active "${zone}"; then
-					zone_start "${zone}"
+				# Attach the device if the parent bridge is up
+				if zone_is_active "${zone}"; then
+					hook_port_up "${zone}" "${INTERFACE}"
 				fi
-
-				hook_port_up "${zone}" "${INTERFACE}"
 			fi
 			;;
 		remove)

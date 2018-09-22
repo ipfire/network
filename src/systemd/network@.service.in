@@ -3,7 +3,6 @@ Description=Network Connectivity for zone %I
 After=firewall-init.service network-init.service
 Requires=firewall-init.service network-init.service
 Wants=network.target
-Before=network.target
 
 [Service]
 Type=oneshot
@@ -14,4 +13,4 @@ ExecReload=@sbindir@/network zone %I reload
 
 [Install]
 WantedBy=network.target
-Alias=network.target.wants/network@%i.service
+Alias=network.target.wants/network@%i.service multi-user.target.wants/network@%i.service
