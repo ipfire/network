@@ -111,7 +111,7 @@ wireless_create() {
 
 	# Set the channel
 	if isset channel; then
-		wireless_set_channel "${device}" "${channel}" || return $?
+		wireless_set_channel "${device}" "${channel}" "auto" || return $?
 	fi
 
 	return ${ret}
@@ -309,9 +309,34 @@ wireless_channel_is_valid() {
 	return ${EXIT_FALSE}
 }
 
+wireless_channel_is_ht40_plus() {
+	local channel="${1}"
+	assert isinteger channel
+
+	# 2.4 GHz
+	if [ ${channel} -le 6 ]; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
+wireless_channel_is_ht40_minus() {
+	local channel="${1}"
+	assert isinteger channel
+
+	# 2.4 GHz
+	if [ ${channel} -ge 6 ]; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
 wireless_set_channel() {
-	local device=${1}
-	local channel=${2}
+	local device="${1}"
+	local channel="${2}"
+	local bandwidth="${3}"
 
 	# Check if the device exists
 	if ! device_exists "${device}"; then
@@ -325,8 +350,27 @@ wireless_set_channel() {
 		return ${EXIT_ERROR}
 	fi
 
+	local ht_flag
+	if [ "${bandwidth}" = "auto" ]; then
+		local phy="$(device_get_phy "${device}")"
+
+		# Offset of a 40 MHz channel
+		local ht_offset=5
+
+		if wireless_channel_is_ht40_plus "${channel}" \
+				&& phy_supports_ht_capability "${phy}" "HT40+" \
+				&& phy_supports_channel "${phy}" $(( channel + ht_offset )); then
+			ht_flag="HT40+"
+
+		elif wireless_channel_is_ht40_minus "${channel}" \
+				&& phy_supports_ht_capability "${phy}" "HT40-" \
+				&& phy_supports_channel "${phy}" $(( channel - ht_offset )); then
+			ht_flags="HT40-"
+		fi
+	fi
+
 	log DEBUG "Setting wireless channel on device '${device}' to channel '${channel}'"
-	cmd iw dev "${device}" set channel "${channel}"
+	cmd iw dev "${device}" set channel "${channel}" "${ht_flag}"
 }
 
 wireless_pre_shared_key_is_valid() {

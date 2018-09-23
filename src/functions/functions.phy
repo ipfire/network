@@ -169,3 +169,22 @@ phy_supports_channel() {
 
 	return ${EXIT_FALSE}
 }
+
+__phy_list_ht_capabilities() {
+	local phy="${1}"
+	assert isset phy
+
+	local capabilities="$(network-phy-list-ht-caps "${phy}")"
+
+	print "${capabilities//[\[\]]/ }"
+}
+
+phy_supports_ht_capability() {
+	local phy="${1}"
+	assert isset phy
+
+	local capability="${2}"
+	assert isset capability
+
+	list_match "${capability}" $(__phy_list_ht_capabilities "${phy}")
+}
