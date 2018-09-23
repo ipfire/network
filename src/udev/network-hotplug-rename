@@ -46,6 +46,14 @@ fi
 
 # Everything is wrapped into a function so that we can use locking on it
 main() {
+	# Check if the device has a unique MAC address (which is
+	# what are using to uniquely identify an interface)
+	local address="$(device_get_address "${INTERFACE}")"
+	if isset address && [ "${address}" = "00:00:00:00:00:00" ]; then
+		log DEBUG "Ignoring interface ${INTERFACE} with invalid MAC address ${address}"
+		return ${EXIT_OK}
+	fi
+
 	# Determine the type of the device and then see what
 	# we need to do with it.
 	local type="$(device_get_type "${INTERFACE}")"
