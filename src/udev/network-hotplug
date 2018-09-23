@@ -85,6 +85,7 @@ case "${SUBSYSTEM}" in
 					case "${INTERFACE}" in
 						gre0|ip6gre0|ip6tnl0|ip6_vti0|ip_vti0)
 							log DEBUG "Ignoring special device ${INTERFACE}"
+							exit ${EXIT_OK}
 							;;
 					esac
 
@@ -92,20 +93,28 @@ case "${SUBSYSTEM}" in
 
 					# Try to remove the device again
 
-					TYPE="$(device_get_type "${INTERFACE}")"
-					case "${TYPE}" in
-						bonding)
-							bonding_remove "${INTERFACE}"
-							;;
-						dummy)
-							dummy_remove "${INTERFACE}"
-							;;
-						wireless)
-							wireless_remove "${INTERFACE}"
-							;;
-						*)
-							device_delete "${INTERFACE}"
-					esac
+					# Bonding
+					if device_is_bonding "${INTERFACE}"; then
+						bonding_remove "${INTERFACE}"
+
+					# Dummy
+					elif device_is_dummy "${INTERFACE}"; then
+						dummy_remove "${INTERFACE}"
+
+					# Wireless
+					elif device_is_wireless "${INTERFACE}"; then
+						wireless_remove "${INTERFACE}"
+
+					# Everything else
+					else
+						device_delete "${INTERFACE}"
+					fi
+
+					# Check if the device still exists and if so, log an error
+					if device_exists "${INTERFACE}"; then
+						log ERROR "Could not delete ${INTERFACE}"
+						exit ${EXIT_ERROR}
+					fi
 
 					exit ${EXIT_OK}
 					;;
