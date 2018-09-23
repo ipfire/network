@@ -67,6 +67,11 @@ case "${SUBSYSTEM}" in
 		if device_is_loopback ${INTERFACE}; then
 			exit ${EXIT_OK}
 
+		# Skip all pppN interfaces (for pppoe-server)
+		elif device_is_ppp "${INTERFACE}" && [[ ${INTERFACE} =~ ^ppp[0-9]+$ ]]; then
+			log DEBUG "Ignoring PPP device"
+			exit ${EXIT_OK}
+
 		# Stop processing rules for wireless monitoring devices
 		elif device_is_wireless_monitor ${INTERFACE}; then
 			exit ${EXIT_OK}
