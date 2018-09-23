@@ -532,11 +532,11 @@ cmd_quiet() {
 }
 
 cmd_exec() {
-	local cmd=$@
+	local cmd=( "$@" )
 
 	log DEBUG "Exec'ing command: ${cmd}"
 
-	exec ${cmd}
+	exec "${cmd[@]}"
 
 	log ERROR "Could not exec-ute: ${cmd}"
 	exit ${EXIT_ERROR}
