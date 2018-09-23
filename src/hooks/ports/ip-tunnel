@@ -1,0 +1,148 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2018  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+. /usr/lib/network/header-port
+
+SUPPORTED_IP_TUNNEL_MODES="gretap"
+
+HOOK_SETTINGS="ADDRESS MARK MODE PEER LOCAL_ADDRESS"
+
+hook_check_settings() {
+	assert isset MODE
+	assert isoneof MODE ${SUPPORTED_IP_TUNNEL_MODES}
+
+	# Generate a random mark
+	if ! isset MARK; then
+		MARK="$(( ${RANDOM} & 0xffffffff ))"
+	fi
+}
+
+hook_parse_cmdline() {
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--local-address=*)
+				LOCAL_ADDRESS="$(cli_get_val "${1}")"
+				;;
+
+			--mode=*)
+				MODE="$(cli_get_val "${1}")"
+
+				# MODE must be on the list of supported protocols
+				if ! isoneof MODE ${SUPPORTED_IP_TUNNEL_MODES}; then
+					error "Unsupported mode: ${mode}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
+			--peer=*)
+				PEER="$(cli_get_val "${1}")"
+				;;
+
+			*)
+				error "Unknown option: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
+
+	# If PEER is set, it must be a valid IP address
+	if isset PEER && ! ip_is_valid "${PEER}"; then
+		error "Peer ${PEER} is not a valid IP address"
+		return ${EXIT_ERROR}
+	fi
+
+	# If LOCAL_ADDRESS is set, it must be a valid IP address
+	# of the same protocol than PEER is
+	if isset LOCAL_ADDRESS; then
+		if ! ip_is_valid "${LOCAL_ADDRESS}"; then
+			error "Local address ${LOCAL_ADDRESS} is not a valid IP address"
+			return ${EXIT_ERROR}
+		fi
+
+		if ! ip_protocol_match "${PEER}" "${LOCAL_ADDRESS}"; then
+			error "Peer and local address are of different IP protocols"
+			return ${EXIT_ERROR}
+		fi
+	fi
+
+	return ${EXIT_OK}
+}
+
+hook_create() {
+	local port="${1}"
+	assert isset port
+
+	local ${HOOK_SETTINGS}
+	if ! port_settings_read "${port}" ${HOOK_SETTINGS}; then
+		log ERROR "Could not read settings for port ${port}"
+		return ${EXIT_ERROR}
+	fi
+
+	if ! ip_tunnel_add "${port}" \
+			--mode="${MODE}" \
+			--address="${ADDRESS}" \
+			--remote-address="${PEER}" \
+			--local-address="${LOCAL_ADDRESS}" \
+			--ikey="${MARK}" \
+			--okey="${MARK}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	exit ${EXIT_OK}
+}
+
+hook_remove() {
+	local port="${1}"
+	assert isset port
+
+	# Remove the device
+	if ! ip_tunnel_del "${port}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	exit ${EXIT_OK}
+}
+
+hook_hotplug_rename() {
+	local port="${1}"
+	assert isset port
+
+	local device="${2}"
+	assert isset device
+
+	local ${HOOK_SETTINGS}
+	if ! port_settings_read "${port}" ${HOOK_SETTINGS}; then
+		log ERROR "Could not read settings for port ${port}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Get the current MAC address of the device.
+	local address="$(device_get_address ${device})"
+	assert isset address
+
+	# Return OK on match
+	if [ "${ADDRESS}" = "${address}" ]; then
+		return ${EXIT_OK}
+	fi
+
+	return ${EXIT_ERROR}
+}

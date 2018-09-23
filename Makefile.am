@@ -229,6 +229,7 @@ dist_hooks_ports_SCRIPTS = \
 	src/hooks/ports/bonding \
 	src/hooks/ports/dummy \
 	src/hooks/ports/ethernet \
+	src/hooks/ports/ip-tunnel \
 	src/hooks/ports/vlan \
 	src/hooks/ports/wireless-ap \
 	src/hooks/ports/wireless-mesh
