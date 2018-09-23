@@ -33,6 +33,11 @@ lock() {
 	local lock="${1}"
 	shift
 
+	# Move locks with name only into lock directory
+	if [ "${lock:0:1}" != "/" ]; then
+		lock="${LOCK_DIR}/${lock}"
+	fi
+
 	local timeout="60"
 
 	# Make partent directory
