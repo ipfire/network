@@ -1489,6 +1489,8 @@ _ipsec_connection_to_strongswan_connection() {
 			# Local Prefixes
 			if isset LOCAL_PREFIX; then
 				print_indent 4 "local_ts = $(list_join LOCAL_PREFIX ,)"
+			elif isset ZONE; then
+				print_indent 4 "local_ts = ::/0, 0.0.0.0/0"
 			else
 				print_indent 4 "local_ts = dynamic"
 			fi
@@ -1496,6 +1498,8 @@ _ipsec_connection_to_strongswan_connection() {
 			# Remote Prefixes
 			if isset REMOTE_PREFIX; then
 				print_indent 4 "remote_ts = $(list_join REMOTE_PREFIX ,)"
+			elif isset ZONE; then
+				print_indent 4 "remote_ts = ::/0, 0.0.0.0/0"
 			else
 				print_indent 4 "remote_ts = dynamic"
 			fi
