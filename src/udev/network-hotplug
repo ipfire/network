@@ -89,6 +89,11 @@ case "${SUBSYSTEM}" in
 					if device_is_gre "${INTERFACE}" && [ "${INTERFACE}" = "gre0" ]; then
 						log DEBUG "gre0 cannot be removed"
 						exit ${EXIT_OK}
+
+					# VTI
+					elif device_is_vti "${INTERFACE}" && [ "${INTERFACE}" = "ip_vti0" ]; then
+						log DEBUG "ip_vti0 cannot be removed"
+						exit ${EXIT_OK}
 					fi
 
 					TYPE="$(device_get_type "${INTERFACE}")"
