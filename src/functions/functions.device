@@ -248,13 +248,25 @@ device_get_vlans() {
 	done < ${PROC_NET_VLAN_CONFIG}
 }
 
+__device_type_matches() {
+	local device="${1}"
+	local type="${2}"
+
+	local _type="$(__device_get_file "${device}" "type")"
+
+	if [ "${type}" = "${_type}" ]; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
 # Check if the device is a ppp device
 device_is_ppp() {
-	local device=${1}
+	local device="${1}"
+	assert isset device
 
-	local type=$(__device_get_file ${device} type)
-
-	[ "${type}" = "512" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
+	__device_type_matches "${device}" 512
 }
 
 # Check if the device is a pointopoint device.
@@ -293,19 +305,17 @@ device_is_wireless() {
 }
 
 device_is_vti() {
-	local device=${1}
+	local device="${1}"
+	assert isset device
 
-	local type=$(__device_get_file ${device} type)
-
-	[ "${type}" = "768" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
+	__device_type_matches "${device}" 768
 }
 
 device_is_vti6() {
-	local device=${1}
+	local device="${1}"
+	assert isset device
 
-	local type=$(__device_get_file ${device} type)
-
-	[ "${type}" = "769" ] && return ${EXIT_OK} || return ${EXIT_ERROR}
+	__device_type_matches "${device}" 769
 }
 
 device_get_phy() {
