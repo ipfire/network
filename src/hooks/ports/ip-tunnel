@@ -29,6 +29,9 @@ hook_check_settings() {
 	assert isset MODE
 	assert isoneof MODE ${SUPPORTED_IP_TUNNEL_MODES}
 
+	assert isset ADDRESS
+	assert mac_is_valid "${ADDRESS}"
+
 	# Generate a random mark
 	if ! isset MARK; then
 		MARK="$(( ${RANDOM} & 0xffffffff ))"
@@ -38,6 +41,15 @@ hook_check_settings() {
 hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
+			--address=*)
+				ADDRESS="$(cli_get_val "${1}")"
+
+				if ! isset ADDRESS || ! mac_is_valid "${ADDRESS}"; then
+					error "Invalid MAC address: ${ADDRESS}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
 			--local-address=*)
 				LOCAL_ADDRESS="$(cli_get_val "${1}")"
 				;;
@@ -63,6 +75,11 @@ hook_parse_cmdline() {
 		esac
 		shift
 	done
+
+	# Generate a random MAC address if none is set
+	if ! isset ADDRESS; then
+		ADDRESS="$(mac_generate)"
+	fi
 
 	# If PEER is set, it must be a valid IP address
 	if isset PEER && ! ip_is_valid "${PEER}"; then
