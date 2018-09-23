@@ -185,22 +185,25 @@ pppoe_server_options() {
 }
 
 pppoe_server_poolfile() {
-	local file=${1}
+	local file="${1}"
 	assert isset file
 
-	local subnet=${2}
+	local subnet="${2}"
 	assert isset subnet
 
-	config_header "PPPoE server IP address pool file" > ${file}
+	(
+		config_header "PPPoE server IP address pool file"
 
-	# The network address will be the gateway address.
-	local netaddr=$(ipv4_get_network ${subnet})
+		i=0
+		for addr in $(ipv4_range_explicit "${subnet}"); do
+			(( i++ ))
 
-	local addr
-	for addr in $(ipv4_range_explicit ${subnet}); do
-		[ "${addr}" = "${netaddr}" ] && continue
-		print "${addr}"
-	done >> ${file}
+			# Skip the first address which is being used for the gateway
+			[ ${i} -eq 1 ] && continue
+
+			print "${addr}"
+		done
+	) > ${file}
 
 	return ${EXIT_OK}
 }
