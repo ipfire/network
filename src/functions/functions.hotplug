@@ -76,8 +76,6 @@ hotplug_event_interface_is_zone() {
 	local zone="${1}"
 	assert isset zone
 
-	log DEBUG "${zone}= ${INTERFACE}?"
-
 	[ "${zone}" = "${INTERFACE}" ]
 }
 
