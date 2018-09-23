@@ -81,25 +81,16 @@ case "${SUBSYSTEM}" in
 		if ! zone_exists "${INTERFACE}" && ! port_exists "${INTERFACE}"; then
 			case "${ACTION}" in
 				add)
+					# Ignore this for some special devices
+					case "${INTERFACE}" in
+						gre0|ip6gre0|ip6tnl0|ip6_vti0|ip_vti0)
+							log DEBUG "Ignoring special device ${INTERFACE}"
+							;;
+					esac
+
 					log WARNING "Got to hotplug event for a port which does not exist: ${INTERFACE}"
 
 					# Try to remove the device again
-
-					# GRE6
-					if device_is_gre6 "${INTERFACE}" && [ "${INTERFACE}" = "ip6gre0" ]; then
-						log DEBUG "ip6gre0 cannot be removed"
-						exit ${EXIT_OK}
-
-					# GRE
-					elif device_is_gre "${INTERFACE}" && [ "${INTERFACE}" = "gre0" ]; then
-						log DEBUG "gre0 cannot be removed"
-						exit ${EXIT_OK}
-
-					# VTI
-					elif device_is_vti "${INTERFACE}" && [ "${INTERFACE}" = "ip_vti0" ]; then
-						log DEBUG "ip_vti0 cannot be removed"
-						exit ${EXIT_OK}
-					fi
 
 					TYPE="$(device_get_type "${INTERFACE}")"
 					case "${TYPE}" in
