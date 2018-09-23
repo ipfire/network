@@ -19,7 +19,7 @@
 #                                                                             #
 ###############################################################################
 
-IP_TUNNEL_MODES="gre sit vti"
+IP_TUNNEL_MODES="gre gretap sit vti"
 
 ip_tunnel_protocol_to_name() {
 	local protocol="${1}"
@@ -64,17 +64,22 @@ ip_tunnel_convert_mode_to_iproute2_mode() {
 				;;
 			"gre")
 				echo "ip6gre"
+				;;
+			"gretap")
+				echo "ip6gretap"
+				;;
 		esac
 	fi
 }
 
 ip_tunnel_add() {
-	local device=${1}
+	local device="${1}"
 	shift
 
 	local mode
 	local ttl
 
+	local address
 	local remote_address
 	local local_address
 
@@ -83,6 +88,15 @@ ip_tunnel_add() {
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
+			--address=*)
+				address="$(cli_get_val "${1}")"
+
+				# Validate input
+				if ! isset address || ! mac_is_valid "${address}"; then
+					error "Invalid MAC address: ${address}"
+					return ${EXIT_ERROR}
+				fi
+				;;
 			--mode=*)
 				mode="$(cli_get_val "${1}")"
 				;;
@@ -129,42 +143,59 @@ ip_tunnel_add() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Custom checks for certain modes
+	case "${mode}" in
+		gretap)
+			# Generate a random MAC address if none was passed
+			if ! isset address; then
+				address="$(mac_generate)"
+			fi
+			;;
+	esac
+
 	# If TTL is set, make sure it is an integer.
 	if isset ttl && ! isinteger ttl; then
 		error "TTL must be an integer: ${ttl}"
 		return ${EXIT_ERROR}
 	fi
 
-	local cmd_args
-
-	# Apply TTL if a value has been set.
-	if isset ttl; then
-		cmd_args="${cmd_args} ttl ${ttl}"
-	fi
-
-	# Apply local address if a value has been set.
-	if isset local_address; then
-		cmd_args="${cmd_args} local ${local_address}"
-	fi
-
-	# Apply remote address if a value has been set.
-	if isset remote_address; then
-		cmd_args="${cmd_args} remote ${remote_address}"
-	fi
-
-	# Add ikey and okey for VTI devices
-	if [ "${mode}" = "vti" ]; then
-		cmd_args="${cmd_args} ikey ${ikey} okey ${okey}"
-	fi
-
 	# Determine the mode based on the IP protocol
 	local remote_address_protocol="$(ip_detect_protocol "${remote_address}")"
 	mode=$(ip_tunnel_convert_mode_to_iproute2_mode "${mode}" "${remote_address_protocol}")
 
+	local cmd_args=( name "${device}" )
+
+	if isset address; then
+		cmd_args=( "${cmd_args[@]}" "address" "${address}" )
+	fi
+
+	# Mode
+	cmd_args=( "${cmd_args[@]}" "type" "${mode}" )
+
+	# Apply TTL if a value has been set.
+	if isset ttl; then
+		cmd_args=( "${cmd_args[@]}" "ttl" "${ttl}" )
+	fi
+
+	# Apply local address if a value has been set.
+	if isset local_address; then
+		cmd_args=( "${cmd_args[@]}" "local" "${local_address}" )
+	fi
+
+	# Apply remote address if a value has been set.
+	if isset remote_address; then
+		cmd_args=( "${cmd_args[@]}" "remote" "${remote_address}" )
+	fi
+
+	# Add ikey and okey for VTI devices
+	if [ "${mode}" = "vti" ]; then
+		cmd_args=( "${cmd_args[@]}" "ikey" "${ikey}" "okey" "${okey}" )
+	fi
+
 	log DEBUG "Creating tunnel device '${device}' (mode=${mode})..."
 
 	# Create the device.
-	if ! cmd ip link add name ${device} type ${mode} ${cmd_args}; then
+	if ! cmd ip link add "${cmd_args[@]}"; then
 		error "Could not create tunnel device ${device}"
 		return ${EXIT_ERROR}
 	fi
