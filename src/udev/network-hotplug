@@ -85,8 +85,13 @@ case "${SUBSYSTEM}" in
 
 					# Try to remove the device again
 
+					# GRE6
+					if device_is_gre6 "${INTERFACE}" && [ "${INTERFACE}" = "ip6gre0" ]; then
+						log DEBUG "ip6gre0 cannot be removed"
+						exit ${EXIT_OK}
+
 					# GRE
-					if device_is_gre "${INTERFACE}" && [ "${INTERFACE}" = "gre0" ]; then
+					elif device_is_gre "${INTERFACE}" && [ "${INTERFACE}" = "gre0" ]; then
 						log DEBUG "gre0 cannot be removed"
 						exit ${EXIT_OK}
 
