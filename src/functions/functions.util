@@ -873,6 +873,11 @@ copy() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Create destination directory if it doesn't exist, yet
+	if ! make_parent_directory "${dst}"; then
+		return ${EXIT_ERROR}
+	fi
+
 	if ! fread "${src}" > "${dst}"; then
 		log ERROR "Could not copy data from ${src} to ${dst}"
 		return ${EXIT_ERROR}
