@@ -29,6 +29,9 @@ HOOK_SETTINGS="ADDRESS ADVERTISED_LINK_SPEEDS DEVICE OFFLOADING MTU"
 hook_check_settings() {
 	assert ismac DEVICE
 
+	# Invalid MAC addresses are not allowed
+	assert not isoneof DEVICE 00:00:00:00:00:00 ff:ff:ff:ff:ff:ff
+
 	if isset ADDRESS; then
 		assert ismac ADDRESS
 	fi
