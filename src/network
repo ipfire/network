@@ -1209,12 +1209,12 @@ cli_reset() {
 	done
 
 	local zone
-	for zone in $(zones_get --all); do
+	for zone in $(zones_get_all); do
 		zone_destroy "${zone}"
 	done
 
 	local port
-	for port in $(ports_get --all); do
+	for port in $(ports_get_all); do
 		port_destroy "${port}"
 	done
 

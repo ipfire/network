@@ -329,6 +329,9 @@ hook_port_up() {
 	# Read configuration values
 	zone_port_settings_read "${zone}" "${port}" ${HOOK_PORT_SETTINGS}
 
+	# Make sure that the port is up
+	port_up "${port}"
+
 	# Attach the port to the bridge
 	bridge_attach_device "${zone}" "${port}"
 
@@ -340,9 +343,6 @@ hook_port_up() {
 	if isset PRIORITY; then
 		stp_port_set_priority "${zone}" "${port}" "${PRIORITY}"
 	fi
-
-	# Make sure that the port is up
-	port_up "${port}"
 
 	return ${EXIT_OK}
 }

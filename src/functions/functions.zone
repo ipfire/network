@@ -322,15 +322,19 @@ zone_destroy() {
 		return ${EXIT_ERROR}
 	fi
 
-	log INFO "Destroying zone ${zone}"
-
 	# Force the zone down.
 	zone_is_active "${zone}" && zone_stop "${zone}"
 
 	# Disable zone auto-start
 	zone_disable "${zone}"
 
-	rm -rf "${NETWORK_ZONES_DIR}/${zone}"
+	if ! rm -rf "${NETWORK_ZONES_DIR}/${zone}"; then
+		log ERROR "Could not destroy zone ${zone}"
+		return ${EXIT_ERROR}
+	fi
+
+	log INFO "Destroyed zone ${zone}"
+	return ${EXIT_OK}
 }
 
 zone_up() {

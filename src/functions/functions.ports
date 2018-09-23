@@ -19,8 +19,18 @@
 #                                                                             #
 ###############################################################################
 
+ports_get_all() {
+	local port
+	for port in $(list_directory "${NETWORK_PORTS_DIR}"); do
+		if port_exists "${port}"; then
+			print "${port}"
+		fi
+	done
+}
+
+# XXX TO BE REMOVED
 port_list() {
-	list_directory "${NETWORK_PORTS_DIR}"
+	ports_get_all "$@"
 }
 
 port_list_in_use() {
@@ -93,10 +103,6 @@ port_settings_write() {
 	list_append args HOOK ${HOOK_SETTINGS}
 
 	settings_write "$(port_file "${port}")" ${args}
-}
-
-ports_get_all() {
-	port_list
 }
 
 port_file() {
@@ -188,7 +194,13 @@ port_destroy() {
 		return ${EXIT_ERROR}
 	fi
 
-	rm -rf "${NETWORK_PORTS_DIR}/${port}"
+	if ! rm -rf "${NETWORK_PORTS_DIR}/${port}"; then
+		log ERROR "Could not destroy port ${port}"
+		return ${EXIT_ERROR}
+	fi
+
+	log INFO "Destroyed port ${port}"
+	return ${EXIT_OK}
 }
 
 port_create() {
