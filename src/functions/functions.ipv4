@@ -380,9 +380,9 @@ ipv4_range_explicit() {
 			;;
 		*.*.*.*/*)
 			first=$(ipv4_get_network ${range})
-			first="$(ip_split_prefix "${range}")"
+			first="$(ip_split_prefix "${first}")"
 			last=$(ipv4_get_broadcast ${range})
-			last="$(ip_split_prefix "${range}")"
+			last="$(ip_split_prefix "${last}")"
 			;;
 	esac
 
