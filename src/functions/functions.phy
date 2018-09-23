@@ -152,3 +152,20 @@ phy_leds_autoconf() {
 
 	return ${EXIT_OK}
 }
+
+phy_supports_channel() {
+	local phy="${1}"
+	assert isset phy
+
+	local channel="${2}"
+	assert isinteger channel
+
+	local _channel _frequency _dfs _max_tx_power
+	while read -r _channel _frequency _dfs _max_tx_power; do
+		if [ "${channel}" = "${_channel}" ]; then
+			return ${EXIT_TRUE}
+		fi
+	done <<< "$(network-phy-list-channels "${phy}")"
+
+	return ${EXIT_FALSE}
+}

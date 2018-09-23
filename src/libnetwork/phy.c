@@ -23,14 +23,25 @@
 #include <netlink/attr.h>
 #include <netlink/genl/genl.h>
 #include <netlink/msg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/queue.h>
 
 #include <network/libnetwork.h>
 #include <network/logging.h>
 #include <network/phy.h>
 #include "libnetwork-private.h"
+
+struct network_phy_channel {
+	unsigned int number;
+	unsigned int frequency;
+	bool dfs;
+	double max_tx_power; // dBm
+
+	TAILQ_ENTRY(network_phy_channel) channels;
+};
 
 struct network_phy {
 	struct network_ctx* ctx;
@@ -38,6 +49,8 @@ struct network_phy {
 
 	int index;
 	char* name;
+
+	TAILQ_HEAD(head, network_phy_channel) channels;
 
 	ssize_t max_mpdu_length;
 	unsigned int vht_caps;
@@ -232,6 +245,77 @@ static void phy_parse_ht_capabilities(struct network_phy* phy, __u16 caps) {
 		phy->ht_caps |= NETWORK_PHY_HT_CAP_LSIG_TXOP_PROT;
 }
 
+static struct nla_policy phy_frequency_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
+	[NL80211_FREQUENCY_ATTR_FREQ] = { .type = NLA_U32 },
+	[NL80211_FREQUENCY_ATTR_DISABLED] = { .type = NLA_FLAG },
+	[NL80211_FREQUENCY_ATTR_NO_IR] = { .type = NLA_FLAG },
+	[__NL80211_FREQUENCY_ATTR_NO_IBSS] = { .type = NLA_FLAG },
+	[NL80211_FREQUENCY_ATTR_RADAR] = { .type = NLA_FLAG },
+	[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = { .type = NLA_U32 },
+};
+
+static unsigned int phy_frequency_to_channel(unsigned int freq) {
+	if (freq == 2484)
+		return 14;
+
+	else if (freq < 2484)
+		return (freq - 2407) / 5;
+
+	else if (freq >= 4910 && freq <= 4980)
+		return (freq - 4000) / 5;
+
+	else if (freq <= 45000)
+		return (freq - 5000) / 5;
+
+	else if (freq >= 58320 && freq <= 64800)
+		return (freq - 56160) / 2160;
+
+	return 0;
+};
+
+static int phy_parse_channels(struct network_phy* phy, struct nlattr* nl_freqs) {
+	struct nlattr* nl_freq;
+	int rem_freq;
+
+	struct nlattr* tb_freq[NL80211_FREQUENCY_ATTR_MAX + 1];
+	nla_for_each_nested(nl_freq, nl_freqs, rem_freq) {
+		// Get data
+		nla_parse(tb_freq, NL80211_FREQUENCY_ATTR_MAX, nla_data(nl_freq),
+				nla_len(nl_freq), phy_frequency_policy);
+
+		if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
+			continue;
+
+		// Skip any disabled channels
+		if (tb_freq[NL80211_FREQUENCY_ATTR_DISABLED])
+			continue;
+
+		struct network_phy_channel* channel = calloc(1, sizeof(*channel));
+		if (!channel)
+			return -1;
+
+		// Append object to list of channels
+		TAILQ_INSERT_TAIL(&phy->channels, channel, channels);
+
+		// Get frequency
+		channel->frequency = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
+
+		// Convert frequency to channel
+		channel->number = phy_frequency_to_channel(channel->frequency);
+
+		// Radar detection
+		if (tb_freq[NL80211_FREQUENCY_ATTR_RADAR])
+			channel->dfs = true;
+
+		// Maximum TX power
+		if (tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER])
+			channel->max_tx_power = \
+				nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]) * 0.01;
+	}
+
+	return 0;
+}
+
 static int phy_parse_info(struct nl_msg* msg, void* data) {
 	struct network_phy* phy = data;
 
@@ -262,6 +346,11 @@ static int phy_parse_info(struct nl_msg* msg, void* data) {
 
 				phy_parse_vht_capabilities(phy, vht_caps);
 			}
+
+			// Frequencies
+			if (band_attrs[NL80211_BAND_ATTR_FREQS]) {
+				phy_parse_channels(phy, band_attrs[NL80211_BAND_ATTR_FREQS]);
+			}
 		}
 	}
 
@@ -289,6 +378,13 @@ static int phy_get_info(struct network_phy* phy) {
 static void network_phy_free(struct network_phy* phy) {
 	DEBUG(phy->ctx, "Releasing phy at %p\n", phy);
 
+	// Destroy all channels
+	while (!TAILQ_EMPTY(&phy->channels)) {
+		struct network_phy_channel* channel = TAILQ_FIRST(&phy->channels);
+		TAILQ_REMOVE(&phy->channels, channel, channels);
+		free(channel);
+	}
+
 	if (phy->name)
 		free(phy->name);
 
@@ -315,6 +411,8 @@ NETWORK_EXPORT int network_phy_new(struct network_ctx* ctx, struct network_phy**
 
 	p->name = strdup(name);
 	p->index = index;
+
+	TAILQ_INIT(&p->channels);
 
 	// Load information from kernel
 	int r = phy_get_info(p);
@@ -517,4 +615,21 @@ NETWORK_EXPORT char* network_phy_list_ht_capabilities(struct network_phy* phy) {
 	}
 
 	return buffer;
+}
+
+NETWORK_EXPORT char* network_phy_list_channels(struct network_phy* phy) {
+	char string[10240] = "CHAN FREQ  DFS TXPWR\n";
+	char* p = string + strlen(string);
+
+	struct network_phy_channel* channel;
+	TAILQ_FOREACH(channel, &phy->channels, channels) {
+		p += sprintf(p, "%-4u %-5u %-3s %-4.1f\n",
+			channel->number,
+			channel->frequency,
+			(channel->dfs) ? "Y" : "N",
+			channel->max_tx_power
+		);
+	}
+
+	return strdup(string);
 }

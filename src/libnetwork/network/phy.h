@@ -67,6 +67,7 @@ enum network_phy_vht_caps {
 };
 
 
+char* network_phy_list_channels(struct network_phy* phy);
 int network_phy_has_vht_capability(struct network_phy* phy, const enum network_phy_vht_caps cap);
 char* network_phy_list_vht_capabilities(struct network_phy* phy);
 int network_phy_has_ht_capability(struct network_phy* phy, const enum network_phy_ht_caps cap);
