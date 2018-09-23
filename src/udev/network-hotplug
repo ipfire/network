@@ -84,6 +84,13 @@ case "${SUBSYSTEM}" in
 					log WARNING "Got to hotplug event for a port which does not exist: ${INTERFACE}"
 
 					# Try to remove the device again
+
+					# GRE
+					if device_is_gre "${INTERFACE}" && [ "${INTERFACE}" = "gre0" ]; then
+						log DEBUG "gre0 cannot be removed"
+						exit ${EXIT_OK}
+					fi
+
 					TYPE="$(device_get_type "${INTERFACE}")"
 					case "${TYPE}" in
 						bonding)

@@ -298,6 +298,13 @@ device_is_wireless() {
 	[ -d "${SYS_CLASS_NET}/${device}/phy80211" ]
 }
 
+device_is_gre() {
+	local device="${1}"
+	assert isset device
+
+	__device_type_matches "${device}" 778
+}
+
 device_is_vti() {
 	local device="${1}"
 	assert isset device
