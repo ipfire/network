@@ -124,6 +124,18 @@ hook_help() {
 	exit $?
 }
 
+# Sets all settings in HOOK_SETTINGS to their DEFAULT_* values
+hook_set_defaults() {
+	local setting
+	for setting in ${HOOK_SETTINGS}; do
+		local default="DEFAULT_${setting}"
+
+		if isset ${default}; then
+			assign "${setting}" "${!default}"
+		fi
+	done
+}
+
 config_get_hook() {
 	local config=${1}
 

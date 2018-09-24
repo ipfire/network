@@ -29,12 +29,10 @@ HOOK_SETTINGS="${HOOK_SETTINGS} STP_PRIORITY MTU"
 HOOK_PORT_SETTINGS="COST PRIORITY"
 
 # Default values
-MTU=1500
-STP="on"
-STP_FORWARD_DELAY=0
-STP_HELLO=2
-STP_MAXAGE=20
-STP_PRIORITY=512
+DEFAULT_STP_FORWARD_DELAY=0
+DEFAULT_STP_HELLO=2
+DEFAULT_STP_MAXAGE=20
+DEFAULT_STP_PRIORITY=512
 
 hook_check_settings() {
 	assert ismac ADDRESS
@@ -117,9 +115,17 @@ hook_parse_cmdline() {
 	done
 
 	# Generate a random MAC address if the user passed no one
-	if isset ADDRESS; then
+	if ! isset ADDRESS; then
 		ADDRESS="$(mac_generate)"
 	fi
+
+	# Enable Spanning Tree Protocol by default
+	if ! isset STP; then
+		STP="on"
+	fi
+
+	# Set all other defaults
+	hook_set_defaults
 
 	return ${EXIT_OK}
 }
