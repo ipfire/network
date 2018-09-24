@@ -23,13 +23,12 @@
 
 HOOK_MANPAGE="network-zone-bridge"
 
-HOOK_SETTINGS="HOOK STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE"
-HOOK_SETTINGS="${HOOK_SETTINGS} STP_PRIORITY MAC MTU"
+HOOK_SETTINGS="HOOK ADDRESS STP STP_FORWARD_DELAY STP_HELLO STP_MAXAGE"
+HOOK_SETTINGS="${HOOK_SETTINGS} STP_PRIORITY MTU"
 
 HOOK_PORT_SETTINGS="COST PRIORITY"
 
 # Default values
-MAC=""
 MTU=1500
 STP="on"
 STP_FORWARD_DELAY=0
@@ -38,7 +37,9 @@ STP_MAXAGE=20
 STP_PRIORITY=512
 
 hook_check_settings() {
-	assert ismac MAC
+	assert ismac ADDRESS
+
+	# Spanning Tree Protocol
 	assert isbool STP
 	assert isinteger STP_HELLO
 	assert isinteger STP_FORWARD_DELAY
@@ -49,33 +50,78 @@ hook_check_settings() {
 hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--stp=*)
-				STP=${1#--stp=}
+			--address=*)
+				ADDRESS="$(cli_get_val "${1}")"
+
+				if ! mac_is_valid "${ADDRESS}"; then
+					error "Invalid MAC address: ${ADDRESS}"
+					return ${EXIT_ERROR}
+				fi
 				;;
-			--stp-hello=*)
-				STP_HELLO=${1#--stp-hello=}
-				;;
-			--stp-forward-delay=*)
-				STP_FORWARD_DELAY=${1#--stp-forward-delay=}
-				;;
-			--stp-priority=*)
-				STP_PRIORITY=${1#--stp-priority=}
-				;;
+
 			--mtu=*)
-				MTU=${1#--mtu=}
+				MTU="$(cli_get_val "${1}")"
+
+				if ! mtu_is_valid "ethernet" "${MTU}"; then
+					error "Invalid MTU: ${MTU}"
+					return ${EXIT_ERROR}
+				fi
 				;;
-			--mac=*)
-				MAC=${1#--mac=}
+
+			--stp=*)
+				STP="$(cli_get_val "${1}")"
+
+				if enabled STP; then
+					STP="on"
+				elif disabled STP; then
+					STP="off"
+				else
+					error "Invalid value for STP: ${STP}"
+					return ${EXIT_ERROR}
+				fi
 				;;
+
+			--stp-hello=*)
+				STP_HELLO="$(cli_get_val "${1}")"
+
+				if ! isinteger STP_HELLO; then
+					error "Invalid STP hello time: ${STP_HELLO}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
+			--stp-forward-delay=*)
+				STP_FORWARD_DELAY="$(cli_get_val "${1}")"
+
+				if ! isinteger STP_FORWARD_DELAY; then
+					error "Invalid STP forwarding delay: ${STP_FORWARD_DELAY}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
+			--stp-priority=*)
+				STP_PRIORITY="$(cli_get_val "${1}")"
+
+				if ! isinteger STP_PRIORITY; then
+					error "Invalid STP priority: ${STP_PRIORITY}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
 			*)
-				warning "Ignoring unknown option '${1}'"
+				error "Unknown argument: ${1}"
+				return ${EXIT_ERROR}
 				;;
 		esac
 		shift
 	done
 
 	# Generate a random MAC address if the user passed no one
-	isset MAC || MAC="$(mac_generate)"
+	if isset ADDRESS; then
+		ADDRESS="$(mac_generate)"
+	fi
+
+	return ${EXIT_OK}
 }
 
 hook_up() {
@@ -87,7 +133,7 @@ hook_up() {
 	# Create the bridge if it does not already exist.
 	if ! device_exists "${zone}"; then
 		bridge_create "${zone}" \
-			--address="${MAC}" \
+			--address="${ADDRESS}" \
 			--mtu="${MTU}"
 	fi
 
