@@ -172,53 +172,6 @@ hook_up() {
 	exit ${EXIT_OK}
 }
 
-hook_hotplug() {
-	local zone="${1}"
-	assert isset zone
-
-	case "$(hotplug_action)" in
-		add)
-			# Attach all ports when zone is coming up
-			if hotplug_event_interface_is_zone "${zone}"; then
-				# Bring up all ports
-				local port
-				for port in $(zone_get_ports "${zone}"); do
-					log DEBUG "Trying to attach port ${port} to ${zone}"
-
-					hook_port_up "${zone}" "${port}"
-				done
-
-			# Handle ports of this zone that have just been added
-			elif hotplug_event_interface_is_port_of_zone "${zone}"; then
-				# Attach the device if the parent bridge is up
-				if zone_is_active "${zone}"; then
-					hook_port_up "${zone}" "${INTERFACE}"
-				fi
-			fi
-			;;
-		remove)
-			if hotplug_event_interface_is_zone "${zone}"; then
-				# Bring down/destroy all ports
-				local port
-				for port in $(zone_get_ports "${zone}"); do
-					log DEBUG "Trying to detach port ${port} from ${zone}"
-
-					hook_port_down "${zone}" "${port}"
-				done
-
-			# Handle ports of this zone that have just been removed
-			elif hotplug_event_interface_is_port_of_zone "${zone}"; then
-				hook_port_down "${zone}" "${INTERFACE}"
-			fi
-			;;
-		*)
-			exit ${EXIT_NOT_HANDLED}
-			;;
-	esac
-
-	exit ${EXIT_OK}
-}
-
 hook_down() {
 	local zone="${1}"
 	assert isset zone
@@ -290,6 +243,55 @@ hook_status() {
 	cli_headline 2 "Configurations"
 	zone_configs_cmd status "${zone}"
 	cli_space
+
+	exit ${EXIT_OK}
+}
+
+hook_hotplug() {
+	local zone="${1}"
+	assert isset zone
+
+	case "$(hotplug_action)" in
+		add)
+			# Attach all ports when zone is coming up
+			if hotplug_event_interface_is_zone "${zone}"; then
+				# Bring up all ports
+				local port
+				for port in $(zone_get_ports "${zone}"); do
+					log DEBUG "Trying to attach port ${port} to ${zone}"
+
+					hook_port_up "${zone}" "${port}"
+				done
+
+			# Handle ports of this zone that have just been added
+			elif hotplug_event_interface_is_port_of_zone "${zone}"; then
+				# Attach the device if the parent bridge is up
+				if zone_is_active "${zone}"; then
+					hook_port_up "${zone}" "${INTERFACE}"
+				fi
+			fi
+			;;
+
+		remove)
+			if hotplug_event_interface_is_zone "${zone}"; then
+				# Bring down/destroy all ports
+				local port
+				for port in $(zone_get_ports "${zone}"); do
+					log DEBUG "Trying to detach port ${port} from ${zone}"
+
+					hook_port_down "${zone}" "${port}"
+				done
+
+			# Handle ports of this zone that have just been removed
+			elif hotplug_event_interface_is_port_of_zone "${zone}"; then
+				hook_port_down "${zone}" "${INTERFACE}"
+			fi
+			;;
+
+		*)
+			exit ${EXIT_NOT_HANDLED}
+			;;
+	esac
 
 	exit ${EXIT_OK}
 }
