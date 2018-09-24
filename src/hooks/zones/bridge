@@ -79,20 +79,20 @@ hook_parse_cmdline() {
 				fi
 				;;
 
-			--stp-hello=*)
-				STP_HELLO="$(cli_get_val "${1}")"
-
-				if ! isinteger STP_HELLO; then
-					error "Invalid STP hello time: ${STP_HELLO}"
-					return ${EXIT_ERROR}
-				fi
-				;;
-
 			--stp-forward-delay=*)
 				STP_FORWARD_DELAY="$(cli_get_val "${1}")"
 
 				if ! isinteger STP_FORWARD_DELAY; then
 					error "Invalid STP forwarding delay: ${STP_FORWARD_DELAY}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
+			--stp-hello=*)
+				STP_HELLO="$(cli_get_val "${1}")"
+
+				if ! isinteger STP_HELLO; then
+					error "Invalid STP hello time: ${STP_HELLO}"
 					return ${EXIT_ERROR}
 				fi
 				;;
