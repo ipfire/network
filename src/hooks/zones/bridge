@@ -38,13 +38,13 @@ STP_PRIORITY=512
 
 hook_check_settings() {
 	assert ismac ADDRESS
+	assert isset MTU && assert mtu_is_valid "ethernet" "${MTU}"
 
 	# Spanning Tree Protocol
 	assert isbool STP
 	assert isinteger STP_HELLO
 	assert isinteger STP_FORWARD_DELAY
 	assert isinteger STP_PRIORITY
-	assert isinteger MTU
 }
 
 hook_parse_cmdline() {
