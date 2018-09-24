@@ -97,6 +97,15 @@ hook_parse_cmdline() {
 				fi
 				;;
 
+			--stp-max-age=*)
+				STP_MAXAGE="$(cli_get_val "${1}")"
+
+				if ! isinteger STP_MAXAGE; then
+					error "Invalid STP max age: ${STP_MAXAGE}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
 			--stp-priority=*)
 				STP_PRIORITY="$(cli_get_val "${1}")"
 
