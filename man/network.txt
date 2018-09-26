@@ -1,0 +1,107 @@
+network(8)
+==========
+
+NAME
+----
+network - IPFire Network Configuration Program
+
+SYNOPSIS
+--------
+[verse]
+'network' [<options>] <command> ...
+
+DESCRIPTION
+-----------
+The 'network' command is a tool which configures the network on every IPFire
+system. It is a fast and versatile way to create, edit and remove configurations,
+review the status of the network and it is working in the background of the
+system make sure that things are running smoothly.
+
+OPTIONS
+-------
+-d::
+--debug::
+	Enabled debugging mode.
+	In this mode, there wll be debug output on the console and written to
+	the log.
+	The debugging mode can be permanently enabled by setting 'DEBUG=1'.
+
+COMMANDS
+--------
+The following commands are understood:
+
+'start' [ZONE]::
+	Starts a zone. That means the zone is being created and brought up.
+	If one or more zones are passed to the command, only these will be
+	started.
+
+'stop' [ZONE]::
+	Stops a zone. This is the inverse of the 'start' command.
+
+'restart' [ZONE]::
+	Restarts a zone.
+
+'status' [ZONE]::
+	Shows an overview of the status of the zone.
+
+'zone' ...::
+	Commands to configure zones. See link:network-zone[8] for details.
+
+'port' ...::
+	Commands to configure ports. See link:network-port[8] for details.
+
+'device' ...::
+	See the status or execute commands to network devices.
+	See link:network-device[8] for details.
+
+'hostname' [HOSTNAME]::
+	Without the optional 'HOSTNAME' argument, this command will print
+	the configured hostname.
+	Passing 'HOSTNAME' will set it as the new hostname.
+
+'settings' ...::
+	Shows and alters global configuration parameters.
+	See link:network-settings[8] for details.
+
+'dns-server' ...::
+	This command allows to configure DNS servers.
+	See link::network-dns-server[8] for details.
+
+'route' ...::
+	This command allows managing static routes.
+	See link:network-route[8] for details.
+
+'vpn' ...::
+	The command allows managing VPN connections.
+	See link:network-vpn[8] for details.
+
+'reset'::
+	This command will reset all network configuration.
+	All zones, ports and other settings will be removed.
+
+'help' ...::
+	Shows this man page.
+
+EXIT CODES
+----------
+The 'network' command will normally exit with code zero.
+If there has been aproblem and the requested action could not be performed,
+the exit code is unequal to zero.
+
+BUGS
+----
+Please report all bugs to the bugtracker at https://bugzilla.ipfire.org/.
+
+AUTHORS
+-------
+Michael Tremer
+
+SEE ALSO
+--------
+link:network-settings[8]
+link:network-device[8]
+link:network-dns-server[8]
+link:network-performance-tuning[8]
+link:network-port[8]
+link:network-quick-start[8]
+link:network-zone[8]
