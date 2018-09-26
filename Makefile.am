@@ -508,14 +508,18 @@ XSLTPROC_COMMAND_MAN = \
 	$(AM_V_XSLT)$(XSLTPROC) -o $@ $(XSLTPROC_FLAGS) \
 		http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
 
-man/%.xml: man/%.txt
-	$(AM_V_ASCIIDOC)$(ASCIIDOC) -d manpage -b docbook -o $@ $<
+man/%.xml: man/%.txt man/asciidoc.conf
+	$(AM_V_ASCIIDOC)$(ASCIIDOC) \
+		-f man/asciidoc.conf \
+		-d manpage -b docbook -o $@ $<
 
 man/%.8: man/%.xml
 	$(XSLTPROC_COMMAND_MAN)
 
-man/%.html: man/%.txt
-	$(AM_V_ASCIIDOC)$(ASCIIDOC) -b html5 -a icons -a theme=flask -o $@ $<
+man/%.html: man/%.txt man/asciidoc.conf
+	$(AM_V_ASCIIDOC)$(ASCIIDOC) \
+		-f man/asciidoc.conf \
+		-b html5 -a icons -a theme=flask -o $@ $<
 
 # ------------------------------------------------------------------------------
 
