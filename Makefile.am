@@ -89,6 +89,10 @@ INSTALL_EXEC_HOOKS += \
 
 # ------------------------------------------------------------------------------
 
+AM_V_ASCIIDOC   = $(AM_V_ASCIIDOC_$(V))
+AM_V_ASCIIDOC_  = $(AM_V_ASCIIDOC_$(AM_DEFAULT_VERBOSITY))
+AM_V_ASCIIDOC_0 = @echo "  ASCIIDOC" $@;
+
 AM_V_DOWNLOAD   = $(AM_V_DOWNLOAD_$(V))
 AM_V_DOWNLOAD_  = $(AM_V_DOWNLOAD_$(AM_DEFAULT_VERBOSITY))
 AM_V_DOWNLOAD_0 = @echo "  LOAD    " $@;
@@ -443,6 +447,7 @@ INSTALL_DIRS += \
 # ------------------------------------------------------------------------------
 
 MANPAGES = \
+	man/test.8 \
 	man/firewall-settings.8 \
 	man/network.8 \
 	man/network-color.8 \
@@ -466,8 +471,8 @@ MANPAGES = \
 	man/network-zone-pppoe.8 \
 	man/network-zone-wireless.8
 
-MANPAGES_XML  = $(patsubst %.8,%.xml,$(MANPAGES))
-MANPAGES_HTML = $(patsubst %.xml,%.html,$(MANPAGES_XML))
+MANPAGES_TXT  = $(patsubst %.8,%.txt,$(MANPAGES))
+MANPAGES_HTML = $(patsubst %.txt,%.html,$(MANPAGES))
 
 .PHONY: man
 man: $(MANPAGES) $(MANPAGES_HTML)
@@ -483,7 +488,7 @@ CLEANFILES += \
 	$(MANPAGES_HTML)
 
 EXTRA_DIST += \
-	$(MANPAGES_XML) \
+	$(MANPAGES_TXT) \
 	man/custom-html.xsl
 
 XSLTPROC_FLAGS = \
@@ -500,6 +505,9 @@ XSLTPROC_COMMAND_MAN = \
 
 XSLTPROC_COMMAND_HTML = \
 	$(AM_V_XSLT)$(XSLTPROC) -o $@ $(XSLTPROC_FLAGS) $(srcdir)/man/custom-html.xsl $<
+
+man/%.xml: man/%.txt
+	$(AM_V_ASCIIDOC)$(ASCIIDOC) -d manpage -b docbook -o $@ $<
 
 man/%.8: man/%.xml
 	$(XSLTPROC_COMMAND_MAN)
