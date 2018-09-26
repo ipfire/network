@@ -494,8 +494,7 @@ CLEANFILES += \
 	$(MANPAGES_HTML)
 
 EXTRA_DIST += \
-	$(MANPAGES_TXT) \
-	man/custom-html.xsl
+	$(MANPAGES_TXT)
 
 XSLTPROC_FLAGS = \
 	--nonet \
@@ -509,17 +508,14 @@ XSLTPROC_COMMAND_MAN = \
 	$(AM_V_XSLT)$(XSLTPROC) -o $@ $(XSLTPROC_FLAGS) \
 		http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
 
-XSLTPROC_COMMAND_HTML = \
-	$(AM_V_XSLT)$(XSLTPROC) -o $@ $(XSLTPROC_FLAGS) $(srcdir)/man/custom-html.xsl $<
-
 man/%.xml: man/%.txt
 	$(AM_V_ASCIIDOC)$(ASCIIDOC) -d manpage -b docbook -o $@ $<
 
 man/%.8: man/%.xml
 	$(XSLTPROC_COMMAND_MAN)
 
-man/%.html: man/%.xml man/custom-html.xsl
-	$(XSLTPROC_COMMAND_HTML)
+man/%.html: man/%.txt
+	$(AM_V_ASCIIDOC)$(ASCIIDOC) -b html5 -a icons -a theme=flask -o $@ $<
 
 # ------------------------------------------------------------------------------
 
