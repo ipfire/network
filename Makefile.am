@@ -447,7 +447,6 @@ INSTALL_DIRS += \
 # ------------------------------------------------------------------------------
 
 MANPAGES = \
-	man/test.8 \
 	man/firewall-settings.8 \
 	man/network.8 \
 	man/network-color.8 \
