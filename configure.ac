@@ -143,6 +143,10 @@ PKG_CHECK_MODULES([LIBNL], [libnl-3.0 libnl-genl-3.0])
 
 # ------------------------------------------------------------------------------
 
+AC_CHECK_PROGS(ASCIIDOC, [asciidoc])
+
+# ------------------------------------------------------------------------------
+
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
 	Makefile
