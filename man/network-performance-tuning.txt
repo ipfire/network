@@ -1,0 +1,33 @@
+network-performance-tuning(8)
+=============================
+
+NAME
+----
+network-performance-tuning - Performance Tuning for Networking
+
+DESCRIPTION
+-----------
+This page contains a summary of some performance tuning techniques
+that this system is using.
+
+=== SMP Affinity
+
+This system is automatically using SMP affinity for every physical
+network controller, if supported.
+
+A processor core is assigned to handle all interrupts of a certain
+network controller which will result in minimising cache misses,
+reducing network latency and quite possibly increasing throughput.
+
+The algorithm is trying to balance all network controllers across
+all processors.
+
+See /proc/interrups for the distribution of interrupts. 
+
+AUTHORS
+-------
+Michael Tremer
+
+SEE ALSO
+--------
+link:network[8]
