@@ -39,8 +39,14 @@ hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--address=*)
-				ADDRESS=$(cli_get_val "${1}")
+				ADDRESS="$(cli_get_val "${1}")"
+
+				if ! mac_is_valid "${ADDRESS}"; then
+					error "Invalid MAC address: ${ADDRESS}"
+					return ${EXIT_ERROR}
+				fi
 				;;
+
 			--miimon=*)
 				MIIMON=$(cli_get_val "${1}")
 				;;
