@@ -1,0 +1,75 @@
+network-dns-server(8)
+=====================
+
+NAME
+----
+network-dns-server - Controls the DNS settings
+
+SYNOPSIS
+--------
+[verse]
+'network dns-server' add SERVER [PRIORITY]
+'network dns-server' remove SERVER
+'network dns-server' list
+'network dns-server' update
+
+DESCRIPTION
+-----------
+With this command, you will be able to configure the local DNS
+configuration.
+
+You may add and remove DNS servers as well as view the settings.
+
+COMMANDS
+--------
+The following commands are understood:
+
+'add' SERVER [PRIORITY]::
+	A new DNS server may be added to the list by the
+	'add' command.
+	A priority that will rank the server my optionally be given.
+
+	NOTE: SERVER must be a valid IP address and PRIORITY
+	must be a positive number.
+	The smaller this number, the higher is is the rank of
+	the server.
+
+'remove' SERVER::
+	The given server will be removed from the list of DNS servers.
+
+'list'::
+	Shows a list of all servers that are currently in use.
+
+'update'::
+	This command will re-create the system's configuration
+	files. It should not be required to use this command
+	very often.
+
+SETTINGS
+--------
+The following settings may be set using link:network-settings[8]:
+
+'DNS_USE_LOCAL_RESOLVER = [true|false]'::
+	This option defines whether the local DNS resolver should
+	be used or not.
+
+	Basically, the option adds localhost to the list of nameservers
+	in link:resolv.conf[5].
+
+'DNS_SEARCH_DOMAINS ='::
+	This setting configures the search domains for DNS queries
+	made by the local system.
+
+'DNS_RANDOMIZE = [true|false]'::
+	This option will break the DNS server ranks and will query
+	them in a random order which is useful to load-balance
+	multiple DNS servers.
+
+AUTHORS
+-------
+Michael Tremer
+
+SEE ALSO
+--------
+link:network[8],
+link:network-settings[8]
