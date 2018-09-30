@@ -1,0 +1,92 @@
+network-quick-start(8)
+======================
+
+NAME
+----
+network-quick-start - Quick Start Guide for Networking
+
+DESCRIPTION
+-----------
+The link:network[8] is a very powerful command that allows you to configure
+the entire networking stack.
+Unfortunately that makes it quite complicated to use as well.
+
+This guide tries to be a good starting point to set up basic networking with
+the 'network' command.
+
+=== Adding an Uplink Zone
+
+The first step is to create a new uplink zone with name 'upl0'.
+
+This zone will be of the link:network-zone-bridge[8] type which is the default
+for all local networks.
+
+------------
+# network zone new upl0 bridge
+------------
+
+The zone will be created and brought up immediately.
+
+=== Attaching Ports
+
+To connect the zone to the physical world outside of our box we will need
+to attach ports to the zone. That is done with a single command.
+To execute this command, we will need to know which ports are available.
+One of the easiest way to find out about that is to use the auto-completion
+feature of the shell like this:
+
+------------
+# network zone upl0 port attach [TAB] [TAB]
+------------
+
+That will list all not yet attached ports. The following command will actually
+attach the port (which is 'p0' in this example).
+
+-----------
+# network zone upl0 port attach p0
+-----------
+
+You can as well get a list of all detected devices, zones and ports by running:
+
+-----------
+# network device list
+-----------
+
+To a zone of the 'bridge' type you may attach more than just one port if you
+wish to.
+
+=== IP Connectivity
+
+After a zone has been created and ports have been attached, you are now
+able to add IP connectivity.
+
+The easiest way to do that is using DHCP which can be enabled by this simple command:
+
+------------
+# network zone upl0 config new dhcp
+------------
+
+=== Debugging
+
+You may see the current status of the network by running this command:
+
+------------
+# network status
+------------
+
+The entire network can be restarted by running:
+
+------------
+# network restart
+------------
+
+AUTHORS
+-------
+Michael Tremer
+
+SEE ALSO
+--------
+link:network[8],
+link:network-device[8],
+link:network-port[8],
+link:network-zone[8]
