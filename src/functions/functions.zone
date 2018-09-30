@@ -619,10 +619,6 @@ zone_config_list() {
 	done
 }
 
-zone_config_show() {
-	zone_config_cmd "show" "$@"
-}
-
 # Returns a list of all used ids for a zone
 zone_config_list_ids() {
 	assert [ $# -eq 1 ]
