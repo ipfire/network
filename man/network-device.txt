@@ -1,0 +1,61 @@
+network(8)
+==========
+
+NAME
+----
+network-device - Controls network devices
+
+SYNOPSIS
+--------
+[verse]
+'network device' [<options>] <command> ...
+
+DESCRIPTION
+-----------
+The 'network device' command shows low-level status information
+of network devices and other things.
+
+COMMANDS
+--------
+The following commands are understood:
+
+'list'::
+	This command shows a list of all device that are currently present
+	on this system. This includes PHYs and serial devices as well.
+
+'DEVICE discover'::
+	Runs a discovery for many hooks on the given device.
+
+	This will check if the hook can find for example a DHCP server or
+	DSLAM and thus predict for what the device should be used.
+
+'DEVICE identify'::
+	This command only works for Ethernet adapters and will make those
+	that support this feature flash for a few seconds.
+
+	It is handy to find the right device to put the cable in.
+
+'DEVICE monitor'::
+	This command creates a monitor interface for wireless modules.
+
+	An instance of link:tcpdump[8] will be started and show all
+	frames that are sent or received on the 802.11 layer (layer 2).
+
+'DEVICE status'::
+	This will show you very detailed information about the given device.
+
+'DEVICE unlock'::
+	This command will unlock the SIM card in a modem.
+	Only serial devices are supported which are the most 4G or 3G modems.
+
+	For the PIN or PUK code, the user will be prompted.
+
+AUTHORS
+-------
+Michael Tremer
+
+SEE ALSO
+--------
+link:network[8]
+link:network-port[8]
+link:network-zone[8]
