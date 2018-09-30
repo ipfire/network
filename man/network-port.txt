@@ -10,7 +10,8 @@ SYNOPSIS
 [verse]
 'network port' new HOOK ...
 'network port' destroy PORT
-'network port' PORT color
+'network port' PORT color set <color>
+'network port' PORT color reset
 'network port' PORT create
 'network port' PORT description edit
 'network port' PORT description show
@@ -45,9 +46,7 @@ The following commands are understood:
 
 For all other commands, the name of the port needs to be passed first:
 
-'color'::
-	This command allows settings a color for a port.
-	See link:network-color[8] for more information.
+include::include-color.txt[]
 
 'create'::
 	This will create devices for the existing port PORT.
