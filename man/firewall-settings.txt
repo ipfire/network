@@ -1,0 +1,97 @@
+firewall-settings(8)
+====================
+
+NAME
+----
+firewall-settings - Global firewall settings
+
+SYNOPSIS
+--------
+[verse]
+'firewall settings'
+'firewall settings' KEY=VALUE ...
+
+DESCRIPTION
+-----------
+This command is used to set global firewall settings.
+Please have a look at the individual man pages for more options.
+
+COMMANDS
+--------
+If no argument is given, the configuration will be dumped to the console.
+
+You may set a new value by adding the variable name and the new value to
+the command line.
+
+SETTINGS
+--------
+=== CONNTRACK_MAX_CONNECTIONS = 16384
+Limits the max. number of simultaneous connections.
+
+Modify this if you want to handle a larger number of concurrent
+connections. Every connection will use approx. 16 kBytes of memory.
+
+=== CONNTRACK_UDP_TIMEOUT = 60
+Defines the timeout (in seconds) the kernel will wait until
+a half-assured UDP connection is fully established.
+
+=== FIREWALL_ACCEPT_ICMP_REDIRECTS = [true|false]
+Enable if you want to accept ICMP redirect messages.
+
+=== FIREWALL_CLAMP_PATH_MTU = [true|false]
+If Path MTU Discovery does not work well, enable this option.
+
+It sets the MSS value of a packet so that the remote site would
+never send a packet bigger than the MSS value.
+
+No ICMP packets are needed to make this work, so use this on
+networks with broken ICMP filtering.
+
+=== FIREWALL_DEFAULT_TTL = 64
+Here you can change the default TTL used for sending packets.
+
+The given value must be between 10 and 255.
+Don't mess with this unless you know what you are doing.
+
+=== FIREWALL_LOG_BAD_TCP_FLAGS = [true|false]
+Enable this to log TCP packets with bad flags or options.
+
+=== FIREWALL_LOG_INVALID_ICMP = [true|false]
+Enable this to log INVALID ICMP packets.
+
+=== FIREWALL_LOG_INVALID_TCP = [true|false]
+Enable this to log INVALID TCP packets.
+
+=== FIREWALL_LOG_INVALID_UDP = [true|false]
+Enable this to log INVALID UDP packets.
+
+=== FIREWALL_LOG_MARTIANS = [true|false]
+Enable this to log packets with impossible addresses.
+
+=== FIREWALL_LOG_STEALTH_SCANS = [true|false]
+Enable this to log all stealth scans.
+
+=== FIREWALL_PMTU_DISCOVERY = [true|false]
+Enables Path MTU Discovery.
+
+=== FIREWALL_RP_FILTER = [true|false]
+Enable to drop connection from non-routable IPs,
+e.g. prevent source routing.
+
+=== FIREWALL_SYN_COOKIES = [true|false]
+Enable for SYN-flood protection.
+
+=== FIREWALL_USE_ECN = [true|false]
+Enables the ECN (Explicit Congestion Notification) TCP flag.
+
+Some routers on the Internet still do not support ECN properly.
+When this setting is disabled, ECN is only advertised
+when asked for.
+
+AUTHORS
+-------
+Michael Tremer
+
+SEE ALSO
+--------
+link:firewall[8]
