@@ -60,7 +60,7 @@ bird_generate_config() {
 		print
 
 		print "# Export all routes to kernel"
-		for proto in ipv6 ipv4; do
+		for proto in ${IP_SUPPORTED_PROTOCOLS}; do
 			print "protocol kernel {"
 			print "	${proto} {"
 			print "		table ${proto/ipv/master};"
@@ -71,4 +71,54 @@ bird_generate_config() {
 			print
 		done
 	) >> ${BIRD_CONF}
+
+	# Static routes
+	for proto in ${IP_SUPPORTED_PROTOCOLS}; do
+		print "protocol static {"
+		print "	${proto};"
+		print
+
+		# Read routes for this protocol from configuration
+		__bird_static_routes "${proto}"
+
+		print "}"
+		print
+	done >> ${BIRD_CONF}
+}
+
+__bird_static_routes() {
+	local proto="${1}"
+	assert isset proto
+
+	local ${NETWORK_CONFIG_ROUTES_PARAMS}
+	local line
+	while read line; do
+		route_parse_line "${line}"
+		[ $? -eq ${EXIT_OK} ] || continue
+
+		local type
+		local arg
+		for arg in unreachable prohibit blackhole; do
+			if enabled "${arg}"; then
+				type="${arg}"
+				break
+			fi
+		done
+
+		# Skip all routes of another protocol
+		local _proto="$(ip_detect_protocol "${network}")"
+		if [ "${proto}" != "${_proto}" ]; then
+			continue
+		fi
+
+		case "${type}" in
+			unreachable|prohibit|blackhole)
+				print "	route ${network} ${type};"
+				;;
+
+			*)
+				print "	route ${network} via ${gateway};"
+				;;
+		esac
+	done < ${NETWORK_CONFIG_ROUTES}
 }

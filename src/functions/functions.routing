@@ -181,7 +181,4 @@ routing_update() {
 	cmd ${routing_cmd}
 
 	cmd ${ip_cmd} rule add from ${local_ip_address} lookup ${table}
-
-	# Apply all static routes
-	route_apply
 }

@@ -393,41 +393,11 @@ route_parse_line() {
 }
 
 route_apply() {
-	local table="static"
-	local type
+	# Re-generate BIRD configuration
+	bird_generate_config
 
-	log DEBUG "Applying static routes..."
-
-	# Flush the routing table.
-	route_table_flush ${table}
-
-	local ${NETWORK_CONFIG_ROUTES_PARAMS}
-	local line
-	while read line; do
-		route_parse_line ${line}
-		[ $? -eq ${EXIT_OK} ] || continue
-
-		type="unicast"
-		local arg
-		for arg in unreachable prohibit blackhole; do
-			if enabled ${arg}; then
-				type="${arg}"
-				break
-			fi
-		done
-
-		# Add the route.
-		route_entry_add ${network} --table="static" --proto="static" \
-			--type="${type}" --gateway="${gateway}" --mtu="${mtu}"
-		local ret=$?
-
-		if [ ${ret} -ne ${EXIT_OK} ]; then
-			log WARNING "Could not set route '${network}'."
-		fi
-	done < ${NETWORK_CONFIG_ROUTES}
-
-	# Create a lookup rule for the static routing table.
-	route_rule_add --lookup="static" --priority=1000
+	# Reload the daemon
+	bird_reload
 }
 
 route_entry_add() {
