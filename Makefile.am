@@ -127,6 +127,7 @@ EXTRA_DIST += \
 dist_network_DATA = \
 	src/functions/functions.at \
 	src/functions/functions.auth \
+	src/functions/functions.bird \
 	src/functions/functions.bonding \
 	src/functions/functions.bridge \
 	src/functions/functions.cli \

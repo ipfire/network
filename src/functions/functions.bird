@@ -1,0 +1,74 @@
+#!/bin/bash
+###############################################################################
+#                                                                             #
+# IPFire.org - A linux based firewall                                         #
+# Copyright (C) 2018  IPFire Network Development Team                         #
+#                                                                             #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
+###############################################################################
+
+BIRD_CONF="/etc/bird.conf"
+
+bird_start() {
+	service_start "bird.service"
+}
+
+bird_stop() {
+	service_stop "bird.service"
+}
+
+bird_reload() {
+	service_reload "bird.service"
+}
+
+bird_generate_config() {
+	log DEBUG "Write BIRD configuration file"
+
+	# Write header
+	config_header "bird" > ${BIRD_CONF}
+
+	# Write some basic settings
+	local proto
+	(
+		print "# Log everything to syslog"
+		print "log syslog all;"
+		print
+
+		print "# Turn on internal watchdog"
+		print "watchdog warning 5s;"
+		print "watchdog timeout 30s;"
+		print
+
+		print "# Define default route tables"
+		print "ipv6 table master6;"
+		print "ipv4 table master4;"
+
+		print "# Enable device configuration"
+		print "protocol device {}"
+		print
+
+		print "# Export all routes to kernel"
+		for proto in ipv6 ipv4; do
+			print "protocol kernel {"
+			print "	${proto} {"
+			print "		table ${proto/ipv/master};"
+			print "		export all;"
+			print "	};"
+			print "	learn;"
+			print "}"
+			print
+		done
+	) >> ${BIRD_CONF}
+}
