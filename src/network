@@ -1410,6 +1410,9 @@ case "${action}" in
 		# Update resolv.conf(5) when initializing the network
 		dns_generate_resolvconf
 
+		# Update bird configuration
+		bird_generate_config
+
 		# Also execute all triggers
 		triggers_execute_all "init"
 		;;
