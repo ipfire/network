@@ -245,6 +245,9 @@ dns_generate_resolvconf() {
 
 	config_header "resolver configutation file" > ${file}
 
+	# Always enable EDNS0
+	print "option edns0\n" >> "${file}"
+
 	if enabled DNS_RANDOMIZE; then
 		print "option rotate\n" >> ${file}
 	fi
