@@ -36,6 +36,7 @@ hostapd_config_write() {
 	local broadcast_ssid
 	local channel
 	local country_code="$(wireless_get_reg_domain)"
+	local dfs="on"
 	local encryption
 	local key
 	local mode
@@ -49,6 +50,9 @@ hostapd_config_write() {
 				;;
 			--channel=*)
 				channel=$(cli_get_val "${1}")
+				;;
+			--dfs=*)
+				dfs="$(cli_get_val "${1}")"
 				;;
 			--encryption=*)
 				encryption=$(cli_get_val "${1}")
@@ -177,7 +181,11 @@ hostapd_config_write() {
 		print "ieee80211d=1"
 
 		# Enable Radar Detection
-		print "ieee80211h=1"
+		if enabled dfs; then
+			print "ieee80211h=1"
+		else
+			print "ieee80211h=0"
+		fi
 
 		print # empty line
 

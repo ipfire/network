@@ -33,12 +33,16 @@ ENCRYPTION=""
 KEY=""
 SSID=
 
+# Perform radar detection by default when possible
+DFS="on"
+
 hook_check_settings() {
 	assert isset ADDRESS
 	assert ismac ADDRESS
 	assert isset BROADCAST_SSID
 	assert isbool BROADCAST_SSID
 	assert isset CHANNEL
+	assert isbool DFS
 	assert isset MODE
 	assert isoneof MODE ${HOSTAPD_SUPPORTED_MODES}
 	assert isset PHY
@@ -62,6 +66,18 @@ hook_parse_cmdline() {
 				;;
 			--channel=*)
 				CHANNEL=$(cli_get_val "${1}")
+				;;
+			--dfs=*)
+				DFS="$(cli_get_val "${1}")"
+
+				if enabled DFS; then
+					DFS="on"
+				elif disabled DFS; then
+					DFS="off"
+				else
+					error "Invalid value for DFS: ${DFS}"
+					return ${EXIT_ERROR}
+				fi
 				;;
 			--encryption=*)
 				ENCRYPTION=$(cli_get_val "${1}")
