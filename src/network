@@ -277,6 +277,13 @@ cli_device_status_phy() {
 		cli_space
 	fi
 
+	cli_headline 2 "Features"
+
+	cli_print_fmt1 2 "DFS" \
+		"$(phy_supports_dfs "${phy}" && print "Supported" || print "Not Supported")"
+
+	cli_space
+
 	return ${EXIT_OK}
 }
 

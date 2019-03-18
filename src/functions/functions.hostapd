@@ -181,7 +181,7 @@ hostapd_config_write() {
 		print "ieee80211d=1"
 
 		# Enable Radar Detection
-		if enabled dfs; then
+		if enabled dfs && wireless_supports_dfs "${device}"; then
 			print "ieee80211h=1"
 		else
 			print "ieee80211h=0"
