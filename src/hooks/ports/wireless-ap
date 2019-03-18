@@ -29,6 +29,7 @@ HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION KEY"
 ADDRESS=$(mac_generate)
 BROADCAST_SSID=on
 CHANNEL=0
+CHANNEL_BANDWIDTH=
 ENCRYPTION=""
 KEY=""
 SSID=
@@ -66,6 +67,9 @@ hook_parse_cmdline() {
 				;;
 			--channel=*)
 				CHANNEL=$(cli_get_val "${1}")
+				;;
+			--channel-bandwidth=*)
+				CHANNEL_BANDWIDTH="$(cli_get_val "${1}")"
 				;;
 			--dfs=*)
 				DFS="$(cli_get_val "${1}")"
@@ -118,6 +122,12 @@ hook_parse_cmdline() {
 	# MODE must be set
 	if ! isset MODE; then
 		error "--mode is not set"
+		return ${EXIT_ERROR}
+	fi
+
+	# Channel bandwidth must match the mode
+	if isset CHANNEL_BANDWIDTH && ! wireless_channel_bandwidth_is_valid "${MODE}" "${CHANNEL_BANDWIDTH}"; then
+		error "Channel Bandwidth '${CHANNEL_BANDWIDTH}' is not supported"
 		return ${EXIT_ERROR}
 	fi
 

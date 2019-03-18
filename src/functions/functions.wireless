@@ -29,6 +29,14 @@ WIRELESS_DEFAULT_ENCRYPTION_MODE="NONE"
 WIRELESS_VALID_ENCRYPTION_MODES="WPA2-PSK-SHA256 WPA2-PSK \
 	WPA-PSK-SHA256 WPA-PSK NONE"
 
+declare -A WIRELESS_CHANNEL_BANDWIDTHS=(
+	["802.11ac"]="20 40 80 160 80+80"
+	["802.11a/n"]="20 40"
+	["802.11a"]="20 40"
+	["802.11g/n"]="20 40"
+	["802.11g"]="20 40"
+)
+
 cli_wireless() {
 	local action=${1}
 	shift 1
@@ -307,6 +315,18 @@ wireless_channel_is_valid() {
 
 	# Invalid channel number given
 	return ${EXIT_FALSE}
+}
+
+wireless_channel_bandwidth_is_valid() {
+	local mode="${1}"
+	assert isset mode
+
+	local bandwidth="${2}"
+	assert isset bandwidth
+
+	local bandwidths="${WIRELESS_CHANNEL_BANDWIDTHS["${mode}"]}"
+
+	list_match "${bandwidth}" ${bandwidths}
 }
 
 wireless_channel_is_ht40_plus() {
