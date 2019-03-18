@@ -127,7 +127,7 @@ hook_parse_cmdline() {
 
 	# Channel bandwidth must match the mode
 	if isset CHANNEL_BANDWIDTH && ! wireless_channel_bandwidth_is_valid "${MODE}" "${CHANNEL_BANDWIDTH}"; then
-		error "Channel Bandwidth '${CHANNEL_BANDWIDTH}' is not supported"
+		error "Channel Bandwidth '${CHANNEL_BANDWIDTH}' is not supported for ${MODE}"
 		return ${EXIT_ERROR}
 	fi
 

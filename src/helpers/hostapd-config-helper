@@ -40,6 +40,7 @@ case "${action}" in
 		hostapd_config_write ${port} ${config_file} \
 			--broadcast-ssid="${BROADCAST_SSID}" \
 			--channel="${CHANNEL}" \
+			--channel-bandwidth="${CHANNEL_BANDWIDTH}" \
 			--dfs="${DFS}" \
 			--encryption="${ENCRYPTION}" \
 			--key="${KEY}" \

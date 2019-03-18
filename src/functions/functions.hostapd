@@ -35,6 +35,7 @@ hostapd_config_write() {
 
 	local broadcast_ssid
 	local channel
+	local channel_bandwidth
 	local country_code="$(wireless_get_reg_domain)"
 	local dfs="on"
 	local encryption
@@ -50,6 +51,9 @@ hostapd_config_write() {
 				;;
 			--channel=*)
 				channel=$(cli_get_val "${1}")
+				;;
+			--channel-bandwidth=*)
+				channel_bandwidth="$(cli_get_val "${1}")"
 				;;
 			--dfs=*)
 				dfs="$(cli_get_val "${1}")"
@@ -107,10 +111,17 @@ hostapd_config_write() {
 		assert isset key
 	fi
 
+	# Check channel bandwidth for validity
+	if isset channel_bandwidth && ! wireless_channel_bandwidth_is_valid "${mode}" "${channel_bandwidth}"; then
+		error "Invalid channel bandwidth for ${mode}: ${channel_bandwidth}"
+		return ${EXIT_ERROR}
+	fi
+
 	# 802.11ac/n flags
 	local ieee80211ac
 	local ieee80211n
 	local vht_caps
+	local vht_oper_chwidth="0"
 	local ht_caps
 
 	local hw_mode
@@ -149,6 +160,18 @@ hostapd_config_write() {
 
 			# Fetch HT caps
 			ht_caps="$(wireless_get_ht_caps "${device}")"
+
+			case "${channel_bandwidth}" in
+				80)
+					vht_oper_chwidth="1"
+					;;
+				160)
+					vht_oper_chwidth="2"
+					;;
+				80+80)
+					vht_oper_chwidth="3"
+					;;
+			esac
 			;;
 	esac
 
@@ -220,6 +243,9 @@ hostapd_config_write() {
 
 		# Enable HT caps
 		print "ht_capab=${ht_caps}"
+
+		# Wider Channels
+		print "vht_oper_chwidth=${vht_oper_chwidth}"
 
 		print
 	) >> ${file}
