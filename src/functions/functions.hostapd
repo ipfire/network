@@ -111,6 +111,12 @@ hostapd_config_write() {
 		assert isset key
 	fi
 
+	# With channel 0, ACS must be supported
+	if [ ${channel} -eq 0 ] && ! wireless_supports_acs "${device}"; then
+		error "ACS requested, but not supported by ${device}"
+		return ${EXIT_ERROR}
+	fi
+
 	# Check channel bandwidth for validity
 	if isset channel_bandwidth && ! wireless_channel_bandwidth_is_valid "${mode}" "${channel_bandwidth}"; then
 		error "Invalid channel bandwidth for ${mode}: ${channel_bandwidth}"

@@ -28,7 +28,7 @@ HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION KEY SSID"
 
 ADDRESS=$(mac_generate)
 BROADCAST_SSID=on
-CHANNEL=0
+CHANNEL=
 CHANNEL_BANDWIDTH=
 ENCRYPTION=""
 KEY=""
@@ -123,6 +123,13 @@ hook_parse_cmdline() {
 	if ! isset MODE; then
 		error "--mode is not set"
 		return ${EXIT_ERROR}
+	fi
+
+	# Automatically enable ACS if no channel is set and ACS is available
+	if ! isset CHANNEL && phy_supports_acs "${PHY}"; then
+		CHANNEL="0"
+
+		log INFO "Automatic Channel Selection (ACS) enabled"
 	fi
 
 	# Channel bandwidth must match the mode

@@ -189,6 +189,28 @@ phy_supports_ht_capability() {
 	list_match "${capability}" $(__phy_list_ht_capabilities "${phy}")
 }
 
+# Returns TRUE if the PHY supports ACS
+phy_supports_acs() {
+	local phy="${1}"
+	assert isset phy
+
+	local driver="$(phy_get_driver "${phy}")"
+	if ! isset driver; then
+		return ${EXIT_ERROR}
+	fi
+
+	# This is basically a whilelist of drivers which support this
+	# There is no better detection
+	case "${driver}" in
+		ath10k_*|ath9k|ath5k)
+			return ${EXIT_TRUE}
+			;;
+		*)
+			return ${EXIT_FALSE}
+			;;
+	esac
+}
+
 # Returns TRUE if the PHY supports DFS
 phy_supports_dfs() {
 	local phy="${1}"

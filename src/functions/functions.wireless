@@ -536,6 +536,19 @@ wireless_get_vht_caps() {
 	network-phy-list-vht-caps "${phy}"
 }
 
+wireless_supports_acs() {
+	local device="${1}"
+	assert isset device
+
+	local phy="$(device_get_phy "${device}")"
+	if ! isset phy; then
+		log ERROR "Could not determine PHY for ${device}"
+		return ${EXIT_ERROR}
+	fi
+
+	phy_supports_acs "${phy}"
+}
+
 wireless_supports_dfs() {
 	local device="${1}"
 	assert isset device
