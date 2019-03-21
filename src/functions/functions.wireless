@@ -37,6 +37,9 @@ declare -A WIRELESS_CHANNEL_BANDWIDTHS=(
 	["802.11g"]="20 40"
 )
 
+WIRELESS_ENVIRONMENTS=( "indoor+outdoor" "indoor" "outdoor" )
+WIRELESS_DEFAULT_ENVIRONMENT="${WIRELESS_ENVIRONMENTS[0]}"
+
 cli_wireless() {
 	local action=${1}
 	shift 1
@@ -560,4 +563,10 @@ wireless_supports_dfs() {
 	fi
 
 	phy_supports_dfs "${phy}"
+}
+
+wireless_environment_is_valid() {
+	local environment="${1}"
+
+	list_match "${environment}" "${WIRELESS_ENVIRONMENTS[@]}"
 }

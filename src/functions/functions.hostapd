@@ -39,6 +39,7 @@ hostapd_config_write() {
 	local country_code="$(wireless_get_reg_domain)"
 	local dfs="on"
 	local encryption
+	local environment="${WIRELESS_DEFAULT_ENVIRONMENT}"
 	local key
 	local mode
 	local ssid
@@ -60,6 +61,9 @@ hostapd_config_write() {
 				;;
 			--encryption=*)
 				encryption=$(cli_get_val "${1}")
+				;;
+			--environment=*)
+				environment="$(cli_get_val "${1}")"
 				;;
 			--key=*)
 				key=$(cli_get_val "${1}")
@@ -109,6 +113,12 @@ hostapd_config_write() {
 	if isset encryption; then
 		assert isoneof encryption WPA WPA2 WPA/WPA2
 		assert isset key
+	fi
+
+	# Check wireless environment
+	if ! wireless_environment_is_valid "${environment}"; then
+		error "Invalid wireless environment: ${environment}"
+		return ${EXIT_ERROR}
 	fi
 
 	# With channel 0, ACS must be supported
@@ -208,6 +218,21 @@ hostapd_config_write() {
 
 		# Advertise country code and maximum transmission power
 		print "ieee80211d=1"
+		print "country_code=${country_code}"
+
+		# Wireless Environment
+		case "${environment}" in
+			indoor)
+				print "country3=0x49"
+				       country3
+				;;
+			outdoor)
+				print "country3=0x4f"
+				;;
+			indoor+outdoor)
+				print "country3=0x20"
+				;;
+		esac
 
 		# Enable Radar Detection
 		if enabled dfs && wireless_supports_dfs "${device}"; then
@@ -230,7 +255,6 @@ hostapd_config_write() {
 		fi
 
 		print "channel=${channel}"
-		print "country_code=${country_code}"
 		print "ignore_broadcast_ssid=${ignore_broadcast_ssid}"
 
 		if contains_spaces "${ssid}"; then

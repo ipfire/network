@@ -24,7 +24,7 @@
 HOOK_PORT_PATTERN="${PORT_PATTERN_ACCESSPOINT}"
 
 HOOK_SETTINGS="ADDRESS BROADCAST_SSID CHANNEL CHANNEL_BANDWIDTH DFS MODE PHY"
-HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION KEY SSID"
+HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION ENVIRONMENT KEY SSID"
 
 ADDRESS=$(mac_generate)
 BROADCAST_SSID=on
@@ -36,6 +36,8 @@ SSID=
 
 # Perform radar detection by default when possible
 DFS="on"
+
+ENVIRONMENT="${WIRELESS_DEFAULT_ENVIRONMENT}"
 
 hook_check_settings() {
 	assert isset ADDRESS
@@ -57,6 +59,8 @@ hook_check_settings() {
 		assert [ ${#KEY} -ge 8 ]
 		assert [ ${#KEY} -le 63 ]
 	fi
+
+	assert wireless_environment_is_valid "${ENVIRONMENT}"
 }
 
 hook_parse_cmdline() {
@@ -85,6 +89,14 @@ hook_parse_cmdline() {
 				;;
 			--encryption=*)
 				ENCRYPTION=$(cli_get_val "${1}")
+				;;
+			--environment=*)
+				ENVIRONMENT="$(cli_get_val "${1}")"
+
+				if ! wireless_environment_is_valid "${ENVIRONMENT}"; then
+					error "Invalid wireless environment: ${ENVIRONMENT}"
+					return ${EXIT_ERROR}
+				fi
 				;;
 			--key=*)
 				KEY=$(cli_get_val "${1}")
