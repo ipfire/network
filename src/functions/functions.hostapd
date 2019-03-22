@@ -41,6 +41,7 @@ hostapd_config_write() {
 	local encryption
 	local environment="${WIRELESS_DEFAULT_ENVIRONMENT}"
 	local key
+	local mfp="off"
 	local mode
 	local ssid
 	local wmm="1"
@@ -67,6 +68,9 @@ hostapd_config_write() {
 				;;
 			--key=*)
 				key=$(cli_get_val "${1}")
+				;;
+			--mfp=*)
+				mfp="$(cli_get_val "${1}")"
 				;;
 			--mode=*)
 				mode=$(cli_get_val "${1}")
@@ -130,6 +134,12 @@ hostapd_config_write() {
 	# Check channel bandwidth for validity
 	if isset channel_bandwidth && ! wireless_channel_bandwidth_is_valid "${mode}" "${channel_bandwidth}"; then
 		error "Invalid channel bandwidth for ${mode}: ${channel_bandwidth}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Management Frame Proection
+	if ! isbool mfp; then
+		error "Invalid value for --mfp: ${mfp}"
 		return ${EXIT_ERROR}
 	fi
 
@@ -325,6 +335,13 @@ hostapd_config_write() {
 		print "vht_oper_chwidth=${vht_oper_chwidth}"
 
 		print
+
+		# 802.11w - Management Frame Protection (MFP)
+		if enabled mfp; then
+			print "ieee80211w=2" # required
+		else
+			print "ieee80211w=0"
+		fi
 	) >> ${file}
 
 	# Control interface.

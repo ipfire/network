@@ -25,6 +25,7 @@ HOOK_PORT_PATTERN="${PORT_PATTERN_ACCESSPOINT}"
 
 HOOK_SETTINGS="ADDRESS BROADCAST_SSID CHANNEL CHANNEL_BANDWIDTH DFS MODE PHY"
 HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION ENVIRONMENT KEY SSID"
+HOOK_SETTINGS="${HOOK_SETTINGS} MFP"
 
 ADDRESS=$(mac_generate)
 BROADCAST_SSID=on
@@ -37,6 +38,10 @@ SSID=
 # Perform radar detection by default when possible
 DFS="on"
 
+# 802.11w - Management Frame Protection
+# Disable by default because many clients cannot connect when enabled
+MFP="off"
+
 ENVIRONMENT="${WIRELESS_DEFAULT_ENVIRONMENT}"
 
 hook_check_settings() {
@@ -46,6 +51,7 @@ hook_check_settings() {
 	assert isbool BROADCAST_SSID
 	assert isset CHANNEL
 	assert isbool DFS
+	assert isbool MFP
 	assert isset MODE
 	assert isoneof MODE ${HOSTAPD_SUPPORTED_MODES}
 	assert isset PHY
@@ -103,6 +109,18 @@ hook_parse_cmdline() {
 				;;
 			--mac=*)
 				ADDRESS=$(cli_get_val "${1}")
+				;;
+			--mfp=*)
+				MFP="$(cli_get_val "${1}")"
+
+				if enabled MFP; then
+					MFP="on"
+				elif disabled MFP; then
+					MFP="off"
+				else
+					error "Invalid value for --mfp: ${MFP}"
+					return ${EXIT_ERROR}
+				fi
 				;;
 			--mode=*)
 				MODE=$(cli_get_val "${1}")
