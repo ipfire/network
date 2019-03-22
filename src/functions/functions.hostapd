@@ -265,8 +265,53 @@ hostapd_config_write() {
 			print "ssid=${ssid}"
 		fi
 
-		# WMM
+		# WMM & WMM-PS Unscheduled Automatic Power Save Delivery
 		print "wmm_enabled=${wmm}"
+		print "uapsd_advertisement_enabled=1"
+
+		# Low Priority / AC_BK = Background
+		print "wmm_ac_bk_cwmin=4"
+		print "wmm_ac_bk_cwmax=10"
+		print "wmm_ac_bk_aifs=7"
+		print "wmm_ac_bk_txop_limit=0"
+		print "wmm_ac_bk_acm=0"
+		print "tx_queue_data3_aifs=7"
+		print "tx_queue_data3_cwmin=15"
+		print "tx_queue_data3_cwmax=1023"
+		print "tx_queue_data3_burst=0"
+
+		# Normal Priority / AC_BE = Best Effort
+		print "wmm_ac_be_aifs=3"
+		print "wmm_ac_be_cwmin=4"
+		print "wmm_ac_be_cwmax=10"
+		print "wmm_ac_be_txop_limit=0"
+		print "wmm_ac_be_acm=0"
+		print "tx_queue_data2_aifs=3"
+		print "tx_queue_data2_cwmin=15"
+		print "tx_queue_data2_cwmax=63"
+		print "tx_queue_data2_burst=0"
+
+		# High Priority / AC_VI = Video
+		print "wmm_ac_vi_aifs=2"
+		print "wmm_ac_vi_cwmin=3"
+		print "wmm_ac_vi_cwmax=4"
+		print "wmm_ac_vi_txop_limit=94"
+		print "wmm_ac_vi_acm=0"
+		print "tx_queue_data1_aifs=1"
+		print "tx_queue_data1_cwmin=7"
+		print "tx_queue_data1_cwmax=15"
+		print "tx_queue_data1_burst=3.0"
+
+		# Highest Priority / AC_VO = Voice
+		print "wmm_ac_vo_aifs=2"
+		print "wmm_ac_vo_cwmin=2"
+		print "wmm_ac_vo_cwmax=3"
+		print "wmm_ac_vo_txop_limit=47"
+		print "wmm_ac_vo_acm=0"
+		print "tx_queue_data0_aifs=1"
+		print "tx_queue_data0_cwmin=3"
+		print "tx_queue_data0_cwmax=7"
+		print "tx_queue_data0_burst=1.5"
 
 		# Enable VHT caps
 		if isset vht_caps; then
