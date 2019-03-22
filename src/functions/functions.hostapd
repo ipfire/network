@@ -259,11 +259,8 @@ hostapd_config_write() {
 		print "channel=${channel}"
 		print "ignore_broadcast_ssid=${ignore_broadcast_ssid}"
 
-		if contains_spaces "${ssid}"; then
-			print "ssid=\"${ssid}\""
-		else
-			print "ssid=${ssid}"
-		fi
+		print "ssid2=\"${ssid}\""
+		print "utf8_ssid=1"
 
 		# Kick stations that are too far away
 		print "disassoc_low_ack=1"
