@@ -265,6 +265,9 @@ hostapd_config_write() {
 			print "ssid=${ssid}"
 		fi
 
+		# Kick stations that are too far away
+		print "disassoc_low_ack=1"
+
 		# WMM & WMM-PS Unscheduled Automatic Power Save Delivery
 		print "wmm_enabled=${wmm}"
 		print "uapsd_advertisement_enabled=1"
