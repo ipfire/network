@@ -232,6 +232,10 @@ hostapd_config_write() {
 				;;
 		esac
 
+		# Always advertise TPC
+		print "local_pwr_constraint=3"
+		print "spectrum_mgmt_required=1"
+
 		# Enable Radar Detection
 		if enabled dfs && wireless_supports_dfs "${device}"; then
 			print "ieee80211h=1"
