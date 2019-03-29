@@ -279,6 +279,8 @@ cli_device_status_phy() {
 
 	cli_headline 2 "Features"
 
+	cli_print_fmt1 2 "Automatic Channel Selection" \
+		"$(phy_supports_acs "${phy}" && print "Supported" || print "Not Supported")"
 	cli_print_fmt1 2 "DFS" \
 		"$(phy_supports_dfs "${phy}" && print "Supported" || print "Not Supported")"
 
