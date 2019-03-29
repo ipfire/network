@@ -251,44 +251,6 @@ cli_device_status_serial() {
 	fi
 }
 
-cli_device_status_phy() {
-	local phy="${1}"
-	assert phy_exists "${phy}"
-
-	local address="$(phy_get_address "${phy}")"
-	cli_print_fmt1 1 "Address" "${address}"
-
-	# Show kernel module
-	local driver="$(phy_get_driver "${phy}")"
-	if isset driver; then
-		cli_print_fmt1 1 "Driver" "${driver}"
-	fi
-
-	cli_space
-
-	local devices="$(phy_get_devices "${phy}")"
-	if isset devices; then
-		cli_headline 2 "Soft interfaces"
-
-		local device
-		for device in ${devices}; do
-			cli_print 2 "* %s" "${device}"
-		done
-		cli_space
-	fi
-
-	cli_headline 2 "Features"
-
-	cli_print_fmt1 2 "Automatic Channel Selection" \
-		"$(phy_supports_acs "${phy}" && print "Supported" || print "Not Supported")"
-	cli_print_fmt1 2 "DFS" \
-		"$(phy_supports_dfs "${phy}" && print "Supported" || print "Not Supported")"
-
-	cli_space
-
-	return ${EXIT_OK}
-}
-
 cli_device_discover() {
 	local device=${1}
 	shift
