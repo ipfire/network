@@ -22,18 +22,16 @@
 . /usr/lib/network/header-config
 
 HOOK_SETTINGS=(
-	"ENABLE_IPV6"
-	"ENABLE_IPV4"
+	"IPV6"
+	"IPV4"
 )
 
-DEFAULT_ENABLE_IPV6="on"
-DEFAULT_ENABLE_IPV4="on"
+DEFAULT_IPV6="on"
+DEFAULT_IPV4="on"
 
 hook_check_config_settings() {
-	assert isset ENABLE_IPV6
-	assert isbool ENABLE_IPV6
-	assert isset ENABLE_IPV4
-	assert isbool ENABLE_IPV4
+	assert isbool IPV6
+	assert isbool IPV4
 }
 
 hook_parse_cmdline() {
@@ -42,17 +40,11 @@ hook_parse_cmdline() {
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--enable-ipv6)
-				ENABLE_IPV6="on"
+			--ipv6)
+				IPV6="$(cli_get_bool "${1}")"
 				;;
-			--disable-ipv6)
-				ENABLE_IPV6="off"
-				;;
-			--enable-ipv4)
-				ENABLE_IPV4="on"
-				;;
-			--disable-ipv4)
-				ENABLE_IPV4="off"
+			--ipv4)
+				IPV4="$(cli_get_bool "${1}")"
 				;;
 			*)
 				warning "Ignoring unknown option '${1}'"
@@ -62,8 +54,8 @@ hook_parse_cmdline() {
 	done
 
 	# Check if the user disabled ipv6 and ipv4
-	if ! enabled ENABLE_IPV6 && ! enabled ENABLE_IPV4; then
-		log ERROR "You disabled IPv6 and IPv4. At least one must be enabled"
+	if ! enabled IPV6 && ! enabled IPV4; then
+		error "You disabled IPv6 and IPv4. At least one must be enabled"
 		return ${EXIT_ERROR}
 	fi
 }
@@ -106,12 +98,12 @@ hook_up() {
 	zone_config_settings_read "${zone}" "${config}"
 
 	# Start dhclient for IPv6 on this zone if enabled.
-	if enabled ENABLE_IPV6; then
+	if enabled IPV6; then
 		dhclient_start ${zone} ipv6
 	fi
 
 	# Start dhclient for IPv4 on this zone if enabled.
-	if enabled ENABLE_IPV4; then
+	if enabled IPV4; then
 		dhclient_start ${zone} ipv4
 	fi
 
@@ -165,7 +157,7 @@ hook_status() {
 
 		cli_print_fmt1 3 "${proto}"
 
-		if enabled ENABLE_${proto^^}; then
+		if enabled "${proto^^}"; then
 			cli_print_fmt1 4 "Status" "enabled"
 
 			local address="$(db_get "${zone}/${_proto}/local-ip-address")"
