@@ -146,26 +146,5 @@ hook_remove() {
 }
 
 hook_hotplug_rename() {
-	local port="${1}"
-	assert isset port
-
-	local device="${2}"
-	assert isset device
-
-	local ${HOOK_SETTINGS[*]}
-	if ! port_settings_read "${port}"; then
-		log ERROR "Could not read settings for port ${port}"
-		return ${EXIT_ERROR}
-	fi
-
-	# Get the current MAC address of the device.
-	local address="$(device_get_address ${device})"
-	assert isset address
-
-	# Return OK on match
-	if [ "${ADDRESS}" = "${address}" ]; then
-		return ${EXIT_OK}
-	fi
-
-	return ${EXIT_ERROR}
+	hook_hotplug_rename_by_address "$@"
 }

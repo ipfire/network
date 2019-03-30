@@ -90,40 +90,6 @@ hook_remove() {
 	dummy_remove "${port}"
 }
 
-hook_up() {
-	local port="${1}"
-	assert isset port
-
-	# Bring up the port.
-	device_set_up ${port}
-
-	exit ${EXIT_OK}
-}
-
-hook_down() {
-	local port="${1}"
-	assert isset port
-
-	# Tear down the port.
-	device_set_down ${port}
-
-	exit ${EXIT_OK}
-}
-
 hook_hotplug_rename() {
-	local port=${1}
-	assert isset port
-
-	local device=${2}
-	assert isset device
-
-	port_settings_read "${port}"
-
-	if [ "${ADDRESS}" = "$(device_get_address ${device})" ]; then
-		log DEBUG "Device '${device}' equals port '${port}'."
-		exit ${EXIT_OK}
-	fi
-
-	log DEBUG "Device '${device}' does not equal port '${port}'."
-	exit ${EXIT_ERROR}
+	hook_hotplug_rename_by_address "$@"
 }

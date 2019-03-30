@@ -173,25 +173,5 @@ hook_remove() {
 }
 
 hook_hotplug_rename() {
-	local port=${1}
-	assert isset port
-
-	local device=${2}
-	assert isset device
-
-	# Read in the conifguration file.
-	port_settings_read "${port}"
-
-	# Get the current MAC address of the device.
-	local address=$(device_get_address ${device})
-	assert isset address
-
-	# Check if the address matches with the configuration.
-	if list_match "${address}" ${DEVICE} ${ADDRESS}; then
-		log DEBUG "Device '${device}' equals port '${port}'."
-		exit ${EXIT_OK}
-	fi
-
-	log DEBUG "Device '${device}' does not equal port '${port}'."
-	exit ${EXIT_ERROR}
+	hook_hotplug_rename_by_address "$@"
 }

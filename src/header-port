@@ -42,6 +42,32 @@ hook_hotplug_rename() {
 	exit ${EXIT_FALSE}
 }
 
+hook_hotplug_rename_by_address() {
+	local port="${1}"
+	assert isset port
+
+	local device="${2}"
+	assert isset device
+
+	# Read in the conifguration file.
+	if ! port_settings_read "${port}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Get the current MAC address of the device.
+	local address="$(device_get_address "${device}")"
+	assert isset address
+
+	# Check if the address matches with the configuration.
+	if list_match "${address}" "${ADDRESS}" "${DEVICE}"; then
+		log DEBUG "Device '${device}' is port '${port}'"
+		return ${EXIT_OK}
+	fi
+
+	log DEBUG "Device '${device}' is not port '${port}'"
+	return ${EXIT_ERROR}
+}
+
 hook_default_new() {
 	local ${HOOK_SETTINGS[*]}
 
