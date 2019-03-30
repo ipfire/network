@@ -21,7 +21,11 @@
 
 . /usr/lib/network/header-port
 
-HOOK_SETTINGS="ADDRESS PARENT_DEVICE TAG"
+HOOK_SETTINGS=(
+	"ADDRESS"
+	"PARENT_DEVICE"
+	"TAG"
+)
 
 PORT_PARENTS_VAR="PARENT"
 
@@ -68,7 +72,7 @@ hook_new() {
 
 	local port="${PARENT_DEVICE}${VLAN_PORT_INTERFIX}${TAG}"
 
-	port_settings_write "${port}" ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS[*]}
 
 	exit ${EXIT_OK}
 }
@@ -78,7 +82,7 @@ hook_edit() {
 	assert isset port
 	shift
 
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
@@ -92,7 +96,7 @@ hook_edit() {
 		shift
 	done
 
-	port_settings_write "${port}" ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS[*]}
 
 	exit ${EXIT_OK}	
 }
@@ -104,7 +108,7 @@ hook_create() {
 	device_exists "${port}" && exit ${EXIT_OK}
 
 	# Read configruation
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
 
 	# Create the VLAN device
 	vlan_create "${port}" "${PARENT_DEVICE}" "${TAG}" "${ADDRESS}"

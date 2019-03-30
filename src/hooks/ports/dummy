@@ -21,7 +21,9 @@
 
 . /usr/lib/network/header-port
 
-HOOK_SETTINGS="ADDRESS"
+HOOK_SETTINGS=(
+	"ADDRESS"
+)
 
 hook_check_settings() {
 	assert ismac ADDRESS
@@ -60,7 +62,7 @@ hook_new() {
 	local port=$(port_find_free ${DUMMY_PORT_PATTERN})
 	assert isset port
 
-	if port_settings_write "${port}" ${HOOK_SETTINGS}; then
+	if port_settings_write "${port}" ${HOOK_SETTINGS[*]}; then
 		log INFO "New dummy port '${port}' has been created"
 	fi
 
@@ -72,7 +74,7 @@ hook_create() {
 	assert isset port
 
 	# Read configuration
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
 
 	# Create the dummy device
 	dummy_create "${port}" "${ADDRESS}"
@@ -115,7 +117,7 @@ hook_hotplug_rename() {
 	local device=${2}
 	assert isset device
 
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
 
 	if [ "${ADDRESS}" = "$(device_get_address ${device})" ]; then
 		log DEBUG "Device '${device}' equals port '${port}'."

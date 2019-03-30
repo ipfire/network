@@ -21,7 +21,10 @@
 
 . /usr/lib/network/header-zone
 
-HOOK_SETTINGS="HOOK ADDRESS PHY"
+HOOK_SETTINGS=(
+	"ADDRESS"
+	"PHY"
+)
 
 hook_check_settings() {
 	assert ismac ADDRESS

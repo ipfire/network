@@ -23,7 +23,13 @@
 
 SUPPORTED_IP_TUNNEL_MODES="gretap"
 
-HOOK_SETTINGS="ADDRESS MARK MODE PEER LOCAL_ADDRESS"
+HOOK_SETTINGS=(
+	"ADDRESS"
+	"MARK"
+	"MODE"
+	"PEER"
+	"LOCAL_ADDRESS"
+)
 
 hook_check_settings() {
 	assert isset MODE
@@ -108,8 +114,8 @@ hook_create() {
 	local port="${1}"
 	assert isset port
 
-	local ${HOOK_SETTINGS}
-	if ! port_settings_read "${port}" ${HOOK_SETTINGS}; then
+	local ${HOOK_SETTINGS[*]}
+	if ! port_settings_read "${port}" ${HOOK_SETTINGS[*]}; then
 		log ERROR "Could not read settings for port ${port}"
 		return ${EXIT_ERROR}
 	fi
@@ -146,8 +152,8 @@ hook_hotplug_rename() {
 	local device="${2}"
 	assert isset device
 
-	local ${HOOK_SETTINGS}
-	if ! port_settings_read "${port}" ${HOOK_SETTINGS}; then
+	local ${HOOK_SETTINGS[*]}
+	if ! port_settings_read "${port}" ${HOOK_SETTINGS[*]}; then
 		log ERROR "Could not read settings for port ${port}"
 		return ${EXIT_ERROR}
 	fi

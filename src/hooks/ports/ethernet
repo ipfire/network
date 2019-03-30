@@ -21,10 +21,13 @@
 
 . /usr/lib/network/header-port
 
-# DEVICE equals the actual MAC address of the device.
-# If ADDRESS is set, the device will get ADDRESS set for its MAC address.
-
-HOOK_SETTINGS="ADDRESS ADVERTISED_LINK_SPEEDS DEVICE OFFLOADING MTU"
+HOOK_SETTINGS=(
+	"ADDRESS"
+	"ADVERTISED_LINK_SPEEDS"
+	"DEVICE"
+	"OFFLOADING"
+	"MTU"
+)
 
 hook_check_settings() {
 	assert ismac DEVICE
@@ -114,7 +117,7 @@ hook_new() {
 
 	local DEVICE="$(device_get_address "${device}")"
 
-	if ! port_settings_write "${port}" ${HOOK_SETTINGS}; then
+	if ! port_settings_write "${port}" ${HOOK_SETTINGS[*]}; then
 		log ERROR "Could not write settings for port ${port}"
 		return ${EXIT_ERROR}
 	fi
@@ -129,8 +132,8 @@ hook_create() {
 hook_up() {
 	local port="${1}"
 
-	local ${HOOK_SETTINGS}
-	if ! port_settings_read "${port}" ${HOOK_SETTINGS}; then
+	local ${HOOK_SETTINGS[*]}
+	if ! port_settings_read "${port}" ${HOOK_SETTINGS[*]}; then
 		log ERROR "Could not read settings for port ${port}"
 		return ${EXIT_ERROR}
 	fi
@@ -177,7 +180,7 @@ hook_hotplug_rename() {
 	assert isset device
 
 	# Read in the conifguration file.
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
 
 	# Get the current MAC address of the device.
 	local address=$(device_get_address ${device})

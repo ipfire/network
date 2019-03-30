@@ -24,41 +24,21 @@
 # Modems support all authentication methods, that pppd does support.
 MODEM_ALLOWED_AUTH_METHODS="${PPP_ALLOWED_AUTH_METHODS}"
 
-HOOK_SETTINGS="HOOK"
+HOOK_SETTINGS=(
+	"APN"
+	"AUTH"
+	"BAUDRATE"
+	"DEVICE"
+	"MONITOR_DEVICE"
+	"MTU"
+	"USERNAME"
+	"PASSWORD"
+	"PIN"
+	"PHONE_NUMBER"
+	"IMSI"
+)
 
-# Access Point Name.
-HOOK_SETTINGS="${HOOK_SETTINGS} APN"
-
-# Sets the authentication algortihm that must be used.
-HOOK_SETTINGS="${HOOK_SETTINGS} AUTH"
-
-# Baudrate.
 DEFAULT_BAUDRATE=921600
-HOOK_SETTINGS="${HOOK_SETTINGS} BAUDRATE"
-
-# The device name of the serial device.
-# XXX how can we make sure that this does not change all the time?
-HOOK_SETTINGS="${HOOK_SETTINGS} DEVICE"
-
-# A monitor device.
-# Send AT commands to this device, when the primary device is
-# connected.
-HOOK_SETTINGS="${HOOK_SETTINGS} MONITOR_DEVICE"
-
-# Maximum transmission unit.
-HOOK_SETTINGS="${HOOK_SETTINGS} MTU"
-
-# User credentials.
-HOOK_SETTINGS="${HOOK_SETTINGS} USERNAME PASSWORD"
-
-# PIN code.
-HOOK_SETTINGS="${HOOK_SETTINGS} PIN"
-
-# Phone number.
-HOOK_SETTINGS="${HOOK_SETTINGS} PHONE_NUMBER"
-
-# IMSI
-HOOK_SETTINGS="${HOOK_SETTINGS} IMSI"
 
 hook_check_settings() {
 	assert isset DEVICE

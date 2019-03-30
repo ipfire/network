@@ -23,9 +23,20 @@
 
 HOOK_PORT_PATTERN="${PORT_PATTERN_ACCESSPOINT}"
 
-HOOK_SETTINGS="ADDRESS BROADCAST_SSID CHANNEL CHANNEL_BANDWIDTH DFS MODE PHY"
-HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION ENVIRONMENT KEY SSID"
-HOOK_SETTINGS="${HOOK_SETTINGS} MFP"
+HOOK_SETTINGS=(
+	"ADDRESS"
+	"BROADCAST_SSID"
+	"CHANNEL"
+	"CHANNEL_BANDWIDTH"
+	"DFS"
+	"ENCRYPTION"
+	"ENVIRONMENT"
+	"KEY"
+	"MFP"
+	"MODE"
+	"PHY"
+	"SSID"
+)
 
 # Broadcast SSID by default
 DEFAULT_BROADCAST_SSID="on"
@@ -186,7 +197,7 @@ hook_create() {
 
 	device_exists "${port}" && exit ${EXIT_OK}
 
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
 
 	# Check if the PHY is present.
 	local phy=$(phy_get ${PHY})

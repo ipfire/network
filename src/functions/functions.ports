@@ -85,7 +85,7 @@ port_settings_read() {
 	# Save the HOOK variable.
 	local hook="${HOOK}"
 
-	settings_read "$(port_file "${port}")" ${HOOK_SETTINGS}
+	settings_read "$(port_file "${port}")" ${HOOK_SETTINGS[*]}
 
 	# Restore hook.
 	HOOK="${hook}"
@@ -100,7 +100,7 @@ port_settings_write() {
 	if function_exists "hook_check_settings"; then
 		list_append args "--check=\"hook_check_settings\""
 	fi
-	list_append args HOOK ${HOOK_SETTINGS}
+	list_append args HOOK ${HOOK_SETTINGS[*]}
 
 	settings_write "$(port_file "${port}")" ${args}
 }

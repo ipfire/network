@@ -43,7 +43,7 @@ hook_hotplug_rename() {
 }
 
 hook_default_new() {
-	local ${HOOK_SETTINGS}
+	local ${HOOK_SETTINGS[*]}
 
 	# Import all default variables
 	hook_set_defaults
@@ -57,7 +57,7 @@ hook_default_new() {
 	local port=$(port_find_free ${HOOK_PORT_PATTERN})
 	assert isset port
 
-	port_settings_write "${port}" ${HOOK_SETTINGS}
+	port_settings_write "${port}" ${HOOK_SETTINGS[*]}
 
 	exit ${EXIT_OK}
 }
@@ -72,7 +72,7 @@ hook_default_edit() {
 	shift
 
 	# Read settings
-	if ! port_settings_read "${port}" ${HOOK_SETTINGS}; then
+	if ! port_settings_read "${port}" ${HOOK_SETTINGS[*]}; then
 		error "Could not read settings for port ${port}"
 		return ${EXIT_ERROR}
 	fi
@@ -83,7 +83,7 @@ hook_default_edit() {
 	fi
 
 	# Save settings
-	if ! port_settings_write "${port}" ${HOOK_SETTINGS}; then
+	if ! port_settings_write "${port}" ${HOOK_SETTINGS[*]}; then
 		error "Could not write settings for port ${port}"
 		return ${EXIT_ERROR}
 	fi
@@ -102,7 +102,7 @@ hook_edit() {
 hook_children() {
 	local port="${1}"
 
-	if ! port_settings_read "${port}" ${HOOK_SETTINGS}; then
+	if ! port_settings_read "${port}" ${HOOK_SETTINGS[*]}; then
 		log ERROR "Could not read port settings: ${port}"
 		return ${EXIT_OK}
 	fi

@@ -23,7 +23,13 @@
 
 HOOK_PORT_PATTERN="${PORT_PATTERN_MESH}"
 
-HOOK_SETTINGS="ADDRESS MESH_ID CHANNEL PHY PSK"
+HOOK_SETTINGS=(
+	"ADDRESS"
+	"CHANNEL"
+	"MESH_ID"
+	"PHY"
+	"PSK"
+)
 
 hook_check_settings() {
 	assert ismac ADDRESS
@@ -84,7 +90,7 @@ hook_create() {
 	assert isset port
 
 	# Read settings
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
 
 	# Check if the PHY is present.
 	local phy="$(phy_get "${PHY}")"
@@ -143,7 +149,7 @@ hook_hotplug() {
 	local port="${1}"
 	assert isset port
 
-	port_settings_read "${port}" ${HOOK_SETTINGS}
+	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
 
 	case "$(hotplug_action)" in
 		add)

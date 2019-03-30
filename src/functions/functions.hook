@@ -127,7 +127,7 @@ hook_help() {
 # Sets all settings in HOOK_SETTINGS to their DEFAULT_* values
 hook_set_defaults() {
 	local setting
-	for setting in ${HOOK_SETTINGS}; do
+	for setting in ${HOOK_SETTINGS[*]}; do
 		local default="DEFAULT_${setting}"
 
 		# Sets the default or empty
