@@ -19,9 +19,18 @@
 #                                                                             #
 ###############################################################################
 
+# Allow only one instance of this hook
+HOOK_UNIQUE="true"
+
 hook_new() {
 	local zone="${1}"
 	shift
+
+	# Check if we are allowed to have multiple configurations of $HOOK
+	if enabled HOOK_UNIQUE && zone_config_hook_is_configured "${zone}" "${HOOK}"; then
+		error "You can only have one configuration of type ${HOOK}"
+		return ${EXIT_CONF_ERROR}
+	fi
 
 	local id=$(zone_config_get_new_id ${zone})
 	log DEBUG "ID for the config is: ${id}"

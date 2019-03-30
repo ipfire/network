@@ -60,31 +60,6 @@ hook_parse_cmdline() {
 	fi
 }
 
-hook_new() {
-	local zone="${1}"
-	shift
-
-	if zone_config_hook_is_configured ${zone} "dhcp"; then
-		log ERROR "You can configure the dhcp hook only once for a zone"
-		return ${EXIT_ERROR}
-	fi
-
-	local id=$(zone_config_get_new_id ${zone})
-	log DEBUG "ID for the config is: ${id}"
-
-	# Import defaults
-	hook_set_defaults
-
-	if ! hook_parse_cmdline "${id}" "$@"; then
-		# Return an error if the parsing of the cmd line fails
-		return ${EXIT_ERROR}
-	fi
-
-	zone_config_settings_write "${zone}" "${HOOK}" "${id}"
-
-	exit ${EXIT_OK}
-}
-
 hook_up() {
 	local zone=${1}
 	local config=${2}
