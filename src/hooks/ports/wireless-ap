@@ -29,14 +29,19 @@ HOOK_SETTINGS=(
 	"CHANNEL"
 	"CHANNEL_BANDWIDTH"
 	"DFS"
-	"ENCRYPTION"
 	"ENVIRONMENT"
-	"KEY"
 	"MFP"
 	"MODE"
 	"PHY"
+	"SECRET"
 	"SSID"
+	"WPA3_PERSONAL"
+	"WPA2_PERSONAL"
 )
+
+# Disable WPA3+2 by default
+DEFAULT_WPA3_PERSONAL="off"
+DEFAULT_WPA2_PERSONAL="off"
 
 # Broadcast SSID by default
 DEFAULT_BROADCAST_SSID="on"
@@ -63,14 +68,6 @@ hook_check_settings() {
 	assert isset PHY
 	assert ismac PHY
 	assert isset SSID
-
-	if isset ENCRYPTION; then
-		assert isoneof ENCRYPTION WPA2
-
-		assert isset KEY
-		assert [ ${#KEY} -ge 8 ]
-		assert [ ${#KEY} -le 63 ]
-	fi
 
 	assert wireless_environment_is_valid "${ENVIRONMENT}"
 }
@@ -99,9 +96,6 @@ hook_parse_cmdline() {
 					return ${EXIT_ERROR}
 				fi
 				;;
-			--encryption=*)
-				ENCRYPTION=$(cli_get_val "${1}")
-				;;
 			--environment=*)
 				ENVIRONMENT="$(cli_get_val "${1}")"
 
@@ -109,9 +103,6 @@ hook_parse_cmdline() {
 					error "Invalid wireless environment: ${ENVIRONMENT}"
 					return ${EXIT_ERROR}
 				fi
-				;;
-			--key=*)
-				KEY=$(cli_get_val "${1}")
 				;;
 			--mac=*)
 				ADDRESS=$(cli_get_val "${1}")
@@ -140,8 +131,17 @@ hook_parse_cmdline() {
 			--phy=*)
 				PHY=$(cli_get_val "${1}")
 				;;
+			--secret=*)
+				SECRET="$(cli_get_val "${1}")"
+				;;
 			--ssid=*)
 				SSID=$(cli_get_val "${1}")
+				;;
+			--wpa2-personal=*)
+				WPA2_PERSONAL="$(cli_get_bool "${1}")"
+				;;
+			--wpa3-personal=*)
+				WPA3_PERSONAL="$(cli_get_bool "${1}")"
 				;;
 			*)
 				warning "Ignoring unknown argument '${1}'"
@@ -171,6 +171,12 @@ hook_parse_cmdline() {
 	# Channel bandwidth must match the mode
 	if isset CHANNEL_BANDWIDTH && ! wireless_channel_bandwidth_is_valid "${MODE}" "${CHANNEL_BANDWIDTH}"; then
 		error "Channel Bandwidth '${CHANNEL_BANDWIDTH}' is not supported for ${MODE}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if SECRET is set when WPA* is enabled
+	if ! isset SECRET && (enabled WPA3_PERSONAL || enabled WPA2_PERSONAL); then
+		error "Secret is not set when PSK authentication is enabled"
 		return ${EXIT_ERROR}
 	fi
 

@@ -61,13 +61,14 @@ hostapd_config_write() {
 	local channel_bandwidth
 	local country_code="$(wireless_get_reg_domain)"
 	local dfs="on"
-	local encryption
 	local environment="${WIRELESS_DEFAULT_ENVIRONMENT}"
-	local key
 	local mfp="off"
 	local mode
+	local secret
 	local ssid
 	local wmm="1"
+	local wpa2_personal="off"
+	local wpa3_personal="off"
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
@@ -89,9 +90,6 @@ hostapd_config_write() {
 			--environment=*)
 				environment="$(cli_get_val "${1}")"
 				;;
-			--key=*)
-				key=$(cli_get_val "${1}")
-				;;
 			--mfp=*)
 				mfp="$(cli_get_val "${1}")"
 				;;
@@ -103,6 +101,9 @@ hostapd_config_write() {
 					return ${EXIT_ERROR}
 				fi
 				;;
+			--secret=*)
+				secret="$(cli_get_val "${1}")"
+				;;
 			--ssid=*)
 				ssid=$(cli_get_val "${1}")
 				;;
@@ -113,6 +114,12 @@ hostapd_config_write() {
 				else
 					wmm="0"
 				fi
+				;;
+			--wpa2-personal=*)
+				wpa2_personal="$(cli_get_bool "${1}")"
+				;;
+			--wpa3-personal=*)
+				wpa3_personal="$(cli_get_bool "${1}")"
 				;;
 			*)
 				warning_log "Ignoring unknown argument '${1}'."
@@ -136,12 +143,6 @@ hostapd_config_write() {
 	assert isset mode
 	assert isset ssid
 
-	# Check if key is set when encryption is used.
-	if isset encryption; then
-		assert isoneof encryption WPA2
-		assert isset key
-	fi
-
 	# Check wireless environment
 	if ! wireless_environment_is_valid "${environment}"; then
 		error "Invalid wireless environment: ${environment}"
@@ -163,6 +164,12 @@ hostapd_config_write() {
 	# Management Frame Proection
 	if ! isbool mfp; then
 		error "Invalid value for --mfp: ${mfp}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if secret is set for personal authentication
+	if ! isset secret && (enabled WPA3_PERSONAL || enabled WPA2_PERSONAL); then
+		error "Secret not set but personal authentication enabled"
 		return ${EXIT_ERROR}
 	fi
 
@@ -394,26 +401,51 @@ hostapd_config_write() {
 		print
 	) >> ${file}
 
-	# Encryption settings
-	if isset encryption; then
-		local encryption_mode=0
-		case "${encryption}" in
-			WPA2)
-				encryption_mode=2
-				;;
-		esac
+	# Authentication Settings
+	local wpa
+	local wpa_key_mgmt
+	local wpa_passphrase
+	local sae_password
+	local wpa_strict_rekey
 
-		(
-			print "# Encryption settings"
-			print "wpa=${encryption_mode}"
-			print "wpa_passphrase=${key}"
-			print "wpa_key_mgmt=WPA-PSK-SHA256 WPA-PSK"
-			print "wpa_pairwise=${pairwise_ciphers[*]}"
-			print "rsn_pairwise=${pairwise_ciphers[*]}"
-			print "group_cipher=${group_ciphers[*]}"
-			print
-		) >> ${file}
+	# WPA3 Personal
+	if enabled WPA3_PERSONAL; then
+		# Enable RSN
+		wpa="2"
+
+		# Add WPA key management
+		list_append wpa_key_mgmt "SAE"
+		sae_password="${secret}"
 	fi
+
+	# WPA2 Personal
+	if enabled WPA2_PERSONAL; then
+		# Enable RSN
+		wpa="2"
+
+		# Add WPA key management
+		list_append wpa_key_mgmt "WPA-PSK-SHA256" "WPA-PSK"
+		wpa_passphrase="${secret}"
+
+		# Enable WPA strict rekey
+		wpa_strict_rekey="1"
+	fi
+
+	# Enable RSN ciphers when RSN is enabled
+	local rsn_pairwise
+	local group_cipher
+	if [ "${wpa}" = "2" ]; then
+		rsn_pairwise="${pairwise_ciphers[*]}"
+		group_cipher="${group_ciphers[*]}"
+	fi
+
+	local var
+	for var in wpa wpa_key_mgmt wpa_passphrase sae_password \
+			rsn_pairwise group_cipher wpa_strict_rekey; do
+		if [ -n "${!var}" ]; then
+			print "${var}=${!var}"
+		fi
+	done >> "${file}"
 
 	# Log configuration file
 	file_to_log DEBUG "${file}"

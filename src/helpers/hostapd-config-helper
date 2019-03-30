@@ -42,12 +42,13 @@ case "${action}" in
 			--channel="${CHANNEL}" \
 			--channel-bandwidth="${CHANNEL_BANDWIDTH}" \
 			--dfs="${DFS}" \
-			--encryption="${ENCRYPTION}" \
 			--environment="${ENVIRONMENT}" \
-			--key="${KEY}" \
+			--secret="${SECRET}" \
 			--mfp="${MFP}" \
 			--mode="${MODE}" \
 			--ssid="${SSID}" \
+			--wpa3-personal="${WPA3_PERSONAL}" \
+			--wpa2-personal="${WPA2_PERSONAL}" \
 		|| exit $?
 		;;
 
