@@ -24,31 +24,15 @@
 HOOK_SETTINGS="HOOK ACCESS_CONCENTRATOR AUTH USERNAME PASSWORD"
 HOOK_SETTINGS="${HOOK_SETTINGS} SERVICE_NAME MTU IPV6 PREFIX_DELEGATION"
 
-# User credentials for the dialin.
-USERNAME=""
-PASSWORD=""
-
-# Set the authentication mechanism.
-AUTH=
-
-# Access Concentrator.
-ACCESS_CONCENTRATOR=""
-
-# Service name.
-SERVICE_NAME=""
-
-# Maximum Transmission Unit.
-MTU=
-
 # This hook can work with all authentication methods supported by pppd.
 PPPOE_SUPPORTED_AUTH_METHODS="${PPP_SUPPORTED_AUTH_METHODS}"
 PPPOE_PLUGIN="rp-pppoe.so"
 
 # Request an IPv6 address.
-IPV6="true"
+DEFAULT_IPV6="true"
 
 # Use IPv6 prefix delegation.
-PREFIX_DELEGATION="true"
+DEFAULT_PREFIX_DELEGATION="true"
 
 hook_check_settings() {
 	assert isset USERNAME

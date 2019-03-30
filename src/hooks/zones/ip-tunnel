@@ -26,13 +26,7 @@ SUPPORTED_IP_TUNNEL_MODES="gre vti"
 HOOK_SETTINGS="HOOK MARK MODE PEER LOCAL_ADDRESS"
 
 # Default mode of the tunnel
-MODE="gre"
-
-# The IP address of the tunnel endpoint where to connect to
-PEER=
-
-# The local IP address of the tunnel endpoint
-LOCAL_ADDRESS=
+DEFAULT_MODE="gre"
 
 hook_check_settings() {
 	assert isset MODE && assert isoneof MODE ${SUPPORTED_IP_TUNNEL_MODES}

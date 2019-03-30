@@ -27,47 +27,37 @@ MODEM_ALLOWED_AUTH_METHODS="${PPP_ALLOWED_AUTH_METHODS}"
 HOOK_SETTINGS="HOOK"
 
 # Access Point Name.
-APN=
 HOOK_SETTINGS="${HOOK_SETTINGS} APN"
 
 # Sets the authentication algortihm that must be used.
-AUTH=
 HOOK_SETTINGS="${HOOK_SETTINGS} AUTH"
 
 # Baudrate.
-BAUDRATE=921600
+DEFAULT_BAUDRATE=921600
 HOOK_SETTINGS="${HOOK_SETTINGS} BAUDRATE"
 
 # The device name of the serial device.
 # XXX how can we make sure that this does not change all the time?
-DEVICE=
 HOOK_SETTINGS="${HOOK_SETTINGS} DEVICE"
 
 # A monitor device.
 # Send AT commands to this device, when the primary device is
 # connected.
-MONITOR_DEVICE=
 HOOK_SETTINGS="${HOOK_SETTINGS} MONITOR_DEVICE"
 
 # Maximum transmission unit.
-MTU=
 HOOK_SETTINGS="${HOOK_SETTINGS} MTU"
 
 # User credentials.
-USERNAME=
-PASSWORD=
 HOOK_SETTINGS="${HOOK_SETTINGS} USERNAME PASSWORD"
 
 # PIN code.
-PIN=
 HOOK_SETTINGS="${HOOK_SETTINGS} PIN"
 
 # Phone number.
-PHONE_NUMBER=
 HOOK_SETTINGS="${HOOK_SETTINGS} PHONE_NUMBER"
 
 # IMSI
-IMSI=
 HOOK_SETTINGS="${HOOK_SETTINGS} IMSI"
 
 hook_check_settings() {

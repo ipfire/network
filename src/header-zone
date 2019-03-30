@@ -34,6 +34,11 @@ hook_new() {
 	assert isset zone
 	shift
 
+	local ${HOOK_SETTINGS}
+
+	# Import all default variables
+	hook_set_defaults
+
 	if ! hook_parse_cmdline "$@"; then
 		return ${EXIT_ERROR}
 	fi
