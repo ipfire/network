@@ -84,16 +84,7 @@ hook_parse_cmdline() {
 				CHANNEL_BANDWIDTH="$(cli_get_val "${1}")"
 				;;
 			--dfs=*)
-				DFS="$(cli_get_val "${1}")"
-
-				if enabled DFS; then
-					DFS="on"
-				elif disabled DFS; then
-					DFS="off"
-				else
-					error "Invalid value for DFS: ${DFS}"
-					return ${EXIT_ERROR}
-				fi
+				DFS="$(cli_get_bool "${1}")"
 				;;
 			--environment=*)
 				ENVIRONMENT="$(cli_get_val "${1}")"
@@ -107,16 +98,7 @@ hook_parse_cmdline() {
 				ADDRESS=$(cli_get_val "${1}")
 				;;
 			--mfp=*)
-				MFP="$(cli_get_val "${1}")"
-
-				if enabled MFP; then
-					MFP="on"
-				elif disabled MFP; then
-					MFP="off"
-				else
-					error "Invalid value for --mfp: ${MFP}"
-					return ${EXIT_ERROR}
-				fi
+				MFP="$(cli_get_bool "${1}")"
 				;;
 			--mode=*)
 				MODE=$(cli_get_val "${1}")

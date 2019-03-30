@@ -59,16 +59,7 @@ hook_parse_cmdline() {
 				MODE=$(cli_get_val "${1}")
 				;;
 			--offloading=*)
-				OFFLOADING="$(cli_get_val "${1}")"
-
-				if enabled OFFLOADING; then
-					OFFLOADING="on"
-				elif disabled OFFLOADING; then
-					OFFLOADING="off"
-				else
-					error "Invalid value for offloading: ${OFFLOADING}"
-					return ${EXIT_ERROR}
-				fi
+				OFFLOADING="$(cli_get_bool "${1}")"
 				;;
 			+*)
 				local slave=$(cli_get_val "${1:1}")
