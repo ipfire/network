@@ -397,24 +397,23 @@ wireless_set_channel() {
 }
 
 wireless_pre_shared_key_is_valid() {
-	local encryption_mode="${1}"
-	local psk="${2}"
+	local psk="${1}"
 
 	# Length of the PSK
 	local l="${#psk}"
 
-	case "${encryption_mode}" in
-		# For WPA*, the key must be between 8 and 63 chars
-		WPA2-PSK|WPA2-PSK-SHA256|WPA-PSK|WPA-PSK-SHA256)
-			if [ ${l} -ge 8 ] && [ ${l} -le 63 ]; then
-				return ${EXIT_TRUE}
-			fi
+	# For WPA*, the key must be between 8 and 63 chars
+	if [ ${l} -lt 8 ] || [ ${l} -gt 63 ]; then
+		return ${EXIT_FALSE}
+	fi
 
-			return ${EXIT_FALSE}
-			;;
-	esac
+	# Can only contain ASCII chararcters
+	if contains_non_ascii_characters "${psk}"; then
+		return ${EXIT_FALSE}
+	fi
 
-	return ${EXIT_ERROR}
+	# Seems OK
+	return ${EXIT_TRUE}
 }
 
 wireless_client_is_connected() {

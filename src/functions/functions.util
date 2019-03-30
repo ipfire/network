@@ -745,6 +745,19 @@ contains_spaces() {
 	return ${EXIT_FALSE}
 }
 
+contains_non_ascii_characters() {
+	local value="$@"
+
+	# Strip away all ASCII characters
+	local non_ascii="${value//[[:ascii:]]/}"
+
+	if isset non_ascii; then
+		return ${EXIT_TRUE}
+	fi
+
+	return ${EXIT_FALSE}
+}
+
 string_match() {
 	local match=${1}
 	local string=${2}

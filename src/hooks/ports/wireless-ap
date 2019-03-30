@@ -156,9 +156,17 @@ hook_parse_cmdline() {
 	fi
 
 	# Check if SECRET is set when WPA* is enabled
-	if ! isset SECRET && (enabled WPA3_PERSONAL || enabled WPA2_PERSONAL); then
-		error "Secret is not set when PSK authentication is enabled"
-		return ${EXIT_ERROR}
+	if enabled WPA3_PERSONAL || enabled WPA2_PERSONAL; then
+		if ! isset SECRET; then
+			error "Secret is not set when PSK authentication is enabled"
+			return ${EXIT_ERROR}
+		fi
+
+		# Check if SECRET is valid
+		if ! wireless_pre_shared_key_is_valid "${SECRET}"; then
+			error "The secret is in an invalid format"
+			return ${EXIT_ERROR}
+		fi
 	fi
 
 	# Save address of phy do identify it again
