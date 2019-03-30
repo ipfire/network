@@ -997,15 +997,11 @@ device_get_link_string() {
 }
 
 device_auto_configure_smp_affinity() {
-	assert [ $# -eq 1 ]
+	local device="${1}"
+	assert isset device
 
-	local device=${1}
-
-	if lock_acquire "smp-affinity" 60; then
-		device_set_smp_affinity ${device} auto
-
-		lock_release "smp-affinity"
-	fi
+	lock "smp-affinity" \
+		device_set_smp_affinity "${device}" "auto"
 }
 
 device_set_smp_affinity() {

@@ -19,16 +19,6 @@
 #                                                                             #
 ###############################################################################
 
-__lock_path() {
-	local name=${1}
-
-	if [ "${name:0:1}" = "/" ]; then
-		echo "${name}"
-	else
-		echo "${LOCK_DIR}/network-${name}"
-	fi
-}
-
 lock() {
 	local lock="${1}"
 	shift
@@ -64,64 +54,4 @@ lock() {
 
 		exit ${ret}
 	) 9>${lock} || exit $?
-}
-
-lock_exists() {
-	local name=${1}
-	assert isset name
-
-	local lockfile=$(__lock_path ${name})
-
-	if [ -e "${lockfile}" ]; then
-		return ${EXIT_TRUE}
-	else
-		return ${EXIT_FALSE}
-	fi
-}
-
-lock_acquire() {
-	local name=${1}
-	assert isset name
-
-	# timeout value in seconds
-	local timeout=${2}
-
-	if ! isset timeout; then
-		timeout=0
-	fi
-
-	local lockfile=$(__lock_path ${name})
-
-	timeout=$(( ${timeout} * 4 ))
-
-	log DEBUG "Acquiring lock '${name}'"
-
-	# Wait until lock is available
-	while [ ${timeout} -gt 0 ] && [ -e "${lockfile}" ]; do
-		timeout=$(( ${timeout} - 1 ))
-		sleep 0.25
-	done
-
-	# If another lock still exists, we return an error
-	if [ -e "${lockfile}" ]; then
-		error "Could not acquire lock '${name}'"
-		return ${EXIT_ERROR}
-	fi
-
-	# Write out pid to the lockfile and make sure that
-	# nobody else can access it.
-	echo "$$" > ${lockfile}
-	chmod 600 ${lockfile}
-}
-
-lock_release() {
-	local name=${1}
-	assert isset name
-
-	local lockfile=$(__lock_path ${name})
-
-	log DEBUG "Releasing lock '${name}'"
-
-	# Remove the lockfile (okay if it does not exist).
-	rm -f ${lockfile}
 }

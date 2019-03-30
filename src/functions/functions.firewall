@@ -269,7 +269,8 @@ firewall_panic() {
 }
 
 firewall_lock_acquire() {
-	lock_acquire ${RUN_DIR}/.firewall_lock
+	# XXX DEPRECATED
+	#lock_acquire ${RUN_DIR}/.firewall_lock
 
 	# Make sure the lock is released after the firewall
 	# script has crashed or exited early.
