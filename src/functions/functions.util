@@ -248,6 +248,19 @@ file_get_age() {
 	return ${EXIT_ERROR}
 }
 
+file_to_log() {
+	local level="${1}"
+	assert isset level
+
+	local file="${2}"
+	assert file_exists "${file}"
+
+	local line
+	while read line; do
+		log "${level}" "${line}"
+	done < "${file}"
+}
+
 make_directory() {
 	local path="${1}"
 

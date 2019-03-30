@@ -378,6 +378,9 @@ hostapd_config_write() {
 		) >> ${file}
 	fi
 
+	# Log configuration file
+	file_to_log DEBUG "${file}"
+
 	return ${EXIT_OK}
 }
 
