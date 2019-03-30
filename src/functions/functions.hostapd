@@ -23,6 +23,19 @@ HOSTAPD_CONTROL_INTERFACE_DIR="/run/hostapd/ctrl"
 
 HOSTAPD_SUPPORTED_MODES="802.11a 802.11a/n 802.11ac 802.11g 802.11g/n"
 
+HOSTAPD_SUPPORTED_PAIRWISE_CIPHERS=(
+	"GCMP-256"	# Galois/counter mode protocol with 256 bit key
+	"CCMP-256"	# AES in Counter mode with CBC-MAC with 256 bit key
+	"GCMP-128"	# Galois/counter mode protocol with 128 bit key
+	"CCMP-128"	# AES in Counter mode with CBC-MAC with 128 bit key
+)
+
+# This must be supported by all stations on the network and therefore
+# can effectively only be CCMP
+HOSTAPD_SUPPORTED_GROUP_CIPHERS=(
+	"CCMP-128"
+)
+
 hostapd_config_write() {
 	local device=${1}
 	assert isset device
@@ -32,6 +45,16 @@ hostapd_config_write() {
 
 	# Shift the device and file argument.
 	shift 2
+
+	# Device must exist
+	if ! device_exists "${device}"; then
+		error "Cannot write hostapd configuration for non-existant device: ${device}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Get the phy for device
+	local phy="$(device_get_phy "${device}")"
+	assert isset phy
 
 	local broadcast_ssid
 	local channel
@@ -200,6 +223,25 @@ hostapd_config_write() {
 			esac
 			;;
 	esac
+
+	# Cryptography
+	local cipher
+
+	# Get all supported pairwise ciphers
+	local pairwise_ciphers=()
+	for cipher in ${HOSTAPD_SUPPORTED_PAIRWISE_CIPHERS[*]}; do
+		if phy_supports_cipher "${phy}" "${cipher}"; then
+			pairwise_ciphers+=( "$(hostapd_cipher_name "${cipher}")" )
+		fi
+	done
+
+	# Get all supported group ciphers
+	local group_ciphers=()
+	for cipher in ${HOSTAPD_SUPPORTED_GROUP_CIPHERS[*]}; do
+		if phy_supports_cipher "${phy}" "${cipher}"; then
+			group_ciphers+=( "$(hostapd_cipher_name "${cipher}")" )
+		fi
+	done
 
 	# Create configuration directory.
 	local config_dir=$(dirname ${file})
@@ -372,8 +414,9 @@ hostapd_config_write() {
 			print "wpa=${encryption_mode}"
 			print "wpa_passphrase=${key}"
 			print "wpa_key_mgmt=WPA-PSK"
-			print "wpa_pairwise=TKIP"
-			print "rsn_pairwise=CCMP"
+			print "wpa_pairwise=${pairwise_ciphers[*]}"
+			print "rsn_pairwise=${pairwise_ciphers[*]}"
+			print "group_cipher=${group_ciphers[*]}"
 			print
 		) >> ${file}
 	fi
@@ -406,4 +449,22 @@ hostapd_stop() {
 	assert isset device
 
 	service_stop "hostapd@${device}.service"
+}
+
+hostapd_cipher_name() {
+	local cipher="${1}"
+
+	case "${cipher}" in
+		CCMP-128)
+			print "CCMP"
+			;;
+
+		GCMP-128)
+			print "GCMP"
+			;;
+
+		*)
+			print "${cipher}"
+			;;
+	esac
 }

@@ -208,6 +208,23 @@ phy_supports_channel() {
 	return ${EXIT_FALSE}
 }
 
+phy_list_ciphers() {
+	local phy="${1}"
+	assert isset phy
+
+	network-phy-list-ciphers "${phy}"
+}
+
+phy_supports_cipher() {
+	local phy="${1}"
+	assert isset phy
+
+	local cipher="${2}"
+	assert isset cipher
+
+	list_match "${cipher}" $(phy_list_ciphers "${phy}")
+}
+
 __phy_list_ht_capabilities() {
 	local phy="${1}"
 	assert isset phy

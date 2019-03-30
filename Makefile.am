@@ -301,6 +301,7 @@ EXTRA_DIST += \
 
 util_PROGRAMS = \
 	src/utils/network-phy-list-channels \
+	src/utils/network-phy-list-ciphers \
 	src/utils/network-phy-list-ht-caps \
 	src/utils/network-phy-list-vht-caps
 
@@ -308,6 +309,12 @@ src_utils_network_phy_list_channels_SOURCES = \
 	src/utils/network-phy-list-channels.c
 
 src_utils_network_phy_list_channels_LDADD = \
+	src/libnetwork.la
+
+src_utils_network_phy_list_ciphers_SOURCES = \
+	src/utils/network-phy-list-ciphers.c
+
+src_utils_network_phy_list_ciphers_LDADD = \
 	src/libnetwork.la
 
 src_utils_network_phy_list_ht_caps_SOURCES = \

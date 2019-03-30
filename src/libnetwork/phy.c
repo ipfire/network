@@ -52,6 +52,7 @@ struct network_phy {
 
 	TAILQ_HEAD(head, network_phy_channel) channels;
 
+	enum network_phy_ciphers ciphers;
 	ssize_t max_mpdu_length;
 	unsigned int vht_caps;
 	unsigned int ht_caps;
@@ -78,6 +79,81 @@ static int phy_get_index(const char* name) {
 	fclose(f);
 
 	return atoi(index);
+}
+
+static void phy_parse_ciphers(struct network_phy* phy, __u32* ciphers, int num) {
+	enum network_phy_ciphers cipher;
+
+	// Reset value
+	phy->ciphers = 0;
+
+	for (int i = 0; i < num; i++) {
+		switch (ciphers[i]) {
+			case 0x000fac01:
+				cipher = NETWORK_PHY_CIPHER_WEP40;
+				break;
+
+			case 0x000fac02:
+				cipher = NETWORK_PHY_CIPHER_TKIP;
+				break;
+
+			case 0x000fac04:
+				cipher = NETWORK_PHY_CIPHER_CCMP128;
+				break;
+
+			case 0x000fac05:
+				cipher = NETWORK_PHY_CIPHER_WEP104;
+				break;
+
+			case 0x000fac06:
+				cipher = NETWORK_PHY_CIPHER_CMAC128;
+				break;
+
+			case 0x000fac08:
+				cipher = NETWORK_PHY_CIPHER_GCMP128;
+				break;
+
+			case 0x000fac09:
+				cipher = NETWORK_PHY_CIPHER_GCMP256;
+				break;
+
+			/*
+				I have no idea what these are. My card reports them but
+				I could not find out anything about them.
+			*/
+			case 0x000fac0a:
+			case 0x000fac0b:
+			case 0x000fac0c:
+			case 0x000fac0d:
+				continue;
+
+			case 0x000fac10:
+				cipher = NETWORK_PHY_CIPHER_CCMP256;
+				break;
+
+			case 0x000fac11:
+				cipher = NETWORK_PHY_CIPHER_GMAC128;
+				break;
+
+			case 0x000fac12:
+				cipher = NETWORK_PHY_CIPHER_GMAC256;
+				break;
+
+			case 0x000fac13:
+				cipher = NETWORK_PHY_CIPHER_CMAC256;
+				break;
+
+			case 0x00147201:
+				cipher = NETWORK_PHY_CIPHER_WPISMS4;
+				break;
+
+			default:
+				ERROR(phy->ctx, "Unknown cipher found: %x\n", ciphers[i]);
+				continue;
+		}
+
+		phy->ciphers |= cipher;
+	}
 }
 
 static void phy_parse_vht_capabilities(struct network_phy* phy, __u32 caps) {
@@ -325,6 +401,13 @@ static int phy_parse_info(struct nl_msg* msg, void* data) {
 	nla_parse(attrs, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
 		genlmsg_attrlen(gnlh, 0), NULL);
 
+	// Ciphers
+	if (attrs[NL80211_ATTR_CIPHER_SUITES]) {
+		int num = nla_len(attrs[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
+		__u32* ciphers = nla_data(attrs[NL80211_ATTR_CIPHER_SUITES]);
+		phy_parse_ciphers(phy, ciphers, num);
+	}
+
 	if (attrs[NL80211_ATTR_WIPHY_BANDS]) {
 		struct nlattr* nl_band;
 		int i;
@@ -462,6 +545,72 @@ nla_put_failure:
 	nlmsg_free(msg);
 
 	return NULL;
+}
+
+NETWORK_EXPORT const char* network_phy_get_cipher_string(const enum network_phy_ciphers cipher) {
+	switch (cipher) {
+		case NETWORK_PHY_CIPHER_WEP40:
+			return "WEP40";
+
+		case NETWORK_PHY_CIPHER_TKIP:
+			return "TKIP";
+
+		case NETWORK_PHY_CIPHER_CCMP128:
+			return "CCMP-128";
+
+		case NETWORK_PHY_CIPHER_WEP104:
+			return "WEP-104";
+
+		case NETWORK_PHY_CIPHER_CMAC128:
+			return "CMAC-128";
+
+		case NETWORK_PHY_CIPHER_GCMP128:
+			return "GCMP-128";
+
+		case NETWORK_PHY_CIPHER_GCMP256:
+			return "GCMP-256";
+
+		case NETWORK_PHY_CIPHER_CCMP256:
+			return "CCMP-256";
+
+		case NETWORK_PHY_CIPHER_GMAC128:
+			return "GMAC-128";
+
+		case NETWORK_PHY_CIPHER_GMAC256:
+			return "GMAC-256";
+
+		case NETWORK_PHY_CIPHER_CMAC256:
+			return "CMAC-256";
+
+		case NETWORK_PHY_CIPHER_WPISMS4:
+			return "WPI-SMS4";
+	}
+
+	return NULL;
+}
+
+NETWORK_EXPORT int network_phy_supports_cipher(struct network_phy* phy, const enum network_phy_ciphers cipher) {
+	return phy->ciphers & cipher;
+}
+
+NETWORK_EXPORT char* network_phy_list_ciphers(struct network_phy* phy) {
+	char* buffer = NULL;
+
+	foreach_cipher(cipher) {
+		if (network_phy_supports_cipher(phy, cipher)) {
+			const char* s = network_phy_get_cipher_string(cipher);
+
+			if (!s)
+				continue;
+
+			if (buffer)
+				asprintf(&buffer, "%s %s", buffer, s);
+			else
+				asprintf(&buffer, "%s", s);
+		}
+	}
+
+	return buffer;
 }
 
 NETWORK_EXPORT int network_phy_has_vht_capability(struct network_phy* phy, const enum network_phy_vht_caps cap) {

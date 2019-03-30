@@ -30,6 +30,25 @@ int network_phy_new(struct network_ctx*, struct network_phy** phy, const char* n
 struct network_phy* network_phy_ref(struct network_phy* phy);
 struct network_phy* network_phy_unref(struct network_phy* phy);
 
+enum network_phy_ciphers {
+	NETWORK_PHY_CIPHER_WEP40           = (1 <<  0),
+	NETWORK_PHY_CIPHER_TKIP            = (1 <<  1),
+	NETWORK_PHY_CIPHER_CCMP128         = (1 <<  2),
+	NETWORK_PHY_CIPHER_WEP104          = (1 <<  3),
+	NETWORK_PHY_CIPHER_CMAC128         = (1 <<  4),
+	NETWORK_PHY_CIPHER_GCMP128         = (1 <<  5),
+	NETWORK_PHY_CIPHER_GCMP256         = (1 <<  6),
+	NETWORK_PHY_CIPHER_CCMP256         = (1 <<  7),
+	NETWORK_PHY_CIPHER_GMAC128         = (1 <<  8),
+	NETWORK_PHY_CIPHER_GMAC256         = (1 <<  9),
+	NETWORK_PHY_CIPHER_CMAC256         = (1 << 10),
+	NETWORK_PHY_CIPHER_WPISMS4         = (1 << 11),
+};
+
+const char* network_phy_get_cipher_string(const enum network_phy_ciphers cipher);
+int network_phy_supports_cipher(struct network_phy* phy, const enum network_phy_ciphers cipher);
+char* network_phy_list_ciphers(struct network_phy* phy);
+
 enum network_phy_ht_caps {
 	NETWORK_PHY_HT_CAP_RX_LDPC         = (1 <<  0),
 	NETWORK_PHY_HT_CAP_HT40            = (1 <<  1),
@@ -80,6 +99,9 @@ char* network_phy_list_ht_capabilities(struct network_phy* phy);
 
 struct nl_msg* network_phy_make_netlink_message(struct network_phy* phy,
 	enum nl80211_commands cmd, int flags);
+
+#define foreach_cipher(cipher) \
+	for(enum network_phy_ciphers cipher = NETWORK_PHY_CIPHER_WEP40; cipher <= NETWORK_PHY_CIPHER_WPISMS4; cipher <<= 1)
 
 #define foreach_vht_cap(cap) \
 	for(int cap = NETWORK_PHY_VHT_CAP_VHT160; cap <= NETWORK_PHY_VHT_CAP_TX_ANTENNA_PATTERN; cap <<= 1)

@@ -1,21 +1,24 @@
 LIBNETWORK_0 {
 global:
-        network_interface_get_name;
-        network_interface_new;
-        network_interface_ref;
-        network_interface_unref;
-        network_new;
-        network_phy_has_ht_capability;
-        network_phy_has_vht_capability;
-        network_phy_list_channels;
-        network_phy_list_ht_capabilities;
-        network_phy_list_vht_capabilities;
-        network_phy_new;
-        network_phy_ref;
-        network_phy_unref;
-        network_ref;
-        network_unref;
-        network_version;
+	network_interface_get_name;
+	network_interface_new;
+	network_interface_ref;
+	network_interface_unref;
+	network_new;
+	network_phy_get_cipher_string;
+	network_phy_has_ht_capability;
+	network_phy_has_vht_capability;
+	network_phy_list_channels;
+	network_phy_list_ciphers;
+	network_phy_list_ht_capabilities;
+	network_phy_list_vht_capabilities;
+	network_phy_supports_cipher;
+	network_phy_new;
+	network_phy_ref;
+	network_phy_unref;
+	network_ref;
+	network_unref;
+	network_version;
 local:
-        *;
+	*;
 };
