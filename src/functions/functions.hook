@@ -130,9 +130,8 @@ hook_set_defaults() {
 	for setting in ${HOOK_SETTINGS}; do
 		local default="DEFAULT_${setting}"
 
-		if isset ${default}; then
-			assign "${setting}" "${!default}"
-		fi
+		# Sets the default or empty
+		assign "${setting}" "${!default}"
 	done
 }
 

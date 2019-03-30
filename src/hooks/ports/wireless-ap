@@ -27,22 +27,17 @@ HOOK_SETTINGS="ADDRESS BROADCAST_SSID CHANNEL CHANNEL_BANDWIDTH DFS MODE PHY"
 HOOK_SETTINGS="${HOOK_SETTINGS} ENCRYPTION ENVIRONMENT KEY SSID"
 HOOK_SETTINGS="${HOOK_SETTINGS} MFP"
 
-ADDRESS=$(mac_generate)
-BROADCAST_SSID=on
-CHANNEL=
-CHANNEL_BANDWIDTH=
-ENCRYPTION=""
-KEY=""
-SSID=
+# Broadcast SSID by default
+DEFAULT_BROADCAST_SSID="on"
 
 # Perform radar detection by default when possible
-DFS="on"
+DEFAULT_DFS="on"
 
 # 802.11w - Management Frame Protection
 # Disable by default because many clients cannot connect when enabled
-MFP="off"
+DEFAULT_MFP="off"
 
-ENVIRONMENT="${WIRELESS_DEFAULT_ENVIRONMENT}"
+DEFAULT_ENVIRONMENT="${WIRELESS_DEFAULT_ENVIRONMENT}"
 
 hook_check_settings() {
 	assert isset ADDRESS
