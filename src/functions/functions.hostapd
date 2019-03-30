@@ -413,7 +413,7 @@ hostapd_config_write() {
 			print "# Encryption settings"
 			print "wpa=${encryption_mode}"
 			print "wpa_passphrase=${key}"
-			print "wpa_key_mgmt=WPA-PSK"
+			print "wpa_key_mgmt=WPA-PSK-SHA256 WPA-PSK"
 			print "wpa_pairwise=${pairwise_ciphers[*]}"
 			print "rsn_pairwise=${pairwise_ciphers[*]}"
 			print "group_cipher=${group_ciphers[*]}"
