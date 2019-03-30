@@ -29,6 +29,7 @@ lock() {
 	fi
 
 	local timeout="60"
+	local ret=0
 
 	# Make partent directory
 	make_parent_directory "${lock}"
@@ -53,5 +54,10 @@ lock() {
 		log DEBUG "Released lock ${lock}"
 
 		exit ${ret}
-	) 9>${lock} || exit $?
+	) 9>${lock} || ret=$?
+
+	# Cleanup log file
+	file_delete "${lock}"
+
+	return ${ret}
 }
