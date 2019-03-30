@@ -424,7 +424,7 @@ hostapd_config_write() {
 		wpa="2"
 
 		# Add WPA key management
-		list_append wpa_key_mgmt "WPA-PSK-SHA256" "WPA-PSK"
+		list_append wpa_key_mgmt "WPA-PSK-SHA256"
 		wpa_passphrase="${secret}"
 
 		# Enable WPA strict rekey
