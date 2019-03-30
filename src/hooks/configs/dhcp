@@ -40,10 +40,10 @@ hook_parse_cmdline() {
 
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--ipv6)
+			--ipv6=*)
 				IPV6="$(cli_get_bool "${1}")"
 				;;
-			--ipv4)
+			--ipv4=*)
 				IPV4="$(cli_get_bool "${1}")"
 				;;
 			*)
