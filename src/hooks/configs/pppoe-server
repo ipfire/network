@@ -21,21 +21,15 @@
 
 . /usr/lib/network/header-config
 
-HOOK_CONFIG_SETTINGS="HOOK DNS_SERVERS MTU SERVICE_NAME SUBNET MAX_SESSIONS"
+HOOK_SETTINGS=(
+	"DNS_SERVERS"
+	"MTU"
+	"SERVICE_NAME"
+	"SUBNET MAX_SESSIONS"
+)
 
-# Maximum Transmission Unit.
-MTU=1492
-
-# Service Name.
-SERVICE_NAME=
-
-# A subnet. Addresses from this subnet will be given to the remote hosts.
-# The net address will be the gateway address for the PPPoE server.
-SUBNET=
-
-# Defines the max. number of sessions per MAC address.
-# 0 = unlimited.
-MAX_SESSIONS=0
+DEFAULT_MTU=1492
+DEFAULT_MAX_SESSIONS=0
 
 hook_check_config_settings() {
 	assert isset MTU

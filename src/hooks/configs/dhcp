@@ -21,11 +21,13 @@
 
 . /usr/lib/network/header-config
 
-HOOK_CONFIG_SETTINGS="HOOK ENABLE_IPV6 ENABLE_IPV4"
+HOOK_SETTINGS=(
+	"ENABLE_IPV6"
+	"ENABLE_IPV4"
+)
 
-# Default settings.
-ENABLE_IPV6="on"
-ENABLE_IPV4="on"
+DEFAULT_ENABLE_IPV6="on"
+DEFAULT_ENABLE_IPV4="on"
 
 hook_check_config_settings() {
 	assert isset ENABLE_IPV6
@@ -77,6 +79,9 @@ hook_new() {
 
 	local id=$(zone_config_get_new_id ${zone})
 	log DEBUG "ID for the config is: ${id}"
+
+	# Import defaults
+	hook_set_defaults
 
 	if ! hook_parse_cmdline "${id}" "$@"; then
 		# Return an error if the parsing of the cmd line fails

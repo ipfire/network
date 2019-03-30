@@ -21,10 +21,12 @@
 
 . /usr/lib/network/header-config
 
-HOOK_CONFIG_SETTINGS="HOOK PRIVACY_EXTENSIONS"
+HOOK_SETTINGS=(
+	"PRIVACY_EXTENSIONS"
+)
 
 # Privacy Extensions are disabled by default
-PRIVACY_EXTENSIONS="off"
+DEFAULT_PRIVACY_EXTENSIONS="off"
 
 hook_check_config_settings() {
 	assert isbool PRIVACY_EXTENSIONS
@@ -35,17 +37,10 @@ hook_parse_cmdline() {
 	shift
 
 	local arg
-
 	while read arg; do
 		case "${arg}" in
 			--privacy-extensions=*)
-				local val="$(cli_get_val "${arg}")"
-
-				if enabled val; then
-					PRIVACY_EXTENSIONS="on"
-				else
-					PRIVACY_EXTENSIONS="off"
-				fi
+				PRIVACY_EXTENSIONS="$(cli_get_bool "${arg}")"
 				;;
 		esac
 	done <<< "$(args "$@")"

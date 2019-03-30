@@ -21,7 +21,11 @@
 
 . /usr/lib/network/header-config
 
-HOOK_CONFIG_SETTINGS="HOOK ADDRESS PREFIX GATEWAY"
+HOOK_SETTINGS=(
+	"ADDRESS"
+	"PREFIX"
+	"GATEWAY"
+)
 
 hook_check_config_settings() {
 	local protocol="$(ip_detect_protocol "${ADDRESS}")"

@@ -26,6 +26,9 @@ hook_new() {
 	local id=$(zone_config_get_new_id ${zone})
 	log DEBUG "ID for the config is: ${id}"
 
+	# Import all default variables
+	hook_set_defaults
+
 	# Parse command line arguments
 	if ! hook_parse_cmdline "${id}" "$@"; then
 		# Return an error if the parsing of the cmd line fails
@@ -64,7 +67,7 @@ hook_edit() {
 		fi
 	fi
 
-	local ${HOOK_CONFIG_SETTINGS}
+	local ${HOOK_SETTINGS}
 
 	# If reading the config fails we cannot go on
 	if ! zone_config_settings_read "${zone}" "${config}"; then

@@ -1312,8 +1312,8 @@ zone_config_settings_read() {
 	shift 2
 
 	local args
-	if [ $# -eq 0 ] && [ -n "${HOOK_CONFIG_SETTINGS}" ]; then
-		list_append args ${HOOK_CONFIG_SETTINGS}
+	if [ $# -eq 0 ] && [ -n "${HOOK_SETTINGS[*]}" ]; then
+		list_append args ${HOOK_SETTINGS[*]}
 	else
 		list_append args "$@"
 	fi
@@ -1323,7 +1323,7 @@ zone_config_settings_read() {
 }
 
 zone_config_settings_write() {
-	assert [ $# -eq 2 ]
+	assert [ $# -eq 3 ]
 
 	local zone="${1}"
 	local hook="${2}"
@@ -1333,7 +1333,7 @@ zone_config_settings_write() {
 
 	local path="${NETWORK_ZONES_DIR}/${zone}/configs/${hook}.${id}"
 	settings_write "${path}" \
-		--check="hook_check_config_settings" ${HOOK_CONFIG_SETTINGS[*]}
+		--check="hook_check_config_settings" HOOK ${HOOK_SETTINGS[*]}
 }
 
 zone_config_settings_destroy() {
