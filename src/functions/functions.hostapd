@@ -138,7 +138,7 @@ hostapd_config_write() {
 
 	# Check if key is set when encryption is used.
 	if isset encryption; then
-		assert isoneof encryption WPA WPA2 WPA/WPA2
+		assert isoneof encryption WPA2
 		assert isset key
 	fi
 
@@ -398,14 +398,8 @@ hostapd_config_write() {
 	if isset encryption; then
 		local encryption_mode=0
 		case "${encryption}" in
-			WPA)
-				encryption_mode=1
-				;;
 			WPA2)
 				encryption_mode=2
-				;;
-			WPA/WPA2)
-				encryption_mode=3
 				;;
 		esac
 
