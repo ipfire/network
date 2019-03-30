@@ -1267,13 +1267,8 @@ zone_settings_write() {
 	local zone="${1}"
 	assert isset zone
 
-	local args
-	if function_exists "hook_check_settings"; then
-		list_append args "--check=\"hook_check_settings\""
-	fi
-	list_append args HOOK ${HOOK_SETTINGS[*]}
-
-	settings_write "${NETWORK_ZONES_DIR}/${zone}/settings" ${args}
+	settings_write "${NETWORK_ZONES_DIR}/${zone}/settings" \
+		--check="hook_check_settings" HOOK ${HOOK_SETTINGS[*]}
 }
 
 zone_settings_set() {
@@ -1328,7 +1323,7 @@ zone_config_settings_read() {
 }
 
 zone_config_settings_write() {
-	assert [ $# -ge 2 ]
+	assert [ $# -eq 2 ]
 
 	local zone="${1}"
 	local hook="${2}"
@@ -1336,14 +1331,9 @@ zone_config_settings_write() {
 
 	assert isset id
 
-	local args
-	if function_exists "hook_check_config_settings"; then
-		list_append args "--check=\"hook_check_config_settings\""
-	fi
-	list_append args ${HOOK_CONFIG_SETTINGS}
-
 	local path="${NETWORK_ZONES_DIR}/${zone}/configs/${hook}.${id}"
-	settings_write "${path}" ${args}
+	settings_write "${path}" \
+		--check="hook_check_config_settings" ${HOOK_CONFIG_SETTINGS[*]}
 }
 
 zone_config_settings_destroy() {
@@ -1416,20 +1406,14 @@ zone_port_settings_read() {
 }
 
 zone_port_settings_write() {
-	assert [ $# -ge 2 ]
+	assert [ $# -eq 2 ]
 
 	local zone="${1}"
 	local port="${2}"
-	shift 2
-
-	local args
-	if function_exists "hook_check_port_settings"; then
-		list_append args "--check=\"hook_check_port_settings\""
-	fi
-	list_append args ${HOOK_PORT_SETTINGS}
 
 	local path="${NETWORK_ZONES_DIR}/${zone}/ports/${port}"
-	settings_write "${path}" ${args}
+	settings_write "${path}" \
+		--check="hook_check_port_settings" ${HOOK_PORT_SETTINGS[*]}
 }
 
 zone_port_settings_remove() {

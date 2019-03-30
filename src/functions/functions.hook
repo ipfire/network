@@ -124,6 +124,19 @@ hook_help() {
 	exit $?
 }
 
+# Dummy functions being overlayed by hooks
+hook_check_settings() {
+	:
+}
+
+hook_check_config_settings() {
+	:
+}
+
+hook_check_port_settings() {
+	:
+}
+
 # Sets all settings in HOOK_SETTINGS to their DEFAULT_* values
 hook_set_defaults() {
 	local setting
