@@ -116,7 +116,7 @@ hook_new() {
 	assert isset port
 
 	# Save configuration
-	if port_settings_write "${port}" ${HOOK_SETTINGS[*]}; then
+	if port_settings_write "${port}"; then
 		log INFO "New port ${port} has been created"
 	else
 		error "Could not save configuration for ${port}"
@@ -168,7 +168,7 @@ hook_create() {
 	# Exit silently if the device already exists
 	device_exists "${port}" && exit ${EXIT_OK}
 
-	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
+	port_settings_read "${port}"
 
 	# Create the bonding devices
 	bonding_create "${port}" \
@@ -184,7 +184,7 @@ hook_remove() {
 	local port="${1}"
 	assert isset port
 
-	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
+	port_settings_read "${port}"
 
 	# Remove the bonding device
 	if device_exists "${port}"; then
@@ -196,7 +196,7 @@ hook_up() {
 	local port="${1}"
 	assert isset port
 
-	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
+	port_settings_read "${port}"
 
 	# Auto-enable or disable hardware offloading
 	if ! isset OFFLOADING || enabled OFFLOADING; then
@@ -219,7 +219,7 @@ hook_down() {
 	local port="${1}"
 	assert isset port
 
-	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
+	port_settings_read "${port}"
 
 	# Bring down all slaves
 	local slave
@@ -240,7 +240,7 @@ hook_hotplug() {
 			# Handle events of the same interface
 			if hotplug_event_port_is_interface "${port}"; then
 				# Read configuration
-				port_settings_read "${port}" ${HOOK_SETTINGS[*]}
+				port_settings_read "${port}"
 
 				# Bring up all slaves
 				# Attach those which already exist and try to create

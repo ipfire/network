@@ -90,7 +90,7 @@ hook_create() {
 	assert isset port
 
 	# Read settings
-	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
+	port_settings_read "${port}"
 
 	# Check if the PHY is present.
 	local phy="$(phy_get "${PHY}")"
@@ -149,7 +149,7 @@ hook_hotplug() {
 	local port="${1}"
 	assert isset port
 
-	port_settings_read "${port}" ${HOOK_SETTINGS[*]}
+	port_settings_read "${port}"
 
 	case "$(hotplug_action)" in
 		add)

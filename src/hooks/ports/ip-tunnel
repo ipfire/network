@@ -115,7 +115,7 @@ hook_create() {
 	assert isset port
 
 	local ${HOOK_SETTINGS[*]}
-	if ! port_settings_read "${port}" ${HOOK_SETTINGS[*]}; then
+	if ! port_settings_read "${port}"; then
 		log ERROR "Could not read settings for port ${port}"
 		return ${EXIT_ERROR}
 	fi
@@ -153,7 +153,7 @@ hook_hotplug_rename() {
 	assert isset device
 
 	local ${HOOK_SETTINGS[*]}
-	if ! port_settings_read "${port}" ${HOOK_SETTINGS[*]}; then
+	if ! port_settings_read "${port}"; then
 		log ERROR "Could not read settings for port ${port}"
 		return ${EXIT_ERROR}
 	fi
