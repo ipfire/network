@@ -1,0 +1,32 @@
+= network-zone-wireless(8)
+Michael Tremer <michael.tremer@ipfire.org>
+
+== NAME
+network-zone-wireless - Wireless Networks
+
+== SYNOPSIS
+[verse]
+`network zone new ZONE wireless ...`
+
+== DESCRIPTION
+The wireless hook uses a WiFi interface and connects to a wireless access point
+in station mode.
+
+Configuration and credentials for any wireless networks to connect to can be
+configured by using link:network-wireless-network[8].
+
+== OPTIONS
+The following options are understood:
+
+`--phy=PHY`::
+	Takes the MAC address or name of the physical layer that is used to create
+	a virtual wireless interface.
+
+`--address=ADDRESS`::
+	Define a MAC address that is used for the virtual wireless device. This
+	parameter is optional and a random MAC address will be generated when
+	omitted.
+
+== SEE ALSO
+link:network[8],
+link:network-zone[8]
