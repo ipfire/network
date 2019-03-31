@@ -1,0 +1,73 @@
+= network-zone(8)
+Michael Tremer <michael.tremer@ipfire.org>
+
+== NAME
+network-zone - Manage network zones
+
+== SYNOPSIS
+[verse]
+'network zone [new|destroy]' ZONE
+'network zone' ZONE ...
+
+== DESCRIPTION
+With help of the 'zone' command, it is very easy to configure network zones.
+
+It is possible to create zones and remove them. Zones may also be brought up
+and down and reconfigured. Their status may be viewed as well.
+
+== COMMANDS
+The following commands are understood:
+
+'new ZONE HOOK OPTIONS'::
+	A new zone may be created by the 'create' command.
+	There are at least two arguments required.
+	+
+	ZONE must be valid name for a zone which does not already exist.
+	HOOK is a valid zone hook which may require additional options.
+
+'destroy ZONE'::
+	A zone can be destroyed with this command.
+	+
+	There are two possible ways to remove a zone. The case is when the zone is
+	not up. Then, it will be removed immediately. When the zone is current up
+	and used, it will tagged to be remove later, after it has been brought down.
+
+For all other commands, the name of the zone needs to be passed first:
+
+'edit OPTIONS'::
+	The settings of a zone may be edited after it has been created.
+	The options that can be passed depend on the hook that is used for the zone.
+	Run 'network zone ZONE edit --help' to learn more about that.
+	+
+	It usually is required to restart/reload the zone until the new settings
+	are taken into account.
+
+'[up|down]'::
+	These commands will bring the zone up/down. This is done without control
+	of systemd, therefore not intended to be done in a productive environment.
+	However, these commands may be used for debugging.
+
+'[enable|disable]'::
+	These commands will enable or disable the zone. An enabled zone will
+	automatically be started either during the boot process or a hotplug event
+	of an associated port or other device.
+
+'status'::
+	This will show some detailed information about the state if the specified zone.
+
+include::include-color.txt[]
+
+include::include-description.txt[]
+
+'identify'::
+	This command will make all ports of the zone flash for a few seconds so
+	that you can identify the correct network adapters in the system.
+
+'rename' NAME::
+	Renames the zone to NAME.
+	+
+	The command will shut down the zone if it is up and start it again with
+	the new name. If the zone is not up it won't be started.
+
+== SEE ALSO
+link:network[8]
