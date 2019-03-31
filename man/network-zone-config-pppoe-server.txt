@@ -1,0 +1,50 @@
+= network-zone-config-pppoe-server(8)
+
+== NAME
+network-zone-config-pppoe-server - PPPoE Server Settings
+
+== SYNOPSIS
+[verse]
+`network zone ZONE config create pppoe-server ...`
+`network zone ZONE config pppoe-server edit ...`
+
+== DESCRIPTION
+This configuration hook enables a **PPPoE Server** on a zone.
+
+== OPTIONS
+The following options are understood:
+
+`--subnet=SUBNET`::
+	The `--subnet` option defines an IPv4 pool of which IP addresses are
+	assigned to the remote hosts. The first address of the subnet will be used
+	for the gateway which is the PPPoE server itself.
+	+
+	The subnet must at least have two IP addresses.
+
+`--mtu=MTU`::
+	Set the required MTU (Maximum Transmission Unit) for the PPP connection.
+	The default value is 1492 bytes which is a common MTU for DSL connections.
+
+`--service-name=SERVICE NAME`::
+	This option receives a string which will be used as the service name. The
+	service name is sent out to the clients and used for identification but
+	not authorisation purposes.
+	+
+	The default is an empty value.
+
+`--max-sessions=0`::
+	Limit the number of sessions that may be established by the same MAC address.
+	This must be a positive number.
+	0 permits an unlimited number of sessions per MAC address.
+
+== EXAMPLES
+
+This command creates a PPPoE server that will assign an IP address from the
+192.168.0.0/16 subnet:
+
+  network zone net0 config create pppoe-server --subnet=192.168.0.0/16
+
+== SEE ALSO
+link:network[8],
+link:network-zone[8],
+link:network-zone-config[8]
