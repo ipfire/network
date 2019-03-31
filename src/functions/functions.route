@@ -393,11 +393,8 @@ route_parse_line() {
 }
 
 route_apply() {
-	# Re-generate BIRD configuration
-	bird_generate_config
-
-	# Reload the daemon
-	bird_reload
+	# Update bird
+	bird_update
 }
 
 route_entry_add() {

@@ -33,6 +33,20 @@ bird_reload() {
 	service_reload "bird.service"
 }
 
+bird_enable() {
+	# Generate configuration file
+	if ! bird_generate_config; then
+		log ERROR "Could not write Bird configuration"
+		return ${EXIT_ERROR}
+	fi
+
+	# Enable the service to be automatically started next time
+	service_enable "bird.service"
+
+	# Start it now
+	bird_start
+}
+
 # Update configuration any apply it in one go
 bird_update() {
 	if ! bird_generate_config; then
