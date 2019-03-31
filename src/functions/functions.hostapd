@@ -407,6 +407,7 @@ hostapd_config_write() {
 	local wpa_passphrase
 	local sae_password
 	local wpa_strict_rekey
+	local sae_require_mfp
 
 	# WPA3 Personal
 	if enabled WPA3_PERSONAL; then
@@ -416,6 +417,10 @@ hostapd_config_write() {
 		# Add WPA key management
 		list_append wpa_key_mgmt "SAE"
 		sae_password="${secret}"
+
+		if enabled MFP; then
+			sae_require_mfp="1"
+		fi
 	fi
 
 	# WPA2 Personal
@@ -441,7 +446,7 @@ hostapd_config_write() {
 
 	local var
 	for var in wpa wpa_key_mgmt wpa_passphrase sae_password \
-			rsn_pairwise group_cipher wpa_strict_rekey; do
+			rsn_pairwise group_cipher wpa_strict_rekeyi sae_require_mfp; do
 		if [ -n "${!var}" ]; then
 			print "${var}=${!var}"
 		fi
