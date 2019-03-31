@@ -1,0 +1,44 @@
+= network-settings(8)
+Michael Tremer <michael.tremer@ipfire.org>
+
+== NAME
+network-settings - Change global network settings
+
+== SYNOPSIS
+'network settings'
+'network settings' KEY=VALUE
+
+== DESCRIPTION
+The 'network settings' command may be used to set global settings.
+
+Please have a look at the individual man pages for more options.
+
+== COMMANDS
+If no additional argument is given, running the command will dump a list of
+all settings variables and their current values.
+
+You may set a new value by adding the variable name and the new
+value to the command line.
+
+== VARIABLES
+
+'DEBUG=[true|_false_]'::
+	The DEBUG will control whether debug logging is enabled or not.
+	Additionally to writing debug log messages to the log files, the messages
+	will be displayed on the console as well.
+
+'WIRELESS_REGULATORY_DOMAIN=_00_'::
+	The wireless regulatory domain is set globally for the entire system with
+	the WIRELESS_REGULATORY_DOMAIN setting.
+	+
+	The default is '00' which is the _world_ setting.
+	+
+	Valid values are country codes for countries which have their own
+	regulatory domain.
+
+== AUTHORS
+Michael Tremer
+
+== SEE ALSO
+link:network[8],
+link:network-dns-server[8]
