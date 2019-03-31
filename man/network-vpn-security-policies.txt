@@ -1,0 +1,111 @@
+= network-vpn-security-policies(8)
+Michael Tremer <michael.tremer@ipfire.org>
+
+== NAME
+network-vpn-security-policies - Configure VPN Security Policies
+
+== SYNOPSIS
+[verse]
+'network vpn security-policies [new|destroy]' NAME...
+'network vpn security-policies' NAME COMMAND ...
+
+== DESCRIPTION
+With help of the 'vpn security-policies', it is possible to create, destroy
+and edit VPN security policies.
+
+A security policy is a definition of ciphers and algorithms for integrity
+and key-exchanges for VPN connections.
+
+== COMMANDS
+The following commands are understood:
+
+'new NAME'::
+	A new security policy may be created with the 'new' command.
+	+
+	NAME does not allow any spaces.
+
+'destroy NAME'::
+	A security policy can be destroyed with this command.
+	+
+	If the policy is still in use, it cannot be deleted.
+
+For all other commands, the name of the security policy needs to be passed first:
+
+'NAME show'::
+	Shows the configuration of the security policy.
+
+'NAME key-exchange' [IKEv2|IKEv1]::
+	Defines the key exchange algorithm that should be used to initiate an
+	IPsec VPN connection.
+
+'NAME ciphers' [CIPHER-LIST|+CIPHER ...|-CIPHER ...]::
+	This command allows modifying the cipher list.
+	A new CIPHER-LIST can be passed which will replace the current configuration.
+	Alternatively, new ciphers can be added by prepending a + sign to the cipher
+	name and can removed likewise using -.
+	+
+	A cipher is an algorithm that encrypts and decrypts data to be able to
+	transmit it over an insecure channel.
+
+'NAME integrities' [INTEGRITY-LIST|+INTEGRITY ...|-INTEGRITY ...]::
+	This command allows modifying the integrity list similar to the
+	'ciphers' command.
+	+
+	Integrity algorithms are used to be able to determine if data has been
+	altered when being transferred over an untrusted channel.
+
+'NAME pseudo-random-functions' [PSEUDO-RANDOM-FUNCTION-LIST|+PSEUDO-RANDOM-FUNCTION...|-PSEUDO-RANDOM-FUNCTION]::
+	This command allows modifying the list of pseudo random functions
+	similar to the 'ciphers' command.
+	+
+	These functions are used in combination with an AEAD cipher only.
+
+'NAME group-types' [GROUP-TYPES-LIST|+GROUP-TYPE ...|-GROUP-TYPE]::
+	This command allows modifying the list of group types similar to the
+	'ciphers' command.
+	+
+	These algorithms are used to negotiate a shared secret of an insecure channel.
+
+'NAME pfs' [on|off]::
+	This command allows to enable or disable Perfect Forward Secrecy (PFS).
+	If PFS is enabled, the encrypted channels of a VPN connection will be
+	renegotiated regularly to avoid that the same keys are used for too long.
+	If an attacker is able to obtain a key that was used to encrypt the
+	data, it is only possible to decrypt a certain amount of data.
+	+
+	It is strongly recommended to enable PFS at all times.
+
+'NAME lifetime' LIFETIME::
+	This command allows to define how often the VPN connection is
+	renegotiated if PFS is enabled.
+
+'NAME compression' [on|off]::
+	This command allows to enable or disable compression.
+	If compression is enabled, all data is being compressed before being
+	sent through the VPN.
+	This setting is ignored if the peer does not support this.
+
+== System Policies
+
+The system comes with builtin policies that cannot be modified by the user.
+They are intended to provide good defaults for various situations.
+
+[horizontal]
+'system'::
+	This policy is the default for every VPN connection and allows using
+	all ciphers, integrity and key-exchange algorithms that are recommended
+	to use and have not been proven or assumed to be broken, yet.
+	+
+	Over time, this policy will change whenever an algorithm has been broken
+	and is not recommended to be used any more.
+
+'performance'::
+	This policy is recommended to be used on systems that are not very powerful.
+	Algorithms with smaller key lengths, but still considered to be secure
+	are being used.
+
+System policies cannot be deleted.
+
+== SEE ALSO
+link:network[8],
+link:network-vpn[8]
