@@ -173,7 +173,6 @@ dist_network_DATA = \
 	src/functions/functions.ports \
 	src/functions/functions.ppp \
 	src/functions/functions.pppoe-server \
-	src/functions/functions.radvd \
 	src/functions/functions.route \
 	src/functions/functions.routing \
 	src/functions/functions.serial \
@@ -193,7 +192,6 @@ dist_network_DATA = \
 	src/functions/functions.wireless-networks \
 	src/functions/functions.wpa_supplicant \
 	src/functions/functions.zone \
-	src/network-radvd-config \
 	src/header-config \
 	src/header-port \
 	src/header-zone

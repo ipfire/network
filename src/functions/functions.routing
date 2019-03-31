@@ -80,8 +80,8 @@ routing_default_update() {
 		# Remove too much spaces.
 		routes=$(echo ${routes})
 
-		# Reload radvd configuration
-		[[ "${proto}" = "ipv6" ]] && radvd_update
+		# Reload bird configuration
+		[[ "${proto}" = "ipv6" ]] && bird_update
 
 		# Remove all default routes.
 		if [ -z "${routes}" ]; then

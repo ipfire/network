@@ -31,8 +31,8 @@ NETWORK_SETTINGS_FILE_PARAMS="${NETWORK_SETTINGS_FILE_PARAMS} DNS_RANDOMIZE"
 DNS_SEARCH_DOMAINS=""
 NETWORK_SETTINGS_FILE_PARAMS="${NETWORK_SETTINGS_FILE_PARAMS} DNS_SEARCH_DOMAINS"
 
-# Set this option to true if the DNS servers should be advertised by
-# radvd.
+# Set this option to true if the DNS servers should be advertised in
+# IPv6 router advertisements
 DNS_ADVERTISE_SERVERS="true"
 
 DNS_SERVER_CONFIG_FILE="${NETWORK_CONFIG_DIR}/dns-servers"
@@ -234,8 +234,8 @@ dns_server_update() {
 	# Regenerate /etc/resolv.conf
 	dns_generate_resolvconf
 
-	# Restart radvd which propagates IPv6 DNS servers
-	radvd_update
+	# Update bird about IPv6 DNS server changes
+	bird_update
 }
 
 dns_generate_resolvconf() {
