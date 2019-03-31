@@ -84,6 +84,9 @@ bird_generate_config() {
 		print "}"
 		print
 	done >> ${BIRD_CONF}
+
+	# Write IPv6 Router Advertisement configuration
+	__bird_ipv6_radv >> ${BIRD_CONF}
 }
 
 __bird_static_routes() {
@@ -121,4 +124,90 @@ __bird_static_routes() {
 				;;
 		esac
 	done < ${NETWORK_CONFIG_ROUTES}
+}
+
+__bird_ipv6_radv() {
+	print "protocol radv {"
+
+	local zone
+	for zone in $(zones_get_local); do
+		log DEBUG "Writing bird radv configuration for ${zone}"
+
+		# Skip if there is no prefix or prefix is link-local.
+		local addr="$(db_get "${zone}/ipv6/local-ip-address")"
+		if [ -z "${addr}" ] || [ "${addr:0:5}" = "fe80:" ]; then
+			continue
+		fi
+
+		# Check if the subnet is configured by the DHCP server.
+		local dhcp="false"
+		local prefix="$(ipv6_get_network "${addr}")"
+		if isset prefix && dhcpd_subnet_match ipv6 "${prefix}"; then
+			dhcp="true"
+		fi
+
+		print "	interface \"${zone}\" {"
+			# Failover to other routers within 10s
+			print "		max ra interval 10;"
+
+			# Tell clients we are running DHCP
+			if enabled dhcp; then
+				print "		managed yes;"
+				print "		other config yes;"
+			fi
+
+			if device_exists "${zone}"; then
+				# Announce link MTU
+				local mtu="$(device_get_mtu "${zone}")"
+				print "		link mtu ${mtu};"
+			fi
+
+			print # empty line
+
+			# Announce all prefixes
+			print "		prefix ::/0 {"
+
+			if enabled dhcp; then
+				print "			autonomous off;"
+			fi
+
+			print "		};"
+		print "	};\n"
+	done
+
+	# Advertise any DNS servers
+	if enabled DNS_ADVERTISE_SERVERS; then
+		# Get a list of all IPv6 name servers
+		local servers=()
+		local server
+		for server in $(dns_server_list_sorted); do
+			# Skip any non-IPv6 servers
+			ipv6_is_valid "${server}" || continue
+
+			servers+=( "${server}" )
+		done
+
+		if isset servers; then
+			print "	rdnss {"
+
+			local server
+			for server in ${servers}; do
+				print "		ns ${server};"
+			done
+
+			print "	};"
+		fi
+	fi
+
+	# DNS Search Domain
+	print "	dnssl {"
+
+	local domain
+	for domain in $(dns_get_search_domains); do
+		print "		domain \"${domain}\";"
+	done
+
+	print "	};"
+
+	print "}\n"
 }
