@@ -1,0 +1,35 @@
+= network-zone-ip-tunnel(8)
+Michael Tremer <michael.tremer@ipfire.org>
+
+== NAME
+network-zone-ip-tunnel - Manage IP Tunnels
+
+== SYNOPSIS
+[verse]
+`network zone new ZONE ip-tunnel ...`
+`network zone ZONE edit ...`
+
+== DESCRIPTION
+The ip-tunnel hook is used to create IP tunnels that use protocols like GRE to
+encapsulate IP packets.
+
+== OPTIONS
+The following options are understood:
+
+`--mode=MODE`::
+	Sets the protocol that is being used to encapsulate IP packets.
+	Currently only **GRE** is supported.
+
+`--peer=PEER`::
+	The address of the peer that terminates the remote end of this tunnel.
+	+
+	If left empty, connections from any IP address will be accepted.
+
+`--local-address=LOCAL-ADDRESS`::
+	The local IP address the tunnel originates from.
+	+
+	This is optional and if unset a useful default will be used.
+
+== SEE ALSO
+link:network[8],
+link:network-zone[8]
