@@ -475,7 +475,8 @@ MANPAGES = \
 	man/network-zone-wireless.8
 
 MANPAGES_TXT  = $(patsubst %.8,%.txt,$(MANPAGES))
-MANPAGES_HTML = $(patsubst %.txt,%.html,$(MANPAGES))
+MANPAGES_HTML = $(patsubst %.txt,%.html,$(MANPAGES_TXT))
+MANPAGES_XML  = $(patsubst %.txt,%.xml,$(MANPAGES_TXT))
 
 .PHONY: man
 man: $(MANPAGES) $(MANPAGES_HTML)
@@ -484,11 +485,13 @@ man_MANS = \
 	$(MANPAGES)
 
 noinst_DATA += \
-	$(MANPAGES_HTML)
+	$(MANPAGES_HTML) \
+	$(MANPAGES_XML)
 
 CLEANFILES += \
 	$(man_MANS) \
-	$(MANPAGES_HTML)
+	$(MANPAGES_HTML) \
+	$(MANPAGES_XML)
 
 EXTRA_DIST += \
 	$(MANPAGES_TXT)
