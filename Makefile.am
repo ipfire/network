@@ -474,6 +474,10 @@ MANPAGES = \
 	man/network-zone-pppoe.8 \
 	man/network-zone-wireless.8
 
+EXTRA_DIST += \
+	man/include-color.txt \
+	man/include-description.txt
+
 MANPAGES_TXT  = $(patsubst %.8,%.txt,$(MANPAGES))
 MANPAGES_HTML = $(patsubst %.txt,%.html,$(MANPAGES_TXT))
 MANPAGES_XML  = $(patsubst %.txt,%.xml,$(MANPAGES_TXT))
