@@ -1,0 +1,52 @@
+= network-zone-pppoe(8)
+Michael Tremer <michael.tremer@ipfire.org>
+
+== NAME
+network-zone-pppoe - PPP over Ethernet
+
+== SYNOPSIS
+[verse]
+`network zone new ZONE pppoe ...`
+
+== DESCRIPTION
+The `pppoe` hook creates a PPPoE connection to your ISP.
+
+== OPTIONS
+The following options are understood:
+
+`--username=USERNAME`::
+	Sets the username for authentication.
+
+`--password=PASSWORD`::
+	Sets the password for authentication.
+	+
+	Use the `--auth=` option to transmit it in a secure manner to the provider.
+
+`--mtu=N`::
+	Sets the default MTU of the PPP connection.
+
+`--auth=[chap|pap]`::
+	Define the authentication method that is used to authenticate against your
+	provider. The default is to use the provider's preference.
+
+	* _Challange-Handshake Authentication Protocol_ (`chap`) is the preferred,
+	secure method.
+	* _Password Authentication Protocol_ (`pap`) sends the plaintext password
+	to the authentication server which is the reason why it should be avoided.
+
+`--access-concentrator=STRING`::
+	By this option, you may define the name of the access concentrator.
+
+`--service-name=STRING`::
+	By this option, you may define the service name.
+
+`--ipv6=[on|off]`::
+	By this option, you may enable or disable IPv6.
+
+`--prefix-delegation=[on|off]`::
+	By this option, you may enable or disable the delegation through your
+	provider of one IPv6 prefix to your system.
+
+== SEE ALSO
+link:network[8],
+link:network-zone[8]
