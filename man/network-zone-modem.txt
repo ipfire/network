@@ -1,0 +1,66 @@
+= network-zone-modem(8)
+Michael Tremer <michael.tremer@ipfire.org>
+
+== NAME
+network-zone-modem - Configure serial modems
+
+== SYNOPSIS
+[verse]
+`network zone new ZONE modem ...`
+
+== DESCRIPTION
+The modem hook uses a serial interface to establish a PPP session to an Internet
+Service Provider. This method is used by 56k modems and mobile networks like
+LTE, GSM and 3G.
+
+== OPTIONS
+The following options are understood:
+
+`--device=DEVICE`::
+	Sets the serial device that is used to connect. Example: /dev/ttyUSB0
+
+`--monitor-device=DEVICE`::
+	The optional monitor device is used to collect status information like
+	signal strength and link quality while the connection is established.
+
+`--imsi=IMSI`::
+	Set the IMSI of the SIM card inside the wireless modem to identify it when
+	it is plugged in at runtime.
+
+`--pin=PIN`::
+	The PIN number of the SIM card.
+	This will be used to unlock the SIM card when it is locked.
+
+`--apn=APN`::
+	Sets the Access Point Name (APN) that the modem connects to.
+
+`--phone-number=PHONE-NUMBER`::
+	Sets the phone number that is dialled by the modem when the connection is
+	to be established.
+
+`--username=USERNAME`::
+	Sets the username for authentication.
+
+`--password=PASSWORD`::
+	Sets the password for authentication.
+	+
+	Use the `--auth=` option to transmit it in a secure manner to the provider.
+
+`--baudrate=921600`::
+	The baudrate for the serial link to the modem.
+
+`--mtu=N`::
+	Sets the default MTU of the PPP connection.
+
+`--auth=[chap|pap]`::
+	Define the authentication method that is used to authenticate against your
+	provider. The default is to use the provider's preference.
+
+	* _Challange-Handshake Authentication Protocol_ (`chap`) is the preferred,
+	secure method.
+	* _Password Authentication Protocol_ (`pap`) sends the plaintext password
+	to the authentication server which is the reason why it should be avoided.
+
+== SEE ALSO
+link:network[8],
+link:network-zone[8]
