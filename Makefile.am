@@ -494,6 +494,7 @@ CLEANFILES += \
 	$(MANPAGES_XML)
 
 EXTRA_DIST += \
+	man/asciidoc.conf \
 	$(MANPAGES_TXT)
 
 XSLTPROC_FLAGS = \
@@ -505,20 +506,23 @@ XSLTPROC_FLAGS = \
 	--stringparam man.copyright.section.enabled 1
 
 XSLTPROC_COMMAND_MAN = \
-	$(AM_V_XSLT)$(XSLTPROC) -o $@ $(XSLTPROC_FLAGS) \
+	$(AM_V_XSLT)$(MKDIR_P) $(dir $@) && \
+	$(XSLTPROC) -o $@ $(XSLTPROC_FLAGS) \
 		http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
 
 man/%.xml: man/%.txt man/asciidoc.conf
-	$(AM_V_ASCIIDOC)$(ASCIIDOC) \
-		-f man/asciidoc.conf \
+	$(AM_V_ASCIIDOC)$(MKDIR_P) $(dir $@) && \
+	$(ASCIIDOC) \
+		-f $(abs_srcdir)/man/asciidoc.conf \
 		-d manpage -b docbook -o $@ $<
 
 man/%.8: man/%.xml
 	$(XSLTPROC_COMMAND_MAN)
 
 man/%.html: man/%.txt man/asciidoc.conf
-	$(AM_V_ASCIIDOC)$(ASCIIDOC) \
-		-f man/asciidoc.conf \
+	$(AM_V_ASCIIDOC)$(MKDIR_P) $(dir $@) && \
+	$(ASCIIDOC) \
+		-f $(abs_srcdir)/man/asciidoc.conf \
 		-b html5 -a icons -a theme=flask -o $@ $<
 
 # ------------------------------------------------------------------------------
