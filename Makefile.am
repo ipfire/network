@@ -529,6 +529,10 @@ man/%.html: man/%.txt man/asciidoc.conf
 		-f $(abs_srcdir)/man/asciidoc.conf \
 		-b html5 -a icons -a theme=flask -o $@ $<
 
+.PHONY: upload-man
+upload-man: $(MANPAGES_HTML)
+	rsync -avHz --delete --progress $(MANPAGES_HTML) ms@people.ipfire.org:/pub/man-pages/$(PACKAGE_NAME)/
+
 # ------------------------------------------------------------------------------
 
 substitutions = \
