@@ -1,29 +1,25 @@
-network-port(8)
-===============
+= network-port(8)
 
-NAME
-----
+== NAME
 network-port - Controls Network Ports
 
-SYNOPSIS
---------
+== SYNOPSIS
 [verse]
-'network port' new HOOK ...
-'network port' destroy PORT
-'network port' PORT color set <color>
-'network port' PORT color reset
-'network port' PORT create
-'network port' PORT description edit
-'network port' PORT description show
-'network port' PORT down
-'network port' PORT edit ...
-'network port' PORT identify
-'network port' PORT remove
-'network port' PORT status
-'network port' PORT up
+`network port new HOOK ...`
+`network port destroy PORT`
+`network port PORT color set COLOR`
+`network port PORT color reset`
+`network port PORT create`
+`network port PORT description edit`
+`network port PORT description show`
+`network port PORT down`
+`network port PORT edit ...`
+`network port PORT identify`
+`network port PORT remove`
+`network port PORT status`
+`network port PORT up`
 
-DESCRIPTION
------------
+== DESCRIPTION
 This command creates, deletes, changes and views the configuration
 and status of ports.
 
@@ -32,15 +28,14 @@ to an other network. It connects those and zones together.
 The 'network device' command shows status information of network devices
 and other things.
 
-COMMANDS
---------
+== COMMANDS
 The following commands are understood:
 
-'new' HOOK ...::
+`new HOOK ...`::
 	A new port may be created with this command.
 	HOOK must be a valid hook which may require more options.
 
-'destroy' PORT::
+`destroy PORT`::
 	Destroys the port PORT.
 	The port is removed from any zones it is attached to and shut down.
 
@@ -48,49 +43,47 @@ For all other commands, the name of the port needs to be passed first:
 
 include::include-color.txt[]
 
-'create'::
+`create`::
 	This will create devices for the existing port PORT.
-
+	+
 	This does not create a new port. It will just create the (possibly
 	virtual) interface this port (i.e. create an interface for a WiFi
 	module or a VLAN device).
-
-	The interface is not brought up. Use the 'up' command to do that.
+	+
+	The interface is not brought up. Use the `up` command to do that.
 
 include::include-description.txt[]
 
-'down'::
+`down`::
 	Shuts down the port.
 
-'edit'::
+`edit`::
 	This command can be used to alter the configuration of a port.
 	Consult the documentation of the port hook to find out what is supported.
 
-'identify'::
+`identify`::
 	This command will make the port flash for a few seconds
 	so that you can identify the correct network adapters
 	in the system.
-
+	+
 	This is not supported by all network adapters.
 
-'remove'::
+`remove`::
 	This will remove an existing PORT.
-
+	+
 	This does not destroy the port. It inverses the operation performed
 	by the 'create' command.
 
-'status'::
+`status`::
 	This will show some detailed information about the status
 	of the specified port.
 
-'up'::
+`up`::
 	Brings up the port. It has to be created first.
 
-AUTHORS
--------
+== AUTHORS
 Michael Tremer
 
-SEE ALSO
---------
+== SEE ALSO
 link:network[8],
 link:network-zone[8]

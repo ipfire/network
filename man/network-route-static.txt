@@ -5,10 +5,10 @@ network-route-static - Manage Static Routing
 
 == SYNOPSIS
 [verse]
-'network route static' COMMAND ...
-'network route static add' NETWORK [--gateway=GATEWAY,--unreachable,--prohibit,--blackhole] [--mtu=MTU]
-'network route static remove' NETWORK
-'network route static list' [--protocol=ipv6|ipv4]
+`network route static COMMAND ...`
+`network route static add NETWORK [--gateway=GATEWAY,--unreachable,--prohibit,--blackhole] [--mtu=MTU]`
+`network route static remove NETWORK`
+`network route static list` [--protocol=ipv6|ipv4]`
 
 == DESCRIPTION
 This command helps to manage routes.
@@ -20,14 +20,14 @@ The following commands are understood:
 	A new route may be added by the 'add' command. It is required to pass a
 	valid network prefix NETWORK, which can be either IPv6 or IPv4.
 	+
-	For unicast routes, the '--gateway=GATEWAY' option must be passed, where
+	For unicast routes, the `--gateway=GATEWAY` option must be passed, where
 	GATEWAY is a valid IP address of the same protocol type as the network
 	prefix is.
 	+
-	Use '--unreachable', '--prohibit', '--blackhole' can be used to create of
+	Use `--unreachable`, `--prohibit`, `--blackhole` can be used to create of
 	that type. See ROUTE TYPES below for more information about these options.
 	+
-	The optional '--mtu=MTU' parameter defines the MTU along the path to the
+	The optional `--mtu=MTU` parameter defines the MTU along the path to the
 	destination and must be an integer number. This will show you very
 	detailed information about the given device.
 
@@ -39,7 +39,7 @@ The following commands are understood:
 'list'::
 	Shows a list of all configured routes.
 	+
-	Output can be filtered by passing --protocol=[ipv6|ipv4].
+	Output can be filtered by passing `--protocol=[ipv6|ipv4]`.
 
 == ROUTE TYPES
 
@@ -47,7 +47,7 @@ The following commands are understood:
 'unicast'::
 	A unicast route is the most common route in routing tables. It is a route to
 	a destination network address, which describes the path to the destination.
-	Use the '--gateway=GATEWAY' option to create such a route.
+	Use the `--gateway=GATEWAY` option to create such a route.
 
 'unreachable'::
 	When a route is determined and the routing decision process returns a

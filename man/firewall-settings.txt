@@ -1,30 +1,25 @@
-firewall-settings(8)
-====================
+= firewall-settings(8)
 
-NAME
-----
+== NAME
 firewall-settings - Global firewall settings
 
-SYNOPSIS
---------
+== SYNOPSIS
 [verse]
-'firewall settings'
-'firewall settings' KEY=VALUE ...
+`firewall settings`
+`firewall settings` KEY=VALUE ...
 
-DESCRIPTION
------------
+== DESCRIPTION
 This command is used to set global firewall settings.
 Please have a look at the individual man pages for more options.
 
-COMMANDS
---------
+== COMMANDS
 If no argument is given, the configuration will be dumped to the console.
 
 You may set a new value by adding the variable name and the new value to
 the command line.
 
-SETTINGS
---------
+== SETTINGS
+
 === CONNTRACK_MAX_CONNECTIONS = 16384
 Limits the max. number of simultaneous connections.
 
@@ -88,10 +83,8 @@ Some routers on the Internet still do not support ECN properly.
 When this setting is disabled, ECN is only advertised
 when asked for.
 
-AUTHORS
--------
+== AUTHORS
 Michael Tremer
 
-SEE ALSO
---------
+== SEE ALSO
 link:firewall[8]
