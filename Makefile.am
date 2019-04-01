@@ -488,10 +488,6 @@ man: $(MANPAGES) $(MANPAGES_HTML)
 man_MANS = \
 	$(MANPAGES)
 
-noinst_DATA += \
-	$(MANPAGES_HTML) \
-	$(MANPAGES_XML)
-
 CLEANFILES += \
 	$(man_MANS) \
 	$(MANPAGES_HTML) \
