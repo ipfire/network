@@ -24,19 +24,6 @@ PROC_NET_VLAN_CONFIG="${PROC_NET_VLAN}/config"
 
 VLAN_PORT_INTERFIX="v"
 
-vlan_init() {
-	ebtables-restore <<EOF
-*filter
-:INPUT ACCEPT
-:FORWARD ACCEPT
-:OUTPUT ACCEPT
-
-*broute
-:BROUTING ACCEPT
--A BROUTING -p 802_1Q -j DROP
-EOF
-}
-
 vlan_create() {
 	local device="${1}"
 	shift
@@ -89,9 +76,6 @@ vlan_create() {
 		log ERROR "Parent device '${parent}' does not exist"
 		return ${EXIT_ERROR}
 	fi
-
-	# Load ebtables stuff.
-	vlan_init
 
 	# Make the command
 	local command=(
