@@ -68,6 +68,12 @@ hook_hotplug_rename_by_address() {
 	return ${EXIT_ERROR}
 }
 
+# Returns the suggested name of the port
+hook_find_port_name() {
+	assert isset HOOK_PORT_PATTERN
+	port_find_free "${HOOK_PORT_PATTERN}"
+}
+
 hook_default_new() {
 	local ${HOOK_SETTINGS[*]}
 
@@ -78,14 +84,16 @@ hook_default_new() {
 		return ${EXIT_ERROR}
 	fi
 
-	assert isset HOOK_PORT_PATTERN
-
-	local port=$(port_find_free ${HOOK_PORT_PATTERN})
+	# Determine a name for this port
+	local port="$(hook_find_port_name)"
 	assert isset port
 
-	port_settings_write "${port}" ${HOOK_SETTINGS[*]}
+	# Save settings
+	if ! port_settings_write "${port}" ${HOOK_SETTINGS[*]}; then
+		return ${EXIT_ERROR}
+	fi
 
-	exit ${EXIT_OK}
+	return ${EXIT_OK}
 }
 
 hook_new() {
