@@ -103,7 +103,15 @@ hook_create() {
 	device_exists "${port}" && exit ${EXIT_OK}
 
 	# Read configruation
-	port_settings_read "${port}"
+	if ! port_settings_read "${port}"; then
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if the parent port exists
+	if ! port_exists "${PARENT_PORT}"; then
+		error "Port '${PARENT_PORT}' does not exist"
+		return ${EXIT_ERROR}
+	fi
 
 	# Create the VLAN device
 	vlan_create "${port}" "${PARENT_PORT}" "${TAG}" "${ADDRESS}"
