@@ -30,25 +30,11 @@ HOOK_SETTINGS=(
 PORT_PARENTS_VAR="PARENT_PORT"
 
 hook_check_settings() {
+	assert ismac ADDRESS
 	assert isset PARENT_PORT
+
 	assert isinteger ID
-
-	if isset ADDRESS; then
-		assert ismac ADDRESS
-	fi
-
-	if [ ${ID} -gt 4096 ]; then
-		error "ID is greater than 4096."
-		exit ${EXIT_ERROR}
-	fi
-
-	local reserved
-	for reserved in 0 4095; do
-		if [ "${ID}" = "${reserved}" ]; then
-			error "ID=${reserved} is reserved."
-			exit ${EXIT_ERROR}
-		fi
-	done
+	assert vlan_valid_id "${ID}"
 }
 
 hook_find_port_name() {
@@ -72,6 +58,12 @@ hook_parse_cmdline() {
 				;;
 			--id=*)
 				ID=$(cli_get_val "${1}")
+
+				# Validate VLAN ID
+				if ! vlan_valid_id "${ID}"; then
+					error "Invalid VLAN ID: ${ID}"
+					return ${EXIT_CONF_ERROR}
+				fi
 				;;
 			--port=*)
 				PARENT_PORT=$(cli_get_val "${1}")

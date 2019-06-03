@@ -24,6 +24,23 @@ PROC_NET_VLAN_CONFIG="${PROC_NET_VLAN}/config"
 
 VLAN_PORT_INTERFIX="v"
 
+vlan_valid_id() {
+	local id="${1}"
+
+	# Must be an integer
+	if ! isinteger id; then
+		return ${EXIT_FALSE}
+	fi
+
+	# Must be between 1 and 4095
+	if [ ${id} -ge 1 ] && [ ${id} -le 4096 ]; then
+		return ${EXIT_TRUE}
+	fi
+
+	# Otherwise this is invalid
+	return ${EXIT_FALSE}
+}
+
 vlan_create() {
 	local device="${1}"
 	shift
@@ -31,7 +48,7 @@ vlan_create() {
 	assert isset device
 
 	local address
-	local id
+	local id=1
 	local parent
 
 	# Parse command line arguments
@@ -62,6 +79,12 @@ vlan_create() {
 	# Check if address is valid
 	if ! ismac address; then
 		log ERROR "Invalid mac address: ${address}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check VLAN ID
+	if ! vlan_valid_id "${id}"; then
+		log ERROR "Invalid VLAN ID: ${id}"
 		return ${EXIT_ERROR}
 	fi
 
