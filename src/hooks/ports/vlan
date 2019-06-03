@@ -23,39 +23,39 @@
 
 HOOK_SETTINGS=(
 	"ADDRESS"
+	"ID"
 	"PARENT_PORT"
-	"TAG"
 )
 
 PORT_PARENTS_VAR="PARENT_PORT"
 
 hook_check_settings() {
 	assert isset PARENT_PORT
-	assert isinteger TAG
+	assert isinteger ID
 
 	if isset ADDRESS; then
 		assert ismac ADDRESS
 	fi
 
-	if [ ${TAG} -gt 4096 ]; then
-		error "TAG is greater than 4096."
+	if [ ${ID} -gt 4096 ]; then
+		error "ID is greater than 4096."
 		exit ${EXIT_ERROR}
 	fi
 
 	local reserved
 	for reserved in 0 4095; do
-		if [ "${TAG}" = "${reserved}" ]; then
-			error "TAG=${reserved} is reserved."
+		if [ "${ID}" = "${reserved}" ]; then
+			error "ID=${reserved} is reserved."
 			exit ${EXIT_ERROR}
 		fi
 	done
 }
 
 hook_find_port_name() {
+	assert isset ID
 	assert isset PARENT_PORT
-	assert isset TAG
 
-	print "${PARENT_PORT}${VLAN_PORT_INTERFIX}${TAG}"
+	print "${PARENT_PORT}${VLAN_PORT_INTERFIX}${ID}"
 }
 
 hook_parse_cmdline() {
@@ -70,6 +70,9 @@ hook_parse_cmdline() {
 					return ${EXIT_CONF_ERROR}
 				fi
 				;;
+			--id=*)
+				ID=$(cli_get_val "${1}")
+				;;
 			--port=*)
 				PARENT_PORT=$(cli_get_val "${1}")
 
@@ -78,9 +81,6 @@ hook_parse_cmdline() {
 					error "Port '${PARENT_PORT}' does not exist"
 					return ${EXIT_CONF_ERROR}
 				fi
-				;;
-			--tag=*)
-				TAG=$(cli_get_val "${1}")
 				;;
 			*)
 				error "Unknown argument '${1}'"
@@ -122,8 +122,8 @@ hook_create() {
 	# Create the VLAN device
 	if ! vlan_create "${port}" \
 			--address="${ADDRESS}" \
-			--parent="${PARENT_PORT}" \
-			--tag="${TAG}"; then
+			--id="${id}" \
+			--parent="${PARENT_PORT}"; then
 		error "Could not create port: ${port}"
 		return ${EXIT_ERROR}
 	fi

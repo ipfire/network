@@ -31,8 +31,8 @@ vlan_create() {
 	assert isset device
 
 	local address
+	local id
 	local parent
-	local tag
 
 	# Parse command line arguments
 	while [ $# -gt 0 ]; do
@@ -40,11 +40,11 @@ vlan_create() {
 			--address=*)
 				address=$(cli_get_val "${1}")
 				;;
+			--id=*)
+				id=$(cli_get_val "${1}")
+				;;
 			--parent=*)
 				parent=$(cli_get_val "${1}")
-				;;
-			--tag=*)
-				tag=$(cli_get_val "${1}")
 				;;
 			*)
 				error "Unrecognized argument: ${1}"
@@ -80,7 +80,7 @@ vlan_create() {
 	# Make the command
 	local command=(
 		ip link add link "${parent}" name "${device}"
-			address "${address}" type vlan id "${tag}"
+			address "${address}" type vlan id "${id}"
 	)
 
 	# Run the command
@@ -89,7 +89,7 @@ vlan_create() {
 		return ${EXIT_ERROR}
 	fi
 
-	log DEBUG "Created VLAN device ${device} (parent = ${parent}, id = ${tag})"
+	log DEBUG "Created VLAN device ${device} (parent = ${parent}, id = ${id})"
 
 	return ${EXIT_OK}
 }
