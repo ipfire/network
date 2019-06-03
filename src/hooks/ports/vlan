@@ -66,6 +66,12 @@ hook_parse_cmdline() {
 				;;
 			--address=*)
 				ADDRESS=$(cli_get_val "${1}")
+
+				# Validate address
+				if ! mac_is_valid "${ADDRESS}"; then
+					error "Invalid MAC address given: ${ADDRESS}"
+					return ${EXIT_CONF_ERROR}
+				fi
 				;;
 			--tag=*)
 				TAG=$(cli_get_val "${1}")
@@ -73,6 +79,11 @@ hook_parse_cmdline() {
 		esac
 		shift
 	done
+
+	# Generate a random MAC address if none given
+	if ! isset ADDRESS; then
+		ADDRESS="$(mac_generate)"
+	fi
 }
 
 hook_create() {
