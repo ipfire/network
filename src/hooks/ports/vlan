@@ -23,14 +23,14 @@
 
 HOOK_SETTINGS=(
 	"ADDRESS"
-	"PARENT_DEVICE"
+	"PARENT_PORT"
 	"TAG"
 )
 
-PORT_PARENTS_VAR="PARENT"
+PORT_PARENTS_VAR="PARENT_PORT"
 
 hook_check_settings() {
-	assert isset PARENT_DEVICE
+	assert isset PARENT_PORT
 	assert isinteger TAG
 
 	if isset ADDRESS; then
@@ -52,18 +52,15 @@ hook_check_settings() {
 }
 
 hook_find_port_name() {
-	assert isset PARENT_DEVICE
+	assert isset PARENT_PORT
 	assert isset TAG
 
-	print "${PARENT_DEVICE}${VLAN_PORT_INTERFIX}${TAG}"
+	print "${PARENT_PORT}${VLAN_PORT_INTERFIX}${TAG}"
 }
 
 hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
-			--parent-device=*)
-				PARENT_DEVICE=$(cli_get_val "${1}")
-				;;
 			--address=*)
 				ADDRESS=$(cli_get_val "${1}")
 
@@ -73,10 +70,19 @@ hook_parse_cmdline() {
 					return ${EXIT_CONF_ERROR}
 				fi
 				;;
+			--port=*)
+				PARENT_PORT=$(cli_get_val "${1}")
+
+				# Check if PARENT_PORT exists
+				if ! port_exists "${PARENT_PORT}"; then
+					error "Port '${PARENT_PORT}' does not exist"
+					return ${EXIT_CONF_ERROR}
+				fi
+				;;
 			--tag=*)
 				TAG=$(cli_get_val "${1}")
 				;;
-			-*)
+			*)
 				error "Unknown argument '${1}'"
 				return ${EXIT_CONF_ERROR}
 				;;
@@ -100,7 +106,7 @@ hook_create() {
 	port_settings_read "${port}"
 
 	# Create the VLAN device
-	vlan_create "${port}" "${PARENT_DEVICE}" "${TAG}" "${ADDRESS}"
+	vlan_create "${port}" "${PARENT_PORT}" "${TAG}" "${ADDRESS}"
 
 	exit ${EXIT_OK}
 }
