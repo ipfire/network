@@ -113,6 +113,12 @@ hook_create() {
 		return ${EXIT_ERROR}
 	fi
 
+	# Create the partent port first
+	if ! port_create "${PARENT_PORT}"; then
+		error "Could not bring up parent port: ${PARENT_PORT}"
+		return ${EXIT_ERROR}
+	fi
+
 	# Create the VLAN device
 	if ! vlan_create "${port}" \
 			--address="${ADDRESS}" \
