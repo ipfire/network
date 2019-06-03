@@ -51,7 +51,14 @@ hook_check_settings() {
 	done
 }
 
-hook_new() {
+hook_find_port_name() {
+	assert isset PARENT_DEVICE
+	assert isset TAG
+
+	print "${PARENT_DEVICE}${VLAN_PORT_INTERFIX}${TAG}"
+}
+
+hook_parse_cmdline() {
 	while [ $# -gt 0 ]; do
 		case "${1}" in
 			--parent-device=*)
@@ -63,42 +70,9 @@ hook_new() {
 			--tag=*)
 				TAG=$(cli_get_val "${1}")
 				;;
-			*)
-				warning "Unknown argument '${1}'"
-				;;
 		esac
 		shift
 	done
-
-	local port="${PARENT_DEVICE}${VLAN_PORT_INTERFIX}${TAG}"
-
-	port_settings_write "${port}"
-
-	exit ${EXIT_OK}
-}
-
-hook_edit() {
-	local port=${1}
-	assert isset port
-	shift
-
-	port_settings_read "${port}"
-
-	while [ $# -gt 0 ]; do
-		case "${1}" in
-			--address=*)
-				ADDRESS=$(cli_get_val "${1}")
-				;;
-			*)
-				warning "Unknown argument '${1}'"
-				;;
-		esac
-		shift
-	done
-
-	port_settings_write "${port}"
-
-	exit ${EXIT_OK}	
 }
 
 hook_create() {
