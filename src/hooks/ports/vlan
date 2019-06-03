@@ -76,6 +76,10 @@ hook_parse_cmdline() {
 			--tag=*)
 				TAG=$(cli_get_val "${1}")
 				;;
+			-*)
+				error "Unknown argument '${1}'"
+				return ${EXIT_CONF_ERROR}
+				;;
 		esac
 		shift
 	done
