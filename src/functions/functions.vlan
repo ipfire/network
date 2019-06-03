@@ -22,6 +22,11 @@
 PROC_NET_VLAN="/proc/net/vlan"
 PROC_NET_VLAN_CONFIG="${PROC_NET_VLAN}/config"
 
+VLAN_SUPPORTED_PROTOCOLS=(
+	"802.1Q"	# default
+	"802.1ad"
+)
+
 VLAN_PORT_INTERFIX="v"
 
 vlan_valid_id() {
@@ -41,6 +46,13 @@ vlan_valid_id() {
 	return ${EXIT_FALSE}
 }
 
+vlan_supported_protocol() {
+	local proto="${1}"
+	assert isset proto
+
+	list_match "${proto}" "${VLAN_SUPPORTED_PROTOCOLS[@]}"
+}
+
 vlan_create() {
 	local device="${1}"
 	shift
@@ -50,6 +62,7 @@ vlan_create() {
 	local address
 	local id=1
 	local parent
+	local protocol="${VLAN_SUPPORTED_PROTOCOLS[0]}"
 
 	# Parse command line arguments
 	while [ $# -gt 0 ]; do
@@ -62,6 +75,9 @@ vlan_create() {
 				;;
 			--parent=*)
 				parent=$(cli_get_val "${1}")
+				;;
+			--protocol=*)
+				protocol=$(cli_get_val "${1}")
 				;;
 			*)
 				error "Unrecognized argument: ${1}"
@@ -79,6 +95,12 @@ vlan_create() {
 	# Check if address is valid
 	if ! ismac address; then
 		log ERROR "Invalid mac address: ${address}"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check protocol
+	if ! vlan_supported_protocol "${protocol}"; then
+		log ERROR "Invalid protocol: ${protocol}"
 		return ${EXIT_ERROR}
 	fi
 
@@ -103,7 +125,7 @@ vlan_create() {
 	# Make the command
 	local command=(
 		ip link add link "${parent}" name "${device}"
-			address "${address}" type vlan id "${id}"
+			address "${address}" type vlan proto "${protocol}" id "${id}"
 	)
 
 	# Run the command

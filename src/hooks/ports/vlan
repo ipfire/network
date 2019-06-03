@@ -25,13 +25,20 @@ HOOK_SETTINGS=(
 	"ADDRESS"
 	"ID"
 	"PARENT_PORT"
+	"PROTOCOL"
 )
+
+# Set the default to 802.1Q
+DEFAULT_PROTOCOL="${VLAN_SUPPORTED_PROTOCOLS[0]}"
 
 PORT_PARENTS_VAR="PARENT_PORT"
 
 hook_check_settings() {
 	assert ismac ADDRESS
 	assert isset PARENT_PORT
+
+	assert isset PROTOCOL
+	assert vlan_supported_protocol "${PROTOCOL}"
 
 	assert isinteger ID
 	assert vlan_valid_id "${ID}"
@@ -71,6 +78,16 @@ hook_parse_cmdline() {
 				# Check if PARENT_PORT exists
 				if ! port_exists "${PARENT_PORT}"; then
 					error "Port '${PARENT_PORT}' does not exist"
+					return ${EXIT_CONF_ERROR}
+				fi
+				;;
+			--protocol=*)
+				PROTOCOL="$(cli_get_val "${1}")"
+
+				# Check if PROTOCOL is supported
+				if ! vlan_supported_protocol "${PROTOCOL}"; then
+					error "Protocol '${PROTOCOL}' is not supported"
+					error "Choose one of ${VLAN_SUPPORTED_PROTOCOLS[*]}"
 					return ${EXIT_CONF_ERROR}
 				fi
 				;;
@@ -114,8 +131,9 @@ hook_create() {
 	# Create the VLAN device
 	if ! vlan_create "${port}" \
 			--address="${ADDRESS}" \
-			--id="${id}" \
-			--parent="${PARENT_PORT}"; then
+			--id="${ID}" \
+			--parent="${PARENT_PORT}" \
+			--protocol="${PROTOCOL}"; then
 		error "Could not create port: ${port}"
 		return ${EXIT_ERROR}
 	fi
