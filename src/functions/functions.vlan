@@ -38,53 +38,76 @@ EOF
 }
 
 vlan_create() {
-	local device=${1}
+	local device="${1}"
+	shift
+
 	assert isset device
 
-	local parent=${2}
-	assert isset parent
+	local address
+	local parent
+	local tag
 
-	local tag=${3}
-	assert isinteger tag
+	# Parse command line arguments
+	while [ $# -gt 0 ]; do
+		case "${1}" in
+			--address=*)
+				address=$(cli_get_val "${1}")
+				;;
+			--parent=*)
+				parent=$(cli_get_val "${1}")
+				;;
+			--tag=*)
+				tag=$(cli_get_val "${1}")
+				;;
+			*)
+				error "Unrecognized argument: ${1}"
+				return ${EXIT_ERROR}
+				;;
+		esac
+		shift
+	done
 
-	local address=${4}
-	if isset address; then
-		assert ismac address
+	# Generate a random MAC address if none was passed
+	if ! isset address; then
+		address="$(mac_generate)"
 	fi
 
-	# Check if a device with the name does already exist.
-	if device_exists ${device}; then
-		log ERROR "device '${device}' does already exist"
+	# Check if address is valid
+	if ! ismac address; then
+		log ERROR "Invalid mac address: ${address}"
 		return ${EXIT_ERROR}
 	fi
 
-	# Check if the parent device exists.
-	if ! device_exists ${parent}; then
-		log ERROR "parent device '${parent}' does not exist"
+	# Check if a device with the name does already exist
+	if device_exists "${device}"; then
+		log ERROR "Device '${device}' already exists"
+		return ${EXIT_ERROR}
+	fi
+
+	# Check if the parent device exists
+	if ! device_exists "${parent}"; then
+		log ERROR "Parent device '${parent}' does not exist"
 		return ${EXIT_ERROR}
 	fi
 
 	# Load ebtables stuff.
 	vlan_init
 
-	local command="ip link add link ${parent} name ${device}"
+	# Make the command
+	local command=(
+		ip link add link "${parent}" name "${device}"
+			address "${address}" type vlan id "${tag}"
+	)
 
-	if isset address; then
-		command="${command} address ${address}"
+	# Run the command
+	if ! cmd_quiet "${command[*]}"; then
+		log ERROR "Could not create VLAN device ${device}: $?"
+		return ${EXIT_ERROR}
 	fi
 
-	command="${command} type vlan id ${tag}"
+	log DEBUG "Created VLAN device ${device} (parent = ${parent}, id = ${tag})"
 
-	cmd_quiet ${command}
-	local ret=$?
-
-	if [ ${ret} -eq ${EXIT_OK} ]; then
-		log DEBUG "vlan device '${device}' has been created"
-	else
-		log ERROR "could not create vlan device '${device}': ${ret}"
-	fi
-
-	return ${ret}
+	return ${EXIT_OK}
 }
 
 vlan_remove() {

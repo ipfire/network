@@ -114,9 +114,15 @@ hook_create() {
 	fi
 
 	# Create the VLAN device
-	vlan_create "${port}" "${PARENT_PORT}" "${TAG}" "${ADDRESS}"
+	if ! vlan_create "${port}" \
+			--address="${ADDRESS}" \
+			--parent="${PARENT_PORT}" \
+			--tag="${TAG}"; then
+		error "Could not create port: ${port}"
+		return ${EXIT_ERROR}
+	fi
 
-	exit ${EXIT_OK}
+	return ${EXIT_OK}
 }
 
 hook_remove() {
