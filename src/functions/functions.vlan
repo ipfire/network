@@ -88,13 +88,7 @@ vlan_create() {
 }
 
 vlan_remove() {
-	local device=${1}
-	assert isset device
-
-	# Set down device (if not already done).
-	device_set_down ${device}
-
-	device_delete ${device}
+	device_delete "$@"
 }
 
 vlan_get_parent() {
