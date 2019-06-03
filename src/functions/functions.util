@@ -469,12 +469,25 @@ assert() {
 	local assertion="$@"
 
 	if ! ${assertion}; then
-		error_log "Assertion '${assertion}' failed."
 		backtrace
-		exit ${EXIT_ERROR_ASSERT}
+
+		# End the program here
+		abort "Assertion failed: ${assertion}"
 	fi
 
 	return ${EXIT_OK}
+}
+
+# Ends the program immediately without cleaning up
+abort() {
+	local msg="$@"
+
+	# Print message
+	if isset msg; then
+		log ERROR "${msg}"
+	fi
+
+	exit ${EXIT_ERROR_ASSERT}
 }
 
 # This function checks, if the given argument is an assert error
