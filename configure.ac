@@ -124,6 +124,14 @@ AS_IF([test "x$enable_debug" = "xyes"], [
 ])
 
 # ------------------------------------------------------------------------------
+
+have_manpages=no
+AC_ARG_ENABLE(manpages, AS_HELP_STRING([--disable-man-pages],
+	[do not install man pages]))
+AS_IF([test "x$enable_manpages" != xno], [have_manpages=yes])
+AM_CONDITIONAL(ENABLE_MANPAGES, [test "x$have_manpages" = "xyes"])
+
+# ------------------------------------------------------------------------------
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
 	[], [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
@@ -144,7 +152,7 @@ PKG_CHECK_MODULES([LIBNL], [libnl-3.0 libnl-genl-3.0])
 # ------------------------------------------------------------------------------
 
 AC_CHECK_PROGS(ASCIIDOC, [asciidoc])
-if test -z "${ASCIIDOC}"; then
+if test "${have_manpages}" = "yes" && test -z "${ASCIIDOC}"; then
 	AC_MSG_ERROR([Required program 'asciidoc' not found])
 fi
 
@@ -167,4 +175,6 @@ AC_MSG_RESULT([
 
 	systemdsystemunitdir: $systemdsystemunitdir
 	udevdir:              $udevdir
+
+	Generate man-pages:   ${have_manpages}
 ])

@@ -480,11 +480,13 @@ MANPAGES_XML  = $(patsubst %.txt,%.xml,$(MANPAGES_TXT))
 .PHONY: man
 man: $(MANPAGES) $(MANPAGES_HTML)
 
+if ENABLE_MANPAGES
 man_MANS = \
 	$(MANPAGES)
+endif
 
 CLEANFILES += \
-	$(man_MANS) \
+	$(MANPAGES) \
 	$(MANPAGES_HTML) \
 	$(MANPAGES_XML)
 
