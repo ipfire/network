@@ -363,8 +363,7 @@ UNINSTALL_EXEC_HOOKS += ppp-uninstall-hook
 
 if HAVE_SYSTEMD
 systemdsystemunit_DATA = \
-	src/systemd/firewall4.service \
-	src/systemd/firewall6.service \
+	src/systemd/firewall.service \
 	src/systemd/firewall-init.service \
 	src/systemd/network-init.service \
 	src/systemd/network@.service
