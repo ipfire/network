@@ -19,11 +19,35 @@
 #                                                                             #
 ###############################################################################
 
+# Parse the command line
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		-d|--debug)
+			DEBUG=1
+			;;
+		*)
+			action=${1}
+			;;
+	esac
+	shift
+	[ -n "${action}" ] && break
+done
+
 . /usr/lib/network/functions
 
 # Read firewall settings
 firewall_settings_read
 
-firewall_cli "ipv6" "$@"
+case "${action}" in
+	# Initialise kernel with firewall settings
+	init)
+		firewall_kernel_init
+		exit $?
+		;;
+
+	*)
+		firewall_cli "ipv6" "${action}" "$@"
+		;;
+esac
 
 exit ${EXIT_ERROR}
