@@ -134,9 +134,9 @@ static int default_prefix(const int family) {
 static int ip_address_parse_simple(ip_address_t* ip, const int family, const char* address) {
 	assert(family == AF_INET || family == AF_INET6);
 
-	size_t address_length = strlen(address);
-	char buffer[address_length + 1];
-	strncpy(buffer, address, sizeof(buffer));
+	// Copy input to stack
+	char buffer[512];
+	strncpy(buffer, address, sizeof(buffer) - 1);
 
 	// Search for a prefix or subnet mask
 	char* prefix = strchr(buffer, '/');
