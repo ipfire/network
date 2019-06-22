@@ -1,8 +1,8 @@
 [Unit]
-Description=Initialize kernel parameters for the firewalls
+Description=Initialize kernel parameters for the firewall
 Before=network.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=@helpersdir@/firewall-kernel-init
+ExecStart=@sbindir@/firewall init

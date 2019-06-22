@@ -206,7 +206,6 @@ dist_network_SCRIPTS = \
 
 dist_helpers_SCRIPTS = \
 	src/helpers/dhcpd-config-helper \
-	src/helpers/firewall-kernel-init \
 	src/helpers/hostapd-config-helper \
 	src/helpers/ipsec-updown \
 	src/helpers/pppd-angel \
