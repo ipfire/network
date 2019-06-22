@@ -45,7 +45,7 @@ hook_new() {
 	fi
 
 	# Write configuration to disk
-	if ! zone_config_settings_write "${zone}" "${HOOK}"; then
+	if ! zone_config_settings_write "${zone}" "${HOOK}" "${id}"; then
 		return ${EXIT_ERROR}
 	fi
 
