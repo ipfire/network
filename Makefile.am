@@ -114,7 +114,6 @@ dist_doc_DATA = \
 
 dist_sbin_SCRIPTS = \
 	src/dhclient-script \
-	src/firewall-config \
 	src/firewall \
 	src/network
 

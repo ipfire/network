@@ -45,6 +45,11 @@ case "${action}" in
 		exit $?
 		;;
 
+	settings)
+		firewall_cli_settings "$@"
+		exit $?
+		;;
+
 	*)
 		firewall_cli "ipv6" "${action}" "$@"
 		;;
