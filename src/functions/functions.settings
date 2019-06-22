@@ -297,13 +297,13 @@ network_settings_list() {
 }
 
 firewall_settings_read() {
-	settings_read "${FIREWALL_SETTINGS_FILE}" "${FIREWALL_SETTINGS_PARAMS}"
+	settings_read "${FIREWALL_SETTINGS_FILE}" "${FIREWALL_SETTINGS[*]}"
 }
 
 firewall_settings_write() {
-	settings_write "${FIREWALL_SETTINGS_FILE}" "${FIREWALL_SETTINGS_PARAMS}"
+	settings_write "${FIREWALL_SETTINGS_FILE}" "${FIREWALL_SETTINGS[*]}"
 }
 
 firewall_settings_print() {
-	settings_print "${FIREWALL_SETTINGS_PARAMS}"
+	settings_print "${FIREWALL_SETTINGS[*]}"
 }
