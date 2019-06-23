@@ -26,12 +26,16 @@ SUPPORTED_IP_TUNNEL_MODES="gre sit vti"
 HOOK_SETTINGS=(
 	"MARK"
 	"MODE"
+	"MTU"
 	"PEER"
 	"LOCAL_ADDRESS"
 )
 
 # Default mode of the tunnel
 DEFAULT_MODE="gre"
+
+# Default MTU
+DEFAULT_MTU="1480"
 
 hook_check_settings() {
 	assert isset MODE && assert isoneof MODE ${SUPPORTED_IP_TUNNEL_MODES}
@@ -63,6 +67,16 @@ hook_parse_cmdline() {
 				# MODE must be on the list of supported protocols
 				if ! isoneof MODE ${SUPPORTED_IP_TUNNEL_MODES}; then
 					error "Unsupported mode: ${mode}"
+					return ${EXIT_ERROR}
+				fi
+				;;
+
+			--mtu=*)
+				MTU="$(cli_get_val "${1}")"
+
+				# Validate MTU
+				if ! mtu_is_valid "ipv6" "${MTU}"; then
+					error "Invalid MTU: ${MTU}"
 					return ${EXIT_ERROR}
 				fi
 				;;
@@ -116,6 +130,7 @@ hook_up() {
 	if ! device_exists "${zone}"; then
 		ip_tunnel_add "${zone}" \
 			--mode="${MODE}" \
+			--mtu="${MTU}" \
 			--remote-address="${PEER}" \
 			--local-address="${LOCAL_ADDRESS}" \
 			--ikey="${MARK}" \
