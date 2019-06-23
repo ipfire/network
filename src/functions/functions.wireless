@@ -555,6 +555,11 @@ wireless_supports_dfs() {
 	local device="${1}"
 	assert isset device
 
+	# DFS is not supported if wireless reg domain is set to world
+	if [ -n "${WIRELESS_REGULATORY_DOMAIN}" ] || [ "${WIRELESS_REGULATORY_DOMAIN}" = "00" ]; then
+		return ${EXIT_FALSE}
+	fi
+
 	local phy="$(device_get_phy "${device}")"
 	if ! isset phy; then
 		log ERROR "Could not determine PHY for ${device}"
