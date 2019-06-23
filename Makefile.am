@@ -374,8 +374,7 @@ INSTALL_DIRS += \
 endif
 
 EXTRA_DIST += \
-	src/systemd/firewall4.service.in \
-	src/systemd/firewall6.service.in \
+	src/systemd/firewall.service.in \
 	src/systemd/firewall-init.service.in \
 	src/systemd/network-init.service.in \
 	src/systemd/network@.service.in
