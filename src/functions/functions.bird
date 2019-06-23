@@ -21,6 +21,10 @@
 
 BIRD_CONF="/etc/bird.conf"
 
+bird_is_active() {
+	service_is_active "bird.service"
+}
+
 bird_start() {
 	service_start "bird.service"
 }
@@ -41,7 +45,11 @@ bird_update() {
 	fi
 
 	# Reload bird
-	bird_reload
+	if bird_is_active; then
+		bird_reload
+	else
+		bird_start
+	fi
 }
 
 bird_generate_config() {
