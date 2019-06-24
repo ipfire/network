@@ -460,6 +460,7 @@ MANPAGES = \
 	man/network-route-static.8 \
 	man/network-settings.8 \
 	man/network-vpn.8 \
+	man/network-vpn-ipsec.8 \
 	man/network-vpn-security-policies.8 \
 	man/network-zone.8 \
 	man/network-zone-bridge.8 \
