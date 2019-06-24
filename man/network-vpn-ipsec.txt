@@ -1,0 +1,97 @@
+= network-vpn-security-policies(8)
+
+== NAME
+network-ipsec - Configure IPsec VPN connections 
+
+== SYNOPSIS
+[verse]
+'network vpn ipsec [new|destroy]' NAME...
+'network vpn ipsec' NAME COMMAND ...
+
+== DESCRIPTION
+With help of the 'vpn ipsec', it is possible to create, destroy
+and edit IPsec VPN connections.
+
+
+== COMMANDS
+The following commands are understood:
+
+'new NAME'::
+	A new IPsec VPN connection may be created with the 'new' command.
+	+
+	NAME does not allow any spaces.
+
+'destroy NAME'::
+	A IPsec VPN connection can be destroyed with this command.
+
+For all other commands, the name of the IPsec VPN connection needs to be passed first:
+
+'NAME show'::
+	Shows the configuration of the IPsec VPN connection 
+
+'NAME authentication mode'::
+	Set the authentication mode out of the following available modes:
+	* psk
+
+'NAME authentication psk PSK'::
+	Set the pre-shared-key to PSK, only useful when the authentication mode is psk:
+
+include::include-color.txt[]
+
+include::include-description.txt[]
+
+'NAME down'::
+	Shutdown a etablished IPsec VPN connection
+
+'NAME inactivity-timeout TIME'::
+	Set the inactivity timeout with TIME in seconds or in the format hh:mm:ss
+
+'NAME local id ID'::
+	Specify the identity of the local system.
+	+
+	The ID must be in one of the following formats:
+	* IP address
+	* FQDN
+	* a string which starts with @
+
+'NAME local prefix [PREFIX-LIST|+PREFIX ...|-PREFIX ...]'::
+	Specify the subnets of the local system which should be made available to the remote peer.
+
+'NAME mode [transport|tunnel]'::
+	Set the mode of the IPsec VPN connection. 
+
+'NAME peer PEER'::
+	Set the peer to which the IPsec VPN connection should be etablished.
+
+'NAME remote id ID'::
+	Specify the identity of the remote machine.
+	+
+	The ID must be in one of the following formats:
+	* IP address
+	* FQDN
+	* A string which starts with @
+
+'NAME remote prefix [PREFIX-LIST|+PREFIX ...|-PREFIX ...]'::
+	Specify the subnets which the remote side makes available to us.
+
+'NAME security-policy'::
+	Set the security policy which the connection uses.
+	+
+	See link:network-vpn-security-policies[8] for details.
+
+'NAME up'::
+	Establishes the IPsec VPN connection to the remote peer.
+
+'NAME zone'::
+	When you specify a zone of type ip-tunnel here the IPsec connection is established over a vti tunnel.
+	The remote and local prefixes are ignored. Imagine a fiber connection between this two machines, and how you would use it.
+	The IPsec VPN connection works in the same way. You must configure routes and IP addresses of the ip-tunnel hook manually.
+
+
+== AUTHORS
+Michael Tremer,
+Jonatan Schlag
+
+== SEE ALSO
+link:network[8],
+link:network-vpn[8]
