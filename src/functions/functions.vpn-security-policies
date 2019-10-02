@@ -263,6 +263,9 @@ declare -A VPN_SUPPORTED_GROUP_TYPES=(
 
 	# Curve25519
 	[CURVE25519]="256 bit Elliptic Curve 25519"
+
+	# Curve448
+	[CURVE448]="224 bit Elliptic Curve 448"
 )
 
 declare -A GROUP_TYPE_TO_STRONGSWAN=(
@@ -289,8 +292,9 @@ declare -A GROUP_TYPE_TO_STRONGSWAN=(
 	[ECP384BP]="ecp384bp"
 	[ECP512BP]="ecp512bp"
 
-	# Curve25519
+	# More Curves
 	[CURVE25519]="curve25519"
+	[CURVE448]="curve448"
 )
 
 cli_vpn_security_policies() {
