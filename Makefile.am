@@ -31,6 +31,7 @@ AUTOMAKE_OPTIONS = color-tests
 configdir        = $(sysconfdir)/network
 bashcompletiondir= $(datadir)/bash-completion/completions
 libexecdir       = $(prefix)/lib
+modprobedir      = $(prefix)/lib/modprobe.d
 pkgconfigdir     = $(libdir)/pkgconfig
 pppdir           = $(sysconfdir)/ppp
 systemconfigdir  = $(datadir)/network
@@ -393,6 +394,11 @@ systemconfig_vpn_security_policiesdir = $(systemconfig_vpndir)/security-policies
 
 dist_sysctl_DATA = \
 	src/sysctl/network.conf
+
+# ------------------------------------------------------------------------------
+
+dist_modprobe_DATA = \
+	src/modprobe.d/no-copybreak.conf
 
 # ------------------------------------------------------------------------------
 
